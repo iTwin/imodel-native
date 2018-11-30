@@ -425,6 +425,26 @@ void RealityDataConsole::PrintResults(bvector<Utf8String> results)
         }
     }
 
+void RealityDataConsole::PrintResults(bvector<pair<Utf8String, Utf8String>> results)
+{
+    std::stringstream index;
+    Utf8String fullOption;
+    DisplayInfo("Index \t Value\n");
+    std::string str;
+    Utf8String currentSection = "";
+
+    for (size_t i = 0; i < results.size(); ++i)
+    {
+        if (currentSection != results[i].first)
+            {
+            currentSection = results[i].first;
+            DisplayInfo(Utf8PrintfString("\t\t%s\n", currentSection), DisplayOption::Question);
+            }
+        DisplayInfo(Utf8PrintfString("%5d \t %s\n", (i + 1), results[i].second));
+    }
+}
+
+
 void RealityDataConsole::PrintResults(bmap<Utf8String, bvector<Utf8String>> results)
     {
     std::stringstream index;
@@ -822,7 +842,8 @@ void RealityDataConsole::ListRoots()
         partialVec = RealityDataService::Request(ultimateReq, ultimateResponse);
         ultimateVec.insert(ultimateVec.end(), partialVec.begin(), partialVec.end());
         }
-    bmap<Utf8String, bvector<Utf8String>> nodes = bmap<Utf8String, bvector<Utf8String>>();
+    bvector<pair<Utf8String, Utf8String>> nodes;
+
     bvector<Utf8String> subvec = bvector<Utf8String>();
     Utf8String owner;
     if(ultimateVec.size() > 0)
@@ -832,26 +853,15 @@ void RealityDataConsole::ListRoots()
         }
 
     Utf8String schema = RealityDataService::GetSchemaName();
-    int position = 0;
     Utf8String rdOwner;
     for (RealityDataPtr rData : ultimateVec)
         {
         rdOwner = rData->GetOwner();
         rdOwner.ToLower();
-        if(owner != rdOwner)
-            {
-            nodes.Insert(owner, subvec);
-            subvec.clear();
-            owner = rdOwner;
-            }
 
-        subvec.push_back(Utf8PrintfString("%-30s  %-22s (%s / %s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", ShortenVisibility(rData->GetVisibilityTag()), rData->GetIdentifier(), rData->GetTotalSize()));
+        nodes.push_back(pair<Utf8String, Utf8String>(rdOwner, Utf8PrintfString("%-30s  %-22s (%s / %s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", ShortenVisibility(rData->GetVisibilityTag()), rData->GetIdentifier(), rData->GetTotalSize())));
 
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
-
-        position++;
-        if(position == ultimateVec.size())
-            nodes.Insert(owner, subvec);
         }
 
     PrintResults(nodes);
@@ -1734,8 +1744,6 @@ void RealityDataConsole::Details()
         DisplayInfo(Utf8PrintfString(" Footprint           : %s\n", entity->GetFootprintString()));
         DisplayInfo(Utf8PrintfString(" ThumbnailDocument   : %s\n", entity->GetThumbnailDocument()));
         DisplayInfo(Utf8PrintfString(" MetadataUrl         : %s\n", entity->GetMetadataUrl()));
-        DisplayInfo(Utf8PrintfString(" UltimateId          : %s\n", entity->GetUltimateId()));
-        DisplayInfo(Utf8PrintfString(" UltimateSite        : %s\n", entity->GetUltimateSite()));
         DisplayInfo(Utf8PrintfString(" Copyright           : %s\n", entity->GetCopyright()));
         DisplayInfo(Utf8PrintfString(" TermsOfUse          : %s\n", entity->GetTermsOfUse()));
         DisplayInfo(Utf8PrintfString(" AccuracyInMeters    : %s\n", entity->GetAccuracy()));

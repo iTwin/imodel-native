@@ -614,7 +614,7 @@ public:
         m_sort = false; 
         }
 
-    REALITYDATAPLATFORM_EXPORT void SetFilter(const RDSFilter& filter);
+    REALITYDATAPLATFORM_EXPORT void SetFilter(RDSFilter const& filter);
     REALITYDATAPLATFORM_EXPORT void SetQuery(Utf8StringCR query);
     REALITYDATAPLATFORM_EXPORT void SetProject(Utf8StringCR project);
 
@@ -912,7 +912,7 @@ struct TransferReport
 //=====================================================================================
 struct TransferError
 {
-    TransferError::TransferError(): m_errorCode((int)BentleyStatus::SUCCESS) {}
+    TransferError(): m_errorCode((int)BentleyStatus::SUCCESS) {}
     enum class TransferErrorOrigin
     {
          RDS_SERVICE,
@@ -925,15 +925,15 @@ struct TransferError
     Utf8String           m_errorMessage;
 };
 
-inline bool operator==(int errorCode, const TransferError& transferError) {return transferError.m_errorCode == errorCode;}
-inline bool operator!=(int errorCode, const TransferError& transferError) {return transferError.m_errorCode != errorCode;}
-inline bool operator==(BentleyStatus errorCode, const TransferError& transferError) {return transferError.m_errorCode == (int)errorCode;}
-inline bool operator!=(BentleyStatus errorCode, const TransferError& transferError) {return transferError.m_errorCode != (int)errorCode;}
+inline bool operator==(int errorCode, TransferError const& transferError) {return transferError.m_errorCode == errorCode;}
+inline bool operator!=(int errorCode, TransferError const& transferError) {return transferError.m_errorCode != errorCode;}
+inline bool operator==(BentleyStatus errorCode, TransferError const& transferError) {return transferError.m_errorCode == (int)errorCode;}
+inline bool operator!=(BentleyStatus errorCode, TransferError const& transferError) {return transferError.m_errorCode != (int)errorCode;}
 
-inline bool operator==(const TransferError& transferError, int errorCode) {return transferError.m_errorCode == errorCode;}
-inline bool operator!=(const TransferError& transferError, int errorCode) {return transferError.m_errorCode != errorCode;}
-inline bool operator==(const TransferError& transferError, BentleyStatus errorCode) {return transferError.m_errorCode == (int)errorCode;}
-inline bool operator!=(const TransferError& transferError, BentleyStatus errorCode) {return transferError.m_errorCode != (int)errorCode;}
+inline bool operator==(TransferError const& transferError, int errorCode) {return transferError.m_errorCode == errorCode;}
+inline bool operator!=(TransferError const& transferError, int errorCode) {return transferError.m_errorCode != errorCode;}
+inline bool operator==(TransferError const& transferError, BentleyStatus errorCode) {return transferError.m_errorCode == (int)errorCode;}
+inline bool operator!=(TransferError const& transferError, BentleyStatus errorCode) {return transferError.m_errorCode != (int)errorCode;}
 
 //! Callback function to prep a request, if necessary
 //! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
@@ -984,13 +984,13 @@ struct RealityDataServiceTransfer : public RequestConstructor
 
     //! Start the upload progress for all links.
     //! Returns a reference to the internal transfer report structure.
-    REALITYDATAPLATFORM_EXPORT virtual const TransferReport& Perform();
+    REALITYDATAPLATFORM_EXPORT virtual TransferReport const& Perform();
 
     //! Returns the current TransferReport. 
     //! Normally this io only performed before calling Perfrom() as the Perform()
     //! call clears the report. This can be used to extract the error status
     //! when IsTransferValid() report false.
-    REALITYDATAPLATFORM_EXPORT virtual const TransferError& GetError() {return m_creationError;}
+    REALITYDATAPLATFORM_EXPORT virtual TransferError const& GetError() {return m_creationError;}
     
     //! Specifies if the the transfer report will track every operation or only those that failed
     REALITYDATAPLATFORM_EXPORT void OnlyReportErrors(bool onlyErrors) { m_onlyReportErrors = onlyErrors; }
@@ -1157,7 +1157,7 @@ private:
 //! Callback function to surface RequestErrors.
 //! @param[in] basicMessage Utf8String provided by the specific request
 //! @param[in] rawResponse  the raw server response
-typedef std::function<void(Utf8String basicMessage, const RawServerResponse& rawResponse)> RealityDataService_ErrorCallBack;
+typedef std::function<void(Utf8String basicMessage, RawServerResponse const& rawResponse)> RealityDataService_ErrorCallBack;
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -1218,90 +1218,90 @@ public:
     //! Returns a list of RealityData objects that overlap the given region
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(const RealityDataPagedRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(RealityDataPagedRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns the specified Data Location.
-    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataLocationRequest& request, RealityDataLocation& dataLocationObject, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataLocationRequest const& request, RealityDataLocation& dataLocationObject, RawServerResponse& rawResponse);
 
     //! Returns the available Data Locations for the enterprise of the user.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataLocation>  RealityDataService::Request(const AllRealityDataLocationsRequest& request,  RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataLocation>  Request(AllRealityDataLocationsRequest const& request,  RawServerResponse& rawResponse);
 
     //! Returns the size in KB for the specify Enterprise, or the default one.
-    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, RealityDataEnterpriseStat& statObject, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataEnterpriseStatRequest const& request, RealityDataEnterpriseStat& statObject, RawServerResponse& rawResponse);
 
     //! Returns a list of EnterpriseStat objects for every organization.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataEnterpriseStat> Request(const RealityDataAllEnterpriseStatsRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataEnterpriseStat> Request(RealityDataAllEnterpriseStatsRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns the size in KB for the specify Enterprise, or the default one.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataServiceStat> RealityDataService::Request(const RealityDataServiceStatRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataServiceStat> Request(RealityDataServiceStatRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns a list of EnterpriseStat objects for every organization.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataServiceStat> Request(const RealityDataAllServiceStatsRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataServiceStat> Request(RealityDataAllServiceStatsRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns the user stats for the specify Enterprise, or the default one.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataUserStat> RealityDataService::Request(const RealityDataUserStatRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataUserStat> Request(RealityDataUserStatRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns a list of UserStat objects for every organization.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataUserStat> Request(const RealityDataAllUserStatsRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataUserStat> Request(RealityDataAllUserStatsRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns the list of all documents in a repo
-    REALITYDATAPLATFORM_EXPORT static bvector<bpair<WString, uint64_t>> Request(const AllRealityDataByRootId& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<bpair<WString, uint64_t>> Request(AllRealityDataByRootId const& request, RawServerResponse& rawResponse);
 
     //! Returns the RealityData object requested or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataPtr Request(const RealityDataByIdRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static RealityDataPtr Request(RealityDataByIdRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns the RealityDataExtended object requested or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataExtendedPtr Request(const RealityDataExtendedByIdRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static RealityDataExtendedPtr Request(RealityDataExtendedByIdRequest const& request, RawServerResponse& rawResponse);
 
     //! Deletes a RealityData object
-    REALITYDATAPLATFORM_EXPORT static void Request(const RealityDataDelete& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDelete const& request, RawServerResponse& rawResponse);
 
     //! Returns a RealityDataDocument or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(RealityDataDocumentByIdRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns the content of a RealityData Service document
     REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequest& request, BeFile* file, RawServerResponse& rawResponse);
 
     //! Returns a RealityDataFolder or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(const RealityDataFolderByIdRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(RealityDataFolderByIdRequest const& request, RawServerResponse& rawResponse);
 
     //! DEPRECATED use RealityDataListByUltimateIdPagedRequest
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(const RealityDataListByOrganizationPagedRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(RealityDataListByOrganizationPagedRequest const& request, RawServerResponse& rawResponse);
     
     //! Returns a list of RealityData objects that belongs to the organization.
     //! Notice that the organization is not usually provided and the organization of the currently
     //! Bentley CONNECT user is used.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(const RealityDataListByUltimateIdPagedRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(RealityDataListByUltimateIdPagedRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(const RealityDataRelationshipByProjectIdRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(RealityDataRelationshipByProjectIdRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific RealityData.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(const RealityDataRelationshipByRealityDataIdRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(RealityDataRelationshipByRealityDataIdRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(const RealityDataRelationshipByProjectIdPagedRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(RealityDataRelationshipByProjectIdPagedRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific RealityData.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(const RealityDataRelationshipByRealityDataIdPagedRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(RealityDataRelationshipByRealityDataIdPagedRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns a serverResponse or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataChangeRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(RealityDataChangeRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns a RealityDataFolder or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataCreateRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(RealityDataCreateRequest const& request, RawServerResponse& rawResponse);
 
     //! Creates a relationship between reality data and project
-    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataRelationshipCreateRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(RealityDataRelationshipCreateRequest const& request, RawServerResponse& rawResponse);
 
     //! Deletes a relationship between reality data and project
-    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataRelationshipDelete& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(RealityDataRelationshipDelete const& request, RawServerResponse& rawResponse);
 
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically

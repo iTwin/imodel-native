@@ -115,7 +115,7 @@ public:
 
 private:
     static RealityDataDownload::sisterFileVector SpatialEntityDataSourceToSisterVector(RealityPlatform::SpatialEntityDataSourceCR dataSource, BeFileNameCR destinationFolder);
-    static RealityDataDownload::mirrorWSistersVector RealityConversionTools::RealityDataToMirrorVector(const RealityPlatform::PackageRealityData& realityData, BeFileNameCR destinationFolder);
+    static RealityDataDownload::mirrorWSistersVector RealityDataToMirrorVector(const RealityPlatform::PackageRealityData& realityData, BeFileNameCR destinationFolder);
     static StatusInt JsonToObjectBase(Utf8CP data, Json::Value& json);
     };
 

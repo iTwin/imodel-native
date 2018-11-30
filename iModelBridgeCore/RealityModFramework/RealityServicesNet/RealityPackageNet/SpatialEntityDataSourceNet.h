@@ -2,7 +2,7 @@
 |
 |     $Source: RealityServicesNet/RealityPackageNet/SpatialEntityDataSourceNet.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -96,6 +96,10 @@ namespace RealityPackageNet
             //! Get/Set the server authentication hint. Might be empty.
             System::String^ GetServerOrganisationPage();
             void SetServerOrganisationPage(System::String^ link);
+
+            //! Get/Set the visibility tag. Tag values are limited. See C++ class for details.
+            System::String^ GetVisibilityTag();
+            void SetVisibilityTag(System::String^ visibilityTag);
 
             //! Get/Set the size in kilobytes. Default to 0.
             uint64_t GetSize();

@@ -448,7 +448,7 @@ ConnectedResponse ConnectedRealityDataDocument::RetrieveAllForRealityData(bvecto
 
     for(int i = 0; i < filesInRepo.size(); i++)
         {
-        docVector.push_back(make_bpair(Utf8PrintfString("%s/%s", realityDataGUID, Utf8String(filesInRepo[i].first.c_str())), filesInRepo[i].second));
+        docVector.push_back(make_bpair(Utf8PrintfString("%s/%s", realityDataGUID.c_str(), Utf8String(filesInRepo[i].first.c_str()).c_str()), filesInRepo[i].second));
         }
 
     response.Clone(sasResponse);
@@ -530,7 +530,7 @@ ConnectedResponse ConnectedRealityDataDocument::Upload(BeFileName filePath, Utf8
         if(ur.results.empty())
             {
             response.simpleSuccess = true;
-            response.simpleMessage = Utf8PrintfString("document uploaded to %s", serverPath);
+            response.simpleMessage = Utf8PrintfString("document uploaded to %s", serverPath.c_str());
             }
         else
             {
@@ -572,7 +572,7 @@ ConnectedResponse ConnectedRealityDataDocument::Download(BeFileName filePath, Ut
         if (dr.results.empty())
             {
             response.simpleSuccess = true;
-            response.simpleMessage = Utf8PrintfString("document downloaded from %s", serverPath);
+            response.simpleMessage = Utf8PrintfString("document downloaded from %s", serverPath.c_str());
             }
         else
             {
@@ -690,7 +690,7 @@ ConnectedResponse ConnectedRealityDataFolder::Upload(BeFileName filePath, Utf8St
         if (ur.results.empty())
             {
             response.simpleSuccess = true;
-            response.simpleMessage = Utf8PrintfString("folder uploaded to %s", serverPath);
+            response.simpleMessage = Utf8PrintfString("folder uploaded to %s", serverPath.c_str());
             }
         else
             {
@@ -732,7 +732,7 @@ ConnectedResponse ConnectedRealityDataFolder::Download(BeFileName filePath, Utf8
         if (dr.results.empty())
             {
             response.simpleSuccess = true;
-            response.simpleMessage = Utf8PrintfString("folder downloaded from %s", serverPath);
+            response.simpleMessage = Utf8PrintfString("folder downloaded from %s", serverPath.c_str());
             }
         else
             {
@@ -798,7 +798,6 @@ void ConnectedRealityData::Clone(RealityDataPtr rd)
     m_footprintExtent = rd->GetFootprintExtent();
     m_description = rd->GetDescription();
     m_visibility = rd->GetVisibility();
-    m_visibilityString = rd->GetVisibilityTag();
 
     m_realityDataType = rd->GetRealityDataType();
     m_streamed = rd->IsStreamed();
@@ -914,47 +913,47 @@ ConnectedResponse ConnectedRealityData::UpdateInfo()
 
     Utf8String propertyString = "";
     if(!m_organizationId.empty())
-        propertyString.append(Utf8PrintfString("\"OrganizationId\" : \"%s\",", m_organizationId));
+        propertyString.append(Utf8PrintfString("\"OrganizationId\" : \"%s\",", m_organizationId.c_str()));
     if (!m_ultimateId.empty())
-        propertyString.append(Utf8PrintfString("\"UltimateId\" : \"%s\",", m_ultimateId));
+        propertyString.append(Utf8PrintfString("\"UltimateId\" : \"%s\",", m_ultimateId.c_str()));
     if (!m_ultimateSite.empty())
-        propertyString.append(Utf8PrintfString("\"UltimateSite\" : \"%s\",", m_ultimateSite));
+        propertyString.append(Utf8PrintfString("\"UltimateSite\" : \"%s\",", m_ultimateSite.c_str()));
     if (!m_name.empty())
-        propertyString.append(Utf8PrintfString("\"Name\" : \"%s\",", m_name));
+        propertyString.append(Utf8PrintfString("\"Name\" : \"%s\",", m_name.c_str()));
     if (!m_dataset.empty())
-        propertyString.append(Utf8PrintfString("\"Dataset\" : \"%s\",", m_dataset));
+        propertyString.append(Utf8PrintfString("\"Dataset\" : \"%s\",", m_dataset.c_str()));
     if (!m_group.empty())
-        propertyString.append(Utf8PrintfString("\"Group\" : \"%s\",", m_group));
+        propertyString.append(Utf8PrintfString("\"Group\" : \"%s\",", m_group.c_str()));
     if (!m_description.empty())
-        propertyString.append(Utf8PrintfString("\"Description\" : \"%s\",", m_description));
+        propertyString.append(Utf8PrintfString("\"Description\" : \"%s\",", m_description.c_str()));
     if (!m_rootDocument.empty())
-        propertyString.append(Utf8PrintfString("\"RootDocument\" : \"%s\",", m_rootDocument));
+        propertyString.append(Utf8PrintfString("\"RootDocument\" : \"%s\",", m_rootDocument.c_str()));
     if (!GetClassificationTag().empty())
-        propertyString.append(Utf8PrintfString("\"Classification\" : \"%s\",", GetClassificationTag()));
+        propertyString.append(Utf8PrintfString("\"Classification\" : \"%s\",", GetClassificationTag().c_str()));
     if (!m_realityDataType.empty())
-        propertyString.append(Utf8PrintfString("\"Type\" : \"%s\",", m_realityDataType));
+        propertyString.append(Utf8PrintfString("\"Type\" : \"%s\",", m_realityDataType.c_str()));
     propertyString.append(m_streamed ? "\"Streamed\" : true," : "\"Streamed\" : false,"); 
     if (!GetFootprintString().empty())
-        propertyString.append(Utf8PrintfString("\"Footprint\" : \"%s\",", GetFootprintString()));
+        propertyString.append(Utf8PrintfString("\"Footprint\" : \"%s\",", GetFootprintString().c_str()));
     if (!m_thumbnailDocument.empty())
-        propertyString.append(Utf8PrintfString("\"ThumbnailDocument\" : \"%s\",", m_thumbnailDocument));
+        propertyString.append(Utf8PrintfString("\"ThumbnailDocument\" : \"%s\",", m_thumbnailDocument.c_str()));
     if (!m_metadataUrl.empty())
-        propertyString.append(Utf8PrintfString("\"MetadataUrl\" : \"%s\",", m_metadataUrl));
+        propertyString.append(Utf8PrintfString("\"MetadataUrl\" : \"%s\",", m_metadataUrl.c_str()));
     if (!m_copyright.empty())
-        propertyString.append(Utf8PrintfString("\"Copyright\" : \"%s\",", m_copyright));
+        propertyString.append(Utf8PrintfString("\"Copyright\" : \"%s\",", m_copyright.c_str()));
     if (!m_metadataUrl.empty())
-        propertyString.append(Utf8PrintfString("\"MetadataUrl\" : \"%s\",", m_metadataUrl));
+        propertyString.append(Utf8PrintfString("\"MetadataUrl\" : \"%s\",", m_metadataUrl.c_str()));
     if (!m_termsOfUse.empty())
-        propertyString.append(Utf8PrintfString("\"TermsOfUse\" : \"%s\",", m_termsOfUse));
+        propertyString.append(Utf8PrintfString("\"TermsOfUse\" : \"%s\",", m_termsOfUse.c_str()));
     if (!m_resolution.empty())
-        propertyString.append(Utf8PrintfString("\"ResolutionInMeters\" : \"%s\",", m_resolution));
+        propertyString.append(Utf8PrintfString("\"ResolutionInMeters\" : \"%s\",", m_resolution.c_str()));
     if (!m_accuracy.empty())
-        propertyString.append(Utf8PrintfString("\"AccuracyInMeters\" : \"%s\",", m_accuracy));
+        propertyString.append(Utf8PrintfString("\"AccuracyInMeters\" : \"%s\",", m_accuracy.c_str()));
     if (!GetVisibilityTag().empty())
-        propertyString.append(Utf8PrintfString("\"Visibility\" : \"%s\",", GetVisibilityTag()));
+        propertyString.append(Utf8PrintfString("\"Visibility\" : \"%s\",", GetVisibilityTag().c_str()));
     propertyString.append(m_listable ? "\"Listable\" : true," : "\"Listable\" : false,");
     if (!m_owner.empty())
-        propertyString.append(Utf8PrintfString("\"OwnedBy\" : \"%s\",", m_owner));
+        propertyString.append(Utf8PrintfString("\"OwnedBy\" : \"%s\",", m_owner.c_str()));
     propertyString.append(m_hidden ? "\"Hidden\" : true," : "\"Hidden\" : false,");
     propertyString.append(m_delegatePermissions ? "\"DelegatePermissions\" : true," : "\"DelegatePermissions\" : false,");
     
@@ -1023,7 +1022,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
         properties.Insert(RealityDataField::ResolutionInMeters, m_resolution);
     if (!m_accuracy.empty())
         properties.Insert(RealityDataField::AccuracyInMeters, m_accuracy);
-    if ((m_visibility != Visibility::UNDEFINED_VISIBILITY) || !m_visibilityString.empty())
+    if ((m_visibility != Visibility::UNDEFINED_VISIBILITY))
         properties.Insert(RealityDataField::Visibility, GetVisibilityTag());
     properties.Insert(RealityDataField::Listable, m_listable ? "true" : "false");
     if (!m_owner.empty())
@@ -1042,7 +1041,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
         if (ur.results.empty())
             {
             response.simpleSuccess = true;
-            response.simpleMessage = Utf8PrintfString("repo uploaded to %s", m_identifier);
+            response.simpleMessage = Utf8PrintfString("repo uploaded to %s", m_identifier.c_str());
             }
         else
             {
@@ -1084,7 +1083,7 @@ ConnectedResponse ConnectedRealityData::Download(BeFileName filePath, Utf8String
         if (dr.results.empty())
             {
             response.simpleSuccess = true;
-            response.simpleMessage = Utf8PrintfString("files downloaded from %s", serverPath);
+            response.simpleMessage = Utf8PrintfString("files downloaded from %s", serverPath.c_str());
             }
         else
             {
