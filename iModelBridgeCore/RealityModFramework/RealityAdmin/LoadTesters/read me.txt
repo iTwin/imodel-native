@@ -1,0 +1,51 @@
+LoadTestBase - Load testing tool
+======================================
+
+Usage: RealityContextTest.exe -u:[users]
+Options: -h,  --help                       Shows usage
+         -s,  --serverType                 Tells the loadTester which server to contact (dev/qa/prod)
+         -u,  --users                      Number of users
+         -hr, --hourlyrate (optional)      Target number of requests per hour
+         -t,  --trickle (optional)         Add this argument to avoid spawing all users at once
+         -p,  --path (optional)            Specifiy a path to out the log file to. Any text added after the 
+                                           last backslash will be added to the file name
+         If there are spaces in an argument, surround it with ""
+
++---------------------+
+Operation:
++---------------------+
+Main thread:
+Parses command line arguments and spawns the requested amount of users.
+If the trickle option is specified, spawned users are passed to the dispatch thread.
+Afterwards, this thread is responsible for handling a multicurl function which will execute requests.
+When a response is received, if curl says the request was successful, the thread will attempt to validate the response.
+If at any time, errors are detected, they are passed to the static Stats struct.
+When all pending requests have returned, the thread will either fully repopulate the list or exit the loop, if that has been queued.
+upon exiting, the other threads will be joined and the results will be written to a logfile
+the logfile's name is taken from the timestamp, when the program exited.
+
+Dispatch thread:
+Holds an array of innactive users. 
+Adds a single user to the multicurl pool then sleeps for a random amount of time before adding another user.
+Also responsible for printing to the console the current success/failure statistics.
+
+Interrupt thread:
+waits for user input to queue the program's exit
+
++---------------------+
+Components:
++---------------------+
+User:
+Randomly selects an RDS server operation to execute and constructs the appropriate curl pointer which is added to the multicurl.
+Only performs Delete, Link and Unlink on Reality Datas that it has previously Created.
+When the response is received, validates the response and adds it to the stats
+
+UserManager:
+Run by the main thread. Responsible for running the multicurl and repopulating an empty user pool.
+
+RPS:
+requests per second tracker. Keeps a record of how many request of a given type where executed at a given timestamp.
+When polled, returns the number of requests per second, normalized over ten seconds (t-12 -> t-2).
+
+Stats:
+tracks actual success/failure rate for each request type, as well as execution time metrics

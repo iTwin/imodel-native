@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RealityDataPackage xmlns="http://www.bentley.com/RealityDataServer/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\RealityPackage.1.0.xsd" version="1.0">
+  <Name>7c71c780-8b52-47ba-adac-a29b407c5ac6</Name>
+  <CreationDate>2016-02-02T16:28:01.727Z</CreationDate>
+  <BoundingPolygon>-71.072445 42.339894 -71.056824 42.339894 -71.056824 42.332027 -71.072445 42.332027 -71.072445 42.339894</BoundingPolygon>
+  <ImageryGroup>
+    <ImageryData>
+      <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_nw_19_1_20140712_20140923.jp2" type="JPEG2000">
+        <Copyright>FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+        <Id>55098640e4b02e76d757f634</Id>
+        <Provider>usgs</Provider>
+        <Filesize>25827</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/55098640e4b02e76d757f634?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_ne_19_1_20140712_20140923.jp2" type="JPEG2000">
+        <Copyright>FSA 10:1 NAIP Imagery m_4207148_ne_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+        <Id>55098634e4b02e76d757f5c6</Id>
+        <Provider>usgs</Provider>
+        <Filesize>25831</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/55098634e4b02e76d757f5c6?f=__disk__94%2F3c%2F45%2F943c454b8481aa188053612d4bc4541b9f37abf0</Metadata>
+      </Source>
+    </ImageryData>
+  </ImageryGroup>
+  <TerrainGroup>
+    <TerrainData>
+      <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n42x50_w071x25_ma_lftne_lot7_2011.zip" type="IMG">
+        <Copyright>USGS NED ned19_n42x50_w071x25_ma_lftne_lot7_2011 1/9 arc-second 2012 15 x 15 minute IMG courtesy of the U.S. Geological Survey</Copyright>
+        <Id>53174905e4b0cd4cd83c06a6</Id>
+        <Provider>usgs</Provider>
+        <Filesize>9930</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83c06a6?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+      </Source>
+    </TerrainData>
+  </TerrainGroup>
+</RealityDataPackage>
