@@ -29,6 +29,7 @@ private:
     InstanceKeyMap m_instances;
     NavNodeKeySet m_nodes;
     mutable INavNodeKeysContainerCPtr m_nodeKeysContainer;
+    mutable BeMutex m_mutex;
 
 private:
     void InvalidateNodeKeysContainer() {m_nodeKeysContainer = nullptr;}
@@ -62,7 +63,7 @@ public:
     ECPRESENTATION_EXPORT static KeySetPtr Create(bvector<ECClassCP> const& classes);
 
     //! Returns whether this key set is equal to the supplied one.
-    bool Equals(KeySetCR other) const {return GetHash().Equals(other.GetHash());}
+    bool Equals(KeySetCR other) const {BeMutexHolder lock(m_mutex); return GetHash().Equals(other.GetHash());}
     //! Equals operator override
     bool operator==(KeySetCR other) const {return Equals(other);}
     //! Get hash of this key set.
@@ -76,21 +77,21 @@ public:
     //! Get size of nav node keys.
     size_t size() const {return GetAllNavNodeKeys()->size();}
     //! Add instance key to this key set. (Returns true if key was added and false if key was in the set already)
-    bool Add(ECClassCP ecClass, ECInstanceId instanceId) {InvalidateNodeKeysContainer(); return m_instances[ecClass].insert(instanceId).second;}
+    bool Add(ECClassCP ecClass, ECInstanceId instanceId) {BeMutexHolder lock(m_mutex); InvalidateNodeKeysContainer(); return m_instances[ecClass].insert(instanceId).second;}
     //! Add instance ket to this key set. (Returns true if key was added and false if key was in the set already)
     bool Add(ECClassInstanceKeyCR instanceKey) {return Add(instanceKey.GetClass(), instanceKey.GetId());}
     //! Add NavNode key to this key set. (Returns true if key was added and false if key was in the set already)
-    bool Add(NavNodeKeyCR nodeKey) {InvalidateNodeKeysContainer(); return m_nodes.insert(&nodeKey).second;}
+    bool Add(NavNodeKeyCR nodeKey) {BeMutexHolder lock(m_mutex); InvalidateNodeKeysContainer(); return m_nodes.insert(&nodeKey).second;}
     //! Returns whether this key set contains supplied instance key.
     ECPRESENTATION_EXPORT bool Contains(ECClassCP, ECInstanceId) const;
     //! Returns whether this key set contains supplied instance key.
     bool Contains(ECClassInstanceKeyCR instanceKey) const {return Contains(instanceKey.GetClass(), instanceKey.GetId());}
     //! Return whether this key set contains supplied NavNode key.
-    bool Contains(NavNodeKeyCR nodeKey) const {return m_nodes.end() != m_nodes.find(&nodeKey);}
+    bool Contains(NavNodeKeyCR nodeKey) const {BeMutexHolder lock(m_mutex); return m_nodes.end() != m_nodes.find(&nodeKey);}
     //! Clears this key set.
-    void Clear() {InvalidateNodeKeysContainer(); m_instances.clear(); m_nodes.clear();}
+    void Clear() {BeMutexHolder lock(m_mutex); InvalidateNodeKeysContainer(); m_instances.clear(); m_nodes.clear();}
     //! Returns whether this key set is empty.
-    bool empty() const {return m_instances.empty() && m_nodes.empty();}
+    bool empty() const {BeMutexHolder lock(m_mutex); return m_instances.empty() && m_nodes.empty();}
     //! Merge supplied key set which this key set. Returns number of new keys added.
     ECPRESENTATION_EXPORT uint64_t MergeWith(KeySetCR other);
     //! Remove supplied keys from this key set. Return number of keys removed.

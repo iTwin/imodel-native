@@ -53,16 +53,16 @@ protected:
     KeySetCPtr _GetSelection(ECDbCR ecdb) const override
         {
         auto iter = m_selections.find(&ecdb);
-        return (m_selections.end() != iter) ? iter->second : nullptr;
+        return (m_selections.end() != iter) ? iter->second : KeySet::Create();
         }
     KeySetCPtr _GetSubSelection(ECDbCR ecdb) const override
         {
         auto iter = m_subSelections.find(&ecdb);
-        return (m_subSelections.end() != iter) ? iter->second : nullptr;
+        return (m_subSelections.end() != iter) ? iter->second : KeySet::Create();
         }
     void _AddListener(ISelectionChangesListener& listener) override {m_listeners.insert(&listener);}
     void _RemoveListener(ISelectionChangesListener& listener) override {m_listeners.erase(&listener);}
-    void _AddToSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR, uint64_t) override
+    folly::Future<folly::Unit> _AddToSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR, uint64_t) override
         {
         KeySetPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
         if (curr.IsNull())
@@ -73,8 +73,9 @@ protected:
             SetSubSelection(db, *curr);
         else
             SetSelection(db, *curr);
+        return folly::makeFuture();
         }
-    void _RemoveFromSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR, uint64_t) override
+    folly::Future<folly::Unit> _RemoveFromSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR, uint64_t) override
         {
         KeySetPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
         if (curr.IsNull())
@@ -85,27 +86,30 @@ protected:
             SetSubSelection(db, *curr);
         else
             SetSelection(db, *curr);
+        return folly::makeFuture();
         }
-    void _ChangeSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR, uint64_t) override
+    folly::Future<folly::Unit> _ChangeSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR, uint64_t) override
         {
         if (isSub)
             SetSubSelection(db, keys);
         else
             SetSelection(db, keys);
+        return folly::makeFuture();
         }
-    void _ClearSelection(ECDbCR db, Utf8CP, bool isSub, RapidJsonValueCR, uint64_t) override
+    folly::Future<folly::Unit> _ClearSelection(ECDbCR db, Utf8CP, bool isSub, RapidJsonValueCR, uint64_t) override
         {
         if (isSub)
             SetSubSelection(db, *KeySet::Create());
         else
             SetSelection(db, *KeySet::Create());
+        return folly::makeFuture();
         }
-    void _RefreshSelection(ECDbCR db, Utf8CP name, bool isSub, RapidJsonValueCR extendedData, uint64_t) override
+    folly::Future<folly::Unit> _RefreshSelection(ECDbCR db, Utf8CP name, bool isSub, RapidJsonValueCR extendedData, uint64_t) override
         {
         KeySetPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
         if (curr.IsNull())
             curr = KeySet::Create();
-        ChangeSelection(db, name, isSub, *curr, extendedData);
+        return ChangeSelection(db, name, isSub, *curr, extendedData);
         }
 public:
     TestSelectionManager(IConnectionCacheCR connections) : m_connections(connections) {}
@@ -134,10 +138,11 @@ struct TestSelectionChangesListener : ISelectionChangesListener
 private:
     std::function<void(SelectionChangedEventCR)> m_callback;
 protected:
-    void _OnSelectionChanged(SelectionChangedEventCR evt) override
+    folly::Future<folly::Unit> _OnSelectionChanged(SelectionChangedEventCR evt) override
         {
         if (m_callback)
             m_callback(evt);
+        return folly::makeFuture();
         }
 public:
     TestSelectionChangesListener(std::function<void(SelectionChangedEventCR)> callback = nullptr) : m_callback(callback) {}

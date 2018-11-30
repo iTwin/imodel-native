@@ -80,6 +80,27 @@ struct CustomizationHelperTests : ECPresentationTest
         node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*m_connection, *node, bvector<Utf8String>()));
         return node;
         }
+
+    void Cache(JsonNavNodeR node)
+        {
+        NavNodeExtendedData extendedData(node);
+        uint64_t virtualParentId = extendedData.HasVirtualParentId() ? extendedData.GetVirtualParentId() : 0;
+        HierarchyLevelInfo hlInfo = m_nodesCache.FindHierarchyLevel(extendedData.GetConnectionId(), 
+            extendedData.GetRulesetId(), extendedData.GetLocale(), extendedData.HasVirtualParentId() ? &virtualParentId : nullptr);
+        if (!hlInfo.IsValid())
+            {
+            hlInfo = HierarchyLevelInfo(extendedData.GetConnectionId(), extendedData.GetRulesetId(), 
+                extendedData.GetLocale(), node.GetParentNodeId(), virtualParentId);
+            m_nodesCache.Cache(hlInfo);
+            }
+        DataSourceInfo dsInfo = m_nodesCache.FindDataSource(hlInfo.GetId(), 0);
+        if (!dsInfo.IsValid())
+            {
+            dsInfo = DataSourceInfo(hlInfo.GetId(), 0);
+            m_nodesCache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
+            }
+        m_nodesCache.Cache(node, dsInfo, 0, false);
+        }
 };
 ECDbTestProject* CustomizationHelperTests::s_project = nullptr;
 
@@ -209,7 +230,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
 TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSymbols)
     {
     JsonNavNodePtr parentNode = CreateNode("Parent", "description", "imageId", "ParentType");
-    m_nodesCache.Cache(*parentNode, DataSourceInfo(), 0, false);
+    Cache(*parentNode);
     uint64_t parentNodeId = parentNode->GetNodeId();
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);

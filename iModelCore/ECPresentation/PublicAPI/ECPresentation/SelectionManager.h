@@ -133,12 +133,12 @@ protected:
     //! A callback that's called when the selection changes.
     //! @param[in] evt The selection change event.
     //! @note The callback may be called from any thread.
-    virtual void _OnSelectionChanged(SelectionChangedEventCR evt) = 0;
+    virtual folly::Future<folly::Unit> _OnSelectionChanged(SelectionChangedEventCR evt) = 0;
 
 public:
     //! Virtual destructor.
     virtual ~ISelectionChangesListener() {}
-    void NotifySelectionChanged(SelectionChangedEventCR evt) {_OnSelectionChanged(evt);}
+    folly::Future<folly::Unit> NotifySelectionChanged(SelectionChangedEventCR evt) { return _OnSelectionChanged(evt); }
 };
 
 //=======================================================================================
@@ -173,12 +173,14 @@ private:
     SelectionManager* m_manager;
 
 private:
+    NativeLogging::ILogger& GetLogger() const;
     void OnRegistered(SelectionManager&);
     void OnUnregistered(SelectionManager&);
+    folly::Future<folly::Unit> CallSelectInstances(SelectionChangedEventCR, bvector<ECClassInstanceKey>);
 
 protected:
     //! ISelectionChangesListener implementation. Handles the selection event.
-    ECPRESENTATION_EXPORT void _OnSelectionChanged(SelectionChangedEventCR) override;
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> _OnSelectionChanged(SelectionChangedEventCR) override;
 
 protected:
     //! Get the selection event extended data. The content of the extended data
@@ -208,11 +210,15 @@ protected:
     //! @param[in] keys The keys of ECInstances to select.
     virtual void _SelectInstances(SelectionChangedEventCR evt, bvector<ECClassInstanceKey> const& keys) {}
 
+    //! Called to get an executor to call _SelectInstances callback.
+    //! @return An executor to call the callback or nullptr to call using current executor on arbitrary thread.
+    virtual folly::Executor* _GetSelectExecutor() const {return nullptr;}
+
 //__PUBLISH_SECTION_END__
 protected:
     //! Handle the supplied selection change event.
     //! @param[in] evt The event to handle.
-    ECPRESENTATION_EXPORT void HandleSelectionChangeEvent(SelectionChangedEventCR evt);
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> HandleSelectionChangeEvent(SelectionChangedEventCR evt);
 
 //__PUBLISH_SECTION_START__
 protected:
@@ -229,7 +235,7 @@ protected:
     //! @param[in] keys The keys to add to selection.
     //! @param[in] timestamp Time of when the selection changed
     //! @see SelectionManager::AddToSelection
-    ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, bool isSubSelection, KeySetCR keys, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> AddToSelection(ECDbCR db, bool isSubSelection, KeySetCR keys, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
     //! Remove from selection.
     //! @param[in] db The ECDb to remove the selection from.
@@ -237,7 +243,7 @@ protected:
     //! @param[in] keys The keys to remove from selection.
     //! @param[in] timestamp Time of when the selection changed
     //! @see SelectionManager::RemoveFromSelection
-    ECPRESENTATION_EXPORT void RemoveFromSelection(ECDbCR db, bool isSubSelection, KeySetCR keys, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> RemoveFromSelection(ECDbCR db, bool isSubSelection, KeySetCR keys, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
     //! Change selection.
     //! @param[in] db The ECDb to change the selection in.
@@ -245,14 +251,14 @@ protected:
     //! @param[in] keys The keys indicating the new selection.
     //! @param[in] timestamp Time of when the selection changed
     //! @see SelectionManager::ChangeSelection
-    ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, bool isSubSelection, KeySetCR keys, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> ChangeSelection(ECDbCR db, bool isSubSelection, KeySetCR keys, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
     //! Clear selection.
     //! @param[in] db The ECDb to clear the selection in.
     //! @param[in] isSubSelection A flag indicating whether to clear the sub-selection or the main selection.
     //! @param[in] timestamp Time of when the selection changed
     //! @see SelectionManager::ClearSelection
-    ECPRESENTATION_EXPORT void ClearSelection(ECDbCR db, bool isSubSelection, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> ClearSelection(ECDbCR db, bool isSubSelection, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 };
 
 //=======================================================================================
@@ -271,19 +277,19 @@ protected:
     virtual void _RemoveListener(ISelectionChangesListener&) = 0;
     
     //! @see AddToSelection
-    virtual void _AddToSelection(ECDbCR, Utf8CP source, bool isSubSelection, KeySetCR, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
+    virtual folly::Future<folly::Unit> _AddToSelection(ECDbCR, Utf8CP source, bool isSubSelection, KeySetCR, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
     
     //! @see RemoveFromSelection
-    virtual void _RemoveFromSelection(ECDbCR, Utf8CP source, bool isSubSelection, KeySetCR, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
+    virtual folly::Future<folly::Unit> _RemoveFromSelection(ECDbCR, Utf8CP source, bool isSubSelection, KeySetCR, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
     
     //! @see ChangeSelection
-    virtual void _ChangeSelection(ECDbCR, Utf8CP source, bool isSubSelection, KeySetCR, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
+    virtual folly::Future<folly::Unit> _ChangeSelection(ECDbCR, Utf8CP source, bool isSubSelection, KeySetCR, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
     
     //! @see ClearSelection
-    virtual void _ClearSelection(ECDbCR, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
+    virtual folly::Future<folly::Unit> _ClearSelection(ECDbCR, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
 
     //! @see RefreshSelection
-    virtual void _RefreshSelection(ECDbCR, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
+    virtual folly::Future<folly::Unit> _RefreshSelection(ECDbCR, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp) = 0;
 
 public:
     //! Register the selection changes listener.
@@ -300,7 +306,7 @@ public:
     //! @param[in] key The key to add to selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     
     //! Add to selection.
     //! @param[in] db The ECDb to add the selection to.
@@ -309,7 +315,7 @@ public:
     //! @param[in] key The key to add to selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     
     //! Add to selection.
     //! @param[in] db The ECDb to add the selection to.
@@ -318,7 +324,7 @@ public:
     //! @param[in] key The key to add to selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
     //! Add to selection.
     //! @param[in] db The ECDb to add the selection to.
@@ -327,9 +333,9 @@ public:
     //! @param[in] keys The keys to add to selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
+    folly::Future<folly::Unit> AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
         {
-        _AddToSelection(db, source, isSubSelection, keys, extendedData, timestamp);
+        return _AddToSelection(db, source, isSubSelection, keys, extendedData, timestamp);
         }
 
     //! Remove from selection.
@@ -339,7 +345,7 @@ public:
     //! @param[in] key The key to remove from selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    ECPRESENTATION_EXPORT void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
     //! Remove from selection.
     //! @param[in] db The ECDb to remove the selection from.
@@ -348,7 +354,7 @@ public:
     //! @param[in] key The key to remove from selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    ECPRESENTATION_EXPORT void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     
     //! Remove from selection.
     //! @param[in] db The ECDb to remove the selection from.
@@ -357,7 +363,7 @@ public:
     //! @param[in] key The key to remove from selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    ECPRESENTATION_EXPORT void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
     //! Remove from selection.
     //! @param[in] db The ECDb to remove the selection from.
@@ -366,9 +372,9 @@ public:
     //! @param[in] keys The keys to remove from selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
+    folly::Future<folly::Unit> RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
         {
-        _RemoveFromSelection(db, source, isSubSelection, keys, extendedData, timestamp);
+        return _RemoveFromSelection(db, source, isSubSelection, keys, extendedData, timestamp);
         }
 
     //! Change selection.
@@ -378,7 +384,7 @@ public:
     //! @param[in] key The key indicating the new selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
     //! Change selection.
     //! @param[in] db The ECDb to change the selection in.
@@ -387,7 +393,7 @@ public:
     //! @param[in] key The key indicating the new selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     
     //! Change selection.
     //! @param[in] db The ECDb to change the selection in.
@@ -396,7 +402,7 @@ public:
     //! @param[in] key The key indicating the new selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
     //! Change selection.
     //! @param[in] db The ECDb to change the selection in.
@@ -405,9 +411,9 @@ public:
     //! @param[in] keys The keys indicating the new selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
+    folly::Future<folly::Unit> ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
         {
-        _ChangeSelection(db, source, isSubSelection, keys, extendedData, timestamp);
+        return _ChangeSelection(db, source, isSubSelection, keys, extendedData, timestamp);
         }
 
     //! Clear selection.
@@ -416,9 +422,9 @@ public:
     //! @param[in] isSubSelection A flag indicating whether to clear the sub-selection or the main selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    void ClearSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
+    folly::Future<folly::Unit> ClearSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
         {
-        _ClearSelection(db, source, isSubSelection, extendedData, timestamp);
+        return _ClearSelection(db, source, isSubSelection, extendedData, timestamp);
         }
 
     //! Refresh selection.
@@ -427,9 +433,9 @@ public:
     //! @param[in] isSubSelection A flag indicating whether to refresh the sub-selection or the main selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     //! @param[in] timestamp Time of when the selection changed
-    void RefreshSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
+    folly::Future<folly::Unit> RefreshSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData = rapidjson::Value(), uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
         {
-        _RefreshSelection(db, source, isSubSelection, extendedData, timestamp);
+        return _RefreshSelection(db, source, isSubSelection, extendedData, timestamp);
         }
 };
 
@@ -457,7 +463,7 @@ private:
     SelectionStorage& GetStorage(IConnectionCR, bool isSubSelection) const;
     NativeLogging::ILogger& GetLogger() const;
     void OnECDbClosed(ECDbCR) const;
-    void BroadcastSelectionChangedEvent(IConnectionCR, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, KeySetCR, RapidJsonValueCR, uint64_t) const;
+    folly::Future<folly::Unit> BroadcastSelectionChangedEvent(IConnectionCR, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, KeySetCR, RapidJsonValueCR, uint64_t) const;
 
 protected:
     //! @see ISelectionProvider::GetSelection
@@ -473,19 +479,19 @@ protected:
     ECPRESENTATION_EXPORT void _RemoveListener(ISelectionChangesListener&) override;
     
     //! @see ISelectionManager::AddToSelection
-    ECPRESENTATION_EXPORT void _AddToSelection(ECDbCR, Utf8CP, bool, KeySetCR, RapidJsonValueCR, uint64_t timestamp) override;
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> _AddToSelection(ECDbCR, Utf8CP, bool, KeySetCR, RapidJsonValueCR, uint64_t timestamp) override;
     
     //! @see ISelectionManager::RemoveFromSelection
-    ECPRESENTATION_EXPORT void _RemoveFromSelection(ECDbCR, Utf8CP, bool, KeySetCR, RapidJsonValueCR, uint64_t timestamp) override;
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> _RemoveFromSelection(ECDbCR, Utf8CP, bool, KeySetCR, RapidJsonValueCR, uint64_t timestamp) override;
     
     //! @see ISelectionManager::ChangeSelection
-    ECPRESENTATION_EXPORT void _ChangeSelection(ECDbCR, Utf8CP, bool, KeySetCR, RapidJsonValueCR, uint64_t timestamp) override;
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> _ChangeSelection(ECDbCR, Utf8CP, bool, KeySetCR, RapidJsonValueCR, uint64_t timestamp) override;
     
     //! @see ISelectionManager::ClearSelection
-    ECPRESENTATION_EXPORT void _ClearSelection(ECDbCR, Utf8CP, bool, RapidJsonValueCR, uint64_t timestamp) override;
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> _ClearSelection(ECDbCR, Utf8CP, bool, RapidJsonValueCR, uint64_t timestamp) override;
 
     //! @see ISelectionManager::RefreshSelection
-    ECPRESENTATION_EXPORT void _RefreshSelection(ECDbCR, Utf8CP, bool, RapidJsonValueCR, uint64_t timestamp) override;
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> _RefreshSelection(ECDbCR, Utf8CP, bool, RapidJsonValueCR, uint64_t timestamp) override;
 
 public:
     SelectionManager(IConnectionCacheCR connections) : m_connections(connections) {}

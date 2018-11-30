@@ -108,7 +108,7 @@ TEST_F(CustomNodesProviderTests, ReturnsValidNode)
 TEST_F(CustomNodesProviderTests, ReturnsValidChildNode)
     {
     TestNavNodePtr parent = TestNodesHelper::CreateCustomNode(*m_connection, "parent_type", "parent_label", "parent_descr");
-    m_nodesCache.Cache(*parent, DataSourceInfo(), 0, true);
+    Cache(*parent);
 
     ChildNodeRule rule;
     m_context->SetChildNodeContext(&rule, *parent);
