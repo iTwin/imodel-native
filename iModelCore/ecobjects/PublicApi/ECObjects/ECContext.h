@@ -143,6 +143,10 @@ public:
     //! @param[in] locater  Locater to add to the current context
     void AddSchemaLocater(IECSchemaLocaterR locater) {m_locaters.insert(m_locaters.begin() + ++m_userAddedLocatersCount, &locater);}
 
+    //! Adds a schema locater as first to the current context
+    //! @param[in] locater  Locater to add to the current context
+    void AddFirstSchemaLocater(IECSchemaLocaterR locater) { m_locaters.insert(m_locaters.begin() + 1, &locater); ++m_userAddedLocatersCount; }
+
     //! Removes a schema locater from the current context
     //! @param[in] locater  Locater to remove from the current context
     ECOBJECTS_EXPORT void RemoveSchemaLocater(IECSchemaLocaterR locater);

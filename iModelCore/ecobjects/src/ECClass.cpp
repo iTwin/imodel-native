@@ -4110,7 +4110,7 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVers
     additionalAttributes[STRENGTH_ATTRIBUTE] = SchemaParseUtils::StrengthToXmlString(m_strength);
     if (m_strengthDirection != ECRelatedInstanceDirection::Forward)
         { //skip the attribute for "forward" as it is the default value.
-        additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = SchemaParseUtils::DirectionToJsonString(m_strengthDirection);
+        additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = SchemaParseUtils::DirectionToXmlString(m_strengthDirection);
         }
 
     if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersion, ECXML_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
