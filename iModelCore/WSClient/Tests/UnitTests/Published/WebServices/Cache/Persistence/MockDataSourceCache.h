@@ -151,6 +151,8 @@ struct MockDataSourceCache : public IDataSourceCache
             BentleyStatus (CachedResponseKeyCR responseKey));
         MOCK_METHOD2 (RemoveTemporaryResponses,
             BentleyStatus (Utf8StringCR name, DateTimeCR accessedBeforeDateUtc));
+        MOCK_METHOD2 (RemoveTemporaryResponsesByPrefix,
+            BentleyStatus(Utf8StringCR, DateTimeCR));
         MOCK_METHOD0(GetStaleFiles, 
             bset<BeFileName>());
         MOCK_METHOD0(CleanupStaleFiles, 

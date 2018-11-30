@@ -96,6 +96,7 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         WSCACHE_EXPORT ECRelationshipClassCP FindClosestRelationshipClassWithSource(ECClassId sourceClassId, ECClassId targetClassId) override;
 
         WSCACHE_EXPORT ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) override;
+        WSCACHE_EXPORT ECInstanceKey GetInstanceKeyFromJsonInstance(const rapidjson::Value& ecInstanceJson) override;
 
         //! Prepare statement. Assert and return error if failed
         WSCACHE_EXPORT BentleyStatus PrepareStatement(ECSqlStatement& statement, Utf8StringCR ecsql) override;

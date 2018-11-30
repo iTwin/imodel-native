@@ -66,51 +66,13 @@ Utf8String ActivityLogger::CreateLogMessage(Utf8String message) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ActivityLogger::ActivityLogger(NativeLogging::ILogger& logger, Utf8StringCR activityName, Utf8StringCR headerName, Utf8StringCR activityId) :
-    m_logger(logger),
-    m_activityId(activityId),
-    m_activityName(activityName),
-    m_headerName(headerName)
-    {}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ActivityLogger::HasValidActivityInfo() const
-    {
-    return !m_activityId.empty() && !m_headerName.empty();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ActivityLogger::GetActivityId() const
-    {
-    return m_activityId;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ActivityLogger::GetHeaderName() const
-    {
-    return m_headerName;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ActivityLogger::isSeverityEnabled(NativeLogging::SEVERITY sev) const
-    {
-    return m_logger.isSeverityEnabled(sev);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::message(NativeLogging::SEVERITY sev, WCharCP msg)
     {
-    messageva(sev, msg, va_list());
+    if (!isSeverityEnabled(sev))
+        return;
+
+    WString logMessage = CreateLogMessage(msg);
+    m_logger.message(sev, logMessage.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -118,7 +80,11 @@ void ActivityLogger::message(NativeLogging::SEVERITY sev, WCharCP msg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::message(NativeLogging::SEVERITY sev, Utf8CP msg)
     {
-    messageva(sev, msg, va_list());
+    if (!isSeverityEnabled(sev))
+        return;
+
+    Utf8String logMessage = CreateLogMessage(msg);
+    m_logger.message(sev, logMessage.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -172,7 +138,11 @@ void ActivityLogger::messageva(NativeLogging::SEVERITY sev, Utf8CP msg, va_list 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::message(WCharCP nameSpace, NativeLogging::SEVERITY sev, WCharCP msg)
     {
-    messageva(nameSpace, sev, msg, va_list());
+    if (!isSeverityEnabled(sev))
+        return;
+
+    WString logMessage = CreateLogMessage(msg);
+    m_logger.message(nameSpace, sev, logMessage.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -180,7 +150,11 @@ void ActivityLogger::message(WCharCP nameSpace, NativeLogging::SEVERITY sev, WCh
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::message(Utf8CP nameSpace, NativeLogging::SEVERITY sev, Utf8CP msg)
     {
-    messageva(nameSpace, sev, msg, va_list());
+    if (!isSeverityEnabled(sev))
+        return;
+
+    Utf8String logMessage = CreateLogMessage(msg);
+    m_logger.message(nameSpace, sev, logMessage.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -232,22 +206,6 @@ void ActivityLogger::messageva(Utf8CP nameSpace, NativeLogging::SEVERITY sev, Ut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::fatal(WCharCP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_FATAL, msg, va_list());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::fatal(Utf8CP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_FATAL, msg, va_list());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::fatalv(WCharCP msg, ...)
     {
     va_list args;
@@ -265,22 +223,6 @@ void ActivityLogger::fatalv(Utf8CP msg, ...)
     va_start(args, msg);
     messageva(NativeLogging::SEVERITY::LOG_FATAL, msg, args);
     va_end(args);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::error(WCharCP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_ERROR, msg, va_list());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::error(Utf8CP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_ERROR, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -308,22 +250,6 @@ void ActivityLogger::errorv(Utf8CP msg, ...)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::warning(WCharCP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_WARNING, msg, va_list());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::warning(Utf8CP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_WARNING, msg, va_list());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::warningv(WCharCP msg, ...)
     {
     va_list args;
@@ -341,22 +267,6 @@ void ActivityLogger::warningv(Utf8CP msg, ...)
     va_start(args, msg);
     messageva(NativeLogging::SEVERITY::LOG_WARNING, msg, args);
     va_end(args);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::info(WCharCP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_INFO, msg, va_list());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::info(Utf8CP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_INFO, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -384,22 +294,6 @@ void ActivityLogger::infov(Utf8CP msg, ...)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::debug(WCharCP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_DEBUG, msg, va_list());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::debug(Utf8CP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_DEBUG, msg, va_list());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::debugv(WCharCP msg, ...)
     {
     va_list args;
@@ -417,22 +311,6 @@ void ActivityLogger::debugv(Utf8CP msg, ...)
     va_start(args, msg);
     messageva(NativeLogging::SEVERITY::LOG_DEBUG, msg, args);
     va_end(args);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::trace(WCharCP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_TRACE, msg, va_list());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ActivityLogger::trace(Utf8CP msg)
-    {
-    messageva(NativeLogging::SEVERITY::LOG_TRACE, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+

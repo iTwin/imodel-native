@@ -64,6 +64,8 @@ struct IWSRepositoryClient
 
     struct RequestOptions;
     typedef std::shared_ptr<RequestOptions> RequestOptionsPtr;
+    struct ActivityOptions;
+    typedef std::shared_ptr<ActivityOptions> ActivityOptionsPtr;
     struct JobOptions;
     typedef std::shared_ptr<JobOptions> JobOptionsPtr;
 
@@ -473,6 +475,7 @@ struct IWSRepositoryClient::RequestOptions
     {
     private:
         uint64_t m_transferTimeOut;
+        ActivityOptionsPtr m_activityOptions;
         JobOptionsPtr m_jobOptions;
 
     public:
@@ -482,9 +485,55 @@ struct IWSRepositoryClient::RequestOptions
         void SetTransferTimeOut(uint64_t timeOut) {m_transferTimeOut = timeOut;}
         uint64_t GetTransferTimeOut() const {return m_transferTimeOut;}
 
+        //! Retrieve options for activity
+        ActivityOptionsPtr GetActivityOptions() { return m_activityOptions; }
+
         //! Retrieve options required for WSG asynchronous job operations
         //! Jobs API can be enabled through these options
         JobOptionsPtr GetJobOptions() { return m_jobOptions; }
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Mantas.Smicius    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IWSRepositoryClient::ActivityOptions
+    {
+    public:
+        enum class HeaderName
+            {
+            MasRequestId,
+            XCorrelationId,
+            Default = MasRequestId
+            };
+
+    private:
+        HeaderName m_headerName;
+        Utf8String m_activityId;
+
+    public:
+        ActivityOptions() :
+        m_headerName(HeaderName::Default)
+            {}
+
+        //! Set header name for Activity id in each Http request to WSG
+        void SetHeaderName(HeaderName headerName) { m_headerName = headerName; }
+
+        //! Get header name for Activity id in each Http request to WSG
+        HeaderName GetHeaderName() const { return m_headerName; }
+
+        //! Set custom activity id for all Http requests in current Api method.
+        //! If activity id is not set then unique value will be generated.
+        //! It is not recommended to use custom activity id value. Optional
+        void SetActivityId(Utf8StringCR activityId) { m_activityId = activityId; }
+
+        //! Get activity id for all Http requests in current Api method
+        Utf8StringCR GetActivityId() const { return m_activityId; }
+
+        //! Check if activity id is set
+        bool HasActivityId() const { return !m_activityId.empty(); }
+
+        //! Converts specified HeaderName enum value to String
+        WSCLIENT_EXPORT static Utf8String HeaderNameToString(HeaderName headerName);
     };
 
 /*--------------------------------------------------------------------------------------+

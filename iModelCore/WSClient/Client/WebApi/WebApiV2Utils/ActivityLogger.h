@@ -38,24 +38,19 @@ struct ActivityLogger : public NativeLogging::ILogger
         //! @param[in] activityName Activity name that will be included in each log
         //! @param[in] headerName header name for adding activity id into Http request. Optional
         //! @param[in] activityId Activity id that will be included in each log if it is specfied. Optional
-        WSCLIENT_EXPORT ActivityLogger
-        (
-        NativeLogging::ILogger& logger,
-        Utf8StringCR activityName,
-        Utf8StringCR headerName = Utf8String(),
-        Utf8StringCR activityId = Utf8String()
-        );
+        ActivityLogger(NativeLogging::ILogger& logger, Utf8StringCR activityName, Utf8StringCR headerName = Utf8String(), Utf8StringCR activityId = Utf8String()) 
+            : m_logger(logger), m_activityId(activityId), m_activityName(activityName), m_headerName(headerName) {}
 
         //! Check if logger has activity id and header name
-        WSCLIENT_EXPORT bool HasValidActivityInfo() const;
+        bool HasValidActivityInfo() const { return !m_activityId.empty() && !m_headerName.empty(); }
 
         //! Get activity id. If activity id does not exist then returns empty string
-        WSCLIENT_EXPORT Utf8StringCR GetActivityId() const;
+        Utf8StringCR GetActivityId() const { return m_activityId; }
 
         //! Get header name for adding activity id into Http request
-        WSCLIENT_EXPORT Utf8StringCR GetHeaderName() const;
+        Utf8StringCR GetHeaderName() const { return m_headerName; }
 
-        WSCLIENT_EXPORT bool isSeverityEnabled(NativeLogging::SEVERITY sev) const override;
+        bool isSeverityEnabled(NativeLogging::SEVERITY sev) const override { return m_logger.isSeverityEnabled(sev); }
         WSCLIENT_EXPORT void message(NativeLogging::SEVERITY sev, WCharCP msg) override;
         WSCLIENT_EXPORT void message(NativeLogging::SEVERITY sev, Utf8CP msg) override;
         WSCLIENT_EXPORT void messagev(NativeLogging::SEVERITY sev, WCharCP msg, ...) override;
@@ -68,28 +63,28 @@ struct ActivityLogger : public NativeLogging::ILogger
         WSCLIENT_EXPORT void messagev(Utf8CP nameSpace, NativeLogging::SEVERITY sev, Utf8CP msg, ...) override;
         WSCLIENT_EXPORT void messageva(WCharCP nameSpace, NativeLogging::SEVERITY sev, WCharCP msg, va_list args) override;
         WSCLIENT_EXPORT void messageva(Utf8CP nameSpace, NativeLogging::SEVERITY sev, Utf8CP msg, va_list args) override;
-        WSCLIENT_EXPORT void fatal(WCharCP msg) override;
-        WSCLIENT_EXPORT void fatal(Utf8CP msg) override;
+        void fatal(WCharCP msg) override { message(NativeLogging::SEVERITY::LOG_FATAL, msg); }
+        void fatal(Utf8CP msg) override { message(NativeLogging::SEVERITY::LOG_FATAL, msg); }
         WSCLIENT_EXPORT void fatalv(WCharCP msg, ...) override;
         WSCLIENT_EXPORT void fatalv(Utf8CP msg, ...) override;
-        WSCLIENT_EXPORT void error(WCharCP msg) override;
-        WSCLIENT_EXPORT void error(Utf8CP msg) override;
+        void error(WCharCP msg) override { message(NativeLogging::SEVERITY::LOG_ERROR, msg); }
+        void error(Utf8CP msg) override { message(NativeLogging::SEVERITY::LOG_ERROR, msg); }
         WSCLIENT_EXPORT void errorv(WCharCP msg, ...) override;
         WSCLIENT_EXPORT void errorv(Utf8CP msg, ...) override;
-        WSCLIENT_EXPORT void warning(WCharCP msg) override;
-        WSCLIENT_EXPORT void warning(Utf8CP msg) override;
+        void warning(WCharCP msg) override { message(NativeLogging::SEVERITY::LOG_WARNING, msg); }
+        void warning(Utf8CP msg) override { message(NativeLogging::SEVERITY::LOG_WARNING, msg); }
         WSCLIENT_EXPORT void warningv(WCharCP msg, ...) override;
         WSCLIENT_EXPORT void warningv(Utf8CP msg, ...) override;
-        WSCLIENT_EXPORT void info(WCharCP msg) override;
-        WSCLIENT_EXPORT void info(Utf8CP msg) override;
+        void info(WCharCP msg) override { message(NativeLogging::SEVERITY::LOG_INFO, msg); }
+        void info(Utf8CP msg) override { message(NativeLogging::SEVERITY::LOG_INFO, msg); }
         WSCLIENT_EXPORT void infov(WCharCP msg, ...) override;
         WSCLIENT_EXPORT void infov(Utf8CP msg, ...) override;
-        WSCLIENT_EXPORT void debug(WCharCP msg) override;
-        WSCLIENT_EXPORT void debug(Utf8CP msg) override;
+        void debug(WCharCP msg) override { message(NativeLogging::SEVERITY::LOG_DEBUG, msg); }
+        void debug(Utf8CP msg) override { message(NativeLogging::SEVERITY::LOG_DEBUG, msg); }
         WSCLIENT_EXPORT void debugv(WCharCP msg, ...) override;
         WSCLIENT_EXPORT void debugv(Utf8CP msg, ...) override;
-        WSCLIENT_EXPORT void trace(WCharCP msg) override;
-        WSCLIENT_EXPORT void trace(Utf8CP msg) override;
+        void trace(WCharCP msg) override { message(NativeLogging::SEVERITY::LOG_TRACE, msg); }
+        void trace(Utf8CP msg) override { message(NativeLogging::SEVERITY::LOG_TRACE, msg); }
         WSCLIENT_EXPORT void tracev(WCharCP msg, ...) override;
         WSCLIENT_EXPORT void tracev(Utf8CP msg, ...) override;
     };

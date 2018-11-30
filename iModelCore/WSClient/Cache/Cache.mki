@@ -105,6 +105,25 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)SyncCachedInstancesTask.h                           \
     $(CacheMkiSourceDir)SyncLocalChangesTask.h                              
     
+#----------------------------------------------------------------------
+#   Create precompiled headers
+#----------------------------------------------------------------------
+%if $(TARGET_PLATFORM) != "WinRT"
+    PchCompiland        = $(CacheMkiSourceDir)CacheInternal.cpp
+    PchOutputDir        = $(o)
+    PchExtraOptions     = -Zm160
+
+    %include $(SharedMki)PreCompileHeader.mki
+
+    CCCompOpts + -FICacheInternal.h
+    CCPchOpts = $(UsePrecompiledHeaderOptions)
+    CPchOpts  = $(UsePrecompiledHeaderOptions)
+    DLM_OBJECT_PCH = $(o)CacheInternal$(oext) 
+
+    MultiCompileDepends=$(_MakeFileSpec)
+    %include MultiCppCompileRule.mki
+%endif
+
 #----------------------------------------------------------------------------------------
 #   Compile
 #----------------------------------------------------------------------------------------

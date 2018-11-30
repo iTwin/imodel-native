@@ -40,9 +40,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>__WSCLIENT_DLL_BUILD__;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -N0 -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* WSClient*</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb -N0 -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* WSClient* -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>bb         -ax64 -r WSClient -f WSClient -p WebServicesCache b</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* WSClient*</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* WSClient* -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache b</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI\;$(OutRoot)Winx64\Product\DgnClientSdk-Winx64\include\;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>

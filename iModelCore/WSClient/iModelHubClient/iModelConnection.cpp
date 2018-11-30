@@ -70,7 +70,7 @@ ICancellationTokenPtr             cancellationToken
     // Download file directly from the url.
     return ExecuteWithRetry<void>([=]()
         {
-        return m_azureClient->SendGetFileRequest(fileAccessKey->GetDownloadUrl(), localFile, callback, cancellationToken)
+        return m_azureClient->SendGetFileRequest(fileAccessKey->GetDownloadUrl(), localFile, callback, nullptr, cancellationToken)
             ->Then<StatusResult>([=](const AzureResult& result)
             {
             if (!result.IsSuccess())
@@ -243,7 +243,7 @@ StatusTaskPtr iModelConnection::AzureFileUpload(BeFileNameCR filePath, FileAcces
                                                 ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::AzureFileUpload";
-    return m_azureClient->SendUpdateFileRequest(url->GetUploadUrl(), filePath, callback, cancellationToken)
+    return m_azureClient->SendUpdateFileRequest(url->GetUploadUrl(), filePath, callback, nullptr, cancellationToken)
         ->Then<StatusResult>([=](const AzureResult& result)
         {
         if (!result.IsSuccess())
@@ -1689,7 +1689,7 @@ CodeCallbackFunction*               codesCallback
             ObjectId    changeSetObjectId = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSetInstanceId);
             auto fileAccessKey = FileAccessKey::ParseFromRelated(changeSetInstance);
 
-            m_azureClient->SendUpdateFileRequest(fileAccessKey->GetUploadUrl(), changeSet->GetRevisionChangesFile(), callback, cancellationToken)
+            m_azureClient->SendUpdateFileRequest(fileAccessKey->GetUploadUrl(), changeSet->GetRevisionChangesFile(), callback, nullptr, cancellationToken)
                 ->Then([=] (const AzureResult& result)
                 {
 #if defined (ENABLE_BIM_CRASH_TESTS)

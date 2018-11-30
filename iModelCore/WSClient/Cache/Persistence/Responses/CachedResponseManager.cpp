@@ -260,28 +260,58 @@ BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name, DateTime
     auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::DeleteResponsesByDate", [=]
         {
         return
-            "SELECT ECInstanceId "
+            "SELECT ECClassId, ECInstanceId "
             "FROM ONLY " ECSql_CachedResponseInfo " "
-            "WHERE [" CLASS_CachedResponseInfo_PROPERTY_Name "] = ? AND "
-            "     ([" CLASS_CachedResponseInfo_PROPERTY_AccessDate "] IS NULL OR "
-            "      [" CLASS_CachedResponseInfo_PROPERTY_AccessDate "] < ?) ";
+            "WHERE [" CLASS_CachedResponseInfo_PROPERTY_Name "] = ? "
+            "    AND ([" CLASS_CachedResponseInfo_PROPERTY_AccessDate "] IS NULL OR "
+            "         [" CLASS_CachedResponseInfo_PROPERTY_AccessDate "] < ?) "
+            "    AND NOT InVirtualSet(?, ECInstanceId) ";
         });
 
     statement->BindText(1, name.c_str(), IECSqlBinder::MakeCopy::No);
     statement->BindDateTime(2, accessedBeforeDateUtc);
 
-    bset<ECInstanceKey> responsesToDelete;
-    while (BE_SQLITE_ROW == statement->Step())
-        {
-        ECInstanceKey responseKey(m_responseClass->GetId(), statement->GetValueId<ECInstanceId>(0));
-        if (ECDbHelper::IsInstanceInMultiMap(responseKey, nodesToLeave))
-            {
-            continue;
-            }
-        responsesToDelete.insert(responseKey);
-        }
+    auto cachedResponseInfosToKeep = nodesToLeave.equal_range(m_responseClass->GetId());
+    ECInstanceIdSet idsToKeep;
+    for (auto it = cachedResponseInfosToKeep.first; it != cachedResponseInfosToKeep.second; ++it)
+        idsToKeep.insert(it->second);
 
-    return m_hierarchyManager.DeleteInstances(responsesToDelete);
+    statement->BindVirtualSet(3, idsToKeep);
+    return m_hierarchyManager.DeleteInstances(*statement);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::DeleteResponsesByPrefix(Utf8StringCR responsePrefix, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& nodesToLeave)
+    {
+    if (accessedBeforeDateUtc.GetInfo().GetKind() != DateTime::Kind::Utc)
+        return ERROR;
+
+    if (responsePrefix.empty())
+        return ERROR;
+
+    auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::DeleteResponsesByDateAndPrefix", [=]
+        {
+        return
+            "SELECT ECClassId, ECInstanceId "
+            "FROM ONLY " ECSql_CachedResponseInfo " "
+            "WHERE instr([" CLASS_CachedResponseInfo_PROPERTY_Name "], ?) = 1 "
+            "    AND ([" CLASS_CachedResponseInfo_PROPERTY_AccessDate "] IS NULL OR "
+            "         [" CLASS_CachedResponseInfo_PROPERTY_AccessDate "] < ?) "
+            "    AND NOT InVirtualSet(?, ECInstanceId) ";
+        });
+
+    statement->BindText(1, responsePrefix.c_str(), IECSqlBinder::MakeCopy::No);
+    statement->BindDateTime(2, accessedBeforeDateUtc);
+
+    auto cachedResponseInfosToKeep = nodesToLeave.equal_range(m_responseClass->GetId());
+    ECInstanceIdSet idsToKeep;
+    for (auto it = cachedResponseInfosToKeep.first; it != cachedResponseInfosToKeep.second; ++it)
+        idsToKeep.insert(it->second);
+
+    statement->BindVirtualSet(3, idsToKeep);
+    return m_hierarchyManager.DeleteInstances(*statement);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -312,11 +342,10 @@ BentleyStatus CachedResponseManager::DeleteResponsesByPrefix(Utf8StringCR respon
         return
             "SELECT ECClassId, ECInstanceId "
             "FROM ONLY " ECSql_CachedResponseInfo " "
-            "WHERE [" CLASS_CachedResponseInfo_PROPERTY_Name "] LIKE ? ";
+            "WHERE instr([" CLASS_CachedResponseInfo_PROPERTY_Name "], ?) = 1 ";
         });
 
-    Utf8String wildcardedPrefix = responsePrefix + "%";
-    statement->BindText(1, wildcardedPrefix.c_str(), IECSqlBinder::MakeCopy::No);
+    statement->BindText(1, responsePrefix.c_str(), IECSqlBinder::MakeCopy::No);
 
     return m_hierarchyManager.DeleteInstances(*statement);
     }

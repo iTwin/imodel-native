@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/MockECDbAdapter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -64,6 +64,8 @@ struct MockECDbAdapter : public IECDbAdapter
             ECRelationshipClassCP (ECClassId sourceClassId, ECClassId targetClassId));
         MOCK_METHOD1 (GetInstanceKeyFromJsonInstance,
             ECInstanceKey (JsonValueCR ecInstanceJson));
+        MOCK_METHOD1(GetInstanceKeyFromJsonInstance,
+            ECInstanceKey(RapidJsonValueCR ecInstanceJson));
         MOCK_METHOD2 (PrepareStatement,
             BentleyStatus (ECSqlStatement&, Utf8StringCR ecsql));
         MOCK_METHOD3 (BindParameters,
