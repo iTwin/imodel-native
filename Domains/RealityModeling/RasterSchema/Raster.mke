@@ -1,0 +1,128 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: RasterSchema/Raster.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+#-----------------------------------------------------------
+# Root directory
+#-----------------------------------------------------------
+SrcRaster                 = $(_MakeFilePath)
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+RasterPublicApiSrc        = $(SrcRaster)../PublicAPI/Raster/
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcRaster)Raster.mki
+%include $(CompileOptionsMki)
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+rasterDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
+                                  $(RasterPublicApiSrc)RasterDomain.h                 \
+                                  $(RasterPublicApiSrc)RasterApi.h              \
+                                  $(RasterPublicApiSrc)RasterCommon.h           \
+                                  $(RasterPublicApiSrc)RasterTypes.h            \
+                                  $(RasterPublicApiSrc)RasterHandler.h                \
+                                  $(RasterPublicApiSrc)RasterDomain.h                 \
+                                  $(RasterPublicApiSrc)RasterFileHandler.h            \
+                                  $(RasterPublicApiSrc)WmsHandler.h             \
+                                  $(BuildContext)PublicAPI/DgnPlatform/CesiumTileTree.h
+
+rasterDisplayDepends =  $(SrcRaster)RasterTileTree.h
+
+wmsDepends    = $(rasterDepends) \
+                $(rasterDisplayDepends)
+                        
+rasterFileDepends    =  $(rasterDepends) \
+                        $(rasterDisplayDepends) \
+                        $(SrcRaster)RasterFile.h \
+                        $(SrcRaster)RasterFileSource.h \
+                        $(SrcRaster)ImagePPAdmin.h
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Make sure that RasterInternal.pch is up-to-date.
+#----------------------------------------------------------------------
+PchCompiland        = $(SrcRaster)RasterInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(rasterDepends)
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+#--------------------------------------------------------------------------------------
+#   Compile portable source
+#--------------------------------------------------------------------------------------
+$(o)RasterHandler$(oext)        : $(SrcRaster)RasterHandler.cpp       $(rasterDepends) ${MultiCompileDepends}
+
+$(o)RasterFileHandler$(oext)    : $(SrcRaster)RasterFileHandler.cpp   $(rasterDepends) ${MultiCompileDepends}
+
+$(o)RasterDomain$(oext)         : $(SrcRaster)RasterDomain.cpp        $(rasterDepends) ${MultiCompileDepends}
+
+$(o)RasterTileTree$(oext)       : $(SrcRaster)RasterTileTree.cpp      $(rasterDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+
+$(o)WmsHandler$(oext)           : $(SrcRaster)WmsHandler.cpp          $(wmsDepends) ${MultiCompileDepends}
+
+$(o)RasterFile$(oext)           : $(SrcRaster)RasterFile.cpp          $(rasterFileDepends) ${MultiCompileDepends}
+
+$(o)ImagePPAdmin$(oext)         : $(SrcRaster)ImagePPAdmin.cpp        $(rasterFileDepends) ${MultiCompileDepends}
+
+$(o)RasterFileSource$(oext)     : $(SrcRaster)RasterFileSource.cpp    $(rasterFileDepends) ${MultiCompileDepends}
+
+$(o)GcsUtils$(oext)             : $(SrcRaster)GcsUtils.cpp            $(SrcRaster)GcsUtils.h ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+CCPchOpts =
+CPchOpts =
+
+#--------------------------------------------------------------------------------------
+#   Build the library
+#--------------------------------------------------------------------------------------
+DLM_OBJECT_FILES            = $(objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)RasterInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+
+LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
+                                $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+
+%include $(sharedMki)LinkLibrary.mki
+

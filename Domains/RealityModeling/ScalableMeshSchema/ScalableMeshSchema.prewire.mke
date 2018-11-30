@@ -1,0 +1,12 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: ScalableMeshSchema/ScalableMeshSchema.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+    
+$(BuildContext)PublicAPI/ScalableMeshSchema : $(_MakeFilePath)../PublicAPI/ScalableMeshSchema
+    $(LinkFirstDepToFirstTargetAsDirectory)
