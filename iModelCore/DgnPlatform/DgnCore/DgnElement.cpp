@@ -238,6 +238,13 @@ DgnDbStatus DgnElement::_OnInsert()
             return DgnDbStatus::InvalidCode;
         }
 
+    if (m_code.GetValueUtf8().length() > (size_t)IModelHubConstants::MaxCodeValueLength)
+        {
+        BeAssert(false);
+        LOG.errorv("Element insert rejected because code value [%s] is too long. ECClass=%s", m_code.GetValueUtf8CP(), GetHandlerECClassName());
+        return DgnDbStatus::InvalidCode;
+        }
+
     if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
 
