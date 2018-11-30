@@ -1,0 +1,114 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: SQLite/bentley-sqlite.c $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#define SQLITE_OMIT_DEPRECATED 1 // leave out all deprecated apis
+#define SQLITE_ENABLE_COLUMN_METADATA 1
+#define SQLITE_DEFAULT_FOREIGN_KEYS 1
+#define SQLITE_OMIT_AUTOINIT 1
+#define SQLITE_ENABLE_SESSION 1
+#define SQLITE_ENABLE_RTREE 1
+#define SQLITE_ENABLE_PREUPDATE_HOOK 1
+#define SQLITE_ENABLE_ZIPVFS 1
+#define SQLITE_USE_URI 1
+#define SQLITE_ENABLE_NULL_TRIM 1 // trim null columns from end of rows. Experimental for now, per DRH
+#define SQLITE_MAX_VARIABLE_NUMBER 20000 // this is the maximum number of variables in an SQL statement
+#define SQLITE_HAS_CODEC 1
+// #define SQLITE_TEMP_STORE 3 // always use memory for temporary files see https://www.sqlite.org/tempfiles.html#tempstore
+#define SQLITE_OMIT_COMPLETE 1
+#define SQLITE_OMIT_PROGRESS_CALLBACK 1
+#define SQLITE_HAS_CODEC 1
+//Alocate around 16Mb instead of 2Mb for page cache
+#define SQLITE_DEFAULT_CACHE_SIZE 4000
+
+// # Alloc 4000 pages allocated in advance  (default 20)
+// cDefs + -DSQLITE_DEFAULT_PCACHE_INITSZ=4000
+// # Alloc 4000 pages is page cache size (default 2000)
+// cDefs + -DSQLITE_DEFAULT_CACHE_SIZE=4000
+
+// #64*4096 default(64*1024)
+// cDefs + -DSQLITE_STMTJRNL_SPILL=262144
+// cDefs + -DSQLITE_DEFAULT_AUTOVACUUM=1
+// cDefs + -DSQLITE_OMIT_AUTHORIZATION
+// cDefs + -DSQLITE_OMIT_WAL
+
+// uncomment next line to build with explain comments enabled
+// #define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
+
+// uncomment next line to build with sql logging enabled
+//#define SQLITE_ENABLE_SQLLOG 1
+
+#define SQLITE_ENABLE_FTS5 1    // include support for full text search
+#define SQLITE_ENABLE_JSON1 1   // include support for json
+
+#define HAVE_STDINT_H
+
+#define SQLITE_CORE 1
+#define SQLITE_AMALGAMATION 1
+#ifndef SQLITE_PRIVATE
+# define SQLITE_PRIVATE static
+#endif
+
+#if defined (__BE_SQLITE_WINRT__)
+    #define SQLITE_OS_WINRT 1
+#endif
+
+#if defined (_WIN32)
+    #pragma warning (disable: 4244 4267 4018 4090 4101)
+#elif defined (__clang__)
+    #pragma clang diagnostic ignored "-Wunused-variable"
+    #pragma clang diagnostic ignored "-Wunused-function"
+    #pragma clang diagnostic ignored "-Wconstant-conversion"
+#endif
+
+#define SQLITE_API
+
+#if defined (__APPLE__)
+    #define SQLITE_HAVE_ISNAN 1
+#endif
+
+#if !defined(NDEBUG)
+    #define SQLITE_DEBUG 1
+#endif
+
+#if defined (ANDROID)
+    #define HAVE_STRCHRNUL 0
+#endif
+
+#include "sqlite3.c"
+#include "zipvfs.c"
+#include "closure.c"
+#include "see-aes128-ofb.c"
+
+#if defined (SQLITE_ENABLE_SQLLOG)
+#include "test_sqllog.c"
+#endif
+
+#if !defined (NDEBUG)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int checkNoActiveStatements(sqlite3* db)
+    {
+    Vdbe* stmt;
+    if (0 == db->nVdbeActive)
+        return SQLITE_OK;
+
+    for (stmt = db->pVdbe; stmt != NULL; stmt = stmt->pNext)
+        {
+        if (stmt->magic != VDBE_MAGIC_RUN)
+            {
+            sqlite3_log(SQLITE_BUSY, "Active statement: %s", stmt->zSql);
+            //assert(0);
+            return SQLITE_ERROR;
+            }
+        }
+
+    sqlite3_log(SQLITE_BUSY, "nVdbeActive=%d but no active statements detected?!)", db->nVdbeActive);
+    return SQLITE_ERROR;
+    }
+#endif
