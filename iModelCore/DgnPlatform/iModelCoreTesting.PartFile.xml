@@ -40,9 +40,7 @@
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/Units/Units" Repository="imodel02"/>
-        <!-- doesn't currently build
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
-        -->
     </Part>
 
     <Part Name="RunUnitXCTest" OnlyPlatforms="ios*" Sequential="true" DeferType="RunUnitTests"

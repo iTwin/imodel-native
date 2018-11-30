@@ -696,13 +696,10 @@
         <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
-    <!-- Does not build currently on Linux and MacOs 
-            OnlyPlatforms="x86,x64,MacOs*,Linux*"
-    -->
     <Part Name="RunGtest" DeferType="RunUnitTests"
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke"
         BentleyBuildMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest"
-        OnlyPlatforms="x86,x64"
+        OnlyPlatforms="x86,x64,MacOs*,Linux*"
         >
         <SubProduct ProductName="WSClient-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
