@@ -827,10 +827,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     void SetIModelDb(Napi::CallbackInfo const& info) {
         Napi::Value obj = info[0];
         if (m_dgndb.IsValid()) {
-        if (obj.IsObject())
-            m_dgndb->m_jsIModelDb.Reset(obj.As<Napi::Object>(), 1);
-        else
-            m_dgndb->m_jsIModelDb.Reset();
+            if (obj.IsObject())
+                m_dgndb->m_jsIModelDb.Reset(obj.As<Napi::Object>(), 1);
+            else
+                m_dgndb->m_jsIModelDb.Reset();
         }
     }
 
