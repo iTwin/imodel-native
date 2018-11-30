@@ -111,7 +111,7 @@ static DRange3d computeAuxRange(DrawArgsCR args)
     for (int iPoint=0; iPoint < 8; ++iPoint)
         {
         GeoPointP latLongP = &latLongBox[iPoint];
-        if (SUCCESS != dgnGCS->LatLongFromUors (*latLongP, viewBox.m_pts[iPoint]))
+        if (SUCCESS != (StatusInt)dgnGCS->LatLongFromUors (*latLongP, viewBox.m_pts[iPoint]))
             {
             BeAssert (false);
             return DRange3d::NullRange();
