@@ -646,6 +646,33 @@ void            ViewportFactory::AddModelspaceCategories (Utf8StringCR viewName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool    ViewportFactory::IsLayerDisplayed (DwgDbHandleCR layerHandle, DwgDbObjectIdArrayCR vpfrozenLayers, DwgDbDatabaseR dwg) const
+    {
+    DwgDbObjectId   layerId;
+    if (layerHandle.IsNull() || !(layerId = dwg.GetObjectId(layerHandle)).IsValid())
+        return  false;
+
+    // if this is a viewport in layout, check viewport frozen layers:
+    if (!vpfrozenLayers.empty())
+        {
+        // erase category from the view if the layer is viewport frozen:
+        auto found = std::find_if (vpfrozenLayers.begin(), vpfrozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
+        if (found != vpfrozenLayers.end())
+            return  false;
+        }
+
+    // check the layer's global on/off status and global freeze:
+    DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
+    if (layer.OpenStatus() == DwgDbStatus::Success)
+        return !layer->IsOff() && !layer->IsFrozen();
+
+    // default to displaying a layer which has a valid ID.
+    return  true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void            ViewportFactory::UpdateModelspaceCategories (DgnCategoryIdSet& categoryIdSet) const
     {
     // add all spatial categories to the modelspace view, but only add displayed ones to a viewport view:
@@ -653,9 +680,8 @@ void            ViewportFactory::UpdateModelspaceCategories (DgnCategoryIdSet& c
     DwgDbViewportCP     viewportEntity = DwgDbViewport::Cast (m_inputViewport);
 
     // if this is for a viewport entity, get viewport frozen layer ID's:
-    size_t  numFrozenLayers = 0;
-    if (nullptr != viewportEntity && DwgDbStatus::Success == viewportEntity->GetFrozenLayers(frozenLayers))
-        numFrozenLayers = frozenLayers.size ();
+    if (nullptr != viewportEntity)
+        viewportEntity->GetFrozenLayers (frozenLayers);
 
     // lookup current DWG file in syncInfo
     DwgDbDatabaseR          dwg = m_importer.GetDwgDb ();
@@ -663,7 +689,7 @@ void            ViewportFactory::UpdateModelspaceCategories (DgnCategoryIdSet& c
     DwgSyncInfo&            syncInfo = m_importer.GetSyncInfo ();
     DgnDbR                  db = m_importer.GetDgnDb ();
 
-    // add all displayed modelspace categories to the view:
+    // add all displayed categories created from the layer table to the view:
     for (auto entry : DwgSyncInfo::LayerIterator(db, nullptr))
         {
         auto    syncLayer = entry.Get ();
@@ -674,24 +700,11 @@ void            ViewportFactory::UpdateModelspaceCategories (DgnCategoryIdSet& c
             continue;
             }
 
-        if (nullptr != viewportEntity && numFrozenLayers > 0)
-            {
-            // this is a viewport entity - check viewport layer freeze:
-            DwgDbObjectId   layerId;
-            DwgDbHandle     objHandle = syncLayer.GetLayerHandle ();
-            if (!objHandle.IsNull() && (layerId = dwg.GetObjectId(objHandle)).IsValid())
-                {
-                // erase category from the view if the layer is viewport frozen:
-                auto found = std::find_if (frozenLayers.begin(), frozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
-                if (found != frozenLayers.end())
-                    {
-                    categoryIdSet.erase (categoryId);
-                    continue;
-                    }
-                }
-            }
-
-        categoryIdSet.insert (categoryId);
+        // add the category if displayed and remove it if not:
+        if (this->IsLayerDisplayed(syncLayer.GetLayerHandle(), frozenLayers, dwg))
+            categoryIdSet.insert (categoryId);
+        else
+            categoryIdSet.erase (categoryId);
         }
     }
 
@@ -1699,24 +1712,37 @@ bool            DwgImporter::UpdatePaperspaceView (ViewControllerP view, DwgDbOb
         DgnCategoryId   categoryId = entry.GetId <DgnCategoryId> ();
         bool isCategoryViewed = categorySelector.IsCategoryViewed (categoryId);
 
-        if (numFrozenLayers > 0)
+        /*---------------------------------------------------------------------------
+        Find layer ID from syncInfo, which has categories created from the layer table only:
+        when the root model is 2d, find the layer directly using current drawing category
+        ID. If the root model is 3d, first find the spatial category from the code value,
+        then find the layer ID from the spatial category ID.
+        ---------------------------------------------------------------------------*/
+        DwgDbObjectId   layerId;
+        DgnCategoryId   searchId = isRoot3d ? SpatialCategory::QueryCategoryId(*definitionModel, entry.GetCodeValue()) : entry.GetId <DgnCategoryId>();
+        DwgDbHandle     objHandle = m_syncInfo.FindLayerHandle (searchId, fileId);
+        if (!objHandle.IsNull() && (layerId = m_dwgdb->GetObjectId(objHandle)).IsValid())
             {
-            /*---------------------------------------------------------------------------
-            Find layer ID from syncInfo, which has modelspace categories only:
-            when the root model is 2d, find the layer directly using current drawing category
-            ID. If the root model is 3d, first find the spatial category from the code value, 
-            then find the layer ID from the spatial category ID.
-            ---------------------------------------------------------------------------*/
-            DwgDbObjectId   layerId;
-            DgnCategoryId   searchId = isRoot3d ? SpatialCategory::QueryCategoryId(*definitionModel, entry.GetCodeValue()) : entry.GetId <DgnCategoryId>();
-            DwgDbHandle     objHandle = m_syncInfo.FindLayerHandle (searchId, fileId);
-            if (!objHandle.IsNull() && (layerId = m_dwgdb->GetObjectId(objHandle)).IsValid())
+            // 1) check layer's global on/off status and global freeze:
+            DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
+            if (layer.OpenStatus() == DwgDbStatus::Success && (layer->IsOff() || layer->IsFrozen()))
                 {
-                // check viewport frozen layer for this view:
+                // the layer is globally turned off or frozen, if the category is viewed, drop it:
+                if (isCategoryViewed)
+                    {
+                    categorySelector.DropCategory (categoryId);
+                    changed = true;
+                    }
+                continue;
+                }
+
+            // 2) check viewport frozen layer for this view:
+            if (numFrozenLayers > 0)
+                {
                 auto found = std::find_if (frozenLayers.begin(), frozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
                 if (found != frozenLayers.end())
                     {
-                    // if the category is in this view, drop it:
+                    // the viewport has this layer frozen - if the category is in this view, drop it:
                     if (isCategoryViewed)
                         {
                         categorySelector.DropCategory (categoryId);

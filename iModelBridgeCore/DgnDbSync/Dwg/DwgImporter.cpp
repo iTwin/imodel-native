@@ -548,7 +548,7 @@ Utf8String      DwgImporter::ComputeModelName (Utf8StringR proposedName, BeFileN
     if (m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel) != modelType)
         return  uniqueName;
 
-    // unique phisical model names will be later handled by PhysicalPartition::CreateUniqueCode
+    // unique physical model names will be later handled by PhysicalPartition::CreateUniqueCode
 
     return uniqueName;
     }
@@ -1984,7 +1984,7 @@ void            DwgImporter::_FinishImport ()
         }
     changeDetector._Cleanup (*this);
 
-    // that deleted views are deleted, now update survived views and generate thumbnails as needed:
+    // now that not seen views are deleted, update survived views and generate thumbnails as needed:
     _PostProcessViewports ();
     ValidateJob ();
 
