@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Bentley\nonport\BeTest.cpp" />
+    <ClCompile Include="NonPublished\bentleylogging_test.cpp" />
+    <ClCompile Include="NonPublished\BeStringUtilitiesTests.cpp" />
+    <ClCompile Include="NonPublished\consoleatp.cpp" />
+    <ClCompile Include="NonPublished\DateTimeTests.cpp" />
+    <ClCompile Include="NonPublished\fileatp.cpp" />
+    <ClCompile Include="NonPublished\FileNameTests.cpp" />
+    <ClCompile Include="NonPublished\GlobalHandleContainerTests.cpp" />
+    <ClCompile Include="Performance\base64utilities_performance.cpp" />
+    <ClCompile Include="Performance\bmap_performanceTest.cpp" />
+    <ClCompile Include="Performance\bvector_performanceTest.cpp" />
+    <ClCompile Include="Performance\DateTime_performanceTest.cpp" />
+    <ClCompile Include="Performance\WString_performanceTest.cpp" />
+    <ClCompile Include="Published\Base64UtilitiesTests.cpp" />
+    <ClCompile Include="Published\BeClockTests.cpp" />
+    <ClCompile Include="Published\BeFileIterator_Tests.cpp" />
+    <ClCompile Include="Published\BeFileName_test.cpp" />
+    <ClCompile Include="Published\BeFile_Test.cpp" />
+    <ClCompile Include="Published\BeIdTest.cpp" />
+    <ClCompile Include="Published\BeNumerical_Test.cpp" />
+    <ClCompile Include="Published\BeStringUtilities_tests.cpp" />
+    <ClCompile Include="Published\BeSystemInfo_Tests.cpp" />
+    <ClCompile Include="Published\BeTextFile_Test.cpp" />
+    <ClCompile Include="Published\BeThread_Tests.cpp" />
+    <ClCompile Include="Published\BeTimeUtilities_test.cpp" />
+    <ClCompile Include="Published\bmap_test.cpp" />
+    <ClCompile Include="Published\bset_test.cpp" />
+    <ClCompile Include="Published\bvector_test.cpp" />
+    <ClCompile Include="Published\Cpp_Test.cpp" />
+    <ClCompile Include="Published\DateTimeTestDataset.cpp" />
+    <ClCompile Include="Published\DateTime_DstAnalysis.cpp" />
+    <ClCompile Include="Published\DateTime_Tests.cpp" />
+    <ClCompile Include="Published\DirectoryObserverTests.cpp" />
+    <ClCompile Include="Published\formatting_test.cpp" />
+    <ClCompile Include="Published\LocalStateTests.cpp" />
+    <ClCompile Include="Published\Md5_Test.cpp" />
+    <ClCompile Include="Published\OsEnvUnitTests.cpp" />
+    <ClCompile Include="Published\printf_test.cpp" />
+    <ClCompile Include="Published\printf_test2.cpp" />
+    <ClCompile Include="Published\RefCounted_test.cpp" />
+    <ClCompile Include="Published\scanf_test.cpp" />
+    <ClCompile Include="Published\DateTimeTestHelpers.cpp" />
+    <ClCompile Include="Published\SHA1_Test.cpp" />
+    <ClCompile Include="Published\shared_mutex.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncErrorTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncResultTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTasksFollyAdapterTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTasksManagerTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTaskTests.cpp" />
+    <ClCompile Include="Published\CancellationTokenTests.cpp" />
+    <ClCompile Include="Published\Tasks\LimitingTaskQueueTests.cpp" />
+    <ClCompile Include="Published\Tasks\ThreadlessTaskSchedulerTests.cpp" />
+    <ClCompile Include="Published\Tasks\UniqueTaskHolderTests.cpp" />
+    <ClCompile Include="Published\Tasks\UniqueTasksHolderTests.cpp" />
+    <ClCompile Include="Published\Tasks\WorkerThreadTests.cpp" />
+    <ClCompile Include="Published\TimeOutSampleTest.cpp" />
+    <ClCompile Include="Published\Utf8PrintfStringTests.cpp" />
+    <ClCompile Include="Published\Utf8String_test.cpp" />
+    <ClCompile Include="Published\valueformat_test.cpp" />
+    <ClCompile Include="Published\VersionTests.cpp" />
+    <ClCompile Include="Published\WPrintfStringTests.cpp" />
+    <ClCompile Include="Published\WString_test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests.mke" />
+    <None Include="ignore_list.txt" />
+    <None Include="Prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PublicAPI\Bentley\BeTest.h" />
+    <ClInclude Include="Performance\PerformanceTests.h" />
+    <ClInclude Include="Published\bunique_ptr_test.h" />
+    <ClInclude Include="Published\BeSystemInfo_Tests.h" />
+    <ClInclude Include="Published\DateTimeTestDataset.h" />
+    <ClInclude Include="Published\DateTimeTestHelpers.h" />
+    <ClInclude Include="Published\DirectoryObserverTests.h" />
+    <ClInclude Include="Published\shared_mutex.h" />
+    <ClInclude Include="Published\Tasks\AsyncResultTests.h" />
+    <ClInclude Include="Published\Tasks\AsyncTaskTests.h" />
+    <ClInclude Include="Published\Tasks\AsyncTestCheckpoint.h" />
+    <ClInclude Include="Published\Tasks\LimitingTaskQueueTests.h" />
+    <ClInclude Include="Published\Tasks\StubTaskScheduler.h" />
+    <ClInclude Include="Published\Tasks\TasksTestsHelper.h" />
+    <ClInclude Include="Published\Tasks\UniqueTaskHolderTests.h" />
+    <ClInclude Include="Published\Tasks\UniqueTasksHolderTests.h" />
+    <ClInclude Include="Published\Tasks\WorkerThreadTests.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Published\datetimedstanalysis.logging.config.xml" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{18CE72BD-2296-43A0-91BC-C76D2EC910C9}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectName>
+    </ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+    <IntermediateOutputPath>$(OutRoot)Winx64\Build\BentleyTest\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\BentleyTest\</BaseIntermediateOutputPath>
+    <NMakeOutput>$(OutRoot)Winx64\Product\Bentley-Gtest\BentleyTest.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(OutRoot)\Winx64\BuildContexts\Bentley\PublicAPI\;$(OutRoot)\Winx64\build\UnitTests\Bentley\PublishedBentleyUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\Bentley\VendorAPI\;$(ProjectDir)\NonPublished\;$(OutRoot)\Winx64\build\UnitTests\Bentley\NonPublishedBentleyUnitTests\PublicAPI\;$(ProjectDir)\Published\;$(OutRoot)\Winx64\BuildContexts\BentleyUnitTests\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published -c</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
