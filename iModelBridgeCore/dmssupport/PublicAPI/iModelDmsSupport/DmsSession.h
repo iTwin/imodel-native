@@ -44,6 +44,8 @@ struct DmsSession
 
         BeFileName GetApplicationResourcePath(bool isv8i) const;
 
+        BeFileName GetDefaultConfigPath(bool isv8i) const;
+
         iModelDmsSupport::SessionType GetSessionType() const;
     };
 
