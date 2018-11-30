@@ -302,7 +302,7 @@ virtual double                      lineTypeScale () const override { return nul
 virtual double                      thickness () const override { return nullptr!=m_drawParameters ? m_drawParameters->_GetThickness() : 0.0; }
 virtual StubPOrObjectId             visualStyle () const override { return m_visualstyleId; }
 virtual DWGGI_TypeCP(Mapper)        mapper () const override { return m_mapper; }
-virtual DWGCM_Type(Transparency)    transparency () const override { return nullptr!=m_drawParameters ? m_drawParameters->_GetTransparency() : DWGCM_Type(Transparency)(1.0); }
+virtual DWGCM_Type(Transparency)    transparency () const override { return nullptr!=m_drawParameters ? DWGCM_Type(Transparency)(m_drawParameters->_GetTransparency()) : DWGCM_Type(Transparency)(1.0); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -794,7 +794,8 @@ void            pline (const OdGiPolyline& lwBuf, OdUInt32 fromIndex, OdUInt32 n
     {
     if (nullptr != m_drawGeometry)
         {
-        DwgDbPolylinePtr    pline = lwBuf.getDbPolyline ();
+        OdDbPolylinePtr     odPline = lwBuf.getDbPolyline ();
+        DwgDbPolylinePtr    pline = odPline;
         if (pline.isNull())
             {
             pline = OdDbPolyline::createObject ();
@@ -1491,7 +1492,7 @@ void            DwgGiDrawable::Draw (IDwgDrawGeometryR drawGeom, IDwgDrawOptions
 
 bool            DwgGiDrawable::IsValid () const { return nullptr!=m_toolkitDrawable; }
 bool            DwgGiDrawable::IsPersistent () const { return nullptr!=m_toolkitDrawable ? DWGDB_IsTrue(m_toolkitDrawable->isPersistent()) : false; }
-DwgDbObjectId   DwgGiDrawable::GetId () const { return nullptr!=m_toolkitDrawable ? m_toolkitDrawable->id() : DWGDB_Type(ObjectId)::kNull; }
+DwgDbObjectId   DwgGiDrawable::GetId () const { return nullptr!=m_toolkitDrawable ? DwgDbObjectId(m_toolkitDrawable->id()) : DwgDbObjectId(DWGDB_Type(ObjectId)::kNull); }
 DwgDbEntityP    DwgGiDrawable::GetEntityP () { return DwgDbEntity::cast(m_toolkitDrawable); }
 DwgDbLineP      DwgGiDrawable::GetLineP () { return DwgDbLine::cast(m_toolkitDrawable); }
 DwgDbCircleP    DwgGiDrawable::GetCircleP () { return DwgDbCircle::cast(m_toolkitDrawable); }

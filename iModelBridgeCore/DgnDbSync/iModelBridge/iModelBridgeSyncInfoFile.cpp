@@ -613,10 +613,10 @@ BentleyStatus iModelBridgeWithSyncInfoBase::_OnOpenBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeWithSyncInfoBase::_OnCloseBim(BentleyStatus status)
+void iModelBridgeWithSyncInfoBase::_OnCloseBim(BentleyStatus status, iModelBridge::ClosePurpose purpose)
     {
     m_syncInfo.DetachFromBIM();
-    T_Super::_OnCloseBim(status);
+    T_Super::_OnCloseBim(status, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -633,16 +633,20 @@ void iModelBridgeWithSyncInfoBase::_DeleteSyncInfo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::RecordDocument(iModelBridgeSyncInfoFile::ChangeDetector& changeDetector,
                                                                      BeFileNameCR fileNameIn, iModelBridgeSyncInfoFile::SourceState const* sstateIn,
-                                                                     Utf8CP kind, iModelBridgeSyncInfoFile::ROWID srid)
+                                                                     Utf8CP kind, iModelBridgeSyncInfoFile::ROWID srid, Utf8StringCR knownUrn)
     {
     // Get the identity of the document
     BeFileName fileName(fileNameIn);
     if (fileName.empty())
         fileName = _GetParams().GetInputFileName();
 
+    Utf8String urn(knownUrn);
+    if (urn.empty())
+        urn = GetParamsCR().QueryDocumentURN(fileName);
+
     // Make a RepositoryLink to represent the document
     iModelBridgeSyncInfoFile::ConversionResults results;
-    results.m_element = MakeRepositoryLink(GetDgnDbR(), _GetParams(), fileName, "", "");
+    results.m_element = MakeRepositoryLink(GetDgnDbR(), _GetParams(), fileName, "", urn);
     if (!results.m_element.IsValid())
         {
         BeAssert(false);

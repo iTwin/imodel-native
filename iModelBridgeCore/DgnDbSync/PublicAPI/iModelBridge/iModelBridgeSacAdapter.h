@@ -73,6 +73,7 @@ struct iModelBridgeSacAdapter
         bool m_shouldCompress = false;
         bool m_isFileAssignedToBridge = true;
         bool m_detectDeletedFiles = false;
+        bool m_mergeDefinitions = false;
         uint32_t m_compressChunkSize = 0;
         BeFileName m_loggingConfigFile;         
         BeFileName m_dupInputFileName;         

@@ -48,7 +48,6 @@ BEGIN_DWG_NAMESPACE
 
 //=======================================================================================
 //! Base class for options that control how to merge various named data structures that match specified properties
-// @bsiclass                                                    Sam.Wilson      12/13
 //=======================================================================================
 struct ImportRule
 {
@@ -97,9 +96,9 @@ public:
     BentleyStatus ComputeNewName(Utf8StringR newName, Utf8StringCR modelName, BeFileNameCR baseFilename) const;
 };  // ImportRule
 
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          05/17
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Mapping of a DWG model(modelspace, paperspace, xRef, raster, etc) to a DgnModel.
+//=======================================================================================
 struct ResolvedModelMapping
 {
 private:
@@ -131,7 +130,6 @@ typedef bmultiset<ResolvedModelMapping>     T_DwgModelMapping;
 
 //=======================================================================================
 //! An import "job" definition, including its subject element.
-//! @bsiclass                                                    Sam.Wilson      11/16
 //=======================================================================================
 struct ResolvedImportJob
 {
@@ -156,9 +154,9 @@ public:
     Utf8StringCR GetNamePrefix() const { return m_mapping.GetPrefix(); }
 };  // ResolvedImportJob
 
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          04/17
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! An interface for a change detector that detects changes in a DWG file
+//=======================================================================================
 struct IDwgChangeDetector
 {
     enum class ChangeType
@@ -258,9 +256,9 @@ struct IDwgChangeDetector
 typedef std::unique_ptr <IDwgChangeDetector>    T_DwgChangeDetectorPtr;
 
 
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          01/16
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! The main class that imports a root DWG file to a DgnDb project
+//=======================================================================================
 struct DwgImporter
     {
 //__PUBLISH_SECTION_END__
@@ -975,6 +973,7 @@ protected:
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
+    DgnModelId                  m_drawingListModelId;
     DgnModelId                  m_groupModelId;
     DefinitionModelPtr          m_geometryPartsModel;
     DefinitionModelPtr          m_jobDefinitionModel;
@@ -986,6 +985,7 @@ private:
     void                    InitUncategorizedCategory ();
     void                    InitBusinessKeyCodeSpec ();
     BentleyStatus           InitSheetListModel ();
+    BentleyStatus           InitDrawingListModel ();
     BentleyStatus           InitGroupModel ();
     DgnElementId            CreateModelElement (DwgDbBlockTableRecordCR block, Utf8StringCR modelName, DgnClassId modelId);
     void                    ScaleModelTransformBy (TransformR trans, DwgDbBlockTableRecordCR block);
@@ -1009,6 +1009,8 @@ private:
     bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
     bool                    ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId);
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
+    bool                    UpdateModelspaceView (ViewControllerP view);
+    bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
     DgnCategoryId           FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
     DgnSubCategoryId        FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
 
@@ -1117,7 +1119,7 @@ protected:
     DWG_EXPORT virtual size_t         _ImportLayersByFile (DwgDbDatabaseP dwg);
     DWG_EXPORT virtual BentleyStatus  _ImportLayer (DwgDbLayerTableRecordCR layer, DwgStringP overrideName = nullptr);
     DWG_EXPORT virtual BentleyStatus  _OnUpdateLayer (DgnCategoryId&, DwgDbLayerTableRecordCR);
-    BentleyStatus                           GetLayerAppearance (DgnSubCategory::Appearance& appearance, DwgDbLayerTableRecordCR layer, DwgDbObjectIdCP viewportId = nullptr);
+    BentleyStatus                     GetLayerAppearance (DgnSubCategory::Appearance& appearance, DwgDbLayerTableRecordCR layer, DwgDbObjectIdCP viewportId = nullptr);
 
     //! @name  Importing viewport table
     //! @{
@@ -1170,7 +1172,7 @@ protected:
     //! Determine graphical element label from an entity
     DWG_EXPORT virtual Utf8String     _GetElementLabel (DwgDbEntityCR entity);
     //! Should the entity be imported at all?
-    DWG_EXPORT virtual bool           _FilterEntity (DwgDbEntityCR entity, DwgDbSpatialFilterP filter=nullptr);
+    DWG_EXPORT virtual bool           _FilterEntity (ElementImportInputs& inputs) const;
     //! Should create a DgnElement if there is no geometry at all?
     DWG_EXPORT virtual bool           _SkipEmptyElement (DwgDbEntityCP entity);
     //! Insert imported DgnElement into DgnDb.  This method is called after _ImportEntity.
@@ -1210,6 +1212,9 @@ protected:
     //! @param[in] dwgGroup Input object of the DWG group dictionary.
     //! @note When a change is detected for a DWG group, _UpdateGroup will be called; otherwise _ImportGroup will be called, by the default implementation.
     DWG_EXPORT virtual BentleyStatus  _OnUpdateGroup (DwgSyncInfo::Group const& prov, DwgDbGroupCR dwgGroup);
+    //! Tell DwgSyncInfo how to sync groups: group object alone or members included?
+    //! @return True to include members - needed when members are not made persistent elements; False to sync group object only - members are tracked by entity mappings.
+    DWG_EXPORT virtual bool _ShouldSyncGroupWithMembers () const { return false; }
 
     //! @name Options and configs
     //! @{
@@ -1342,10 +1347,9 @@ public:
     
     };  // DwgImporter
 
-/*=================================================================================**//**
-* A no-op detector for creating BIM from DWG
-* @bsiclass                                                     Don.Fu          03/16
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A no-op change detector for creating DgnDb from DWG
+//=======================================================================================
 struct CreatorChangeDetector : IDwgChangeDetector
 {
 public:
@@ -1374,10 +1378,9 @@ public:
     CreatorChangeDetector () {}
 };  // CreatorChangeDetector
 
-/*=================================================================================**//**
-* A change detector to help updating BIM previously imported from DWG
-* @bsiclass                                                     Don.Fu          03/16
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A change detector to help updating DgnDb previously imported from DWG
+//=======================================================================================
 struct UpdaterChangeDetector : IDwgChangeDetector
 {
 private:

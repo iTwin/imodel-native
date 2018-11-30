@@ -897,7 +897,7 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
         DwgDbMaterialPtr    material(iter->GetObjectId(), DwgDbOpenMode::ForRead);
         if (material.IsNull())
             {
-            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("material ID=%ld", iter->GetObjectId().ToAscii()).c_str());
+            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("material ID=%ld", iter->GetObjectId().ToAscii().c_str()).c_str());
             continue;
             }
 

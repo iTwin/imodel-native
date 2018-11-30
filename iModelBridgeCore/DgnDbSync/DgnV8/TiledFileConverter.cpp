@@ -130,9 +130,8 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
     if (_WantModelProvenanceInBim())
         {
         DgnV8FileP file = v8Model.GetDgnFileP();
-        SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
-        BeSQLite::BeGuid guid;
-        if (SUCCESS == DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+        BeSQLite::BeGuid guid = GetDocumentGUIDforFile(*file);
+        if (SUCCESS == DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
             {
             DgnV8ModelProvenance::ModelProvenanceEntry entry;
             entry.m_dgnv8ModelId = mapping.GetV8ModelId().GetValue();
@@ -366,8 +365,7 @@ void TiledFileConverter::_OnFileComplete(DgnV8FileR v8File)
         GetChangeDetector()._DetectDeletedElementsEnd(*this);
         GetChangeDetector()._DetectDeletedModelsEnd(*this);
 
-        SyncInfo::V8FileProvenance prov(v8File, GetSyncInfo(), GetCurrentIdPolicy());
-        prov.Update();
+        GetSyncInfo().UpdateFile(nullptr, v8File);
         }
 
     GetDgnDb().Elements().ClearCache();

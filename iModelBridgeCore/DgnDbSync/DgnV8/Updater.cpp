@@ -157,8 +157,8 @@ bool ChangeDetector::_ShouldSkipFileByName(Converter& converter, BeFileNameCR fi
     if (converter.HasRootTransChanged())  // must re-visit all elements if root transform has changed
         return false;
 
-    SyncInfo::V8FileProvenance prov(file, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
-    if (prov.FindByName(false))
+    SyncInfo::V8FileProvenance prov = converter.GetSyncInfo().FindFileByFileName(file);
+    if (prov.IsValid())
         {
         SyncInfo::ModelIterator it(converter.GetDgnDb(), "V8FileSyncInfoId=?");
         it.GetStatement()->BindInt(1, prov.m_syncId.GetValue());
@@ -279,8 +279,8 @@ void Converter::_DeleteElement(DgnElementId eid)
     GetDgnDb().Elements().Delete(eid);
     GetSyncInfo().DeleteElement(eid);
 
-    if (_WantProvenanceInBim())
-        DgnV8ElementProvenance::Delete(eid, GetDgnDb());
+    // if (_WantProvenanceInBim())
+    //    DgnV8ElementProvenance::Delete(eid, GetDgnDb());
 
     _OnElementConverted(eid, nullptr, Converter::ChangeOperation::Delete);
     }
@@ -405,16 +405,7 @@ void SpatialConverterBase::_DetectDeletedDocuments()
     if (!IsUpdating())
         return;
 
-    // note that _DetectDeletedDocuments is called after Process finishes. So, the converter must be re-initialized
-
-    if (!_HaveChangeDetector())
-        _SetChangeDetector(true);
-    
-    _OnConversionStart();       
-
     T_Super::_DetectDeletedDocuments();
-
-    _OnConversionComplete();    // free resources, recompute project extents, etc.
     }
 
 /*---------------------------------------------------------------------------------**//**

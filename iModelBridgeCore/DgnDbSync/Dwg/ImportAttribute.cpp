@@ -529,7 +529,7 @@ BentleyStatus   DwgImporter::_EmbedPresentationRules ()
         ruleset->AddPresentationRule (*modifier);
 
         // relating property DwgAttributeDefinition:ECClass name from the attrdef tag:
-        Utf8PrintfString    related("%s:%s", SCHEMAName_AttributeDefinitions, content.GetAttrdefClass());
+        Utf8PrintfString    related("%s:%s", SCHEMAName_AttributeDefinitions, content.GetAttrdefClass().c_str());
         RelatedPropertiesSpecificationP prop = new RelatedPropertiesSpecification (RequiredRelationDirection_Forward, multiAspect, related, "", RelationshipMeaning::SameInstance);
         if (nullptr == prop)
             return  BSIERROR;

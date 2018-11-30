@@ -43,7 +43,7 @@ cIncs + -I$(OpenDwgCore)Include/
 #    OdGripPointsModule compile options
 #----------------------------------------------------------------------
 CCompOpts + -D_TOOLKIT_IN_DLL_ -DGRIPPOINTS_DLL_EXPORTS -DGripPoints_EXPORTS -DSKIP_COMPILER_ANALYZE
-CCompOpts + -wd4389 -wd4189 -wd4505
+CCompOpts + -wd4389 -wd4189 -wd4505 -wd5043
 # CCompOpts + -DODA_LINT <= debugging stuff??
 
 always:

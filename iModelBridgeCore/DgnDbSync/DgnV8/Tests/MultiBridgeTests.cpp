@@ -96,7 +96,7 @@ static void doConvert(DefinitionModelIds& defids,
     params.SetBridgeRegSubKey(bridgeRegSubKey);
     params.SetDocumentPropertiesAccessor(docaccessor);
     params.SetInputFileName(inputFileName);
-    params.m_keepHostAliveForUnitTests = true;
+    params.SetKeepHostAlive(true);
     RootModelConverter converter(params);
     converter.SetDgnDb(db);
     converter.SetIsUpdating(isUpdate);
@@ -123,9 +123,14 @@ static void doConvert(DefinitionModelIds& defids,
         ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, converter.FindJob());
         }
 
-    converter.Process();
+    ASSERT_EQ(BentleyApi::SUCCESS, converter.DoBeginConversion());
+    ASSERT_EQ(BentleyApi::SUCCESS, converter.MakeDefinitionChanges());
+
+    converter.ConvertData();
     
     ASSERT_FALSE(converter.WasAborted());
+
+    ASSERT_EQ(BentleyApi::SUCCESS, converter.DoFinishConversion());
 
     defids.m_definitionModelId = converter.GetJobDefinitionModel()->GetModelId();
     defids.m_sheetListModelId = converter.GetSheetListModelId();
@@ -203,6 +208,8 @@ TEST_F(MultiBridgeTests, FileSpecificDefinitions)
     // r is assigned to the reference file
     docaccessor.m_assignments[L"r"].push_back(refV8FileName);
 
+    m_params.SetMergeDefinitions(false);
+
     DefinitionModelIds mDefs, rDefs;
     RunBridge(mDefs, L"m", docaccessor, true);
     RunBridge(rDefs, L"r", docaccessor, true);
@@ -223,7 +230,9 @@ TEST_F(MultiBridgeTests, FileSpecificDefinitions)
     getElementsInModel(mViews, *db, mDefs.m_definitionModelId, "bis.ViewDefinition");
     getElementsInModel(rViews, *db, rDefs.m_definitionModelId, "bis.ViewDefinition");
 
+#ifdef COMMENT_OUT // We are not converting saved views by default any more. If we want to re-enable this part of the test, we would have to use a special cfg file that turns on saved views.
     EXPECT_TRUE (isCodeValueInList(mViews, "MasterView"));
+#endif
     EXPECT_FALSE(isCodeValueInList(rViews, "MasterView"));
     // EXPECT_TRUE (isCodeValueInList(rViews, "ReferenceView"));
     EXPECT_FALSE(isCodeValueInList(rViews, "ReferenceView"));  // Actually, named views in reference files are not converted at all
