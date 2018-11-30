@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="facebook.PartFile.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="folly.mke" />
+    <None Include="Tests\BuildTests.mke" />
+    <None Include="Tests\Prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Tests\ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="folly\BeTimekeeper.cpp" />
+    <ClCompile Include="folly\BeFolly.cpp" />
+    <ClCompile Include="folly\futures\InlineExecutor.cpp" />
+    <ClCompile Include="Tests\Published\BeTimekeeperTests.cpp" />
+    <ClCompile Include="Tests\Published\Futures\HelpersTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="folly\futures\Timekeeper.h" />
+    <ClInclude Include="Tests\Published\AsyncTestCheckpoint.h" />
+    <ClInclude Include="VendorApi\folly\BeTimekeeper.h" />
+    <ClInclude Include="VendorApi\folly\BeFolly.h" />
+    <ClInclude Include="VendorApi\folly\futures\helpers.h" />
+    <ClInclude Include="VendorApi\folly\futures\InlineExecutor.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A19A8223-2731-406F-97C1-899E8B34B87F}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectName>BeFacebookTests</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\Product\BeFacebook-Gtest\BeFacebookTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r Libsrc-facebook -f facebook -p BeFacebook-Gtest re facebook:folly facebook:UnitTest* facebook:GTest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r Libsrc-facebook -f facebook -p BeFacebook-Gtest b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r Libsrc-facebook -f facebook -p BeFacebook-Gtest re facebook:folly facebook:UnitTest* facebook:GTest -c</NMakeCleanCommandLine>
+    <IncludePath>$(OutRoot)Winx64\BuildContexts\facebook\PublicAPI;$(OutRoot)Winx64\BuildContexts\facebook\VendorAPI;$(IncludePath)</IncludePath>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeOutput>BeFacebookTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
