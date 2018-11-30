@@ -1342,7 +1342,7 @@ TEST_F(ChangeManagerTests, GetChanges_GetOnlySyncReady_ReturnOnlyReadyInstances)
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instanceNotReady = StubCreatedObjectInCache(*cache, IChangeManager::SyncStatus::NotReady, "TestSchema.TestClass");
+    StubCreatedObjectInCache(*cache, IChangeManager::SyncStatus::NotReady, "TestSchema.TestClass");
     auto instanceReady = StubCreatedObjectInCache(*cache, IChangeManager::SyncStatus::Ready, "TestSchema.TestClass");
     // Act
     IChangeManager::Changes changes;
@@ -1360,7 +1360,7 @@ TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndCreatedObject_ReturnsIn
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instanceA = StubCreatedObjectInCache(*cache, "TestSchema.TestClass");
+    StubCreatedObjectInCache(*cache, "TestSchema.TestClass");
     auto instanceB = StubCreatedObjectInCache(*cache, "TestSchema.TestClass");
     // Act
     IChangeManager::Changes changes;
@@ -2667,7 +2667,7 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithSameClassAndId_Upda
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithDifferentId_Error)
     {
     auto cache = GetTestCache();
-    auto oldInstanceKey = StubInstanceInCache(*cache, {"TestSchema.TestClass", "OldId"});
+    StubInstanceInCache(*cache, {"TestSchema.TestClass", "OldId"});
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "NewId"}, {{"TestProperty", "TestValue"}});
