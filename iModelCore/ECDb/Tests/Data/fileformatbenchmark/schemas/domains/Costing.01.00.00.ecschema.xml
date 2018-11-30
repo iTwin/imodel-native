@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Costing" alias="cost" version="01.00.00" description="Schema for Cost-Estimation." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <KindOfQuantity typeName="RATIO" displayLabel="RATIO" persistenceUnit="ONE" relativeError="1e-2" />
+
+    <ECEntityClass typeName="UnitCostClassElement" displayLabel="Unit-cost class" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="UnitCostElement" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="UnitCost" typeName="double"/>
+        <ECProperty propertyName="UnitCostStorageUnit" typeName="string"/>
+        <ECProperty propertyName="UnitCostKindOfQuantity" typeName="string"/>        
+    </ECEntityClass>
+    <ECRelationshipClass typeName="UnitCostClassElementHasUnitCostElements" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is owned by 1 UnitCostClass">
+            <Class class="UnitCostClassElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="owns N UnitCost elements">
+            <Class class="UnitCostElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="UnitCostQuantityAspect">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Quantity" typeName="double"/>
+        <ECNavigationProperty propertyName="UnitCost" relationshipName="UnitCostQuantityRefersToUnitCost" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="UnitCostQuantityRefersToUnitCost" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered by N quantity aspects">
+            <Class class="UnitCostQuantityAspect"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 UnitCost">
+            <Class class="UnitCostElement"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>
