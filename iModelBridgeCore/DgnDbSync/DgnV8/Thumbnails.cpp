@@ -179,6 +179,7 @@ BentleyStatus Converter::GenerateThumbnail(ViewDefinition const& view)
     if (IsUpdating() && !ThumbnailUpdateRequired (view))
         return BSISUCCESS;
 
+#if defined(TODO_IMODEL02_THUMBNAILS)
     ThumbnailConfig thumbnailConfig(m_config);
 
     BeDuration timeout = BeDuration::FromSeconds(m_config.GetOptionValueDouble("ThumbnailTimeout", 30));
@@ -190,6 +191,8 @@ BentleyStatus Converter::GenerateThumbnail(ViewDefinition const& view)
     Point2d size = {thumbnailConfig.GetResolution(), thumbnailConfig.GetResolution()};
 
     view.RenderAndSaveThumbnail(size, thumbnailConfig.GetUseRenderModeOverride() ? &mode : nullptr, timeout);
+#endif
+
     return BSISUCCESS;
     }
 
