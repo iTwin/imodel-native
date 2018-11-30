@@ -1,0 +1,73 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Tests/GTests/BuildTests_vancouver.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+programName = ScalableMeshUnitTests
+
+PolicyFile=$(SrcBsiCommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+o = $(OutputRootDir)build/ScalableMesh/ScalableMeshUnitTests/
+
+always:
+    !~@mkdir $(o)
+
+cDefs + -DUSE_GTEST
+cDefs + -DVANCOUVER_API
+#cDefs + -DOVERRIDE_TEST_DATA_DIR
+#cDefs + -DSM_DATA_PATH=\"E:\/WorkData\/ScalableMesh\/defects\/MathieuRaster1\/\"
+
+%include MultiCppCompileRule.mki
+
+$(o)ScalableMeshUnitTests.obj   : $(_MakeFilePath)/ScalableMeshUnitTests.cpp ${MultiCompileDepends}
+
+$(o)SMUnitTestDisplayQuery.obj   : $(_MakeFilePath)/SMUnitTestDisplayQuery.cpp ${MultiCompileDepends}
+
+$(o)SMUnitTestGroundDetection.obj   : $(_MakeFilePath)/SMUnitTestGroundDetection.cpp ${MultiCompileDepends}
+
+$(o)SMUnitTestUtil.obj   : $(_MakeFilePath)/SMUnitTestUtil.cpp $(_MakeFilePath)/SMUnitTestUtil.h ${MultiCompileDepends}
+
+$(o)SMUnitTestProgress.obj   : $(_MakeFilePath)/SMUnitTestProgress.cpp ${MultiCompileDepends}
+
+$(o)SMUnitTestMeshFlags.obj   : $(_MakeFilePath)/SMUnitTestMeshFlags.cpp ${MultiCompileDepends}
+
+
+libsUsed = \
+        $(BuildContext)SubParts/Libs/Bentley.lib \
+        $(BuildContext)SubParts/Libs/ScalableMeshCore.lib \
+		$(BuildContext)SubParts/Libs/ScalableMeshCreator.lib \
+		$(BuildContext)SubParts/Libs/BaseGeoCoord.lib \
+		$(BuildContext)SubParts/Libs/BentleyGeom.lib \
+		$(BuildContext)SubParts/Libs/TerrainModelCore.lib \
+        $(BuildContext)SubParts/Libs/gtest.lib \
+        $(BuildContext)SubParts/Libs/DgnGeoCoord.lib \
+        $(BuildContext)SubParts/Libs/BentleyAllocator.lib \
+        $(BuildContext)SubParts/Libs/DgnView.lib \
+        $(BuildContext)SubParts/Libs/DgnPlatform.lib \
+        $(BuildContext)SubParts/Libs/BeJsonCpp.lib
+
+
+%include MultiCppCompileGo.mki
+
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(programName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_LIBS      = $(libsUsed)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib
+GUNITTEST_OBJS      = $(PCHHeaderObject) $(MultiCompileObjectList)
+GUNITTEST_PATH      = $(o) 
+GUNITTEST_SYMB      = $(o)
+#GTEST_MAIN_IS_SUPPLIED = 1
+DLM_PROFILE  = 1
+GUnitTestDir = $(BuildContext)SubParts/google_gtest/
+GUNIT_TEST_VERSION = 1.3
+GUNITTEST_NOEXEC = 1
+
+%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+%include $(SharedMki)gunittest.mki
+
+always:
+    @CreateSymLinks.py "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
