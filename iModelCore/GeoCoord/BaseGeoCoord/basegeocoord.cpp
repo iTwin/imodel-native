@@ -1054,8 +1054,16 @@ StatusInt GetGeographicToCoordSys (WStringR wkt, WStringR geographicName, WStrin
                 return status;
 
         if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"UNIT")))
+            {
             if (SUCCESS != (status = GetAngleUnit (wkt, conversionToDegree)))
                 return status;
+
+            // Conversion error may make it that a degree is slightly higher than 1.0 within 1E-11
+            // This may lead to values minuscully greater than 90 degrees for latitudes
+            // Clamping to 1.0 insures exact value.
+            if (*conversionToDegree > 1.0 && doubleSame(*conversionToDegree, 1.0))
+                *conversionToDegree = 1.0;
+            }
 
         // Optional AXIS
         if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"AXIS")))
@@ -3170,7 +3178,8 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
              (upperParameterName == L"LATITUDE OF 1ST STANDARD PARALLEL") ||
              (upperParameterName == L"NORTHERN STANDARD PARALLEL"))
         {
-        if (BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode())
+        if ((BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvLambertConformalConicOneParallel == coordinateSystem.GetProjectionCode()))
             {
             if (SUCCESS != coordinateSystem.SetOriginLatitude (parameterValue * conversionToDegree)) // Weird occurence !
                 return ERROR;
@@ -3207,8 +3216,22 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
         if ((BaseGCS::pcvObliqueCylindricalSwiss != coordinateSystem.GetProjectionCode()) && // Swiss azimuth is implicit and needs(cannot) not be specified
             (BaseGCS::pcvCzechKrovak != coordinateSystem.GetProjectionCode()) &&             // Krovak azimuth is implicit and needs(cannot) not be specified
             (BaseGCS::pcvCzechKrovakModified != coordinateSystem.GetProjectionCode()))       // Krovak azimuth is implicit and needs(cannot) not be specified
-            if (SUCCESS != coordinateSystem.SetAzimuth (parameterValue * conversionToDegree))
-                return ERROR;
+            {
+            if (BaseGCS::pcvLambertConformalConicTwoParallel == coordinateSystem.GetProjectionCode())
+                {
+                // The only Lambert 2SP that takes azimuth is the lambert variation ... we switch though the azimuth is built in
+                coordinateSystem.SetProjectionCode(BaseGCS::pcvLambertConformalConicBelgian);
+
+                // Check the value (fixed)
+                if (!doubleSame(0.0081384722222, parameterValue * conversionToDegree))
+                    return ERROR;
+                }
+            else
+                {
+                if (SUCCESS != coordinateSystem.SetAzimuth (parameterValue * conversionToDegree))
+                    return ERROR;
+                }
+            }
         }
     else if ((upperParameterName == L"ZONENUMBER") || 
              (upperParameterName == L"UTM ZONE NUMBER (1 - 60)"))
@@ -6458,8 +6481,12 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorGeoTools == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorEPSG == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_WCCSL && wktFlavorOGC == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_LM2SP && wktFlavorOGC == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorOracle9 == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_LMTAN && wktFlavorOracle == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorOracle == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorEPSG == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_SINUS && wktFlavorAutodesk == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_KROVAK) ||
                              (m_csParameters->prj_code == cs_PRJCOD_KROVAKMOD) ||
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorOGC == wktFlavor && AString(m_csParameters->csdef.key_nm) == "EPSG:900913" ))
