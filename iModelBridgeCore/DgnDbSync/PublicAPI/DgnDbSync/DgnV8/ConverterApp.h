@@ -95,6 +95,7 @@ protected:
     BentleyStatus _OnOpenBim(DgnDbR db) override;
     void _OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose) override;
     Dgn::SubjectCPtr _FindJob() override;
+    BentleyStatus _MakeDefinitionChanges(SubjectCR) override;
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus , iModelBridge::ClosePurpose) override;
     BentleyStatus _DetectDeletedDocuments() override;

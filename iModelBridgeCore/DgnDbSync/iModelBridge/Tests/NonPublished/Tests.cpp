@@ -610,6 +610,9 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
         auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
+        m_testIModelHubClientForBridges.m_expect.haveTxns = true;
+        m_expect.findJobSubject = true;
+
         if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceFile))
             DgnV8FileProvenance::CreateTable(GetDgnDbR());
         if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceModel))
@@ -1284,7 +1287,7 @@ TEST_F(iModelBridgeTests, DISABLED_TestMultipleRootsSameSubject_ToyTile) // disa
     args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
 
-	args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", toyTileBridge_dll));
+	args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", toyTileBridge_dll.c_str()));
     args.push_back(L"--fwk-bridge-regsubkey=" BRIDGE_REG_SUBKEY_TOY_TILE);
 	args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", toyTileBridge_assetsDir.c_str()));
 

@@ -280,6 +280,7 @@ private:
     bool ComputeViewAttachment (Placement2dR placement);
     bool ComposeLayoutTransform (TransformR trans, DwgDbObjectIdCR blockId);
     void TransformDataToBim ();
+    bool IsLayerDisplayed (DwgDbHandleCR layer, DwgDbObjectIdArrayCR vpfrozenLayers, DwgDbDatabaseR dwg) const;
     void AddModelspaceCategories (Utf8StringCR viewName);
     // clip SpatialView attached to ViewAttachment - legacy clipping, may be removed.
     void ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip);

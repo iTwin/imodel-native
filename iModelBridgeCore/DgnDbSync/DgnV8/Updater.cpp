@@ -405,16 +405,7 @@ void SpatialConverterBase::_DetectDeletedDocuments()
     if (!IsUpdating())
         return;
 
-    // note that _DetectDeletedDocuments is called after Process finishes. So, the converter must be re-initialized
-
-    if (!_HaveChangeDetector())
-        _SetChangeDetector(true);
-    
-    _OnConversionStart();       
-
     T_Super::_DetectDeletedDocuments();
-
-    _OnConversionComplete();    // free resources, recompute project extents, etc.
     }
 
 /*---------------------------------------------------------------------------------**//**

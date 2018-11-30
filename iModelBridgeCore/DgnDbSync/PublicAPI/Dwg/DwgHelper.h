@@ -29,9 +29,9 @@ USING_NAMESPACE_DWGDB
 
 BEGIN_DWG_NAMESPACE
 
-/*=================================================================================**//**
-* A helper class of utilities used for common DWG conversion
-+===============+===============+===============+===============+===============+======*/
+//======================================================================================
+// !A helper class of common utilities useful for DWG conversion
+//===============+===============+===============+===============+===============+======
 struct DwgHelper : BentleyApi::NonCopyableClass
     {
 private:

@@ -72,6 +72,8 @@ Also see @ref ANCHOR_BridgeConfig "bridge-specific configuration".
 
 - Override iModelBridge::_MakeSchemaChanges to import required schemas during @ref ANCHOR_InitializationPhase "initialization phase"
 
+- Override iModelBridge::_MakeDefinitionChanges to import or update definitions such as Categories in public models. This is called during @ref ANCHOR_InitializationPhase "initialization phase"
+
 - Keep track of source data -> iModel element mappings by using something like syncinfo. See @ref ANCHOR_TypicalBridgeConversionLogic "typical bridge conversion logic".
 
 - Use syncinfo data to detect changes and convert only changed data. See @ref ANCHOR_TypicalBridgeConversionLogic "typical bridge conversion logic".
@@ -114,6 +116,7 @@ registered by the bridge in its _Initialize method are imported into the BIM and
 -# iModelBridge::_OnOpenBim     (may call _OnCloseBim and _OnOpenBim more than once in the Initialization Phase.)
 -# iModelBridge::_OpenSource
 -# iModelBridge::_MakeSchemaChanges. The framework may close and reopen the briefcase at this point.
+-# iModelBridge::_MakeDefinitionChanges. The framework may close and reopen the briefcase at this point.
 
 The framework will pullmergepush as necessary in order to capture schema changes and push them to iModelHub. 
 If the necessary schema lock cannot be acquired, then the bridge is terminated with an error.
@@ -491,6 +494,7 @@ struct iModelBridge
         bool m_isUpdating = false;
         bool m_wantThumbnails = true;
         bool m_doDetectDeletedModelsAndElements =  true;
+        bool m_mergeDefinitions = true;  // WIP make this default to false
         PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
@@ -597,6 +601,8 @@ struct iModelBridge
         BeDuration GetThumbnailTimeout() const {return m_thumbnailTimeout;}
         void SetWantThumbnails(bool b) {m_wantThumbnails = b;}
         bool WantThumbnails() const {return m_wantThumbnails;}
+        void SetMergeDefinitions(bool b) {m_mergeDefinitions = b;}
+        bool GetMergeDefinitions() const {return m_mergeDefinitions;}
         void SetBridgeJobName(Utf8StringCR str) {m_converterJobName=str;}
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
@@ -669,7 +675,9 @@ struct iModelBridge
     //! @return non-zero error status if the bridge cannot convert the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
     //! @see OpenBimAndMergeSchemaChanges
-    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles);
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj, bool detectDeletedFiles);
+
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db);
 
     //! @}
 
@@ -787,9 +795,18 @@ public:
     //! This function is called after _OnOpenBim and _OpenSource but before _ConvertToBim.
     //! The bridge may generate a schema dynamically, based on the content of the source files. Or, in the case of an update, the bridge can upgrade or change a previously generated schema. 
     //! @return non-zero error status if the bridge cannot make the schema changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    //! @note The bridge must call dgndb.BriefcaseManager().LockSchemas() before attempting to call dgndb.ImportSchemas. The bridge *must* return a non-zero error status if LockSchemas fails.
     //! @note The bridge should *not* convert elements or models in this function.
+    //! @note The schema lock is held (by the framework) when this function is called.
     virtual BentleyStatus _MakeSchemaChanges() {return BSISUCCESS;}
+
+    //! By overriding this function, the bridge may insert and update definition elements such as Categories in public models such as the dictionary model.
+    //! This function is called after _OnOpenBim, _OpenSource, and _MakeSchemaChanges but before _ConvertToBim.
+    //! @return non-zero error status if the bridge cannot make the changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
+    //! @note The bridge should *not* convert elements or models in this function.
+    //! @note The schema lock is held (by the framework) when this function is called.
+    //! @note If the bridge must make definition changes in public models as part of its _ConvertToBim function, then the bridge
+    //! must override _ConvertToBimRequiresExclusiveLock to return true.
+    virtual BentleyStatus _MakeDefinitionChanges(SubjectCR jobSubject) {return BSISUCCESS;}
 
     //! Try to find an existing @ref ANCHOR_BridgeJobSubject "job subject" in the BIM.
     //! This is called prior to _ConvertToBim.
@@ -835,6 +852,9 @@ public:
     //! @return non-zero error status if the bridge cannot conversion the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @see _OnOpenBim
     virtual BentleyStatus _ConvertToBim(SubjectCR jobSubject) = 0;
+
+    //! Query if the bridge must have exclusive access to the iModel while converting data.
+    virtual bool _ConvertToBimRequiresExclusiveLock() {return false;}
 
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
@@ -941,6 +961,9 @@ public:
     //! @param commitComment The summary description of the ChangeSet
     //! @return the outcome of the attempt to push
     IMODEL_BRIDGE_EXPORT static IBriefcaseManager::PushStatus PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment);
+
+    IMODEL_BRIDGE_EXPORT static bool AnyChangesToPush(DgnDbR);
+    IMODEL_BRIDGE_EXPORT static bool AnyTxns(DgnDbR);
 
     IMODEL_BRIDGE_EXPORT virtual Utf8String _FormatPushComment(DgnDbR db, Utf8CP commitComment);
 

@@ -47,11 +47,7 @@ $(o)Decrypt$(oext): $(baseDir)Decrypt.cpp $(baseDir)Decrypt.h ${MultiCompileDepe
 
 $(o)iModelBridgeFwkDmsOptions$(oext): $(baseDir)iModelBridgeFwkDmsOptions.cpp  $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 
-$(o)OidcTokenProvider$(oext): $(baseDir)OidcTokenProvider.cpp  $(baseDir)OidcTokenProvider.h $(baseDir)OidcToken.h ${MultiCompileDepends}
-
-$(o)OidcSignInManager$(oext): $(baseDir)OidcSignInManager.cpp  $(baseDir)OidcSignInManager.h $(baseDir)OidcTokenProvider.h $(baseDir)OidcToken.h ${MultiCompileDepends}
-
-$(o)OidcToken$(oext): $(baseDir)OidcToken.cpp  $(baseDir)OidcToken.h ${MultiCompileDepends}
+$(o)OidcSignInManager$(oext): $(baseDir)OidcSignInManager.cpp  $(baseDir)OidcSignInManager.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

@@ -29,6 +29,7 @@ DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManagerForBridges)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct IModelClientForBridges;
+struct iModelBridgeCallOpenCloseFunctions;
 
 //=======================================================================================
 // @bsiclass
@@ -124,8 +125,10 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     //! The command-line arguments required by the iModelBridgeFwk itself that define the Job
     struct JobDefArgs
         {
-        bool m_skipAssignmentCheck = false;
-        bool m_createRepositoryIfNecessary = false;
+        bool       m_skipAssignmentCheck = false;
+        bool       m_createRepositoryIfNecessary = false;
+        bool       m_storeElementIdsInBIM {};
+        bool       m_mergeDefinitions = true;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
         WString    m_bridgeRegSubKey;
@@ -137,7 +140,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String m_jobRunCorrelationId;
         Utf8String m_jobRequestId;
         Utf8String m_jobSubjectName;
-        bool       m_storeElementIdsInBIM {};
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
@@ -264,6 +266,7 @@ protected:
         };
     Utf8String m_briefcaseBasename;
     int m_maxRetryCount;
+    bool m_isCreatingNewRepo {};
     DmsServerArgs m_dmsServerArgs;
     FwkRepoAdmin* m_repoAdmin {};
     IDmsSupport*    m_dmsSupport;
@@ -309,6 +312,8 @@ protected:
     BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
     int UpdateExistingBim();
     int UpdateExistingBimWithExceptionHandling();
+    int MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions&);
+    int MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCallOpenCloseFunctions&);
     void OnUnhandledException(Utf8CP);
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
@@ -321,7 +326,7 @@ protected:
     BentleyStatus StageInputFile();
     BentleyStatus StageWorkspace();
     BentleyStatus SetupDmsFiles();
-    int ProcessSchemaChange();
+    int PullMergeAndPushChange(Utf8StringCR description);
     int StoreHeaderInformation();
     
 public:
