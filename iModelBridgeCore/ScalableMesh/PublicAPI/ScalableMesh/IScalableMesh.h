@@ -233,6 +233,8 @@ struct IScalableMesh :  IRefCounted
 
         virtual void _ReFilter() = 0;
 
+        virtual void                               _RegenerateClips(bool forceRegenerate = false) = 0;
+
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;
@@ -242,6 +244,8 @@ struct IScalableMesh :  IRefCounted
         virtual bool                               _RemoveClip(uint64_t clipID) = 0;
 
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) = 0;
+
+        virtual bool                               _GetClip(uint64_t clipID, CLIP_VECTOR_NAMESPACE::ClipVectorPtr& clipData) = 0;
 
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) = 0;
 
@@ -439,6 +443,8 @@ struct IScalableMesh :  IRefCounted
 
         Count                  GetCountInRange (const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const;
 
+        BENTLEY_SM_EXPORT void                   RegenerateClips(bool forceRegenerate = false);
+
         BENTLEY_SM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
 
         BENTLEY_SM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
@@ -456,6 +462,8 @@ struct IScalableMesh :  IRefCounted
         BENTLEY_SM_EXPORT bool                   RemoveClip(uint64_t clipID);
 
         BENTLEY_SM_EXPORT bool                   GetClip(uint64_t clipID, bvector<DPoint3d>& clipData);
+
+        BENTLEY_SM_EXPORT bool                   GetClip(uint64_t clipID, CLIP_VECTOR_NAMESPACE::ClipVectorPtr& clipData);
 
         BENTLEY_SM_EXPORT void                   SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts);
 

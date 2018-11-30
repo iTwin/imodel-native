@@ -135,7 +135,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
         }
 
         //(*clips)[0]->GetRange(range, nullptr, true);
-        auto nodeDataSaver = [pi_pDataStore, ranges, allClipsAreMasks, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, progress, outputTexture](IScalableMeshNodePtr& node)
+        auto nodeDataSaver = [pi_pDataStore, ranges, allClipsAreMasks, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, progress, transform, outputTexture](IScalableMeshNodePtr& node)
         {
             if (progress != nullptr  && progress->IsCanceled()) return;
 
@@ -152,7 +152,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
                 IScalableMeshNodePtr nodeP(node);
                 bvector<Byte> cesiumData;
                 IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
-                cesiumPublisher->Publish(nodeP, (hasMSClips ? clips : nullptr), coverageID, isClipBoundary, sourceGCS, destinationGCS, cesiumData, outputTexture);
+                cesiumPublisher->Publish(nodeP, (hasMSClips ? clips : nullptr), coverageID, isClipBoundary, transform, cesiumData, outputTexture);
 
                 ISMTileMeshDataStorePtr tileStore;
 
@@ -336,9 +336,19 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     auto strategy =rootNodeGroup->GetStrategy<DRange3d>();
     strategy->SetOldMasterHeader(oldMasterHeader);
     strategy->SetClipInfo(coverageID, isClipBoundary);
-    strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
+    //strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
+    strategy->SetRootTransform(transform);
     strategy->AddGroup(rootNodeGroup.get());
     index->SetRootNodeGroup(rootNodeGroup);
+
+    DRange3d smExtent = index->GetIndexExtent();
+
+    DPoint3d center = DPoint3d::From((smExtent.low.x + smExtent.high.x) *0.5, (smExtent.low.y + smExtent.high.y) *0.5, (smExtent.low.z + smExtent.high.z) *0.5);
+    Transform t = Transform::From(center);
+    t.InverseOf(t);
+
+    strategy->SetTransform(t);
+
 
     // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
     std::thread saveGroupsThread([index, strategy, rootNodeGroup, progress]()
@@ -380,7 +390,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
 
     PrepareClipsForSaveAs(clips);
 
-    Publish3DTile(nodeP, pDataStore, transform, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, progress, outputTexture);
+    Publish3DTile(nodeP, pDataStore, t, clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
 
     if (progress != nullptr) progress->Progress() = 1.0f;
 
@@ -391,9 +401,8 @@ bool s_stream_from_wsg;
 bool s_stream_from_grouped_store;
 bool s_is_virtual_grouping;
 
-StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
-{
-
+StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const Transform& transform, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
+    {
     if (!meshP.IsValid()) return ERROR;
 
     StatusInt status;
@@ -401,23 +410,23 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     auto mesh = static_cast<ScalableMesh<POINT>*>(meshP.get());
     WString path;
     if (server == SMCloudServerType::Azure)
-    {
+        {
         // Setup streaming stores to use Azure
         //s_stream_from_disk = false; 
         s_stream_from_wsg = false;
 
         path += outContainerName + L"/" + outDatasetName;
-    }
+        }
     else if (server == SMCloudServerType::WSG)
-    {
+        {
         // Setup streaming stores to use WSG
         //s_stream_from_disk = false;
         s_stream_from_wsg = true;
 
         path += outContainerName + L"~2F" + outDatasetName;
-    }
+        }
     else if (server == SMCloudServerType::LocalDiskCURL)
-    {
+        {
         // Setup streaming stores to use local disk (relative to attached 3sm file location)
         //s_stream_from_disk = true;
         s_stream_using_curl = true;
@@ -426,15 +435,15 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
         path += BEFILENAME(GetDirectoryName, smFileName);
         path += L"cloud\\";
         path += BEFILENAME(GetFileNameWithoutExtension, smFileName);
-    }
+        }
     else
-    {
+        {
         assert(server == SMCloudServerType::LocalDisk);
 
         // Setup streaming stores to use local disk (relative to attached 3sm file location)
         //s_stream_from_disk = true;
         path = outContainerName;
-    }
+        }
 
     //s_stream_from_grouped_store = false;
     mesh->GetMainIndexP()->m_progress = progress;
@@ -442,29 +451,29 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     bvector<SMNodeGroupPtr> coverageTilesets;
 
     if (coverageId == (uint64_t)-1)
-    {
+        {
         // Generate 3DTiles tilesets for all coverages
         bvector<uint64_t> ids;
         mesh->GetMainIndexP()->GetClipRegistry()->GetAllCoverageIds(ids);
         hasCoverages = !ids.empty();
         for (auto coverageID : ids)
-        {
+            {
             Utf8String coverageName;
             mesh->GetMainIndexP()->GetClipRegistry()->GetCoverageName(coverageID, coverageName);
 
             BeFileName coverageFileName(coverageName.c_str());
             if (BeFileName::DoesPathExist(coverageFileName))
-            {
+                {
                 // Ensure that coverage path is formatted correctly (e.g. remove redundant double backslashes such as \\\\)
                 WString coverageFullPathName;
                 BeFileName::BeGetFullPathName(coverageFullPathName, coverageFileName.c_str());
 
                 IScalableMeshPtr coverageMeshPtr = nullptr;
                 if ((coverageMeshPtr = IScalableMesh::GetFor(coverageFullPathName.c_str(), meshP->GetEditFilesBasePath(), false, true, true, status)) == nullptr || status != SUCCESS)
-                {
+                    {
                     BeAssert(false); // Error opening coverage 3sm
                     return status;
-                }
+                    }
 
                 auto coverageMesh = static_cast<ScalableMesh<POINT>*>(coverageMeshPtr.get());
 
@@ -473,22 +482,22 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
                 coverageOutDir.AppendToPath(BeFileName::GetFileNameWithoutExtension(coverageFileName).c_str());
                 coverageOutDir.AppendSeparator();
                 if (!BeFileName::DoesPathExist(coverageOutDir) && (status = (StatusInt)BeFileName::CreateNewDirectory(coverageOutDir)) != SUCCESS)
-                {
+                    {
                     BeAssert(false); // Could not create tileset output directory for coverage
                     return status;
-                }
-                if ((status = Generate3DTiles(coverageMesh,coverageOutDir.c_str(), outDatasetName, server, nullptr /*no progress?*/, clips, coverageID)) != SUCCESS)
-                {
+                    }
+                if ((status = Generate3DTiles(coverageMesh, coverageOutDir.c_str(), outDatasetName, server, nullptr /*no progress?*/, clips, coverageID)) != SUCCESS)
+                    {
                     BeAssert(false); // Could not publish coverage
                     return status;
-                }
+                    }
                 auto coverageIndex = coverageMesh->GetMainIndexP();
                 auto root = coverageIndex->GetRootNodeGroup();
                 BeAssert(root.IsValid()); // Something wrong in the publish
                 coverageTilesets.push_back(root);
+                }
             }
         }
-    }
 
 
     IScalableMeshTextureInfoPtr textureInfo;
@@ -501,23 +510,26 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     if (status != SUCCESS || textureInfo->IsUsingBingMap())
         outputTexture = false;
 
+    Transform t = transform;
+    t.FromProduct(meshP->GetReprojectionTransform(), t);
 
-    status = Publish3DTiles((SMMeshIndex<DPoint3d,DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, meshP->GetReprojectionTransform(), clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture,(ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
+
+    status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, t, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
     SMNodeGroupPtr rootTileset = mesh->GetMainIndexP()->GetRootNodeGroup();
     BeAssert(rootTileset.IsValid()); // something wrong in the publish
 
 
     for (auto& converageTileset : coverageTilesets)
-    {
+        {
         // insert tileset as child tileset to the current tileset
         rootTileset->AppendChildGroup(converageTileset);
         converageTileset->Close<Extent3dType>();
-    }
+        }
 
     WString wktStr;
 
     if (meshP->GetBaseGCS() != nullptr)
-        { 
+        {
 #ifdef VANCOUVER_API
         meshP->GetBaseGCS()->GetWellKnownText(wktStr, BaseGCS::wktFlavorAutodesk);
 #else
@@ -532,6 +544,10 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     // Force save of root tileset and take into account coverages
     rootTileset->Close<Extent3dType>();
     return status;
-}
+        }
+StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
+    {
+    return IScalableMeshSaveAs::Generate3DTiles(meshP, outContainerName, Transform::FromIdentity(), outDatasetName, server, progress, clips, coverageId);
+    }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

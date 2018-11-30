@@ -405,10 +405,17 @@ IDTMSource::Impl::Impl(DTMSourceDataType       sourceDataType,
         m_config.SetReplacementSMData(data);
         }     
 #else
-    struct stat64 attrib;
+    #ifdef __APPLE__
+    struct stat attrib;
 
     Utf8String fullPathUtf8(fullPath);
+    if (stat(fullPathUtf8.c_str(), &attrib) == 0)
+    #else
+    struct stat64 attrib;
+        
+    Utf8String fullPathUtf8(fullPath);
     if (stat64(fullPathUtf8.c_str(), &attrib) == 0)
+    #endif
         {        
         ScalableMeshData data = m_config.GetReplacementSMData();
     

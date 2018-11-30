@@ -468,13 +468,14 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     Urlmon.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
-    $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)BeXml.lib
+
+#    $(ContextSubpartsLibs)wastorage.lib \
     
 
 LINKER_LIBRARIES            = \

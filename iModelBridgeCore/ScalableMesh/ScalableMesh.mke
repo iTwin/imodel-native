@@ -38,7 +38,7 @@ always:
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
-CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
+CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR -Zc:twoPhase-
 
 #Uncomment this to allow generating design meshes
 #CCompOpts + -DWIP_MESH_IMPORT
@@ -75,7 +75,7 @@ CCompOpts + -wd4091
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -Zc:twoPhase-
 CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 %include $(SharedMki)PreCompileHeader.mki
 
@@ -209,7 +209,7 @@ $(o)SMMeshIndex$(oext) : $(stmDir)SMMeshIndex.cpp $(stmDir)SMMeshIndex.hpp $(stm
 
 $(o)SMMemoryPool$(oext) : $(stmDir)SMMemoryPool.cpp $(stmDir)SMMemoryPool.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshCreator$(oext) : $(stmDir)ScalableMeshCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -498,7 +498,6 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     Urlmon.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
-    $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
@@ -514,6 +513,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 #    $(DgnPlatformV8LibDir)RmgrTools.lib \
 #    $(DgnPlatformV8LibDir)BaseGeoCoord.lib 
 
+#    $(ContextSubpartsLibs)wastorage.lib \
 #    $(ContextSubpartsLibs)cpprest140_2_6.lib
 #    $(ContextSubpartsLibs)PCLWrapper.lib \
 #    $(ContextSubpartsLibs)Imagepp-gdal.lib \

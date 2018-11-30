@@ -293,7 +293,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     ClipRegistry* GetClipRegistry() const
         {
-        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipRegistry();
+        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->GetClipRegistry();
         }
 
     void  BuildSkirts();
@@ -439,9 +439,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> customGenericBlobItemPtr(
 #ifndef VANCOUVER_API            
-            new SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>(0, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex)
+            new SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>(0, this->GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)this->m_SMIndex)
 #else
-            SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>::CreateItem(0, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex)
+            SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>::CreateItem(0, this->GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)this->m_SMIndex)
 #endif
             );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
@@ -490,9 +490,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> customGenericBlobItemPtr(
 #ifndef VANCOUVER_API            
-            new SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
+            new SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)this->m_SMIndex)
 #else
-            SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
+            SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)this->m_SMIndex)
 #endif
             );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
@@ -501,22 +501,22 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             {
             auto displayTexVideoPoolItemId = SMMemoryPool::GetInstanceVideo()->AddItem(memPoolItemPtr);
             assert(displayTexVideoPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureVideo(texID, displayTexVideoPoolItemId);
+            ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->SetPoolIdForTextureVideo(texID, displayTexVideoPoolItemId);
             m_textureVideoIds.insert(texID);
             }
         else
             {            
-            auto displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+            auto displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
             
             if (displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
                 {
                 //If we get here is because a change of Display Cache Manager. Ensure to remove the display texture for the previous display cache manager first.
-                GetMemoryPool()->RemoveItem(displayTexPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);                
+                GetMemoryPool()->RemoveItem(displayTexPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)this->m_SMIndex);                
                 }
             
             displayTexPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
             assert(displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexPoolItemId);
+            ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexPoolItemId);
             m_textureIds.insert(texID);
             }
                                
@@ -530,22 +530,22 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             {
             auto displayTexVideoPoolItemId = SMMemoryPool::GetInstanceVideo()->AddItem(itemPtr);
             assert(displayTexVideoPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureVideo(texID, displayTexVideoPoolItemId);
+            ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->SetPoolIdForTextureVideo(texID, displayTexVideoPoolItemId);
             m_textureVideoIds.insert(texID);
             }
         else
             {
-            auto displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+            auto displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
 
             if (displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
                 {
                 //If we get here is because a change of Display Cache Manager. Ensure to remove the display texture for the previous display cache manager first.
-                GetMemoryPool()->RemoveItem(displayTexPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+                GetMemoryPool()->RemoveItem(displayTexPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)this->m_SMIndex);
                 }
 
             displayTexPoolItemId = GetMemoryPool()->AddItem(itemPtr);
             assert(displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexPoolItemId);
+            ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexPoolItemId);
             m_textureIds.insert(texID);
             }                
 
@@ -575,13 +575,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             {
             if (m_displayMeshVideoPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayMeshItemPtr;
             
-            SMMemoryPool::GetInstanceVideo()->template GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshVideoPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            SMMemoryPool::GetInstanceVideo()->template GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshVideoPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)this->m_SMIndex);
             }
         else
             {
             if (m_displayMeshPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayMeshItemPtr;
 
-            GetMemoryPool()->template GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);            
+            GetMemoryPool()->template GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)this->m_SMIndex);            
             }
         
         return cachedDisplayMeshItemPtr;
@@ -593,17 +593,17 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         
         if(!isVideoMemory)
             {
-            SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+            SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
             if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
 
-            GetMemoryPool()->template GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            GetMemoryPool()->template GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)this->m_SMIndex);
             }
         else
             {
-            SMMemoryPoolItemId displayTexVideoPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureVideo(texID);
+            SMMemoryPoolItemId displayTexVideoPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->GetPoolIdForTextureVideo(texID);
             if (displayTexVideoPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
 
-            SMMemoryPool::GetInstanceVideo()->template GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexVideoPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            SMMemoryPool::GetInstanceVideo()->template GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexVideoPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)this->m_SMIndex);
             }
 
         return cachedDisplayDataItemPtr;
@@ -616,17 +616,17 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                 
         if (!isVideoMemory)
             {
-            SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+            SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
             if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
 
-            GetMemoryPool()->template GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            GetMemoryPool()->template GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t) this->m_SMIndex);
             }
         else
             {
-            SMMemoryPoolItemId displayTexVideoPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureVideo(texID);
+            SMMemoryPoolItemId displayTexVideoPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->GetPoolIdForTextureVideo(texID);
             if (displayTexVideoPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
 
-            SMMemoryPool::GetInstanceVideo()->template GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexVideoPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            SMMemoryPool::GetInstanceVideo()->template GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexVideoPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t) this->m_SMIndex);
             }
 
         return cachedDisplayDataItemPtr;
@@ -634,8 +634,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
      uint64_t GetSingleTextureID()
          {
-         if (!IsLoaded()) Load();
-         return m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID;
+         if (!this->IsLoaded()) Load();
+         return this->m_nodeHeader.m_textureID.IsValid() && this->m_nodeHeader.m_textureID.m_integerID != -1 ? this->m_nodeHeader.m_textureID.m_integerID : this->GetBlockID().m_integerID;
          }
 
      bool GetAllDisplayTextures(bvector<RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>>& textures, bool isInVRAM=false)
@@ -662,7 +662,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
          else
              {
 #endif
-             if (IsTextured())
+             if (this->IsTextured())
              {
                  auto tex = GetSingleDisplayTexture(isInVRAM);
                  if (!tex.IsValid()) return false;
@@ -681,12 +681,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     
         if(!isVideoMemory)
             { 
-            GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)this->m_SMIndex);
             m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
         else
             { 
-            SMMemoryPool::GetInstanceVideo()->RemoveItem(m_displayMeshVideoPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            SMMemoryPool::GetInstanceVideo()->RemoveItem(m_displayMeshVideoPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)this->m_SMIndex);
             m_displayMeshVideoPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }        
         }
@@ -718,7 +718,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void RemoveDisplayData()
         {                                
-        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)this->m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;        
         }   
 
@@ -766,16 +766,16 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {
         RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> poolMemVectorItemPtr;
 
-        if (!IsTextured())
+        if (!this->IsTextured())
             return poolMemVectorItemPtr;
                             
-        if (!m_SMIndex->IsFromCesium())
+        if (!this->m_SMIndex->IsFromCesium())
             {
-            poolMemVectorItemPtr = this->template GetMemoryPoolItem<ISMUVCoordsDataStorePtr, DPoint2d, SMMemoryPoolVectorItem<DPoint2d>, SMStoredMemoryPoolVectorItem<DPoint2d>>(m_uvCoordsPoolItemId, SMStoreDataType::UvCoords, GetBlockID());
+            poolMemVectorItemPtr = this->template GetMemoryPoolItem<ISMUVCoordsDataStorePtr, DPoint2d, SMMemoryPoolVectorItem<DPoint2d>, SMStoredMemoryPoolVectorItem<DPoint2d>>(m_uvCoordsPoolItemId, SMStoreDataType::UvCoords, this->GetBlockID());
             }
         else
             {
-            SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = this->template GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
+            SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = this->template GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(this->m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, this->GetBlockID()).get();
             bool result = poolMemMultiItemsPtr->template GetItem<DPoint2d>(poolMemVectorItemPtr, SMStoreDataType::UvCoords);
             assert(result == true);
             }
@@ -827,7 +827,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             }
         else if (!IsLeaf())
             {
-            for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
+            for (size_t indexNodes = 0; indexNodes < this->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
                 {
                 if (m_apSubNodes[indexNodes] != nullptr)
                     {
@@ -1012,19 +1012,19 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         public:
             SMIndexNodeVirtual(const SMMeshIndexNode<POINT, EXTENT>* rParentNode) : SMMeshIndexNode<POINT, EXTENT>(rParentNode->GetSplitTreshold(), rParentNode->GetNodeExtent(), const_cast<SMMeshIndexNode<POINT, EXTENT>*>(rParentNode))
             {
-            m_nodeHeader.m_contentExtent = rParentNode->m_nodeHeader.m_contentExtent;
-            m_nodeHeader.m_nodeExtent = rParentNode->m_nodeHeader.m_nodeExtent;
-            m_nodeHeader.m_numberOfSubNodesOnSplit = rParentNode->m_nodeHeader.m_numberOfSubNodesOnSplit;
-            m_nodeHeader.m_totalCount = rParentNode->m_nodeHeader.m_totalCount;
-            m_nodeHeader.m_IsLeaf = true;
-            m_nodeHeader.m_IsBranched = false;
-            m_nodeHeader.m_IsUnSplitSubLevel = true;
-            m_nodeHeader.m_contentExtentDefined = true;
+            this->m_nodeHeader.m_contentExtent = rParentNode->m_nodeHeader.m_contentExtent;
+            this->m_nodeHeader.m_nodeExtent = rParentNode->m_nodeHeader.m_nodeExtent;
+            this->m_nodeHeader.m_numberOfSubNodesOnSplit = rParentNode->m_nodeHeader.m_numberOfSubNodesOnSplit;
+            this->m_nodeHeader.m_totalCount = rParentNode->m_nodeHeader.m_totalCount;
+            this->m_nodeHeader.m_IsLeaf = true;
+            this->m_nodeHeader.m_IsBranched = false;
+            this->m_nodeHeader.m_IsUnSplitSubLevel = true;
+            this->m_nodeHeader.m_contentExtentDefined = true;
             }
 
         virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true) override
             {
-            return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->GetGraphPtr(loadGraph);
+            return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(this->GetParentNodePtr().GetPtr())->GetGraphPtr(loadGraph);
             };
         virtual bool IsVirtualNode() const override
             {
@@ -1033,7 +1033,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         
         virtual RefCountedPtr<SMMemoryPoolVectorItem<POINT>> GetPointsPtr(bool loadPts = true) override 
             {
-            return GetParentNodePtr()->GetPointsPtr(loadPts);
+            return this->GetParentNodePtr()->GetPointsPtr(loadPts);
             }        
 
         virtual bool Destroy() override

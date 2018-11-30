@@ -514,7 +514,6 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     Urlmon.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
-    $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)PCLWrapper.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
 	$(ContextSubpartsLibs)acute3dio.lib \
@@ -524,6 +523,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
     
+#    $(ContextSubpartsLibs)wastorage.lib \
 #    $(ContextSubpartsLibs)cpprest120_2_6.lib \
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
@@ -555,6 +555,9 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
 %elif defined (BUILD_USING_VS2015)
+    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
+%elif defined (BUILD_USING_VS2017)
     $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
 %endif

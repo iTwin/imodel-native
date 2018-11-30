@@ -118,13 +118,18 @@ void BatchIdMap::ToJson(Json::Value& value) const
 TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS)
     : m_batchIds(TileSource::None), m_centroid(tile.GetTileCenter()), m_tile(&tile), m_context(nullptr)
     {
+    m_centroid = DPoint3d::From(0, 0, 0);
     m_meshes = m_tile->GenerateMeshes();
+#if 0
+    // 1. CESIUM_RTC does not work when root tileset contains a non-identity transform
+    // 2. Point to point reprojection is not necessary
+    // 3. TODO: Must investigate the use of RTC_CENTER instead
     if (!m_meshes.empty())
         {
-        m_meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
-
         if (sourceGCS != nullptr && sourceGCS != destinationGCS && !destinationGCS->IsEquivalent(*sourceGCS))
             {
+            m_meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
+
             GeoPoint inLatLong, outLatLong;
             if (sourceGCS->LatLongFromCartesian(inLatLong, m_centroid) != SUCCESS)
                 assert(false);
@@ -136,10 +141,12 @@ TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr source
 
         // Convert points to follow Y-up convention and translate to zero (avoids jittering for distant datasets)
         Transform transform = Transform::FromRowValues(1, 0, 0, -m_centroid.x,
-                                                       0, 0, 1, -m_centroid.z,
-                                                       0, -1, 0, m_centroid.y);
+                                                       0, 1, 0, -m_centroid.y,
+                                                       0, 0, 1, -m_centroid.z);
+        
         m_meshes[0]->ApplyTransform(transform);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -188,6 +195,11 @@ TileMeshList ScalableMeshTileNode::_GenerateMeshes(TileGeometry::NormalMode norm
     builder->AddPolyface(*meshP->GetPolyfaceQuery(), false);
 
     tileMeshes.push_back(builder->GetMesh());
+
+    for (auto& mesh : tileMeshes)
+        {
+        mesh->ApplyTransform(GetTransformFromDgn());
+        }
     return tileMeshes;
     }
 
@@ -278,8 +290,8 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
     auto bufferDataSize = bufferData.size() * sizeof(bufferData[0]);
     auto& view = (views[name] = Json::objectValue);
     view["buffer"] = "binary_glTF";
-    view["byteOffset"] = m_binaryData.size();
-    view["byteLength"] = bufferDataSize;
+    view["byteOffset"] = Json::Value(m_binaryData.size());
+    view["byteLength"] = Json::Value(bufferDataSize);
 
     size_t binaryDataSize = m_binaryData.size();
     m_binaryData.resize(binaryDataSize + bufferDataSize);
@@ -625,8 +637,8 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
 
     ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
-    rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+    rootNode["bufferViews"][bvImageId]["byteOffset"] = Json::Value(m_binaryData.size());
+    rootNode["bufferViews"][bvImageId]["byteLength"] = Json::Value(imageData.size());
 
     AddBinaryData(imageData.data(), imageData.size());
 
@@ -993,13 +1005,13 @@ void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const*
 
 
     bufferViews["buffer"] = "binary_glTF";
-    bufferViews["byteOffset"] = byteOffset;
-    bufferViews["byteLength"] = dataSize;
+    bufferViews["byteOffset"] = Json::Value(byteOffset);
+    bufferViews["byteLength"] = Json::Value(dataSize);
     bufferViews["target"] = GLTF_ARRAY_BUFFER;
 
     accessor["bufferView"] = bufferViewId;
     accessor["byteOffset"] = 0;
-    accessor["count"] = nAttributes;
+    accessor["count"] = Json::Value(nAttributes);
     accessor["type"] = accessorType;
 
     rootNode["bufferViews"][bufferViewId] = bufferViews;
@@ -1096,7 +1108,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     attr["attributes"]["POSITION"] = accPositionId;
 
     unsigned short qmin[3], qmax[3];
-    AddMeshVertexAttribute (rootNode, &mesh.Points().front().x, bvPositionId, accPositionId, 3, mesh.Points().size(), "VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x, &qmin[0], &qmax[0]);
+    AddMeshVertexAttribute (rootNode, &mesh.Points().front().x, bvPositionId, accPositionId, 3, mesh.Points().size(), (char*)"VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x, &qmin[0], &qmax[0]);
 
     if (!mesh.Params().empty())
         {
@@ -1108,7 +1120,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
             flippedUvs[i++] = DPoint2d::From (uv.x, 1.0 - uv.y);      // Needs work - flip textures rather than params.
 
         DRange3d        paramRange = DRange3d::From(flippedUvs, 0.0);
-        AddMeshVertexAttribute (rootNode, &flippedUvs.front().x, bvParamId, accParamId, 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
+        AddMeshVertexAttribute (rootNode, &flippedUvs.front().x, bvParamId, accParamId, 2, mesh.Params().size(), (char*)"VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
         }
 
 
@@ -1118,15 +1130,15 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         DRange3d        normalRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0); 
     
         attr["attributes"]["NORMAL"] = accNormalId;
-        AddMeshVertexAttribute (rootNode, &mesh.Normals().front().x, bvNormalId, accNormalId, 3, mesh.Normals().size(), "VEC3", quantizeNormals, &normalRange.low.x, &normalRange.high.x);
+        AddMeshVertexAttribute (rootNode, &mesh.Normals().front().x, bvNormalId, accNormalId, 3, mesh.Normals().size(), (char*)"VEC3", quantizeNormals, &normalRange.low.x, &normalRange.high.x);
         }
 
     rootNode["meshes"]["mesh_0"]["primitives"].append(attr);
 
     rootNode["bufferViews"][bvIndexId] = Json::objectValue;
     rootNode["bufferViews"][bvIndexId]["buffer"] = "binary_glTF";
-    rootNode["bufferViews"][bvIndexId]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bvIndexId]["byteLength"] = useShortIndices ? (shortIndices.size() * sizeof(uint16_t)) : (indices.size() * sizeof(uint32_t));
+    rootNode["bufferViews"][bvIndexId]["byteOffset"] = Json::Value(m_binaryData.size());
+    rootNode["bufferViews"][bvIndexId]["byteLength"] = Json::Value(useShortIndices ? (shortIndices.size() * sizeof(uint16_t)) : (indices.size() * sizeof(uint32_t)));
     rootNode["bufferViews"][bvIndexId]["target"] =  GLTF_ELEMENT_ARRAY_BUFFER;
 
     if (useShortIndices)
@@ -1139,8 +1151,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
         rootNode["bufferViews"][bvBatchId] = Json::objectValue;
         rootNode["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
-        rootNode["bufferViews"][bvBatchId]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
+        rootNode["bufferViews"][bvBatchId]["byteOffset"] = Json::Value(m_binaryData.size());
+        rootNode["bufferViews"][bvBatchId]["byteLength"] = Json::Value(nBatchIdBytes);
         rootNode["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
 
         AddBinaryData (batchIds.data(), nBatchIdBytes);
@@ -1148,7 +1160,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         rootNode["accessors"][accBatchId]["bufferView"] = bvBatchId;
         rootNode["accessors"][accBatchId]["byteOffset"] = 0;
         rootNode["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
-        rootNode["accessors"][accBatchId]["count"] = batchIds.size();
+        rootNode["accessors"][accBatchId]["count"] = Json::Value(batchIds.size());
         rootNode["accessors"][accBatchId]["type"] = "SCALAR";
         }
     
@@ -1178,13 +1190,13 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["accessors"][accIndexId]["bufferView"] = bvIndexId;
     rootNode["accessors"][accIndexId]["byteOffset"] = 0;
     rootNode["accessors"][accIndexId]["componentType"] = useShortIndices ? GLTF_UNSIGNED_SHORT : GLTF_UINT32;
-    rootNode["accessors"][accIndexId]["count"] = useShortIndices ? shortIndices.size() : indices.size();
+    rootNode["accessors"][accIndexId]["count"] = Json::Value(useShortIndices ? shortIndices.size() : indices.size());
     rootNode["accessors"][accIndexId]["type"] = "SCALAR";
 
     //AddMeshPointRange(tileData.m_json["accessors"][accPositionId], pointRange);
 
 
-    rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
+    rootNode["buffers"]["binary_glTF"]["byteLength"] = Json::Value(m_binaryData.size());
     }
 
 /*---------------------------------------------------------------------------------**//**

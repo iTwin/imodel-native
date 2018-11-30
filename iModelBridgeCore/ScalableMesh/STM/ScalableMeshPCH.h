@@ -16,6 +16,10 @@
 #include <amp.h> 
 #include <amp_math.h>
 #endif
+
+#ifdef __APPLE__
+	#define _VA_LIST
+#endif	
 #include <thread>
 #include <atomic>
 #include <mutex> 
@@ -24,7 +28,9 @@
 #endif
 #include <map>
 
-
+#ifdef __APPLE__
+	#define TARGET_CPU_ARM64 1
+#endif	
 #include <BeSQLite/BeSQLite.h>
 #include <ScalableMesh/Foundations/Definitions.h>
 #include <ScalableMesh/GeoCoords/Definitions.h>

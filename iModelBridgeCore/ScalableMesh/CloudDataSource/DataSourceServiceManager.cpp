@@ -32,15 +32,17 @@ DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager
         return status;
 
 
+#ifdef USE_WASTORAGE
     if((service = new DataSourceServiceAzure(manager, DataSourceService::ServiceName(L"DataSourceServiceAzure"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
 
     if ((status = addService(service)).isFailed())
         return status;
+#endif
 
     if ((service = new DataSourceServiceAzureCURL(manager, DataSourceService::ServiceName(L"DataSourceServiceAzureCURL"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-
+    
     if ((status = addService(service)).isFailed())
         return status;
 
@@ -89,7 +91,7 @@ DataSourceAccount * DataSourceServiceManager::getAccount(const DataSourceAccount
 {
     DataSourceAccount   * account;
 
-    ApplyFunction getAccount = [this, accountName, &account]( ItemMap::iterator it) -> bool
+    ApplyFunction getAccount = [accountName, &account]( ItemMap::iterator it) -> bool
     {
         DataSourceService *service = it->second;        
         if (service)

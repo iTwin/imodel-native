@@ -6,7 +6,7 @@
 |       $Date: 2012/02/22 14:21:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -378,6 +378,11 @@ template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const b
           typename InitAccumulateFnT, typename AccumulateFnT, typename StatT, typename StreamT>
 struct FileAnalysisStrategy : private FileAnalysisStrategyBase<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES, StatT, StreamT>
     {
+    typedef FileAnalysisStreamTrait<StreamT>
+        StreamTraitType;
+    typedef typename StreamTraitType::OffsetType
+        OffsetType;
+
 private:
     friend struct FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>;
 
@@ -391,7 +396,7 @@ private:
         {
         static_assert(1 < MAX_SAMPLE_QTY, "");
 
-        StatT cummuledStats = RunOnSingleSample(fileStream, fileStatistics, fileSampleBuffer, initAccumulateFn, stats, success);
+        StatT cummuledStats = FileAnalysisStrategy::RunOnSingleSample(fileStream, fileStatistics, fileSampleBuffer, initAccumulateFn, stats, success);
 
         if (!cummuledStats)
             return cummuledStats;
@@ -422,7 +427,7 @@ private:
                 break;
                 }
 
-            cummuledStats = RunOnSingleSample(fileStream, fileStatistics, fileSampleBuffer, accumulateFn, cummuledStats, success);
+            cummuledStats = FileAnalysisStrategy::RunOnSingleSample(fileStream, fileStatistics, fileSampleBuffer, accumulateFn, cummuledStats, success);
 
             if (!cummuledStats)
                 break;

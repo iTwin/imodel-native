@@ -28,12 +28,12 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture)
+void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const Transform& transform, bvector<Byte>& outData, bool outputTexture)
     {
     size_t siblingIndex = 0;
     TileNodeP parent = nullptr;
-    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), Transform::FromIdentity(), siblingIndex, parent, clips, coverageID, isClipBoundary, outputTexture);
-    TilePublisher publisher(*tileNode, sourceGCS, destinationGCS);
+    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), transform, siblingIndex, parent, clips, coverageID, isClipBoundary, outputTexture);
+    TilePublisher publisher(*tileNode, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/);
     publisher.Publish(outData);
     }
 
@@ -54,9 +54,9 @@ void SMCesiumPublisher::_ExtractPublishMasterHeader(IScalableMeshPtr smPtr, Json
     auto& sm = static_cast<ScalableMesh<DPoint3d>&>(*smPtr);
     auto const& index = sm.GetMainIndexP();
     smJsonMasterHeader["Balanced"] = index->IsBalanced();
-    smJsonMasterHeader["SplitTreshold"] = index->GetSplitTreshold();
-    smJsonMasterHeader["Depth"] = index->GetDepth();
-    smJsonMasterHeader["MeshDataDepth"] = index->GetTerrainDepth();
+    smJsonMasterHeader["SplitTreshold"] = Json::Value(index->GetSplitTreshold());
+    smJsonMasterHeader["Depth"] = Json::Value(index->GetDepth());
+    smJsonMasterHeader["MeshDataDepth"] = Json::Value(index->GetTerrainDepth());
     smJsonMasterHeader["IsTerrain"] = index->IsTerrain();
     smJsonMasterHeader["DataResolution"] = index->GetResolution();
     smJsonMasterHeader["IsTextured"] = (uint32_t)index->IsTextured();

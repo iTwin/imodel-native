@@ -22,7 +22,9 @@ public:
     CLOUD_EXPORT    DataSourceStatus    testDataSources              (void);
 
     CLOUD_EXPORT    DataSourceStatus    testDataSourceFile           (void);
+#ifdef USE_WASTORAGE
     CLOUD_EXPORT    DataSourceStatus    testDataSourceAzure          (void);
+#endif
 
 };
 

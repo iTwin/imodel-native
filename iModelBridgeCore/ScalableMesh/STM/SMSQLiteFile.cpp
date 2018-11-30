@@ -227,7 +227,7 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 #ifndef VANCOUVER_API
     if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
 #else
-    if (result != BE_SQLITE_ERROR_FileNotFound)
+    if (result != BE_SQLITE_ERROR_FileNotFound && result != BE_SQLITE_ERROR)
         {
         Db::OpenParams params = Db::OpenParams(openReadOnly ? READONLY : READWRITE);
         result = m_database->IsProfileVersionUpToDate(params);
@@ -321,7 +321,7 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
             if (!BeFileName::DoesPathExist(dirname))
                 BeFileName::CreateNewDirectory(dirname.GetWCharCP());
 #endif
-            result = smSQLiteFile->Create(Utf8String(filename.c_str()).c_str(), SQLDatabaseType::SM_DIFFSETS_FILE);
+            result = smSQLiteFile->Create(Utf8String(filename.c_str()).c_str(), type);
             BeAssert(result == true); // Failed to create sister file
 
             status = result ? SUCCESS : ERROR;
