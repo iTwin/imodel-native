@@ -11,11 +11,27 @@
     <None Include="BEKeychainItem.m" />
     <None Include="BeSecurity.mke" />
     <None Include="BeSecurityCompileOptions.mki" />
+    <None Include="libsrc\KeychainItemWrapper\KeychainItemWrapper.m" />
+    <None Include="nonport\android\BeSecurity\android.iml" />
+    <None Include="nonport\android\BeSecurity\AssertBeSecurityPolicy.mki" />
+    <None Include="nonport\android\BeSecurity\BeSecurity.iml" />
+    <None Include="nonport\android\BeSecurity\BeSecurityMavenArchive.mke" />
+    <None Include="nonport\android\BeSecurity\BeSecurityProject\build.gradle" />
+    <None Include="nonport\android\BeSecurity\BeSecurityProject\src\main\java\com\bentley\android\security\BeSecurity.java" />
+    <None Include="nonport\android\BeSecurity\BeSecurityProject\src\main\java\com\bentley\android\security\KeyStoreCipher.java" />
+    <None Include="nonport\android\BeSecurity\BeSecurityProject\src\main\java\com\bentley\android\security\KeyStorePre18.java" />
+    <None Include="nonport\android\BeSecurity\build.gradle" />
+    <None Include="nonport\android\BeSecurity\gradle.properties" />
+    <None Include="nonport\android\BeSecurity\gradlew" />
+    <None Include="nonport\android\BeSecurity\gradlew.bat" />
+    <None Include="nonport\android\BeSecurity\local.properties" />
+    <None Include="nonport\android\BeSecurity\settings.gradle" />
     <None Include="prewire.mke" />
     <None Include="SecureStoreIos.mm" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BEKeychainItem.h" />
+    <ClInclude Include="libsrc\KeychainItemWrapper\KeychainItemWrapper.h" />
     <ClInclude Include="PublicAPI\BeSecurity\BeSecurity.h" />
     <ClInclude Include="PublicAPI\BeSecurity\SecureStore.h" />
   </ItemGroup>
@@ -23,9 +39,16 @@
     <Xml Include="BeSecurity.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
+    <Xml Include="nonport\android\BeSecurity\BeSecurityProject\src\main\AndroidManifest.xml" />
+    <Xml Include="nonport\android\BeSecurity\BeSecurityProject\src\main\res\values\strings.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SecureStore.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="nonport\android\BeSecurity\BeSecurityProject\src\main\res\drawable-hdpi\ic_launcher.png" />
+    <Image Include="nonport\android\BeSecurity\BeSecurityProject\src\main\res\drawable-ldpi\ic_launcher.png" />
+    <Image Include="nonport\android\BeSecurity\BeSecurityProject\src\main\res\drawable-mdpi\ic_launcher.png" />
   </ItemGroup>
   <PropertyGroup>
     <ShowAllFiles>true</ShowAllFiles>
