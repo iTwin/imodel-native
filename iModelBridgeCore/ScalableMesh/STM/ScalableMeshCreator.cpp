@@ -756,7 +756,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
             return ERROR;
             }
 
-       
+         #ifndef LINUX_SCALABLEMESH_BUILD      
         ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
@@ -782,6 +782,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
         dataStore->SetProjectFilesPath(newFileNameDir);
         pDataIndex->SetSingleFile(false);
         pDataIndex->SetGenerating(true);
+        #endif
 
        
         }

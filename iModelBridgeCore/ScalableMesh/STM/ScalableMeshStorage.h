@@ -205,7 +205,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
         m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
         m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
         
-        for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End() ; myFeature++)
+        for (typename ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End() ; myFeature++)
             {            
             const bool success = (*m_featureCallback)(myFeature->Begin(), myFeature->GetSize(), (DTMFeatureType)myFeature->GetType(), m_is3dData);
 
@@ -459,7 +459,7 @@ class ScalableMeshStorage : public IStorage
     virtual Import::ContentDescriptor       _CreateDescriptor             () const override
         {
         using Import::ContentDescriptor;
-        using Import::LayerDescriptor;
+        using Import::ILayerDescriptor;
 
         // TDORAY: Return more accurate data..
         return ContentDescriptor
@@ -565,7 +565,7 @@ class GenericStorage : public IStorage
     virtual Import::ContentDescriptor       _CreateDescriptor             () const override
         {
         using Import::ContentDescriptor;
-        using Import::LayerDescriptor;
+        using Import::ILayerDescriptor;
 
         // TDORAY: Return more accurate data..
         return ContentDescriptor
@@ -703,7 +703,7 @@ class ClipShapeStorage : public IStorage
     virtual Import::ContentDescriptor _CreateDescriptor() const override
         {
         using Import::ContentDescriptor;
-        using Import::LayerDescriptor;
+        using Import::ILayerDescriptor;
 
         // TDORAY: Return more accurate data..
         return ContentDescriptor

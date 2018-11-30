@@ -9,6 +9,12 @@
 #include "SMNodeGroup.h"
 #include "Stores\SMStreamingDataStore.h"
 
+#ifndef VANCOUVER_API
+#include <DgnPlatform\DesktopTools\ConfigurationManager.h>
+#else
+#include <DgnPlatform\Tools\ConfigurationManager.h>
+#endif
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 void PrepareClipsForSaveAs(ClipVectorPtr clips)
@@ -108,7 +114,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
 
     ++nbNodes;
 
-    static const uint64_t nbThreads = std::max((uint64_t)1, (uint64_t)(std::thread::hardware_concurrency() - 2));
+    static uint64_t nbThreads = std::max((uint64_t)1, (uint64_t)(std::thread::hardware_concurrency() - 2));
     static const uint64_t maxQueueSize = /*std::max((uint64_t)m_SMIndex->m_totalNumNodes, (uint64_t)*/30000;//);
 
     typedef SMNodeDistributor<IScalableMeshNodePtr> Distribution_Type;
@@ -116,6 +122,15 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
 
     if (node->GetLevel() == 0)
     {
+        WString cfgVarValueStr;
+        if (BSISUCCESS == ConfigurationManager::GetVariable(cfgVarValueStr, L"SMPUBLISH_NUM_THREADS"))
+            {
+            int nT = std::stoi(cfgVarValueStr.c_str());
+            if (nT >= 1) nbThreads = (uint64_t)nT;
+            }
+
+        //LOG.debugv("Publishing using [%I64d] threads", nbThreads);
+
         startTime = clock();
         bvector<DRange3d> ranges;
         bool allClipsAreMasks = true;
@@ -138,6 +153,11 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
         auto nodeDataSaver = [pi_pDataStore, ranges, allClipsAreMasks, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, progress, transform, outputTexture](IScalableMeshNodePtr& node)
         {
             if (progress != nullptr  && progress->IsCanceled()) return;
+
+            //std::wstringstream      threadIDStrStream;
+            //std::thread::id threadID = std::this_thread::get_id();
+            //threadIDStrStream << threadID;
+            //LOG.debugv("Processing node [%I64d] in thread %ls", node->GetNodeId(), threadIDStrStream.str().c_str());
 
             bool hasMSClips = false;
             for (auto const& range : ranges)
@@ -162,6 +182,10 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
 
                 if (!cesiumData.empty())
                     tileStore->StoreBlock(&cesiumData, cesiumData.size(), smPtNode->GetBlockID());
+                else
+                    {
+                    LOG.errorv("No Cesium 3DTiles data generated for node [%I64d]", nodeP->GetNodeId());
+                    }
                 
                 //// Store header
                 //pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
@@ -173,15 +197,12 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
             }
 
             node = nullptr;
+            ++nbProcessedNodes;
 
             if (progress != nullptr)
             {
                 // Report progress
-                static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(++nbProcessedNodes);
-            }
-            else
-            {
-                ++nbProcessedNodes;
+                static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(nbProcessedNodes);
             }
         };
         distributor = new Distribution_Type(nodeDataSaver, [](IScalableMeshNodePtr& node) {return true; }, nbThreads, maxQueueSize);
@@ -243,32 +264,41 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
     }
 
     if (node->GetLevel() == 0)
-    {
-        //distributor->Go();
-#ifdef PRINT_PUBLISH_3DTILES_INFO
-        std::cout << "\nTime to process tree: " << (clock() - startTime) / CLOCKS_PER_SEC << std::endl;
-#endif
-        while (progress != nullptr && !distributor->empty())
         {
+        bool printStats = false;
+        WString cfgVarValueStr;
+        if (BSISUCCESS == ConfigurationManager::GetVariable(cfgVarValueStr, L"SMPUBLISH_PRINT_STATS"))
+            printStats = true;
+        if (printStats)
+            {
+            LOG.infov("Time to process tree: %f", (clock() - startTime) / CLOCKS_PER_SEC);
+            }
+        while (progress != nullptr && !distributor->empty())
+            {
             progress->UpdateListeners();
             if (progress->IsCanceled()) break;
-        }
+            }
         distributor = nullptr; // join queue threads
-#ifdef PRINT_PUBLISH_3DTILES_INFO
-        std::cout << "\nTime to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / nbThreads << std::endl;
-        std::cout << "Time to convert data: " << (double)convertTime / CLOCKS_PER_SEC / nbThreads << std::endl;
-        std::cout << "Time to store data: " << (double)storeTime / CLOCKS_PER_SEC / nbThreads << std::endl;
-        auto tTime = (double)(clock() - startTime) / CLOCKS_PER_SEC;
-        std::cout << "Total time: " << tTime << std::endl;
-        std::cout << "Number processed nodes: " << nbProcessedNodes << std::endl;
-        std::cout << "Total number of nodes: " << nbNodes << std::endl;
-        std::cout << "Convert speed (nodes/sec): " << nbProcessedNodes / tTime << std::endl;
-#endif
-    }
+        if (printStats)
+            {
+            auto tTime = (double)(clock() - startTime) / CLOCKS_PER_SEC;
+            LOG.infov("Time to load data: %f\n"
+                "Time to convert data : %f\n"
+                "Time to store data: %f\n"
+                "Total time: %f\n"
+                "Number processed nodes: %I64d\n"
+                "Total number of nodes: %I64d\n"
+                "Convert speed (nodes/sec): %f"
+                , (clock() - startTime) / CLOCKS_PER_SEC,
+                (double)convertTime.load() / CLOCKS_PER_SEC / nbThreads,
+                (double)storeTime.load() / CLOCKS_PER_SEC / nbThreads,
+                tTime, nbProcessedNodes.load(), nbNodes.load(), nbProcessedNodes.load() / tTime);
+            }
+        }
     return true;
 }
 
-StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& path, TransformCR transform, ClipVectorPtr clips, const uint64_t& coverageID, const GeoCoordinates::BaseGCSCPtr sourceGCS, bool outputTexture,ScalableMeshProgress* progress)
+StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& path, TransformCR ecefTransform, TransformCR smTransform, ClipVectorPtr clips, const uint64_t& coverageID, const GeoCoordinates::BaseGCSCPtr sourceGCS, bool outputTexture,ScalableMeshProgress* progress)
 {
     if (progress != nullptr)
     {
@@ -297,7 +327,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
             }
         }
     }
-
+        #ifndef LINUX_SCALABLEMESH_BUILD
     // Create store for 3DTiles output
     typedef SMStreamingStore<DRange3d>::SMStreamingSettings StreamingSettingsType;
     SMStreamingStore<DRange3d>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
@@ -313,7 +343,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
         SMStreamingStore<DRange3d>::Create(settings, nullptr)
 #endif
     );
-
+#endif
     // Register 3DTiles index to the store
     pDataStore->Register(index->m_smID);
 
@@ -337,18 +367,16 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     strategy->SetOldMasterHeader(oldMasterHeader);
     strategy->SetClipInfo(coverageID, isClipBoundary);
     //strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
-    strategy->SetRootTransform(transform);
+    strategy->SetRootTransform(ecefTransform);
     strategy->AddGroup(rootNodeGroup.get());
     index->SetRootNodeGroup(rootNodeGroup);
 
-    DRange3d smExtent = index->GetIndexExtent();
+    strategy->SetTransform(smTransform);
 
-    DPoint3d center = DPoint3d::From((smExtent.low.x + smExtent.high.x) *0.5, (smExtent.low.y + smExtent.high.y) *0.5, (smExtent.low.z + smExtent.high.z) *0.5);
-    Transform t = Transform::From(center);
-    t.InverseOf(t);
+    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+    NativeLogging::LoggingConfig::SetSeverity(L"SMPublisher", NativeLogging::LOG_TRACE);
 
-    strategy->SetTransform(t);
-
+    //LOG.debug("Publishing index...");
 
     // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
     std::thread saveGroupsThread([index, strategy, rootNodeGroup, progress]()
@@ -390,7 +418,9 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
 
     PrepareClipsForSaveAs(clips);
 
-    Publish3DTile(nodeP, pDataStore, t, clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
+    //LOG.debug("Publishing nodes...");
+
+    Publish3DTile(nodeP, pDataStore, smTransform, clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
 
     if (progress != nullptr) progress->Progress() = 1.0f;
 
@@ -401,7 +431,7 @@ bool s_stream_from_wsg;
 bool s_stream_from_grouped_store;
 bool s_is_virtual_grouping;
 
-StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const Transform& transform, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
+StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const Transform& tileToECEF, const Transform& dbToTile, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
     {
     if (!meshP.IsValid()) return ERROR;
 
@@ -510,11 +540,10 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     if (status != SUCCESS || textureInfo->IsUsingBingMap())
         outputTexture = false;
 
-    Transform t = transform;
-    t.FromProduct(meshP->GetReprojectionTransform(), t);
+    Transform smTransform = meshP->GetReprojectionTransform();
+    smTransform = smTransform.FromProduct(dbToTile, smTransform);
 
-
-    status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, t, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
+    status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, tileToECEF, smTransform, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
     SMNodeGroupPtr rootTileset = mesh->GetMainIndexP()->GetRootNodeGroup();
     BeAssert(rootTileset.IsValid()); // something wrong in the publish
 
@@ -547,7 +576,7 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
         }
 StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
     {
-    return IScalableMeshSaveAs::Generate3DTiles(meshP, outContainerName, Transform::FromIdentity(), outDatasetName, server, progress, clips, coverageId);
+    return IScalableMeshSaveAs::Generate3DTiles(meshP, outContainerName, Transform::FromIdentity(), Transform::FromIdentity(), outDatasetName, server, progress, clips, coverageId);
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

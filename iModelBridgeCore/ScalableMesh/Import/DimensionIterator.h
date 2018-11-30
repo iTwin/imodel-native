@@ -96,9 +96,9 @@ private:
         };
 
     HSTATICASSERT(sizeof(T) <= IncrementToNext);
-    static const OptimizationLevel      OPT_LEVEL = (sizeof(T) == IncrementToNext) ? OPTL_T_SZ_EQ_INCR
+   /* static const OptimizationLevel      OPT_LEVEL = (sizeof(T) == IncrementToNext) ? OPTL_T_SZ_EQ_INCR
                                                         : (0 == (IncrementToNext % sizeof(T))) ? OPTL_T_SZ_MULT_OF_INCR 
-                                                                : OPTL_NONE;
+                                                                : OPTL_NONE;*/
 
     static const size_t                 TypedIncrementToNext = IncrementToNext/sizeof(T);
 
@@ -123,55 +123,62 @@ private:
     bool                                LessThan                           (const typename super_class::rconst_iterator_t&    pi_rRight) const {return m_pCurrent < pi_rRight.m_pCurrent;}
 
 
-    template <OptimizationLevel OptLevel>
-    static typename super_class::difference_type              ComputeDistance                    (T*                          pi_pTo,
+    template <class U = T>
+    static typename std::enable_if<(sizeof(U) != IncrementToNext), typename super_class::difference_type>::type              ComputeDistance                    (T*                          pi_pTo,
                                                                             T*                          pi_pFrom)
         {
         return (reinterpret_cast<ByteType*>(pi_pTo) - reinterpret_cast<ByteType*>(pi_pFrom))/IncrementToNext;
         }
-    template <> static typename super_class::difference_type  ComputeDistance<OPTL_T_SZ_EQ_INCR> (T*                          pi_pTo,
+    
+    template <class U = T>
+    static typename std::enable_if<(sizeof(U) == IncrementToNext), typename super_class::difference_type>::type  ComputeDistance (T*                          pi_pTo,
                                                                             T*                          pi_pFrom)
         {
         return pi_pTo - pi_pFrom;
         }
 
 
-    template <OptimizationLevel OptLevel>
-    static void                         Increment                          (T*&                         pi_rpCurrent)
+    template <class U = T>
+    static typename std::enable_if<(sizeof(U) != IncrementToNext && (0 != (IncrementToNext % sizeof(U)))),void>::type                       Increment                          (T*&                         pi_rpCurrent)
         {
         reinterpret_cast<ByteType*&>(pi_rpCurrent) += IncrementToNext;
         }
-    template <> static void             Increment<OPTL_T_SZ_MULT_OF_INCR>  (T*&                         pi_rpCurrent)
+    template <class U = T>
+    static typename std::enable_if<(0 == (IncrementToNext % sizeof(U))),void>::type      Increment (T*&                         pi_rpCurrent)
         {
         pi_rpCurrent += TypedIncrementToNext;
         }
-    template <> static void             Increment<OPTL_T_SZ_EQ_INCR>       (T*&                         pi_rpCurrent)
+    template <class U = T>
+    static typename std::enable_if<(sizeof(U) == IncrementToNext),void>::type               Increment       (T*&                         pi_rpCurrent)
         {
         ++pi_rpCurrent;
         }
 
-    template <OptimizationLevel OptLevel>
-    static void                         Decrement                          (T*&                         pi_rpCurrent)
+    template <class U = T>
+    static typename std::enable_if<(sizeof(U) != IncrementToNext && (0 != (IncrementToNext % sizeof(U)))),void>::type                        Decrement                          (T*&                         pi_rpCurrent)
         {
         reinterpret_cast<ByteType*&>(pi_rpCurrent) -= IncrementToNext;
         }
-    template <> static void             Decrement<OPTL_T_SZ_MULT_OF_INCR>  (T*&                         pi_rpCurrent)
+    template <class U = T>
+    static typename std::enable_if<(0 == (IncrementToNext % sizeof(U))),void>::type  Decrement (T*&                         pi_rpCurrent)
         {
         pi_rpCurrent += TypedIncrementToNext;
         }
-    template <> static void             Decrement<OPTL_T_SZ_EQ_INCR>       (T*&                         pi_rpCurrent)
+    template <class U = T>
+    static typename std::enable_if<(sizeof(U) == IncrementToNext),void>::type           Decrement       (T*&                         pi_rpCurrent)
         {
         ++pi_rpCurrent;
         }
 
 
-    template <OptimizationLevel OptLevel>
-    static void                         Advance                            (T*&                         pi_rpCurrent,
+    template <class U = T>
+    static typename std::enable_if<(sizeof(U) != IncrementToNext), typename super_class::difference_type>::type          Advance                            (T*&                         pi_rpCurrent,
                                                                             typename super_class::difference_type             pi_Offset)
         {
         reinterpret_cast<ByteType*&>(m_pCurrent) += (IncrementToNext*pi_Offset);
         }
-    template <> static void             Advance<OPTL_T_SZ_EQ_INCR>         (T*&                         pi_rpCurrent,
+    template <class U = T>
+    static typename std::enable_if<(sizeof(U) == IncrementToNext), typename super_class::difference_type>::type            Advance         (T*&                         pi_rpCurrent,
                                                                             typename super_class::difference_type             pi_Offset)
         {
         m_pCurrent += pi_Offset;
