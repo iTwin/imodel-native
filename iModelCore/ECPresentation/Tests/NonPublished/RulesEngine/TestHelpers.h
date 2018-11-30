@@ -653,18 +653,18 @@ private:
     NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parent) const
         {
         NavNodesProviderPtr provider;
+        RulesPreprocessor preprocessor(context.GetConnections(), context.GetConnection(), context.GetRuleset(),
+            context.GetLocale(), context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
         if (nullptr == parent)
             {
-            RulesPreprocessor::RootNodeRuleParameters params(context.GetConnections(), context.GetConnection(), context.GetRuleset(), TargetTree_MainTree,
-                context.GetLocale(), context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
-            RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
+            RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
+            RootNodeRuleSpecificationsList specs = preprocessor.GetRootNodeSpecifications(params);
             provider = MultiSpecificationNodesProvider::Create(context, specs);
             }
         else
             {
-            RulesPreprocessor::ChildNodeRuleParameters params(context.GetConnections(), context.GetConnection(), *parent, context.GetRuleset(), TargetTree_MainTree, 
-                context.GetLocale(), context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
-            ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
+            RulesPreprocessor::ChildNodeRuleParameters params(*parent, TargetTree_MainTree);
+            ChildNodeRuleSpecificationsList specs = preprocessor.GetChildNodeSpecifications(params);
             provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
         return provider;
