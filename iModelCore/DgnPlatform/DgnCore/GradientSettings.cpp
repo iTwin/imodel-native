@@ -501,7 +501,7 @@ GradientSymb::GradientSymb(ThematicGradientSettingsR settings) : m_thematicSetti
         auto&   schemeKeys = s_keys[(uint32_t) settings.GetColorScheme()];
 
         m_mode = Mode::Thematic;
-        m_nKeys = 2 + static_cast<uint32_t>(schemeKeys.size());
+        m_nKeys = static_cast<uint32_t>(schemeKeys.size());
     
         for (size_t i=0; i<schemeKeys.size(); i++)
             {
