@@ -284,10 +284,10 @@ TEST_F(MultiBridgeTests, MergedDefinitions)
     getElementsInModel(mCategories, *db, mDefs.m_definitionModelId, "bis.Category");
     getElementsInModel(rCategories, *db, rDefs.m_definitionModelId, "bis.Category");
 
-    EXPECT_TRUE (isCodeValueInList(mCategories, "MasterLevel"))   << "Levels should be merged by name into the dictionary model";
-    EXPECT_TRUE (isCodeValueInList(mCategories, "ReferenceLevel"))<< "Levels should be merged by name into the dictionary model";
+    EXPECT_TRUE (isCodeValueInList(commonCats,  "MasterLevel"))   << "Levels should be merged by name into the dictionary model";
     EXPECT_FALSE(isCodeValueInList(mCategories, "MasterLevel"));
     EXPECT_FALSE(isCodeValueInList(rCategories, "MasterLevel"));
+    EXPECT_TRUE (isCodeValueInList(commonCats,  "ReferenceLevel"))<< "Levels should be merged by name into the dictionary model";
     EXPECT_FALSE(isCodeValueInList(rCategories, "ReferenceLevel"));
     EXPECT_FALSE(isCodeValueInList(mCategories, "ReferenceLevel"));
     EXPECT_TRUE (isCodeValueInList(mCategories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
