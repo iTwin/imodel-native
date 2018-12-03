@@ -1,0 +1,93 @@
+﻿<Window x:Class="ORDBridgeGUI.View.BridgeGUIView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ORDBridgeGUI.View"
+        xmlns:vm="clr-namespace:ORDBridgeGUI.ViewModel"
+        xmlns:controls="clr-namespace:ORDBridgeGUI.Controls"
+        xmlns:converters="clr-namespace:ORDBridgeGUI.Converters"
+        xmlns:p = "clr-namespace:ORDBridgeGUI.Properties"
+        mc:Ignorable="d"
+        Icon="pack://application:,,,/Images/civil_review.ico"
+        Title="Civil iModel Bridge Publisher" Height="500" Width="800" ResizeMode="NoResize">
+
+    <Grid>
+        <Grid.Resources>
+            <converters:ComparisonConverter x:Key="EnumConverter"/>
+            <converters:IsOtherRootModelConverter x:Key="RootModelConverter"/>
+            <converters:BooleanToVisibilityConverter x:Key="BoolVisibilityConverter"/>
+        </Grid.Resources>
+
+        <Grid>
+            <RadioButton Content="{x:Static p:Resources.LABEL_PublishLocal}" Name="rbLocal" IsChecked="{Binding Path=SelectedPublisher, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static vm:PublisherType.Local}}" HorizontalAlignment="Left" Margin="225,24,0,0" VerticalAlignment="Top" />
+            <RadioButton Content="{x:Static p:Resources.LABEL_PublishToIModelHub}" Name="rbHub" IsChecked="{Binding Path=SelectedPublisher, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static vm:PublisherType.IModelHub}}" HorizontalAlignment="Left" Margin="476,24,0,0" VerticalAlignment="Top"/>
+        </Grid>
+
+        <Label Content="{x:Static p:Resources.LABEL_INPUT}" HorizontalAlignment="Left" Margin="93,73,0,0" VerticalAlignment="Top" />
+        <AdornerDecorator HorizontalAlignment="Left" Height="23" Margin="162,73,0,0"  VerticalAlignment="Top" Width="501"  >
+            <TextBox Text="{Binding Path=Input}" VerticalContentAlignment="Center">
+                <controls:WatermarkService.Watermark>
+                    <TextBlock Text="{x:Static p:Resources.PLACEHOLDER_Input}" />
+                </controls:WatermarkService.Watermark>
+            </TextBox>
+        </AdornerDecorator>
+        <Button Content="{x:Static p:Resources.BUTTONLABEL_Browse}" Command="{Binding SelectFileCommand}" ToolTip="{x:Static p:Resources.TOOLTIP_Input}" HorizontalAlignment="Left" Margin="680,73,0,0" VerticalAlignment="Top" Width="75" Height="23"/>
+
+        <Label Content="{x:Static p:Resources.LABEL_Output}" IsEnabled="{Binding IsChecked, ElementName=rbLocal}" HorizontalAlignment="Left" Margin="52,111,0,0" VerticalAlignment="Top" Width="79"/>
+        <!--<TextBox Text="{Binding Path=Output}" IsEnabled="{Binding IsChecked, ElementName=rbLocal}" HorizontalAlignment="Left" Height="23" Margin="162,111,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="501" RenderTransformOrigin="0.434,-0.254" />-->
+        <AdornerDecorator HorizontalAlignment="Left" Height="23" Margin="162,111,0,0"   VerticalAlignment="Top" Width="501"  >
+            <TextBox Text="{Binding Path=Output}" IsEnabled="{Binding IsChecked, ElementName=rbLocal}" Margin="0,0,-0.2,-0.8" VerticalContentAlignment="Center">
+                <controls:WatermarkService.Watermark>
+                    <TextBlock Text="{x:Static p:Resources.PLACEHOLDER_Output}" />
+                </controls:WatermarkService.Watermark>
+            </TextBox>
+        </AdornerDecorator>
+        <Button Content="{x:Static p:Resources.BUTTONLABEL_SaveAs}" Command="{Binding SelectOutDirCommand}" ToolTip="{x:Static p:Resources.TOOLTIP_Output}" HorizontalAlignment="Left" Margin="680,113,0,0" VerticalAlignment="Top" Width="75" Height="23"/>
+
+        <Label Content="{x:Static p:Resources.LABEL_ConnectProjNum}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" HorizontalAlignment="Left" Margin="13,158,0,0" VerticalAlignment="Top" />
+        <!--<TextBox Text="{Binding Path=ConnectProject}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" HorizontalAlignment="Left" Height="23" Margin="162,158,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="501" RenderTransformOrigin="0.434,-0.254" />-->
+        <AdornerDecorator  HorizontalAlignment="Left" Height="23" Margin="162,158,0,0" VerticalAlignment="Top" Width="501" >
+            <TextBox Text="{Binding Path=ConnectProject}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" VerticalContentAlignment="Center">
+                <controls:WatermarkService.Watermark>
+                    <TextBlock Text="{x:Static p:Resources.PLACEHOLDER_ConnectProjNum}" />
+                </controls:WatermarkService.Watermark>
+            </TextBox>
+        </AdornerDecorator>
+
+        <Label Content="{x:Static p:Resources.LABEL_IModelHubOutput}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" HorizontalAlignment="Left" Margin="45,201,0,0" VerticalAlignment="Top" />
+        <!--<TextBox Text="{Binding Path=ConnectOutput}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" HorizontalAlignment="Left" Height="23" Margin="162,201,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="501" RenderTransformOrigin="0.434,-0.254" />-->
+        <AdornerDecorator HorizontalAlignment="Left" Height="23" Margin="162,201,0,0" VerticalAlignment="Top" Width="501" >
+            <TextBox Text="{Binding Path=ConnectOutput}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" VerticalContentAlignment="Center">
+                <controls:WatermarkService.Watermark>
+                    <TextBlock Text="{x:Static p:Resources.PLACEHOLDER_IModelHubOutput}" />
+                </controls:WatermarkService.Watermark>
+            </TextBox>
+        </AdornerDecorator>
+
+        <Label Content="{x:Static p:Resources.LABEL_ImsUsername}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" HorizontalAlignment="Left" Margin="41,244,0,0" VerticalAlignment="Top" />
+        <!--<TextBox Text="{Binding Path=ImsUsername}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" HorizontalAlignment="Left" Height="23" Margin="162,247,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="501" RenderTransformOrigin="0.434,-0.254" />-->
+        <AdornerDecorator HorizontalAlignment="Left" Height="23" Margin="162,247,0,0" VerticalAlignment="Top" Width="501"  >
+            <TextBox Text="{Binding Path=ImsUsername}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" VerticalContentAlignment="Center">
+                <controls:WatermarkService.Watermark>
+                    <TextBlock Text="{x:Static p:Resources.PLACEHOLDER_ImsUsername}" />
+                </controls:WatermarkService.Watermark>
+            </TextBox>
+        </AdornerDecorator>
+
+        <Label Content="{x:Static p:Resources.LABEL_ImsPW}" IsEnabled="{Binding IsChecked, ElementName=rbHub}" HorizontalAlignment="Left" Margin="43,290,0,0" VerticalAlignment="Top"/>
+        <PasswordBox Name="ImsPassword" IsEnabled="{Binding IsChecked, ElementName=rbHub}" HorizontalAlignment="Left" Margin="162,292,0,0" VerticalAlignment="Top" Width="501" Height="23" />
+
+        <Label Content="{x:Static p:Resources.LABEL_Workspace}" HorizontalAlignment="Left" Margin="59,330,0,0" VerticalAlignment="Top" />
+        <ComboBox ItemsSource="{Binding Path=WorkspaceEntries}" SelectedValue="{Binding Path=SelectedWorkspace}" HorizontalAlignment="Left" Margin="162,332,0,0" VerticalAlignment="Top" Width="501" IsReadOnly="False" Height="23" />
+        <Button Content="{x:Static p:Resources.BUTTONLABEL_Browse}" Command="{Binding SelectDgnWorkspaceCommand}" ToolTip="{x:Static p:Resources.TOOLTIP_Workspace}" HorizontalAlignment="Left" Margin="680,333,0,0" VerticalAlignment="Top" Width="75" Height="22"/>
+
+        <Label Content="{x:Static p:Resources.LABEL_RootModel}" HorizontalAlignment="Left" Margin="59,372,0,0" VerticalAlignment="Top" />
+        <ComboBox Name="RootModelComboBox" ItemsSource="{Binding Path=RootModelEntries}" SelectedValue="{Binding Path=SelectedRootModel}" HorizontalAlignment="Left" Margin="162,372,0,0" VerticalAlignment="Top" Width="100" IsReadOnly="False" Height="23" />
+        <TextBox Text="{Binding Path=RootModel}" Visibility="{Binding Path=SelectedRootModel, Converter={StaticResource BoolVisibilityConverter}, Mode=OneWay}" VerticalContentAlignment="Center" HorizontalAlignment="Left" Height="23" Margin="278,372,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="385" />
+
+        <Button Content="{x:Static p:Resources.BUTTONLABEL_Publish}" Command="{Binding RunBridgeCommand}" CommandParameter="{Binding ElementName=ImsPassword}" ToolTip="{x:Static p:Resources.TOOLTIP_Publish}" HorizontalAlignment="Left" Margin="575,416,0,0" VerticalAlignment="Top" Width="180" />
+
+    </Grid>
+
+</Window>
