@@ -2197,17 +2197,17 @@ void DgnPlatformLib::Host::TxnAdmin::DropTxnMonitor(TxnMonitor& monitor)
     {
     auto it = std::find(m_monitors.begin(), m_monitors.end(), &monitor);
     if (it != m_monitors.end())
-        *it = NULL; // removed from list by CallMonitors
+        *it = nullptr; // removed from list by CallMonitors
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <typename CALLER> void DgnPlatformLib::Host::TxnAdmin::CallMonitors(CALLER const& caller)
+void DgnPlatformLib::Host::TxnAdmin::CallMonitors(std::function<void(TxnMonitor&)> caller)
     {
     for (auto curr = m_monitors.begin(); curr!=m_monitors.end(); )
         {
-        if (*curr == NULL)
+        if (*curr == nullptr)
             curr = m_monitors.erase(curr);
         else
             {
@@ -2217,64 +2217,13 @@ template <typename CALLER> void DgnPlatformLib::Host::TxnAdmin::CallMonitors(CAL
         }
     }
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/13
-//=======================================================================================
-struct TxnAppliedCaller
-{
-    TxnManagerR m_mgr;
-    TxnAppliedCaller(TxnManagerR summary) : m_mgr(summary) {}
-    void operator()(TxnMonitorR monitor) const {monitor._OnAppliedChanges(m_mgr);}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/13
-//=======================================================================================
-struct TxnCommitCaller
-{
-    TxnManagerR m_mgr;
-    TxnCommitCaller(TxnManagerR mgr) : m_mgr(mgr) {}
-    void operator()(TxnMonitorR monitor) const {monitor._OnCommit(m_mgr);}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/13
-//=======================================================================================
-struct TxnCommittedCaller
-{
-    TxnManagerR m_mgr;
-    TxnCommittedCaller(TxnManagerR mgr) : m_mgr(mgr) {}
-    void operator()(TxnMonitorR monitor) const {monitor._OnCommitted(m_mgr);}
-};
-
-//=======================================================================================
-// @bsiclass                                                Karolis.Zukauskas   11/17
-//=======================================================================================
-struct PrepareForUndoRedoCaller
-    {
-    TxnManagerR m_mgr;
-    PrepareForUndoRedoCaller(TxnManagerR mgr) : m_mgr(mgr) {}
-    void operator() (TxnMonitorR handler) const {handler._OnPrepareForUndoRedo(m_mgr);}
-    };
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/13
-//=======================================================================================
-struct UndoRedoCaller
-    {
-    TxnManagerR m_mgr;
-    TxnAction m_action;
-    UndoRedoCaller(TxnManager& mgr, TxnAction action) : m_mgr(mgr), m_action(action) {}
-    void operator()(TxnMonitorR handler) const {handler._OnUndoRedo(m_mgr, m_action);}
-    };
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
     {
     mgr.CallJsMonitors("onCommit");
-    CallMonitors(TxnCommitCaller(mgr));
+    CallMonitors([&mgr](TxnMonitor& monitor){monitor._OnCommit(mgr);});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2283,7 +2232,7 @@ void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
 void DgnPlatformLib::Host::TxnAdmin::_OnCommitted(TxnManagerR mgr)
     {
     mgr.CallJsMonitors("onCommitted");
-    CallMonitors(TxnCommittedCaller(mgr));
+    CallMonitors([&mgr](TxnMonitor& monitor){monitor._OnCommitted(mgr);});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2292,7 +2241,7 @@ void DgnPlatformLib::Host::TxnAdmin::_OnCommitted(TxnManagerR mgr)
 void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR mgr)
     {
     mgr.CallJsMonitors("onChangesApplied");
-    CallMonitors(TxnAppliedCaller(mgr));
+    CallMonitors([&mgr](TxnMonitor& monitor){monitor._OnAppliedChanges(mgr);});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2301,7 +2250,7 @@ void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR mgr)
 void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo(TxnManagerR mgr)
     {
     mgr.CallJsMonitors("onBeforeUndoRedo");
-    CallMonitors(PrepareForUndoRedoCaller(mgr));
+    CallMonitors([&mgr](TxnMonitor& monitor){monitor._OnPrepareForUndoRedo(mgr);});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2311,7 +2260,7 @@ void DgnPlatformLib::Host::TxnAdmin::_OnUndoRedo(TxnManager& mgr, TxnAction acti
     {
     int jsAction = (int) action;
     mgr.CallJsMonitors("onAfterUndoRedo", &jsAction);
-    CallMonitors(UndoRedoCaller(mgr, action));
+    CallMonitors([&mgr, action](TxnMonitor& monitor){monitor._OnUndoRedo(mgr, action);});
     }
 
 /*---------------------------------------------------------------------------------**//**

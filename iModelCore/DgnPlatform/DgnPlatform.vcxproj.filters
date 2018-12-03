@@ -299,7 +299,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnElement.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnPlatform\DgnElementDependency.h">
+    <ClInclude Include="PublicAPI\DgnPlatform\ElementDependency.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DgnPlatform\DgnFont.fb.h">
@@ -869,7 +869,7 @@
     <ClCompile Include="DgnCore\ECUtils.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
-    <ClCompile Include="DgnCore\ElementDependencyGraph.cpp">
+    <ClCompile Include="DgnCore\ElementDependency.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\ElementGeometry.cpp">

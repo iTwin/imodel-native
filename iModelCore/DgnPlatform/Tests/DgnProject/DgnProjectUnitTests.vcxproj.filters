@@ -211,7 +211,7 @@
     <ClCompile Include="Published\Revision_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\ElementDependencyGraph.cpp">
+    <ClCompile Include="NonPublished\ElementDependency.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\MissingHandler_Test.cpp">

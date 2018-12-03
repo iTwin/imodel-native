@@ -151,7 +151,7 @@ $(CoreObjs)TxnManager$(oext) :                      $(DgnCoreDir)TxnManager.cpp 
 
 $(coreObjs)RevisionManager$(oext) :                 $(DgnCoreDir)RevisionManager.cpp $(DgnPlatformAPISrc)RevisionManager.h ${MultiCompileDepends}
 
-$(CoreObjs)ElementDependencyGraph$(oext) :          $(DgnCoreDir)ElementDependencyGraph.cpp $(DgnPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
+$(CoreObjs)ElementDependency$(oext) :               $(DgnCoreDir)ElementDependency.cpp $(DgnPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 
 $(coreObjs)LocksManager$(oext):                     $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
 
