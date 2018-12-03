@@ -24,16 +24,34 @@ IShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pN
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 IShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
-    double webThickness, double filletRadius, double edgeRadius, double flangeSlope)
+    double webThickness, double filletRadius, double flangeEdgeRadius, double flangeSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , flangeWidth (flangeWidth)
     , depth (depth)
     , flangeThickness (flangeThickness)
     , webThickness (webThickness)
     , filletRadius (filletRadius)
-    , edgeRadius (edgeRadius)
+    , flangeEdgeRadius (flangeEdgeRadius)
     , flangeSlope (flangeSlope)
     {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IShapeProfile::IShapeProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetFlangeWidth (params.flangeWidth);
+    SetDepth (params.depth);
+    SetFlangeThickness (params.flangeThickness);
+    SetWebThickness (params.webThickness);
+    SetFilletRadius (params.filletRadius);
+    SetFlangeEdgeRadius (params.flangeEdgeRadius);
+    SetFlangeSlope (params.flangeSlope);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
