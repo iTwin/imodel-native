@@ -193,7 +193,7 @@ Formatting::Format DgnElementPlacementStrategy::GetAreaFUS() const
      {
     Utf8String unitName = m_lengthFUS.GetCompositeMajorUnit()->GetName();
 
-    Utf8PrintfString squaredUnitName(Squared_Template, unitName);
+    Utf8PrintfString squaredUnitName(Squared_Template, unitName.c_str());
     ECN::ECUnitCP unit = GetDgnDb().Schemas().GetUnit(Standard_Units_Schema, squaredUnitName.c_str());
 
     ECN::ECFormatCP format = GetDgnDb().Schemas().GetFormat(Standard_Formats_Schema, DefaultRealU);
@@ -220,7 +220,7 @@ Formatting::Format DgnElementPlacementStrategy::GetVolumeFUS() const
     {
     Utf8String unitName = m_lengthFUS.GetCompositeMajorUnit()->GetName();
 
-    Utf8PrintfString cubedUnitName(Cubed_Template, unitName);
+    Utf8PrintfString cubedUnitName(Cubed_Template, unitName.c_str());
     ECN::ECUnitCP unit = GetDgnDb().Schemas().GetUnit(Standard_Units_Schema, cubedUnitName.c_str());
 
     ECN::ECFormatCP format = GetDgnDb().Schemas().GetFormat(Standard_Formats_Schema, DefaultRealU);

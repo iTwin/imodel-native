@@ -918,7 +918,7 @@ DynamicStateBaseCPtr CurveVectorManipulationStrategy::_GetDynamicState() const
         state.push_back({strategy, innerState});
         }
 
-    return CurveVectorDynamicState::Create(state);
+    return DynamicStateBaseCPtr(CurveVectorDynamicState::Create(state));
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \

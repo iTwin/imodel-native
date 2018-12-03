@@ -751,7 +751,7 @@ Dgn::IBriefcaseManager::Response* pResponse
         break;
         }
 
-    Utf8String notify = Utf8PrintfString ("Error> acquire lock Failed on Element:%I64u, (Label:\"%s\"), due to \"%s\"", el.GetElementId (), el.GetUserLabel (), statusString).append(additionalInfo);
+    Utf8String notify = Utf8PrintfString ("Error> acquire lock Failed on Element:%I64u, (Label:\"%s\"), due to \"%s\"", el.GetElementId ().GetValue(), el.GetUserLabel (), statusString.c_str()).append(additionalInfo);
     Dgn::NotifyMessageDetails nmd (Dgn::OutputMessagePriority::Error, notify.c_str ());
     Dgn::NotificationManager::OutputMessage (nmd);
     }

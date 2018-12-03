@@ -193,7 +193,7 @@ double value
     while ((result = number % 1000) != 0 || number >= 1000)
         {
         if (skipped1st)
-            resultString = Utf8PrintfString (",%s", resultString);
+            resultString = Utf8PrintfString (",%s", resultString.c_str());
         else
             skipped1st = true;
 
@@ -203,12 +203,12 @@ double value
         else if (number >= 1000)
             tempResult = "000";
 
-        resultString = Utf8PrintfString ("%s%s", tempResult, resultString);
+        resultString = Utf8PrintfString ("%s%s", tempResult.c_str(), resultString.c_str());
         number = number / 1000;
         }
 
     if (value < 1)
-        resultString = Utf8PrintfString ("0%s", resultString);
+        resultString = Utf8PrintfString ("0%s", resultString.c_str());
     return resultString;
     }
 

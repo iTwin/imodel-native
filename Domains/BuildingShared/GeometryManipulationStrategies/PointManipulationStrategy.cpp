@@ -127,7 +127,7 @@ void PointManipulationStrategy::_PopKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 DynamicStateBaseCPtr PointManipulationStrategy::_GetDynamicState() const 
     { 
-    return BooleanDynamicState::Create(_IsDynamicKeyPointSet()); 
+    return DynamicStateBaseCPtr(BooleanDynamicState::Create(_IsDynamicKeyPointSet()));
     }
 
 //--------------------------------------------------------------------------------------

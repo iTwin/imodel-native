@@ -29,7 +29,7 @@ void CurvePrimitiveManipulationStrategy::_SetDynamicState
 //---------------+---------------+---------------+---------------+---------------+------
 DynamicStateBaseCPtr CurvePrimitiveManipulationStrategy::_GetDynamicState() const
     {
-    return BooleanDynamicState::Create(m_dynamicKeyPointSet);
+    return DynamicStateBaseCPtr(BooleanDynamicState::Create(m_dynamicKeyPointSet));
     }
 
 //--------------------------------------------------------------------------------------

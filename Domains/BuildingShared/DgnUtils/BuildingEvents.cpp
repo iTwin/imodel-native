@@ -247,7 +247,7 @@ void BuildingEvents::NotifyToolSettingsChanged(JsonValueCR jsonValue, DgnClientF
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildingEvents::NotifyCreatePressed(JsonValueCR jsonValue, DgnClientFx::MessageResponse& response)
     {
-    for each (ICreatePressedHandler* handler in s_RegisteredCreatePressedHandlersVector)
+    for (ICreatePressedHandler* handler : s_RegisteredCreatePressedHandlersVector)
         (*handler).OnCreatePressed(jsonValue, response);
     }
 
@@ -256,7 +256,7 @@ void BuildingEvents::NotifyCreatePressed(JsonValueCR jsonValue, DgnClientFx::Mes
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildingEvents::NotifyResetPressed(JsonValueCR jsonValue, DgnClientFx::MessageResponse& response)
     {
-    for each (IResetPressedHandler* handler in s_RegisteredResetPressedHandlersVector)
+    for (IResetPressedHandler* handler : s_RegisteredResetPressedHandlersVector)
         handler->OnResetPressed(jsonValue, response);
     }
 
@@ -265,7 +265,7 @@ void BuildingEvents::NotifyResetPressed(JsonValueCR jsonValue, DgnClientFx::Mess
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildingEvents::NotifyFrontStageValuesChanged(JsonValueCR jsonValue, DgnClientFx::MessageResponse & response)
     {
-    for each (IFrontStageValuesChangedHandler * handler in s_RegisteredFrontStageValuesChangedHandlersVector)
+    for (IFrontStageValuesChangedHandler * handler : s_RegisteredFrontStageValuesChangedHandlersVector)
         handler->OnFrontStageValuesChanged(jsonValue, response);
     }
 
@@ -274,7 +274,7 @@ void BuildingEvents::NotifyFrontStageValuesChanged(JsonValueCR jsonValue, DgnCli
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildingEvents::NotifyFrontStageValuesRequested(JsonValueCR jsonValue, DgnClientFx::MessageResponse & response)
     {
-    for each (IFrontStageValuesRequestedHandler * handler in s_RegisteredFrontStageValuesRequestedHandlersVector)
+    for (IFrontStageValuesRequestedHandler * handler : s_RegisteredFrontStageValuesRequestedHandlersVector)
         handler->OnFrontStageValuesRequested(jsonValue, response);
     }
 

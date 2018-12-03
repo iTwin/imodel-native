@@ -62,7 +62,7 @@ struct NullGeometryManipulationStrategy final : public GeometryManipulationStrat
 
         // IRessetableDynamic
         virtual void _SetDynamicState(DynamicStateBaseCR state) override {}
-        virtual DynamicStateBaseCPtr _GetDynamicState() const override { return NullDynamicState::Create(); }
+        virtual DynamicStateBaseCPtr _GetDynamicState() const override { return DynamicStateBaseCPtr(NullDynamicState::Create()); }
 
     public:
         static NullGeometryManipulationStrategyPtr Create() { return new NullGeometryManipulationStrategy(); }

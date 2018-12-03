@@ -89,9 +89,9 @@ public:
 
         bvector<RefCountedPtr<T>> result;
 
-        for (ElementIteratorEntry elementEntry : pModel->MakeIterator())
+        for (Dgn::ElementIteratorEntry elementEntry : pModel->MakeIterator())
             {
-            DgnElementId id = elementEntry.GetElementId();
+            Dgn::DgnElementId id = elementEntry.GetElementId();
             auto element = pModel->GetDgnDb().Elements().GetForEdit<T>(id);
             if (element.IsValid())
                 result.push_back(element);

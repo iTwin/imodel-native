@@ -687,7 +687,7 @@ DynamicStateBaseCPtr ExtrusionManipulationStrategy::_GetDynamicState() const
     if (baseState.IsNull())
         return nullptr;
 
-    return ExtrusionDynamicState::Create(*baseState, m_dynamicHeightSet, m_dynamicSweepDirectionSet);
+    return DynamicStateBaseCPtr(ExtrusionDynamicState::Create(*baseState, m_dynamicHeightSet, m_dynamicSweepDirectionSet));
     }
 
 //--------------------------------------------------------------------------------------
