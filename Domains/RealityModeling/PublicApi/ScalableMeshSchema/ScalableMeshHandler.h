@@ -380,6 +380,8 @@ protected:
     virtual bool _IsMultiResolution() const override { return true; };
     BentleyApi::AxisAlignedBox3d _GetRange() const override;
     SCALABLEMESH_SCHEMA_EXPORT BentleyApi::AxisAlignedBox3d _QueryModelRange() const override;
+    AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryModelRange(); }
+
 
     BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
     BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
