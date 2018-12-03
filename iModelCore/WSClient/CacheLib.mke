@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-CompileOptionsMki           = $(SrcRoot)WSClient/CacheLibCompileOptions.mki
+CompileOptionsMki           = $(SrcRoot)imodel02/iModelBridgeCore/WSClient/CacheLibCompileOptions.mki
 %include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------

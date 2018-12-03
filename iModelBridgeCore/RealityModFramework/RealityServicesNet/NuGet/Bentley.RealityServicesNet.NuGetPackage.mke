@@ -10,10 +10,10 @@ PackageOutputDir = $(OutputRootDir)build/RealityModFramework/RealityServicesNet/
 
 NUGET_BUILD_DIR = $(OutputRootDir)build/
 
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 always:
-    CreateSymLinks.py   -m"$(BuildContext)Subparts/Files=$(SrcRoot)RealityModFramework/RealityServicesNet/NuGet/Bentley.RealityServicesNet.targets"
+    CreateSymLinks.py   -m"$(BuildContext)Subparts/Files=$(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/RealityServicesNet/NuGet/Bentley.RealityServicesNet.targets"
         
 NUGET_BASE_PATH=$(BuildContext)Subparts/
 
@@ -21,6 +21,6 @@ NUGET_BASE_PATH=$(BuildContext)Subparts/
 BUILD_NUGET=1
 
 NuGetBaseName=Bentley.RealityServicesNet
-NuSpecPath=$(SrcRoot)RealityModFramework/RealityServicesNet/NuGet/Bentley.RealityServicesNet.nuspec
+NuSpecPath=$(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/RealityServicesNet/NuGet/Bentley.RealityServicesNet.nuspec
 NuGetDependencies=\#Json_version\#=$(BuildContext)SubParts\Assemblies\Newtonsoft.Json.dll \#PlatformTech_version\#=$(BuildContext)SubParts\Assemblies\Bentley.Exceptions.dll
 %include $(sharedMki)nuspecCreate.mki
