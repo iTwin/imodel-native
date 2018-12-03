@@ -27,7 +27,7 @@ struct SplineGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulat
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) override;
         virtual BBS::GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
         virtual BBS::GeometryManipulationStrategyR _GetGeometryManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
-        virtual BBS::GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const override { return m_geometryPlacementStrategy; }
+        virtual BBS::GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const override { return BBS::GeometryPlacementStrategyCPtr(m_geometryPlacementStrategy); }
         virtual BBS::GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() override { return m_geometryPlacementStrategy; }
 
         virtual BentleyStatus _UpdateGridSurface() override;
