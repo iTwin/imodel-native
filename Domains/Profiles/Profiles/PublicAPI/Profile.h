@@ -27,6 +27,7 @@ public:
         explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
 
     public:
+        virtual ~CreateParams() = default;
         explicit CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName);
 
     public:
