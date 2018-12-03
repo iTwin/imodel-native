@@ -8,7 +8,6 @@
 #include "ProfilesTestCase.h"
 #include "TestHost.h"
 
-
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 

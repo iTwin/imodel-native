@@ -8,11 +8,13 @@
 #pragma once
 #include <Bentley\BeTest.h>
 #include <DgnView\DgnViewLib.h>
+#include <Profiles/ProfilesApi.h>
 
 /*---------------------------------------------------------------------------------**//**
+* Base class for Profiles domain test cases.
 * @bsiclass                                                                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-class ProfilesTestCase : public testing::Test
+struct ProfilesTestCase : testing::Test
     {
 private:
     Dgn::DgnDbPtr m_dbPtr;

@@ -5,71 +5,20 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ProfilesTestCase.h"
-#include <Profiles/ProfilesApi.h>
+#include "ProfileValidationTestCase.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_PROFILES
 
 
-#define EXPECT_SUCCESS_Insert(params) EXPECT_EQ (DgnDbStatus::Success, Insert (params))
-#define EXPECT_FAIL_Insert(params) EXPECT_EQ (DgnDbStatus::ValidationFailed, Insert (params))
-
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                                      11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CShapeProfileTestCase : ProfilesTestCase
+struct CShapeProfileTestCase : ProfileValidationTestCase<CShapeProfile>
     {
 public:
     typedef CShapeProfile::CreateParams CreateParams;
-
-public:
-    DgnDbStatus Insert (CreateParams const& createParams);
-
-    void ExpectParameterToBeFiniteAndPositive (CreateParams& params, double& valueToCheck, Utf8CP pParameterName, bool allowEqualToZero);
     };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CShapeProfileTestCase::Insert (CreateParams const& createParams)
-    {
-    CShapeProfilePtr profilePtr = CShapeProfile::Create (createParams);
-    BeAssert (profilePtr.IsValid());
-
-    DgnDbStatus status;
-    profilePtr->Insert (&status);
-    if (status != DgnDbStatus::Success)
-        return status;
-
-    // Perform an Update just to double check same validation is happenning on update.
-    profilePtr->Update (&status);
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CShapeProfileTestCase::ExpectParameterToBeFiniteAndPositive (CreateParams& params, double& valueToCheck, Utf8CP pParameterName, bool allowEqualToZero)
-    {
-    valueToCheck = -1.0;
-    EXPECT_EQ (DgnDbStatus::ValidationFailed, Insert (params)) << pParameterName << " should be non negative.";
-
-    valueToCheck = 0;
-    if (allowEqualToZero)
-        EXPECT_EQ (DgnDbStatus::Success, Insert (params)) << pParameterName << " should be greater or equal to zero.";
-    else
-        EXPECT_EQ (DgnDbStatus::ValidationFailed, Insert (params)) << pParameterName << " should be greater than zero.";
-
-    valueToCheck = std::numeric_limits<double>::signaling_NaN();
-    EXPECT_EQ (DgnDbStatus::ValidationFailed, Insert (params)) << pParameterName << " cannot be NaN.";
-
-    valueToCheck = std::numeric_limits<double>::infinity();
-    EXPECT_EQ (DgnDbStatus::ValidationFailed, Insert (params)) << pParameterName << " cannot be infinity.";
-
-    valueToCheck = std::numeric_limits<double>::infinity() * -1;
-    EXPECT_EQ (DgnDbStatus::ValidationFailed, Insert (params)) << pParameterName << " cannot be infinity.";
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
@@ -184,7 +133,7 @@ TEST_F (CShapeProfileTestCase, Insert_InvalidFlangeWidth_FailedInsert)
     {
     CreateParams params (GetModel(), "C", INFINITY, 10.0, 1.0, 1.0);
 
-    ExpectParameterToBeFiniteAndPositive (params, params.flangeWidth, "FlangeWidth", false);
+    TestParameterToBeFiniteAndPositive (params, params.flangeWidth, "FlangeWidth", false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -205,7 +154,7 @@ TEST_F (CShapeProfileTestCase, Insert_InvalidDepth_FailedInsert)
     {
     CreateParams params (GetModel(), "C", 10.0, INFINITY, 1.0, 1.0);
 
-    ExpectParameterToBeFiniteAndPositive (params, params.depth, "Depth", false);
+    TestParameterToBeFiniteAndPositive (params, params.depth, "Depth", false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -226,7 +175,7 @@ TEST_F (CShapeProfileTestCase, Insert_InvalidFlangeThickness_FailedInsert)
     {
     CreateParams params (GetModel(), "C", 10.0, 10.0, INFINITY, 1.0);
 
-    ExpectParameterToBeFiniteAndPositive (params, params.flangeThickness, "FlangeThickness", false);
+    TestParameterToBeFiniteAndPositive (params, params.flangeThickness, "FlangeThickness", false);
 
     params.flangeThickness = params.depth / 2.0;
     EXPECT_FAIL_Insert (params) << "Flange thickness should be less than half of the depth.";
@@ -253,7 +202,7 @@ TEST_F (CShapeProfileTestCase, Insert_InvalidWebThickness_FailedInsert)
     {
     CreateParams params (GetModel(), "C", 10.0, 10.0, 1.0, INFINITY);
 
-    ExpectParameterToBeFiniteAndPositive (params, params.webThickness, "WebThickness", false);
+    TestParameterToBeFiniteAndPositive (params, params.webThickness, "WebThickness", false);
 
     params.webThickness = params.flangeWidth;
     EXPECT_FAIL_Insert (params) << "Web thickness should be less than flange width.";
@@ -281,7 +230,7 @@ TEST_F (CShapeProfileTestCase, Insert_VariousFilletRadiusAndZeroFlangeSlope_Corr
     CreateParams params (GetModel(), "C_ZeroFlangeSlope", 10.0, 10.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = 0.0;
 
-    ExpectParameterToBeFiniteAndPositive (params, params.filletRadius, "FilletRadius", true);
+    TestParameterToBeFiniteAndPositive (params, params.filletRadius, "FilletRadius", true);
 
     params.filletRadius = 4.0;
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
@@ -352,7 +301,7 @@ TEST_F (CShapeProfileTestCase, Insert_VariousFlangeEdgeRadius_CorrectInsertResul
     {
     CreateParams params (GetModel(), "C", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
-    ExpectParameterToBeFiniteAndPositive (params, params.flangeEdgeRadius, "EdgeRadius", true);
+    TestParameterToBeFiniteAndPositive (params, params.flangeEdgeRadius, "EdgeRadius", true);
 
     params.flangeEdgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
@@ -381,7 +330,7 @@ TEST_F (CShapeProfileTestCase, Insert_VariousFlangeSlope_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "C", 5.0, 10.0, 1.0, 1.0, 0.0, 0.0, INFINITY);
 
-    ExpectParameterToBeFiniteAndPositive (params, params.flangeSlope, "FlangeSlope", true);
+    TestParameterToBeFiniteAndPositive (params, params.flangeSlope, "FlangeSlope", true);
 
     // 45 degree angle means a slope height of 4, when the inner flange face length is 4
     // since inner web face length is 8, a slope of 45 degree should be the maximum allowed value

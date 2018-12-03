@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesTestCase.h"
-#include <Profiles/ProfilesApi.h>
 #include <DgnPlatform/GenericDomain.h>
 
 USING_NAMESPACE_BENTLEY_DGN

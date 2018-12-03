@@ -10,6 +10,9 @@
     <Filter Include="Src\Tests">
       <UniqueIdentifier>{56615e67-0f53-4987-b755-bbb418fe47b0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\TestCases">
+      <UniqueIdentifier>{0d67030f-6532-44a7-addc-e4a373d918d1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="tests.mke">
@@ -29,14 +32,14 @@
     <ClCompile Include="src\DomainTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
-    <ClCompile Include="src\ProfilesTestCase.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="src\CShapeProfileTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
     <ClCompile Include="src\IShapeProfileTests.cpp">
       <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ProfilesTestCase.cpp">
+      <Filter>Src\TestCases</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -44,7 +47,10 @@
       <Filter>Src</Filter>
     </ClInclude>
     <ClInclude Include="src\ProfilesTestCase.h">
-      <Filter>Src</Filter>
+      <Filter>Src\TestCases</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ProfileValidationTestCase.h">
+      <Filter>Src\TestCases</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

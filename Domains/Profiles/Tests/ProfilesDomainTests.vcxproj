@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ProfilesTestCase.h" />
+    <ClInclude Include="src\ProfileValidationTestCase.h" />
     <ClInclude Include="src\TestHost.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

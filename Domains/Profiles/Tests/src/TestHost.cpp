@@ -12,6 +12,7 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_PROFILES
 
 BeFileName ProfilesTestHost::s_baseDbPath;
 
@@ -95,7 +96,7 @@ ProfilesTestHost::ProfilesTestHost()
     {
     DgnViewLib::Initialize (*this, true);
 
-    BentleyStatus registrationStatus = DgnDomains::RegisterDomain (Profiles::ProfilesDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    BentleyStatus registrationStatus = DgnDomains::RegisterDomain (ProfilesDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     BeAssert (BentleyStatus::SUCCESS == registrationStatus);
 
     DgnDbPtr dbPtr = createDgnDb (getOutputDirectory().AppendToPath (L"ProfilesTests"));
