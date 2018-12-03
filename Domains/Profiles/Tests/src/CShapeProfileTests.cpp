@@ -27,7 +27,7 @@ TEST_F (CShapeProfileTestCase, Create_MinimalCreateParams_ValidInstance)
     {
     CreateParams params (GetModel(), "C");
 
-    CShapeProfilePtr profilePtr = CShapeProfile::Create (params);
+    CShapeProfilePtr profilePtr = CreateProfile (params);
     EXPECT_TRUE (profilePtr.IsValid());
     }
 
@@ -58,9 +58,7 @@ TEST_F (CShapeProfileTestCase, Insert_EmptyCreateParams_FailedInsert)
 TEST_F (CShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
     {
     CreateParams params (GetModel(), "C", 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
-
-    CShapeProfilePtr profilePtr = CShapeProfile::Create (params);
-    ASSERT_TRUE (profilePtr.IsValid());
+    CShapeProfilePtr profilePtr = CreateProfile (params);
 
     EXPECT_EQ ("C", profilePtr->GetName());
     EXPECT_EQ (1.0, profilePtr->GetFlangeWidth());
@@ -77,10 +75,8 @@ TEST_F (CShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     {
-    CreateParams createParams (GetModel(), "", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-
-    CShapeProfilePtr profilePtr = CShapeProfile::Create (createParams);
-    ASSERT_TRUE (profilePtr.IsValid());
+    CreateParams params (GetModel(), "", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    CShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetName ("C");
     profilePtr->SetFlangeWidth (1.0);
