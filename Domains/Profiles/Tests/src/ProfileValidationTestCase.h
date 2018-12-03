@@ -27,7 +27,7 @@ public:
         {
         T::CreateParams const* pParams = dynamic_cast<T::CreateParams const*> (&createParams);
         if (pParams == nullptr)
-            ASSERT_TRUE (false && "CreateParams must be of the class that is being created");
+            BeAssert (false && "CreateParams must be of the class that is being created");
 
         return T::Create (*pParams);
         }
@@ -38,7 +38,7 @@ public:
     Dgn::DgnDbStatus InsertProfile (Profiles::Profile::CreateParams const& createParams)
         {
         Profiles::ProfilePtr profilePtr = CreateProfile (createParams);
-        ASSERT_TRUE (profilePtr.IsValid());
+        BeAssert (profilePtr.IsValid());
 
         DgnDbStatus status;
         profilePtr->Insert (&status);
