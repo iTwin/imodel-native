@@ -824,6 +824,9 @@ struct Converter
         L10N_STRING(TemporaryDirectoryNotFound)  // =="Failed to find/create temporary directory %s"==
         L10N_STRING(RDSUninitialized)            // =="Failed to initialize RDSRequestManager"==
         L10N_STRING(RDSUploadFailed)             // =="Failed to upload tileset to Reality Data Server"==
+        L10N_STRING(GCSHardConversionError)      // =="Geographic Coordinate System conversion error"==
+        L10N_STRING(GCSDatumConversionFailure)   // =="Geographic Coordinate System conversion failure: probably datum transformation issue. Are grid shift files missing?"==
+        L10N_STRING(GCSRangeConversionWarning)   // =="Geographic Coordinate System conversion: coordinates outside the normal useful range of system."==
 
         L10N_STRING(InitProjectWiseLinkError)      // =="Could not initialize ProjectWise extension. Any ProjectWise documents that are target of links will not be embedded."==
         L10N_STRING(TerminateProjectWiseLinkError) // =="Could not terminate ProjectWise extension."==
@@ -1220,6 +1223,7 @@ public:
     BentleyStatus GenerateThumbnails();
     void GenerateThumbnailsWithExceptionHandling();
     BentleyStatus GenerateRealityModelTilesets();
+    BentleyStatus ComputeRealityModelFootprint(bvector<GeoPoint2d>& footprint, GeometricModelCP geometricModel, GeoCoordinates::BaseGCSCR targetLatLongGCS);
     void  StoreRealityTilesetTransform(DgnModelR model, TransformCR tilesetToDb);
     BentleyStatus GenerateWebMercatorModel();
 
