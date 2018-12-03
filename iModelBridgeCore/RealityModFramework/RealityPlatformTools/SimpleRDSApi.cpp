@@ -1010,6 +1010,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
     properties.Insert(RealityDataField::Streamed, m_streamed ? "true" : "false");
     if (!m_footprintString.empty() || !m_footprint.empty())
         properties.Insert(RealityDataField::Footprint, GetFootprintString());
+    properties.Insert(RealityDataField::ApproximateFootprint, m_approximateFootprint ? "true" : "false");
     if (!m_thumbnailDocument.empty())
         properties.Insert(RealityDataField::ThumbnailDocument, m_thumbnailDocument);
     if (!m_metadataUrl.empty())
