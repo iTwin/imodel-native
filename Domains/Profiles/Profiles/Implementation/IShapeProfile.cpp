@@ -78,7 +78,7 @@ BentleyStatus IShapeProfile::_Validate() const
     if (!isValidWebThickness)
         return BSIERROR;
 
-    double const innerFlangeFaceLength = GetFlangeWidth() - GetWebThickness() / 2.0;
+    double const innerFlangeFaceLength = (GetFlangeWidth() - GetWebThickness()) / 2.0;
     double const innerWebFaceLength = GetDepth() - GetFlangeThickness() * 2.0;
     double const slopeDepth = (innerFlangeFaceLength / std::cos (GetFlangeSlope())) * std::sin (GetFlangeSlope());
 
