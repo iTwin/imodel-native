@@ -174,7 +174,7 @@ namespace ORDBridgeGUI.ViewModel
             m_connectEnv = "QA";
 #endif
 
-            m_dgnInstall = LocateInstall();
+            m_dgnInstall = LocateDgnInstall();
             m_dgnInstall = m_dgnInstall.Substring(0, m_dgnInstall.Length - 1);
             m_bridgeDll = LocateBridgeDll();
 
@@ -187,9 +187,6 @@ namespace ORDBridgeGUI.ViewModel
             RootModelEntries = rootModels;
             SelectedRootModel = RootModelEntries[0];
 
-            //m_publisherPath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoads Designer Bridge\{BA04D7DE-6102-4C66-B0C0-7C488B8CDD17}")?.GetValue("InstallDir").ToString();
-            //m_publisherPath = Path.Combine(m_publisherPath, "PublishORDToBim.exe");
-            //m_frameworkPath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("iModelFrameWorkExe").ToString();
             FindExePaths();
 
             m_isPublisherRunning = false;
@@ -289,7 +286,7 @@ namespace ORDBridgeGUI.ViewModel
                 }
             }
 
-        private string LocateInstall ()
+        private string LocateDgnInstall ()
             {
             return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ProgramPath").ToString();
             }
@@ -341,7 +338,17 @@ namespace ORDBridgeGUI.ViewModel
 
         private string LocateBridgeDll ()
             {
-            return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("BridgeLibraryPath").ToString();
+            var curDir = new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).DirectoryName;
+            var curDirBridgeDll = String.Format("{0}\\{1}", curDir, "ORDBridge.dll");
+
+            if ( File.Exists(curDirBridgeDll) )
+                {
+                return curDirBridgeDll;
+                }
+            else
+                {
+                return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("BridgeLibraryPath").ToString();
+                }
             }
 
         public ICommand RunBridgeCommand
@@ -401,7 +408,47 @@ namespace ORDBridgeGUI.ViewModel
             proc.Start();
             m_isPublisherRunning = true;
             proc.WaitForExit();
-            switch ( proc.ExitCode )
+
+            if ( SelectedPublisher == PublisherType.Local )
+                {
+                CheckPublisherExitCode(proc.ExitCode);
+                }
+            else
+                {
+                CheckFrameworkExitCode(proc.ExitCode);
+                }
+
+            m_isPublisherRunning = false;
+            }
+
+        private void CheckFrameworkExitCode (int exitCode)
+            {
+            switch ( exitCode )
+                {
+                case 0:
+                    System.Windows.MessageBox.Show("INFO: The conversion completed successfully.", "Pass");
+                    break;
+                case 1:
+                    System.Windows.MessageBox.Show("ERROR: Entered parameters are incorrect", "Failure");
+                    break;
+                case 2:
+                    System.Windows.MessageBox.Show("ERROR: A converter error has occurred.", "Failure");
+                    break;
+                case 3:
+                    System.Windows.MessageBox.Show("ERROR: A server error has occurred.", "Failure");
+                    break;
+                case 4:
+                    System.Windows.MessageBox.Show("ERROR: A local error has occurred.", "Failure");
+                    break;
+                default:
+                    System.Windows.MessageBox.Show("ERROR: An unknown error has occurred.", "Failure");
+                    break;
+                }
+            }
+
+        private void CheckPublisherExitCode (int exitCode)
+            {
+            switch ( exitCode )
                 {
                 case 0:
                     System.Windows.MessageBox.Show("INFO: The conversion completed successfully.", "Pass");
@@ -428,7 +475,6 @@ namespace ORDBridgeGUI.ViewModel
                     System.Windows.MessageBox.Show("ERROR: General failure.", "Failure");
                     break;
                 }
-            m_isPublisherRunning = false;
             }
 
         private bool Validate (String imsPw)
