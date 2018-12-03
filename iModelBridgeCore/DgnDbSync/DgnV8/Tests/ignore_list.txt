@@ -8,5 +8,3 @@ NamedGroupTests.NamedGroupOf2dElement
     #   Actual: false
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
-
-MultiBridgeTests.MergedDefinitions  # SamW - WIP
