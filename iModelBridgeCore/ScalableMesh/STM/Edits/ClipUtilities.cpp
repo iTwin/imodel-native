@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
 #define SM_TRACE_CLIPS_FULL 0
-const wchar_t* s_path = L"C:\\work\\2017q3\\tmp\\";
+static const wchar_t* s_path = L"C:\\work\\2017q3\\tmp\\";
    
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {

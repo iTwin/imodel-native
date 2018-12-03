@@ -472,6 +472,19 @@ BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverterApp::_MakeDefinitionChanges(SubjectCR jobsubj)
+    {
+    auto status = m_converter->DoBeginConversion();     // must call this first, to initialize the ChangeDetector, which MakeDefinitionChanges will use
+    if (BSISUCCESS != status || m_converter->WasAborted())
+        return BSIERROR;
+
+    status = m_converter->MakeDefinitionChanges();
+    return ((BSISUCCESS != status) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
@@ -489,9 +502,20 @@ BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_OnCloseBim(BentleyStatus)
+void RootModelConverterApp::_OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose)
     {
+    m_converter->DoFinishConversion();
+
+    bool keepHostAliveOriginal = false;
+    if (NULL != m_converter.get())
+        {
+        bool keepHostAlive = m_converter->GetParams().GetKeepHostAlive();
+        keepHostAliveOriginal = keepHostAlive;
+        keepHostAlive |= purpose == iModelBridge::ClosePurpose::SchemaUpgrade;
+        m_converter->SetKeepHostAlive(keepHostAlive);
+        }
     m_converter.reset(nullptr); // this also has the side effect of closing the source files
+    m_params.SetKeepHostAlive(keepHostAliveOriginal);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -523,7 +547,7 @@ BentleyStatus RootModelConverterApp::_OpenSource()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_CloseSource(BentleyStatus)
+void RootModelConverterApp::_CloseSource(BentleyStatus, iModelBridge::ClosePurpose)
     {
     // _OnCloseBim will close the source files
     }
@@ -569,7 +593,7 @@ SubjectCPtr RootModelConverterApp::_InitializeJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverterApp::_ConvertToBim(Dgn::SubjectCR jobSubject)
     {
-    m_converter->Process();
+    m_converter->ConvertData();
     m_hadAnyChanges = m_converter->HadAnyChanges();
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }

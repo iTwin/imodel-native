@@ -1114,7 +1114,7 @@ GCS GCSFactory::Impl::Create   (const WChar*             wktBegin,
         }
 
     const WKTKeyword& firstKeyword = GetWKTKeyword(firstKeywordBegin);
-
+ 
     switch (firstKeyword.type)
         {
     case WKTKeyword::TYPE_LOCAL_CS:         

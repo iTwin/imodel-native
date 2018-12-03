@@ -645,12 +645,12 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(ECClassRemovalContex
     if (inputClass.GetClassModifier() == ECClassModifier::Abstract)
         inputClass.SetClassModifier(ECClassModifier::None);
 
-    if (conversionSchema.IsValid())
-        {
-        ECN::ECClassCP ecClass = conversionSchema->GetClassCP(inputClass.GetName().c_str());
-        if (nullptr != ecClass)
-            ignoreBisBase = ecClass->GetCustomAttribute("ForceIgnoreRelationshipBISBaseClass") != nullptr;
-        }
+    //if (conversionSchema.IsValid())
+    //    {
+    //    ECN::ECClassCP ecClass = conversionSchema->GetClassCP(inputClass.GetName().c_str());
+    //    if (nullptr != ecClass)
+    //        ignoreBisBase = ecClass->GetCustomAttribute("ForceIgnoreRelationshipBISBaseClass") != nullptr;
+    //    }
 
     if (!ignoreBisBase)
         {
@@ -866,7 +866,8 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
         context.ReportIssue(Converter::IssueSeverity::Info, msg.c_str());
         }
     
-    // It is possible that a constraint can have multiple classes, one of which got turned into an aspect.  This makes for an incompatible constraint.  Need to remove the conflicting type.
+    // If the constraint is the source, replace all aspect constraints with the element class it modifies
+    // If the constraint is the target, and the first constraint class is an element, replace any subsequent aspect class with the corresponding element class
     bool haveFirstType = false;
     bool firstIsElement = true;
     bvector<ECClassCP> constraintsToRemove;
@@ -876,14 +877,27 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
             {
             haveFirstType = true;
             firstIsElement = constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
-            continue;
             }
-        if (firstIsElement != constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
+        if (isSource)
+            {
+            if (!constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
+                constraintsToRemove.push_back(constraintClass);
+            }
+        else if (firstIsElement != constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
             constraintsToRemove.push_back(constraintClass);
         }
 
     for (ECClassCP ecClass : constraintsToRemove)
         constraint.RemoveClass(*ecClass->GetEntityClassCP());
+
+    // If we removed any aspect classes as a constraint, then we need to add the base Element class as a constraint.  This is because we are 
+    // using the element that owns the aspect as the relationship constraint but we have no way of knowing what class that is.  Therefore, we
+    // can only use the most generic class as the constraint.
+    if (constraintsToRemove.size() > 0)
+        {
+        constraint.AddClass(*defaultConstraintClass);
+        constraint.SetIsPolymorphic(true);
+        }
 
     constraintsToRemove.clear();
     bvector<ECClassCP> constraintsToAdd;
@@ -919,8 +933,15 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
                             ECN::ECClassP dropped = droppedSchema->GetClassP(components[1].c_str());
                             if (nullptr != dropped)
                                 {
-                                ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(dropped);
-                                searchClasses.push_back(nonConst);
+                                if (dropped->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect))
+                                    {
+                                    searchClasses.push_back(defaultConstraintClass);
+                                    }
+                                else
+                                    {
+                                    ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(dropped);
+                                    searchClasses.push_back(nonConst);
+                                    }
                                 }
                             }
                         }
@@ -1091,6 +1112,9 @@ BentleyStatus BisClassConverter::FinalizeConversion(SchemaConversionContext& con
                                         aspectOnlyClass->GetFullName());
                     return BSIERROR;
                     }
+
+                ECN::ECClassP nonConstBase = const_cast<ECN::ECClassP>(baseClass);
+                AddDroppedDerivedClass(nonConstBase, aspectOnlyClass);
                 }
             }
         }
@@ -1156,6 +1180,56 @@ BentleyStatus BisClassConverter::AddBaseClass(BECN::ECClassR targetClass, BECN::
 
     return BSISUCCESS;
     }
+
+// Create the pseudo polymorphic hierarchy by keeping track of any derived class that was lost.
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void BisClassConverter::AddDroppedDerivedClass(ECN::ECClassP baseClass, ECN::ECClassP derivedClass)
+    {
+    ECN::IECInstancePtr droppedInstance = baseClass->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldDerivedClasses");
+    if (!droppedInstance.IsValid())
+        droppedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("OldDerivedClasses");
+    if (!droppedInstance.IsValid())
+        {
+        LOG.warningv("Failed to create 'OldDerivedClasses' custom attribute for ECClass '%s'", baseClass->GetFullName());
+        return;
+        }
+    ECN::ECValue v;
+    droppedInstance->GetValue(v, "Classes");
+    Utf8String classes("");
+    if (!v.IsNull())
+        classes = Utf8String(v.GetUtf8CP()).append(";");
+
+    classes.append(derivedClass->GetFullName());
+
+    v.SetUtf8CP(classes.c_str());
+    if (ECN::ECObjectsStatus::Success != droppedInstance->SetValue("Classes", v))
+        {
+        LOG.warningv("Failed to create 'OldDerivedClasses' custom attribute for the ECClass '%s' with 'Classes' set to '%s'.", baseClass->GetFullName(), classes.c_str());
+        return;
+        }
+
+    if (!ECN::ECSchema::IsSchemaReferenced(baseClass->GetSchemaR(), droppedInstance->GetClass().GetSchema()))
+        {
+        ECN::ECClassP nonConstClass = const_cast<ECN::ECClassP>(&droppedInstance->GetClass());
+        if (ECN::ECObjectsStatus::Success != baseClass->GetSchemaR().AddReferencedSchema(nonConstClass->GetSchemaR()))
+            {
+            LOG.warningv("Failed to add %s as a referenced schema to %s.", droppedInstance->GetClass().GetSchema().GetName().c_str(), baseClass->GetSchemaR().GetName().c_str());
+            LOG.warningv("Failed to add 'OldDerivedClasses' custom attribute to ECClass '%s'.", baseClass->GetFullName());
+            return;
+            }
+        }
+
+    if (ECN::ECObjectsStatus::Success != baseClass->SetCustomAttribute(*droppedInstance))
+        {
+        LOG.warningv("Failed to add 'OldDerivedClasses' custom attribute, with 'PropertyMapping' set to '%s', to ECClass '%s'.", classes.c_str(), baseClass->GetFullName());
+        return;
+        }
+
+    LOG.debugv("Successfully added OldDerivedClasses custom attribute to ECClass '%s'", baseClass->GetFullName());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------

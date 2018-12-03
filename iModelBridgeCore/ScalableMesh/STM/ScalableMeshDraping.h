@@ -15,6 +15,8 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include <queue>
 #include <future>
+#include <stdint.h>
+#include <set>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

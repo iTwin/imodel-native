@@ -262,7 +262,7 @@ void IDTMFeatureArray<PointType, HeaderType>::Insert   (const_iterator  pi_Posit
 template <typename PointType, typename HeaderType>
 void IDTMFeatureArray<PointType, HeaderType>::Append    (const_reference pi_rFeature)
     {
-    HeaderArray::iterator AddedHeaderIt = EditHeaders().Append();
+    typename HeaderArray::iterator AddedHeaderIt = EditHeaders().Append();
     super_class::facade_type::InitHeader(*AddedHeaderIt, pi_rFeature.GetType(), m_Points.GetSize(), pi_rFeature.GetSize(), pi_rFeature.GetGroupID());
 
     copy(pi_rFeature.Begin(), pi_rFeature.End(), m_Points.Append(AddedHeaderIt->size));

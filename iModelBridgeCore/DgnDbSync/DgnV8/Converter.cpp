@@ -151,9 +151,12 @@ StableIdPolicy Converter::GetIdPolicyFromAppData(DgnV8FileCR file)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ComputeRepositoryLinkCodeValueAndUri(Utf8StringR code, Utf8StringR uri, DgnV8FileR file)
     {
-    auto const& moniker = file.GetDocument().GetMoniker();
-
-    uri = Utf8String(moniker.ResolveURI().c_str());
+    uri = GetDocumentURNforFile(file);
+    if (iModelBridge::IsPwUrn(uri))
+        {
+        code = uri;
+        return;
+        }
 
     char let;
     Utf8String urilwr = uri.ToLower();
@@ -245,15 +248,35 @@ void Converter::SetRepositoryLinkInAppData(DgnV8FileCR file, DgnElementId rlinkI
 SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, StableIdPolicy policy)
     {
     //  Make sure the file is registered in syncinfo
-    SyncInfo::V8FileProvenance provenance(file, m_syncInfo, policy);
-    if (!provenance.FindByName(true))
+    SyncInfo::V8FileProvenance provenance = m_syncInfo.FindFile(file);
+    if (!provenance.IsValid())
         {
-        provenance.Insert();
-        BeSQLite::BeGuid guid;
-        bool insertProvenance = _WantModelProvenanceInBim() && (SUCCESS == guid.FromString(provenance.m_uniqueName.c_str()));
-            
-        if (insertProvenance && SUCCESS != DgnV8FileProvenance::FindFirst(NULL, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
-            DgnV8FileProvenance::Insert(guid, provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
+        DbResult rc;
+        provenance = m_syncInfo.InsertFile(&rc, file, policy);
+        if (!provenance.IsValid())
+            {
+            LOG.errorv("+ %s -> syncinfo failed with error %x", Bentley::Utf8String(file.GetFileName()).c_str(), rc);
+            OnFatalError();
+            return provenance;
+            }
+
+        if (_WantModelProvenanceInBim())
+            {
+            BeSQLite::BeGuid guid = GetDocumentGUIDforFile(file);
+            if (guid.IsValid())
+                {
+                if (BSISUCCESS != DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
+                    {
+                    LOG.infov("DgnV8FileProvenance::Insert %s (%s)", Bentley::Utf8String(file.GetFileName()).c_str(), guid.ToString().c_str());
+                    DgnV8FileProvenance::Insert(guid, provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
+                    }
+                else
+                    {
+                    LOG.infov("DgnV8FileProvenance already has %s (%s)", Bentley::Utf8String(file.GetFileName()).c_str(), guid.ToString().c_str());
+                    }
+                }
+            }
+
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
             LOG.tracev("+ %s => %lld", Bentley::Utf8String(file.GetFileName()).c_str(), provenance.m_syncId.GetValue());
 
@@ -286,8 +309,11 @@ SyncInfo::V8FileSyncInfoId Converter::GetV8FileSyncInfoId(DgnV8FileR file)
 SyncInfo::V8FileProvenance RootModelConverter::_GetV8FileIntoSyncInfo(DgnV8FileR file, StableIdPolicy policy)
     {
     auto prov = T_Super::_GetV8FileIntoSyncInfo(file, policy);
-    m_v8Files.push_back(&file);
-    _KeepFileAlive(file);
+    if (std::find(m_v8Files.begin(), m_v8Files.end(), &file) == m_v8Files.end())
+        {
+        m_v8Files.push_back(&file);
+        _KeepFileAlive(file);
+        }
     return prov;
     }
 
@@ -1345,6 +1371,8 @@ Converter::Converter(Params const& params)
     m_lineStyleConverter = LineStyleConverter::Create(*this);
     m_currIdPolicy = StableIdPolicy::ById;
 
+    m_haveCreatedThumbnails = false;
+
     m_rootTrans.InitIdentity();
     m_rootTransChange.InitIdentity();
 
@@ -1614,7 +1642,11 @@ void Converter::OnCreateComplete()
     {
     _EmbedFonts();
 
-    m_dgndb->GeoLocation().InitializeProjectExtents();
+    size_t      outlierCount;
+    DRange3d    rangeWithOutliers;
+    m_dgndb->GeoLocation().InitializeProjectExtents(&rangeWithOutliers, &outlierCount);
+    if (0 != outlierCount)  
+        ReportAdjustedProjectExtents(outlierCount, m_dgndb->GeoLocation().GetProjectExtents(), rangeWithOutliers);
 
     // *** NEEDS WORK: What is this for? m_rootScaleFactor is never set anywhere in the converter
     //m_dgndb->SaveProperty(PropertySpec("SourceRootScaleFactor", "dgn_Proj"), &m_rootScaleFactor, sizeof(m_rootScaleFactor));
@@ -1652,10 +1684,18 @@ void Converter::OnUpdateComplete()
         GenerateRealityModelTilesets();
 
     auto extents = m_dgndb->GeoLocation().GetProjectExtents();
-    auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents();
+
+    size_t      outlierCount;
+    DRange3d    rangeWithOutliers;
+
+    auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &outlierCount);
 
     if (!extents.IsEqual(calculated))
+        {
         m_dgndb->GeoLocation().SetProjectExtents(calculated);
+        if (0 != outlierCount)  
+            ReportAdjustedProjectExtents(outlierCount, m_dgndb->GeoLocation().GetProjectExtents(), rangeWithOutliers);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1746,6 +1786,13 @@ void Converter::GetOrCreateJobPartitions()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_OnConversionStart()
     {
+    if (m_onConversionStartCalled)
+        {
+        BeAssert(false && "Call _OnConversionStart only once");
+        return;
+        }
+    m_onConversionStartCalled = true;
+
     BeAssert(_GetParams().GetAssetsDir().DoesPathExist());
 
     SetV8ProgressMeter();
@@ -2072,6 +2119,26 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
     return gs->Is3d() != v8mm.GetDgnModel().Is3dModel();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ BentleyStatus  Converter::AddElementSourceInfo(ElementConversionResults& results, DgnV8EhCR v8eh)
+    {
+    ECN::ECClassCP aspectClass = GetDgnDb().Schemas().GetClass(SOURCEINFO_ECSCHEMA_NAME, SOURCEINFO_CLASS_SoureElementInfo);
+    if (NULL == aspectClass)
+        return ERROR;
+
+    ECN::IECInstanceCP aspect = DgnElement::GenericMultiAspect::GetAspect(*results.m_element, *aspectClass, BeSQLite::EC::ECInstanceId());
+    if (NULL != aspect)
+        return SUCCESS;//Assuming dgnv8 element mapping is n->1. So no need to update the element id.
+
+    auto aspectInstance = aspectClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    Utf8PrintfString elementId("%lld", v8eh.GetElementId());
+    aspectInstance->SetValue("SourceId", ECN::ECValue(elementId.c_str()));
+
+    return DgnElement::GenericMultiAspect::AddAspect(*results.m_element, *aspectInstance) == DgnDbStatus::Success ? BSISUCCESS : BSIERROR;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2014
 //---------------------------------------------------------------------------------------
@@ -2220,6 +2287,10 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             return BSIERROR;
         }
 
+    if (SUCCESS != AddElementSourceInfo(results, v8eh))
+        {
+        //TODO Log error
+        }
     return BentleyApi::SUCCESS;
     }
 
@@ -2991,11 +3062,15 @@ ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8ModelRef,
 BentleyStatus Converter::FindModelProvenanceEntry(DgnV8ModelProvenance::ModelProvenanceEntry& entryFound, DgnV8ModelR v8Model, TransformCR trans)
     {
     DgnV8FileP file = v8Model.GetDgnFileP();
-    SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
-    BeSQLite::BeGuid guid;
-    if (SUCCESS != DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+    BeSQLite::BeGuid guid = GetDocumentGUIDforFile(*file);
+    if (BSISUCCESS != DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
+        {
+        LOG.infov("DgnV8FileProvenance does not have %s (%s)", Bentley::Utf8String(file->GetFileName()).c_str(), guid.IsValid()? guid.ToString().c_str(): "no guid");
         return BSIERROR;
-        
+        }
+
+    LOG.infov("DgnV8FileProvenance has %s (%s)", Bentley::Utf8String(file->GetFileName()).c_str(), guid.ToString().c_str());
+
     bvector <DgnV8ModelProvenance::ModelProvenanceEntry> entries;
     DgnV8ModelProvenance::FindAll(entries, guid, GetDgnDb());
 
@@ -3224,10 +3299,11 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
     if (_WantModelProvenanceInBim())
         {
         DgnV8FileP file = v8Model.GetDgnFileP();
-        SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
-        BeSQLite::BeGuid guid;
-        if (SUCCESS == DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+        BeSQLite::BeGuid guid = GetDocumentGUIDforFile(*file);
+
+        if (guid.IsValid() && BSISUCCESS == DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
             {
+            LOG.infov("DgnV8FileProvenance has %s (%s)", Bentley::Utf8String(file->GetFileName()).c_str(), guid.ToString().c_str());
             DgnV8ModelProvenance::ModelProvenanceEntry entry;
             entry.m_dgnv8ModelId = mapping.GetV8ModelId().GetValue();
             entry.m_modelId = modelId;
@@ -3793,7 +3869,7 @@ bool            Converter::IsTransformEqualWithTolerance(TransformCR lhs, Transf
 void Converter::CheckForAndSaveChanges()
     {
     m_hadAnyChanges |= m_dgndb->Txns().HasChanges();
-    m_dgndb->SaveChanges();
+    iModelBridge::SaveChanges(*m_dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3806,5 +3882,6 @@ bool Converter::_WantModelProvenanceInBim()
 
     return iModelBridge::WantModelProvenanceInBim(*m_dgndb);
     }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

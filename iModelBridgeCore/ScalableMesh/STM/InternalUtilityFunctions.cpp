@@ -1768,11 +1768,46 @@ HFCPtr<HVEShape> CreateShapeFromClips(const HFCPtr<HVEShape>        areaShape,
 
     return clipShapePtr;
     }    
-
+	
 /*---------------------------------------------------------------------------------**//**
 * Determine of the file name is an URL
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsUrl(WCharCP filename)
     {
-    return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
+	   return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
+	}
+
+double ComputeMinEdgeLength(const DPoint3d* points, size_t ptNum, const int32_t* idx, size_t idxNum)
+{
+    double minLength = DBL_MAX;
+    double avgLength = 0;
+    for (size_t i = 0; i < idxNum-1; i++)
+    {
+        DVec3d vec = DVec3d::FromStartEnd(points[idx[i]-1], i % 3 == 2 ? points[idx[i - 2]-1] : points[idx[i + 1]-1]);
+        double length = vec.Magnitude();
+        if (length > 0)
+        {
+            minLength = std::min(minLength, length);
+            avgLength += length;
+        }
     }
+    avgLength /= idxNum - 1;
+    return avgLength /4;
+}
+
+void SimplifyPolygonToMinEdge(double minEdge, bvector<DPoint3d>& poly)
+{
+    size_t maxPts = poly.size();
+    for (size_t i = 0; i < maxPts-2; ++i)
+    {
+        DVec3d vec = DVec3d::FromStartEnd(poly[i], poly[i + 1]);
+        if (vec.Magnitude() < minEdge)
+        {
+            poly.erase(poly.begin() + i + 1);
+            maxPts--;
+            i--;
+        }
+    }
+    poly.resize(maxPts);
+}
+

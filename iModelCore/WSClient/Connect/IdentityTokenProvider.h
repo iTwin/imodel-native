@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/IConnectTokenProvider.h>
 #include <WebServices/Connect/IImsClient.h>
@@ -38,7 +39,7 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
         int64_t GetTokenExpirationTimestamp();
 
     public:
-        static IdentityTokenProviderPtr Create
+        WSCLIENT_EXPORT static IdentityTokenProviderPtr Create
             (
             IImsClientPtr client,
             ITokenStorePtr store,
@@ -47,10 +48,10 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
             );
 
         //! Set new token lifetime and refresh rate in minutes
-        void Configure(uint32_t tokenLifetime, uint32_t tokenRefreshRate);
+        WSCLIENT_EXPORT void Configure(uint32_t tokenLifetime, uint32_t tokenRefreshRate);
 
-        AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override;
-        ISecurityTokenPtr GetToken() override;
+        WSCLIENT_EXPORT AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override;
+        WSCLIENT_EXPORT ISecurityTokenPtr GetToken() override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

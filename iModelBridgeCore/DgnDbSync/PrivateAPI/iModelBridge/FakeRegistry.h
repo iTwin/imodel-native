@@ -21,5 +21,6 @@ struct FakeRegistry : public iModelBridgeRegistryBase
     virtual BentleyStatus ComputeBridgeAffinityToDocument(iModelBridgeWithAffinity& affinity, BeFileNameCR affinityPath, BeFileNameCR filePath) override;
     void WriteAssignments();
     void Save();
+    BeSQLite::DbResult Open() { return OpenOrCreateStateDb(); }
     };
 END_BENTLEY_DGN_NAMESPACE

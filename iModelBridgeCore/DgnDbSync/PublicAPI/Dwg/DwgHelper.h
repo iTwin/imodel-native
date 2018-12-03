@@ -29,6 +29,9 @@ USING_NAMESPACE_DWGDB
 
 BEGIN_DWG_NAMESPACE
 
+//======================================================================================
+// !A helper class of common utilities useful for DWG conversion
+//===============+===============+===============+===============+===============+======
 struct DwgHelper : BentleyApi::NonCopyableClass
     {
 private:
@@ -59,15 +62,23 @@ public:
     DWG_EXPORT static Utf8String       GetAttrdefECClassNameFromBlockName (WCharCP blockName);
     DWG_EXPORT static DRange2d         GetRangeFrom (DPoint2dCR center, double width, double height);
     DWG_EXPORT static double           GetAbsolutePDSIZE (double pdsize, double vportHeight);
-    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbCircleCR circle, TransformCP transform = nullptr);
-    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbEllipseCR ellipse, TransformCP transform = nullptr);
-    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbFaceCR face, TransformCP transform = nullptr);
-    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbRegionCR region, TransformCP transform = nullptr);
-    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbPolylineCR polyline, TransformCP transform = nullptr);
-    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDb2dPolylineCR polyline2d, TransformCP transform = nullptr);
-    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDb3dPolylineCR polyline3d, TransformCP transform = nullptr);
-    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbSplineCR spline, TransformCP transform = nullptr, bool makeLinestring = false);
-    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbObjectId entityId, TransformCP transform = nullptr);
+    DWG_EXPORT static ICurvePrimitivePtr CreateCurvePrimitive (DwgDbLineCR arc, TransformCP transform = nullptr);
+    DWG_EXPORT static ICurvePrimitivePtr CreateCurvePrimitive (DwgDbArcCR arc, TransformCP transform = nullptr);
+    DWG_EXPORT static ICurvePrimitivePtr CreateCurvePrimitive (DwgDbCircleCR circle, TransformCP transform = nullptr);
+    DWG_EXPORT static ICurvePrimitivePtr CreateCurvePrimitive (DwgDbEllipseCR ellipse, TransformCP transform = nullptr);
+    DWG_EXPORT static ICurvePrimitivePtr CreateCurvePrimitive (DwgDbFaceCR face, TransformCP transform = nullptr);
+    DWG_EXPORT static ICurvePrimitivePtr CreateCurvePrimitive (DwgDbSplineCR spline, TransformCP transform = nullptr, bool makeLinestring = false);
+    DWG_EXPORT static ICurvePrimitivePtr CreateCurvePrimitive (DwgDbEntityCR entity, TransformCP transform = nullptr);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbCircleCR circle, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbEllipseCR ellipse, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbFaceCR face, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbRegionCR region, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbPolylineCR polyline, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDb2dPolylineCR polyline2d, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDb3dPolylineCR polyline3d, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbSplineCR spline, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr, bool makeLinestring = false);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbEntityCR entity, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
+    DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbObjectId entityId, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
     DWG_EXPORT static ClipVectorPtr    CreateClipperFromEntity (DwgDbObjectId entityId, double* frontClip = nullptr, double* backClip = nullptr, TransformCP entityToClipper = nullptr, TransformCP clipperToModel = nullptr);
     DWG_EXPORT static DwgFileVersion   CheckDwgVersionString (Utf8StringCR versionString);
     DWG_EXPORT static Utf8String       GetStringFromDwgVersion (DwgFileVersion dwgVersion);

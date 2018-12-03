@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeFileName.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -400,6 +400,12 @@ POP_MSVC_IGNORE
 
     //! Get name length
     size_t GetNameSize() const { return size(); }
+
+    //! Converts the parameter to a BeFileName, including calling FixPathName, and tests for exact equality of the resolved name.
+    //! This is NOT meant to perform exhaustive computations to determine if two paths resolve to the same physical file.
+    //! This IS intended to, given the same input path, determine if this instance would match (by performaing the same mutations and comparing).
+    bool IsEquivalentTo(Utf8CP rhs) const { return Equals(BeFileName(rhs, BentleyCharEncoding::Utf8)); }
+    bool IsEquivalentTo(WCharCP rhs) const { return Equals(BeFileName(rhs)); }
 /** @} */
 
 /** @name Work with directories */

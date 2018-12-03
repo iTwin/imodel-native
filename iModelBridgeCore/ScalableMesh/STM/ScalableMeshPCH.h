@@ -20,6 +20,10 @@
 #ifdef __APPLE__
 	#define _VA_LIST
 #endif	
+#if ANDROID
+#include <cctype>
+#include <cstring>
+#endif
 #include <thread>
 #include <atomic>
 #include <mutex> 
@@ -29,6 +33,7 @@
 #include <map>
 
 #ifdef __APPLE__
+    #define _RWSTD_NO_IMPLICIT_INCLUSION
 	#define TARGET_CPU_ARM64 1
 #endif	
 #include <BeSQLite/BeSQLite.h>
@@ -47,8 +52,8 @@
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
-#include <TerrainModel/Core/bcdtminlines.h>
 #ifndef LINUX_SCALABLEMESH_BUILD
+#include <TerrainModel/Core/bcdtminlines.h>
 #include <TerrainModel\Formats\InroadsImporter.h>
 #endif
 

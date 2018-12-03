@@ -39,8 +39,11 @@ struct ExpectedEventIdentifier
 struct GlobalEventsTests : IntegrationTestsBase
     {
     DgnDbPtr m_db;
-    bset<Utf8String> m_unsubscribeSubscriptionInstances;
     static ClientPtr s_serviceAccountClient;
+    GlobalConnectionPtr m_globalConnection;
+    GlobalEventManagerPtr m_eventManager;
+    GlobalEventSubscriptionPtr m_subscription;
+    GlobalEventSubscriptionId m_subscriptionId;
 
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Uzkuraitis              05/2018
@@ -72,6 +75,8 @@ struct GlobalEventsTests : IntegrationTestsBase
         behaviourOptions.DisableOption(RequestBehaviorOptionsEnum::DisableGlobalEvents);
         requestOptions.insert(behaviourOptions.GetBehaviorOptionsResultPair());
         s_client->GlobalRequestOptions()->SetRequestOptions(requestOptions);
+        m_globalConnection = s_serviceAccountClient->GlobalConnection()->GetResult().GetValue();
+        m_eventManager = m_globalConnection->GetGlobalEventManager();
         }
 
     /*--------------------------------------------------------------------------------------+
@@ -83,14 +88,9 @@ struct GlobalEventsTests : IntegrationTestsBase
             m_db = nullptr;
         iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
 
-        if(m_unsubscribeSubscriptionInstances.size() > 0)
+        if(!Utf8String::IsNullOrEmpty(m_subscriptionId.c_str()))
             {
-            const auto globalConnection = s_serviceAccountClient->GlobalConnection()->GetResult().GetValue();
-            auto eventManager = globalConnection->GetGlobalEventManager();
-            for (const Utf8String subscriptionInstanceId : m_unsubscribeSubscriptionInstances)
-                {
-                eventManager->UnsubscribeEvents(subscriptionInstanceId);
-                }
+            m_eventManager->UnsubscribeEvents(m_subscriptionId);
             }
         IntegrationTestsBase::TearDown();
         }
@@ -102,6 +102,18 @@ struct GlobalEventsTests : IntegrationTestsBase
         {
         return IntegrationTestsBase::CreateiModel(m_db, expectSuccess);
         }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              05/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void Subscribe(GlobalEventTypeSet* eventTypes)
+        {
+        const BeGuid newGuid(true);
+        GlobalEventSubscriptionResult subscriptionResult = m_eventManager->SubscribeToEvents(newGuid, eventTypes)->GetResult();
+        ASSERT_SUCCESS(subscriptionResult);
+        m_subscription = subscriptionResult.GetValue();
+        m_subscriptionId = m_subscription->GetSubscriptionInstanceId();
+        };
     };
 
 ClientPtr GlobalEventsTests::s_serviceAccountClient;
@@ -157,23 +169,18 @@ void CheckAllEventsReceived(const Utf8String subscriptionInstanceId, GlobalEvent
 //---------------------------------------------------------------------------------------
 TEST_F(GlobalEventsTests, SubscribeTests)
     {
-    auto globalConnection = s_serviceAccountClient->GlobalConnection()->GetResult().GetValue();
     bset<GlobalEvent::GlobalEventType> eventTypes;
     eventTypes.insert(GlobalEvent::GlobalEventType::iModelCreatedEvent);
-    auto eventManager = globalConnection->GetGlobalEventManager();
 
-    const BeGuid newGuid(true);
-    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
-    EXPECT_SUCCESS(subscrResult->GetResult());
-    m_unsubscribeSubscriptionInstances.insert(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
+    Subscribe(&eventTypes);
 
     eventTypes.insert(GlobalEvent::GlobalEventType::ChangeSetCreatedEvent);
-    auto modifiedSubscriptionResult = eventManager->ModifySubscription(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId(), &eventTypes);
-    EXPECT_SUCCESS(modifiedSubscriptionResult->GetResult());
+    GlobalEventSubscriptionResult modifiedSubscriptionResult = m_eventManager->ModifySubscription(m_subscriptionId, &eventTypes)->GetResult();
+    EXPECT_SUCCESS(modifiedSubscriptionResult);
 
-    auto unsubscribeResult = eventManager->UnsubscribeEvents(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
-    EXPECT_SUCCESS(unsubscribeResult->GetResult());
-    m_unsubscribeSubscriptionInstances.erase(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
+    StatusResult unsubscribeResult = m_eventManager->UnsubscribeEvents(m_subscriptionId)->GetResult();
+    EXPECT_SUCCESS(unsubscribeResult);
+    m_subscriptionId = "";
     }
 
 //---------------------------------------------------------------------------------------
@@ -181,15 +188,10 @@ TEST_F(GlobalEventsTests, SubscribeTests)
 //---------------------------------------------------------------------------------------
 TEST_F(GlobalEventsTests, EventGetTests)
     {
-    auto globalConnection = s_serviceAccountClient->GlobalConnection()->GetResult().GetValue();
     bset<GlobalEvent::GlobalEventType> eventTypes;
     eventTypes.insert(GlobalEvent::GlobalEventType::iModelCreatedEvent);
-    auto eventManager = globalConnection->GetGlobalEventManager();
 
-    const BeGuid newGuid(true);
-    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
-    EXPECT_SUCCESS(subscrResult->GetResult());
-    m_unsubscribeSubscriptionInstances.insert(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
+    Subscribe(&eventTypes);
 
     std::list<ExpectedEventIdentifier> expectedEventsList;
 
@@ -200,7 +202,7 @@ TEST_F(GlobalEventsTests, EventGetTests)
     createResult = CreateiModel();
     expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId()));
 
-    CheckAllEventsReceived(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId(), eventManager, expectedEventsList);
+    CheckAllEventsReceived(m_subscriptionId, m_eventManager, expectedEventsList);
     }
 
 //---------------------------------------------------------------------------------------
@@ -208,19 +210,14 @@ TEST_F(GlobalEventsTests, EventGetTests)
 //---------------------------------------------------------------------------------------
 TEST_F(GlobalEventsTests, GetMultipleEventTypes)
     {
-    auto globalConnection = s_serviceAccountClient->GlobalConnection()->GetResult().GetValue();
     bset<GlobalEvent::GlobalEventType> eventTypes;
     eventTypes.insert(GlobalEvent::GlobalEventType::iModelCreatedEvent);
     eventTypes.insert(GlobalEvent::GlobalEventType::ChangeSetCreatedEvent);
     eventTypes.insert(GlobalEvent::GlobalEventType::NamedVersionCreatedEvent);
     eventTypes.insert(GlobalEvent::GlobalEventType::SoftiModelDeleteEvent);
     eventTypes.insert(GlobalEvent::GlobalEventType::HardiModelDeleteEvent);
-    auto eventManager = globalConnection->GetGlobalEventManager();
 
-    const BeGuid newGuid(true);
-    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
-    EXPECT_SUCCESS(subscrResult->GetResult());
-    m_unsubscribeSubscriptionInstances.insert(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
+    Subscribe(&eventTypes);
 
     std::list<ExpectedEventIdentifier> expectedEventsList;
 
@@ -245,14 +242,14 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
 
     IWSRepositoryClientPtr projectClient = nullptr;
     iModelHubHelpers::CreateProjectWSClient(projectClient, *s_client, s_projectId);
-    ASSERT_TRUE(nullptr != projectClient);
+    ASSERT_NE(nullptr, projectClient);
     Utf8StringCR deleteArchivedJobId = LRPJobBackdoorAPI::ScheduleLRPJob(projectClient, "DeleteArchivedJob", createResult.GetValue()->GetId());
 
     bool deleteArchivedJobSuccessful = LRPJobBackdoorAPI::WaitForLRPJobToFinish(projectClient, deleteArchivedJobId);
     EXPECT_TRUE(deleteArchivedJobSuccessful);
     expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::HardiModelDeleteEvent, s_projectId, createResult.GetValue()->GetId()));
 
-    CheckAllEventsReceived(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId(), eventManager, expectedEventsList);
+    CheckAllEventsReceived(m_subscriptionId, m_eventManager, expectedEventsList);
     }
 
 //---------------------------------------------------------------------------------------
@@ -260,39 +257,36 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
 //---------------------------------------------------------------------------------------
 TEST_F(GlobalEventsTests, EventPeekAndDelete)
     {
-    auto globalConnection = s_serviceAccountClient->GlobalConnection()->GetResult().GetValue();
     bset<GlobalEvent::GlobalEventType> eventTypes;
     eventTypes.insert(GlobalEvent::GlobalEventType::iModelCreatedEvent);
-    auto eventManager = globalConnection->GetGlobalEventManager();
 
-    const BeGuid newGuid(true);
-    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
-    auto subscriptionId = subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId();
-    EXPECT_SUCCESS(subscrResult->GetResult());
-    m_unsubscribeSubscriptionInstances.insert(subscriptionId);
+    Subscribe(&eventTypes);
 
     iModelResult createResult = CreateiModel();
-    ExpectedEventIdentifier eventIdentifier = ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId());
     iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
 
-    // First peek should return the same event
-    auto peekedEventResult = eventManager->PeekEvent(subscriptionId, false)->GetResult();
+    // First peek should have an event to return
+    auto peekedEventResult = m_eventManager->PeekEvent(m_subscriptionId, false)->GetResult();
+    ASSERT_SUCCESS(peekedEventResult);
     auto peekedEvent = peekedEventResult.GetValue();
-    EXPECT_EQ(eventIdentifier.eventType, peekedEvent->GetEventType());
-    EXPECT_EQ(eventIdentifier.iModelId, peekedEvent->GetiModelId());
-    EXPECT_EQ(eventIdentifier.projectId, peekedEvent->GetProjectId());
+    EXPECT_EQ(GlobalEvent::GlobalEventType::iModelCreatedEvent, peekedEvent->GetEventType());
 
     // Delete event
-    auto deletionResult = eventManager->DeleteEvent(peekedEvent)->GetResult();
+    auto deletionResult = m_eventManager->DeleteEvent(peekedEvent)->GetResult();
     EXPECT_SUCCESS(deletionResult);
 
     // Second delete should fail
-    deletionResult = eventManager->DeleteEvent(peekedEvent)->GetResult();
+    deletionResult = m_eventManager->DeleteEvent(peekedEvent)->GetResult();
     EXPECT_FAILURE(deletionResult);
 
-    // Next peek should return nothing
-    peekedEventResult = eventManager->PeekEvent(subscriptionId, false)->GetResult();
-    EXPECT_FAILURE(peekedEventResult);
+    // If second peek is successful, it should return a different event
+    auto secondPeekedEventResult = m_eventManager->PeekEvent(m_subscriptionId, false)->GetResult();
+    if (secondPeekedEventResult.IsSuccess())
+        {
+        auto secondPeekedEvent = secondPeekedEventResult.GetValue();
+        EXPECT_EQ(GlobalEvent::GlobalEventType::iModelCreatedEvent, secondPeekedEvent->GetEventType());
+        EXPECT_NE(peekedEvent->GetiModelId(), secondPeekedEvent->GetiModelId());
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -300,29 +294,21 @@ TEST_F(GlobalEventsTests, EventPeekAndDelete)
 //---------------------------------------------------------------------------------------
 TEST_F(GlobalEventsTests, DeleteNotPeekedEvent)
     {
-    auto globalConnection = s_serviceAccountClient->GlobalConnection()->GetResult().GetValue();
     bset<GlobalEvent::GlobalEventType> eventTypes;
     eventTypes.insert(GlobalEvent::GlobalEventType::iModelCreatedEvent);
-    auto eventManager = globalConnection->GetGlobalEventManager();
 
-    const BeGuid newGuid(true);
-    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
-    EXPECT_SUCCESS(subscrResult->GetResult());
-    auto subscriptionId = subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId();
-    m_unsubscribeSubscriptionInstances.insert(subscriptionId);
+    Subscribe(&eventTypes);
 
     auto createResult = CreateiModel();
-    ExpectedEventIdentifier eventIdentifier = ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId());
     iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
 
     //Get event
-    auto eventResult = eventManager->GetEvent(subscriptionId, false)->GetResult();
+    auto eventResult = m_eventManager->GetEvent(m_subscriptionId, false)->GetResult();
+    ASSERT_SUCCESS(eventResult);
     auto gotEvent = eventResult.GetValue();
-    EXPECT_EQ(eventIdentifier.eventType, gotEvent->GetEventType());
-    EXPECT_EQ(eventIdentifier.iModelId, gotEvent->GetiModelId());
-    EXPECT_EQ(eventIdentifier.projectId, gotEvent->GetProjectId());
+    EXPECT_EQ(GlobalEvent::GlobalEventType::iModelCreatedEvent, gotEvent->GetEventType());
 
     // Deleting event that was not peeked should fail
-    auto deletionResult = eventManager->DeleteEvent(gotEvent)->GetResult();
+    auto deletionResult = m_eventManager->DeleteEvent(gotEvent)->GetResult();
     EXPECT_FAILURE(deletionResult);
     }

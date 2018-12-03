@@ -1318,7 +1318,7 @@ BentleyStatus DataSourceCache::ReadInstanceHierarchy(ECInstanceKeyCR instance, E
 
     if (!nodeKey.IsValid())
         return ERROR;
-       
+
     ECInstanceKeyMultiMap nodeKeys;
     ECInstanceKeyMultiMap ansestorNodes;
     ansestorNodes.insert(ECDbHelper::ToPair(nodeKey));
@@ -1709,9 +1709,26 @@ BentleyStatus DataSourceCache::RemoveTemporaryResponses(Utf8StringCR name, DateT
     {
     LogCacheDataForMethod();
 
-    ECInstanceKeyMultiMap fullyPersistedNodes;
-    if (SUCCESS != GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-        SUCCESS != GetState().GetCachedResponseManager().DeleteResponses(name, accessedBeforeDateUtc, fullyPersistedNodes))
+    ECInstanceKeyMultiMap nodesToLeave;
+    if (SUCCESS != GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, nodesToLeave) ||
+        SUCCESS != GetState().GetCachedResponseManager().DeleteResponses(name, accessedBeforeDateUtc, nodesToLeave))
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DataSourceCache::RemoveTemporaryResponsesByPrefix(Utf8StringCR responsePrefix, DateTimeCR accessedBeforeDateUtc)
+    {
+    LogCacheDataForMethod();
+
+    ECInstanceKeyMultiMap nodesToLeave;
+    if (SUCCESS != GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, nodesToLeave) ||
+        SUCCESS != GetState().GetCachedResponseManager().DeleteResponsesByPrefix(responsePrefix, accessedBeforeDateUtc, nodesToLeave))
         {
         return ERROR;
         }

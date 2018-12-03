@@ -43,14 +43,14 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         //! @param client client
         //! @param rpUri Relying Party URI for token
         //! @param parentTokenProvider token provider for parent/identity token to be used to delegate new token
-        DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr parentTokenProvider);
+        WSCLIENT_EXPORT DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr parentTokenProvider);
 
         //! Set new token lifetime and expiration threshold in minutes
-        void Configure(uint32_t tokenLifetime, uint32_t tokenExpirationThreshold);
+        WSCLIENT_EXPORT void Configure(uint32_t tokenLifetime, uint32_t tokenExpirationThreshold);
 
-        AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override;
-        ISecurityTokenPtr GetToken() override;
-        void ClearCache();
+        WSCLIENT_EXPORT AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override;
+        WSCLIENT_EXPORT ISecurityTokenPtr GetToken() override;
+        WSCLIENT_EXPORT void ClearCache();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

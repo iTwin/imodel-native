@@ -11,13 +11,20 @@
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform" />
         <SubPart PartName="iModelHubClient" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02" />
         <SubPart PartName="PublicAPI" />
-      
+        <SubPart PartName="SourceInfoSchemaPrewire"/>
       <Bindings>
             <Libs Required="false">Delivery/$(libprefix)iModelBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)iModelBridge$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-
+    <Part Name="SourceInfoSchemaPrewire" BentleyBuildMakeFile="SourceInfoSchemaPrewire.mke" >
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application">
+                Delivery/SourceInfo.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+    
     <Part Name="PublicApi" BentleyBuildMakeFile="iModelBridge/prewire.mke">
         <Bindings>
             <PublicAPI Domain="iModelBridge" />

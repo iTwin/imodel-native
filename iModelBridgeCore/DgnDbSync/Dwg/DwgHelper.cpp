@@ -1097,7 +1097,57 @@ double          DwgHelper::GetAbsolutePDSIZE (double pdsize, double vportHeight)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbCircleCR circle, TransformCP transform)
+ICurvePrimitivePtr  DwgHelper::CreateCurvePrimitive (DwgDbLineCR line, TransformCP transform)
+    {
+    DPoint3d    points[2] = {line.GetStartPoint(), line.GetEndPoint()};
+    if (nullptr != transform)
+        transform->Multiply (points, 2);
+    return  ICurvePrimitive::CreateLine (points[0], points[1]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr  DwgHelper::CreateCurvePrimitive (DwgDbArcCR arc, TransformCP transform)
+    {
+    DPoint3d    center = arc.GetCenter ();
+    DVec3d      normal = arc.GetNormal ();
+    double      radius = arc.GetRadius ();
+    double      start = arc.GetStartAngle ();
+    double      swept = arc.GetEndAngle() - start;
+
+    if (!Angle::IsFullCircle(swept))
+        swept = Angle::AdjustToSweep (swept, 0, Angle::TwoPi());
+
+    if (nullptr != transform)
+        {
+        transform->Multiply (center);
+        transform->Multiply (normal);
+        normal.Normalize ();
+
+        double  toMeters = 1.0;
+        if (transform->IsRigidScale(toMeters))
+            radius *= toMeters;
+        }
+    else
+        {
+        normal.Normalize ();
+        }
+
+    DVec3d      xAxis, yAxis;
+    RotMatrix   matrix;
+    DwgHelper::ComputeMatrixFromArbitraryAxis (matrix, normal);
+    matrix.GetColumn (xAxis, 0);
+    matrix.GetColumn (yAxis, 1);
+
+    DEllipse3d  ellipse = DEllipse3d::FromScaledVectors (center, xAxis, yAxis, radius, radius, start, swept);
+    return  ICurvePrimitive::CreateArc (ellipse);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr  DwgHelper::CreateCurvePrimitive (DwgDbCircleCR circle, TransformCP transform)
     {
     DPoint3d    center = circle.GetCenter ();
     DVec3d      normal = circle.GetNormal ();
@@ -1114,27 +1164,32 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbCircleCR circle, Transfor
             radius *= toMeters;
         }
     
-    ICurvePrimitivePtr  geom = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterNormalRadius(center, normal, radius));
-    if (!geom.IsValid())
-        return  nullptr;
-
-    return CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, geom);
+    return ICurvePrimitive::CreateArc (DEllipse3d::FromCenterNormalRadius(center, normal, radius));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbEllipseCR ellipse, TransformCP transform)
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbCircleCR circle, CurveVector::BoundaryType type, TransformCP transform)
+    {
+    auto geom = DwgHelper::CreateCurvePrimitive (circle, transform);
+    return  geom.IsValid() ? CurveVector::Create(geom, type) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr  DwgHelper::CreateCurvePrimitive (DwgDbEllipseCR ellipse, TransformCP transform)
     {
     DPoint3d    center = ellipse.GetCenter ();
     DVec3d      major = ellipse.GetMajorAxis ();
     DVec3d      minor = ellipse.GetMinorAxis ();
-    double      start = ellipse.GetStartAngle ();
-    double      swept = ellipse.GetEndAngle() - start;
+    double      start = ellipse.GetStartParam ();
+    double      swept = ellipse.GetEndParam() - start;
 
     if (!Angle::IsFullCircle(swept))
-        swept = Angle::AdjustToSweep (swept, 0, msGeomConst_2pi);
-    
+        swept = Angle::AdjustToSweep (swept, 0.0, msGeomConst_2pi);
+
     if (nullptr != transform)
         {
         transform->Multiply (center);
@@ -1142,19 +1197,25 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbEllipseCR ellipse, Transf
         transform->Multiply (minor);
         }
 
-    ICurvePrimitivePtr  geom = ICurvePrimitive::CreateArc (DEllipse3d::FromVectors(center, major, minor, start, swept));
-    if (!geom.IsValid())
-        return  nullptr;
-
-    return CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, geom);
+    return ICurvePrimitive::CreateArc (DEllipse3d::FromVectors(center, major, minor, start, swept));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbPolylineCR polyline, TransformCP transform)
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbEllipseCR ellipse, CurveVector::BoundaryType type, TransformCP transform)
+    {
+    auto geom = DwgHelper::CreateCurvePrimitive (ellipse, transform);
+    return  geom.IsValid() ? CurveVector::Create(geom, type) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbPolylineCR polyline, CurveVector::BoundaryType type, TransformCP transform)
     {
     PolylineFactory factory (polyline, true);
+    factory.SetBoundaryType (type);
 
     if (nullptr != transform)
         factory.TransformData (*transform);
@@ -1165,7 +1226,7 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbPolylineCR polyline, Tran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb2dPolylineCR polyline2d, TransformCP transform)
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb2dPolylineCR polyline2d, CurveVector::BoundaryType type, TransformCP transform)
     {
     BeAssert (false && "2DPolyline clipper not implemented yet!");
     return  nullptr;
@@ -1174,7 +1235,7 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb2dPolylineCR polyline2d, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb3dPolylineCR polyline3d, TransformCP transform)
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb3dPolylineCR polyline3d, CurveVector::BoundaryType type, TransformCP transform)
     {
     BeAssert (false && "3DPolyline clipper not implemented yet!");
     return  nullptr;
@@ -1183,7 +1244,7 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb3dPolylineCR polyline3d, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbSplineCR spline, TransformCP transform, bool makeLinestring)
+ICurvePrimitivePtr  DwgHelper::CreateCurvePrimitive (DwgDbSplineCR spline, TransformCP transform, bool makeLinestring)
     {
     if (makeLinestring)
         {
@@ -1193,7 +1254,7 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbSplineCR spline, Transfor
             {
             if (nullptr != transform)
                 transform->Multiply (&points.front(), points.size());
-            return CurveVector::CreateLinear (&points.front(), points.size(), CurveVector::BOUNDARY_TYPE_Outer);
+            return ICurvePrimitive::CreateLineString (points);
             }
         }
 
@@ -1220,17 +1281,22 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbSplineCR spline, Transfor
     if (!bspline.IsValid())
         return  nullptr;
 
-    ICurvePrimitivePtr  geom = ICurvePrimitive::CreateBsplineCurve (*bspline);
-    if (geom.IsNull())
-        return  nullptr;
-
-    return CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, geom);
+    return ICurvePrimitive::CreateBsplineCurve (*bspline);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbFaceCR face, TransformCP transform)
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbSplineCR spline, CurveVector::BoundaryType type, TransformCP transform, bool makeLinestring)
+    {
+    auto geom = DwgHelper::CreateCurvePrimitive (spline, transform, makeLinestring);
+    return  geom.IsValid() ? CurveVector::Create(geom, type) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr  DwgHelper::CreateCurvePrimitive (DwgDbFaceCR face, TransformCP transform)
     {
     DPoint3dArray   points;
     for (uint16_t i = 0; i < 4; i++)
@@ -1243,59 +1309,201 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbFaceCR face, TransformCP 
         points.push_back (point);
         }
 
-    return CurveVector::CreateLinear (&points.front(), points.size(), CurveVector::BOUNDARY_TYPE_Outer);
+    return ICurvePrimitive::CreateLineString (points);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbRegionCR region, TransformCP transform)
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbFaceCR face, CurveVector::BoundaryType type, TransformCP transform)
     {
-    BeAssert (false && "Region clipper not implemented yet!");
+    auto geom = DwgHelper::CreateCurvePrimitive (face, transform);
+    return  geom.IsValid() ? CurveVector::Create(geom, type) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbRegionCR region, CurveVector::BoundaryType type, TransformCP transform)
+    {
+    auto shape = CurveVector::Create (type);
+    if (!shape.IsValid())
+        return  shape;
+
+    DwgDbObjectPArray   entities;
+    auto status = region.Explode (entities);
+    if (status != DwgDbStatus::Success || entities.empty())
+        return  nullptr;
+
+    double      pointTol = 1.0e-10;
+    DRange3d    range;
+    if (DwgDbStatus::Success == region.GetRange(range))
+        pointTol = 0.001 * range.DiagonalDistance ();
+
+    auto numEntities = entities.size ();
+    for (int i = 0; i < numEntities; i++)
+        {
+        auto entity = DwgDbEntity::Cast (entities[i]);
+        if (nullptr != entity && shape.IsValid())
+            {
+            // expect primitive geometries only
+            auto curve = DwgHelper::CreateCurvePrimitive (*entity, transform);
+            if (curve.IsValid())
+                shape->Add (curve);
+            else // WIP - chain complex elements?
+                shape = nullptr;
+            }
+        ::free (entities[i]);
+        }
+
+    // ensure non empty
+    if (shape->empty())
+        shape = nullptr;
+
+    // ensure points are in order
+    if (shape.IsValid())
+        shape->ReorderForSmallGaps ();
+
+    return  shape;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr  DwgHelper::CreateCurvePrimitive (DwgDbEntityCR entity, TransformCP transform)
+    {
+    DwgDbArcCP  arc = DwgDbArc::Cast (&entity);
+    if (arc != nullptr)
+        return  DwgHelper::CreateCurvePrimitive (*arc, transform);
+
+    DwgDbLineCP line = DwgDbLine::Cast (&entity);
+    if (line != nullptr)
+        return  DwgHelper::CreateCurvePrimitive (*line, transform);
+    
+    DwgDbCircleCP   circle = DwgDbCircle::Cast (&entity);
+    if (circle != nullptr)
+        return  DwgHelper::CreateCurvePrimitive (*circle, transform);
+
+    DwgDbEllipseCP  ellipse = DwgDbEllipse::Cast (&entity);
+    if (ellipse != nullptr)
+        return  DwgHelper::CreateCurvePrimitive (*ellipse, transform);
+
+    DwgDbSplineCP   spline = DwgDbSpline::Cast (&entity);
+    if (spline != nullptr)
+        return  DwgHelper::CreateCurvePrimitive (*spline, transform, true);
+
+    DwgDbFaceCP     face = DwgDbFace::Cast (&entity);
+    if (face != nullptr)
+        return  DwgHelper::CreateCurvePrimitive (*face, transform);
+
+#ifdef DEBUG
+    auto name = entity.GetDwgClassName ();
+    BeAssert (false && "Unsupported entity type for curve primitive!");
+#endif
+
     return  nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbObjectId entityId, TransformCP transform)
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbEntityCR entity, CurveVector::BoundaryType type, TransformCP transform)
+    {
+    DwgDbCircleCP   circle = DwgDbCircle::Cast (&entity);
+    if (circle != nullptr)
+        return  DwgHelper::CreateCurveVectorFrom (*circle, type, transform);
+
+    DwgDbEllipseCP  ellipse = DwgDbEllipse::Cast (&entity);
+    if (ellipse != nullptr)
+        return  DwgHelper::CreateCurveVectorFrom (*ellipse, type, transform);
+    
+    DwgDbPolylineCP polyline = DwgDbPolyline::Cast (&entity);
+    if (polyline != nullptr)
+        return  DwgHelper::CreateCurveVectorFrom (*polyline, type, transform);
+    
+    DwgDb2dPolylineCP   polyline2d = DwgDb2dPolyline::Cast (&entity);
+    if (polyline2d != nullptr)
+        return  DwgHelper::CreateCurveVectorFrom (*polyline2d, type, transform);
+    
+    DwgDb3dPolylineCP   polyline3d = DwgDb3dPolyline::Cast (&entity);
+    if (polyline3d != nullptr)
+        return  DwgHelper::CreateCurveVectorFrom (*polyline3d, type, transform);
+    
+    // drop Spline curve to linestring - currently BSpline curve does not seem to clip DgnView well, TFS#589853.
+    DwgDbSplineCP   spline = DwgDbSpline::Cast (&entity);
+    if (spline != nullptr)
+        return  DwgHelper::CreateCurveVectorFrom (*spline, type, transform, true);
+    
+    DwgDbRegionCP   region = DwgDbRegion::Cast (&entity);
+    if (region != nullptr)
+        return  DwgHelper::CreateCurveVectorFrom (*region, type, transform);
+    
+    DwgDbFaceCP     face = DwgDbFace::Cast (&entity);
+    if (face != nullptr)
+        return  DwgHelper::CreateCurveVectorFrom (*face, type, transform);
+    
+#ifdef DEBUG
+    auto name = entity.GetDwgClassName ();
+    BeAssert (false && "Unsupported entity type for boundary!");
+#endif
+
+    return  nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbObjectId entityId, CurveVector::BoundaryType type, TransformCP transform)
     {
     if (entityId.IsNull())
         return  nullptr;
 
     DwgDbCirclePtr  circle(entityId, DwgDbOpenMode::ForRead);
     if (circle.OpenStatus() == DwgDbStatus::Success)
-        return  DwgHelper::CreateCurveVectorFrom (*circle.get(), transform);
+        return  DwgHelper::CreateCurveVectorFrom (*circle.get(), type, transform);
 
     DwgDbEllipsePtr ellipse(entityId, DwgDbOpenMode::ForRead);
     if (ellipse.OpenStatus() == DwgDbStatus::Success)
-        return  DwgHelper::CreateCurveVectorFrom (*ellipse.get(), transform);
+        return  DwgHelper::CreateCurveVectorFrom (*ellipse.get(), type, transform);
     
+    DwgDbArcPtr     arc(entityId, DwgDbOpenMode::ForRead);
+    if (arc.OpenStatus() == DwgDbStatus::Success)
+        return  CurveVector::Create(DwgHelper::CreateCurvePrimitive(*arc.get(), transform), type);
+
+    DwgDbLinePtr    line(entityId, DwgDbOpenMode::ForRead);
+    if (line.OpenStatus() == DwgDbStatus::Success)
+        return  CurveVector::Create(DwgHelper::CreateCurvePrimitive(*line.get(), transform), type);
+
     DwgDbPolylinePtr polyline(entityId, DwgDbOpenMode::ForRead);
     if (polyline.OpenStatus() == DwgDbStatus::Success)
-        return  DwgHelper::CreateCurveVectorFrom (*polyline.get(), transform);
+        return  DwgHelper::CreateCurveVectorFrom (*polyline.get(), type, transform);
     
     DwgDb2dPolylinePtr polyline2d(entityId, DwgDbOpenMode::ForRead);
     if (polyline2d.OpenStatus() == DwgDbStatus::Success)
-        return  DwgHelper::CreateCurveVectorFrom (*polyline2d.get(), transform);
+        return  DwgHelper::CreateCurveVectorFrom (*polyline2d.get(), type, transform);
     
     DwgDb3dPolylinePtr polyline3d(entityId, DwgDbOpenMode::ForRead);
     if (polyline3d.OpenStatus() == DwgDbStatus::Success)
-        return  DwgHelper::CreateCurveVectorFrom (*polyline3d.get(), transform);
+        return  DwgHelper::CreateCurveVectorFrom (*polyline3d.get(), type, transform);
     
     // drop Spline curve to linestring - currently BSpline curve does not seem to clip DgnView well, TFS#589853.
     DwgDbSplinePtr  spline(entityId, DwgDbOpenMode::ForRead);
     if (spline.OpenStatus() == DwgDbStatus::Success)
-        return  DwgHelper::CreateCurveVectorFrom (*spline.get(), transform, true);
+        return  DwgHelper::CreateCurveVectorFrom (*spline.get(), type, transform, true);
     
     DwgDbRegionPtr  region(entityId, DwgDbOpenMode::ForRead);
     if (region.OpenStatus() == DwgDbStatus::Success)
-        return  DwgHelper::CreateCurveVectorFrom (*region.get(), transform);
+        return  DwgHelper::CreateCurveVectorFrom (*region.get(), type, transform);
     
     DwgDbFacePtr    face(entityId, DwgDbOpenMode::ForRead);
     if (face.OpenStatus() == DwgDbStatus::Success)
-        return  DwgHelper::CreateCurveVectorFrom (*face.get(), transform);
+        return  DwgHelper::CreateCurveVectorFrom (*face.get(), type, transform);
     
+#ifdef DEBUG
+    auto name = entityId.GetDwgClassName ();
+    BeAssert (false && "Unsupported entity type for boundary!");
+#endif
+
     return  nullptr;
     }
 
@@ -1308,7 +1516,7 @@ ClipVectorPtr   DwgHelper::CreateClipperFromEntity (DwgDbObjectId entityId, doub
     Create a CurveVector w/coordinates on the clipper plane.
     Valid clipping entity types are Circle, Ellipse, Polyline, 2dPolyline, 3dPolyline, Region, Spline, Face.
     -----------------------------------------------------------------------------------*/
-    CurveVectorPtr  curve = DwgHelper::CreateCurveVectorFrom (entityId, entityToClipper);
+    CurveVectorPtr  curve = DwgHelper::CreateCurveVectorFrom (entityId, CurveVector::BOUNDARY_TYPE_Outer, entityToClipper);
     if (curve.IsNull())
         return  nullptr;
 

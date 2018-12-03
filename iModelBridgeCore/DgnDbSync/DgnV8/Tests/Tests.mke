@@ -74,8 +74,6 @@ $(o)MultiBridgeTests.obj        : $(BEGTEST_INPUT)MultiBridgeTests.cpp          
 
 $(o)DrawingTests.obj            : $(BEGTEST_INPUT)DrawingTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)ProgressMeterTests.obj      : $(BEGTEST_INPUT)ProgressMeterTests.cpp        $(TestsHeaders) ${MultiCompileDepends}
-
 $(o)SyncInfoReader.obj          : $(BEGTEST_INPUT)SyncInfoReader.cpp            $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)ImportConfigEditor.obj      : $(BEGTEST_INPUT)ImportConfigEditor.cpp        $(TestsHeaders) ${MultiCompileDepends}

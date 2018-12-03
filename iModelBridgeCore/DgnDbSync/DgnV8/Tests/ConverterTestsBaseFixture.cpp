@@ -323,7 +323,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
 
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
-    params.m_keepHostAliveForUnitTests = true;
+    params.SetKeepHostAlive(true);
     params.SetInputFileName(input);
 
     auto db = OpenExistingDgnDb(output);
@@ -343,7 +343,10 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         creator.MakeSchemaChanges();
         ASSERT_FALSE(creator.WasAborted());
         ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::Success, creator.InitializeJob());
-        creator.Process();
+        ASSERT_EQ(BentleyApi::SUCCESS, creator.DoBeginConversion());
+        ASSERT_EQ(BentleyApi::SUCCESS, creator.MakeDefinitionChanges());
+        creator.ConvertData();
+        ASSERT_EQ(BentleyApi::SUCCESS, creator.DoFinishConversion());
         DgnDbR db = creator.GetDgnDb();
         AddExternalDataModels (db);
         ASSERT_FALSE(creator.WasAborted());
@@ -379,7 +382,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
     {
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
-    params.m_keepHostAliveForUnitTests = true;
+    params.SetKeepHostAlive(true);
     params.SetInputFileName(input);
     auto db = OpenExistingDgnDb(output);
     ASSERT_TRUE(db.IsValid());
@@ -401,8 +404,11 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         if (!updater.WasAborted())
             {
             ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
-            updater.Process();
+            ASSERT_EQ(BentleyApi::SUCCESS, updater.DoBeginConversion());
+            ASSERT_EQ(BentleyApi::SUCCESS, updater.MakeDefinitionChanges());
+            updater.ConvertData();
             ASSERT_EQ(expectFailure, updater.WasAborted());
+            ASSERT_EQ(BentleyApi::SUCCESS, updater.DoFinishConversion());
             m_count = updater.GetElementsConverted();
             hadAnyChanges = updater.HadAnyChanges();
             }

@@ -51,6 +51,9 @@
     <None Include="Scripts\Executables\proxy2.py" />
     <None Include="Scripts\Executables\RegistryFix\PACCachingDisable.reg" />
     <None Include="Scripts\Executables\RegistryFix\PACCachingEnable.reg" />
+    <None Include="Scripts\Executables\Server-localhost-sv.pem" />
+    <None Include="Scripts\Executables\tls-server.bat" />
+    <None Include="Scripts\Executables\tls-server.py" />
     <None Include="Scripts\Resources\Data\pac1.js" />
     <None Include="Scripts\Resources\Data\pac2.js" />
     <None Include="Scripts\Resources\Data\pac3.js" />

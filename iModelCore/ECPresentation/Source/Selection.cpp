@@ -13,76 +13,76 @@
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData, timestamp);
+    return AddToSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     ECClassCP keyClass = ecdb.Schemas().GetClass(key.GetClassId());
-    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData, timestamp);
+    return AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData, timestamp);
+    return AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData, timestamp);
+    return RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     ECClassCP keyClass = ecdb.Schemas().GetClass(key.GetClassId());
-    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData, timestamp);
+    return RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData, timestamp);
+    return RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData, timestamp);
+    return ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     ECClassCP keyClass = ecdb.Schemas().GetClass(key.GetClassId());
-    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData, timestamp);
+    return ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData, timestamp);
+    return ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData, timestamp);
     }
 
 //=======================================================================================
@@ -282,7 +282,7 @@ void  SelectionManager::RemoveSyncHandler(SelectionSyncHandlerR handler)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, 
+folly::Future<folly::Unit> SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, 
     KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp) const
     {
     // create the selection changed event
@@ -291,100 +291,106 @@ void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, 
 
     // notify listeners on the work thread
     bvector<ISelectionChangesListener*> listeners = m_listeners;
+    bvector<folly::Future<folly::Unit>> changeFutures;
     for (ISelectionChangesListener* listener : listeners)
-        listener->NotifySelectionChanged(*evt);
+        changeFutures.push_back(listener->NotifySelectionChanged(*evt));
+
+    return folly::collect(changeFutures).then([]() -> folly::Unit
+        {
+        return folly::Unit();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> SelectionManager::_AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
         {
         BeAssert(false);
-        return;
+        return folly::makeFuture();
         }
     
     BeMutexHolder lock(m_mutex);
-    if (GetStorage(*connection, isSubSelection).AddToSelection(source, keys))
+    if (!GetStorage(*connection, isSubSelection).AddToSelection(source, keys))
+        return folly::makeFuture();
+
+    if (!isSubSelection)
         {
-        if (!isSubSelection)
-            {
-            GetStorage(*connection, true).ClearSelection(source);
-            GetLogger().debug("Sub selection cleared due to main selection change");
-            }
-        lock.unlock();
-        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Add, isSubSelection, keys, extendedData, timestamp);
+        GetStorage(*connection, true).ClearSelection(source);
+        GetLogger().debug("Sub selection cleared due to main selection change");
         }
+    lock.unlock();
+    return BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Add, isSubSelection, keys, extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> SelectionManager::_RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
         {
         BeAssert(false);
-        return;
+        return folly::makeFuture();
         }
     
     BeMutexHolder lock(m_mutex);
-    if (GetStorage(*connection, isSubSelection).RemoveFromSelection(source, keys))
+    if (!GetStorage(*connection, isSubSelection).RemoveFromSelection(source, keys))
+        return folly::makeFuture();
+
+    if (!isSubSelection)
         {
-        if (!isSubSelection)
-            {
-            GetStorage(*connection, true).ClearSelection(source);
-            GetLogger().debug("Sub selection cleared due to main selection change");
-            }
-        lock.unlock();
-        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Remove, isSubSelection, keys, extendedData, timestamp);
+        GetStorage(*connection, true).ClearSelection(source);
+        GetLogger().debug("Sub selection cleared due to main selection change");
         }
+    lock.unlock();
+    return BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Remove, isSubSelection, keys, extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> SelectionManager::_ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
         {
         BeAssert(false);
-        return;
+        return folly::makeFuture();
         }
     
     BeMutexHolder lock(m_mutex);
-    if (GetStorage(*connection, isSubSelection).ChangeSelection(source, keys))
+    if (!GetStorage(*connection, isSubSelection).ChangeSelection(source, keys))
+        return folly::makeFuture();
+
+    if (!isSubSelection)
         {
-        if (!isSubSelection)
-            {
-            GetStorage(*connection, true).ClearSelection(source);
-            GetLogger().debug("Sub selection cleared due to main selection change");
-            }
-        lock.unlock();
-        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, keys, extendedData, timestamp);
+        GetStorage(*connection, true).ClearSelection(source);
+        GetLogger().debug("Sub selection cleared due to main selection change");
         }
+    lock.unlock();
+    return BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, keys, extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_ClearSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> SelectionManager::_ClearSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
         {
         BeAssert(false);
-        return;
+        return folly::makeFuture();
         }
     
     BeMutexHolder lock(m_mutex);
     if (!GetStorage(*connection, isSubSelection).ClearSelection(source))
-        return;
+        return folly::makeFuture();
 
     if (!isSubSelection)
         {
@@ -393,22 +399,22 @@ void SelectionManager::_ClearSelection(ECDbCR ecdb, Utf8CP source, bool isSubSel
         }
     
     lock.unlock();
-    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Clear, isSubSelection, *KeySet::Create(), extendedData, timestamp);
+    return BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Clear, isSubSelection, *KeySet::Create(), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_RefreshSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp)
+folly::Future<folly::Unit> SelectionManager::_RefreshSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
         {
         BeAssert(false);
-        return;
+        return folly::makeFuture();
         }
     KeySetCPtr keys = isSubSelection ? GetSubSelection(ecdb) : GetSelection(ecdb);
-    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, *keys, extendedData, timestamp);
+    return BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, *keys, extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -458,6 +464,11 @@ SelectionChangedEventPtr SelectionChangedEvent::FromJson(IConnectionCacheCR conn
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                               Grigas.Petraitis    11/2018
+//---------------------------------------------------------------------------------------
+NativeLogging::ILogger& SelectionSyncHandler::GetLogger() const {return *NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_DGNCLIENTFX_SELECTION ".SelectionSyncHandler");}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
 void SelectionSyncHandler::OnRegistered(SelectionManager& manager)
@@ -478,23 +489,23 @@ void SelectionSyncHandler::OnUnregistered(SelectionManager& manager)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
+folly::Future<folly::Unit> SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     {
     // can't use presentation-based unified selection without a presentation manager
     if (!IECPresentationManager::IsActive())
-        return;
+        return folly::makeFuture();
 
     // this handler only handles one-way synchronization to SelectionManager
     if (SyncDirection::Outside != _GetSyncDirection() && SyncDirection::Both != _GetSyncDirection())
-        return;
+        return folly::makeFuture();
 
     // return if the event notifies about subselection and this handler doesn't handle it
     if (evt.IsSubSelection() && !_HandlesSubSelection())
-        return;
+        return folly::makeFuture();
 
     // don't handle events fired by itself
     if (nullptr != _GetSelectionSourceName() && evt.GetSourceName().Equals(_GetSelectionSourceName()))
-        return;
+        return folly::makeFuture();
 
     // create content request options
     Json::Value contentOptions = _CreateContentOptionsForSelection(evt);
@@ -503,115 +514,135 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     // create the selection info
     SelectionInfoCPtr selectionInfo = SelectionInfo::Create(evt.GetSourceName(), evt.IsSubSelection());
     KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetECDb()) : m_manager->GetSelection(evt.GetConnection().GetECDb());
-    bvector<ECClassInstanceKey> selectedKeys;
+    
+    Utf8String evtGuid = BeGuid(true).ToString();
+    GetLogger().debugv("_OnSelectionChanged [%s]: source = '%s', sub = '%s', keys count = %" PRIu64,
+        evtGuid.c_str(), evt.GetSourceName().c_str(), evt.IsSubSelection() ? "true" : "false", (uint64_t)inputKeys->size());
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).get();
-    if (defaultDescriptor.IsNull())
+    return IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), 
+        contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).then([this, evtGuid, evt = SelectionChangedEventCPtr(&evt)](ContentDescriptorCPtr defaultDescriptor)
         {
-        _SelectInstances(evt, selectedKeys);
-        return;
-        }
+        if (defaultDescriptor.IsNull())
+            {
+            GetLogger().debugv("_OnSelectionChanged [%s]: No descriptor", evtGuid.c_str());
+            return CallSelectInstances(*evt, bvector<ECClassInstanceKey>());
+            }
 
-    // we only care about keys, so ask to not return anything else
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*defaultDescriptor);
-    descriptor->AddContentFlag(ContentFlags::KeysOnly);
+        // we only care about keys, so ask to not return anything else
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create(*defaultDescriptor);
+        descriptor->AddContentFlag(ContentFlags::KeysOnly);
 
-    // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
-    if (content.IsNull())
+        // request for content
+        return IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).then([this, evtGuid, evt](ContentCPtr content)
+            {
+            if (content.IsNull())
+                {
+                GetLogger().debugv("_OnSelectionChanged [%s]: No content", evtGuid.c_str());
+                return CallSelectInstances(*evt, bvector<ECClassInstanceKey>());
+                }
+
+            // create the list of selected instances and select it
+            bvector<ECClassInstanceKey> selectedKeys;
+            for (ContentSetItemCPtr const& record : content->GetContentSet())
+                std::copy(record->GetKeys().begin(), record->GetKeys().end(), std::back_inserter(selectedKeys));
+            
+            GetLogger().debugv("_OnSelectionChanged [%s]: Set size = %" PRIu64 ", keys count = %" PRIu64, 
+                evtGuid.c_str(), (uint64_t)content->GetContentSet().GetSize(), (uint64_t)selectedKeys.size());
+            return CallSelectInstances(*evt, selectedKeys);
+            });
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Grigas.Petraitis    11/2018
+//---------------------------------------------------------------------------------------
+folly::Future<folly::Unit> SelectionSyncHandler::CallSelectInstances(SelectionChangedEventCR evt, bvector<ECClassInstanceKey> keys)
+    {
+    return folly::via(_GetSelectExecutor(), [this, evt = SelectionChangedEventCPtr(&evt), keys]()
         {
-        _SelectInstances(evt, selectedKeys);
-        return;
-        }
-
-    // create the list of selected instances and select it
-    for (ContentSetItemCPtr const& record : content->GetContentSet())
-        std::copy(record->GetKeys().begin(), record->GetKeys().end(), std::back_inserter(selectedKeys));
-    _SelectInstances(evt, selectedKeys);
+        _SelectInstances(*evt, keys);
+        });
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::AddToSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
+folly::Future<folly::Unit> SelectionSyncHandler::AddToSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
     {
     if (nullptr == m_manager)
         {
         BeAssert(false && "SelectionSyncHandler must be registered with the SelectionManager before calling AddToSelection");
-        return;
+        return folly::makeFuture();
         }
 
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->AddToSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData(), timestamp);
+    return m_manager->AddToSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData(), timestamp);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::RemoveFromSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
+folly::Future<folly::Unit> SelectionSyncHandler::RemoveFromSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
     {
     if (nullptr == m_manager)
         {
         BeAssert(false && "SelectionSyncHandler must be registered with the SelectionManager before calling RemoveFromSelection");
-        return;
+        return folly::makeFuture();
         }
 
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->RemoveFromSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData(), timestamp);
+    return m_manager->RemoveFromSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData(), timestamp);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::ChangeSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
+folly::Future<folly::Unit> SelectionSyncHandler::ChangeSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
     {
     if (nullptr == m_manager)
         {
         BeAssert(false && "SelectionSyncHandler must be registered with the SelectionManager before calling ChangeSelection");
-        return;
+        return folly::makeFuture();
         }
 
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->ChangeSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData(), timestamp);
+    return m_manager->ChangeSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData(), timestamp);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::ClearSelection(ECDbCR ecdb, bool isSubSelection, uint64_t timestamp)
+folly::Future<folly::Unit> SelectionSyncHandler::ClearSelection(ECDbCR ecdb, bool isSubSelection, uint64_t timestamp)
     {
     if (nullptr == m_manager)
         {
         BeAssert(false && "SelectionSyncHandler must be registered with the SelectionManager before calling ClearSelection");
-        return;
+        return folly::makeFuture();
         }
 
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->ClearSelection(ecdb, _GetSelectionSourceName(), isSubSelection, _CreateSelectionEventExtendedData(), timestamp);
+    return m_manager->ClearSelection(ecdb, _GetSelectionSourceName(), isSubSelection, _CreateSelectionEventExtendedData(), timestamp);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    09/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::HandleSelectionChangeEvent(SelectionChangedEventCR evt)
+folly::Future<folly::Unit> SelectionSyncHandler::HandleSelectionChangeEvent(SelectionChangedEventCR evt)
     {
     KeySetCPtr container = &evt.GetSelectedKeys();
     switch (evt.GetChangeType())
         {
         case SelectionChangeType::Add:
-            AddToSelection(evt.GetDb(), evt.IsSubSelection(), *container, evt.GetTimestamp());
-            break;
+            return AddToSelection(evt.GetDb(), evt.IsSubSelection(), *container, evt.GetTimestamp());
         case SelectionChangeType::Remove:
-            RemoveFromSelection(evt.GetDb(), evt.IsSubSelection(), *container, evt.GetTimestamp());
-            break;
+            return RemoveFromSelection(evt.GetDb(), evt.IsSubSelection(), *container, evt.GetTimestamp());
         case SelectionChangeType::Replace:
-            ChangeSelection(evt.GetDb(), evt.IsSubSelection(), *container, evt.GetTimestamp());
-            break;
+            return ChangeSelection(evt.GetDb(), evt.IsSubSelection(), *container, evt.GetTimestamp());
         case SelectionChangeType::Clear:
-            ClearSelection(evt.GetDb(), evt.IsSubSelection(), evt.GetTimestamp());
-            break;
+            return ClearSelection(evt.GetDb(), evt.IsSubSelection(), evt.GetTimestamp());
         default:
             BeAssert(false);
         }
+    return folly::makeFuture();
     }

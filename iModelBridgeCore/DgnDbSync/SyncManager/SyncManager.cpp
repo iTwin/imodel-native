@@ -2,7 +2,7 @@
 |
 |     $Source: SyncManager/SyncManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SyncManagerInternal.h"
@@ -144,7 +144,7 @@ Utf8String IConverter::BuildCommandLine(BeFileNameCR inputPathname, BeFileNameCR
     {
     InitOptions(inputPathname, outputDirectory, outputExtension, isUpdate);
 
-    Utf8PrintfString cmdLine("\"%s\"", m_exePathname.GetNameUtf8());
+    Utf8PrintfString cmdLine("\"%s\"", m_exePathname.GetNameUtf8().c_str());
 
     uint32_t length = m_options.size();
     for (uint32_t ii = 0; ii < length; ii++)

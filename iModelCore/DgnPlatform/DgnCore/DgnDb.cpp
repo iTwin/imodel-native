@@ -983,3 +983,184 @@ void ECSqlStatementIteratorBase::MoveFirst()
     MoveNext();
     }
 
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     11/2018
+//=======================================================================================
+struct RangeWithoutOutlierCalculator
+{
+    struct Stat
+        {
+        DRange3d                m_range;
+        BeInt64Id               m_id;
+        double                  m_diagonal;
+
+        Stat() {}
+        Stat(DRange3dCR range, BeInt64Id id): m_range(range), m_id(id), m_diagonal(range.DiagonalDistance()) { }
+        DPoint3d GetCenter() const { return m_range.LocalToGlobal(.5, .5, .5); }
+        };
+
+    bvector<Stat>       m_stats;
+    double              m_maxDiagonal = 0.0;
+    BeInt64Id           m_maxId;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Add(DRange3dCR range, BeInt64Id id) 
+    { 
+    if (range.DiagonalDistance() > m_maxDiagonal)
+        {
+        m_maxDiagonal = range.DiagonalDistance();
+        m_maxId = id;
+        }
+
+    if (!range.IsNull()) m_stats.push_back(Stat(range, id)); 
+    }
+
+    static void DumpRange(const char* label, DRange3dCR range) { DEBUG_PRINTF ("%s Range: %lf, %lf, %lf) \t (%lf, %lf, %lf) Diagonal: %lf (KM)\n", label, range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z, range.DiagonalDistance()/1000.0); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double sigmaMultiplier = 5.0, double minLimit = 100.0)
+    {
+    double      variance = 0.0, sum = 0.0;
+    DPoint3d    centroid = DPoint3d::FromZero();
+
+    for (auto const& stat : m_stats)
+        {
+        centroid.SumOf(centroid, stat.GetCenter(), stat.m_diagonal);        // Arbitrarily weight by range diagaonal.
+        sum += stat.m_diagonal;
+        }
+        
+    centroid.Scale(1.0 / sum);
+
+    for (auto const& stat : m_stats)
+        {
+        double  delta = stat.GetCenter().Distance(centroid);
+        variance += stat.m_diagonal * delta * delta;
+        }
+    variance /= sum;
+    double      deviation = sqrt(variance);
+    double      limit= max(minLimit, sigmaMultiplier * deviation);
+    DRange3d    range = DRange3d::NullRange();
+
+    DEBUG_PRINTF("Deviation: %lf, Sum: %lf, Limit: %lf, Multiplier: %lf, Max Diagonal: %lf\n", deviation, sum, limit, sigmaMultiplier, m_maxDiagonal);
+
+    fullRange = DRange3d::NullRange();
+    for (auto const& stat : m_stats)
+        {
+        fullRange.Extend(stat.m_range);
+        if (stat.GetCenter().Distance(centroid) < limit)
+            range.Extend(stat.m_range);
+        else
+            outliers.push_back(stat.m_id);
+        }
+    DumpRange("Full Range", fullRange);
+    if (!outliers.empty())
+        DumpRange("Reduced Range", range);
+
+    return range;
+    }
+};  //  RangeWithoutOutlierCalculator.
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
+* Computes the range of elements that are "statistically" signficant - ignoring elements
+* that are more than maxDeviation standard deviations from the centroid.
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d DgnDb::ComputeGeometryExtentsWithoutOutliers(DRange3dP rangeWithOutliers, size_t* outlierCount, double maxDeviations) const
+    {
+    auto stmt = GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d));
+    RangeWithoutOutlierCalculator   elementRangeCalculator;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        if (stmt->IsValueNull(1)) // has no placement
+            continue;
+
+        double yaw   = stmt->GetValueDouble(2);
+        double pitch = stmt->GetValueDouble(3);
+        double roll  = stmt->GetValueDouble(4);
+
+        DPoint3d low = stmt->GetValuePoint3d(5);
+        DPoint3d high = stmt->GetValuePoint3d(6);
+
+        Placement3d placement(stmt->GetValuePoint3d(1),
+                              YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
+                              ElementAlignedBox3d(low.x, low.y, low.z, high.x, high.y, high.z));
+
+        elementRangeCalculator.Add(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0));
+        }
+    
+    bvector<BeInt64Id>  elementOutliers;
+    DRange3d            fullRange, elementRange = elementRangeCalculator.ComputeRange(elementOutliers, fullRange);
+
+    if (nullptr != outlierCount)
+        *outlierCount = elementOutliers.size();
+
+    if (nullptr != rangeWithOutliers)
+        *rangeWithOutliers = fullRange;
+
+    if (!elementOutliers.empty())
+        {
+        double      fullDiagonal = fullRange.DiagonalDistance(), reducedDiagonal = elementRange.DiagonalDistance(); 
+        auto logMessage1 = Utf8PrintfString("%d Outlying elements of %d Total were ignored when calculating project extents\n", (int) elementOutliers.size(), (int) elementRangeCalculator.m_stats.size());
+        auto logMessage2 = Utf8PrintfString("Range reduced from %lf to %lf (%lf %%)\n", fullDiagonal, reducedDiagonal, 100.0 * (fullDiagonal - reducedDiagonal) / fullDiagonal);
+        DEBUG_PRINTF (">>>>>>>>>>>>>>>>>>%s %s<<<<<<<<<<<<<<<<<<<", logMessage1.c_str(), logMessage2.c_str());
+        }
+    else 
+        {
+        DEBUG_PRINTF("No Element Outliers of %d Total, Range Diagonal: %lf\n", (int) elementRangeCalculator.m_stats.size(), fullRange.IsNull() ? 0.0 : fullRange.DiagonalDistance());
+        }
+
+    if (elementRange.DiagonalDistance() > 5.0E5)        
+        {
+        DEBUG_PRINTF("*********************************************** Range still invalid (%f KM) ******************************************\n\n\n", elementRange.DiagonalDistance() / 1000.0);
+        }
+
+    return elementRange;
+    }
+
+#ifdef TEST_OUTLYING_MODELS
+// This is currently not used - but perhaps may be useful at some point. It performs the same statistical analysis as element outlier, but on the models instead.
+// It improves the Mott/EAP files for section 8 - but not enough to make it usable.
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d DgnDb::ComputeExtentsWithoutOutlyingModels(DRange3dCR elementRange, DRange3dCP rangeWithOutliers = nullptr, size_t* outlierCount = nullptr) const
+
+    bvector<BeInt64Id>              modelOutliers;
+    RangeWithoutOutlierCalculator   modelRangeCalculator;
+
+    for (auto& entry : Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel)))
+        {
+        auto model = Models().Get<SpatialModel>(entry.GetModelId());
+        if (model.IsValid())
+            {
+            DRange3d        modelRange;
+
+            modelRange.IntersectionOf(elementRange, model->QueryModelRange());
+            modelRangeCalculator.Add(modelRange, entry.GetModelId());
+            }
+        }   
+
+    DRange3d    fullModelRange, modelRange = modelRangeCalculator.ComputeRange(modelOutliers, fullModelRange); 
+
+    if (!modelOutliers.empty())
+        {
+        double      fullDiagonal = fullModelRange.DiagonalDistance(), reducedDiagonal = modelRange.DiagonalDistance(); 
+        auto logMessage1 = Utf8PrintfString("%d Outlying models of %d Total were ignored when calculating project extents\n",  (int) modelOutliers.size(), (int) modelRangeCalculator.m_stats.size());
+        auto logMessage2 = Utf8PrintfString("Range reduced from %lf to %lf (%lf %%)\n", fullDiagonal, reducedDiagonal, 100.0 * (fullDiagonal - reducedDiagonal) / fullDiagonal);
+        DEBUG_PRINTF ("%s %s", logMessage1.c_str(), logMessage2.c_str());
+        }
+    else
+        {
+        DEBUG_PRINTF("No Model Outliers of %d Total, Range Diagonal: %lf\n",  (int) modelRangeCalculator.m_stats.size(), fullModelRange.DiagonalDistance());
+        }
+
+    return modelRange;
+    }
+
+#endif

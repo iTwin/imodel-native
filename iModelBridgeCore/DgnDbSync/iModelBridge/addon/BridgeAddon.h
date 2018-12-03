@@ -7,4 +7,4 @@
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
-int RunBridge(const char* json);
+int RunBridge(Napi::Env env, const char* json);

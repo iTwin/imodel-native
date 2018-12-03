@@ -64,7 +64,7 @@ USING_NAMESPACE_BENTLEY
             m_ticksPerMillisecond = f.QuadPart / 1000;  // ticks/second * seconds/millisecond = ticks/millisecond
             }
 
-        uint64_t GetCountInMillis() const 
+        uint64_t GetCountInMillis() const
             {
             LARGE_INTEGER tm;
             ::QueryPerformanceCounter(&tm);
@@ -97,7 +97,7 @@ uint64_t BeTimeUtilities::QueryMillisecondsCounter()
     const int64_t oneMillion = 1000 * 1000;
     static mach_timebase_info_data_t s_timebase_info;
 
-    if (s_timebase_info.denom == 0) 
+    if (s_timebase_info.denom == 0)
         {
         (void) mach_timebase_info(&s_timebase_info);
         s_timebase_info.denom *= oneMillion;
@@ -108,20 +108,20 @@ uint64_t BeTimeUtilities::QueryMillisecondsCounter()
     return (int)((mach_absolute_time() * s_timebase_info.numer) / s_timebase_info.denom);
 
 #elif defined (__unix__)
-    
+
     return (uint32_t)(BeTimeUtilities::GetCurrentTimeAsUnixMillis() - s_startTime.m_initializationTimeInMillis);
 
 #elif defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
     return s_qpc.GetCountInMillis();
-    
+
 #else
 #error unknown runtime
-#endif    
+#endif
     }
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-static uint64_t fileTimeAsUInt64(FILETIME const& f)   {return *(uint64_t*)  &f;} 
+static uint64_t fileTimeAsUInt64(FILETIME const& f)   {return *(uint64_t*)  &f;}
 static void     uInt64AsFileTime(FILETIME& f, uint64_t i) {f = *(FILETIME*)&i;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -197,7 +197,7 @@ BentleyStatus BeTimeUtilities::AdjustUnixMillisForLocalTime(uint64_t& millis)
     {
     //milliseconds not supported by tm -> extract and add separately
     uint16_t millisecondComponent = millis % 1000LL;
-    
+
     struct tm localTime;
     BentleyStatus stat = ConvertUnixMillisToLocalTime(localTime, millis);
     if (stat == ERROR)
@@ -217,9 +217,9 @@ BentleyStatus BeTimeUtilities::AdjustUnixMillisForLocalTime(uint64_t& millis)
 * @bsimethod                                                    Krischan.Eberle   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-BentleyStatus BeTimeUtilities::ConvertUnixMillisToLocalTime 
+BentleyStatus BeTimeUtilities::ConvertUnixMillisToLocalTime
 (
-struct tm& localTime, 
+struct tm& localTime,
 uint64_t unixMilliseconds
 )
     {
@@ -232,7 +232,7 @@ uint64_t unixMilliseconds
         {
         return ERROR;
         }
-    
+
 #elif defined (__unix__)
     //localtime_r returns NULL on failure
     if (NULL == localtime_r(&t, &local))
@@ -294,6 +294,50 @@ uint64_t BeTimeUtilities::ConvertTmToUnixMillis(tm const& timeStructIn)
 #error unknown runtime
 #endif
     return time*1000LL;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime BeTimeUtilities::ConvertBeTimePointToDateTime(BeTimePoint timePoint, BeClock const* clock)
+    {
+    if (!timePoint.IsValid())
+        return DateTime();
+
+    if (nullptr == clock)
+        clock = &BeClock::Get();
+
+    int64_t systemTime;
+    if (SUCCESS != clock->GetSystemTime().ToUnixMilliseconds(systemTime))
+        return DateTime();
+
+    using namespace std::chrono;
+    int64_t dateTimeUnixMilliseconds = systemTime + duration_cast<milliseconds>(timePoint - clock->GetSteadyTime()).count();
+    DateTime result;
+    if (SUCCESS != DateTime::FromUnixMilliseconds(result, dateTimeUnixMilliseconds))
+        return DateTime();
+
+    return result;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BeTimePoint BeTimeUtilities::ConvertDateTimeToBeTimePoint(DateTimeCR dateTime, BeClock const* clock)
+    {
+    if (nullptr == clock)
+        clock = &BeClock::Get();
+
+    int64_t dateTimeUnixMilliseconds;
+    if (SUCCESS != dateTime.ToUnixMilliseconds(dateTimeUnixMilliseconds))
+        return BeTimePoint();
+
+    int64_t currentUnixMilliseconds;
+    if (SUCCESS != clock->GetSystemTime().ToUnixMilliseconds(currentUnixMilliseconds))
+        return BeTimePoint();
+
+    using namespace std::chrono;
+    return clock->GetSteadyTime() + milliseconds(dateTimeUnixMilliseconds - currentUnixMilliseconds);
     }
 
 /*--------------------------------------------------------------------------------------+

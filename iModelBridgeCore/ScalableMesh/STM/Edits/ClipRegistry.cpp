@@ -244,6 +244,7 @@ void ClipRegistry::GetSkirt(uint64_t id, bvector<bvector<DPoint3d>>& skirts)
     if (!m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::Skirt, false))
         return;
     
+
     bvector<DPoint3d> outSkirt;
     size_t nOfPts = dataStore->GetBlockDataCount(id);
     if (nOfPts == 0) return;
@@ -259,6 +260,7 @@ void ClipRegistry::GetSkirt(uint64_t id, bvector<bvector<DPoint3d>>& skirts)
             }
         else curSkirt.push_back(pt);
         }
+
     }
 
 

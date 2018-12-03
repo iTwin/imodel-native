@@ -191,38 +191,47 @@ void RootModelConverter::_ConvertDrawings()
     {
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_DRAWINGS());
 
-    bmultiset<ResolvedModelMapping> drawings;
+    bmap<DgnV8FileP, bmultiset<ResolvedModelMapping>> drawings;
+    int32_t count = 0;
     for (auto v8mm : m_v8ModelMappings)
         {
         if (!IsFileAssignedToBridge(*v8mm.GetV8Model().GetDgnFileP()))
             continue;
         if (v8mm.GetDgnModel().IsDrawingModel())
-            drawings.insert(v8mm);
+            {
+            ++count;
+            drawings[v8mm.GetV8Model().GetDgnFileP()].insert(v8mm);
+            }
         }
 
-    AddTasks((uint32_t)drawings.size());
+    AddTasks(count);
 
     // Just in case the session hasn't started
     if (!DgnV8Api::PSolidKernelManager::IsSessionStarted())
         DgnV8Api::PSolidKernelManager::StartSession();
 
-    for (auto v8mm : drawings)
+    for (auto& v8FileGroup: drawings)
         {
-        SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
-        uint32_t start = GetElementsConverted();
-        StopWatch timer(true);
-        DrawingsConvertModelAndViewsWithExceptionHandling(v8mm);
-        // TFS#661407: Reset parasolid session to avoid running out of tags on long processing of VisEdgesLib
-        DgnV8Api::PSolidKernelManager::StopSession();
-        DgnV8Api::PSolidKernelManager::StartSession();
+        for (auto v8mm : v8FileGroup.second)
+            {
+            SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
+            uint32_t start = GetElementsConverted();
+            StopWatch timer(true);
+            DrawingsConvertModelAndViewsWithExceptionHandling(v8mm);
+            // TFS#661407: Reset parasolid session to avoid running out of tags on long processing of VisEdgesLib
+            DgnV8Api::PSolidKernelManager::StopSession();
+            DgnV8Api::PSolidKernelManager::StartSession();
 
-        uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
-        ConverterLogging::LogPerformance(timer, "Convert Drawing Elements> Model '%s' (%" PRIu32 " element(s))",
-                                         v8mm.GetDgnModel().GetName().c_str(),
-                                         convertedElementCount);
+            uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
+            ConverterLogging::LogPerformance(timer, "Convert Drawing Elements> Model '%s' (%" PRIu32 " element(s))",
+                                             v8mm.GetDgnModel().GetName().c_str(),
+                                             convertedElementCount);
 
+            }
+
+        if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByFile)
+            PushChangesForFile(*v8FileGroup.first, ConverterDataStrings::Drawings());
         }
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1356,6 +1365,18 @@ void _DrawModelRef (DgnV8Api::DgnModelRef* baseModelRef, DgnV8Api::DgnModelRefLi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+void VisitElementHandleWithExceptionHandling(DgnV8Api::ElementHandle const& inEl, bool checkRange, bool checkScanCriteria) 
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        T_Super::_VisitElemHandle(inEl, checkRange, checkScanCriteria);
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(m_converter.ReportFailedDrawingElementConversion(inEl));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   _VisitElemHandle (DgnV8Api::ElementHandle const& inEl, bool checkRange, bool checkScanCriteria) override
     {
     if (m_converter.IsUpdating() && !m_output.m_currentModelInfo.m_attachmentChanged)
@@ -1379,7 +1400,8 @@ StatusInt   _VisitElemHandle (DgnV8Api::ElementHandle const& inEl, bool checkRan
     //              visit complex children and ensure that their levels are converted.
     m_converter.ConvertLevels(inEl);
 
-    return T_Super::_VisitElemHandle(inEl, checkRange, checkScanCriteria);
+    VisitElementHandleWithExceptionHandling(inEl, checkRange, checkScanCriteria);
+    return SUCCESS;                      // Not really used...
     }
 
 /*---------------------------------------------------------------------------------**//**

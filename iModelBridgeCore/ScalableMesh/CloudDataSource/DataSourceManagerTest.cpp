@@ -161,7 +161,7 @@ DataSourceStatus DataSourceManagerTest::testUpload(DataSource * dataSource, cons
 DataSourceStatus DataSourceManagerTest::testDataSourceFile(void)
 {
     DataSource            *    dataSource;
-    DataSourceURL            urlFile(L"C:\\Users\\Lee.Bull\\temp\\file1");
+    DataSourceURL            urlFile(std::wstring(L"C:\\Users\\Lee.Bull\\temp\\file1"));
     DataSourceStatus        status;
     DataSourceService    *    service;
     DataSourceManager   *       manager = DataSourceManager::Get();

@@ -30,6 +30,22 @@ wchar_t const** argv = argptrs.data();\
 static Utf8CP s_fooGuid = "6640b375-a539-4e73-b3e1-2c0ceb912551";
 static Utf8CP s_barGuid = "6640b375-a539-4e73-b3e1-2c0ceb912552";
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<SubjectCPtr> getJobSubjects(DgnDbR db)
+    {
+	bvector<SubjectCPtr> subjects;
+    auto childids = db.Elements().GetRootSubject()->QueryChildren();
+    for (auto childid : childids)
+        {
+        auto subj = db.Elements().Get<Subject>(childid);
+        if (subj.IsValid() && JobSubjectUtils::IsJobSubject(*subj))
+            subjects.push_back(subj);
+        }
+    return subjects;
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Sam.Wilson   04/17
 //=======================================================================================
@@ -450,8 +466,8 @@ TEST_F(iModelBridgeTests, iModelBridgeSyncInfoFileTesterSyncInfoFile)
 
     ASSERT_EQ(BentleyStatus::SUCCESS, b._ConvertToBim(*subj));      // Nearly all of the testing is done in here.
 
-    b._CloseSource(BSISUCCESS);
-    b._OnCloseBim(BSISUCCESS);
+    b._CloseSource(BSISUCCESS, iModelBridge::ClosePurpose::Finished);
+    b._OnCloseBim(BSISUCCESS, iModelBridge::ClosePurpose::Finished);
     b._Terminate(BSISUCCESS);
 
     db->SaveChanges();
@@ -507,11 +523,12 @@ struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
     struct
         {
         bool haveTxns;
+		bool checkTxns;
         } m_expect {};
 
-        TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) : TestIModelHubClientForBridges(testWorkDir) {}
+        TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) : TestIModelHubClientForBridges(testWorkDir) { m_expect.haveTxns = false; m_expect.checkTxns = true; }
 
-        virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db) override;
+        virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment) override;
     };
 END_BENTLEY_DGN_NAMESPACE
 
@@ -593,6 +610,9 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
         auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
+        m_testIModelHubClientForBridges.m_expect.haveTxns = true;
+        m_expect.findJobSubject = true;
+
         if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceFile))
             DgnV8FileProvenance::CreateTable(GetDgnDbR());
         if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceModel))
@@ -650,23 +670,34 @@ static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db)
+DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db, Utf8CP comment)
     {
     BeAssert(db != nullptr);
 
     BeAssert(db->IsBriefcase());
 
-    BeAssert(m_expect.haveTxns == anyTxnsInFile(*db));
-
+	if (m_expect.checkTxns)
+		{
+		BeAssert(m_expect.haveTxns == anyTxnsInFile(*db));
+		}
     DgnRevisionPtr changeSet = db->Revisions().StartCreateRevision();
 
     if (!changeSet.IsValid())
         {
-        BeAssert(!m_expect.haveTxns);
+		if (m_expect.checkTxns)
+			{
+			BeAssert(!m_expect.haveTxns);
+			}
         return changeSet;
         }
 
-    BeAssert(m_expect.haveTxns);
+    if (comment)
+        changeSet->SetSummary(comment);
+
+	if (m_expect.checkTxns)
+		{
+		BeAssert(m_expect.haveTxns);
+		}
 
     BeAssert(changeSet.IsValid());
     BeAssert(Dgn::RevisionStatus::Success ==  db->Revisions().FinishCreateRevision());
@@ -1178,50 +1209,157 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-    TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
+TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
+    {
+    auto testDir = getiModelBridgeTestsOutputDir(L"MixedFileTypeBridgeAssignmentTest");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"test1Assignments.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+
+    WString mstnBridgeRegSubKey(L"iModelBridgeForMstn");
+    std::function<T_iModelBridge_getAffinity> mstnLamda = [=](BentleyApi::WCharP buffer,
+                                                            const size_t bufferSize,
+                                                            BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                            BentleyApi::WCharCP affinityLibraryPath,
+                                                            BentleyApi::WCharCP sourceFileName)
         {
-        auto testDir = getiModelBridgeTestsOutputDir(L"MixedFileTypeBridgeAssignmentTest");
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-
-        BeFileName assignDbName(testDir);
-        assignDbName.AppendToPath(L"test1Assignments.db");
-        FakeRegistry testRegistry(testDir, assignDbName);
-        testRegistry.WriteAssignments();
-
-        WString mstnBridgeRegSubKey(L"iModelBridgeForMstn");
-        std::function<T_iModelBridge_getAffinity> mstnLamda = [=](BentleyApi::WCharP buffer,
-                                                               const size_t bufferSize,
-                                                               BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
-                                                               BentleyApi::WCharCP affinityLibraryPath,
-                                                               BentleyApi::WCharCP sourceFileName)
+        BeFileName srcFile(sourceFileName);
+        if (srcFile.GetExtension().CompareToI(L"Dgn"))
             {
-            BeFileName srcFile(sourceFileName);
-            if (srcFile.GetExtension().CompareToI(L"Dgn"))
-                {
                 
-                affinityLevel = iModelBridgeAffinityLevel::Medium;
-                wcsncpy(buffer, mstnBridgeRegSubKey.c_str(), mstnBridgeRegSubKey.length());
-                }
-            };
+            affinityLevel = iModelBridgeAffinityLevel::Medium;
+            wcsncpy(buffer, mstnBridgeRegSubKey.c_str(), mstnBridgeRegSubKey.length());
+            }
+        };
 
-        testRegistry.AddBridge(mstnBridgeRegSubKey, mstnLamda);
+    testRegistry.AddBridge(mstnBridgeRegSubKey, mstnLamda);
 
         
-        WString realDwgBridgeRegSubKey(L"RealDWG");
-        std::function<T_iModelBridge_getAffinity> realDWGLamda = [=](BentleyApi::WCharP buffer,
-                                                                  const size_t bufferSize,
-                                                                  BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
-                                                                  BentleyApi::WCharCP affinityLibraryPath,
-                                                                  BentleyApi::WCharCP sourceFileName)
+    WString realDwgBridgeRegSubKey(L"RealDWG");
+    std::function<T_iModelBridge_getAffinity> realDWGLamda = [=](BentleyApi::WCharP buffer,
+                                                                const size_t bufferSize,
+                                                                BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                                BentleyApi::WCharCP affinityLibraryPath,
+                                                                BentleyApi::WCharCP sourceFileName)
+        {
+        BeFileName srcFile(sourceFileName);
+        if (srcFile.GetExtension().CompareToI(L"DWG"))
             {
-            BeFileName srcFile(sourceFileName);
-            if (srcFile.GetExtension().CompareToI(L"DWG"))
-                {
 
-                affinityLevel = iModelBridgeAffinityLevel::Medium;
-                wcsncpy(buffer, realDwgBridgeRegSubKey.c_str(), realDwgBridgeRegSubKey.length());
-                }
-            };
+            affinityLevel = iModelBridgeAffinityLevel::Medium;
+            wcsncpy(buffer, realDwgBridgeRegSubKey.c_str(), realDwgBridgeRegSubKey.length());
+            }
+        };
 
-        testRegistry.AddBridge(realDwgBridgeRegSubKey, realDWGLamda);
+    testRegistry.AddBridge(realDwgBridgeRegSubKey, realDWGLamda);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, DISABLED_TestMultipleRootsSameSubject_ToyTile) // disabled, because it uses ToyTile bridge, which is not expressed in a part dependency
+    {
+#define BRIDGE_REG_SUBKEY_TOY_TILE L"ToyTile"
+
+    auto testDir = getiModelBridgeTestsOutputDir(L"TestMultipleRootsSameSubject_ToyTile");
+	BeFileName bcName(testDir);
+	bcName.AppendToPath(L"iModelBridgeTests_Test1.bim");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+    
+	BeFileName toyTileBridge_dll(L"d:\\bim0200dev\\out\\Winx64\\Product\\ToyTileBridge\\ToyTileBridge.dll");
+	BeFileName toyTileBridge_assetsDir(toyTileBridge_dll.GetDirectoryName());
+	toyTileBridge_assetsDir.AppendToPath(L"assets");
+	BeFileName toyTileFile1(L"d:\\tmp\\toytile1.xml");
+	BeFileName toyTileFile2(L"d:\\tmp\\toytile1.xml");
+
+    bvector<WString> args;
+    args.push_back(L"iModelBridgeTests.Test1");                                                 // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
+    args.push_back(L"--server-environment=Qa");
+    args.push_back(L"--server-repository=iModelBridgeTests_Test1");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-project-guid=iModelBridgeTests_Project");                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--fwk-create-repository-if-necessary");
+    args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
+    args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+
+	args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", toyTileBridge_dll.c_str()));
+    args.push_back(L"--fwk-bridge-regsubkey=" BRIDGE_REG_SUBKEY_TOY_TILE);
+	args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", toyTileBridge_assetsDir.c_str()));
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
+    testIModelHubClientForBridges.m_expect.checkTxns = testIModelHubClientForBridges.m_expect.haveTxns = false;
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
+
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"test1Assignments.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer, const size_t bufferSize, BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                          BentleyApi::WCharCP affinityLibraryPath, BentleyApi::WCharCP sourceFileName)
+        {
+        affinityLevel = iModelBridgeAffinityLevel::High;
+        wcscpy(buffer, BRIDGE_REG_SUBKEY_TOY_TILE);
+        };
+    testRegistry.AddBridge(BRIDGE_REG_SUBKEY_TOY_TILE, lambda);
+
+    iModelBridgeDocumentProperties fooDocProps(s_fooGuid, "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties barDocProps(s_barGuid, "wurn2", "durn2", "other2", "");
+    testRegistry.SetDocumentProperties(fooDocProps, toyTileFile1);
+    testRegistry.SetDocumentProperties(barDocProps, toyTileFile2);
+    WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(toyTileFile1),L"");
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(toyTileFile2),L"");
+    
+    testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
+    iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
+
+    args.push_back(L"--fwk-job-subject-name=TestMultipleRootsSameSubject_ToyTile"); // use the same job subject for all root files
+
+    if (true)
+        {
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+		args.push_back(WPrintfString(L"--fwk-input=%ls", toyTileFile1.c_str()));
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+		args.pop_back();
         }
+
+	if (true)
+		{
+        ScopedDgnHost host;
+		auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+		ASSERT_TRUE(db.IsValid());
+		auto jobSubjects = getJobSubjects(*db);
+		ASSERT_EQ(jobSubjects.size(), 1);
+		ASSERT_STREQ(jobSubjects[0]->GetCode().GetValueUtf8CP(), "TestMultipleRootsSameSubject_ToyTile");
+		}
+
+	if (true)
+        {
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+		args.push_back(WPrintfString(L"--fwk-input=%ls", toyTileFile2.c_str()));
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+		args.pop_back();
+        }
+
+	if (true)
+		{
+        ScopedDgnHost host;
+		auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+		ASSERT_TRUE(db.IsValid());
+		auto jobSubjects = getJobSubjects(*db);
+		ASSERT_EQ(jobSubjects.size(), 1) << "Still just one job subject";
+		ASSERT_STREQ(jobSubjects[0]->GetCode().GetValueUtf8CP(), "TestMultipleRootsSameSubject_ToyTile");
+		}
+    }

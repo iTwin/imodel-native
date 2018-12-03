@@ -254,6 +254,9 @@ void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
         {
         correctedViewToView.InitFrom(nonPrintableMargin.x, nonPrintableMargin.y, 0);
         }
+
+#ifdef _WIN32    
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -575,7 +578,12 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     BeFileName clipFileBase = GenerateClipFileName(smFilename, dgnProject);
 
     m_basePath = clipFileBase;
+#if !defined(_WIN32)
+	StatusInt status;
+	m_smPtr = IScalableMesh::GetFor(smFilename, Utf8String(clipFileBase.c_str()),false, false, true, status);
+#else
     m_smPtr = IScalableMesh::GetFor(smFilename, Utf8String(clipFileBase.c_str()), false, true);
+#endif
     
     if (!m_smPtr.IsValid())
         {        
@@ -638,16 +646,18 @@ bool ScalableMeshModel::AllowPublishing() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Richard.Bois     08/2018
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& transform) const
+void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& tileToECEF, const Transform& dbToTile) const
     {
     if (!AllowPublishing())
         return;
 
-        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, transform))
+#ifdef _WIN32
+        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, tileToECEF, dbToTile))
         {
         BeFileName oldRootFile = outputDir;
         oldRootFile.AppendToPath(L"n_0.json");
         BeFileName::BeMoveFile(oldRootFile, outFileName);
+#endif
         }
     }
 
@@ -1502,12 +1512,13 @@ void ScalableMeshModel::_OnSaveJsonProperties()
         Json::Value tilesetVal = m_properties.m_fileId.c_str();
         SetJsonProperties(json_tilesetUrl(), tilesetVal);
         }
-
+    #if !defined(ANDROID)
     if (m_clip.IsValid())
         val[json_clip()] = m_clip->ToJson();
 
     if (!m_classifiers.empty())     // Note - This originally was stored on the "scalableMesh" member...
         SetJsonProperties(json_classifiers(), m_classifiers.ToJson());
+#endif
 
     SetJsonProperties(json_scalablemesh(), val);
     }
@@ -1851,12 +1862,14 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     if (val.isMember(json_clip()))
         m_clip = ClipVector::FromJson(val[json_clip()]);
 
+            #if !defined(ANDROID)
     Json::Value     classifiers = GetJsonProperties(json_classifiers());
     if (classifiers.isNull())
         classifiers = m_classifiers.FromJson(val[json_classifiers()]);       // Old location.                                                                                                                                                             
 
     if (!classifiers.isNull())
         m_classifiers.FromJson(classifiers);
+        #endif
 
     if (m_smPtr == 0 && !m_tryOpen)
         {                
@@ -1873,7 +1886,9 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
         Json::Value publishingMetadata;
         publishingMetadata["name"] = "SMMasterHeader";
 
+#ifdef _WIN32
         IScalableMeshPublisher::Create(SMPublishType::CESIUM)->ExtractPublishMasterHeader(m_smPtr, publishingMetadata["properties"]);
+#endif
         SetJsonProperties(json_publishing(), publishingMetadata);
         }
     }

@@ -59,15 +59,59 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
 
         DWORD64 moduleAddress = SymGetModuleBase64(process, symbolAddress);
         SymGetModuleInfo64(process, moduleAddress, module);
-        SymFromAddr(process, symbolAddress, 0, symbol);
+        DWORD64 displacement;
+        SymFromAddr(process, symbolAddress, &displacement, symbol);
 
-        stackTrace += Utf8PrintfString("%-4d %-36s 0x%0X %s\n", i + 1, module->ModuleName, symbol->Address, symbol->Name);
+        IMAGEHLP_LINE lineInfo{};
+        DWORD dwDisplacement = (DWORD)displacement;
+        SymGetLineFromAddr( GetCurrentProcess(), symbolAddress, &dwDisplacement, &lineInfo);
+
+        stackTrace += Utf8PrintfString("%s %s %d\n", module->ModuleName, symbol->Name, (int)lineInfo.LineNumber);
         }
 
     free(symbol);
     free(module);
 
     return stackTrace;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+LONG WINAPI reportUnhandledException(struct _EXCEPTION_POINTERS *ExceptionInfo)
+    {
+    if (!ExceptionInfo || !ExceptionInfo->ExceptionRecord || !ExceptionInfo->ExceptionRecord->ExceptionCode)
+        return EXCEPTION_CONTINUE_SEARCH;
+
+    LONG code = ExceptionInfo->ExceptionRecord->ExceptionCode;
+    if (STATUS_STACK_OVERFLOW == code)
+        {
+        // TODO: Can we at least get the name of the crashing function?
+        fprintf(stderr, "Stack overflow\n");
+        return EXCEPTION_CONTINUE_SEARCH;
+        }
+
+    if (EXCEPTION_BREAKPOINT == code)
+        {	// this actually works, when you debug break explicitly
+        DebugBreak();
+        return EXCEPTION_EXECUTE_HANDLER;
+        }
+
+    LOG.errorv("Exception %lx", code);
+    LOG.error(iModelBridgeErrorHandling::GetStackTraceDescription(20, 0).c_str());
+    return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeErrorHandling::Initialize()
+    {
+    static bool s_initialized;
+    if (s_initialized)
+        return;
+    s_initialized = true;
+    SetUnhandledExceptionFilter(reportUnhandledException);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,5 +148,5 @@ void iModelBridgeErrorHandling::GetStackTraceDescriptionFixed(char* buf, size_t 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeErrorHandling::LogStackTrace()
     {
-    LOG.fatal(GetStackTraceDescription(20, 1).c_str());
+    // LOG.error(GetStackTraceDescription(20, 1).c_str());
     }

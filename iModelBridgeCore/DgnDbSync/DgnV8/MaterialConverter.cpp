@@ -477,7 +477,7 @@ DgnTextureId Converter::FindOrInsertTextureImage(WCharCP inputFileName, DgnV8Api
         }
 
     Point2d size = imageSource.GetSize();
-    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    DefinitionModelPtr definitionModel = ShouldMergeDefinitions()? &m_dgndb->GetDictionaryModel(): GetJobDefinitionModel();
     if (!definitionModel.IsValid())
         return textureId;
 
@@ -743,7 +743,7 @@ void Converter::ConvertModelMaterials(DgnV8ModelR dgnModel)
     {
     DgnV8Api::CachedMaterialConstIterator iter(dgnModel, true), end(dgnModel, false);
 
-    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    DefinitionModelPtr definitionModel = ShouldMergeDefinitions()? &m_dgndb->GetDictionaryModel(): GetJobDefinitionModel();
     if (!definitionModel.IsValid())
         return;
 

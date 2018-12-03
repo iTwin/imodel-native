@@ -437,7 +437,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
         SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
 #else
-SMStreamingNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
+        SMStreamingNodeDataStore(SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
 #endif
         
         virtual ~SMStreamingNodeDataStore();

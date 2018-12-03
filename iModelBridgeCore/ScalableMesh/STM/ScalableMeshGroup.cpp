@@ -15,11 +15,11 @@
 #include "ScalableMeshSourcesPersistance.h"
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
-#include <ScalableMesh\IScalableMeshSourceCollection.h>
-#include <ScalableMesh\IScalableMeshDocumentEnv.h>
-#include <ScalableMesh\IScalableMeshGroundExtractor.h>
-#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
-#include <ScalableMesh\IScalableMeshSources.h>
+#include <ScalableMesh/IScalableMeshSourceCollection.h>
+#include <ScalableMesh/IScalableMeshDocumentEnv.h>
+#include <ScalableMesh/IScalableMeshGroundExtractor.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh/IScalableMeshSources.h>
 
 #ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
@@ -28,13 +28,13 @@
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshVolume.h"
 
-#include "Edits\ClipRegistry.h"
-#include "Stores\SMStreamingDataStore.h"
+#include "Edits/ClipRegistry.h"
+#include "Stores/SMStreamingDataStore.h"
 
-#include <Vu\VuApi.h>
-#include <Vu\vupoly.fdf>
+#include <Vu/VuApi.h>
+#include <Vu/vupoly.fdf>
 #include "vuPolygonClassifier.h"
-#include <ImagePP\all\h\HIMMosaic.h>
+#include <ImagePP/all/h/HIMMosaic.h>
 #include "LogUtils.h"
 #include "ScalableMeshEdit.h"
 #include <ScalableMesh/ScalableMeshLib.h>

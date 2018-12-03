@@ -47,7 +47,11 @@ class DataSource : public DataSourceLocator
 public:
 
     typedef unsigned long long int                  DataPtr;
+#if ANDROID
+    typedef uint64_t                                DataSize;
+#else
     typedef unsigned long long int                  DataSize;
+#endif
     typedef unsigned char                           Buffer;
 
     typedef DataSourceBuffer::TimeoutStatus         TimeoutStatus;

@@ -338,6 +338,24 @@
         <SubPart PartName="3CSLoadTest"/>
         <SubPart PartName="RealityDataServicePerformanceTests"/>
     </Part>
+
+
+    <Part Name="RealityServicesNetNuGetPackages">     
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>  
+    <!--    <Bindings>
+            <Assemblies>NuGet\net40\Common.Logging.dll</Assemblies>
+            <Assemblies>NuGet\net40\Common.Logging.Core.dll</Assemblies>
+        </Bindings> -->
+    </Part>
+
+    <Part Name="RealityServicesNetNuGet" BMakeFile="RealityServicesNet\NuGet\Bentley.RealityServicesNet.NuGetPackage.mke" OnlyPlatforms="x86,x64">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <SubPart PartName="RealityServicesNetNuGetPackages"/>
+        <SubPart PartName="RealityServicesNet" />
+        <Bindings>
+            <Files ProductDirectoryName="RealityServicesNetNuGetPackages" Required="false">Install\Bentley.RealityServicesNet\Bentley.RealityServicesNet.*.nupkg</Files>
+        </Bindings>
+    </Part>
     
     <Part Name="RequiredNugets" BentleyBuildMakeFile="RequiredNugets.prewire.mke">
     
@@ -424,10 +442,13 @@
     </ProductDirectoryList>
     
     <Product Name="RealityModFramework">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+
         <SubPart PartName="Reality-Examples"/>
         <SubPart PartName="RealityAdmin-Applications"/>
         <SubPart PartName="RealityModFrameworkTested"/>
         <SubPart PartName="RealityPlatformToolsLight"/>
+<!--	<SubPart PartName="RealityServicesNetNuGet" /> -->
       <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 

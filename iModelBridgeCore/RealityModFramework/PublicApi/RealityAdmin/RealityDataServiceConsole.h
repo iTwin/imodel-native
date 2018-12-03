@@ -66,7 +66,8 @@ enum class Command
     Relationships,
     CreateRD,
     Link,
-    Unlink
+    Unlink,
+    Migrate
     };
 
 struct RealityDataConsole
@@ -129,6 +130,7 @@ private:
     void Unlink();
     void MassUnlink();
     void ForceMassUnlink();
+    void Migrate();
     Utf8String MakeBuddiCall(int region = 0);
 
     void DisplayDataLocations(const bvector<RealityDataLocation>& locations);

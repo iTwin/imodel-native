@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------------------
 #  $Source: EncryptShaders/EncryptShaders.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------------------------
 
 %include $(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/mki/EncryptShadersPolicy.mki
@@ -34,7 +34,6 @@ EXE_OBJS            = $(dlmObjs)
 EXE_DEST            = $(o)
 EXE_TMP_DIR         = $(o)
 EXE_SYMB_DEST       = $(o)
-EXE_MAP_DEST        = $(o)
 EXE_NO_SIGN         = 1
 
 LINKER_LIBRARIES    = shlwapi.lib
