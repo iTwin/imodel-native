@@ -252,7 +252,7 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
 
     m_converter->SetIsProcessing(true);
-    m_converter->Process();
+    m_converter->ConvertData();
     m_converter->SetIsProcessing(false);
 
     Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
