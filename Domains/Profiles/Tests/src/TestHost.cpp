@@ -81,6 +81,8 @@ static DgnDbPtr createDgnDb (BeFileName const& bimFilename)
     createProjectParams.SetOverwriteExisting (true);
     createProjectParams.SetRootSubjectName ("ProfilesTests");
     createProjectParams.SetRootSubjectDescription ("Tests for Profiles domain");
+    createProjectParams.SetOpenMode (Db::OpenMode::ReadWrite);
+    createProjectParams.SetDbType (Db::CreateParams::DbType::Standalone);
 
     DbResult status = BeSQLite::DbResult::BE_SQLITE_ERROR;
     DgnDbPtr db = DgnDb::CreateDgnDb (&status, bimFilename, createProjectParams);
