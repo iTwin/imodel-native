@@ -52,6 +52,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_selectedPublisher = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(SelectedPublisher));
                 }
             }
 
@@ -62,6 +63,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_inputFile = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(Input));
                 }
             }
 
@@ -72,6 +74,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_output = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(Output));
                 }
             }
         public string SelectedWorkspace
@@ -81,6 +84,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_dgnWorkspace = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(SelectedWorkspace));
                 }
             }
 
@@ -91,6 +95,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_workspaceEntries = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(WorkspaceEntries));
                 }
             }
 
@@ -104,6 +109,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_rootModelEntries = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(RootModelEntries));
                 }
             }
 
@@ -117,6 +123,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_selectedRootModel = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(SelectedRootModel));
                 }
             }
 
@@ -127,6 +134,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_rootModel = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(RootModel));
                 }
             }
 
@@ -137,6 +145,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_connectProj = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(ConnectProject));
                 }
             }
         public string ConnectOutput
@@ -146,6 +155,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_connectOutput = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(ConnectOutput));
                 }
             }
 
@@ -156,6 +166,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 m_imsUsername = value;
                 RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(ImsUsername));
                 }
             }
 

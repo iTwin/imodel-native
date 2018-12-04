@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
-    
+
     <!-- ........................................................................................................................................ -->
     <!-- ORDBridge    The bridge itself is a product, containing all of the needed shared libraries, plus assets. -->
     <!-- ........................................................................................................................................ -->
@@ -24,10 +24,10 @@
             </Files>
         </Bindings>
     </Part>
-    
+
     <Part Name="Resources" BentleyBuildMakeFile="ORDBridge/Resources.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <Bindings>
-            <Directory SourceName="Delivery/Resources/Dgnlibs" ProductDirectoryName="Dgnlibs" SubPartDirectory="Resources/Dgnlibs" 
+            <Directory SourceName="Delivery/Resources/Dgnlibs" ProductDirectoryName="Dgnlibs" SubPartDirectory="Resources/Dgnlibs"
             Required="true"/>
         </Bindings>
     </Part>
@@ -84,6 +84,7 @@
         <SubPart PartName="RoadRailPhysical-Tested" Repository="DgnDomains-RoadRailPhysical" PartFile="RoadRailPhysical" />
         <SubPart PartName="CiviliModelBridgesTested" />
         <SubPart PartName="Resources" />
+        <!-- <SubPart PartName="ORDBridgeGUI" /> -->
         <InstallerWixFile SourceFile="ORDBridge\Installer\ORDBridgeInstaller"/>
         <Directories DirectoryListName="ORDBridgeDirectoryList" />
     </Product>
@@ -117,7 +118,7 @@
         <ProductDirectory Name="ScalableMeshV8SDK" Deliver="false" />
         <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
-        <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>        
+        <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>
     </ProductDirectoryList>
 
     <Part Name="ORDBridgeTestAppExe" BentleyBuildMakeFile="ORDBridge/TestApp/ORDBridgeTestApp.mke" >
@@ -204,9 +205,9 @@
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
     </Part>
-    
-    <Part Name="GTest-Run-CheckCoverage" Scope="Private" OnlyPlatforms="x64" 
-        BentleyBuildMakeFile="${SrcRoot}/Civil/Components/sharedmke/CodeCoverage.mke" 
+
+    <Part Name="GTest-Run-CheckCoverage" Scope="Private" OnlyPlatforms="x64"
+        BentleyBuildMakeFile="${SrcRoot}/Civil/Components/sharedmke/CodeCoverage.mke"
         BentleyBuildMakeOptions="-dProductName=CiviliModelBridges -dCodeSourceDir=${SrcRoot}\Civil\iModelBridges\ORDBridge\ -dFailIfCoverageNotMet=0 -dMinimumCoverage=0.0">
         <RequiredRepository>Civil-Components</RequiredRepository>
         <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
@@ -250,6 +251,17 @@
     <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
     <Bindings>
       <Files ProductDirectoryName="ApplicationRoot">Delivery/PublishORDToBIM$(exeext)</Files>
+    </Bindings>
+  </Part>
+
+  <!-- ........................................................................................................................................ -->
+  <!-- ORDBridgeGUI    This is a GUI wrapper for the PublishORDToBIM & iModelBridgeFwk                                                          -->
+  <!-- ........................................................................................................................................ -->
+
+  <Part Name="ORDBridgeGUI" BMakeFile="ORDBridge/ORDBridgeGUI/ORDBridgeGuiExe.mke" OnlyPlatforms="x64">
+    <Bindings>
+      <Assemblies ProductDirectoryName="ApplicationRoot">Delivery/ORDBridgeGUI.exe</Assemblies>
+      <Files ProductDirectoryName="ApplicationRoot">Delivery/ORDBridgeGUI.exe.config</Files>
     </Bindings>
   </Part>
 
@@ -381,7 +393,7 @@
     <!-- <SubPart PartName="UnitTests-Published" /> -->
     <SubPart PartName="CiviliModelBridgesCS06Bridge-UnitTests-Published" />
     <SubPart PartName="CiviliModelBridgesCS06Bridge-UnitTests-NonPublished" />
-    
+
     <!-- We can also have Scenario and Performance tests, they'll get their own Parts -->
 
     <!-- Conceptstation calls the sqlang parts here too -->

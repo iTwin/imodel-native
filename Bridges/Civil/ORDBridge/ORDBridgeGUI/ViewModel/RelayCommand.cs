@@ -22,6 +22,15 @@ namespace ORDBridgeGUI
             {
             m_executeWithArg = execute ?? throw new ArgumentNullException("execute");
             m_canExecute = canExecute ?? throw new ArgumentNullException("canExecute");
+
+            //if ( execute == null )
+            //    throw new ArgumentNullException("execute");
+
+            //if ( canExecute == null )
+            //    throw new ArgumentNullException("canExecute");
+
+            //m_executeWithArg = execute;
+            //m_canExecute = canExecute;
             }
 
         //---------------------------------------------------------------------------------------
