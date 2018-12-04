@@ -503,6 +503,10 @@ bool GeometricPrimitive::IsSameStructureAndGeometry(GeometricPrimitiveCR primiti
 #if defined (BENTLEYCONFIG_PARASOLID)
         case GeometryType::BRepEntity:
             {
+            // Can't ignore body to uor transform...post instancing in V8 converter only compares local range for a match which doesn't account for body transform differences...
+            if (!GetAsIBRepEntity()->GetEntityTransform().IsEqual(primitive.GetAsIBRepEntity()->GetEntityTransform(), tolerance, tolerance))
+                return false;
+
             double      solidTolerance = tolerance;
             PK_BODY_t   bodyTag1 = PSolidUtil::GetEntityTag(*GetAsIBRepEntity());
             PK_BODY_t   bodyTag2 = PSolidUtil::GetEntityTag(*primitive.GetAsIBRepEntity());
