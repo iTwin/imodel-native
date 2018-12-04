@@ -2470,11 +2470,13 @@ public:
 //! 1. InitRootModel            -- also initializes root transform and populates m_spatialModelsInAttachmentOrder, et al.
 //! 1. MakeSchemaChanges        -- uses m_spatialModelsInAttachmentOrder et al to find and convert ECSchemas and V8Tags
 //! 1. FindJob or InitializeJob -- uses root model and syncinfo, initializes the ChangeDetector, augments root transform, creates job definition models
-//! 1. DoBeginConversion        -- prepares ChangeDetector, initializes configuration
 //! 1. MakeDefinitionChanges    -- uses ChangeDetector and configuration.
 //! 1. ConvertData              -- uses definitions, ChangeDetector, and configuration. Writes to job definition models and other job-specific models. Populates m_v8ModelMappings.
-//! 1. DoFinishConversion
-//! 
+//!
+//! DoBeginConversion prepares ChangeDetector, initializes configuration. Both MakeDefinitionChanges and ConvertData call that internally,
+//! to make sure it happens. If MakeDefinitionChanges calls it first, then ConvertData will not.
+//! DoFinishConversion does post-processing, such as converting named groups, updating project extents, and generating thumbnails.
+//! *Only* ConvertData calls that.
 //! 
 //! Note that the output DgnDb might be new or it might already contain other content.
 //! See IsCreatingNewDgnDb.
@@ -2557,6 +2559,10 @@ struct RootModelConverter : SpatialConverterBase
         DGNDBSYNC_EXPORT void Legacy_Converter_Init(BeFileNameCR bcName);
 
     };
+
+private:
+    BentleyStatus DoBeginConversion();
+    BentleyStatus DoFinishConversion();
 
 protected:
     RootModelSpatialParams& m_params;   // NB: Must store a *reference* to the bridge's Params, as they may change after our constructor is called
@@ -2694,10 +2700,8 @@ public:
     //! @return bvector with const v8Files for this converter.
     DGNDBSYNC_EXPORT bvector<DgnV8FileP> const & GetV8Files() const { return m_v8Files; }
 
-    DGNDBSYNC_EXPORT BentleyStatus DoBeginConversion();
     DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
     DGNDBSYNC_EXPORT BentleyStatus ConvertData();
-    DGNDBSYNC_EXPORT BentleyStatus DoFinishConversion();
 
 };
 

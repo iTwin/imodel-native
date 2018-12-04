@@ -1427,6 +1427,11 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_FinishConversion()
     {
+    if (!m_beginConversionCalled)
+        {
+        BeAssert(false && "_FinishConversion called without _BeginConversion");
+        return;
+        }
     UnmapModelsNotAssignedToBridge(); // just in case any snuck back in
 
     ConvertNamedGroupsAndECRelationships();   // Now that we know all elements, work on the relationships between elements.
@@ -1437,8 +1442,7 @@ void RootModelConverter::_FinishConversion()
         UpdateCalculatedProperties();
     _RemoveUnusedMaterials();
 
-    if (nullptr != m_linkConverter)
-        m_linkConverter->PurgeOrphanedLinks();
+    m_linkConverter->PurgeOrphanedLinks();
 
     EmbedSpecifiedFiles();
 
@@ -1583,6 +1587,14 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
     if (!m_isRootModelSpatial)
         return BSISUCCESS;
 
+    if (!m_beginConversionCalled)
+        {
+        if (SUCCESS != DoBeginConversion() || WasAborted())     // must call this first, to initialize the ChangeDetector, which MakeDefinitionChanges will use
+            {
+            return BSIERROR;
+            }
+        }
+
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_STYLES());
     _ConvertLineStyles();
     if (WasAborted())
@@ -1598,6 +1610,9 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
         }
 
     _ConvertSpatialLevels();
+
+    // NB: It is up to ConvertData to call DoEndConversion. Don't do that here!
+
     return BSISUCCESS;
     }
 
@@ -1606,6 +1621,14 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus  RootModelConverter::ConvertData()
     {
+    if (!m_beginConversionCalled)
+        {
+        if (SUCCESS != DoBeginConversion() || WasAborted())     // must call this first, to initialize the ChangeDetector, which MakeDefinitionChanges will use
+            {
+            return BSIERROR;
+            }
+        }
+
     AddSteps(9);
 
     StopWatch totalTimer(true);
@@ -1678,6 +1701,9 @@ BentleyStatus  RootModelConverter::ConvertData()
         PushChangesForFile(*GetRootV8File(), ConverterDataStrings::Sheets());
 
     ConverterLogging::LogPerformance(timer, "Convert Sheets (total)");
+
+    if (BSISUCCESS != DoFinishConversion())
+        return BSIERROR;
 
     ConverterLogging::LogPerformance(totalTimer, "Total data conversion time (%" PRIu32 " element(s))", (uint32_t) GetElementsConverted());
     return WasAborted() ? ERROR : SUCCESS;

@@ -1534,6 +1534,11 @@ static void dumpParentAndChildren(DgnElementCR el, int indent)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_OnConversionComplete()
     {
+    if (!m_onConversionStartCalled)
+        {
+        BeAssert(false && "_OnConversionComplete called without _OnConversionStart");
+        return;
+        }
     GetChangeDetector()._Cleanup(*this);
 
 #if defined (BENTLEYCONFIG_PARASOLID)

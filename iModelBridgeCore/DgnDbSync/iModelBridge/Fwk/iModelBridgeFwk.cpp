@@ -1799,7 +1799,7 @@ int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCal
             return BSIERROR;
         callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
 
-        //BeAssert(!iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb));
+        //BeAssert(!iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb)); -- commented out because _OnOpenBim may update the be_Prop table
 
         // Re-find the JobSubject after close and reopen
         m_bridge->_GetParams().SetIsCreatingNewDgnDb(false);
