@@ -34,7 +34,7 @@ namespace dgn_ElementHandler
 };
 
 namespace dgn_TxnTable {struct Element; struct Model;};
-
+namespace ElementDependency { struct Graph; struct Edge;};
 struct ElementAutoHandledPropertiesECInstanceAdapter;
 
 //=======================================================================================
@@ -1400,6 +1400,11 @@ protected:
     //! @return DgnDbStatus::Success to allow the DgnModel deletion, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDelete, forwarding its status.
     virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model) const {return DgnDbStatus::Success;}
+
+public:
+    virtual void _OnBeforeOutputsHandled(ElementDependency::Graph const& graph, ElementDependency::Edge const& edge) const {}
+    virtual void _OnAllInputsHandled(ElementDependency::Graph const& graph, ElementDependency::Edge const& edge) const {}
+protected:
 
     //! Called after a delete of a DgnModel modeling this element has completed.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDeleted.

@@ -105,6 +105,7 @@ DOMAIN_DEFINE_MEMBERS(BisCoreDomain)
 BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain", 1) 
     {
     // Note: Handlers must be registered in class heirarchy order (base classes before subclasses)
+    RegisterHandler(ElementDependency::Handler::GetHandler());
     RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
     RegisterHandler(dgn_AspectHandler::TextAnnotationDataHandler::GetHandler());
 

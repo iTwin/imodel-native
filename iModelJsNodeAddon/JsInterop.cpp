@@ -75,61 +75,6 @@ public:
     JsDgnHost() { BeAssertFunctions::SetBeAssertHandler(&NativeAssertionsHelper::HandleAssertion); }
 };
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                    Keith.Bentley                    12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void callJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args) {
-    if (obj == nullptr)
-        return;
-
-    auto func = obj.Get(methodName);
-    if (!func.IsFunction()) {
-        Utf8String err("method not found: ");
-        err += methodName;
-        Napi::TypeError::New(obj.Env(), err.c_str()).ThrowAsJavaScriptException();
-        return;
-    }
-    func.As<Napi::Function>().Call(obj, args);
-}
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                    Keith.Bentley                    12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void callDriverFunc(Graph const& graph, DgnElementId id, Utf8CP methodName) {
-    auto& db = graph.GetDgnDb();
-    callJsFunction(graph.m_jsTxns, methodName, {db.GetJsClassName(id), db.ToJsString(id)});
-}
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                    Keith.Bentley                    12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void callEdgeFunc(Graph const& graph, Edge const& edge, Utf8CP methodName) {
-    auto& jsTxns = graph.m_jsTxns;
-    if (jsTxns == nullptr)
-        return;
-    auto& db = graph.GetDgnDb();
-    Napi::Object props = Napi::Object::New(jsTxns.Env());
-
-    auto relClass = db.Schemas().GetClass(edge.GetRelClassId());
-    if (relClass != nullptr) 
-        props["classFullName"] = db.ToJsString(relClass->GetFullName());
-    props["id"] = db.ToJsString(edge.m_relId);
-    props["sourceId"] = db.ToJsString(edge.m_ein);
-    props["targetId"] = db.ToJsString(edge.m_eout);
-    callJsFunction(jsTxns, methodName, {props});
-}
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley  12/18
-//=======================================================================================
-struct JsTxnMonitor : TxnMonitor {
-    void _OnBeforeOutputsHandled(Graph const& graph, Edge const& edge) override {callDriverFunc(graph, edge.m_ein, "_onBeforeOutputsHandled");}
-    void _OnAllInputsHandled(Graph const& graph, Edge const& edge) override {callDriverFunc(graph, edge.m_eout, "_onAllInputsHandled");}
-    void _OnRootChanged(Graph const& graph, Edge const& edge) override {callEdgeFunc(graph, edge,  "_onRootChanged");}
-    void _OnValidateOutput(Graph const& graph, Edge const& edge) override {callEdgeFunc(graph, edge,  "_onValidateOutput");}
-    void _OnDeletedDependency(Graph const& graph, Edge const& edge) override {callEdgeFunc(graph, edge,  "_onDeletedDependency");}
-};
-
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  02/18
 //=======================================================================================
@@ -212,7 +157,6 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env env, BeFileNameCR
         {
         auto jsHost = new JsDgnHost();
         DgnPlatformLib::Initialize(*jsHost);
-        jsHost->GetTxnAdmin().AddTxnMonitor(*new JsTxnMonitor());
         RegisterOptionalDomains();
         InitLogging();
         InitializeParasolid();
