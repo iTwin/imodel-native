@@ -1437,7 +1437,8 @@ void RootModelConverter::_FinishConversion()
         UpdateCalculatedProperties();
     _RemoveUnusedMaterials();
 
-    m_linkConverter->PurgeOrphanedLinks();
+    if (nullptr != m_linkConverter)
+        m_linkConverter->PurgeOrphanedLinks();
 
     EmbedSpecifiedFiles();
 

@@ -1783,6 +1783,13 @@ int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCal
         return BentleyStatus::ERROR;
         }
 
+    DbResult dbres = m_briefcaseDgnDb->SaveChanges();
+    if (BeSQLite::BE_SQLITE_OK != dbres)
+        {
+        GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);
+        return RETURN_STATUS_LOCAL_ERROR;
+        }
+    
     bool madeDefinitionChanges = iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb);
     if (madeDefinitionChanges)
         {
@@ -1792,14 +1799,14 @@ int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCal
             return BSIERROR;
         callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
 
-        BeAssert(!iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb));
+        //BeAssert(!iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb));
 
         // Re-find the JobSubject after close and reopen
         m_bridge->_GetParams().SetIsCreatingNewDgnDb(false);
         m_bridge->_GetParams().SetIsUpdating(true);
         jobsubj = m_bridge->_FindJob();
         
-        BeAssert(!iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb));
+        //BeAssert(!iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb));
         }
     return bridgeSchemaChangeStatus;
     }
@@ -1852,7 +1859,13 @@ int iModelBridgeFwk::UpdateExistingBim()
 
     // >------> pullmergepush *may* have pulled schema changes -- close and re-open the briefcase in order to merge them in <-----------<
 
-    m_briefcaseDgnDb->SaveChanges();
+    DbResult dbres = m_briefcaseDgnDb->SaveChanges();
+    if (BeSQLite::BE_SQLITE_OK != dbres)
+        {
+        GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);
+        return RETURN_STATUS_LOCAL_ERROR;
+        }
+
     Briefcase_ReleaseAllPublicLocks();
     m_briefcaseDgnDb = nullptr;             // This is safe, because we released all locks.
 
@@ -1890,9 +1903,13 @@ int iModelBridgeFwk::UpdateExistingBim()
             return BentleyStatus::ERROR;
             }
 
-        m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+        DbResult dbres = m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
                                         // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
-
+        if (BeSQLite::BE_SQLITE_OK != dbres)
+            {
+            GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);
+            return RETURN_STATUS_LOCAL_ERROR;
+            }
 
         //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
@@ -1950,7 +1967,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
 
-    DbResult dbres = m_briefcaseDgnDb->SaveChanges();
+    dbres = m_briefcaseDgnDb->SaveChanges();
 
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 

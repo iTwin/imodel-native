@@ -504,7 +504,8 @@ BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverterApp::_OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose)
     {
-    m_converter->DoFinishConversion();
+    if (iModelBridge::ClosePurpose::SchemaUpgrade !=purpose)
+        m_converter->DoFinishConversion();
 
     bool keepHostAliveOriginal = false;
     if (NULL != m_converter.get())
