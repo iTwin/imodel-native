@@ -212,4 +212,32 @@ void CShapeProfile::SetFlangeSlope (double val)
     SetPropertyValue (PRF_PROP_CShapeProfile_FlangeSlope, ECN::ECValue (val));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CShapeProfile::GetInnerFlangeFaceLength() const
+    {
+    return GetFlangeWidth() - GetWebThickness();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CShapeProfile::GetInnerWebFaceLength() const
+    {
+    return GetDepth() - GetFlangeThickness() * 2.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CShapeProfile::GetSlopeHeight() const
+    {
+    double const flangeSlopeCos = std::cos (GetFlangeSlope());
+    if (flangeSlopeCos == 0.0)
+        return 0.0;
+
+    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * std::sin (GetFlangeSlope());
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE

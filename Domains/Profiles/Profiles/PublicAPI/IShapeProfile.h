@@ -78,6 +78,11 @@ public:
     PROFILES_EXPORT double GetFlangeSlope() const;
     PROFILES_EXPORT void SetFlangeSlope (double val);
 
+public:
+    PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
+    PROFILES_EXPORT double GetInnerWebFaceLength() const;
+    PROFILES_EXPORT double GetSlopeHeight() const;
+
     }; // IShapeProfile
 
 //=======================================================================================
