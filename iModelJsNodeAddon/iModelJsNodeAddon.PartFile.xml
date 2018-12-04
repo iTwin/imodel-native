@@ -179,6 +179,8 @@
     <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
     <SubPart PartName="BeRapidJson" PartFile="Bentley" Repository="Bentley"/>
-  </Part>
 
+    <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient"/>
+    <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
+  </Part>
 </BuildContext>
