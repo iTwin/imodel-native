@@ -41,12 +41,6 @@ struct MockCachingDataSource : public ICachingDataSource
 
             ON_CALL(m_txnManager, CommitTransaction()).WillByDefault(Return(SUCCESS));
             ON_CALL(m_txnManager, RollbackTransaction()).WillByDefault(Return(SUCCESS));
-
-            ON_CALL(*this, StartCacheTransactionProxy()).WillByDefault(Invoke([=]
-                {
-                auto stubTransactionPtr = std::make_shared<CacheTransaction>(m_cache, &m_txnManager);
-                return stubTransactionPtr;
-                }));
             }
 
         virtual ~MockCachingDataSource()
@@ -68,12 +62,8 @@ struct MockCachingDataSource : public ICachingDataSource
 
         CacheTransaction StartCacheTransaction() override
             {
-            return std::move(*StartCacheTransactionProxy());
+            return std::move(CacheTransaction(m_cache, &m_txnManager));
             }
-
-        //! Use this method to mock StartCacheTransaction that returns non-copyable CacheTransaction
-        MOCK_METHOD0(StartCacheTransactionProxy,
-            std::shared_ptr<CacheTransaction>());
 
         MOCK_METHOD0(GetCacheAccessThread,
             WorkerThreadPtr());

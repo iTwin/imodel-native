@@ -24,11 +24,6 @@ using namespace ::testing;
     EXPECT_EQ(expectedProgress.GetInstances(), actualProgress.GetInstances());  \
     EXPECT_NEAR(expectedProgress.GetSynced(), actualProgress.GetSynced(), 0.01);
 
-struct TestProgressMock
-    {
-    MOCK_METHOD1(TestProgress, void(ICachingDataSource::ProgressCR));
-    };
-
 CachedResponseKey CreateTestResponseKey(ICachingDataSourcePtr ds, Utf8StringCR rootName = "StubResponseKeyRoot", Utf8StringCR keyName = BeGuid(true).ToString())
     {
     auto txn = ds->StartCacheTransaction();
@@ -4233,7 +4228,6 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreateObjectWithFiles_CallbacksC
     options.AddFileCancellationToken(instance2, fileCt2);
 
     MockFunction<void(ECInstanceKeyCR)> mockFunction;
-
     options.SetFileUploadFinishCallback(std::function<void(ECInstanceKeyCR)>([&] (ECInstanceKeyCR key)
         {
         mockFunction.Call(key);
@@ -6316,10 +6310,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_ProgressCa
     ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
         .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
-    TestProgressMock testOnProgress;
+    MockFunction<void(ICachingDataSource::ProgressCR)> mockFunction;
     auto onProgress = [&] (ICachingDataSource::ProgressCR progress)
         {
-        testOnProgress.TestProgress(progress);
+        mockFunction.Call(progress);
         };
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
@@ -6334,27 +6328,27 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_ProgressCa
 
         {
         InSequence dummy;
-        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+        EXPECT_CALL(mockFunction, Call(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
             {
             EXPECT_EQ(instance, progress.GetCurrentFileKey());
             EXPECT_EQ(ICachingDataSource::Progress::State(), progress.GetCurrentFileBytes());
             }));
-        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+        EXPECT_CALL(mockFunction, Call(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
             {
             EXPECT_EQ(instance, progress.GetCurrentFileKey());
             EXPECT_EQ(ICachingDataSource::Progress::State(5.0, filelength), progress.GetCurrentFileBytes());
             }));
-        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+        EXPECT_CALL(mockFunction, Call(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
             {
             EXPECT_EQ(instance, progress.GetCurrentFileKey());
             EXPECT_EQ(ICachingDataSource::Progress::State(10.0, filelength), progress.GetCurrentFileBytes());
             }));
-        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+        EXPECT_CALL(mockFunction, Call(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
             {
             EXPECT_EQ(instance, progress.GetCurrentFileKey());
             EXPECT_EQ(ICachingDataSource::Progress::State(filelength, filelength), progress.GetCurrentFileBytes());
             }));
-        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+        EXPECT_CALL(mockFunction, Call(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
             {
             EXPECT_DOUBLE_EQ(1.0, progress.GetSynced());
             }));
@@ -6380,10 +6374,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithout_ProgressCal
     ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
         .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
-    TestProgressMock testOnProgress;
+    MockFunction<void(ICachingDataSource::ProgressCR)> mockFunction;
     auto onProgress = [&] (ICachingDataSource::ProgressCR progress)
         {
-        testOnProgress.TestProgress(progress);
+        mockFunction.Call(progress);
         };
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
@@ -6394,7 +6388,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithout_ProgressCal
         return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}));
         }));
 
-        EXPECT_CALL(testOnProgress, TestProgress(_)).Times(2).WillRepeatedly(Invoke([&] (ICachingDataSource::ProgressCR progress)
+        EXPECT_CALL(mockFunction, Call(_)).Times(2).WillRepeatedly(Invoke([&] (ICachingDataSource::ProgressCR progress)
             {
             EXPECT_FALSE(progress.GetCurrentFileKey().IsValid());
             }));
