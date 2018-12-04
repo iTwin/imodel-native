@@ -2141,6 +2141,13 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
             continue;
             }
 
+        // SP3D schemas are processed later.  The only way we got here is if there are other schemas in the dgn that get flattened, like mixing OpenPlant and SP3d
+        if (sourceSchema->GetName().StartsWithIAscii("SP3D"))
+            {
+            m_flattenedRefs[sourceSchema->GetName()] = sourceSchema;
+            continue;
+            }
+
         if (m_flattenedRefs.find(sourceSchema->GetName()) != m_flattenedRefs.end())
             continue;
 
@@ -2716,7 +2723,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         });
 
     constSchemas.erase(removeDgn, constSchemas.end());
-//#define EXPORT_BISIFIEDECSCHEMAS 1
+#define EXPORT_BISIFIEDECSCHEMAS 1
 #ifdef EXPORT_BISIFIEDECSCHEMAS
     {
     BeFileName bimFileName = GetDgnDb().GetFileName();
