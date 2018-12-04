@@ -62,7 +62,7 @@ struct MockCachingDataSource : public ICachingDataSource
 
         CacheTransaction StartCacheTransaction() override
             {
-            return std::move(CacheTransaction(m_cache, &m_txnManager));
+            return CacheTransaction(m_cache, &m_txnManager);
             }
 
         MOCK_METHOD0(GetCacheAccessThread,

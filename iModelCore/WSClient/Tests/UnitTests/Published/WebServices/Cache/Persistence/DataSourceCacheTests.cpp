@@ -4459,7 +4459,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResultContainsChangedOneToOne
     auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToOneHoldingRelationshipClass");
     auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
     CachedResponseKey responseKey(parent, "Foo");
-    auto child = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
+    StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
     CachedResponseKey responseKeyChild(parent, "Foo2");
 
     StubInstances instances;
@@ -5604,7 +5604,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_MultiplePages_ReturnsTheirObj
     CachedResponseKey key({cache->FindOrCreateRoot(nullptr), "TestQuery"});
 
     StubInstances instances;
-    auto response = instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "A"});
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
 
     instances.Clear();
@@ -8612,7 +8612,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWas
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}});
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse(), &rejected, nullptr));
-    auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
     ASSERT_TRUE(rejected.empty());
 
     rejected.clear();

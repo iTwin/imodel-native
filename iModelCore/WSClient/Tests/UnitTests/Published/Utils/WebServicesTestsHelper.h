@@ -56,8 +56,10 @@ namespace BackDoor
     }
 
 // Operator for comparisons
+BEGIN_BENTLEY_NAMESPACE
 bool operator <= (const DateTime& lhs, const DateTime& rhs);
 bool operator >= (const DateTime& lhs, const DateTime& rhs);
+END_BENTLEY_NAMESPACE
 
 namespace rapidjson
     {

@@ -1307,7 +1307,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileNotCachedAndConn
     auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
-    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    StubInstanceInCache(txn.GetCache(), fileId);
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, ::testing::An<BeFileNameCR>(), _, _, _)).Times(1)
@@ -1330,7 +1330,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileNotCachedAndServ
     auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
-    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    StubInstanceInCache(txn.GetCache(), fileId);
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, ::testing::An<BeFileNameCR>(), _, _, _)).Times(1)
@@ -1354,7 +1354,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndConnect
     auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
-    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    StubInstanceInCache(txn.GetCache(), fileId);
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile("Foo"))));
     txn.Commit();
 
@@ -1379,7 +1379,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndServerR
     auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
-    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    StubInstanceInCache(txn.GetCache(), fileId);
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile("OldFile"))));
     txn.Commit();
 
@@ -1404,7 +1404,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndServerR
     auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
-    ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
+    StubInstanceInCache(txn.GetCache(), fileId);
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile("OldFile"))));
     txn.Commit();
 
@@ -4622,7 +4622,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledCreatedMo
 
     auto instanceB = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "ToModify"});
     auto instanceC = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "ToDelete"});
-    auto instanceA = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "NewValue"})"));
+    txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "NewValue"})"));
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyObject(instanceB, ToJson(R"({"TestProperty" : "ModifiedValue"})")));
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteObject(instanceC));
 
@@ -5297,11 +5297,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndOneObj
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
 
-    auto instanceA = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"A"})"));
+    txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"A"})"));
     auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"B"})"));
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instanceB, StubFile(), true));
     auto filePath = txn.GetCache().ReadFilePath(instanceB);
-    auto instanceC = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"C"})"));
+    txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"C"})"));
 
     txn.Commit();
 
@@ -5380,7 +5380,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndRelate
 
     auto instanceA = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"A"})"));
     auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"B"})"));
-    auto relationshipAB = txn.GetCache().GetChangeManager().CreateRelationship(*relClass, instanceA, instanceB);
+    txn.GetCache().GetChangeManager().CreateRelationship(*relClass, instanceA, instanceB);
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instanceB, StubFile(), true));
     auto filePath = txn.GetCache().ReadFilePath(instanceB);
 
@@ -5462,7 +5462,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndFailur
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    auto instance = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
     txn.Commit();
 
     SyncOptions options;
@@ -6367,7 +6367,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithout_ProgressCal
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    auto instance = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
 
     txn.Commit();
 
@@ -6404,7 +6404,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
     {
     auto ds = GetTestDataSourceV24();
     auto txn = ds->StartCacheTransaction();
-    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
@@ -6581,7 +6581,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
     {
     auto ds = GetTestDataSourceV24();
     auto txn = ds->StartCacheTransaction();
-    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
@@ -6772,7 +6772,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObje
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
     auto instanceB = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "B"});
     auto instanceC = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "C"});
-    auto instanceA = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyObject(instanceB, Json::objectValue));
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteObject(instanceC));
 
@@ -8288,7 +8288,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstanceThatReturn
     StubInstances instancesB;
     instancesB.Add({"TestSchema.TestClass", "B"});
     ObjectId instanceBId {"TestSchema.TestClass", "B"};
-    auto instanceBKey = StubInstanceInCache(txn.GetCache(), instanceBId);
+    StubInstanceInCache(txn.GetCache(), instanceBId);
     txn.Commit();
 
     // Act & Assert
