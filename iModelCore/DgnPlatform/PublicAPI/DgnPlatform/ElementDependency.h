@@ -15,6 +15,36 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace ElementDependency {
 
+//=======================================================================================
+//! Base class for dependency handlers for the dgn.ElementDrivesElement ECRelationship class. 
+//! Subclasses should derive from this class, register it using DgnDomain::RegisterHandler, and override the virtual methods to do something useful
+//! @see ElementDependency::Graph.
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Handler : DgnDomain::Handler {
+    DOMAINHANDLER_DECLARE_MEMBERS(BIS_REL_ElementDrivesElement, Handler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+
+    //! Called by DgnElementDependencyGraph after the ElementDrivesElement ECRelationship itself is created and then whenever the
+    //! source or target DgnElement is changed directly or by an upstream dependency.
+    //! @note This callback is \em not invoked when the source or target element is deleted. See _OnDeletedDependency
+    //! @param[in] graph The ElementDependency::Graph being evaluated.
+    //! @param[in] edge The relationship's data
+    virtual void _OnRootChanged(Graph const& graph, Edge const& ege) {}
+
+    //! Called by DgnElementDependencyGraph after the specified dependency is deleted.
+    //! @note A dependency relationship is automatically deleted when its source or target element is deleted.
+    //! @param[in] graph The ElementDependency::Graph being evaluated.
+    //! @param[in] edge The relationship's data (as of the time it was deleted)
+    virtual void _OnDeletedDependency(Graph const& graph, Edge const& edge) {}
+
+    //! Called by ElementDependency::Graph after all _OnRootChanged have been invoked, in the case where the output of this dependency is also the output of other dependencies.
+    //! The dependency handler should check that its requirements is still enforced. 
+    //! Call Txns::LogError to report a validation error.
+    //! @note The dependency handler should *not* modify the target element.
+    //! @param[in] graph The ElementDependency::Graph being evaluated.
+    //! @param[in] edge The relationship's data
+    virtual void _OnValidateOutput(Graph const& graph, Edge const& edge) {}
+};
+
 //! Indicates if changes have been propagated through an ECRelationship successfully or not.
 //! These are bits. The Deferred status and the Satisfied/Deferred status may be changed independently of each other.
 enum EdgeStatus 
@@ -74,7 +104,7 @@ struct Edge
     };
 
 //=======================================================================================
-//! Element dependency graph calls JavaScript handers in the correct order when a transaction is "validated".
+//! Element dependency graph calls handers in the correct order when a transaction is "validated".
 //! Called by Txns::CheckTxnBoundary.
 //! 
 //! <h3>Only ElementDrivesElement ECRelationships can have Dependency Handlers</h3>
@@ -146,19 +176,14 @@ private:
     // working with handlers
     void InvokeHandler(Edge const& rh);
     void InvokeHandlerForValidation(Edge const& rh);
-
     void DiscoverEdges();
-
     void VerifyOverlappingDependencies();
     void InvokeHandlersInTopologicalOrder();
     void InvokeHandlersInTopologicalOrder_OneGraph(Edge const&, bvector<Edge> const& pathToSupplier);
-
     void InvokeHandlersInDependencyOrder();
     void InvokeHandlerForDeletedRelationship(BeSQLite::EC::ECInstanceId relId);
-
     BeSQLite::DbResult SetFailedEdgeStatusInDb(Edge const&, bool failed);
     BeSQLite::DbResult UpdateEdgeStatusInDb(Edge const&, EdgeStatus);
-
     BentleyStatus CheckDirection(Edge const&);
 
 public:
@@ -191,6 +216,7 @@ public:
     //! Get a list of the dependencies, in order, that would be evaluated if the specified element and/or ElementDrivesElement relationship were directly changed
     DGNPLATFORM_EXPORT BentleyStatus WhatIfChanged(bvector<DgnElementId> const& directlyChangedEntities, bvector<BeSQLite::EC::ECInstanceId> const& directlyChangedDepRels);
     };
-}
+
+} // end namespace ElementDependency
 
 END_BENTLEY_DGN_NAMESPACE

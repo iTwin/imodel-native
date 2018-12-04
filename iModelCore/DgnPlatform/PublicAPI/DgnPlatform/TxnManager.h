@@ -23,11 +23,6 @@ DGNPLATFORM_REF_COUNTED_PTR(DynamicChangeTracker)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace ElementDependency {
-struct Graph;
-struct Edge;
-}
-
 /*=================================================================================**//**
  @addtogroup GROUP_TxnManager Transaction Manager Module
  Types related to the transaction (txn) manager.
@@ -65,11 +60,6 @@ struct TxnMonitor
     virtual void _OnAppliedChanges(TxnManager&) {}
     virtual void _OnPrepareForUndoRedo(TxnManager&) {}
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
-    virtual void _OnBeforeOutputsHandled(ElementDependency::Graph const&, ElementDependency::Edge const&) {}
-    virtual void _OnRootChanged(ElementDependency::Graph const&, ElementDependency::Edge const&) {}
-    virtual void _OnAllInputsHandled(ElementDependency::Graph const&, ElementDependency::Edge const&) {}
-    virtual void _OnValidateOutput(ElementDependency::Graph const&, ElementDependency::Edge const&) {}
-    virtual void _OnDeletedDependency(ElementDependency::Graph const&, ElementDependency::Edge const&) {}
 };
 
 struct RevisionChangesFileReader;

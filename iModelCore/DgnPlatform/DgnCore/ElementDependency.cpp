@@ -156,6 +156,49 @@ END_BENTLEY_DGN_NAMESPACE
 
 using namespace ElementDependency;
 
+HANDLER_DEFINE_MEMBERS(Handler)
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static Handler& getHandler(Graph const& graph, Edge const& edge) {
+    auto& domains = graph.GetDgnDb().Domains();
+    Handler* handler = (Handler*) domains.LookupHandler(edge.m_relClassId);
+    if (nullptr != handler)
+        return *handler;
+
+    return (Handler&) *domains.FindHandler(edge.m_relClassId, domains.GetClassId(Handler::GetHandler()));
+}
+
+static DgnElementCPtr getDriver(Graph const& graph, DgnElementId id) {return graph.GetDgnDb().Elements().Get<DgnElement>(id);}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void callJsDriverFunc(Graph const& graph, DgnElementId id, Utf8CP methodName) {
+    auto& db = graph.GetDgnDb();
+    DgnDb::CallJsFunction(graph.m_jsTxns, methodName, {db.GetJsClassName(id), db.ToJsString(id)});
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void callJsEdgeFunc(Graph const& graph, Edge const& edge, Utf8CP methodName) {
+    auto& jsTxns = graph.m_jsTxns;
+    if (jsTxns == nullptr)
+        return;
+    auto& db = graph.GetDgnDb();
+    Napi::Object props = Napi::Object::New(jsTxns.Env());
+
+    auto relClass = db.Schemas().GetClass(edge.GetRelClassId());
+    if (relClass != nullptr) 
+        props["classFullName"] = db.ToJsString(relClass->GetFullName());
+    props["id"] = db.ToJsString(edge.m_relId);
+    props["sourceId"] = db.ToJsString(edge.m_ein);
+    props["targetId"] = db.ToJsString(edge.m_eout);
+    DgnDb::CallJsFunction(jsTxns, methodName, {props});
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mindaugas.Butkus                04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -439,13 +482,6 @@ void Graph::WriteDot(BeFileNameCR dotFilename, bvector<bvector<uint64_t>> const&
         auto reldesc = GetValidDotName(FmtRel(edge));
 
         fprintf(fp, "%s -> %s [label=%s]", incode.c_str(), outcode.c_str(), reldesc.c_str());
-
-        /*
-        uint32_t cycleId;
-        if (isInCyclePath (cycleId, inid, outid, cyclePaths))
-            fprintf (fp, "[label=%d color=red fontcolor=red]", cycleId);
-            */
-
         fprintf(fp, ";\n");
         }
 
@@ -489,29 +525,34 @@ void Graph::LogDependencyFound(Statement& stmt, Edge const& edge)
                                   FmtElement(eout).c_str(), 
                                        FmtElementPath(epath).c_str());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Graph::InvokeHandler(Edge const& edge)
-    {
-    auto &txnAdmin = T_HOST.GetTxnAdmin();
+void Graph::InvokeHandler(Edge const& edge) {
     size_t errorCount = m_txnMgr.NumValidationErrors();
-    if (!m_nodes->AnyOutputsProcessed(edge.m_ein) && m_nodes->GetInDegree(edge.m_ein) == 0)
-        txnAdmin.CallMonitors([this, edge](TxnMonitor& monitor){monitor._OnBeforeOutputsHandled(*this, edge);});
+    if (!m_nodes->AnyOutputsProcessed(edge.m_ein) && m_nodes->GetInDegree(edge.m_ein) == 0) {
+        getDriver(*this, edge.m_ein)->_OnBeforeOutputsHandled(*this, edge);
+        callJsDriverFunc(*this, edge.m_ein, "_onBeforeOutputsHandled");
+    }
 
-    if (!edge.IsDeleted())
-        txnAdmin.CallMonitors([this, edge](TxnMonitor& monitor){monitor._OnRootChanged(*this, edge);});
-    else
+    if (!edge.IsDeleted()) {
+        getHandler(*this, edge)._OnRootChanged(*this, edge);
+        callJsEdgeFunc(*this, edge,  "_onRootChanged");
+    } else {
         InvokeHandlerForDeletedRelationship(edge.m_relId);
-    
+    }
+
     m_nodes->IncrementOutputsProcessed(edge.m_ein);
     m_nodes->IncrementInputsProcessed(edge.m_eout);
 
-    if (m_nodes->AllInputsProcessed(edge.m_eout))
-        txnAdmin.CallMonitors([this, edge](TxnMonitor& monitor){monitor._OnAllInputsHandled(*this, edge);});
+    if (m_nodes->AllInputsProcessed(edge.m_eout)) {
+        getDriver(*this, edge.m_eout)->_OnAllInputsHandled(*this, edge);
+        callJsDriverFunc(*this, edge.m_eout, "_onAllInputsHandled");
+    }
 
     SetFailedEdgeStatusInDb(edge, (m_txnMgr.NumValidationErrors() > errorCount));
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
@@ -519,7 +560,8 @@ void Graph::InvokeHandler(Edge const& edge)
 void Graph::InvokeHandlerForValidation(Edge const& edge)
     {
     int errorCount = m_txnMgr.NumValidationErrors();
-    T_HOST.GetTxnAdmin().CallMonitors([this, edge](TxnMonitor& monitor){monitor._OnValidateOutput(*this, edge);});
+    getHandler(*this, edge)._OnValidateOutput(*this, edge);
+    callJsEdgeFunc(*this, edge,  "_onValidateOutput");
     SetFailedEdgeStatusInDb(edge, (m_txnMgr.NumValidationErrors() > errorCount));
     }
 
@@ -792,7 +834,8 @@ void Graph::InvokeHandlerForDeletedRelationship(ECInstanceId relId)
     edge.m_eout = deletedRel->m_target;
     edge.m_relClassId = deletedRel->m_relKey.GetClassId();
     edge.m_relId = deletedRel->m_relKey.GetInstanceId();
-    T_HOST.GetTxnAdmin().CallMonitors([this, edge](TxnMonitor& monitor){monitor._OnDeletedDependency(*this, edge);});
+    getHandler(*this, edge)._OnDeletedDependency(*this, edge);
+    callJsEdgeFunc(*this, edge,  "_onDeletedDependency");
     }
 
 /*---------------------------------------------------------------------------------**//**
