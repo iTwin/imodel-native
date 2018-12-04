@@ -1130,8 +1130,11 @@ ICancellationTokenPtr ct
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateServerNotSupportedError()));
         }
 
+    auto azureRequestOptions = std::make_shared<IAzureBlobStorageClient::RequestOptions>();
+    azureRequestOptions->GetActivityOptions()->SetActivityId(activityLogger.GetActivityId());
+
     auto finalResult = std::make_shared<WSUpdateFileResult>();
-    return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult azureResult) mutable
+    return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, azureRequestOptions, ct)->Then([=] (AzureResult azureResult) mutable
         {
         if (!azureResult.IsSuccess())
             {

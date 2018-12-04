@@ -102,9 +102,10 @@ AsyncTaskPtr<SamlTokenResult> IdentityTokenProvider::RenewToken()
         return m_client->RequestToken(*oldToken, nullptr, m_tokenLifetime)
             ->Then<SamlTokenResult>([=] (SamlTokenResult result)
             {
-            if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
+            if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized ||
+                result.GetError().GetHttpStatus() == HttpStatus::Forbidden)
                 {
-                LOG.infov("Identity token expired");
+                LOG.infov("Identity token expired. Response status: %d", result.GetError().GetHttpStatus());
                 if (m_tokenExpiredHandler)
                     m_tokenExpiredHandler();
                 return result;

@@ -23,14 +23,12 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestApplication.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
-    <ClInclude Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Published\Utils\StubLogger.h" />
     <ClInclude Include="Published\WebServices\Azure\EventServiceClientTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\StubFileManager.h" />
     <ClInclude Include="Published\WebServices\Client\ActivityIdGeneratorTests.h" />
     <ClInclude Include="Published\WebServices\Client\ActivityLoggerTests.h" />
     <ClInclude Include="Published\WebServices\Client\MockRepositoryInfoListener.h" />
-    <ClInclude Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
     <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
     <ClInclude Include="Published\Utils\MockTests.h" />
@@ -107,6 +105,7 @@
     <ClInclude Include="Published\WebServices\Connect\MockImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\MockLocalState.h" />
     <ClInclude Include="Published\Connect\PasswordPersistenceTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockTokenStore.h" />
     <ClInclude Include="Published\WebServices\Connect\SamlTokenTests.h" />
     <ClInclude Include="Published\Connect\SecureStoreTests.h" />
     <ClInclude Include="Published\WebServices\Connect\SecurityTokenTests.h" />
@@ -158,6 +157,7 @@
     <ClInclude Include="Published\Utils\Web\WebTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Client\ChunkedUploadRequestTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
+    <ClInclude Include="Published\WebServices\Connect\StubTokenStore.h" />
     <ClInclude Include="Published\WebServices\Licensing\UsageTrackingDataTests.h" />
     <ClInclude Include="Published\WebServices\Client\MockServerInfoListener.h" />
     <ClInclude Include="Published\WebServices\Client\MockWSClient.h" />
@@ -176,19 +176,18 @@
     <ClInclude Include="Published\WebServices\Client\WSRepositoryClientTests.h" />
     <ClInclude Include="Published\WebServices\Ims\SolrQueryTests.h" />
     <ClInclude Include="Published\WebServices\Ims\SolrClientTests.h" />
+    <ClInclude Include="Published\WSClientUnitTestsPch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp" />
     <ClCompile Include="BackDoor\TestApplication.cpp" />
     <ClCompile Include="BackDoor\TestEnvironment.cpp" />
     <ClCompile Include="BackDoor\DgnClientFxViewportHelpers.cpp" />
-    <ClCompile Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.cpp" />
     <ClCompile Include="Published\Utils\StubLogger.cpp" />
     <ClCompile Include="Published\WebServices\Azure\EventServiceClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ActivityIdGeneratorTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ActivityLoggerTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSRepositoryTests.cpp" />
-    <ClCompile Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.cpp" />
     <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />
     <ClCompile Include="NonPublished\ConfigurableUiTests.cpp" />
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
@@ -315,9 +314,11 @@
     <ClCompile Include="Published\WebServices\Client\WSRepositoryClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Ims\SolrQueryTests.cpp" />
     <ClCompile Include="Published\WebServices\Ims\SolrClientTests.cpp" />
+    <ClCompile Include="Published\WSClientUnitTestsPch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
+    <None Include="CompileOptions.mki" />
     <None Include="Prewire.mke" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
@@ -383,18 +384,18 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -N0 -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb         -ax64 -r WSClient -f WSClient -p WSClient-Gtest b</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -N0 -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-Gtest b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);WSCLIENT_ENABLE_DUPLICATING_SYMBOLS</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\WSClient-Gtest\WSClientTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>bb $(BB2N0) -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WSClient-Gtest -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb $(BB2N0) -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
+    <NMakeCleanCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);USE_GTEST</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx86\build\BeGTest\bin\begtest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath);$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\</NMakeIncludeSearchPath>

@@ -328,3 +328,69 @@ TEST_F(CacheQueryHelperTests, ECSqlCreateOrderByClause_SortOrderReversed_Correct
 
     EXPECT_STREQ("alias.[Legs] ASC, LOWER (alias.[Name]) DESC", orderBy.c_str());
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                 Petras.Sukys                   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CacheQueryHelperTests, ReadJsonInstance_ExistingInstance_ReturnsRapidJsonWithInstance)
+    {
+    auto cache = GetTestCache();
+    DataReadOptions options;
+    options.SelectClassAndProperty("TestSchema.Table", DataSourceCache_PROPERTY_RemoteId);
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.Table", "testId"});
+    auto instanceClass = cache->GetAdapter().GetECClass(instance);
+
+    auto infos = CacheQueryHelper(options).CreateReadInfos(instanceClass);
+    ASSERT_EQ(1, infos.size());
+    auto readInfo = infos[0];
+
+    Utf8String idClause = "instance.ECInstanceId = ?";
+    Utf8String ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(readInfo, idClause);
+
+    ECSqlStatement statement;
+    ASSERT_TRUE(SUCCESS == cache->GetAdapter().PrepareStatement(statement, ecSql));
+    statement.BindId(1, instance.GetInstanceId());
+    EXPECT_TRUE(DbResult::BE_SQLITE_ROW == statement.Step());
+    rapidjson::Document document(rapidjson::kObjectType);
+    ASSERT_TRUE(SUCCESS == CacheQueryHelper::ReadJsonInstance(readInfo, statement, document, document.GetAllocator()));
+    EXPECT_STREQ("testId", document[DataSourceCache_PROPERTY_RemoteId].GetString());
+    EXPECT_STREQ("TestSchema.Table", document[DataSourceCache_PROPERTY_ClassKey].GetString());
+    Utf8String instanceIdString = document[DataSourceCache_PROPERTY_LocalInstanceId].GetString();
+    uint64_t instanceId = 0;
+    auto result = sscanf(instanceIdString.c_str(), "%" PRIx64, &instanceId);
+    EXPECT_EQ(1, result);
+    EXPECT_EQ(instance.GetInstanceId().GetValue(), instanceId);
+    }
+    
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                 Petras.Sukys                   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CacheQueryHelperTests, ReadJsonInstance_ExistingInstanceWithProperties_ReturnsJsonValue)
+    {
+    auto cache = GetTestCache();
+    DataReadOptions options;
+    options.SelectClassAndProperty("TestSchema.Table", DataSourceCache_PROPERTY_RemoteId);
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.Table", "testId"});
+    auto instanceClass = cache->GetAdapter().GetECClass(instance);
+
+    auto infos = CacheQueryHelper(options).CreateReadInfos(instanceClass);
+    ASSERT_EQ(1, infos.size());
+    auto readInfo = infos[0];
+
+    Utf8String idClause = "instance.ECInstanceId = ?";
+    Utf8String ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(readInfo, idClause);
+
+    ECSqlStatement statement;
+    ASSERT_TRUE(SUCCESS == cache->GetAdapter().PrepareStatement(statement, ecSql));
+    statement.BindId(1, instance.GetInstanceId());
+    EXPECT_TRUE(DbResult::BE_SQLITE_ROW == statement.Step());
+    Json::Value jsonValue;
+    ASSERT_TRUE(SUCCESS == CacheQueryHelper::ReadJsonInstance(readInfo, statement, jsonValue));
+    EXPECT_STREQ("testId", jsonValue[DataSourceCache_PROPERTY_RemoteId].asCString());
+    EXPECT_STREQ("TestSchema.Table", jsonValue[DataSourceCache_PROPERTY_ClassKey].asCString());
+    Utf8String instanceIdString = jsonValue[DataSourceCache_PROPERTY_LocalInstanceId].asCString();
+    uint64_t instanceId = 0;
+    auto result = sscanf(instanceIdString.c_str(), "%" PRIx64, &instanceId);
+    EXPECT_EQ(1, result);
+    EXPECT_EQ(instance.GetInstanceId().GetValue(), instanceId);
+    }

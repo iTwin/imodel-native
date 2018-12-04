@@ -1,17 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/CacheQueryHelperTests.h $
+|     $Source: Tests/UnitTests/Published/WSClientUnitTestsPch.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
-#pragma once
-
-#include "BaseCacheTest.h"
-
-class CacheQueryHelperTests : public BaseCacheTest
-    {
-    protected:
-        ECSchemaPtr GetTestSchema();
-    };
+#include "WSClientUnitTestsPch.h"

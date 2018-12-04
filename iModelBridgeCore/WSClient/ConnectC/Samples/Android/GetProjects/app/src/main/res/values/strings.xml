@@ -1,7 +1,0 @@
-<resources>
-    <string name="app_name">LoadProjects</string>
-    <string name="btn_execute">Execute</string>
-    <string name="lbl_projname">Name</string>
-    <string name="lbl_projloc">Location</string>
-    <string name="lbl_projlmd">Last Modified Date</string>
-</resources>

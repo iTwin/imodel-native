@@ -13,6 +13,8 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_TASKS
 
+#define HEADER_XMsClientRequestId "x-ms-client-request-id"
+
 const Utf8String s_errorResponse = "<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>TestCode</Code><Message>TestMessage</Message></Error>";
 
 /*--------------------------------------------------------------------------------------+
@@ -58,6 +60,29 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSucce
     auto result = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", filePath)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ("FooBoo", result.GetValue().GetETag());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Mantas.Smicius                        11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ActivityOptionsEnabled_SendsRequestWithSpecifiedXMsClientRequestId)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForFirstRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("specifiedActivityId", request.GetHeaders().GetValue(HEADER_XMsClientRequestId));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto options = std::make_shared<IAzureBlobStorageClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId("specifiedActivityId");
+
+    EXPECT_TRUE(options->GetActivityOptions()->HasActivityId());
+    EXPECT_STREQ("specifiedActivityId", options->GetActivityOptions()->GetActivityId().c_str());
+
+    client->SendGetFileRequest("https://test/foo", StubFilePath(), nullptr, options)->GetResult();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -225,3 +250,90 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_FileSmallerThanChunk_U
     ASSERT_EQ("FooBoo", result.GetValue().GetETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Mantas.Smicius                        11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ActivityOptionsNotSpecified_SendsRequestWithoutXMsClientRequestId)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue(HEADER_XMsClientRequestId));
+        return StubHttpResponse(HttpStatus::Created);
+        });
+
+    client->SendUpdateFileRequest("https://test/foo", StubFile())->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Mantas.Smicius                        11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_DefaultActivityOptions_SendsRequestWithoutXMsClientRequestId)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue(HEADER_XMsClientRequestId));
+        return StubHttpResponse(HttpStatus::Created);
+        });
+
+    auto options = std::make_shared<IAzureBlobStorageClient::RequestOptions>();
+
+    EXPECT_FALSE(options->GetActivityOptions()->HasActivityId());
+    EXPECT_TRUE(options->GetActivityOptions()->GetActivityId().empty());
+
+    client->SendUpdateFileRequest("https://test/foo", StubFile(), nullptr, options)->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Mantas.Smicius                        11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_EmptyActivityIdSpecified_SendsRequestWithoutXMsClientRequestId)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue(HEADER_XMsClientRequestId));
+        return StubHttpResponse(HttpStatus::Created);
+        });
+
+    auto options = std::make_shared<IAzureBlobStorageClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId(Utf8String());
+
+    EXPECT_FALSE(options->GetActivityOptions()->HasActivityId());
+    EXPECT_TRUE(options->GetActivityOptions()->GetActivityId().empty());
+
+    client->SendUpdateFileRequest("https://test/foo", StubFile(), nullptr, options)->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Mantas.Smicius                        11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ActivityOptionsEnabledForMultiChunkUpload_SendsAllRequestsWithSpecifiedXMsClientRequestId)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+    uint32_t chunkSize = 4 * 1024 * 1024; // 4MB
+
+    GetHandler().ExpectRequests(4);
+    GetHandler().ForAnyRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("specifiedActivityId", request.GetHeaders().GetValue(HEADER_XMsClientRequestId));
+        return StubHttpResponse(HttpStatus::Created);
+        });
+
+    auto options = std::make_shared<IAzureBlobStorageClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId("specifiedActivityId");
+
+    EXPECT_TRUE(options->GetActivityOptions()->HasActivityId());
+    EXPECT_STREQ("specifiedActivityId", options->GetActivityOptions()->GetActivityId().c_str());
+
+    uint32_t fileSize = chunkSize * 3 - 200; // 3 chunks
+    BeFileName filePath = StubFileWithSize(fileSize);
+    client->SendUpdateFileRequest("https://test/foo", filePath, nullptr, options)->GetResult();
+    }

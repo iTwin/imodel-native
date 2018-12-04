@@ -479,6 +479,26 @@ const ReadCallback& readCallback
     return SUCCESS;
     }
 
+int CacheQueryHelper::GetVerifiedRemoteIdColumnIndex(const ClassReadInfo& info, ECSqlStatement& statement)
+    {
+    bool remoteIdColumnNeedsVerification = false;
+
+    int remoteIdColumn = GetRemoteIdColumnIndex(info, remoteIdColumnNeedsVerification);
+
+    if (remoteIdColumnNeedsVerification)
+        {
+        ECPropertyCP remoteIdProperty = statement.GetColumnInfo(remoteIdColumn).GetProperty();
+        if (nullptr == remoteIdProperty ||
+            !remoteIdProperty->GetClass().GetName().Equals(CLASS_CachedObjectInfo) ||
+            !remoteIdProperty->GetName().EqualsI(CLASS_CachedObjectInfo_PROPERTY_RemoteId))
+            {
+            BeAssert(false && "Read info does not match statement");
+            remoteIdColumn = -1;
+            }
+        }
+    return remoteIdColumn;
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -495,34 +515,53 @@ ICancellationTokenPtr ct
         return ERROR;
         }
 
+    int remoteIdColumn = GetVerifiedRemoteIdColumnIndex(info, statement);
+
     ECClassId ecClassId = info.GetECClass().GetId();
-
-    bool remoteIdColumnNeedsVerification = false;
-    int remoteIdColumn = GetRemoteIdColumnIndex(info, remoteIdColumnNeedsVerification);
-
     JsonECSqlSelectAdapter adapter(statement);
-
     if (SUCCESS != adapter.GetRowInstance(jsonInstanceOut, ecClassId))
         {
         return ERROR;
         }
 
-    if (remoteIdColumnNeedsVerification)
+    if (remoteIdColumn >= 0)
         {
-        ECPropertyCP remoteIdProperty = statement.GetColumnInfo(remoteIdColumn).GetProperty();
-        if (nullptr == remoteIdProperty ||
-            !remoteIdProperty->GetClass().GetName().Equals(CLASS_CachedObjectInfo) ||
-            !remoteIdProperty->GetName().EqualsI(CLASS_CachedObjectInfo_PROPERTY_RemoteId))
-            {
-            BeAssert(false && "Read info does not match statement");
-            remoteIdColumn = -1;
-            }
-        remoteIdColumnNeedsVerification = false;
+        jsonInstanceOut[DataSourceCache_PROPERTY_RemoteId] = statement.GetValueText(remoteIdColumn);
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CacheQueryHelper::ReadJsonInstance
+(
+const ClassReadInfo& info,
+ECSqlStatement& statement,
+RapidJsonValueR jsonInstanceOut,
+rapidjson::Document::AllocatorType& allocator,
+ICancellationTokenPtr ct
+)
+    {
+    if (ct && ct->IsCanceled())
+        {
+        return ERROR;
+        }
+
+    int remoteIdColumn = GetVerifiedRemoteIdColumnIndex(info, statement);
+
+    ECClassId ecClassId = info.GetECClass().GetId();
+    JsonECSqlSelectAdapter adapter(statement);
+    if (SUCCESS != adapter.GetRowInstance(jsonInstanceOut, ecClassId, allocator))
+        {
+        return ERROR;
         }
 
     if (remoteIdColumn >= 0)
         {
-        jsonInstanceOut[DataSourceCache_PROPERTY_RemoteId] = statement.GetValueText(remoteIdColumn);
+        Utf8String remoteIdText = statement.GetValueText(remoteIdColumn);
+        jsonInstanceOut.AddMember(DataSourceCache_PROPERTY_RemoteId, rapidjson::Value(remoteIdText.c_str(), allocator).Move(), allocator);
         }
 
     return SUCCESS;
