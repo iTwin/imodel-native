@@ -711,7 +711,7 @@
         <SubPart Repository="ECObjects"             PartFile="ECObjects"        PartName="RunGtest" />
         <SubPart Repository="Units"                 PartFile="Units"            PartName="RunGtest" />
         <!-- <SubPart Repository="DgnClientFx"           PartFile="DgnClientFx"      PartName="RunGtest" /> -->
-        <!-- <SubPart Repository="WSClient"              PartFile="WSClient"         PartName="RunGtest" /> -->
+        <SubPart Repository="WSClient"              PartFile="WSClient"         PartName="RunGtest" />
         <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RunGtest" />
         <!-- Cannot include because they depend on DgnView
         <SubPart Repository="DgnDbSync"             PartFile="iModelBridge"     PartName="RunGtest" />

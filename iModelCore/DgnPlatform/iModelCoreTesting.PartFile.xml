@@ -12,12 +12,14 @@
 
         <SubPart PartName="RunGtest" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="RunGtest" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="RunGtest" PartFile="BeSecurity" Repository="BeSecurity"/>
         <SubPart PartName="RunGtest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="RunGtest" PartFile="ECDb" Repository="ECDb"/>
         <SubPart PartName="RunGtest" PartFile="ECObjects" Repository="ecobjects"/>
         <SubPart PartName="RunGtest" PartFile="ECPresentation" Repository="ECPresentation"/>
         <SubPart PartName="RunGtest" PartFile="geomlibs" Repository="GeomLibs"/>
         <SubPart PartName="RunGtest" PartFile="Units" Repository="Units"/>
+        <SubPart PartName="RunGtest" PartFile="WSClient" Repository="WSClient"/>
 
         <!-- These are built, but not run. -->
         <SubProduct ProductName="GeoCoord-Gtest" PartFile="GeoCoord" Repository="GeoCoord"/>
@@ -53,6 +55,7 @@
         <SubPart PartName="RuniOSXCTest" PartFile="ECPresentation" Repository="ECPresentation"/>
         <SubPart PartName="RuniOSXCTest" PartFile="geomlibs" Repository="GeomLibs"/>
         <SubPart PartName="RuniOSXCTest" PartFile="Units" Repository="Units"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="WSClient" Repository="WSClient"/>
     </Part>
 
     <Part Name="RunUnitCppTest" OnlyPlatforms="winrt*" Sequential="true" DeferType="RunUnitTests"
@@ -69,6 +72,7 @@
         <SubPart PartName="RunUwpTest" PartFile="ECPresentation" Repository="ECPresentation"/>
         <SubPart PartName="RunUwpTest" PartFile="geomlibs" Repository="GeomLibs"/>
         <SubPart PartName="RunUwpTest" PartFile="Units" Repository="Units"/>
+        <SubPart PartName="RunUwpTest" PartFile="WSClient" Repository="WSClient"/>
     </Part>
 
 </BuildContext>
