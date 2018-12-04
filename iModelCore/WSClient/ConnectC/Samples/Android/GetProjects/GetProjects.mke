@@ -1,0 +1,104 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ConnectC/Samples/Android/GetProjects/GetProjects.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+#--------------------------------------------------------------------------------------
+#   Check for environment dependencies
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PLATFORM)!="Android"
+    %error This makefile should be used only when TARGET_PLATFORM is Android
+%endif
+
+%if !defined (ANDROID_SDK_ROOT)
+    %error Must set ANDROID_SDK_ROOT
+%endif
+
+%message I am here
+%message ANDROID_SDK_ROOT=$(ANDROID_SDK_ROOT)
+
+appName=getprojects
+
+
+#--------------------------------------------------------------------------------------
+#   Prewire
+#--------------------------------------------------------------------------------------
+
+%if !defined (BuildContext)
+%error
+%endif
+
+DeliveryDir         = $(BuildContext)Delivery/
+BuildDir 			= $(OutputRootDir)build/WSClient/$(_MakeFileName)/
+SourceDir           = $(_MakeFilePath)app/  
+
+%message BuildContext=$(BuildContext)
+%message OutBuildContexts=$(OutBuildContexts)
+
+$(BuildDir)build.gradle : $(_MakeFilePath)build.gradle
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildDir)settings.gradle : $(_MakeFilePath)settings.gradle
+    $(LinkFirstDepToFirstTarget)
+
+#The Android App Directory
+SourceGradleAppDir=$(_MakeFilePath)app/
+BuildGradleAppDir=$(BuildDir)app/
+
+$(BuildGradleAppDir) : $(SourceGradleAppDir)
+     $(bcopyCmd) -srcFjaw  $(SourceGradleAppDir) $(BuildGradleAppDir)
+
+BuildAssetsDir=$(BuildGradleAppDir)src/main/assets/
+%mkdir  $(BuildAssetsDir)
+
+$(BuildAssetsDir)http/cabundle.pem : $(OutBuildContexts)BeHttp/Delivery/http/cabundle.pem
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildAssetsDir)sqlang/WSClient_en.sqlang.db3 : $(OutBuildContexts)WSClient/Delivery/sqlang/WSClient_en.sqlang.db3
+    $(LinkFirstDepToFirstTarget)
+
+#security jar
+%mkdir $(BuildDir)BeSecurity-1.0.0/
+	
+$(BuildDir)BeSecurity-1.0.0/build.gradle : $(_MakeFilePath)BeSecurity-1.0.0/build.gradle
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildDir)BeSecurity-1.0.0/BeSecurity-1.0.0.aar : $(BuildContext)SubParts/MavenDependencies/com/bentley/android/BeSecurity/1.0.0/BeSecurity-1.0.0.aar
+    $(LinkFirstDepToFirstTarget)
+
+#--------------------------------------------------------------------------------------
+#   Set Variables
+#--------------------------------------------------------------------------------------
+
+APP_ProjectRoot = $(BuildDir)/
+
+buildOut = $(OutputRootDir)build/${_MakeFileName}/
+mavenDependenciesDirectory = $(BuildContext)SubParts/MavenDependencies/
+
+#--------------------------------------------------------------------------------------
+#   Use Gradle to build the DgnClientFx archive
+#--------------------------------------------------------------------------------------
+GRADLE_APK_BASE_NAME=$(appName)
+GRADLE_TASKS=clean assemble uploadArchives
+GRADLE_PROPERTIES=buildDirectory=$[@subst \, \/, $(buildOut)] \
+                  MavenDependenciesDirectory=$[@subst \, \/, $(mavenDependenciesDirectory)] \
+				  BuildContextsDir=$[@subst \, \/, $(BuildContext)] \
+				  AssetsDir=$[@subst \, \/, $(BuildAssetsDir)] 
+
+#Verbose=1
+%include $(SrcRoot)imodel02/iModelCore/WSClient/mki/Android/gradleBuild.mki
+
+#--------------------------------------------------------------------------------------
+#   Link to apk output file.
+#--------------------------------------------------------------------------------------
+%include $(SrcRoot)imodel02/iModelCore/WSClient/mki/Android/getApkName.mki
+link_apk_to_context:
+	~linkfile $(ContextDeliveryDir)getprojects.apk=$(BuildDir)app/build/outputs/apk/$(TARGET_APK_NAME)
+
+
+
+

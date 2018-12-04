@@ -1,0 +1,72 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ClientLib.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+# this is only used if compiling for the WinRT target.
+ENABLE_CPP_CX_EXTENSIONS    = 1
+
+%include mdl.mki
+
+CompileOptionsMki           = $(SrcRoot)imodel02/iModelCore/WSClient/ClientLibCompileOptions.mki
+%include $(CompileOptionsMki)
+
+#--------------------------------------------------------------------------------------
+#   Building the WebServicesClient library
+#--------------------------------------------------------------------------------------
+ClientSourceDirectory       = $(_MakeFilePath)
+ClientPublicApiDirectory    = $(_MakeFilePath)PublicAPI/WebServices/
+BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
+
+o = $(OutputRootDir)build/WSClient/Client/
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+
+%include Client/Client.mki
+%include Azure/Azure.mki
+%include Configuration/Configuration.mki
+%include Connect/Connect.mki
+%include Licensing/Licensing.mki
+%include Ims/Ims.mki
+
+%include MultiCppCompileGo.mki
+WSClientObjectList = $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Link the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = WebServicesClient
+DLM_OBJECT_FILES            = $(WSClientObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)ClientInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%if $(TARGET_PLATFORM)=="Windows"
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)CCApi$(stlibext)	
+%endif
+
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSecurity$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(stlibext)
+
+%if $(TARGET_PLATFORM) != "WinRT"
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
+%endif
+
+%include $(sharedMki)linkLibrary.mki

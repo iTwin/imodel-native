@@ -13,12 +13,14 @@
 
         <SubPart PartName="RunGtest" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
+        <SubPart PartName="RunGtest" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/ECDb/ECDb" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/ecobjects/ECObjects" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/Units/Units" Repository="imodel02"/>
+        <SubPart PartName="RunGtest" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
 
         <!-- These are built, but not run. -->
         <SubProduct ProductName="GeoCoord-Gtest" PartFile="iModelCore/GeoCoord/GeoCoord" Repository="imodel02"/>
@@ -38,6 +40,9 @@
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/Units/Units" Repository="imodel02"/>
+        <!-- doesn't currently build
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
+        -->
     </Part>
 
     <Part Name="RunUnitXCTest" OnlyPlatforms="ios*" Sequential="true" DeferType="RunUnitTests"
@@ -54,6 +59,7 @@
         <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
         <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/Units/Units" Repository="imodel02"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
     </Part>
 
     <Part Name="RunUnitCppTest" OnlyPlatforms="winrt*" Sequential="true" DeferType="RunUnitTests"
@@ -70,6 +76,7 @@
         <SubPart PartName="RunUwpTest" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="RunUwpTest" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
         <SubPart PartName="RunUwpTest" PartFile="iModelCore/Units/Units" Repository="imodel02"/>
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
     </Part>
 
 </BuildContext>

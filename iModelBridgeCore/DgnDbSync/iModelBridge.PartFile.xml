@@ -9,7 +9,7 @@
     <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="M02">
         <SubPart PartName="iModelDmsSupport" Repository="imodel02" PartFile="iModelBridgeCore/dmssupport/iModelDmsSupport"/>
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform" />
-        <SubPart PartName="iModelHubClient" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02" />
+        <SubPart PartName="iModelHubClient" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02" />
         <SubPart PartName="PublicAPI" />
       
       <Bindings>
@@ -87,8 +87,8 @@
     <Part Name="Platform-xliffs">
       <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
       <!-- DgnPlatformDLL is responsible for creating DgnPlatform xliffs -->
-      <SubPart PartName="WSClient-Xliffs" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02"/>
-      <SubPart PartName="iModelHubClient-Xliffs" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02"/>
+      <SubPart PartName="WSClient-Xliffs" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
+      <SubPart PartName="iModelHubClient-Xliffs" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
       <SubPart PartName="BeHttp-Xliffs" PartFile="iModelCore/BeHttp/BeHttp" Repository="imodel02"/>
     </Part>
 
@@ -111,10 +111,10 @@
 
     <Part Name="iModelBridgeFwkLib" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwkLib.mke" ApiNumber="M02">
       <SubPart PartName="PublicAPI"/>
-      <SubPart PartName="iModelHubClient" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02"/>
+      <SubPart PartName="iModelHubClient" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
       <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
       <SubPart PartName="iModelBridgeFwk-en"/>
-      <SubPart PartName="BeSecurity" PartFile="iModelBridgeCore/BeSecurity/BeSecurity" Repository="imodel02"/>
+      <SubPart PartName="BeSecurity" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
       <SubPart PartName="iModelDmsSupport" Repository="imodel02" PartFile="iModelBridgeCore/dmssupport/iModelDmsSupport"/>
       <SubPart PartName="cxxopts" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
       <Bindings>
