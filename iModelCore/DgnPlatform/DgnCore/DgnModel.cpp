@@ -1834,7 +1834,7 @@ static BentleyStatus getECRelColIds(int& sourceInstanceIdCol, int& targetInstanc
 DgnDbStatus DgnModel::ImportLinkTableECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relschema, Utf8CP relname)
     {
     auto sstmt = sourceModel.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(
-        "SELECT rel.* FROM %s.%s rel, " BIS_SCHEMA(BIS_CLASS_Element) " source, " BIS_SCHEMA(BIS_CLASS_Element) " target"
+        "SELECT rel.*, rel.SourceECClassId,rel.TargetECClassId FROM %s.%s rel, " BIS_SCHEMA(BIS_CLASS_Element) " source, " BIS_SCHEMA(BIS_CLASS_Element) " target"
         " WHERE rel.SourceECInstanceId=source.ECInstanceId AND rel.TargetECInstanceId=target.ECInstanceId AND source.Model.Id=? AND target.Model.Id=?",
         relschema, relname).c_str());
 

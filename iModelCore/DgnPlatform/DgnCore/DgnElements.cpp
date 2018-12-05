@@ -893,7 +893,10 @@ JsonECSqlSelectAdapter const* DgnElements::GetJsonSelectAdapter(DgnClassId class
 +---------------+---------------+---------------+---------------+---------------+------*/    
 JsonECSqlSelectAdapter const& DgnElements::GetJsonSelectAdapter(DgnClassId classId, BeSQLite::EC::ECSqlStatement const& stmt, BeSQLite::EC::JsonECSqlSelectAdapter::FormatOptions const& formatOptions) const
     {
-    JsonECSqlSelectAdapter* adapter = new BeSQLite::EC::JsonECSqlSelectAdapter(stmt, formatOptions, true /*force adaptor to use static string for caching*/);
+    // As the adapter is cached, we can avoid that the member names are copied into the generated JSON. Instead
+    // the generated JSON objects reference the member names held by the adapter.
+    // Note: Must make sure the JSON objects don't live longer than the adapter.
+    JsonECSqlSelectAdapter* adapter = new BeSQLite::EC::JsonECSqlSelectAdapter(stmt, formatOptions, false );
     auto adapterPtr = std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>(adapter);
     m_jsonSelectAdaptors[classId] = std::move(adapterPtr);
     return *adapter;
