@@ -13,6 +13,7 @@
 #include <libxml/xpathInternals.h>
 #include <Bentley/CatchNonPortable.h>
 #include <Bentley/BeAssert.h>
+#include <Bentley/BeThread.h>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Daryl.Holmwood  04/2014
@@ -141,11 +142,14 @@ xmlDoc& BeXmlDom::GetDocument ()
     return *m_doc;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
+static BeMutex s_xmlErrorResetMutex;
 BeXmlDom::BeXmlDom (ParseOptions options) : m_doc (NULL), m_options (options)
     {
+    BeMutexHolder lock(s_xmlErrorResetMutex);
     // reset the global error.
     xmlResetLastError();
 
