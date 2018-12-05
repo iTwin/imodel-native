@@ -45,6 +45,9 @@ void ClassNameExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedProp
     ClassMap const& classMap = m_info->GetMap();
     for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
+        if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId)
+            continue; // SourceECClassId/TargetECClassId are skipped in SELECT *
+
         std::unique_ptr<PropertyNameExp> exp = std::make_unique<PropertyNameExp>(ctx, propertyMap->GetAccessString(), *this, classMap);
         expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(exp), nullptr));
         }

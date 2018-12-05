@@ -271,66 +271,226 @@ TEST_F(ECSqlStatementTestFixture, SelectAsterisk)
         stmt.Finalize();
         }
 
-    for (Utf8CP ecsql : std::vector<Utf8CP> {"SELECT * FROM ts.AOwnsB ORDER BY SourceECClassId, TargetECClassId", "SELECT * FROM (SELECT * FROM ts.AOwnsB ORDER BY SourceECClassId, TargetECClassId)", "SELECT * FROM (SELECT * FROM ts.AOwnsB) ORDER BY SourceECClassId, TargetECClassId"})
+    for (Utf8CP ecsql : std::vector<Utf8CP> {"SELECT * FROM ts.AOwnsB ORDER BY SourceECClassId, TargetECClassId", "SELECT * FROM (SELECT * FROM ts.AOwnsB ORDER BY SourceECClassId, TargetECClassId)"})
         {
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-        EXPECT_EQ(6, stmt.GetColumnCount()) << stmt.GetECSql();
-        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s, "SourceECClassId":%s,"TargetECInstanceId":%s,"TargetECClassId":%s})json",
+        EXPECT_EQ(4, stmt.GetColumnCount()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s, "TargetECInstanceId":%s})json",
                                              bKey.GetInstanceId().ToString().c_str(), // nav prop rels don't have their own id, ECDb hands out the instance's id holding the nav prop
                                              aOwnsBClassId.ToString().c_str(),
                                              aKey.GetInstanceId().ToString().c_str(),
-                                             aKey.GetClassId().ToString().c_str(),
-                                             bKey.GetInstanceId().ToString().c_str(),
-                                             bKey.GetClassId().ToString().c_str()
+                                             bKey.GetInstanceId().ToString().c_str()
         )), retrieveRow(stmt)) << stmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s, "SourceECClassId":%s,"TargetECInstanceId":%s,"TargetECClassId":%s})json",
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s,"TargetECInstanceId":%s})json",
                                              subBKey.GetInstanceId().ToString().c_str(), // nav prop rels don't have their own id, ECDb hands out the instance's id holding the nav prop
                                              aOwnsBClassId.ToString().c_str(),
                                              aKey.GetInstanceId().ToString().c_str(),
-                                             aKey.GetClassId().ToString().c_str(),
-                                             subBKey.GetInstanceId().ToString().c_str(),
-                                             subBKey.GetClassId().ToString().c_str()
+                                             subBKey.GetInstanceId().ToString().c_str()
         )), retrieveRow(stmt)) << stmt.GetECSql();
 
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
         stmt.Finalize();
         }
+
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT * FROM ts.AOwnsB) ORDER BY SourceECClassId, TargetECClassId"));
+
+    
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT SourceECClassId, TargetECClassId FROM ts.AOwnsB ORDER BY TargetECInstanceId) ORDER BY SourceECClassId,TargetECClassId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(2, stmt.GetColumnCount()) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"SourceECClassId":%s,"TargetECClassId":%s})json",
+                                         aKey.GetClassId().ToString().c_str(),
+                                         bKey.GetClassId().ToString().c_str())), retrieveRow(stmt)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"SourceECClassId":%s,"TargetECClassId":%s})json",
+                                         aKey.GetClassId().ToString().c_str(),
+                                         subBKey.GetClassId().ToString().c_str())), retrieveRow(stmt)) << stmt.GetECSql();
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
 
     for (Utf8CP ecsql : std::vector<Utf8CP> {"SELECT * FROM ts.ALinksB", "SELECT * FROM (SELECT * FROM ts.ALinksB)"})
         {
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-        EXPECT_EQ(6, stmt.GetColumnCount()) << stmt.GetECSql();
-        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s, "SourceECClassId":%s,"TargetECInstanceId":%s,"TargetECClassId":%s})json",
+        EXPECT_EQ(4, stmt.GetColumnCount()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s,"TargetECInstanceId":%s})json",
                                              aLinksBKey.GetInstanceId().ToString().c_str(),
                                              aLinksBKey.GetClassId().ToString().c_str(),
                                              aKey.GetInstanceId().ToString().c_str(),
-                                             aKey.GetClassId().ToString().c_str(),
-                                             bKey.GetInstanceId().ToString().c_str(),
-                                             bKey.GetClassId().ToString().c_str()
+                                             bKey.GetInstanceId().ToString().c_str()
         )), retrieveRow(stmt)) << stmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
         stmt.Finalize();
         }
 
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.ALinksB) ORDER BY SourceECClassId,TargetECClassId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(4, stmt.GetColumnCount()) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"SourceECInstanceId":%s, "SourceECClassId":%s,"TargetECInstanceId":%s,"TargetECClassId":%s})json",
+                                            aKey.GetInstanceId().ToString().c_str(),
+                                            aKey.GetClassId().ToString().c_str(),
+                                            bKey.GetInstanceId().ToString().c_str(),
+                                            bKey.GetClassId().ToString().c_str()
+    )), retrieveRow(stmt)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
     for (Utf8CP ecsql : std::vector<Utf8CP> {"SELECT * FROM ts.SubBLinksFileInfo", "SELECT * FROM (SELECT * FROM ts.SubBLinksFileInfo)"})
         {
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-        EXPECT_EQ(7, stmt.GetColumnCount()) << stmt.GetECSql();
-        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s, "SourceECClassId":%s,"TargetECInstanceId":%s,"TargetECClassId":%s,"Priority":400})json",
+        EXPECT_EQ(5, stmt.GetColumnCount()) << stmt.GetECSql();
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"ECInstanceId":%s, "ECClassId":%s, "SourceECInstanceId":%s,"TargetECInstanceId":%s,"Priority":400})json",
                                              subBLinksFileInfoKey.GetInstanceId().ToString().c_str(),
                                              subBLinksFileInfoKey.GetClassId().ToString().c_str(),
                                              subBKey.GetInstanceId().ToString().c_str(),
-                                             subBKey.GetClassId().ToString().c_str(),
-                                             fileInfoKey.GetInstanceId().ToString().c_str(),
-                                             fileInfoKey.GetClassId().ToString().c_str()
+                                             fileInfoKey.GetInstanceId().ToString().c_str()
         )), retrieveRow(stmt)) << stmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
         stmt.Finalize();
         }
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId,Priority FROM ts.SubBLinksFileInfo) ORDER BY SourceECClassId,TargetECClassId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(5, stmt.GetColumnCount()) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"SourceECInstanceId":%s, "SourceECClassId":%s,"TargetECInstanceId":%s,"TargetECClassId":%s,"Priority":400})json",
+                                         subBKey.GetInstanceId().ToString().c_str(),
+                                         subBKey.GetClassId().ToString().c_str(),
+                                         fileInfoKey.GetInstanceId().ToString().c_str(),
+                                         fileInfoKey.GetClassId().ToString().c_str()
+    )), retrieveRow(stmt)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                 11/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, SelectAsteriskAndViewGenerator)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SelectAsterisk.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                    <ECSchemaReference name="ECDbFileInfo" version="02.00.01" alias="ecdbf" />
+                    <ECEntityClass typeName="A">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Size" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECNavigationProperty propertyName="A" relationshipName="AOwnsB" direction="Backward"/>
+                        <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="SubB">
+                        <BaseClass>B</BaseClass>
+                        <ECProperty propertyName="SubName" typeName="string" />
+                     </ECEntityClass>
+                    <ECRelationshipClass typeName="AOwnsB" modifier="Sealed" strength="referencing">
+                      <Source multiplicity="(0..1)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="A"/>
+                      </Source>
+                      <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="B"/>
+                      </Target>
+                    </ECRelationshipClass>
+                    <ECRelationshipClass typeName="ALinksB" modifier="Sealed" strength="referencing">
+                      <Source multiplicity="(0..*)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="A"/>
+                      </Source>
+                      <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="B"/>
+                      </Target>
+                    </ECRelationshipClass>
+                    <ECRelationshipClass typeName="SubBLinksFileInfo" modifier="Sealed" strength="referencing">
+                      <Source multiplicity="(0..*)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="SubB"/>
+                      </Source>
+                      <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="ecdbf:ExternalFileInfo"/>
+                      </Target>
+                      <ECProperty propertyName="Priority" typeName="int" />
+                    </ECRelationshipClass>
+                </ECSchema>)xml")));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.AOwnsB"));
+    EXPECT_STRCASEEQ("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[TargetECInstanceId] FROM "
+        "(SELECT [ts_B].[Id] ECInstanceId,74 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+        "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", stmt.GetNativeSql()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.AOwnsB WHERE SourceECClassId=?"));
+    EXPECT_STRCASEEQ("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[TargetECInstanceId] FROM "
+        "(SELECT [ts_B].[Id] ECInstanceId,74 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+        "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB] "
+        "WHERE [AOwnsB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId,SourceECClassId FROM ts.AOwnsB"));
+    EXPECT_STRCASEEQ("SELECT [AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId] FROM "
+                     "(SELECT [ts_B].[Id] ECInstanceId,74 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", stmt.GetNativeSql()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT TargetECInstanceId,TargetECClassId FROM ts.AOwnsB"));
+    EXPECT_STRCASEEQ("SELECT [AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
+                     "(SELECT [ts_B].[Id] ECInstanceId,74 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", stmt.GetNativeSql()) << stmt.GetECSql();
+    stmt.Finalize();
+
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB"));
+    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[TargetECInstanceId] FROM "
+        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],72 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+        "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
+        "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB]", stmt.GetNativeSql()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE SourceECInstanceId=? AND SourceECClassId=?"));
+    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[TargetECInstanceId] FROM "
+        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],72 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+        "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
+        "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
+        "WHERE [ALinksB].[SourceECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix2_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE SourceECClassId=?"));
+    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[TargetECInstanceId] FROM "
+                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],72 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+                     "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
+                     "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
+                     "WHERE [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE TargetECInstanceId=? AND TargetECClassId=?"));
+    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[TargetECInstanceId] FROM "
+                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],72 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+                     "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
+                     "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
+                     "WHERE [ALinksB].[TargetECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix2_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE TargetECClassId=?"));
+    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[TargetECInstanceId] FROM "
+                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],72 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+                     "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
+                     "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
+                     "WHERE [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix1_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
@@ -429,10 +589,15 @@ TEST_F(ECSqlStatementTestFixture, InsertWithoutPropClause)
     EXPECT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(Utf8PrintfString("SELECT 1 FROM ecdbf.ExternalFileInfo WHERE ECInstanceId=%" PRIu64 " AND ECClassId=%" PRIu64 " AND Name='DataFile-1' AND Size=1000 AND Description='A test file' AND LastModified=TIMESTAMP '2018-11-23T00:00Z' AND RootFolder=ecdbf.StandardRootFolderType.TemporaryFolder AND RelativePath='files/large'",
                                                                               fileInfoKey.GetInstanceId().GetValue(), fileInfoKey.GetClassId().GetValue()).c_str()));
 
-
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ALinksB VALUES(?,-1,?,-1)"));
+
+    // SourceECClassId/TargetECClassId is skipped
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.ALinksB VALUES(?,-1,?,-1)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.ALinksB VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.ALinksB VALUES(?,?,?)"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ALinksB VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, aKey.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, bKey.GetInstanceId()));
 
@@ -447,7 +612,14 @@ TEST_F(ECSqlStatementTestFixture, InsertWithoutPropClause)
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubBLinksFileInfo VALUES(?,?,-1,?,-1)"));
+
+    // SourceECClassId/TargetECClassId is skipped
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubBLinksFileInfo VALUES(400,?,-1,?,-1)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubBLinksFileInfo VALUES(400,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubBLinksFileInfo VALUES(400,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubBLinksFileInfo VALUES(?,?,?,?)"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubBLinksFileInfo VALUES(?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 400)) << "Priority is expected to be the first prop";
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, subBKey.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, fileInfoKey.GetInstanceId()));

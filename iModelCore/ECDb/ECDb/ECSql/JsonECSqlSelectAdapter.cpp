@@ -65,24 +65,24 @@ public:
     // Otherwise a new member will be created and returned.
     // @param makeCopy if true, a copy of @p memberName will be added to the JSON. If false, a reference to @p memberName 
     // will used in the JSON -> caller must make sure the lifetime of @p memberName is longer than the JSON.
-    JsonRef GetOrAddMember(Utf8StringCR memberName, bool makeCopy = true)
+    JsonRef GetOrAddMember(Utf8CP memberName, bool makeCopy)
         {
         if (IsRapidJson())
             {
             // reuse an already existing member
-            auto it = RapidJson().FindMember(memberName.c_str());
+            auto it = RapidJson().FindMember(memberName);
             if (it != RapidJson().MemberEnd())
                 return JsonRef(it->value, Allocator());
 
-            rapidjson::Value memberNameVal = makeCopy ? rapidjson::Value(memberName.c_str(), (rapidjson::SizeType) memberName.size(), Allocator()) : rapidjson::Value(rapidjson::StringRef(memberName.c_str(), memberName.size()));
+            rapidjson::Value memberNameVal = makeCopy ? rapidjson::Value(memberName, Allocator()) : rapidjson::Value(rapidjson::StringRef(memberName));
             RapidJson().AddMember(memberNameVal.Move(), rapidjson::Value().Move(), Allocator());
-            return JsonRef(RapidJson()[memberName.c_str()], Allocator());
+            return JsonRef(RapidJson()[memberName], Allocator());
             }
 
         if (makeCopy)
             return JsonRef(JsonCpp()[memberName]);
 
-        return JsonRef(JsonCpp()[Json::StaticString(memberName.c_str())]);
+        return JsonRef(JsonCpp()[Json::StaticString(memberName)]);
         }
 
     JsonRef Pushback()
@@ -155,7 +155,7 @@ struct AdapterHelper final
         static bool IsValid(ECSqlStatement const&);
 
     public:
-        static BentleyStatus GetRow(JsonRef&, bvector<Utf8String>& uniqueMemberNames, bool appendToRow, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const&);
+        static BentleyStatus GetRow(JsonRef&, bvector<Utf8String>& uniqueMemberNames, bool appendToRow, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const&, bool copyMemberNames);
         static BentleyStatus GetRowInstance(JsonRef&, bvector<Utf8String>& memberNames, ECN::ECClassId, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const&);
     };
 
@@ -165,7 +165,7 @@ struct AdapterHelper final
 BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, bool appendToJson) const
     {
     JsonRef json(rowJson);
-    return AdapterHelper::GetRow(json, m_uniqueMemberNames, appendToJson, m_ecsqlStatement, m_ecsqlHash, m_formatOptions);
+    return AdapterHelper::GetRow(json, m_uniqueMemberNames, appendToJson, m_ecsqlStatement, m_ecsqlHash, m_formatOptions, m_copyMemberNames);
     }
 
 //--------------------------------------------------------------------------------------
@@ -174,7 +174,7 @@ BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, bool appendToJs
 BentleyStatus JsonECSqlSelectAdapter::GetRow(RapidJsonValueR rowJson, rapidjson::MemoryPoolAllocator<>& allocator, bool appendToJson) const
     {
     JsonRef json(rowJson, allocator);
-    return AdapterHelper::GetRow(json, m_uniqueMemberNames, appendToJson, m_ecsqlStatement, m_ecsqlHash, m_formatOptions);
+    return AdapterHelper::GetRow(json, m_uniqueMemberNames, appendToJson, m_ecsqlStatement, m_ecsqlHash, m_formatOptions, m_copyMemberNames);
     }
 
 //---------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ bool AdapterHelper::IsValid(ECSqlStatement const& stmt)
 // @bsimethod                                 Krischan.Eberle                 11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus AdapterHelper::GetRow(JsonRef& rowJson, bvector<Utf8String>& uniqueMemberNames, bool appendToJson, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
+BentleyStatus AdapterHelper::GetRow(JsonRef& rowJson, bvector<Utf8String>& uniqueMemberNames, bool appendToJson, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const& formatOptions, bool copyMemberNames)
     {
     if (SUCCESS != DetermineUniqueMemberNames(uniqueMemberNames, stmt, ecsqlHash, formatOptions.GetMemberCasingMode()))
         return ERROR;
@@ -246,7 +246,7 @@ BentleyStatus AdapterHelper::GetRow(JsonRef& rowJson, bvector<Utf8String>& uniqu
 
         ECSqlColumnInfoCR colInfo = ecsqlValue.GetColumnInfo();
         Utf8StringCR memberName = uniqueMemberNames[(size_t) columnIndex];
-        JsonRef memberJson = rowJson.GetOrAddMember(memberName);
+        JsonRef memberJson = rowJson.GetOrAddMember(memberName.c_str(), copyMemberNames);
         ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
         if (SUCCESS != SelectClauseItemToJson(memberJson, ecsqlValue, sysPropInfo, schemaManager, formatOptions))
             return ERROR;
@@ -293,7 +293,7 @@ BentleyStatus AdapterHelper::GetRowInstance(JsonRef& rowJson, bvector<Utf8String
         BeAssert(colInfo.GetProperty() != nullptr);
         ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
         Utf8StringCR memberName = memberNames[(size_t) columnIndex];
-        JsonRef memberJson = rowJson.GetOrAddMember(memberName);
+        JsonRef memberJson = rowJson.GetOrAddMember(memberName.c_str(), true);
         if (SUCCESS != SelectClauseItemToJson(memberJson, ecsqlValue, sysPropInfo, schemaManager, formatOptions))
             return ERROR;
         }
@@ -558,14 +558,14 @@ BentleyStatus AdapterHelper::NavigationToJson(JsonRef& jsonValue, IECSqlValue co
         }
 
     jsonValue.SetObject();
-    JsonRef navIdJson = jsonValue.GetOrAddMember(ECJsonSystemNames::Navigation::Id());
+    JsonRef navIdJson = jsonValue.GetOrAddMember(ECJsonSystemNames::Navigation::Id(), false);
     if (SUCCESS != navIdJson.FromId(navId))
         return ERROR;
 
     if (relClass == nullptr)
         return SUCCESS;
 
-    JsonRef relClassNameJson = jsonValue.GetOrAddMember(ECJsonSystemNames::Navigation::RelClassName());
+    JsonRef relClassNameJson = jsonValue.GetOrAddMember(ECJsonSystemNames::Navigation::RelClassName(), false);
     relClassNameJson.FromClass(*relClass);
     return SUCCESS;
     }
@@ -587,10 +587,10 @@ BentleyStatus AdapterHelper::StructToJson(JsonRef& jsonValue, IECSqlValue const&
             {
             Utf8String memberPropName(memberProp->GetName());
             FormatMemberName(memberPropName, formatOptions.GetMemberCasingMode());
-            memberJson = jsonValue.GetOrAddMember(memberPropName);
+            memberJson = jsonValue.GetOrAddMember(memberPropName.c_str(), true);
             }
         else
-            memberJson = jsonValue.GetOrAddMember(memberProp->GetName());
+            memberJson = jsonValue.GetOrAddMember(memberProp->GetName().c_str(), true);
 
         BeAssert(memberJson.IsValid());
 

@@ -493,16 +493,20 @@ TEST_F(DbMappingTestFixture, SubQueringEndTableRelationship)
 
 
 
-    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId FROM (SELECT TargetECClassId FROM ts.ElementRefsElement)"));
-    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId FROM (SELECT TargetECClassId FROM ts.ElementOwnsAspect)"));
-    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT TargetECClassId FROM ts.ElementRefsElement)"));
-    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT TargetECClassId FROM ts.ElementOwnsAspect)"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId,SourceECClassId FROM (SELECT SourceECClassId,TargetECClassId FROM ts.ElementRefsElement)"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId,SourceECClassId FROM (SELECT SourceECClassId,TargetECClassId FROM ts.ElementOwnsAspect)"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT SourceECClassId,TargetECClassId FROM ts.ElementRefsElement)"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT SourceECClassId,TargetECClassId FROM ts.ElementOwnsAspect)"));
     ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT * FROM ts.ElementRefsElement)"));
     ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT * FROM ts.ElementOwnsAspect)"));
-    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId FROM (SELECT TargetECClassId FROM (SELECT * FROM ts.ElementRefsElement))"));
-    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId FROM (SELECT TargetECClassId FROM (SELECT * FROM ts.ElementOwnsAspect))"));
-    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId FROM (SELECT * FROM (SELECT * FROM ts.ElementRefsElement))"));
-    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId FROM (SELECT * FROM (SELECT * FROM ts.ElementOwnsAspect))"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId, SourceECClassId FROM (SELECT SourceECClassId,TargetECClassId FROM (SELECT TargetECClassId, SourceECClassId FROM ts.ElementRefsElement))"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, PrepareECSql("SELECT TargetECClassId, SourceECClassId FROM (SELECT SourceECClassId, TargetECClassId FROM (SELECT * FROM ts.ElementRefsElement))")) << "SourceECClassId and TargetECClassId is not included in SELECT *";
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId, SourceECClassId FROM (SELECT SourceECClassId,TargetECClassId FROM (SELECT TargetECClassId, SourceECClassId FROM ts.ElementOwnsAspect))"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, PrepareECSql("SELECT TargetECClassId, SourceECClassId FROM (SELECT SourceECClassId, TargetECClassId FROM (SELECT * FROM ts.ElementOwnsAspect))")) << "SourceECClassId and TargetECClassId is not included in SELECT *";
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT SourceECClassId,TargetECClassId FROM (SELECT * FROM (SELECT TargetECClassId,SourceECClassId FROM ts.ElementRefsElement))"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT SourceECClassId,TargetECClassId FROM (SELECT * FROM (SELECT TargetECClassId,SourceECClassId FROM ts.ElementOwnsAspect))"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, PrepareECSql("SELECT SourceECClassId,TargetECClassId FROM (SELECT * FROM (SELECT * FROM ts.ElementRefsElement))")) << "SourceECClassId and TargetECClassId is not included in SELECT *";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, PrepareECSql("SELECT SourceECClassId,TargetECClassId FROM (SELECT * FROM (SELECT * FROM ts.ElementOwnsAspect))")) << "SourceECClassId and TargetECClassId is not included in SELECT *";
     ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT * FROM (SELECT * FROM ts.ElementRefsElement))"));
     ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT * FROM (SELECT * FROM ts.ElementOwnsAspect))"));
     }
