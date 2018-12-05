@@ -14,8 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceECSqlSelectAdapter::ECInstanceECSqlSelectAdapter(ECSqlStatement const &ecSqlStatement)
-    : m_ecSqlStatement(ecSqlStatement), m_isValid(false), m_ecClassIdColumnIndex(-1), m_sourceECClassIdColumnIndex(-1), m_targetECClassIdColumnIndex(-1), m_isSingleClassSelectClause(false)
+ECInstanceECSqlSelectAdapter::ECInstanceECSqlSelectAdapter(ECSqlStatement const &ecSqlStatement) : m_ecSqlStatement(ecSqlStatement)
     {
     if (!m_ecSqlStatement.IsPrepared())
         return;
@@ -403,6 +402,12 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetInstanceId(ECN::IECInstanceR inst
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipSource(ECN::IECInstanceR instance, IECSqlValue const& value) const
     {
+    if (m_sourceECClassIdColumnIndex < 0)
+        {
+        LOG.errorv("ECInstanceECSqlSelectAdapter cannot return ECRelationship instances because the SELECT clause does not include SourceECClassId. ECSQL: %s", m_ecSqlStatement.GetECSql());
+        return ERROR;
+        }
+
     ECN::StandaloneECRelationshipInstance* standaloneRelationship = dynamic_cast<ECN::StandaloneECRelationshipInstance*>(&instance);
     if (nullptr == standaloneRelationship)
         return ERROR;
@@ -422,6 +427,12 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipSource(ECN::IECInstan
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipTarget(ECN::IECInstanceR instance, IECSqlValue const& value) const
     {
+    if (m_targetECClassIdColumnIndex < 0)
+        {
+        LOG.errorv("ECInstanceECSqlSelectAdapter cannot return ECRelationship instances because the SELECT clause does not include TargetECClassId. ECSQL: %s", m_ecSqlStatement.GetECSql());
+        return ERROR;
+        }
+
     ECN::StandaloneECRelationshipInstance* standaloneRelationship = dynamic_cast<ECN::StandaloneECRelationshipInstance*>(&instance);
     if (nullptr == standaloneRelationship)
         return ERROR;
