@@ -878,28 +878,21 @@ ECSqlClassInfo& DgnElements::FindClassInfo(DgnClassId classId) const
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      06/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsonECSqlSelectAdapter const* DgnElements::GetJsonSelectAdapter(DgnClassId classId) const
-    {
-    auto it = m_jsonSelectAdaptors.find(classId);
-    if (it != m_jsonSelectAdaptors.end())
-        return it->second.get();
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/    
-JsonECSqlSelectAdapter const& DgnElements::GetJsonSelectAdapter(DgnClassId classId, BeSQLite::EC::ECSqlStatement const& stmt, BeSQLite::EC::JsonECSqlSelectAdapter::FormatOptions const& formatOptions) const
+JsonECSqlSelectAdapter const& DgnElements::GetJsonSelectAdapter(BeSQLite::EC::ECSqlStatement const& stmt) const
     {
+    auto it = m_jsonSelectAdapterCache.find(stmt.GetHashCode());
+    if (it != m_jsonSelectAdapterCache.end())
+        return *it->second;
+
     // As the adapter is cached, we can avoid that the member names are copied into the generated JSON. Instead
     // the generated JSON objects reference the member names held by the adapter.
     // Note: Must make sure the JSON objects don't live longer than the adapter.
-    JsonECSqlSelectAdapter* adapter = new BeSQLite::EC::JsonECSqlSelectAdapter(stmt, formatOptions, false );
-    auto adapterPtr = std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>(adapter);
-    m_jsonSelectAdaptors[classId] = std::move(adapterPtr);
-    return *adapter;
+    std::unique_ptr<JsonECSqlSelectAdapter> adapter = std::make_unique<JsonECSqlSelectAdapter>(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString), 
+                                                                   false); // don't make copy of member names for every JSON as the adapter is cached.
+    JsonECSqlSelectAdapter* adapterP = adapter.get();
+    m_jsonSelectAdapterCache[stmt.GetHashCode()] = std::move(adapter);
+    return *adapterP;
     }
 
 /*---------------------------------------------------------------------------------**//**
