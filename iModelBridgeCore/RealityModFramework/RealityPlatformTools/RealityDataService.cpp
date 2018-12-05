@@ -962,6 +962,7 @@ static bmap<RealityDataField, Utf8String> CreatePropertyMap()
     m.Insert(RealityDataField::Type, "Type");
     m.Insert(RealityDataField::Streamed, "Streamed");
     m.Insert(RealityDataField::Footprint, "Footprint");
+    m.Insert(RealityDataField::ApproximateFootprint, "ApproximateFootprint");
     m.Insert(RealityDataField::ThumbnailDocument, "ThumbnailDocument");
     m.Insert(RealityDataField::MetadataUrl, "MetadataUrl");
     m.Insert(RealityDataField::Copyright, "Copyright");
@@ -1647,7 +1648,9 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
         field = it.key();
         if(propertyString.length() > 0)
             propertyString.append(",");
-        if(field == RealityDataField::Streamed || field == RealityDataField::Listable || field == RealityDataField::Hidden || field == RealityDataField::DelegatePermissions || field == RealityDataField::Footprint)
+        if(field == RealityDataField::Streamed || field == RealityDataField::Listable || 
+           field == RealityDataField::Hidden || field == RealityDataField::DelegatePermissions || 
+           field == RealityDataField::Footprint || field == RealityDataField::ApproximateFootprint)
             propertyString.append(Utf8PrintfString("\"%s\" : %s", s_propertyMap[field].c_str(), properties[field].c_str()));
         else
             propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", s_propertyMap[field].c_str(), properties[field].c_str()));

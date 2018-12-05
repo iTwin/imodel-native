@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatformToolsComplete/RealityDataDownload.cpp $
+|     $Source: RealityPlatformToolsCurl/RealityDataDownload.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
