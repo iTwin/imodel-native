@@ -121,3 +121,11 @@ BeFileTests1.CreateFile1
 
 # Randomly hangs on firebug.
 LimitingTaskQueueTests.Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed 
+
+WorkerThreadTests.Stop_ThreadStoppedInObjectDesctructorThatHadLifeProlongedByTaskInOtherThread_DoesNotDeadlock
+
+    # VSTS#49583
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/04/2018
+    # c:\build\src\mds06t\Bentley\Tests\Published\Tasks\WorkerThreadTests.cpp(451): error: Value of: threadStopped
+    # Actual: false
+    # Expected: true
