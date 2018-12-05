@@ -64,7 +64,6 @@ static BeFileName getOutputDirectory()
     {
     BeFileName outputDirectory;
     BeTest::GetHost().GetTempDir (outputDirectory);
-    outputDirectory.AppendToPath (L"ProfilesTests");
 
     if (!BeFileName::DoesPathExist (outputDirectory.c_str()))
         BeFileName::CreateNewDirectory (outputDirectory.c_str());
@@ -100,6 +99,8 @@ ProfilesTestHost::ProfilesTestHost()
 
     BentleyStatus registrationStatus = DgnDomains::RegisterDomain (ProfilesDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     BeAssert (BentleyStatus::SUCCESS == registrationStatus);
+
+    BeFileName::EmptyDirectory (getOutputDirectory());
 
     DgnDbPtr dbPtr = createDgnDb (getOutputDirectory().AppendToPath (L"ProfilesTests"));
     BeAssert (dbPtr.IsValid());
