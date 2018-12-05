@@ -317,7 +317,7 @@
         <Directories DirectoryListName="iModelHubNativeTests"/>
     </Product>
 
-    <Part Name="iModelHubGtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke"
+    <Part Name="iModelHubGtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
     BentleyBuildMakeOptions="-dTEST_NAME=iModelHubNativeTests -dTEST_COLLECTION_PRODUCT=iModelHubNativeTestsCollection -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x64">
         <SubProduct ProductName="iModelHubNativeTestsCollection"/>
         <Bindings>
@@ -679,7 +679,7 @@
     </ProductDirectoryList>
 
     <Part Name="Gtest" DeferType="BuildUnitTests"
-        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=WSClientTest -dTEST_COLLECTION_PRODUCT=WSClient-Tests"
         OnlyPlatforms="x86,x64,Linux*,MacOS*"
         >
