@@ -149,15 +149,18 @@ void MstnBridgeTestsFixture::MakeCopyOfFile(BentleyApi::BeFileNameR outFile, Ben
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir, WCharCP bridgeRegSubkey)
+void MstnBridgeTestsFixture::SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir, WCharCP bridgeRegSubkey, bool setCredentials)
     {
     args.push_back(L"iModelBridgeTests.ConvertLinesUsingBridgeFwk");                                                 // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-environment=Qa");
     args.push_back(L"--server-repository=iModelBridgeTests_Test1");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-project-guid=iModelBridgeTests_Project");                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
-    args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    if (setCredentials)
+        {
+        args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+        args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+        }
     args.push_back(BentleyApi::WPrintfString(L"--fwk-bridge-library=\"%s\"", GetDgnv8BridgeDllName().c_str()));     // must refer to a path that exists! 
 
     BentleyApi::BeFileName platformAssetsDir;
