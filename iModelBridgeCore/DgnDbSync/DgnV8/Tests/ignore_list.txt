@@ -20,3 +20,15 @@ TransformTests.Test1
     # To be equal to: m_count
     #       Which is: 2
     # [  FAILED  ] TransformTests.Test1 (4081 ms)
+
+BasicGeometryTests.LineUpdateWithoutAnyChange
+#m:\work\bim0200dev\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(437): error:       Expected: hadAnyChanges
+#      Which is: true
+#To be equal to: expectUpdate
+#      Which is: false
+ConverterTests.GCSNoChange
+ConverterTests.NoGCSNoChange
+#m:\work\bim0200dev\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(437): error:       Expected: hadAnyChanges
+#      Which is: true
+#To be equal to: expectUpdate
+#      Which is: false
