@@ -448,7 +448,7 @@
         <SubPart PartName="RealityAdmin-Applications"/>
         <SubPart PartName="RealityModFrameworkTested"/>
         <SubPart PartName="RealityPlatformToolsLight"/>
-<!--	<SubPart PartName="RealityServicesNetNuGet" /> -->
+	<SubPart PartName="RealityServicesNetNuGet" />
       <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
