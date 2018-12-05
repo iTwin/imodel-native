@@ -1613,6 +1613,14 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
 
     // NB: It is up to ConvertData to call DoEndConversion. Don't do that here!
 
+    // HACK! Zero out the stored provenance of all newly discovered files, so that ConvertData will know that they have NOT been fully processed yet.
+    auto newFiles = _GetParams().IsUpdating()? &m_newV8Files: &m_v8Files;
+    for (auto fp : *newFiles)
+        {
+        if (IsFileAssignedToBridge(*fp))
+            m_syncInfo.UpdateFile(nullptr, *fp, true);
+        }
+
     return BSISUCCESS;
     }
 

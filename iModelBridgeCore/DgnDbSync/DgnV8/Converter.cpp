@@ -247,6 +247,8 @@ void Converter::SetRepositoryLinkInAppData(DgnV8FileCR file, DgnElementId rlinkI
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, StableIdPolicy policy)
     {
+    bool isNew = false;
+
     //  Make sure the file is registered in syncinfo
     SyncInfo::V8FileProvenance provenance = m_syncInfo.FindFile(file);
     if (!provenance.IsValid())
@@ -280,12 +282,17 @@ SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, St
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
             LOG.tracev("+ %s => %lld", Bentley::Utf8String(file.GetFileName()).c_str(), provenance.m_syncId.GetValue());
 
+        isNew = true;
         }
 
     //  Cache the file's syncinfo id in memory for quick access during this conversion/update
     file.AddAppData(V8FileSyncInfoIdAppData::GetKey(), new V8FileSyncInfoIdAppData(provenance.m_syncId, provenance.m_idPolicy));
 
     BeAssert(GetV8FileSyncInfoIdFromAppData(file).IsValid());
+
+    if (isNew)
+        _OnFileDiscovered(file);
+
     return provenance;
     }
 

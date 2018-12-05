@@ -1024,6 +1024,8 @@ protected:
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
     virtual void _OnSheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) {}
 
+    virtual void _OnFileDiscovered(DgnV8FileR) {;}
+
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
@@ -2567,6 +2569,7 @@ private:
 protected:
     RootModelSpatialParams& m_params;   // NB: Must store a *reference* to the bridge's Params, as they may change after our constructor is called
     bvector<DgnV8FileP> m_v8Files;
+    bvector<DgnV8FileP> m_newV8Files;
     bvector<Bentley::DgnModelPtr> m_drawingModelsKeepAlive;
     bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
     DgnV8Api::ViewGroupPtr m_viewGroup;
@@ -2580,6 +2583,8 @@ protected:
 
     void CorrectSpatialTransforms();
     bool ShouldCorrectSpatialTransform(ResolvedModelMapping const& rmm) {return rmm.GetDgnModel().IsSpatialModel() && IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP());}
+
+    void _OnFileDiscovered(DgnV8FileR fp) override {m_newV8Files.push_back(&fp);}
 
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}

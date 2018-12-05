@@ -722,7 +722,7 @@ public:
     DGNDBSYNC_EXPORT bool HasDiskFileChanged(BeFileNameCR v8FileName);
 
     DGNDBSYNC_EXPORT V8FileProvenance InsertFile(BeSQLite::DbResult*, DgnV8FileCR, StableIdPolicy);
-    DGNDBSYNC_EXPORT V8FileProvenance UpdateFile(BeSQLite::DbResult*, DgnV8FileCR);
+    DGNDBSYNC_EXPORT V8FileProvenance UpdateFile(BeSQLite::DbResult*, DgnV8FileCR, bool zeroOut = false);
     DGNDBSYNC_EXPORT V8FileProvenance FindFileById(V8FileSyncInfoId);
     DGNDBSYNC_EXPORT V8FileProvenance FindFile(DgnV8FileCR);
     DGNDBSYNC_EXPORT V8FileProvenance FindFileByFileName(BeFileNameCR);
