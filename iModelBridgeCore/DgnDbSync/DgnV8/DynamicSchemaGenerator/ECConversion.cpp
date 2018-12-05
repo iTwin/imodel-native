@@ -1109,8 +1109,6 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
                 if (diff->Merge(merged, CONFLICTRULE_TakeLeft) == MergeStatus::Success)
                     {
                     leftSchema = merged;
-                    Utf8String xml;
-                    merged->WriteToXmlString(xml);
                     leftSchema->ComputeCheckSum();
                     LOG.infov("Merged two versions of ECSchema '%s' successfully. Updated checksum: %s", leftSchema->GetFullSchemaName().c_str(), leftSchema->GetSchemaKey().m_checksum.c_str());
                     }
@@ -2723,7 +2721,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         });
 
     constSchemas.erase(removeDgn, constSchemas.end());
-#define EXPORT_BISIFIEDECSCHEMAS 1
+//#define EXPORT_BISIFIEDECSCHEMAS 1
 #ifdef EXPORT_BISIFIEDECSCHEMAS
     {
     BeFileName bimFileName = GetDgnDb().GetFileName();
