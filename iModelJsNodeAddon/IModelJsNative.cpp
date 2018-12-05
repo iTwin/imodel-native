@@ -827,10 +827,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     void SetIModelDb(Napi::CallbackInfo const& info) {
         Napi::Value obj = info[0];
         if (m_dgndb.IsValid()) {
-        if (obj.IsObject())
-            m_dgndb->m_jsIModelDb.Reset(obj.As<Napi::Object>(), 1);
-        else
-            m_dgndb->m_jsIModelDb.Reset();
+            if (obj.IsObject())
+                m_dgndb->m_jsIModelDb.Reset(obj.As<Napi::Object>(), 1);
+            else
+                m_dgndb->m_jsIModelDb.Reset();
         }
     }
 
@@ -4274,8 +4274,6 @@ bool IModelJsNative::JsInterop::IsSeverityEnabled(Utf8CP category, NativeLogging
     return IModelJsNative::callIsLogLevelEnabledJs(category, sev);
     }
 
-
-
 static Utf8String s_mobileResourcesDir;
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Satyakam.Khadilkar    03/2018
@@ -4303,7 +4301,6 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
     BeFileName addondir(s_mobileResourcesDir);
     BeFileName tempdir(s_mobileTempDir);
 #endif
-
 
     IModelJsNative::JsInterop::Initialize(addondir, env, tempdir);
     IModelJsNative::NativeDgnDb::Init(env, exports);

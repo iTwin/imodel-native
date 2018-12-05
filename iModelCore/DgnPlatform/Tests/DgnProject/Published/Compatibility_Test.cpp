@@ -1191,7 +1191,9 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 if (className == BIS_CLASS_Subject)
                     {
+                    ECN::ECClassCP relClass = ecClass->GetSchema().GetClassCP(BIS_REL_SubjectOwnsSubjects);
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(rootSubject->GetModelId())));
+                    ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Parent", ECN::ECValue(rootSubject->GetElementId(), relClass->GetId())));
                     }
                 else
                     {

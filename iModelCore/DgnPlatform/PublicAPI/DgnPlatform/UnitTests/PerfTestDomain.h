@@ -14,7 +14,7 @@
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/ElementHandler.h>
-#include <DgnPlatform/DgnElementDependency.h>
+#include <DgnPlatform/ElementDependency.h>
 #include <DgnPlatform/TxnManager.h>
 
 #define PERF_TEST_PERFELEMENT_CLASS_NAME "PerfElement"

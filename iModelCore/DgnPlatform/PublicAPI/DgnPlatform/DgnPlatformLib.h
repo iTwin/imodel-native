@@ -126,6 +126,7 @@ public:
             virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
         };
 
+
         //=======================================================================================
         // @bsiclass                                                    Keith.Bentley   07/13
         //=======================================================================================
@@ -135,9 +136,9 @@ public:
 
         protected:
             TxnMonitors m_monitors;
-            template <typename CALLER> void CallMonitors(CALLER const& caller);
 
         public:
+            void CallMonitors(std::function<void (TxnMonitor&)>);
             virtual bool _OnPromptReverseAll() {return true;}
             virtual void _RestartTool() {}
             virtual void _OnNothingToUndo() {}

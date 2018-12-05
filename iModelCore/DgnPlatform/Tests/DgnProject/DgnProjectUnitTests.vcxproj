@@ -43,7 +43,7 @@
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
     <ClCompile Include="NonPublished\ECInstanceSelect_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementAspect_Test.cpp" />
-    <ClCompile Include="NonPublished\ElementDependencyGraph.cpp" />
+    <ClCompile Include="NonPublished\ElementDependency.cpp" />
     <ClCompile Include="NonPublished\ElementGeometryBuilder_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementMaterial_tests.cpp" />

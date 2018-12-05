@@ -19,6 +19,8 @@ static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
 static BeFileName s_tempDir;
 
+using namespace ElementDependency;
+
 namespace IModelJsNative {
 
 BE_JSON_NAME(parentId)
@@ -54,8 +56,7 @@ struct KnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  05/17
 //=======================================================================================
-struct DgnPlatformHost : DgnPlatformLib::Host
-{
+struct JsDgnHost : DgnPlatformLib::Host {
 private:
     BeMutex m_mutex;
 
@@ -71,7 +72,7 @@ private:
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return JsInterop::GetRepositoryAdmin();}
 
 public:
-    DgnPlatformHost() { BeAssertFunctions::SetBeAssertHandler(&NativeAssertionsHelper::HandleAssertion); }
+    JsDgnHost() { BeAssertFunctions::SetBeAssertHandler(&NativeAssertionsHelper::HandleAssertion); }
 };
 
 //=======================================================================================
@@ -154,7 +155,8 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env env, BeFileNameCR
     static std::once_flag s_initFlag;
     std::call_once(s_initFlag, []() 
         {
-        DgnPlatformLib::Initialize(*new DgnPlatformHost);
+        auto jsHost = new JsDgnHost();
+        DgnPlatformLib::Initialize(*jsHost);
         RegisterOptionalDomains();
         InitLogging();
         InitializeParasolid();
