@@ -9,7 +9,7 @@
         <SubProduct ProductName="AecUnitsTests"           PartFile="AecUnits"             Repository="DgnDomains-DesignModelingUnits"/>
     </Part>
 
-    <Part Name="DesignModelingSDKDistribution">
+    <Part Name="DesignModelingSDKDistribution" PrgOutputDir="DesignModelingDomainsSDK">
         <SubPart PartName="BuildingDomains"/>
         <SubNuGetProduct NuGetProductName="DesignModelingSDKForABD" />
     </Part>
