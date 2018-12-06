@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/RealityDataServiceUploader.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, ""/*Id.ToLower()*/, propertyString, false, true, statusFunc);
     if (upload->IsValidTransfer())
         {
-        std::cout << Utf8PrintfString("Upload file : %s \n", fName.GetNameUtf8());
+        std::cout << Utf8PrintfString("Upload file : %s \n", fName.GetNameUtf8().c_str());
 
         upload->SetProgressCallBack(progressFunc);
         upload->SetProgressStep(0.5);

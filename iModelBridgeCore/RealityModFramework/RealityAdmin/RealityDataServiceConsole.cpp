@@ -359,7 +359,7 @@ void RealityDataConsole::Run(Utf8String server, Utf8String projectId)
     m_server = WSGServer(server, false);
     RawServerResponse versionResp = RawServerResponse();
     RealityDataService::SetServerComponents(server, m_server.GetVersion(versionResp), "S3MXECPlugin--Server", "S3MX", "", projectId);
-    DisplayInfo(Utf8PrintfString("Console started with server: %s and projectId: %s\n", server, projectId), DisplayOption::Tip);
+    DisplayInfo(Utf8PrintfString("Console started with server: %s and projectId: %s\n", server.c_str(), projectId.c_str()), DisplayOption::Tip);
     _Run();
     }
 
@@ -368,7 +368,7 @@ void RealityDataConsole::_Run()
     while (m_lastCommand != Command::Quit)
         {
         if (m_currentNode != nullptr)
-            DisplayInfo(Utf8PrintfString("%s", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+            DisplayInfo(Utf8PrintfString("%s", m_currentNode->node.GetInstanceId().c_str()), DisplayOption::Tip);
         DisplayInfo("> ", DisplayOption::Tip);
         InterpretCommand();
         (this->*(m_functionMap[m_lastCommand]))();
@@ -424,7 +424,7 @@ void RealityDataConsole::PrintResults(bvector<Utf8String> results)
     std::string str;
     for (size_t i = 0; i < results.size(); ++i)
         {
-        DisplayInfo(Utf8PrintfString("%5d \t %s\n", (i + 1), results[i]));
+        DisplayInfo(Utf8PrintfString("%5d \t %s\n", (i + 1), results[i].c_str()));
         }
     }
 
@@ -441,9 +441,9 @@ void RealityDataConsole::PrintResults(bvector<pair<Utf8String, Utf8String>> resu
         if (currentSection != results[i].first)
             {
             currentSection = results[i].first;
-            DisplayInfo(Utf8PrintfString("\t\t%s\n", currentSection), DisplayOption::Question);
+            DisplayInfo(Utf8PrintfString("\t\t%s\n", currentSection.c_str()), DisplayOption::Question);
             }
-        DisplayInfo(Utf8PrintfString("%5d \t %s\n", (i + 1), results[i].second));
+        DisplayInfo(Utf8PrintfString("%5d \t %s\n", (i + 1), results[i].second.c_str()));
     }
 }
 
@@ -458,10 +458,10 @@ void RealityDataConsole::PrintResults(bmap<Utf8String, bvector<Utf8String>> resu
     for(bmap<Utf8String, bvector<Utf8String>>::iterator iter = results.begin(); iter != results.end(); ++iter)
         {
         Utf8String key = iter->first;
-        DisplayInfo(Utf8PrintfString("\t\t%s\n", key), DisplayOption::Question);
+        DisplayInfo(Utf8PrintfString("\t\t%s\n", key.c_str()), DisplayOption::Question);
         for (size_t i = 0; i < results[key].size(); ++i)
             {
-            DisplayInfo(Utf8PrintfString("%5d \t %s\n", (j + 1), results[key][i]));
+            DisplayInfo(Utf8PrintfString("%5d \t %s\n", (j + 1), results[key][i].c_str()));
             ++j;
             }
         }
@@ -570,7 +570,7 @@ void RealityDataConsole::ConfigureServer()
         return;
         }
     else
-        DisplayInfo(Utf8PrintfString("Connecting to %s\n", server), DisplayOption::Tip);
+        DisplayInfo(Utf8PrintfString("Connecting to %s\n", server.c_str()), DisplayOption::Tip);
 
     bool verifyCertificate = false;
     Utf8String certificatePath = "";
@@ -649,7 +649,7 @@ void RealityDataConsole::ConfigureServer()
         {
         DisplayInfo("Only one repository found\n");
         repo = repoNames[0];
-        DisplayInfo(Utf8PrintfString("Defaulting to %s\n", repo));
+        DisplayInfo(Utf8PrintfString("Defaulting to %s\n", repo.c_str()));
         }
     else
         {
@@ -691,7 +691,7 @@ void RealityDataConsole::ConfigureServer()
             {
             DisplayInfo("Only one schema found\n");
             schema = schemaNames[0];
-            DisplayInfo(Utf8PrintfString("Defaulting to %s \n", schema));
+            DisplayInfo(Utf8PrintfString("Defaulting to %s \n", schema.c_str()));
             }
         else
             {
@@ -862,7 +862,7 @@ void RealityDataConsole::ListRoots()
         rdOwner = rData->GetOwner();
         rdOwner.ToLower();
 
-        nodes.push_back(pair<Utf8String, Utf8String>(rdOwner, Utf8PrintfString("%-30s  %-22s (%s / %s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", ShortenVisibility(rData->GetVisibilityTag()), rData->GetIdentifier(), rData->GetTotalSize())));
+        nodes.push_back(pair<Utf8String, Utf8String>(rdOwner, Utf8PrintfString("%-30s  %-22s (%s / %s) %s  %ld", rData->GetName().c_str(), rData->GetRealityDataType().c_str(), rData->IsListable() ? "Lst" : " - ", ShortenVisibility(rData->GetVisibilityTag()).c_str(), rData->GetIdentifier().c_str(), rData->GetTotalSize())));
 
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
         }
@@ -1538,7 +1538,7 @@ void RealityDataConsole::Download()
         return;
         }
 
-    DisplayInfo(Utf8PrintfString("Downloading from %s\n", m_currentNode->node.GetLabel()), DisplayOption::Tip);
+    DisplayInfo(Utf8PrintfString("Downloading from %s\n", m_currentNode->node.GetLabel().c_str()), DisplayOption::Tip);
     DisplayInfo("If you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
     DisplayInfo("Please enter the destination folder on the local machine (must be existing folder)\n ?", DisplayOption::Question);
 
@@ -1563,7 +1563,7 @@ void RealityDataConsole::Download()
         Utf8String report;
         tReport.ToXml(report);
         DisplayInfo("If any files failed to download, they will be listed here: \n");
-        DisplayInfo(Utf8PrintfString("%s\n", report));
+        DisplayInfo(Utf8PrintfString("%s\n", report.c_str()));
         }
     else
         DisplayInfo("Download could not be completed. Please verify you have access to this RealityData, that it still exists and that it has files to download\n", DisplayOption::Error);
@@ -1664,9 +1664,9 @@ void RealityDataConsole::Upload()
         else
             DisplayInfo("Error during creation or setting up upload:\n");
 
-        DisplayInfo(Utf8PrintfString("Error Context    : %s\n", tError.m_errorContext), DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("Error Context    : %s\n", tError.m_errorContext.c_str()), DisplayOption::Error);
         DisplayInfo(Utf8PrintfString("Error Code       : %d\n", tError.m_errorCode), DisplayOption::Error);
-        DisplayInfo(Utf8PrintfString("Error Message    : %s\n", tError.m_errorMessage), DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("Error Message    : %s\n", tError.m_errorMessage.c_str()), DisplayOption::Error);
 		}
     }
 
@@ -1694,13 +1694,13 @@ void RealityDataConsole::Details()
             return;
             }
 
-        DisplayInfo(Utf8PrintfString(" Document       : %s\n", document->GetName()));
-        DisplayInfo(Utf8PrintfString(" Container name : %s\n", document->GetContainerName()));
-        DisplayInfo(Utf8PrintfString(" Id             : %s\n", document->GetId()));
-        DisplayInfo(Utf8PrintfString(" Folder Id      : %s\n", document->GetFolderId()));
-        DisplayInfo(Utf8PrintfString(" Access Url     : %s\n", document->GetAccessUrl()));
-        DisplayInfo(Utf8PrintfString(" RealityData Id : %s\n", document->GetRealityDataId()));
-        DisplayInfo(Utf8PrintfString(" ContentType    : %s\n", document->GetContentType()));
+        DisplayInfo(Utf8PrintfString(" Document       : %s\n", document->GetName().c_str()));
+        DisplayInfo(Utf8PrintfString(" Container name : %s\n", document->GetContainerName().c_str()));
+        DisplayInfo(Utf8PrintfString(" Id             : %s\n", document->GetId().c_str()));
+        DisplayInfo(Utf8PrintfString(" Folder Id      : %s\n", document->GetFolderId().c_str()));
+        DisplayInfo(Utf8PrintfString(" Access Url     : %s\n", document->GetAccessUrl().c_str()));
+        DisplayInfo(Utf8PrintfString(" RealityData Id : %s\n", document->GetRealityDataId().c_str()));
+        DisplayInfo(Utf8PrintfString(" ContentType    : %s\n", document->GetContentType().c_str()));
         DisplayInfo(Utf8PrintfString(" Size           : %lu\n", document->GetSize()));
         }
     else if (className == "Folder")
@@ -1714,9 +1714,9 @@ void RealityDataConsole::Details()
             return;
             }
 
-        DisplayInfo(Utf8PrintfString("Folder         : %s\n", folder->GetName()));
-        DisplayInfo(Utf8PrintfString("Parent folder  : %s\n", folder->GetParentId()));
-        DisplayInfo(Utf8PrintfString("RealityData Id : %s\n", folder->GetRealityDataId()));
+        DisplayInfo(Utf8PrintfString("Folder         : %s\n", folder->GetName().c_str()));
+        DisplayInfo(Utf8PrintfString("Parent folder  : %s\n", folder->GetParentId().c_str()));
+        DisplayInfo(Utf8PrintfString("RealityData Id : %s\n", folder->GetRealityDataId().c_str()));
         }
     else if (className == "RealityData")
         {
@@ -1729,34 +1729,35 @@ void RealityDataConsole::Details()
             return;
             }
 
-        DisplayInfo(Utf8PrintfString(" Id                  : %s\n", entity->GetIdentifier()));
-        DisplayInfo(Utf8PrintfString(" OrganizationId      : %s\n", entity->GetOrganizationId()));
-        DisplayInfo(Utf8PrintfString(" UltimateId          : %s\n", entity->GetUltimateId()));
-        DisplayInfo(Utf8PrintfString(" UltimateSite        : %s\n", entity->GetUltimateSite()));
-        DisplayInfo(Utf8PrintfString(" Container name      : %s\n", entity->GetContainerName()));
-        DisplayInfo(Utf8PrintfString(" Data Location GUID  : %s\n", entity->GetDataLocationGuid()));
-        DisplayInfo(Utf8PrintfString(" RealityData name    : %s\n", entity->GetName()));
-        DisplayInfo(Utf8PrintfString(" Dataset             : %s\n", entity->GetDataset()));
-        DisplayInfo(Utf8PrintfString(" Group               : %s\n", entity->GetGroup()));
-        DisplayInfo(Utf8PrintfString(" Description         : %s\n", entity->GetDescription()));
-        DisplayInfo(Utf8PrintfString(" Root document       : %s\n", entity->GetRootDocument()));
+        DisplayInfo(Utf8PrintfString(" Id                  : %s\n", entity->GetIdentifier().c_str()));
+        DisplayInfo(Utf8PrintfString(" OrganizationId      : %s\n", entity->GetOrganizationId().c_str()));
+        DisplayInfo(Utf8PrintfString(" UltimateId          : %s\n", entity->GetUltimateId().c_str()));
+        DisplayInfo(Utf8PrintfString(" UltimateSite        : %s\n", entity->GetUltimateSite().c_str()));
+        DisplayInfo(Utf8PrintfString(" Container name      : %s\n", entity->GetContainerName().c_str()));
+        DisplayInfo(Utf8PrintfString(" Data Location GUID  : %s\n", entity->GetDataLocationGuid().c_str()));
+        DisplayInfo(Utf8PrintfString(" RealityData name    : %s\n", entity->GetName().c_str()));
+        DisplayInfo(Utf8PrintfString(" Dataset             : %s\n", entity->GetDataset().c_str()));
+        DisplayInfo(Utf8PrintfString(" Group               : %s\n", entity->GetGroup().c_str()));
+        DisplayInfo(Utf8PrintfString(" Description         : %s\n", entity->GetDescription().c_str()));
+        DisplayInfo(Utf8PrintfString(" Root document       : %s\n", entity->GetRootDocument().c_str()));
         DisplayInfo(Utf8PrintfString(" Size (kb)           : %lu\n", entity->GetTotalSize()));
-        DisplayInfo(Utf8PrintfString(" Classification      : %s\n", entity->GetClassificationTag()));
-        DisplayInfo(Utf8PrintfString(" Type                : %s\n", entity->GetRealityDataType()));
+        DisplayInfo(Utf8PrintfString(" Classification      : %s\n", entity->GetClassificationTag().c_str()));
+        DisplayInfo(Utf8PrintfString(" Type                : %s\n", entity->GetRealityDataType().c_str()));
         DisplayInfo(Utf8PrintfString(" Streamed            : %s\n", entity->IsStreamed() ? "true" : "false"));
-        DisplayInfo(Utf8PrintfString(" Footprint           : %s\n", entity->GetFootprintString()));
-        DisplayInfo(Utf8PrintfString(" ThumbnailDocument   : %s\n", entity->GetThumbnailDocument()));
-        DisplayInfo(Utf8PrintfString(" MetadataUrl         : %s\n", entity->GetMetadataUrl()));
-        DisplayInfo(Utf8PrintfString(" Copyright           : %s\n", entity->GetCopyright()));
-        DisplayInfo(Utf8PrintfString(" TermsOfUse          : %s\n", entity->GetTermsOfUse()));
-        DisplayInfo(Utf8PrintfString(" AccuracyInMeters    : %s\n", entity->GetAccuracy()));
-        DisplayInfo(Utf8PrintfString(" ResolutionInMeters  : %s\n", entity->GetResolution()));
-        DisplayInfo(Utf8PrintfString(" Visibility          : %s\n", entity->GetVisibilityTag()));
+        DisplayInfo(Utf8PrintfString(" Footprint           : %s\n", entity->GetFootprintString().c_str()));
+        DisplayInfo(Utf8PrintfString(" ThumbnailDocument   : %s\n", entity->GetThumbnailDocument().c_str()));
+        DisplayInfo(Utf8PrintfString(" MetadataUrl         : %s\n", entity->GetMetadataUrl().c_str()));
+        DisplayInfo(Utf8PrintfString(" Copyright           : %s\n", entity->GetCopyright().c_str()));
+        DisplayInfo(Utf8PrintfString(" TermsOfUse          : %s\n", entity->GetTermsOfUse().c_str()));
+        DisplayInfo(Utf8PrintfString(" AccuracyInMeters    : %s\n", entity->GetAccuracy().c_str()));
+        DisplayInfo(Utf8PrintfString(" ResolutionInMeters  : %s\n", entity->GetResolution().c_str()));
+        DisplayInfo(Utf8PrintfString(" Visibility          : %s\n", entity->GetVisibilityTag().c_str()));
         DisplayInfo(Utf8PrintfString(" Listable            : %s\n", entity->IsListable() ? "true" : "false"));
-        DisplayInfo(Utf8PrintfString(" Created timestamp   : %s\n", entity->GetCreationDateTime().ToString()));
-        DisplayInfo(Utf8PrintfString(" Accessed timestamp  : %s\n", entity->GetLastAccessedDateTime().ToString()));
-        DisplayInfo(Utf8PrintfString(" Modified timestamp  : %s\n", entity->GetModifiedDateTime().ToString()));
-        DisplayInfo(Utf8PrintfString(" OwnedBy             : %s\n", entity->GetOwner()));
+        DisplayInfo(Utf8PrintfString(" Created timestamp   : %s\n", entity->GetCreationDateTime().ToString().c_str()));
+        DisplayInfo(Utf8PrintfString(" Accessed timestamp  : %s\n", entity->GetLastAccessedDateTime().ToString().c_str()));
+        DisplayInfo(Utf8PrintfString(" Modified timestamp  : %s\n", entity->GetModifiedDateTime().ToString().c_str()));
+        DisplayInfo(Utf8PrintfString(" OwnedBy             : %s\n", entity->GetOwner().c_str()));
+        DisplayInfo(Utf8PrintfString(" CreatorId           : %s\n", entity->GetCreatorId().c_str()));
         DisplayInfo(Utf8PrintfString(" Hidden              : %s\n", entity->IsHidden() ? "true" : "false"));
         DisplayInfo(Utf8PrintfString(" DelegatePermissions : %s\n", entity->HasDelegatePermissions() ? "true" : "false"));
         DisplayInfo(Utf8PrintfString(" ApproximateFootprint: %s\n", entity->HasApproximateFootprint() ? "true" : "false"));
@@ -1776,7 +1777,7 @@ void RealityDataConsole::FileAccess()
         handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), true);
     else
         handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), false);
-    DisplayInfo(Utf8PrintfString("%s\n", handshake->GetHttpRequestString()));
+    DisplayInfo(Utf8PrintfString("%s\n", handshake->GetHttpRequestString().c_str()));
     delete handshake;
     }
 
@@ -1818,9 +1819,9 @@ void RealityDataConsole::AzureAddress()
         return;
         }
     else if (rootDocument.length() > 0)
-        DisplayInfo(Utf8PrintfString("%s/%s?%s\n", azureServer, rootDocument, azureToken));
+        DisplayInfo(Utf8PrintfString("%s/%s?%s\n", azureServer.c_str(), rootDocument.c_str(), azureToken.c_str()));
     else
-        DisplayInfo(Utf8PrintfString("%s?%s\n", azureServer, azureToken));
+        DisplayInfo(Utf8PrintfString("%s?%s\n", azureServer.c_str(), azureToken.c_str()));
     }
 
 void RealityDataConsole::ChangeProps()
@@ -1848,7 +1849,7 @@ void RealityDataConsole::ChangeProps()
             break;
         else
             {
-            DisplayInfo(Utf8PrintfString("Input value for %s\n", input));
+            DisplayInfo(Utf8PrintfString("Input value for %s\n", input.c_str()));
 
             std::getline(*s_inputSource, str);
             if (propertyString.length() > 0)
@@ -1858,16 +1859,16 @@ void RealityDataConsole::ChangeProps()
             if (input.Equals("Listable") || input.Equals("Streamed") || input.Equals("Hidden") || input.Equals("DelegatePermissions"))
                 {
                 if (value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
-                    propertyString.append(Utf8PrintfString("\"%s\" : false", input));
+                    propertyString.append(Utf8PrintfString("\"%s\" : false", input.c_str()));
                 else if (value.EqualsI("true"))
-                    propertyString.append(Utf8PrintfString("\"%s\" : true", input));
+                    propertyString.append(Utf8PrintfString("\"%s\" : true", input.c_str()));
                 else
-                    DisplayInfo(Utf8PrintfString("%s is boolean. Value must be true or false\n", input), DisplayOption::Error);
+                    DisplayInfo(Utf8PrintfString("%s is boolean. Value must be true or false\n", input.c_str()), DisplayOption::Error);
                 }
             else if (input.Equals("Footprint")) // Footprint prop does not require value between quotes
-                propertyString.append(Utf8PrintfString("\"%s\" : %s", input, value));
+                propertyString.append(Utf8PrintfString("\"%s\" : %s", input.c_str(), value.c_str()));
             else
-                propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", input, value));
+                propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", input.c_str(), value.c_str()));
             }
         }
 
@@ -1902,7 +1903,7 @@ void RealityDataConsole::MassUnlink()
             relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), projectId);
             WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
             if (relationResponse.body.ContainsI("errorMessage"))
-                DisplayInfo(Utf8PrintfString("unlink RD %s from project %s failed with error:\n%s\n", m_serverNodes[i].GetInstanceId(), projectId, relationResponse.body), DisplayOption::Error);
+                DisplayInfo(Utf8PrintfString("unlink RD %s from project %s failed with error:\n%s\n", m_serverNodes[i].GetInstanceId().c_str(), projectId.c_str(), relationResponse.body.c_str()), DisplayOption::Error);
             }
         }
     else
@@ -1935,7 +1936,7 @@ void RealityDataConsole::ForceMassUnlink()
             relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), entity->GetRelatedId());
             WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
             if (relationResponse.body.ContainsI("errorMessage"))
-                DisplayInfo(Utf8PrintfString("unlink RD %s from project %s failed with error:\n%s\n", m_serverNodes[i].GetInstanceId(), entity->GetRelatedId(), relationResponse.body), DisplayOption::Error);
+                DisplayInfo(Utf8PrintfString("unlink RD %s from project %s failed with error:\n%s\n", m_serverNodes[i].GetInstanceId().c_str(), entity->GetRelatedId().c_str(), relationResponse.body.c_str()), DisplayOption::Error);
             }
         }
     
@@ -1986,7 +1987,7 @@ void RealityDataConsole::MassDelete()
         realityDataReq = RealityDataDelete(m_serverNodes[i].GetInstanceId());
         rawResponse = RealityDataService::BasicRequest(&realityDataReq);
         if (rawResponse.body.Contains("errorMessage"))
-            errors.push_back(Utf8PrintfString("%s failed to delete with error:\n%s\n",m_serverNodes[i].GetInstanceId(), rawResponse.body));
+            errors.push_back(Utf8PrintfString("%s failed to delete with error:\n%s\n",m_serverNodes[i].GetInstanceId().c_str(), rawResponse.body.c_str()));
         rawResponse.clear();
         }
     
@@ -2017,7 +2018,7 @@ void RealityDataConsole::Delete()
 
     if (className == "Document")
         {
-        DisplayInfo(Utf8PrintfString("Deleting Document %s.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
+        DisplayInfo(Utf8PrintfString("Deleting Document %s.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId().c_str()), DisplayOption::Question);
         std::getline(*s_inputSource, str);
         if(strstr(str.c_str(), "quit"))
             {      
@@ -2032,7 +2033,7 @@ void RealityDataConsole::Delete()
         }
     else if (className == "Folder")
         {
-        DisplayInfo(Utf8PrintfString("Deleting Folder %s. All documents contained within will also be deleted.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
+        DisplayInfo(Utf8PrintfString("Deleting Folder %s. All documents contained within will also be deleted.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId().c_str()), DisplayOption::Question);
         std::getline(*s_inputSource, str);
         if (strstr(str.c_str(), "quit"))
             {
@@ -2047,7 +2048,7 @@ void RealityDataConsole::Delete()
         }
     else if (className == "RealityData")
         {
-        DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
+        DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId().c_str()), DisplayOption::Question);
         DisplayInfo("A RealityData can only be deleted if there are no project relationships attached to it.\nConfirm ? [y / n]", DisplayOption::Question);
         std::getline(*s_inputSource, str);
         if (strstr(str.c_str(), "quit"))
@@ -2067,7 +2068,7 @@ void RealityDataConsole::Delete()
         Json::Value instances(Json::objectValue);
         if (Json::Reader::Parse(rawResponse.body, instances) && instances.isMember("errorMessage"))
             rawResponse.body = instances["errorMessage"].asString();
-        DisplayInfo(Utf8PrintfString("There was an error removing this item\n%s", rawResponse.body), DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("There was an error removing this item\n%s", rawResponse.body.c_str()), DisplayOption::Error);
         }
     else
         {
@@ -2086,12 +2087,12 @@ void RealityDataConsole::Filter()
         {
         DisplayInfo("\n---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n", DisplayOption::Error);
         DisplayInfo("Current Filters:\n", DisplayOption::Tip);
-        DisplayInfo(Utf8PrintfString("Name : %s\n", m_nameFilter));
-        DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter));
-        DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter));
-        DisplayInfo(Utf8PrintfString("OwnedBy : %s\n", m_ownerFilter));
-        DisplayInfo(Utf8PrintfString("ProjectId : %s\n", m_projectFilter));
-        DisplayInfo(Utf8PrintfString("Fuzzy Filter : %s\n", m_queryFilter));
+        DisplayInfo(Utf8PrintfString("Name : %s\n", m_nameFilter.c_str()));
+        DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter.c_str()));
+        DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter.c_str()));
+        DisplayInfo(Utf8PrintfString("OwnedBy : %s\n", m_ownerFilter.c_str()));
+        DisplayInfo(Utf8PrintfString("ProjectId : %s\n", m_projectFilter.c_str()));
+        DisplayInfo(Utf8PrintfString("Fuzzy Filter : %s\n", m_queryFilter.c_str()));
         DisplayInfo("---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n\n", DisplayOption::Error);
         DisplayInfo("set filters from the list, use the -Finish- option to return\n", DisplayOption::Tip);
 
@@ -2102,7 +2103,7 @@ void RealityDataConsole::Filter()
         if (filter.Equals("Fuzzy Filter"))
             DisplayInfo("\nSet Fuzzy Filter (Enter blank field to remove filter)\nThis Filter searches every property of the RealityData for the specified value (case insensitive)\n", DisplayOption::Tip);
         else
-            DisplayInfo(Utf8PrintfString("Set filter for %s (Enter blank field to remove filter). Careful, filters are case sensitive\n", filter), DisplayOption::Tip);
+            DisplayInfo(Utf8PrintfString("Set filter for %s (Enter blank field to remove filter). Careful, filters are case sensitive\n", filter.c_str()), DisplayOption::Tip);
 
         std::getline(*s_inputSource, str);
         value = Utf8String(str.c_str());
@@ -2155,10 +2156,10 @@ void RealityDataConsole::Relationships()
     DisplayInfo("Related attached to this RealityData\n\n");
     for (RealityDataRelationshipPtr entity : entities)
         DisplayInfo(Utf8PrintfString(" RelatedId          : %s\n RelationType       : %s\n Modified Time      : %s\n Created Time       : %s\n", 
-                          entity->GetRelatedId(), 
-                          entity->GetRelationType(), 
-                          entity->GetModifiedDateTime().ToString(), 
-                          entity->GetCreationDateTime().ToString()));
+                          entity->GetRelatedId().c_str(), 
+                          entity->GetRelationType().c_str(), 
+                          entity->GetModifiedDateTime().ToString().c_str(), 
+                          entity->GetCreationDateTime().ToString().c_str()));
     }
 
 void RealityDataConsole::CreateRD()
@@ -2214,12 +2215,12 @@ void RealityDataConsole::CreateRD()
     Json::Reader::Parse(createResponse.body, instance);
     if (createResponse.status == RequestStatus::OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
         {
-        DisplayInfo(Utf8PrintfString("New RealityData \"%s\" created with GUID %s", name, instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString()), DisplayOption::Info);
+        DisplayInfo(Utf8PrintfString("New RealityData \"%s\" created with GUID %s", name.c_str(), instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString().c_str()), DisplayOption::Info);
         }
     else
         {
         DisplayInfo("There was an error creating a new RealityData.", DisplayOption::Error);
-        DisplayInfo(Utf8PrintfString("And message %s\n", createResponse.body), DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("And message %s\n", createResponse.body.c_str()), DisplayOption::Error);
         }
     }
 
@@ -2231,7 +2232,7 @@ void RealityDataConsole::Link()
         return;
         }
 
-    DisplayInfo(Utf8PrintfString("Creating a relationship for %s\n", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+    DisplayInfo(Utf8PrintfString("Creating a relationship for %s\n", m_currentNode->node.GetInstanceId().c_str()), DisplayOption::Tip);
     DisplayInfo("If you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
     DisplayInfo("Please enter the id of the project you would like to link this to\n ?", DisplayOption::Question);
 
@@ -2259,7 +2260,7 @@ void RealityDataConsole::Unlink()
         return;
         }
 
-    DisplayInfo(Utf8PrintfString("Removing a relationship for %s\n", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+    DisplayInfo(Utf8PrintfString("Removing a relationship for %s\n", m_currentNode->node.GetInstanceId().c_str()), DisplayOption::Tip);
     DisplayInfo("If you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
     DisplayInfo("Please enter the id of the project you would like to unlink this to\n ?", DisplayOption::Question);
 

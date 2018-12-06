@@ -389,6 +389,7 @@ enum class RealityDataField
     ModifiedTimestamp,
     LastAccessedTimestamp,
     OwnedBy,
+    CreatorId,
     Group,
     Hidden,
     DelegatePermissions,
@@ -475,6 +476,10 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOwner() const;
     REALITYDATAPLATFORM_EXPORT void SetOwner(Utf8CP owner);
 
+    //! A string indicating the user id of the creator.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCreatorId() const;
+    REALITYDATAPLATFORM_EXPORT void SetCreatorId(Utf8CP creatorId);
+
     //! Get/Set
     //! A reference to a metadata object. This object can be used by many spatial entities.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataUrl() const;
@@ -537,6 +542,7 @@ protected:
     bool        m_listable;
 
     Utf8String  m_owner;
+    Utf8String  m_creatorId;
     Utf8String  m_group;
     uint64_t    m_totalSize;
 

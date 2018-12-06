@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/FtpTraversalEngine.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -118,10 +118,10 @@ SpatialEntityResponsePtr FtpRequest::Perform()
     CURLcode res;
 
     // Specify url to get.
-    curl_easy_setopt(curl.Get(), CURLOPT_URL, m_url);
+    curl_easy_setopt(curl.Get(), CURLOPT_URL, m_url.c_str());
 
     // Set options.
-    curl_easy_setopt(curl.Get(), CURLOPT_CUSTOMREQUEST, m_method); // Custom string for request method.
+    curl_easy_setopt(curl.Get(), CURLOPT_CUSTOMREQUEST, m_method.c_str()); // Custom string for request method.
     curl_easy_setopt(curl.Get(), CURLOPT_DIRLISTONLY, m_dirListOnly); // Ask for names only in a directory listing.
     curl_easy_setopt(curl.Get(), CURLOPT_VERBOSE, m_verbose); // Switch on full protocol/debug output while testing.
 
