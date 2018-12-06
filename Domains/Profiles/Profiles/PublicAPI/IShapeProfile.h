@@ -49,6 +49,7 @@ protected:
     explicit IShapeProfile (CreateParams const& params);
 
     virtual BentleyStatus _Validate() const override;
+    virtual IGeometryPtr _CreateGeometry() const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (IShapeProfile)
