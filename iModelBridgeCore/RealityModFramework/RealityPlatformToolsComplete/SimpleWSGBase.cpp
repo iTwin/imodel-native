@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatformToolsCurl/SimpleWSGBase.cpp $
+|     $Source: RealityPlatformToolsComplete/SimpleWSGBase.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |

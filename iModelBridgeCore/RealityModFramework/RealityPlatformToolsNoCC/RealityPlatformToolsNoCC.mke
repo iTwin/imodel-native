@@ -59,7 +59,7 @@ $(o)RealityDataService$(oext) : $(curlDir)RealityDataService.cpp $(PublicApiDir)
 
 $(o)GeoCoordinationService$(oext) : $(curlDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
 
-$(o)SimpleWSGBase$(oext) : $(curlDir)SimpleWSGBase.cpp $(PublicApiDir)SimpleWSGBase.h ${MultiCompileDepends}
+$(o)SimpleWSGBase$(oext) : $(childDir)SimpleWSGBase.cpp $(baseDir)SimpleWSGBase.cpp $(PublicApiDir)SimpleWSGBase.h ${MultiCompileDepends}
 
 $(o)SimpleRDSApi$(oext) : $(baseDir)SimpleRDSApi.cpp $(PublicApiDir)SimpleRDSApi.h ${MultiCompileDepends}
 
