@@ -641,7 +641,7 @@
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="iModelHubClient-Library" />
-        <SubPart PartName="iModelHubClient-Library-Android" LibType="Static" />
+        <SubPart PartName="iModelHubClient-Library-Android-Shim" />
 
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
@@ -671,7 +671,10 @@
     <!-- WIP to silence build warnings. -->
     <ProductDirectoryList ListName="WSClient-Tests-Dirs">
         <ProductDirectory Name="Gtest-NativeAssemblies" Deliver="false"/>
-        <ProductDirectory Name="sqlang" LibType="static" Deliver="false"/>
+
+        <!-- This is required on Linux -->
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets"/>
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets" LibType="static"/>
 
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
         <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
