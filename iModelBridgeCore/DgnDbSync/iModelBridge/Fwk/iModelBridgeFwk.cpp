@@ -1449,7 +1449,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description)
+int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description, bool releaseLocks)
     {
     GetLogger().infov("bridge:%s iModel:%s - PullMergeAndPushChange %s.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str(), description.c_str());
 
@@ -1460,7 +1460,8 @@ int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description)
     if (BSISUCCESS != Briefcase_PullMergePush(description.c_str()))
         return RETURN_STATUS_SERVER_ERROR;
 
-    Briefcase_ReleaseAllPublicLocks();
+    if (releaseLocks)
+        Briefcase_ReleaseAllPublicLocks();
 
     // >------> pullmergepush *may* have pulled schema changes -- close and re-open the briefcase in order to merge them in <-----------<
 
@@ -1555,7 +1556,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
     if (madeSchemaChanges)
         {
-        if (0 != PullMergeAndPushChange("domain schema upgrade"))  // pullmergepush + re-open
+        if (0 != PullMergeAndPushChange("domain schema upgrade", true))  // pullmergepush + re-open
             return BSIERROR;
         }
 
@@ -1725,7 +1726,7 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
             GetLogger().infov("_MakeSchemaChanges failed. Retrying.");
             callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade); // re-initialize the bridge, to clear out the side-effects of the previous failed attempt
             m_briefcaseDgnDb->AbandonChanges();
-            if (BSISUCCESS != PullMergeAndPushChange("dynamic schemas"))    // make sure that we are at the tip and that we have absorbed any schema changes from the server
+            if (BSISUCCESS != PullMergeAndPushChange("dynamic schemas", false))    // make sure that we are at the tip and that we have absorbed any schema changes from the server
                 return RETURN_STATUS_SERVER_ERROR;
             callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
             bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges();
@@ -1742,10 +1743,14 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
     bool madeSchemaChanges = importedAspectSchema || iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb);
     if (madeSchemaChanges)
         {
+        BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
+
         callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade);
-        if (0 != PullMergeAndPushChange("dynamic schemas"))  // pullmergepush + re-open
+        if (0 != PullMergeAndPushChange("dynamic schemas", false))  // pullmergepush + re-open
             return BSIERROR;
         callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
+
+        BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
         }
     else
         {
@@ -1910,7 +1915,6 @@ int iModelBridgeFwk::UpdateExistingBim()
             {                                                                                    // === SCHEMA LOCK
             if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))                 // === SCHEMA LOCK
                 return RETURN_STATUS_SERVER_ERROR;                                               // === SCHEMA LOCK
-            Briefcase_ReleaseAllPublicLocks();                                                   // === SCHEMA LOCK
             }                                                                                    // === SCHEMA LOCK
                                                                                                  // === SCHEMA LOCK
         if (BSISUCCESS != MakeSchemaChanges(callCloseOnReturn))                                  // === SCHEMA LOCK
