@@ -142,6 +142,8 @@ $(o)ECDiff$(oext):  $(dynamicSchemaGeneratorDir)ECDiff.cpp $(dynamicSchemaGenera
 
 $(o)EntityConverter$(oext):  $(dynamicSchemaGeneratorDir)EntityConverter.cpp $(dynamicSchemaGeneratorDepends) $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)RulesetEmbedder$(oext):  $(baseDir)RulesetEmbedder.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 cppObjects =% $(MultiCompileObjectList)
 
