@@ -720,6 +720,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetVisibilityTag().c_str(), "UNDEFINED"); // Default is preset
     EXPECT_TRUE(myRealityData->IsListable());
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetCreatorId().c_str(), "");
     EXPECT_FALSE(myRealityData->IsHidden());
     EXPECT_FALSE(myRealityData->HasDelegatePermissions());
 
@@ -807,6 +808,9 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_TRUE(!myRealityData->IsListable());
     myRealityData->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b");
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b");
+
+    myRealityData->SetCreatorId("6e4f68b1-fe63-4264-a7de-f6d54abeeaef");
+    EXPECT_STREQ(myRealityData->GetCreatorId().c_str(), "6e4f68b1-fe63-4264-a7de-f6d54abeeaef");
 
     myRealityData->SetMetadataUrl("http:\\www.bidon.com\\AgoodURL.html");
     EXPECT_STREQ(myRealityData->GetMetadataUrl().c_str(), "http:\\www.bidon.com\\AgoodURL.html");

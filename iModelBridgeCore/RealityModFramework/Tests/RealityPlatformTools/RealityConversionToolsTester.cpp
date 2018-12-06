@@ -346,6 +346,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
                     "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
                     "OwnedBy": "Jane.Doe@bentley.com",
+                    "CreatorId": "6e4f68b1-fe63-4264-a7de-f6d54abeeaef",
                     "Hidden": false,
                     "DelegatePermissions": false
                 },
@@ -407,6 +408,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
                     "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
                     "OwnedBy": "Jane.Doe@bentley.com",
+                    "CreatorId": "6e4f68b1-fe63-4264-a7de-f6d54abeeaef",
                     "Hidden": true,
                     "DelegatePermissions": true
                 },
@@ -476,6 +478,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Date": "2017-02-01T22:26:06.414Z",
                     "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
                     "OwnedBy": "Jane.Doe@bentley.com",
+                    "CreatorId": "6e4f68b1-fe63-4264-a7de-f6d54abeeaef",
                     "Hidden": false,
                     "DelegatePermissions": false,
                     "OriginService": "ServiceOrigin",
@@ -990,6 +993,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetLastAccessedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetCreationDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetOwner(), "Jane.Doe@bentley.com");
+    ASSERT_EQ(realityData->GetCreatorId(), "6e4f68b1-fe63-4264-a7de-f6d54abeeaef");
     ASSERT_EQ(realityData->IsHidden(), false);
     ASSERT_EQ(realityData->HasDelegatePermissions(), false);
     ASSERT_EQ(realityData->HasApproximateFootprint(), false);
@@ -1045,6 +1049,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityDataExtended)
     ASSERT_EQ(realityData->GetLastAccessedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetCreationDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetOwner(), "Jane.Doe@bentley.com");
+    ASSERT_EQ(realityData->GetCreatorId(), "6e4f68b1-fe63-4264-a7de-f6d54abeeaef");
     ASSERT_EQ(realityData->IsHidden(), false);
     ASSERT_EQ(realityData->HasDelegatePermissions(), false);
     ASSERT_EQ(realityData->GetOriginService(), "ServiceOrigin");

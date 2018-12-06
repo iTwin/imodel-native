@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/WMSDataHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -231,7 +231,7 @@ StatusInt WmsData::GetFromServer(bvector<Byte>& buffer, Utf8StringCR url) const
     CurlHolder curl;
 
     // Specify URL to get.
-    curl_easy_setopt(curl.Get(), CURLOPT_URL, url);
+    curl_easy_setopt(curl.Get(), CURLOPT_URL, url.c_str());
 
     // Switch on full protocol/debug output while testing.
     //curl_easy_setopt(curl.Get(), CURLOPT_VERBOSE, 1L);

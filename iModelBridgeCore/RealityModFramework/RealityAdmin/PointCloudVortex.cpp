@@ -307,6 +307,15 @@ bool PointCloudVortex::PointCloudNeedsWhiteBackground(PtHandle cloudHandle)
     BYTE   *pRgbBuffer = NULL;
     int16_t  *pIntensityBuffer = NULL;
 
+    const uint32_t bufferSize = 1000;
+    BYTE colorThreshold = 25;
+
+    // Pre-initialized because following code contains goto clause.
+    //PtHandle queryHandle = PtVortex::CreateBoundingBoxQuery (lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
+    PtHandle queryHandle = ptCreateBoundingBoxQuery(lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
+
+
+
     bool useRgbChannel = false;
     bool useIntensityChannel = false;
     if (specification & PT_HAS_RGB)
@@ -325,7 +334,6 @@ bool PointCloudVortex::PointCloudNeedsWhiteBackground(PtHandle cloudHandle)
         }
 
     // Allocate buffers. We request 1000 points to compute an average color
-    const uint32_t bufferSize = 1000;
     pPointsBuffer = (double*) malloc (bufferSize * 3 * sizeof (double));
     if (useRgbChannel)
         {
@@ -337,8 +345,6 @@ bool PointCloudVortex::PointCloudNeedsWhiteBackground(PtHandle cloudHandle)
         }
 
     // Create a bounding box query
-    //PtHandle queryHandle = PtVortex::CreateBoundingBoxQuery (lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
-    PtHandle queryHandle = ptCreateBoundingBoxQuery(lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
     //PtVortex::ResetQuery(queryHandle);
 	ptResetQuery(queryHandle);
     //PtVortex::SetQueryScope(queryHandle, cloudHandle);
@@ -362,7 +368,6 @@ bool PointCloudVortex::PointCloudNeedsWhiteBackground(PtHandle cloudHandle)
         goto cleanup;
         }
 
-    BYTE colorThreshold = 25;
     if (useRgbChannel)
         {
         int64_t rgbTotal[3]; 

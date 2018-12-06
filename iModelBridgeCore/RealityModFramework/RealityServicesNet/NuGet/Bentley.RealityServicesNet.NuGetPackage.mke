@@ -22,5 +22,5 @@ BUILD_NUGET=1
 
 NuGetBaseName=Bentley.RealityServicesNet
 NuSpecPath=$(SrcRoot)RealityModFramework/RealityServicesNet/NuGet/Bentley.RealityServicesNet.nuspec
-NuGetDependencies=\#Json_version\#=$(BuildContext)SubParts\Assemblies\Newtonsoft.Json.dll \#PlatformTech_version\#=$(BuildContext)SubParts\Assemblies\Bentley.Exceptions.dll
+#NuGetDependencies=\#Json_version\#=$(BuildContext)SubParts\Assemblies\Newtonsoft.Json.dll \#PlatformTech_version\#=$(BuildContext)SubParts\Assemblies\Bentley.Exceptions.dll
 %include $(sharedMki)nuspecCreate.mki
