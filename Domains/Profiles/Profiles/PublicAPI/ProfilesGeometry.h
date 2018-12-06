@@ -7,21 +7,21 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Bentley\Bentley.h>
-#include <DgnPlatform\DgnPlatformApi.h>
+//#include <Bentley\Bentley.h>
+//#include <DgnPlatform\DgnPlatformApi.h>
+#include <Geom\GeomApi.h>
 #include <Profiles\ProfilesApi.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-struct ProfilesGeomApi : RefCountedBase
+struct ProfilesGeomApi
     {
-    protected: 
-        ProfilesGeomApi() {};
-    public:
-        PROFILES_EXPORT static IGeometryPtr CreateIShape(double overallWidth, double overallDepth, double flangeThickness, double webThickness);
-        PROFILES_EXPORT static IGeometryPtr CreateIShapeWithFillet(double overallWidth, double overallDepth, double flangeThickness, double webThickness, double filletRadius);
-        PROFILES_EXPORT static IGeometryPtr CreateCShape (CShapeProfileCPtr profile);
-        PROFILES_EXPORT static IGeometryPtr CreateIShape (IShapeProfileCPtr profile);
+public:
+    ProfilesGeomApi() = delete;
+
+    PROFILES_EXPORT static IGeometryPtr CreateCShape (CShapeProfileCPtr profile);
+    PROFILES_EXPORT static IGeometryPtr CreateIShape (IShapeProfileCPtr profile);
+
     };
 
 END_BENTLEY_PROFILES_NAMESPACE
