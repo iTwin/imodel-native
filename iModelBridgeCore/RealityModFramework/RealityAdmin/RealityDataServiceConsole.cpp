@@ -2307,7 +2307,7 @@ void RealityDataConsole::Migrate()
     
     for(size_t i = 0; i < m_serverNodes.size(); ++i)
         {
-        RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_serverNodes[0].GetRootId(), propertyString);
+        RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_serverNodes[i].GetRootId(), propertyString);
 
         RawServerResponse changeResponse = RawServerResponse();
         Utf8String response = RealityDataService::Request(changeReq, changeResponse);
