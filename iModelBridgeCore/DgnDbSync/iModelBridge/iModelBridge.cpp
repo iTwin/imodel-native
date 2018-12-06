@@ -1053,3 +1053,12 @@ bool iModelBridge::AnyChangesToPush(DgnDbR db)
     {
     return db.Txns().HasChanges() || AnyTxns(db);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::HoldsSchemaLock(DgnDbR db)
+    {
+    LockableId schemasLock(db.Schemas());
+    return db.BriefcaseManager().QueryLockLevel(schemasLock) == LockLevel::Exclusive;
+    }

@@ -105,8 +105,10 @@ The process shown here is for the case of a bridge doing an incremental update. 
 The framework then makes the following calls on the bridge object:
 
 @anchor ANCHOR_InitializationPhase
-<h3>I. Initialization Phase</h3>
-During this phase, the bridge may register domains and import schemas, and the bridge may call SaveChanges on the DgnDb.
+<h3>I. Initialization and Schema and Definitions Phase</h3>
+During this phase, the bridge may register domains and import schemas, and the bridge may write definitions to public models.
+The bridge may create codes that are scoped to public models and shared elements.
+The schema lock is held exclusively during this phase.
 
 -# iModelBridge::_ParseCommandLine (standalone converters only)
 -# iModelBridge::_Initialize
@@ -116,14 +118,10 @@ registered by the bridge in its _Initialize method are imported into the BIM and
 -# iModelBridge::_OnOpenBim     (may call _OnCloseBim and _OnOpenBim more than once in the Initialization Phase.)
 -# iModelBridge::_OpenSource
 -# iModelBridge::_MakeSchemaChanges. The framework may close and reopen the briefcase at this point.
--# iModelBridge::_MakeDefinitionChanges. The framework may close and reopen the briefcase at this point.
 
 The framework will pullmergepush as necessary in order to capture schema changes and push them to iModelHub. 
-If the necessary schema lock cannot be acquired, then the bridge is terminated with an error.
-
-@anchor ANCHOR_ConversionPhase
-<h3>II. Conversion Phase</h3>
-During this phase, the bridge must not try to change the schema and must not call SaveChanges on the DgnDb.
+If that is done, then the bim will be closed and re-opened and so, _CloseSource and _OnCloseBim will be called,
+and then _OnOpenBim and _OpenSource will be called again.
 
 -# Find or initialize the @ref ANCHOR_BridgeJobSubject "job subject"
     -# iModelBridge::_GetParams().SetIsUpdating (true);
@@ -131,6 +129,18 @@ During this phase, the bridge must not try to change the schema and must not cal
     -# If jobsubject.IsInvalid
         -# iModelBridge::_GetParams().SetIsUpdating (false)
         -# jobsubject = iModelBridge::_InitializeJob
+
+-# iModelBridge::_MakeDefinitionChanges. The framework may close and reopen the briefcase at this point.
+The framework will pullmergepush as necessary in order to capture definition changes and push them to iModelHub. 
+The framework will NOT close and reopen the bim when doing this.
+
+@anchor ANCHOR_ConversionPhase
+<h3>II. Data Conversion Phase</h3>
+During this phase, the bridge must not try to change the schema or definitions.
+No locks are held during this phase. Lock and code requirements are handled in bulk mode.
+The bridge should write only to its own private models during the data conversion phase.
+Any codes created in this phase must be scoped to private models or to the bridge's own job subject.
+
 -# iModelBridge::_ConvertToBim
 
 @anchor ANCHOR_FinalizationPhase
@@ -964,6 +974,7 @@ public:
 
     IMODEL_BRIDGE_EXPORT static bool AnyChangesToPush(DgnDbR);
     IMODEL_BRIDGE_EXPORT static bool AnyTxns(DgnDbR);
+    IMODEL_BRIDGE_EXPORT static bool HoldsSchemaLock(DgnDbR);
 
     IMODEL_BRIDGE_EXPORT virtual Utf8String _FormatPushComment(DgnDbR db, Utf8CP commitComment);
 

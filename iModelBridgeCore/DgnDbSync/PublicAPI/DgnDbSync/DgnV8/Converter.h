@@ -2475,7 +2475,7 @@ public:
 //! 1. MakeDefinitionChanges    -- uses ChangeDetector and configuration.
 //! 1. ConvertData              -- uses definitions, ChangeDetector, and configuration. Writes to job definition models and other job-specific models. Populates m_v8ModelMappings.
 //!
-//! DoBeginConversion prepares ChangeDetector, initializes configuration. Both MakeDefinitionChanges and ConvertData call that internally,
+//! FYI DoBeginConversion prepares ChangeDetector, initializes configuration. Both MakeDefinitionChanges and ConvertData call that internally,
 //! to make sure it happens. If MakeDefinitionChanges calls it first, then ConvertData will not.
 //! DoFinishConversion does post-processing, such as converting named groups, updating project extents, and generating thumbnails.
 //! *Only* ConvertData calls that.
@@ -2569,7 +2569,6 @@ private:
 protected:
     RootModelSpatialParams& m_params;   // NB: Must store a *reference* to the bridge's Params, as they may change after our constructor is called
     bvector<DgnV8FileP> m_v8Files;
-    bvector<DgnV8FileP> m_newV8Files;
     bvector<Bentley::DgnModelPtr> m_drawingModelsKeepAlive;
     bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
     DgnV8Api::ViewGroupPtr m_viewGroup;
@@ -2583,8 +2582,6 @@ protected:
 
     void CorrectSpatialTransforms();
     bool ShouldCorrectSpatialTransform(ResolvedModelMapping const& rmm) {return rmm.GetDgnModel().IsSpatialModel() && IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP());}
-
-    void _OnFileDiscovered(DgnV8FileR fp) override {m_newV8Files.push_back(&fp);}
 
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}

@@ -750,7 +750,7 @@ SyncInfo::V8FileProvenance SyncInfo::InsertFile(DbResult* err, DgnV8FileCR file,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8FileProvenance SyncInfo::UpdateFile(DbResult* err, DgnV8FileCR file, bool zeroOut)
+SyncInfo::V8FileProvenance SyncInfo::UpdateFile(DbResult* err, DgnV8FileCR file)
     {
     V8FileProvenance prov = FindFile(file);
     if (!prov.IsValid())
@@ -761,12 +761,6 @@ SyncInfo::V8FileProvenance SyncInfo::UpdateFile(DbResult* err, DgnV8FileCR file,
         }
 
     V8FileProvenance currentStats(file, *this, prov.m_idPolicy); // Get the current time, etc.
-
-    if (zeroOut)
-        {
-        currentStats.m_lastModifiedTime = 0;
-        currentStats.m_lastSaveTime = 0.0;
-        }
 
     auto rc = prov.Update(prov.m_syncId, currentStats);
     if (rc == BE_SQLITE_DONE)
