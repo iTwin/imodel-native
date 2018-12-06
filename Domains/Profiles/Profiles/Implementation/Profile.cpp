@@ -47,12 +47,21 @@ BentleyStatus Profile::_Validate() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr Profile::_CreateGeometry() const
+    {
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_OnInsert()
     {
-    if (_Validate() != BSISUCCESS)
-        return DgnDbStatus::ValidationFailed;
+    DgnDbStatus status = ValidateAndCreateGeometry();
+    if (status != DgnDbStatus::Success)
+        return status;
 
     return T_Super::_OnInsert();
     }
@@ -62,10 +71,27 @@ DgnDbStatus Profile::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
     {
+    DgnDbStatus status = ValidateAndCreateGeometry();
+    if (status != DgnDbStatus::Success)
+        return status;
+
+    return T_Super::_OnUpdate (original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::ValidateAndCreateGeometry()
+    {
     if (_Validate() != BSISUCCESS)
         return DgnDbStatus::ValidationFailed;
 
-    return T_Super::_OnUpdate (original);
+    IGeometryPtr geometryPtr = _CreateGeometry();
+    if (geometryPtr.IsNull())
+        return DgnDbStatus::NoGeometry;
+
+    SetShape (_CreateGeometry());
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

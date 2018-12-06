@@ -38,8 +38,13 @@ protected:
     explicit Profile (CreateParams const& params);
 
     virtual BentleyStatus _Validate() const;
+    virtual IGeometryPtr _CreateGeometry() const;
+
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
+
+private:
+    Dgn::DgnDbStatus ValidateAndCreateGeometry();
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (Profile)
