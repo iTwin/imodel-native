@@ -247,7 +247,7 @@ TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithoutExternalEnvironmentDir
     CacheEnvironment cacheEnv = cache.GetEnvironment();
     EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), HasSubstr(baseEnv.persistentFileCacheDir.c_str()));
     EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), HasSubstr(cacheEnv.persistentFileCacheDir.c_str()));
-    EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), AnyOf(EndsWith(L"\\ext\\"), EndsWith(L"//ext//")));
+    EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), AnyOf(EndsWith(L"\\ext\\"), EndsWith(L"/ext/")));
     }
 
 /*--------------------------------------------------------------------------------------+
