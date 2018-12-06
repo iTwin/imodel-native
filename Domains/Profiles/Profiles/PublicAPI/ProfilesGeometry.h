@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-//#include <Bentley\Bentley.h>
-//#include <DgnPlatform\DgnPlatformApi.h>
 #include <Geom\GeomApi.h>
 #include <Profiles\ProfilesApi.h>
 
