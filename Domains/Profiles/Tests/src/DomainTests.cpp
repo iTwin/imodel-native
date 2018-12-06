@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesTestCase.h"
-#include <DgnPlatform/GenericDomain.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_PROFILES
@@ -50,78 +49,4 @@ TEST_F (DomainTestCase, ValidateSchema)
     ASSERT_TRUE (refSchema.IsValid());
 
     ASSERT_TRUE (refSchema->Validate());
-    }
-
-
-static IGeometryPtr CreateCShape (CShapeProfileCPtr profile);
-
-
-TEST_F(DomainTestCase, IshapeGraphics)
-    {
-    PhysicalElementPtr el = GenericPhysicalObject::Create(GetPhysicalModel(), GetCategoryId());
-    el->SetUserLabel("Petras");
-
-    //test geometry
-    Placement3d placement;
-    placement.GetOriginR() = DPoint3d::From(10.0, 10.0, -50.0);
-    el->SetPlacement(placement);
-
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*el->ToGeometrySourceP());
-
-    GeometrySourceP geomElem = el->ToGeometrySourceP();
-    geomElem->SetCategoryId(el->GetCategoryId());
-
-    builder->Append(el->GetCategoryId(), GeometryBuilder::CoordSystem::World);
-
-    Dgn::Render::GeometryParams params;
-
-    DgnCategoryId c = el->GetCategoryId();
-
-    params.SetCategoryId(el->GetCategoryId());
-    params.SetFillDisplay(Render::FillDisplay::Always);
-    params.SetLineColor(ColorDef::Red());
-    params.SetFillColor(ColorDef::Black());
-    params.SetWeight(1);
-    builder->Append(params, GeometryBuilder::CoordSystem::World);
-
-    CShapeProfile::CreateParams profileParams (GetModel(), "C", 6, 10, 1, 1, 0.5, 0.5, PI / 18);
-    CShapeProfileCPtr profilePtr = CShapeProfile::Create (profileParams);
-
-    IGeometryPtr blockGeom = ProfilesGeomApi::CreateCShape (profilePtr);
-
-    builder->Append(*blockGeom, GeometryBuilder::CoordSystem::World);
-    builder->Finish(*el->ToGeometrySourceP());
-
-    DgnDbStatus status;
-    el->Insert(&status);
-    ASSERT_TRUE(status == DgnDbStatus::Success);
-
-
-    //create a view, it is neccessary if you like to see geoemetry with Gist
-    DefinitionModelR dictionary = GetDb().GetDictionaryModel();
-    CategorySelectorPtr categorySelector = new CategorySelector(dictionary, "Default");
-
-    ModelSelectorPtr modelSelector = new ModelSelector(dictionary, "Default");
-    modelSelector->AddModel(GetPhysicalModel().GetModelId());
-
-    DisplayStyle3dPtr displayStyle = new DisplayStyle3d(dictionary, "Default");
-
-    displayStyle->SetBackgroundColor(ColorDef::DarkYellow());
-    displayStyle->SetSkyBoxEnabled(false);
-    displayStyle->SetGroundPlaneEnabled(false);
-
-    Render::ViewFlags viewFlags = displayStyle->GetViewFlags();
-    viewFlags.SetRenderMode(Render::RenderMode::SolidFill);
-    viewFlags.SetShowTransparency(true);
-    viewFlags.ShowTransparency();
-
-    displayStyle->SetViewFlags(viewFlags);
-
-    //create view 
-    OrthographicViewDefinition view(dictionary, "Structure View", *categorySelector, *displayStyle, *modelSelector);
-    view.SetStandardViewRotation(StandardView::Iso); // Default to a rotated view
-    view.LookAtVolume(GetDb().GeoLocation().GetProjectExtents());
-    view.Insert();
-    DgnViewId viewId = view.GetViewId();
-    GetDb().SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
     }

@@ -41,6 +41,9 @@
     <ClCompile Include="src\ProfilesTestCase.cpp">
       <Filter>Src\TestCases</Filter>
     </ClCompile>
+    <ClCompile Include="src\GeometryTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\TestHost.h">
