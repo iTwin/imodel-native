@@ -21,6 +21,7 @@ struct ProfilesGeomApi : RefCountedBase
         PROFILES_EXPORT static IGeometryPtr CreateIShape(double overallWidth, double overallDepth, double flangeThickness, double webThickness);
         PROFILES_EXPORT static IGeometryPtr CreateIShapeWithFillet(double overallWidth, double overallDepth, double flangeThickness, double webThickness, double filletRadius);
         PROFILES_EXPORT static IGeometryPtr CreateCShape (CShapeProfileCPtr profile);
+        PROFILES_EXPORT static IGeometryPtr CreateIShape (IShapeProfileCPtr profile);
     };
 
 END_BENTLEY_PROFILES_NAMESPACE

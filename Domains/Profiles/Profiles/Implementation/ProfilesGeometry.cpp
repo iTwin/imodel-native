@@ -128,9 +128,9 @@ IGeometryPtr ProfilesGeomApi::CreateCShape (CShapeProfileCPtr profile)
     double const halfDepth = profile->GetDepth() / 2.0;
     double const slopeHeight = profile->GetSlopeHeight();
 
-    DPoint3d const topLeft = { -halfWidth,  halfDepth, 0.0 };
-    DPoint3d const topRight = {  halfWidth,  halfDepth, 0.0 };
-    DPoint3d const bottomRight = {  halfWidth, -halfDepth, 0.0 };
+    DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
+    DPoint3d const topRight = { halfWidth, halfDepth, 0.0 };
+    DPoint3d const bottomRight = { halfWidth, -halfDepth, 0.0 };
     DPoint3d const bottomLeft = { -halfWidth, -halfDepth, 0.0 };
     DPoint3d const topFlangeEdge = topRight - DPoint3d { 0.0, flangeThickness };
     DPoint3d const topInnerCorner = topLeft - DPoint3d { -webThickness, flangeThickness + slopeHeight };
@@ -166,6 +166,90 @@ IGeometryPtr ProfilesGeomApi::CreateCShape (CShapeProfileCPtr profile)
         {
         topLine, topFlangeEdgeLine, topFlangeEdgeArc, topFlangeSlopeLine, topInnerCornerArc, innerWebLine, bottomInnerCornerArc,
         bottomFlangeSlopeLine, bottomFlangeEdgeArc, bottomFlangeEdgeLine, bottomLine, leftLine
+        };
+
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    for (auto const& curve : orderedCurves)
+        {
+        if (curve.IsValid())
+            curveVector->Add (curve);
+        }
+
+    return IGeometry::Create (curveVector);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateIShape (IShapeProfileCPtr profile)
+    {
+    double const flangeThickness = profile->GetFlangeThickness();
+    double const webThickness = profile->GetWebThickness();
+    double const filletRadius = profile->GetFilletRadius();
+    double const flangeEdgeRadius = profile->GetFlangeEdgeRadius();
+    double const halfWidth = profile->GetFlangeWidth() / 2.0;
+    double const halfDepth = profile->GetDepth() / 2.0;
+    double const slopeHeight = profile->GetSlopeHeight();
+
+    DPoint3d const topMiddle = { 0.0, halfDepth, 0.0 };
+    DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
+    DPoint3d const topRight = { halfWidth, halfDepth, 0.0 };
+    DPoint3d const bottomMiddle = { 0.0, -halfDepth, 0.0 };
+    DPoint3d const bottomRight = { halfWidth, -halfDepth, 0.0 };
+    DPoint3d const bottomLeft = { -halfWidth, -halfDepth, 0.0 };
+
+    DPoint3d const topRightFlangeEdge = topRight - DPoint3d { 0.0, flangeThickness };
+    DPoint3d const topLeftFlangeEdge = topLeft - DPoint3d { 0.0, flangeThickness };
+    DPoint3d const topRightInnerCorner = topMiddle - DPoint3d { -webThickness / 2.0, flangeThickness + slopeHeight };
+    DPoint3d const topLeftInnerCorner = topMiddle - DPoint3d { webThickness / 2.0, flangeThickness + slopeHeight };
+    DPoint3d const bottomRightInnerCorner = bottomMiddle - DPoint3d { -webThickness / 2.0, -flangeThickness - slopeHeight };
+    DPoint3d const bototmLeftInnerCorner = bottomMiddle - DPoint3d { webThickness / 2.0, -flangeThickness - slopeHeight };
+    DPoint3d const bottomRightFlangEdge = bottomRight - DPoint3d { 0.0, -flangeThickness };
+    DPoint3d const bottomLeftFlangeEdge = bottomLeft - DPoint3d { 0.0, -flangeThickness };
+
+    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (topLeft, topRight);
+    ICurvePrimitivePtr topRightFlangeEdgeLine = ICurvePrimitive::CreateLine (topRight, topRightFlangeEdge);
+    ICurvePrimitivePtr topRightFlangeEdgeArc = nullptr;
+    ICurvePrimitivePtr topRightFlangeSlopeLine = ICurvePrimitive::CreateLine (topRightFlangeEdge, topRightInnerCorner);
+    ICurvePrimitivePtr topRightInnerCornerArc = nullptr;
+    ICurvePrimitivePtr innerRightWebLine = ICurvePrimitive::CreateLine (topRightInnerCorner, bottomRightInnerCorner);
+    ICurvePrimitivePtr bottomRightInnerCornerArc = nullptr;
+    ICurvePrimitivePtr bottomRightFlangeSlopeLine = ICurvePrimitive::CreateLine (bottomRightInnerCorner, bottomRightFlangEdge);
+    ICurvePrimitivePtr bottomRightFlangeEdgeArc = nullptr;
+    ICurvePrimitivePtr bottomRightFlangeEdgeLine = ICurvePrimitive::CreateLine (bottomRightFlangEdge, bottomRight);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
+    ICurvePrimitivePtr bottomLeftFlangeEdgeLine = ICurvePrimitive::CreateLine (bottomLeft, bottomLeftFlangeEdge);
+    ICurvePrimitivePtr bottomLeftFlangeEdgeArc = nullptr;
+    ICurvePrimitivePtr bottomLeftFlangeSlopeLine = ICurvePrimitive::CreateLine (bottomLeftFlangeEdge, bototmLeftInnerCorner);
+    ICurvePrimitivePtr bottomLeftInnerCornerArc = nullptr;
+    ICurvePrimitivePtr innerLeftWebLine = ICurvePrimitive::CreateLine (bototmLeftInnerCorner, topLeftInnerCorner);
+    ICurvePrimitivePtr topLeftInnerCornerArc = nullptr;
+    ICurvePrimitivePtr topLeftFlangeSlopeLine = ICurvePrimitive::CreateLine (topLeftInnerCorner, topLeftFlangeEdge);
+    ICurvePrimitivePtr topLeftFlangeEdgeArc = nullptr;
+    ICurvePrimitivePtr topLeftFlangeEdgeLine = ICurvePrimitive::CreateLine (topLeftFlangeEdge, topLeft);
+
+    if (profile->GetFlangeEdgeRadius() > 0.0)
+        {
+        topRightFlangeEdgeArc = createArcBetweenLines (topRightFlangeEdgeLine, topRightFlangeSlopeLine, flangeEdgeRadius);
+        bottomRightFlangeEdgeArc = createArcBetweenLines (bottomRightFlangeSlopeLine, bottomRightFlangeEdgeLine, flangeEdgeRadius);
+        bottomLeftFlangeEdgeArc = createArcBetweenLines (bottomLeftFlangeEdgeLine, bottomLeftFlangeSlopeLine, flangeEdgeRadius);
+        topLeftFlangeEdgeArc = createArcBetweenLines (topLeftFlangeSlopeLine, topLeftFlangeEdgeLine, flangeEdgeRadius);
+        }
+
+    if (profile->GetFilletRadius() > 0.0)
+        {
+        topRightInnerCornerArc = createArcBetweenLines (topRightFlangeSlopeLine, innerRightWebLine, filletRadius);
+        bottomRightInnerCornerArc = createArcBetweenLines (innerRightWebLine, bottomRightFlangeSlopeLine, filletRadius);
+        bottomLeftInnerCornerArc = createArcBetweenLines (bottomLeftFlangeSlopeLine, innerLeftWebLine, filletRadius);
+        topLeftInnerCornerArc = createArcBetweenLines (innerLeftWebLine, topLeftFlangeSlopeLine, filletRadius);
+        }
+
+    ICurvePrimitivePtr orderedCurves[] =
+        {
+        topLine, topRightFlangeEdgeLine, topRightFlangeEdgeArc, topRightFlangeSlopeLine, topRightInnerCornerArc, innerRightWebLine,
+        bottomRightInnerCornerArc, bottomRightFlangeSlopeLine, bottomRightFlangeEdgeArc, bottomRightFlangeEdgeLine,
+        bottomLine, bottomLeftFlangeEdgeLine, bottomLeftFlangeEdgeArc, bottomLeftFlangeSlopeLine, bottomLeftInnerCornerArc,
+        innerLeftWebLine, topLeftInnerCornerArc, topLeftFlangeSlopeLine, topLeftFlangeEdgeArc, topLeftFlangeEdgeLine
         };
 
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
