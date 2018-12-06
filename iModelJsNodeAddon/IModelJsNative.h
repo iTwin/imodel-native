@@ -75,6 +75,7 @@ public:
     static DgnDbStatus UpdateElement(DgnDbR db, Json::Value &props);
     static DgnDbStatus DeleteElement(DgnDbR db, Utf8StringCR eidStr);
     static DgnDbStatus InsertElementAspect(DgnDbR db, JsonValueCR aspectProps);
+    static DgnDbStatus UpdateElementAspect(DgnDbR db, JsonValueCR aspectProps);
     static DgnDbStatus DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr);
     static DbResult InsertLinkTableRelationship(JsonValueR results, DgnDbR db, Json::Value& props);
     static DbResult UpdateLinkTableRelationship(DgnDbR db, Json::Value& props);

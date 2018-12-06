@@ -1186,6 +1186,15 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)status);
         }
 
+    Napi::Value UpdateElementAspect(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, aspectPropsJsonStr, Env().Undefined());
+        Json::Value aspectProps = Json::Value::From(aspectPropsJsonStr);
+        DgnDbStatus status = JsInterop::UpdateElementAspect(GetDgnDb(), aspectProps);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
     Napi::Value DeleteElementAspect(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1901,6 +1910,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
+            InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
