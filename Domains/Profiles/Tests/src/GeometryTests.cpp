@@ -134,7 +134,7 @@ void GeometryTestCase::InsertProfileGeometry (ProfilePtr profilePtr, bool placeI
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeometryTestCase, CShapeGeometry)
     {
-    CShapeProfile::CreateParams params1 (GetModel(), "CShape_plain", 6, 10, 1, 1, 0, 0, 0);
+    CShapeProfile::CreateParams params1 (GetModel(), "CShape_Plain", 6, 10, 1, 1, 0, 0, 0);
     CShapeProfilePtr profilePtr1 = CShapeProfile::Create (params1);
     BeAssert (profilePtr1->Insert().IsValid());
     InsertProfileGeometry (profilePtr1);
@@ -153,4 +153,24 @@ TEST_F(GeometryTestCase, CShapeGeometry)
     CShapeProfilePtr profilePtr4 = CShapeProfile::Create (profileParams4);
     BeAssert (profilePtr4->Insert().IsValid());
     InsertProfileGeometry (profilePtr4);
+
+    IShapeProfile::CreateParams params5 (GetModel(), "IShape_Plain", 6, 10, 1, 1, 0, 0, 0);
+    IShapeProfilePtr profilePtr5 = IShapeProfile::Create (params5);
+    BeAssert (profilePtr5->Insert().IsValid());
+    InsertProfileGeometry (profilePtr5, true);
+
+    IShapeProfile::CreateParams params6 (GetModel(), "IShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0.0);
+    IShapeProfilePtr profilePtr6 = IShapeProfile::Create (params6);
+    BeAssert (profilePtr6->Insert().IsValid());
+    InsertProfileGeometry (profilePtr6);
+
+    IShapeProfile::CreateParams params7 (GetModel(), "IShape_MaxFillet", 6, 10, 1, 1, 2.5 / 2.0, 0.1, 0.0);
+    IShapeProfilePtr profilePtr7 = IShapeProfile::Create (params7);
+    BeAssert (profilePtr7->Insert().IsValid());
+    InsertProfileGeometry (profilePtr7);
+
+    IShapeProfile::CreateParams profileParams8 (GetModel(), "IShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, PI / 18);
+    IShapeProfilePtr profilePtr8 = IShapeProfile::Create (profileParams8);
+    BeAssert (profilePtr8->Insert().IsValid());
+    InsertProfileGeometry (profilePtr8);
     }
