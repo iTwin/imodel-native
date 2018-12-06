@@ -9,14 +9,3 @@ NamedGroupTests.NamedGroupOf2dElement
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
 
-TransformTests.Test1
-    # bim0200, NDEBUG
-    # [ RUN      ] TransformTests.Test1
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(441): error:       Expected: hadAnyChanges
-    #       Which is: true
-    # To be equal to: expectUpdate
-    #       Which is: false
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1239): error:       Expected: 0
-    # To be equal to: m_count
-    #       Which is: 2
-    # [  FAILED  ] TransformTests.Test1 (4081 ms)
