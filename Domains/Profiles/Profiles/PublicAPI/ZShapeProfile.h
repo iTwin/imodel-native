@@ -21,8 +21,32 @@ struct ZShapeProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_ZShapeProfile, ParametricProfile);
     friend struct ZShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(ZShapeProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
+            double webThickness, double filletRadius = 0.0, double flangeEdgeRadius = 0.0, double flangeSlope = 0.0);
+
+    public:
+        //! Required properties
+        double flangeWidth = 0.0;
+        double depth = 0.0;
+        double flangeThickness = 0.0;
+        double webThickness = 0.0;
+
+        //! Optional properties
+        double filletRadius = 0.0;
+        double flangeEdgeRadius = 0.0;
+        double flangeSlope = 0.0;
+        };
+
 protected:
-    explicit ZShapeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit ZShapeProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ZShapeProfile)

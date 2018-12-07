@@ -14,6 +14,46 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (ZShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ZShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ZShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
+    double webThickness, double filletRadius, double flangeEdgeRadius, double flangeSlope)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , flangeWidth (flangeWidth)
+    , depth (depth)
+    , flangeThickness (flangeThickness)
+    , webThickness (webThickness)
+    , filletRadius (filletRadius)
+    , flangeEdgeRadius (flangeEdgeRadius)
+    , flangeSlope (flangeSlope)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ZShapeProfile::ZShapeProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetFlangeWidth (params.flangeWidth);
+    SetDepth (params.depth);
+    SetFlangeThickness (params.flangeThickness);
+    SetWebThickness (params.webThickness);
+    SetFilletRadius (params.filletRadius);
+    SetFlangeEdgeRadius (params.flangeEdgeRadius);
+    SetFlangeSlope (params.flangeSlope);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double ZShapeProfile::GetFlangeWidth() const
