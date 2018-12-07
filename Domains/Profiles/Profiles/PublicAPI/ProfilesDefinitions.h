@@ -306,29 +306,4 @@ enum class DoubleLProfileType : int32_t
     SLBB = 1,
 }; // DoubleLProfileType
 
-enum class ParametricProfileType : int32_t
-{
-    C = 0,
-    I = 1,
-    AsymmetricI = 2,
-    L = 3,
-    SchifflerizedL = 4,
-    T = 5,
-    TT = 6,
-    Z = 7,
-    CenterLineC = 8,
-    CenterLineL = 9,
-    CenterLineZ = 10,
-    BentPlate = 11,
-    Rectangle = 12,
-    RoundedRectangle = 13,
-    Hollowrectangle = 14,
-    Ellipse = 15,
-    Circle = 16,
-    HollowCircle = 17,
-    Trapezium = 18,
-    RegularPolygon = 19,
-    Capsule = 20,
-}; // ParametricProfileType
-
 END_BENTLEY_PROFILES_NAMESPACE
