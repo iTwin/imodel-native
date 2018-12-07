@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 // #include "BridgeAddon.h"
 #include <cstdio>
+#include <atlbase.h> 
+
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <json/value.h>
 #include <node-addon-api/napi.h>
@@ -17,7 +19,7 @@ using namespace Napi;
 namespace BridgeNative {
 
     static Napi::ObjectReference s_logger;
-    static Napi::ObjectReference s_WebSocketUtility;
+    static Napi::ObjectReference s_JobUtility;
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Sam.Wilson                      02/18
@@ -36,7 +38,7 @@ namespace BridgeNative {
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Sam.Wilson                      02/18
     +---------------+---------------+---------------+---------------+---------------+------*/
-    //static void logMessageToJs(Utf8CP category, Utf8CP msg)
+    //static void logMessageToSEQ(Utf8CP category, Utf8CP msg)
     //    {
     //    auto env = BridgeNative::s_logger.Env();
     //    Napi::HandleScope scope(env);
@@ -59,28 +61,28 @@ namespace BridgeNative {
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    John.Majerle                      02/18
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static Napi::Value GetWebSocketUtility(Napi::CallbackInfo const& info) { return s_WebSocketUtility.Value(); }
+    static Napi::Value GetJobUtility(Napi::CallbackInfo const& info) { return s_JobUtility.Value(); }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    John.Majerle                      02/18
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static void SetWebSocketUtility(Napi::CallbackInfo const& info)
+    static void SetJobUtility(Napi::CallbackInfo const& info)
         {
-        s_WebSocketUtility = Napi::ObjectReference::New(info[0].ToObject());
-        s_WebSocketUtility.SuppressDestruct();
+        s_JobUtility = Napi::ObjectReference::New(info[0].ToObject());
+        s_JobUtility.SuppressDestruct();
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    John.Majerle                      02/18
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static void SendMessage(Utf8CP msg) 
+    static void logMessage(Utf8CP msg) 
         {
-        auto env = BridgeNative::s_WebSocketUtility.Env();
+        auto env = BridgeNative::s_JobUtility.Env();
         Napi::HandleScope scope(env);
 
-        Utf8CP fname = "SendMessage";
+        Utf8CP fname = "logMessage";
 
-        auto method = BridgeNative::s_WebSocketUtility.Get(fname).As<Napi::Function>();
+        auto method = BridgeNative::s_JobUtility.Get(fname).As<Napi::Function>();
         if (method == env.Undefined())
             {
             //Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
@@ -95,36 +97,58 @@ namespace BridgeNative {
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    John.Majerle                      02/18
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static Napi::String RequestToken()
+    static Napi::String RequestToken() 
         {
         Napi::String result;
 
-        auto env = BridgeNative::s_WebSocketUtility.Env();
+        auto env = BridgeNative::s_JobUtility.Env();
         Napi::HandleScope scope(env);
 
-        Utf8CP fname = "RequestToken";
+        Utf8CP fname = "requestToken";
 
-        auto method = BridgeNative::s_WebSocketUtility.Get(fname).As<Napi::Function>();
+        auto method = BridgeNative::s_JobUtility.Get(fname).As<Napi::Function>();
         if (method == env.Undefined())
             {
-            //Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid WebSocketUtility").ThrowAsJavaScriptException();
+            //Napi::Error::New(env, "Invalid JobUtility").ThrowAsJavaScriptException();
             result = Napi::String::New(env, "");
             return result;
             }
 
         result = method({ }).ToString();
-
         return result;
         }
-}
+
+    // static Napi::Promise RequestToken() 
+    //     {
+    //     auto env = BridgeNative::s_JobUtility.Env();
+    //     Napi::HandleScope scope(env);
+
+    //     Utf8CP fname = "requestToken";
+
+    //     auto method = BridgeNative::s_JobUtility.Get(fname).As<Napi::Function>();
+    //     if (method == env.Undefined())
+    //         {
+    //         Napi::Error::New(env, "Invalid JobUtility").ThrowAsJavaScriptException();
+    //         }
+
+    //     // [NEEDSWORK] method() returns a Napi::Value that is really a Promise.  How to get at it?
+    //     //                      ...try studying Napi::AsyncWorker: https://github.com/nodejs/node-addon-api/blob/master/doc/async_worker.md
+    //     Napi::Promise result = method({ }).As<Promise>();;
+
+    //     return result;
+    //     }
+    }  
 
 Value _RunBridge(const CallbackInfo& info) 
     {
     Env env = info.Env();
     Napi::String str = info[0].As<Napi::String>();
     std::string strVal = str.Utf8Value();
-    RunBridge(env, strVal.c_str());
-    return String::New(env, strVal.c_str());
+
+    int result = RunBridge(env, strVal.c_str());
+    // return String::New(env, strVal.c_str());
+
+    return String::New(env, std::to_string(result).c_str());
     }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -139,7 +163,7 @@ static Napi::Object RegisterModule(Napi::Env env, Napi::Object exports)
     exports.DefineProperties(
         {
         Napi::PropertyDescriptor::Accessor("logger", &BridgeNative::GetLogger, &BridgeNative::SetLogger),
-        Napi::PropertyDescriptor::Accessor("WebSocketUtility", &BridgeNative::GetWebSocketUtility, &BridgeNative::SetWebSocketUtility),
+        Napi::PropertyDescriptor::Accessor("JobUtility", &BridgeNative::GetJobUtility, &BridgeNative::SetJobUtility),
         });
 
     return exports;
@@ -155,43 +179,36 @@ wchar_t const** argv = argptrs.data();\
 {\
     if(json.isMember(MEMBER)) { \
         Utf8String tempsUtf8String = json.get(MEMBER, "").asString();\
-        WString tempWString; \
-        BeStringUtilities::Utf8ToWChar(tempWString, tempsUtf8String.c_str());\
-        args.push_back(WPrintfString(L"--%s=%s", COMMAND, tempWString));\
+        LPCTSTR t = static_cast<LPCTSTR> (tempsUtf8String.c_str());\
+        args.push_back(WPrintfString(L"--%s=%S", COMMAND, t));\
     }\
 }
-
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    John.Majerle                      10/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 int RunBridge(Env env, const char* jsonString)
     {
-    // [NEEDSWORK] Convert all printf statements to logs using BridgeNative::logMessageToJs() after refactor to pass correct category string (see imodel02 source)
-    
     int status = 1;  // Assume failure
 
-    printf("BridgeAddon.cpp: RunBridge() jsonString = %s\n", jsonString);                       // [NEEDSWORK] This line just for testing.  Remove later.
-
-    //BridgeNative::logMessageToJs("INFO", "BridgeAddon.cpp: RunBridge()");                       // [NEEDSWORK] This line just for testing.  Remove later.
-    //BridgeNative::SendMessage("BridgeAddon.cpp: RunBridge()");                                  // [NEEDSWORK] This line just for testing.  Remove later.
-
-    Napi::String encodedToken = BridgeNative::RequestToken();                                   // [NEEDSWORK] This line just for testing.  Remove later.
-    BridgeNative::SendMessage(encodedToken.Utf8Value().c_str());                                // [NEEDSWORK] This line just for testing.  Remove later.
+    // [NEEDSWORK] Convert all printf statements to  BridgeNative::logMessageToSEQ() after refactor to pass correct category string (see imodel02 source)
+    printf("printf: BridgeAddon.cpp: RunBridge() jsonString = %s\n", jsonString);   // [NEEDSWORK] This line just for testing.  Remove later.
+ 
+    //BridgeNative::logMessageToSEQ("INFO", "BridgeAddon.cpp: RunBridge()");        // [NEEDSWORK] This line just for testing.  Remove later.
+    BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() BEGIN");                 // [NEEDSWORK] This line just for testing.  Remove later.
     
-    printf("BridgeAddon.cpp: RunBridge() new token = %s\n", encodedToken.Utf8Value().c_str());  // [NEEDSWORK] This line just for testing.  Remove later.
-
+    // Convert JSON string into a JSON object
     Json::Value json;
     Json::Reader::Parse(jsonString, json); 
 
     // [NEEDSWORK] This block just for testing.  Remove later.
-    printf("BridgeAddon.cpp: List of json members:\n");
-    bvector<Utf8String> memberNames = json.getMemberNames();
-    for(unsigned int ii = 0; ii < memberNames.size(); ++ii) {
-        BentleyB0200::Utf8String memberName = memberNames[ii];
-        Json::Value value = json[memberName];
-        printf("BridgeAddon.cpp: RunBridge() json[%s] = %s\n", memberName.c_str(), value.toStyledString().c_str());
-    }
+    // BridgeNative::logMessage("BridgeAddon.cpp: List of json members:");
+    // bvector<Utf8String> memberNames = json.getMemberNames();
+    // for(unsigned int ii = 0; ii < memberNames.size(); ++ii) {
+    //     BentleyB0200::Utf8String memberName = memberNames[ii];
+    //     Json::Value value = json[memberName];
+    //     printf("printf: BridgeAddon.cpp: RunBridge() json[%s] = %s\n", memberName.c_str(), value.toStyledString().c_str());
+    // }
 
     bvector<WString> args;
 
@@ -228,16 +245,27 @@ int RunBridge(Env env, const char* jsonString)
     MAKE_ARGC_ARGV(argptrs, args);
 
     if(1 == argc) {
-        printf("BridgeAddon.cpp: RunBridge() No valid members passed in json\n");
+        BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() No valid members passed in json");
         return status;    
     }
 
     // [NEEDSWORK] This block just for testing.  Remove later.
-    printf("BridgeAddon.cpp: RunBridge() argv[]:\n");
+    BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() argv[]:");
     for(int ii = 0; ii < argc; ++ii) {
-       printf("BridgeAddon.cpp: argv[%d] = %S\n", ii, argv[ii]); 
+        char buffer [MAX_PATH];
+        sprintf(buffer, "BridgeAddon.cpp: argv[%d] = %S", ii, argv[ii]);
+        BridgeNative::logMessage(buffer);
     }
-   
+
+    // [NEEDSWORK] Simulate a long running process by sleeping for 30 seconds
+    //             Note: BridgeNative::RequestToken() returns a Promise, not a string.  I don't know how to 'await' its execution.
+    // BeThreadUtilities::BeSleep(10000);
+    // Napi::String encodedToken = BridgeNative::RequestToken();  
+    // BridgeNative::logMessage(encodedToken.Utf8Value().c_str());                                
+    // BeThreadUtilities::BeSleep(10000);
+    status = 0;     // Indicate success
+
+/* [NEEDSWORK] Below works, but commented out until I finish debugging all the surrounding code.  -- John Majerle      
     try {
         Dgn::iModelBridgeFwk app;
 
@@ -254,6 +282,9 @@ int RunBridge(Env env, const char* jsonString)
         printf("BridgeAddon.cpp: RunBridge() exception occurred bridging the file\n");
         return status;
     }
+*/
+
+    BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() END"); // [NEEDSWORK] This line just for testing.  Remove later.
 
     return status;
     }
