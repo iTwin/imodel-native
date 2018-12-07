@@ -1,0 +1,176 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: DgnV8/Tests/Tests.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+programName = DgnV8ConverterTests
+baseDir =   $(_MakeFilePath)
+
+BEGTEST_INPUT=$(baseDir)
+ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hopefully by the time permissive is Microsoft's default, Vancouver will have patched header files.
+
+%include mdl.mki
+
+
+dirToSearch = $(BuildContext)SubParts/UnitTests/include
+%include cincapnd.mki
+
+iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+
+dirToSearch  = $(iModelBridgePrivateAPISrc)
+%include cincapnd.mki
+
+
+# Need to ignore this because it's in Vancouver's header files.
+%if defined(MSVC_VERSION)
+%if MSVC_VERSION >= 1900
+    # C4312: 'type cast': conversion from '...' to '...' of greater size
+    CCompOpts + -wd4312
+
+    # C4091: '... ': ignored on left of '...' when no variable is declared
+    CCompOpts + -wd4091
+%endif
+%endif
+
+%ifdef DGNV8_DGNPLATFORM_SDK
+    cDefs +% -DDGNV8_DGNPLATFORM_SDK
+%endif
+
+# We don't want to run the test from the build location because the dependencies are not there.
+GUNITTEST_NOEXEC = 1
+
+BEGTEST_NAME=$(programName)
+BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+
+TestsHeaders = $(baseDir)Tests.h $(baseDir)ConverterTestsBaseFixture.h $(baseDir)ImportConfigeditor.h $(baseDir)GeomTestHelper.h
+
+# Let all stand-alone tests share the same gtestmain and TestFixture objects.
+o = $(OutputRootDir)build/DgnDbSync/$(programName)/
+
+always:
+    !~@mkdir $(o)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)gtestmain.obj               : $(BEGTEST_INPUT)gtestmain.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)Admins.obj                  : $(BEGTEST_INPUT)Admins.cpp                    $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ConverterTestsBaseFixture.obj : $(BEGTEST_INPUT)ConverterTestsBaseFixture.cpp $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)V8FileEditor.obj            : $(BEGTEST_INPUT)V8FileEditor.cpp              $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ConverterTests.obj          : $(BEGTEST_INPUT)ConverterTests.cpp            $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ECTests.obj                 : $(BEGTEST_INPUT)ECTests.cpp                   $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ModelTests.obj              : $(BEGTEST_INPUT)ModelTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)MultiBridgeTests.obj        : $(BEGTEST_INPUT)MultiBridgeTests.cpp          $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)DrawingTests.obj            : $(BEGTEST_INPUT)DrawingTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)SyncInfoReader.obj          : $(BEGTEST_INPUT)SyncInfoReader.cpp            $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ImportConfigEditor.obj      : $(BEGTEST_INPUT)ImportConfigEditor.cpp        $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ImportConfigTests.obj       : $(BEGTEST_INPUT)ImportConfigTests.cpp         $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)DgnMaterial_Tests.obj       : $(BEGTEST_INPUT)DgnMaterial_Tests.cpp         $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)BasicGeometryTests.obj      : $(BEGTEST_INPUT)BasicGeometryTests.cpp        $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)LevelTests.obj              : $(BEGTEST_INPUT)LevelTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)GeomTestHelper.obj          : $(BEGTEST_INPUT)GeomTestHelper.cpp            $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)NamedGroupTests.obj         : $(BEGTEST_INPUT)NamedGroupTests.cpp           $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)V8AttachmentTests.obj       : $(BEGTEST_INPUT)V8AttachmentTests.cpp         $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ECSchemaTests.obj           : $(BEGTEST_INPUT)ECSchemaTests.cpp             $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)BeXmlCompareHelper.obj      : $(BEGTEST_INPUT)BeXmlCompareHelper.cpp        $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)TagTests.obj                : $(BEGTEST_INPUT)TagTests.cpp                  $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)DimensionTests.obj          : $(BEGTEST_INPUT)DimensionTests.cpp            $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ConverterCommandBuilder.obj : $(BEGTEST_INPUT)ConverterCommandBuilder.cpp   $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ConverterAppTestsBaseFixture.obj : $(BEGTEST_INPUT)ConverterAppTestsBaseFixture.cpp        $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ConverterAppTests.obj       : $(BEGTEST_INPUT)ConverterAppTests.cpp         $(TestsHeaders) ${MultiCompileDepends}
+
+#$(o)StyleTests.obj             : $(BEGTEST_INPUT)StyleTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)RasterTests.obj             : $(BEGTEST_INPUT)RasterTests.cpp               $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)TextBlockTests.obj          : $(BEGTEST_INPUT)TextBlockTests.cpp            $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ItemTypeTests.obj           : $(BEGTEST_INPUT)ItemTypeTests.cpp             $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ViewTests.obj               : $(BEGTEST_INPUT)ViewTests.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ConvertToDgnDbElementExtensionTests.obj : $(BEGTEST_INPUT)ConvertToDgnDbElementExtensionTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(programName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib
+GUNITTEST_PATH      = $(o)
+GUNITTEST_SYMB      = $(o)
+GTEST_MAIN_IS_SUPPLIED = 1
+
+# This macro is used by gtestobj.mki
+#GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
+#%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+
+LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/Bentley.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/BentleyAllocator.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/BentleyGeom.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/ECObjects.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/RmgrTools.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/RasterCore.lib
+
+%include $(SharedMki)gunittest.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
+
+$(BuildContext)Delivery/$(programName).logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/ImportConfig.xsd : $(baseDir)../ImportConfig/ImportConfig.xsd
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/ImportConfig.xml : $(baseDir)../ImportConfig/ImportConfig.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/DgnDbSyncTestData/ : $(baseDir)data/
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/NamedGroupTestSchema_DgnDbSync.01.00.ecschema.xml : $(baseDir)data/Schemas/NamedGroupTestSchema_DgnDbSync.01.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+# Create the sqlang database
+SQLANG_OutputDb     = $(o)DgnV8ConverterTests_en-US.sqlang.db3
+SQLANG_DeliveryDir  = $(BuildContext)Delivery/
+SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
+%include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke

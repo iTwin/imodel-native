@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\PublicAPI\BimFromDgnDb\BimFromDgnDb.h" />
+    <ClInclude Include="..\..\PublicAPI\BimFromDgnDb\BimFromJson.h" />
+    <ClInclude Include="exe\BimImporter.h" />
+    <ClInclude Include="lib\BimFromJsonImpl.h" />
+    <ClInclude Include="lib\Readers.h" />
+    <ClInclude Include="lib\SchemaFlattener.h" />
+    <ClInclude Include="lib\SyncInfo.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="exe\BimImporter.cpp" />
+    <ClCompile Include="lib\BimFromJson.cpp" />
+    <ClCompile Include="lib\BimFromJsonImpl.cpp" />
+    <ClCompile Include="lib\Readers.cpp" />
+    <ClCompile Include="lib\SchemaFlattener.cpp" />
+    <ClCompile Include="lib\SyncInfo.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\logging.config.xml" />
+    <None Include="exe\BimImporter.mke" />
+    <None Include="lib\BimFromJson.mke" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{ADB99DEE-1E0E-4A7C-A0DF-9CD247C4D1D5}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeOutput>$(OutRoot)Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -f DgnDbSync -r DgnDbSync -p ConceptStationDgnV8ConverterExe re ConceptStationDgnV8ConverterExe </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine> bb -p ConceptStationDgnV8ConverterDLL -f DgnDbSync -r DgnDbSync -ax64 re ConceptStationDgnV8ConverterDLL  </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild DgnV8ConverterDLL -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir)\PublicAPI\;$(ProjectDir)\PublicAPI\DgnDbSync\;$(ProjectDir)\DgnV8\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\DgnDbSync\VendorAPI\;$(OutRoot)Winx64\BuildContexts\DgnDbSync\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>DgnDbSync.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

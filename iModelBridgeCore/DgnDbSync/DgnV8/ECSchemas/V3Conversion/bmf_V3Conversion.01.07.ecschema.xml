@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="bmf_V3Conversion" nameSpacePrefix="bmfv3" version="1.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="LIST_DEFINITIONS" description="List attribute definitions" displayLabel="List Attribute Definitions" isStructClass="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="bmf_display_list_attributes" description="Display list attributes" displayLabel="Display List Attributes" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="CLASSNAME_DISPLAY_LIST" description="Class name display list" displayLabel="Class Name Display List" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMPONENT_FIXED_TEXT_LIST" description="Component fixed text list" displayLabel="Component Fixed Text List" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DISPLAYABLE_PROPERTY_CLASSES" description="Displayable property classes and categories" displayLabel="Displayable Property Classes and Categories" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DOUBLES_LIST" description="Doubles list" displayLabel="Doubles List" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INTEGER_LIST" description="Integer list" displayLabel="Integer List" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RELATIONSHIP_CLASS_MAPPING" description="Relationship Class Mapping" displayLabel="Relationship Class Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SIZE_NUMERIC_DISPLAY" description="Size numeric display" displayLabel="Size Numeric Display" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRING_LIST" description="String list" displayLabel="String List" isDomainClass="false" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TO_FROM_DATA" description="To from data" displayLabel="To from data" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VALUE_DESCRIPTION_ATTRIBUTE" description="Value description attribute" displayLabel="Value description attribute" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VALUE_KEYIN_ATTRIBUTE" displayLabel="Value keyin attribute" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VALUE_PROPERTY_TEMPLATE_ATTRIBUTE" displayLabel="Value Property Template attribute" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
+</ECSchema>
+

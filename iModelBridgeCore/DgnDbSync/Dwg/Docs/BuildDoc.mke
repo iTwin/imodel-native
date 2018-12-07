@@ -1,0 +1,89 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: Dwg/Docs/BuildDoc.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir         = $(_MakeFilePath)
+publicDwgApi    = $(SrcRoot)DgnDbSync/PublicAPI/Dwg/
+
+# Config with RealDWG (i.e. AcDb prefix will appear in the API references)
+BENTLEY_DOXYGEN_CONFIG  = $(baseDir)realdwgimporter-doxygen.cfg
+BENTLEY_DOXYGEN_ALIASES = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen-html-aliases.cfg
+
+DOXYGEN_CONFIG_FILES    = $(BENTLEY_DOXYGEN_CONFIG)
+DOXYGEN_CONFIG_FILES    + $(BENTLEY_DOXYGEN_ALIASES)
+DOXYGEN_CONFIG_FILES    + $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.css
+
+#----------------------------------------------------------------------------------------
+#   Output directory macros
+#----------------------------------------------------------------------------------------
+DOXYGEN_OUTPUT      = $(OutputRootDir)build/Dwg/Docs/
+DOXYGEN_ARTIFACTS   = $(OutputRootDir)build/Dwg/DoxygenArtifacts/
+DOXYGEN_INPUT       = $(DOXYGEN_ARTIFACTS)input/
+DOXYGEN_WARN_LOGFILE= $(DOXYGEN_ARTIFACTS)doxygen-warnings.txt
+
+#----------------------------------------------------------------------------------------
+#   Handle "clean" of all output files
+#----------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) ${DOXYGEN_ARTIFACTS}
+        -$(rmdirRecursiveCmd) ${DOXYGEN_OUTPUT}
+
+    %return
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Doxygen inputs
+#----------------------------------------------------------------------------------------
+always:
+    !~@mkdir ${DOXYGEN_OUTPUT}
+    !~@mkdir ${DOXYGEN_INPUT}
+    !~@mkdir $(DOXYGEN_INPUT)images
+    ~linkdir "$(DOXYGEN_INPUT)api = ${publicDwgApi}"
+    ~linkdir "$(DOXYGEN_INPUT)overview = ${baseDir}"
+
+
+#----------------------------------------------------------------------------------------
+#   Run Doxygen
+#----------------------------------------------------------------------------------------
+$(DOXYGEN_ARTIFACTS)doxygen.cfg : $(DOXYGEN_CONFIG_FILES) $[@wildcard $(baseDir)*] $[@wildcard $(publicDwgApi)*.h] $(_MakeFileSpec)
+    $(msg)
+    > $(DOXYGEN_ARTIFACTS)doxygen.cfg
+    @INCLUDE = $(BENTLEY_DOXYGEN_CONFIG)
+    @INCLUDE = $(BENTLEY_DOXYGEN_ALIASES)
+    PROJECT_NAME        = "DwgImporter API Documentation"
+    WARN_LOGFILE        = $(DOXYGEN_WARN_LOGFILE)
+    QUIET               = $(DOXYGEN_QUIET)
+    INPUT               = $(DOXYGEN_INPUT)
+    OUTPUT_DIRECTORY    = $(DOXYGEN_OUTPUT)
+    HTML_OUTPUT         = $(DOXYGEN_OUTPUT)html/
+    INCLUDE_PATH        = $(DOXYGEN_INPUT)
+    IMAGE_PATH          = $(DOXYGEN_INPUT)images/
+    DOT_PATH            = $(DOXYGEN_DOT_PATH)
+    GENERATE_HTML       = YES
+    GENERATE_XML        = NO
+    GENERATE_HTMLHELP   = NO
+    HHC_LOCATION        =
+    FILE_PATTERNS       = *.doxpage *.h
+    <
+    !$(doxygenCmd) $(DOXYGEN_ARTIFACTS)doxygen.cfg
+    ~time
+
+%if $[@readfile $(DOXYGEN_WARN_LOGFILE)] != " "
+    %warn ********************
+    %warn * DOXYGEN Warnings *
+    %warn ********************
+    %warn $[@readfile $(DOXYGEN_WARN_LOGFILE)]
+
+    %warn ********************
+    %error DOXYGEN warnings treated as build error
+%endif
+
+$(BuildContext)Delivery/docs : ${DOXYGEN_OUTPUT}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+

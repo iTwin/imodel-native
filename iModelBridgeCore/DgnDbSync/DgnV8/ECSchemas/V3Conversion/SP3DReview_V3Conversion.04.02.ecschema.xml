@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SP3DReview_V3Conversion" nameSpacePrefix="sp3drv3" version="1.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECRelationshipClass typeName="Instrument_ValveOperators" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+</ECSchema>
+

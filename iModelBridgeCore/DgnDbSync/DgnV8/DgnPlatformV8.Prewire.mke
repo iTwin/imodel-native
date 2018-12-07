@@ -1,0 +1,378 @@
+#----------------------------------------------------------------------
+#
+#     $Source: DgnV8/DgnPlatformV8.Prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+%ifdef DGNV8_DGNPLATFORM_SDK
+    DgnV8Sdk=${DGNV8_DGNPLATFORM_SDK}/
+    %ifnofile ${DGNV8_DGNPLATFORM_SDK}
+        %error $(DGNV8_DGNPLATFORM_SDK) not found. Make sure DGNV8_DGNPLATFORM_SDK points to Product\V8_InternalSDK directory in your V8 output tree.
+    %endif
+%else
+    DgnV8Sdk=$(BuildContext)nuget/native/V8_InternalSDKNuget/
+%endif
+
+Delivery=$(BuildContext)Delivery/
+
+o = $(OutputRootDir)build/DgnV8VersionedApi/
+
+# Don't blindly include everything in Vancouver's SDK. It has already grown to be more than our converter needs, so we need to whitelist what we actually use to prevent bloat and potential conflicts.
+%include $(basedir)DgnPlatformV8.PrewireLibsAndData.mki
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    cleanopt = --clean
+%else
+    cleanopt =
+%endif
+
+%if defined (VERBOSE)
+    PUBLISH_VERBOSE = -v6
+%else
+    PUBLISH_VERBOSE = -v3   # INFO_LEVEL_VeryInteresting
+%endif
+
+always:
+    !~@mkdir $(o)
+    >$(o)symbolsToPrefix
+ADIM_GETSEG
+ADIM_GETSUB
+ADIM_GETTYPE
+BASEGEOCOORD_EXPORTED
+BASEMANAGEDGCS_EXPORTED
+BC__RW
+BC__RWSTD_LIB_SRC
+BENTLEYTERRAINMODEL_NAMESPACE_NAME
+DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGNPLATFORM_TEXTEDITOR_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_GEOMETRY_INTERNAL_NAMESPACE
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+BEGIN_BENTLEY_LOGGING_NAMESPACE
+BEGIN_BENTLEY_MRDTM_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
+BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+BEGIN_DGNPLATFORM_DGNHISTORY_NAMESPACE
+BEGIN_RASTER_NAMESPACE
+BENTLEYALLOCATOR_EXPORT
+BENTLEY_BSTDCXX
+BENTLEY_GEOMETRY_INTERNAL_NAMESPACE_NAME
+BENTLEY_NAMESPACE_NAME
+BENTLEY_NAMESPACE_TYPEDEFS
+BENTLEY_REF_COUNTED_PTR
+BENTLEY_TYPEDEFS
+BENTLEY_UTIL_BTREE_BTREE_CONTAINER_H__
+BENTLEY_UTIL_BTREE_BTREE_H__
+BENTLEY_UTIL_BTREE_bmap_H__
+COORDSYS_
+CSMAPERR_
+CSMapErrors
+DC_NOTE
+DECLARE_DSPIRAL2DBASE_OVERRIDES
+DECLARE_KEY_METHOD
+DEFAULT_SPIRAL_MAX_STROKE_LENGTH
+DEFINE_BENTLEY_REF_COUNTED_MEMBERS
+DEFINE_GEOM_CLASS
+DEFINE_GEOM_STRUCT
+DELETE_AND_CLEAR
+DEPENDENCYAPPID_
+DEPENDENCY_
+DGNGEOCOORD_EXPORTED
+DGNPLATFORM_CLASS_TYPEDEFS
+DGNPLATFORM_REF_COUNTED_PTR
+DGNPLATFORM_TYPEDEF
+DGNPLATFORM_TYPEDEFS
+DGNPLATFORM_TYPEDEFS_EX
+DGNV8__RWSTD_MAP_INCLUDED
+DIMTYPE_ANGULAR_MASK
+DIMTYPE_ANGULAR_MASK2
+DIMTYPE_LABELLINE_MASK
+DIMTYPE_LINEAR_MASK
+DIMTYPE_NOTE_MASK
+DIMTYPE_ORDINATE_MASK
+DIMTYPE_RADIAL_MASK
+DIM_ANGULAR
+DIM_LABELLINE
+DIM_LINEAR
+DIM_NOTE
+DIM_ORDINATE
+DIM_RADIAL
+DTMAppDataKey
+DTMAppDataList
+DTMBrowseSinglePointFeatureCallback
+DTMCleanupFlags
+DTMContourSmoothing
+DTMDrapedLineCode
+DTMDrapePointCode
+DTMFeatureCallback
+DTMFeatureIdConst
+DTMFeatureType
+DTMFenceOption
+DTMFenceType
+DTMPondDesignMethod
+DTMPondResult
+DTMPondTarget
+DTMState
+DTMStatusInt
+DTMTriangleHillShadeMeshCallback
+DTMTriangleMeshCallback
+DTMTriangleShadeMeshCallback
+DTMUserTagConst
+DTM_ERROR
+DTM_NULL_FEATURE_ID
+DTM_NULL_USER_TAG
+DTM_SUCCESS
+EC_TYPEDEFS
+ELEMENTHANDLER_DECLARE_MEMBERS
+ELEMENTHANDLER_DECLARE_MEMBERS_NOCTOR
+ELEMENTHANDLER_DECLARE_MEMBERS_NO_CTOR
+ELEMENTHANDLER_DEFINE_MEMBERS
+ELEMENTHANDLER_EXTENSION_DECLARE_MEMBERS
+ELEMENTHANDLER_EXTENSION_DEFINE_MEMBERS
+ELEMENTHANDLER_INSTANCE
+ENABLE_SCOPE_LOGGING
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGNPLATFORM_TEXTEDITOR_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_GEOMETRY_INTERNAL_NAMESPACE
+END_BENTLEY_GEOMETRY_NAMESPACE
+END_BENTLEY_LOGGING_NAMESPACE
+END_BENTLEY_MRDTM_NAMESPACE
+END_BENTLEY_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE
+END_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
+END_BENTLEY_SCALABLEMESH_NAMESPACE
+END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
+END_BENTLEY_TERRAINMODEL_NAMESPACE
+END_DGNPLATFORM_DGNHISTORY_NAMESPACE
+END_RASTER_NAMESPACE
+ENUM_IS_FLAGS
+EXPR_TYPEDEFS
+FREE_AND_CLEAR
+GEOCOORD_TYPEDEFS
+GEOMAPI_PRINTF
+GLOBAL_TYPEDEF
+GLOBAL_TYPEDEF1
+HCRYPTHASH
+HCRYPTKEY
+HCRYPTPROV
+LAST_SNAP_MODE
+LEVEL_DEFAULT_LEVEL_ID
+LEVEL_NULL_ID
+LINKS_START
+LOGNAME
+MS_BSPLINE_STRUCTURES_DEFINED
+MdlDescP
+NAMESPACE_BENTLEY_BSTDCXX_BEGIN
+NAMESPACE_BENTLEY_BSTDCXX_END
+POINTCLOUD_TYPEDEFS
+POINTCLOUD_TYPEDEFS_PTR
+RASTER_TYPEDEFS
+RASTER_REF_COUNTED_PTR
+RELEASE_AND_CLEAR
+TERRAINMODEL_ENUM
+TERRAINMODEL_TYPEDEFS
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGNPLATFORM_TEXTEDITOR
+USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
+USING_NAMESPACE_EC
+USING_NAMESPACE_RASTER
+UTIL_BTREE_BTREE_SET_H__
+_RWSTD_ANSI_C_LIMITS_H
+_RWSTD_ASSERT
+_RWSTD_ASSUME
+_RWSTD_ATOMIC_IO_SWAP
+_RWSTD_ATOMIC_SWAP
+_RWSTD_ATTRIBUTE_NORETURN
+_RWSTD_DECLARE_NOTHROW
+_RWSTD_DEFAULT_BUFSIZE         // specified on command line?
+_RWSTD_DEFINE_EXTERNS
+_RWSTD_DEFINE_NOTHROW
+_RWSTD_DISPATCH
+_RWSTD_DLLIMPORT
+_RWSTD_INSTANTIATE_FUN_1
+_RWSTD_LDBL_PRINTF_PREFIX
+_RWSTD_LDBL_SCANF_PREFIX
+_RWSTD_LIBC_SYM
+_RWSTD_LONG_LONG
+_RWSTD_MAP_INCLUDED
+_RWSTD_MT_CLASS_GUARD
+_RWSTD_MT_GUARD
+_RWSTD_MT_STATIC_GUARD
+_RWSTD_NEW_CAPACITY
+_RWSTD_NO_ALIGN_TRAITS
+_RWSTD_NO_CLASS_PARTIAL_SPEC
+_RWSTD_NO_CLASS_PARTIAL_SPEC 
+_RWSTD_NO_COLLAPSE_TEMPLATE_STATICS
+_RWSTD_NO_DEBUG_ITER
+_RWSTD_NO_DEFAULT_TEMPLATE_ARGS
+_RWSTD_NO_DEPENDENT_TEMPLATE
+_RWSTD_NO_DEPRECATED_C_HEADERS
+_RWSTD_NO_DEPRECATED_LIBC_IN_STD
+_RWSTD_NO_DUMMY_DEFAULT_ARG
+_RWSTD_NO_DYNAMIC_CAST
+_RWSTD_NO_EMPTY_MEM_INITIALIZER
+_RWSTD_NO_EXCEPTIONS
+_RWSTD_NO_EXCEPTION_SPECIFICATION_ON_NEW
+_RWSTD_NO_EXPLICIT_INSTANTIATION_BEFORE_DEFINITION
+_RWSTD_NO_EXPLICIT_INSTANTIATION_WITH_IMPLICIT_INCLUSION
+_RWSTD_NO_EXPORT
+_RWSTD_NO_EXTERN_TEMPLATE
+_RWSTD_NO_EXT_BIN_IO
+_RWSTD_NO_EXT_DEEP_STRING_COPY
+_RWSTD_NO_EXT_REENTRANT_IO
+_RWSTD_NO_EXT_VECTOR_ASSIGN_IN_PLACE
+_RWSTD_NO_EXT_VECTOR_INSERT_IN_PLACE
+_RWSTD_NO_FUNCTION_EXPLICIT_INSTANTIATION
+_RWSTD_NO_FUNC_PARTIAL_SPEC
+_RWSTD_NO_HONOR_STD
+_RWSTD_NO_IMPLICIT_INCLUSION
+_RWSTD_NO_ISO_10646_WCHAR_T
+_RWSTD_NO_LIBC_EXCEPTION_SPEC
+_RWSTD_NO_LIBC_IN_STD
+_RWSTD_NO_LONG_LONG
+_RWSTD_NO_MUTABLE
+_RWSTD_NO_NAMESPACE
+_RWSTD_NO_NATIVE_BOOL
+_RWSTD_NO_NATIVE_IO
+_RWSTD_NO_NATIVE_WCHAR_T
+_RWSTD_NO_NEW_HEADER
+_RWSTD_NO_NONCLASS_ARROW_RETURN
+_RWSTD_NO_NONDEDUCED_CONTEXT
+_RWSTD_NO_OPTIMIZE_SPEED
+_RWSTD_NO_PART_SPEC_OVERLOAD
+_RWSTD_NO_PRETTY_FUNCTION
+_RWSTD_NO_PTR_VALUE_TEMPLATE_OVERLOAD
+_RWSTD_NO_PURE_C_HEADERS
+_RWSTD_NO_SIMPLE_DEFAULT_TEMPLATES
+_RWSTD_NO_SPECIALIZATION_ON_RETURN_TYPE
+_RWSTD_NO_SPECIALIZED_FACET_ID
+_RWSTD_NO_STATICS_IN_TEMPLATE
+_RWSTD_NO_STATIC_CAST
+_RWSTD_NO_STATIC_CONST_MEMBER_DEFINITION
+_RWSTD_NO_STATIC_CONST_MEMBER_INIT
+_RWSTD_NO_STATIC_MUTEX_INIT
+_RWSTD_NO_STD_UNCAUGHT_EXCEPTION
+_RWSTD_NO_STL_SPECIALIZATION
+_RWSTD_NO_STRING_MUTEX
+_RWSTD_NO_STRING_NPOS_TYPE
+_RWSTD_NO_STRING_OUTLINED_MEMBER_TEMPLATES
+_RWSTD_NO_STRING_REF_COUNT
+_RWSTD_NO_STRTOLL
+_RWSTD_NO_STRTOULL
+_RWSTD_NO_TEMPLATE_ON_RETURN_TYPE
+_RWSTD_NO_TLS
+_RWSTD_NO_WCHAR_H
+_RWSTD_NO_WCHAR_T
+_RWSTD_NO_WCSFTIME
+_RWSTD_NO_WCSFTIME_WCHAR_T_FMAT
+_RWSTD_NO_WCSTOK
+_RWSTD_NO_WCSTOK_IN_LIBC
+_RWSTD_NO_WCTYPE_H
+_RWSTD_PATH_SEP
+_RWSTD_REENTRANT
+_RWSTD_RW_ALLOCATOR_H_INCLUDED
+_RWSTD_RW_CONFIG_H_INCLUDED
+_RWSTD_RW_DEFS_H_INCLUDED
+_RWSTD_RW_FUNCBASE_H_INCLUDED
+_RWSTD_RW_ITERATOR_H_INCLUDED
+_RWSTD_RW_ITERBASE_H_INCLUDED
+_RWSTD_RW_MUTEX_H_INCLUDED
+_RWSTD_RW_NEW_H_INCLUDED
+_RWSTD_RW_PAIR_H_INCLUDED
+_RWSTD_RW_SELECT_H_INCLUDED
+_RWSTD_RW_SPECIALIZED_H_INCLUDED
+_RWSTD_RW_STRINGIO_H_INCLUDED
+_RWSTD_RW_STRREF_H_INCLUDED
+_RWSTD_RW_TRAITS_H_INCLUDED
+_RWSTD_RW_TREE_H_INCLUDED
+_RWSTD_SET_INCLUDED
+_RWSTD_SSIZE_T
+_RWSTD_STRICT_ANSI
+_RWSTD_STRING_ATOMIC_SWAP
+_RWSTD_STRING_INCLUDED
+_RWSTD_THREAD
+_RWSTD_THREAD_PREDECREMENT
+_RWSTD_THREAD_PREINCREMENT
+_RWSTD_THREAD_SWAP
+_RWSTD_TMPBUF_SIZE
+_RWSTD_USE_STRING_ATOMIC_OPS
+_RWSTD_UWCHAR_INT_T
+_RWSTD_VECTOR_INCLUDED
+_RWSTD_WINT_T
+COORDSYS_
+CSMAPERR_
+dpoint2d_H_
+dpoint3d_H_
+dvec2d_H_
+dvec3d_H_
+rotmatrix_H_
+transform_H_
+CSMapErrors
+<
+
+headersOutputBaseDir = $(o)include/
+includeDirPrefix = VersionedDgnV8Api
+modifiedHeadersOutputBaseDir = $(headersOutputBaseDir)$(includeDirPrefix)/
+bentleyIncludeDir = $(headersOutputBaseDir)Bentley/
+
+# DgnV8 API special cases:
+#
+# DgnDb moved VirtualCollectionIterator.h from Bentley and into ECObjects. Therefore, #include <Bentley/VirtualCollectionIterator.h> in DgnV8 header files will fail.
+# Since there is only one copy of "Bentley" and it is going to be the DgnDb version, the DgnV8 header files will have to look for VirtualCollectionIterator.h somewhere else.
+# We create a new directory called "BentleyV8" and put DgnV8's VirtualCollectionIterator.h there. We then modify the include statements in the DgnV8
+# header files to look for it there. Same story for ThumbnailPropertyValue.h
+#
+# The last three lines in 'replacements' below cause relative includes of Bentley .h files, such as Bentley.h, to become non-relative, so that relocated files
+# such as VirtualCollectionIterator.h will find the Bentley .h files in the correct location.
+#
+# Some of the items in 'replacements' are there to correct DgnV8 .h files that use incorrect "path/file.h" syntax to include headers from directories other
+# than sub-directories.
+#
+
+$(modifiedHeadersOutputBaseDir).stamp : $[@wildcard $(DgnV8Sdk)PublicAPI/*.h]
+    %iffile ${modifiedHeadersOutputBaseDir}
+        -$(rmdirRecursiveCmd) ${modifiedHeadersOutputBaseDir}
+    %endif
+    !~@mkdir ${modifiedHeadersOutputBaseDir}
+    !~@mkdir $(o)
+    ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedHeadersOutputBaseDir} -d$(DgnV8Sdk)PublicAPI $(cleanopt) --includeDirPrefix=$(includeDirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefix
+    ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedHeadersOutputBaseDir} -d$(DgnV8Sdk)VendorAPI $(cleanopt) --includeDirPrefix=$(includeDirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefix    
+    >$(o)replacements
+\"Bentley.h\"!<VersionedDgnV8Api\/Bentley\/Bentley.h>
+\"BeAssert.h\"!<VersionedDgnV8Api\/Bentley\/BeAssert.h>
+\"WString.h\"!<VersionedDgnV8Api\/Bentley\/WString.h>
+\"Bentley\/RefCounted.h\"!<VersionedDgnV8Api\/Bentley\/RefCounted.h>
+\"DgnPlatform\/Tools\/stlutil.h\"!"Tools/stlutil.h"
+\"RmgrTools\/Tools\/HeapzoneAllocator.h\"!<VersionedDgnV8Api\/RmgrTools\/Tools\/HeapzoneAllocator.h>
+\<RmgrTools\/Tools\/msstrlst.h\>!<VersionedDgnV8Api\/RmgrTools\/Tools\/msstrlst.h>
+\"RmgrTools\/Tools\/msstrlst.h\"!<VersionedDgnV8Api\/RmgrTools\/Tools\/msstrlst.h>
+\"RefCounted\.h\"!<VersionedDgnV8Api\/Bentley\/RefCounted.h>
+\"bvector\.h\"!<VersionedDgnV8Api\/Bentley\/bvector.h>
+\"DgnPlatform\/DgnTextStyle\.h\"!<VersionedDgnV8Api\/DgnPlatform\/DgnTextStyle.h>
+\<GeoCoord\/basegeocoord.h\>!<VersionedDgnV8Api\/GeoCoord\/basegeocoord.h>
+\<Mstn\/RealDwg\/rDwgAPI.h\>!<VersionedDgnV8Api\/Mstn\/RealDWG\/rDwgAPI.h>
+\<realdwg\/base\/dbmain.h\>!<VersionedDgnV8Api\/realdwg\/base\/dbmain.h>
+DgnDimStyleP!Bentley::DgnPlatform::DgnDimStyle*
+DgnDimStyleCP!const Bentley::DgnPlatform::DgnDimStyle*
+    <
+    python $(bsiScripts)RegexListReplace.py $(o)replacements ${modifiedHeadersOutputBaseDir}
+    >$@
+    created
+    <
+    ~time
+
+#----------------------------------------------------------------------------------------
+#   Deliver the results
+#----------------------------------------------------------------------------------------
+# Don't blindly include everything in Vancouver's SDK. It has already grown to be more than our converter needs, so we need to whitelist what we actually use to prevent bloat and potential conflicts.
+%include $(basedir)DgnPlatformV8.PrewireHeaders.mki
