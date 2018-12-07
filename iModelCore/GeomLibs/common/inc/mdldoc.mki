@@ -1,0 +1,75 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: common/inc/mdldoc.mki $
+#       $Date$
+#     $Author$
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#
+#       Make Include File to define rules for documentation extraction
+#
+#--------------------------------------------------------------------------------------
+
+%include HtmlHelp.mki
+
+mdldocCmd                   = $(srcGeomLibs)common/mdldoc/mdldoc.exe
+
+%if !defined (MDLDOC_OutDir)
+    %error MDLDOC_OutDir must be defined.
+%endif
+
+%if !defined (MDLDOC_Pass)
+    %error MDLDOC_Pass must be defined.
+%endif
+
+
+%if MDLDOC_Pass == 1
+    ActionComment = preprocessing doc $<
+    ExtraOptions = -F
+    TouchCommand =
+%else
+    ActionComment = compiling doc $<
+    ExtraOptions =
+    TouchCommand = $(touchCmd) $@
+
+    %if !defined (NO_MDLDOC_SPELLING)
+    ExtraOptions = -l$(MDLDOC_SpellDir)$*.txt
+    %endif
+%endif
+
+
+.(fdf,h).hp1:
+    |-----------------------------------------------------------------
+    |   $(ActionComment)
+    |-----------------------------------------------------------------
+    $(RemoveSpellCommand)
+    > $(MDLDOC_OutDir)make.opt
+    $(MDLDOC_Options)
+    $(ExtraOptions)
+    $&
+    <
+    $(mdldocCmd) @$(MDLDOC_OutDir)make.opt
+    $(TouchCommand)
+
+
+%if defined(BMAKE_DELETE_ALL_TARGETS) && MDLDOC_Pass == 1
+always:
+   |-----------------------------------------------------------------
+   |   Clean up before generating mdl documentation
+   |-----------------------------------------------------------------
+   -del $(MDLDOC_OutDir)$(MDLDOC_ProjectName).__c
+   -del $(MDLDOC_OutDir)$(MDLDOC_ProjectName).__k
+   %if MDLDOC_Pass == 1
+       -del $(MDLDOC_OutDir)$(MDLDOC_ProjectName).__s
+       -del $(MDLDOC_OutDir)$(MDLDOC_ProjectName).__t
+   %endif
+%endif
+
+
+.hhp.chm:
+    |-----------------------------------------------------------------
+    |   building $@
+    |-----------------------------------------------------------------
+    -$(hhc)  $<
+

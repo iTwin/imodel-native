@@ -1,0 +1,223 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6A0E7B2B-2B21-4180-A7CD-8F1CA68A5E17}</ProjectGuid>
+    <RootNamespace>GeomLibsTest</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(OutRoot)\Winx64\BuildContexts\geomlibs\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\Bentley\VendorAPI\;$(ProjectDir)\structsTest\;$(ProjectDir)\src\;$(ProjectDir)\RootTest\;$(ProjectDir)\PolylineOpsTest\;$(ProjectDir)\PolyfaceTest\;$(ProjectDir)\EigenTest\;$(ProjectDir)\CurvePrimitiveTest\;$(ProjectDir)\BsplineTest\;$(ProjectDir)\bezierTest\;$(OutRoot)\Winx64\BuildContexts\GeomLibsUnitTests\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(OutRoot)\Winx64\BuildContexts\geomlibs\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\Bentley\VendorAPI\;$(ProjectDir)\structsTest\;$(ProjectDir)\src\;$(ProjectDir)\RootTest\;$(ProjectDir)\PolylineOpsTest\;$(ProjectDir)\PolyfaceTest\;$(ProjectDir)\EigenTest\;$(ProjectDir)\CurvePrimitiveTest\;$(ProjectDir)\BsplineTest\;$(ProjectDir)\bezierTest\;$(OutRoot)\Winx64\BuildContexts\GeomLibsUnitTests\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="bezierTest\tests\BezierTriangle.h" />
+    <ClInclude Include="bezierTest\tests\GenericNewtonSolver.h" />
+    <ClInclude Include="bezierTest\tests\testHarness.h" />
+    <ClInclude Include="CurvePrimitiveTest\tests\frustumClipper.h" />
+    <ClInclude Include="CurvePrimitiveTest\tests\SampleGeometryCreator.h" />
+    <ClInclude Include="CurvePrimitiveTest\tests\testHarness.h" />
+    <ClInclude Include="MTGTest\tests\testHarness.h" />
+    <ClInclude Include="PerformanceTest\DataReader.h" />
+    <ClInclude Include="PerformanceTest\DbLogHelper.h" />
+    <ClInclude Include="PerformanceTest\GeomLibsTests.h" />
+    <ClInclude Include="PerformanceTest\PerformanceTestFixture.h" />
+    <ClInclude Include="PolyfaceTest\tests\testHarness.h" />
+    <ClInclude Include="SerializationTest\CGSerializationTestPCH.h" />
+    <ClInclude Include="src\CGWriter.h" />
+    <ClInclude Include="src\checkers.h" />
+    <ClInclude Include="src\CommonExport.h" />
+    <ClInclude Include="src\GeomTestFixture.h" />
+    <ClInclude Include="src\SampleGeometry.h" />
+    <ClInclude Include="src\StackExaminer.h" />
+    <ClInclude Include="src\StackExaminerGtestHelper.h" />
+    <ClInclude Include="src\StopWatch.h" />
+    <ClInclude Include="structsTest\tests\testHarness.h" />
+    <ClInclude Include="structsTest\tests\TMatrixOriginal.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="bezierTest\t_analyticRoots.cpp" />
+    <ClCompile Include="bezierTest\t_bezroot.cpp" />
+    <ClCompile Include="bezierTest\t_bspline1d.cpp" />
+    <ClCompile Include="bezierTest\t_ruledSurface.cpp" />
+    <ClCompile Include="BsplineTest\t_accessors.cpp" />
+    <ClCompile Include="BsplineTest\t_bsp.cpp" />
+    <ClCompile Include="BsplineTest\t_bsp1.cpp" />
+    <ClCompile Include="BsplineTest\t_bspline.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_AreaBoolean.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_catenary.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_cci.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_CurveBlend.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_CurvePrimitive.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_frustum.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_gapCleanup.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_IGeometry.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_linearAlgebra.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_MinDist.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_MTGFragmentSorter.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_mtgGraph.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_MTGLoopDetector.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_PathLocationDetail.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_polyfaceIntersection.cpp" />
+    <ClCompile Include="CurvePrimitiveTest\t_SolidPrimitive.cpp" />
+    <ClCompile Include="EigenTest\t_eigenLibrary.cpp" />
+    <ClCompile Include="PerformanceTest\DataReader.cpp" />
+    <ClCompile Include="PerformanceTest\DbLogHelper.cpp" />
+    <ClCompile Include="PerformanceTest\PerformanceTestFixture.cpp" />
+    <ClCompile Include="PerformanceTest\SerializationTests.cpp" />
+    <ClCompile Include="PolyfaceTest\t_localCoordinates.cpp" />
+    <ClCompile Include="PolyfaceTest\t_normals.cpp" />
+    <ClCompile Include="PolyfaceTest\t_pierce.cpp" />
+    <ClCompile Include="PolyfaceTest\t_polyface.cpp" />
+    <ClCompile Include="PolyfaceTest\t_rangeTree.cpp" />
+    <ClCompile Include="PolyfaceTest\t_section.cpp" />
+    <ClCompile Include="PolylineOpsTest\t_PolygonOps.cpp" />
+    <ClCompile Include="PolylineOpsTest\t_PolylineOps.cpp" />
+    <ClCompile Include="RootTest\polygonAccelerator.cpp" />
+    <ClCompile Include="RootTest\t_GaussKronrod.cpp" />
+    <ClCompile Include="RootTest\univariateRoots_test.cpp" />
+    <ClCompile Include="SerializationTest\CGBinarySerializationTests.cpp" />
+    <ClCompile Include="SerializationTest\CGSerializationTests.cpp" />
+    <ClCompile Include="src\CGWriter.cpp" />
+    <ClCompile Include="src\checkers.cpp" />
+    <ClCompile Include="src\SampleGeometry.cpp" />
+    <ClCompile Include="src\StackExaminer.cpp" />
+    <ClCompile Include="src\StackExaminerGtestHelper.cpp" />
+    <ClCompile Include="src\StopWatch.cpp" />
+    <ClCompile Include="structsTest\t_Angle.cpp" />
+    <ClCompile Include="structsTest\t_DEllipse3d.cpp" />
+    <ClCompile Include="structsTest\t_DMap4d.cpp" />
+    <ClCompile Include="structsTest\t_dMatrix4d.cpp" />
+    <ClCompile Include="structsTest\t_DPlane3d.cpp" />
+    <ClCompile Include="structsTest\t_DPoint2d.cpp" />
+    <ClCompile Include="structsTest\t_DPoint3d.cpp" />
+    <ClCompile Include="structsTest\t_DPoint4d.cpp" />
+    <ClCompile Include="structsTest\t_DRange1d.cpp" />
+    <ClCompile Include="structsTest\t_DRange2d.cpp" />
+    <ClCompile Include="structsTest\t_DRange3d.cpp" />
+    <ClCompile Include="structsTest\t_DRay3d.cpp" />
+    <ClCompile Include="structsTest\t_DSegment3d.cpp" />
+    <ClCompile Include="structsTest\t_DVec2d.cpp" />
+    <ClCompile Include="structsTest\t_dvec3d.cpp" />
+    <ClCompile Include="structsTest\t_FPoint3d.cpp" />
+    <ClCompile Include="structsTest\t_fRange3d.cpp" />
+    <ClCompile Include="structsTest\t_FVec3d.cpp" />
+    <ClCompile Include="structsTest\t_irishPolygons.cpp" />
+    <ClCompile Include="structsTest\t_operators.cpp" />
+    <ClCompile Include="structsTest\t_Polynomial.cpp" />
+    <ClCompile Include="structsTest\t_RotMatrix.cpp" />
+    <ClCompile Include="structsTest\t_Transform.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

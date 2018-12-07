@@ -1,0 +1,6 @@
+message SurfacePatch
+{
+required ICurveChain ExteriorLoop = 1;
+repeated ICurveChain HoleLoop = 2;
+}
+
