@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGdalUtilities.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -61,6 +61,7 @@ HCPGeoTiffKeys* HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(char const* pi_pOGC
 
     if (GTIFKeyGet(pGTIF, GTCitationGeoKey, CharVal, 0, 1))
         {
+        CharVal[sizeof(CharVal) - 1] = 0;
         pGeoTiffKeys->AddKey(GTCitationGeoKey, CharVal);
         }
 
@@ -71,6 +72,7 @@ HCPGeoTiffKeys* HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(char const* pi_pOGC
 
     if (GTIFKeyGet(pGTIF, GeogCitationGeoKey, CharVal, 0, 1))
         {
+        CharVal[sizeof(CharVal) - 1] = 0;
         pGeoTiffKeys->AddKey(GeogCitationGeoKey, CharVal);
         }
 
@@ -145,6 +147,7 @@ HCPGeoTiffKeys* HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(char const* pi_pOGC
 
     if (GTIFKeyGet(pGTIF, PCSCitationGeoKey, CharVal, 0, 1))
         {
+        CharVal[sizeof(CharVal) - 1] = 0;
         pGeoTiffKeys->AddKey(PCSCitationGeoKey, CharVal);
         }
 
@@ -270,6 +273,7 @@ HCPGeoTiffKeys* HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(char const* pi_pOGC
 
     if (GTIFKeyGet(pGTIF, VerticalCitationGeoKey, CharVal, 0, 1))
         {
+        CharVal[sizeof(CharVal) - 1] = 0;
         pGeoTiffKeys->AddKey(VerticalCitationGeoKey, CharVal);
         }
 
