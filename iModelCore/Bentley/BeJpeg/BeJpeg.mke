@@ -1,0 +1,29 @@
+#----------------------------------------------------------------------
+#     $Source: BeJpeg/BeJpeg.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+
+%include mdl.mki
+
+AppName = BeJpeg
+CCompPDBName = $(AppName)
+o = $(PartBuildDir)
+
+#----------------------------------------------------------------------
+always:
+    ~linkdir "$(BuildContext)PublicAPI/BeJpeg=$(_MakeFilePath)PublicAPI/BeJpeg"
+
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+$(o)BeJpeg$(oext) : $(_MakeFilePath)BeJpeg.cpp $(_MakeFilePath)PublicAPI/BeJpeg/BeJpeg.h
+
+#----------------------------------------------------------------------
+LIB_NAME = $(AppName)
+LIB_DEST = $(o)
+LIB_OBJS = $(o)BeJpeg$(oext)
+LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+
+%include creatlib.mki
