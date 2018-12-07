@@ -180,7 +180,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnClassId m_classId;
         DgnElementId  m_modeledElementId;
         DgnClassId m_modeledElementRelClassId;
-        bool m_isPrivate;
+        bool m_isPrivate = false;
         bool m_isTemplate = false;
 
         //! Parameters to create a new instance of a DgnModel.

@@ -53,25 +53,22 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                    Keith.Bentley                    11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Napi::Object DgnDb::GetJsTxns() 
-    {
+Napi::Object DgnDb::GetJsTxns() {
     return  m_jsIModelDb == nullptr ? Napi::Object() : m_jsIModelDb.Get("txns").As<Napi::Object>();  // should have a member object named "txns"
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                    Keith.Bentley                    11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Napi::String DgnDb::GetJsClassName(DgnElementId id) 
-    {
+Napi::String DgnDb::GetJsClassName(DgnElementId id) {
     auto el = Elements().Get<DgnElement>(id);
     return ToJsString(el.IsValid() ? el->GetElementClass()->GetFullName() : "");
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                    Keith.Bentley                    11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args) 
-    {
+void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args) {
     if (obj == nullptr)
         return;
 
@@ -83,13 +80,12 @@ void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi
         return;
     }
     func.As<Napi::Function>().Call(obj, args);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                    Keith.Bentley                    11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::RaiseJsEvent(Napi::Object obj, Utf8CP eventName, std::vector<napi_value> const& args) 
-    {
+void DgnDb::RaiseJsEvent(Napi::Object obj, Utf8CP eventName, std::vector<napi_value> const& args) {
     if (obj == nullptr)
         return;
 
@@ -102,7 +98,7 @@ void DgnDb::RaiseJsEvent(Napi::Object obj, Utf8CP eventName, std::vector<napi_va
     }
 
     CallJsFunction(event.As<Napi::Object>(), "raiseEvent", args);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 //not inlined as it must not be called externally

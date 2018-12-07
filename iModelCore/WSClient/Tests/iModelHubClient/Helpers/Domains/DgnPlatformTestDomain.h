@@ -14,7 +14,7 @@
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/ElementHandler.h>
-#include <DgnPlatform/DgnElementDependency.h>
+#include <DgnPlatform/ElementDependency.h>
 #include <DgnPlatform/TxnManager.h>
 
 #define DPTEST_SCHEMA_NAME                               "DgnPlatformTest"

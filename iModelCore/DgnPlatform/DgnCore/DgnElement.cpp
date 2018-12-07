@@ -390,6 +390,10 @@ DefinitionModelPtr DefinitionElement::GetDefinitionModel() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Subject::_OnInsert()
     {
+    // All Subjects (other than the Root Subject) must have a valid parent
+    if ((GetElementId() != GetDgnDb().Elements().GetRootSubjectId()) && !GetParentId().IsValid())
+        return DgnDbStatus::InvalidParent;
+
     // Subjects can only reside in the RepositoryModel
     return DgnModel::RepositoryModelId() == GetModel()->GetModelId() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
     }

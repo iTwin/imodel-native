@@ -72,6 +72,9 @@ LINKER_LIBRARIES   = $(BuildContextSubParts)libs/Bentley.lib
 
 DLM_OBJECT_FILES    = $(o)nativeinterop.obj $(o)managedinterop.obj
 
+# HACK for imodel02 PRG build lack of strong naming support
+ASSEMBLY_NO_TRANSKIT=1
+
 %include $(SharedMki)VersionedPartLinkMixedAssembly.mki
 
 

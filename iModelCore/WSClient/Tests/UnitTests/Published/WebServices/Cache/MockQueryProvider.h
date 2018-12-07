@@ -19,30 +19,19 @@ using namespace ::testing;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MockQueryProvider : public IQueryProvider
     {
-    public:
-        MOCK_CONST_METHOD1 (GetInitialQueries, bvector<IQueryProvider::Query>
-            (
-            CacheTransactionCR txn
-            ));
+    MOCK_CONST_METHOD3 (GetQueries, bvector<IQueryProvider::Query>
+        (
+        CacheTransactionCR txn,
+        ECInstanceKeyCR instanceKey,
+        bool isPersistent
+        ));
 
-        MOCK_CONST_METHOD1 (GetInitialInstances, bvector<ECInstanceKey>
-            (
-            CacheTransactionCR txn
-            ));
-
-        MOCK_CONST_METHOD3 (GetQueries, bvector<IQueryProvider::Query>
-            (
-            CacheTransactionCR txn,
-            ECInstanceKeyCR instanceKey,
-            bool isPersistent
-            ));
-
-        MOCK_CONST_METHOD3(IsFileRetrievalNeeded, ICancellationTokenPtr
-            (
-            CacheTransactionCR txn,
-            ECInstanceKeyCR instanceKey,
-            bool isPersistent
-            ));
+    MOCK_CONST_METHOD3(IsFileRetrievalNeeded, ICancellationTokenPtr
+        (
+        CacheTransactionCR txn,
+        ECInstanceKeyCR instanceKey,
+        bool isPersistent
+        ));
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

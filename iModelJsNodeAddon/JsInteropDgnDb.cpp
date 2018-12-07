@@ -461,6 +461,58 @@ DgnDbStatus JsInterop::InsertElementAspect(DgnDbR db, JsonValueCR aspectProps)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus JsInterop::UpdateElementAspect(DgnDbR db, JsonValueCR aspectProps)
+    {
+    DgnElement::RelatedElement relatedElement;
+    relatedElement.FromJson(db, aspectProps[json_element()]);
+    if (!relatedElement.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCPtr element = db.Elements().GetElement(relatedElement.m_id);
+    if (!element.IsValid())
+        return DgnDbStatus::MissingId;
+
+    DgnClassId aspectClassId = ECJsonUtilities::GetClassIdFromClassNameJson(aspectProps[DgnElement::json_classFullName()], db.GetClassLocater());
+    if (!aspectClassId.IsValid())
+        return DgnDbStatus::WrongClass;
+
+    ECClassCP aspectClass = db.Schemas().GetClass(aspectClassId);
+    if (nullptr == aspectClass)
+        return DgnDbStatus::BadSchema;
+
+    DgnElementPtr elementEdit = element->CopyForEdit();
+    if (!elementEdit.IsValid())
+        return DgnDbStatus::WriteError;
+
+    IECInstanceP aspect;
+    bool isMultiAspect = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
+    if (isMultiAspect)
+        {
+        ECInstanceId aspectId(BeInt64Id::FromString(aspectProps[DgnElement::json_id()].asCString()).GetValue());
+        aspect = DgnElement::GenericMultiAspect::GetAspectP(*elementEdit, *aspectClass, aspectId);
+        }
+    else
+        {
+        aspect = DgnElement::GenericUniqueAspect::GetAspectP(*elementEdit, *aspectClass);
+        }
+
+    if (nullptr == aspect)
+        return DgnDbStatus::NotFound;
+
+    std::function<bool(Utf8CP)> shouldConvertProperty = [aspectClass](Utf8CP propName) 
+        {
+        if ((0 == strcmp(propName, DgnElement::json_classFullName())) || (0 == strcmp(propName, json_element()))) return false;
+        return nullptr != aspectClass->GetPropertyP(propName);
+        };
+    if (BentleyStatus::SUCCESS != ECN::JsonECInstanceConverter::JsonToECInstance(*aspect, aspectProps, db.GetClassLocater(), shouldConvertProperty))
+        return DgnDbStatus::BadRequest;
+
+    return elementEdit->Update().IsValid() ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus JsInterop::DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr)

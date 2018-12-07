@@ -747,12 +747,13 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_PerformedTwiceWithWebApi2
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    BeMutex m_mutex;
+    BeMutex requestIdsMutex;
     set<Utf8CP> requestIds;
 
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
-    GetHandler().ForRequest(2, [=, &requestIds, &m_mutex] (Http::RequestCR request)
+    GetHandler().ForRequest(2, [&] (Http::RequestCR request)
         {
+        BeMutexHolder lock(requestIdsMutex);
         auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
         EXPECT_NE(nullptr, actualActivityId);
 
@@ -761,8 +762,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_PerformedTwiceWithWebApi2
         return StubHttpResponse(HttpStatus::OK);
         });
 
-    GetHandler().ForRequest(3, [=, &requestIds, &m_mutex] (Http::RequestCR request)
+    GetHandler().ForRequest(3, [&] (Http::RequestCR request)
         {
+        BeMutexHolder lock(requestIdsMutex);
         auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
         EXPECT_NE(nullptr, actualActivityId);
 

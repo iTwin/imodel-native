@@ -13,3 +13,11 @@ SeedFileTests.ReplaceWithoutLockediModel
 #   URL Validator - Should run after other tests have finished
 #----------------------------------------------------------------------------------------
 UrlValidator.WhitelistCheck
+
+WSRepositoryClientTests.SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId
+    # Fails randomly on x64 NDEBUG CI builds
+    # [ RUN      ] WSRepositoryClientTests.SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId
+    # D:\vsts_a\40\bbsrc\iModel02\iModelCore\WSClient\Tests\UnitTests\Published\WebServices\Client\WSRepositoryClientTests.cpp(771): error:       Expected: 2
+    # To be equal to: uniqueRequestIds
+    #       Which is: 1
+    # [  FAILED  ] WSRepositoryClientTests.SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId (0 ms)

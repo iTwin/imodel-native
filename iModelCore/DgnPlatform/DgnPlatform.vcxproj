@@ -91,7 +91,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnECSymbolProvider.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnECTypes.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnElement.h" />
-    <ClInclude Include="PublicAPI\DgnPlatform\DgnElementDependency.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\ElementDependency.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnFont.fb.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnFont.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnFontData.h" />
@@ -328,7 +328,7 @@
     <ClCompile Include="DgnCore\DrawAreaPattern.cpp" />
     <ClCompile Include="DgnCore\ECSqlClassParams.cpp" />
     <ClCompile Include="DgnCore\ECUtils.cpp" />
-    <ClCompile Include="DgnCore\ElementDependencyGraph.cpp" />
+    <ClCompile Include="DgnCore\ElementDependency.cpp" />
     <ClCompile Include="DgnCore\ElementGeometry.cpp" />
     <ClCompile Include="DgnCore\ElementGraphics.cpp" />
     <ClCompile Include="DgnCore\ElementUtil.cpp" />

@@ -23,7 +23,7 @@
 #include "RevisionManager.h"
 #include "Render.h"
 #include "LineStyle.h"
-#include "DgnElementDependency.h"
+#include "ElementDependency.h"
 #include "DgnDb.h"
 #include "CodeSpec.h"
 #include "ScanCriteria.h"

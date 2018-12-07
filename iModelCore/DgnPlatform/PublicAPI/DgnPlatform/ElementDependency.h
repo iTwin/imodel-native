@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/DgnElementDependency.h $
+|     $Source: PublicAPI/DgnPlatform/ElementDependency.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,30 +13,98 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct DgnElementDependencyGraph;
-
+namespace ElementDependency {
 
 //=======================================================================================
-//! Interface for element nodes in the dependency graph.
-// @bsiclass                                              Mindaugas.Butkus  04/18
+//! Base class for dependency handlers for the dgn.ElementDrivesElement ECRelationship class. 
+//! Subclasses should derive from this class, register it using DgnDomain::RegisterHandler, and override the virtual methods to do something useful
+//! @see ElementDependency::Graph.
 //=======================================================================================
-struct IDependencyGraphNode
+struct EXPORT_VTABLE_ATTRIBUTE Handler : DgnDomain::Handler {
+    DOMAINHANDLER_DECLARE_MEMBERS(BIS_REL_ElementDrivesElement, Handler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+
+    //! Called by DgnElementDependencyGraph after the ElementDrivesElement ECRelationship itself is created and then whenever the
+    //! source or target DgnElement is changed directly or by an upstream dependency.
+    //! @note This callback is \em not invoked when the source or target element is deleted. See _OnDeletedDependency
+    //! @param[in] graph The ElementDependency::Graph being evaluated.
+    //! @param[in] edge The relationship's data
+    virtual void _OnRootChanged(Graph const& graph, Edge const& ege) {}
+
+    //! Called by DgnElementDependencyGraph after the specified dependency is deleted.
+    //! @note A dependency relationship is automatically deleted when its source or target element is deleted.
+    //! @param[in] graph The ElementDependency::Graph being evaluated.
+    //! @param[in] edge The relationship's data (as of the time it was deleted)
+    virtual void _OnDeletedDependency(Graph const& graph, Edge const& edge) {}
+
+    //! Called by ElementDependency::Graph after all _OnRootChanged have been invoked, in the case where the output of this dependency is also the output of other dependencies.
+    //! The dependency handler should check that its requirements is still enforced. 
+    //! Call Txns::LogError to report a validation error.
+    //! @note The dependency handler should *not* modify the target element.
+    //! @param[in] graph The ElementDependency::Graph being evaluated.
+    //! @param[in] edge The relationship's data
+    virtual void _OnValidateOutput(Graph const& graph, Edge const& edge) {}
+};
+
+//! Indicates if changes have been propagated through an ECRelationship successfully or not.
+//! These are bits. The Deferred status and the Satisfied/Deferred status may be changed independently of each other.
+enum EdgeStatus 
     {
-    protected:
-        friend struct DgnElementDependencyGraph;
-
-        //! Called by DgnElementDependencyGraph after all incoming ElementDrivesElement ECRelationships have been handled.
-        //! Call Txns::ReportError to reject an invalid change. The reported error can be classified as fatal or just a warning.
-        virtual void _OnAllInputsHandled() = 0;
-
-        //! Called by DgnElementDependencyGraph before handling the first ElementDrivesElement ECRelationship where this node is the source
-        //! and only if there are no incoming ElementDrivesElement ECRelationships.
-        //! Call Txns::ReportError to reject an invalid change. The reported error can be classified as fatal or just a warning.
-        virtual void _OnBeforeOutputsHandled() = 0;
+    EDGESTATUS_Satisfied=0,     //! The requirements of this dependency relationship are satisfied.
+    EDGESTATUS_Failed=1,        //! The requirements of this dependency relationship were violated.
+    EDGESTATUS_Deferred=0x80    //! Changes are not being propagated through this dependency relationship.
     };
 
 //=======================================================================================
-//! Element dependency graph calls JavaScript handers in the correct order when a transaction is "validated".
+//  An Edge in the graph is an ECRelationship that has a dependency handler.
+//  It has an input element and an output element.
+// @bsiclass                                                    Sam.Wilson  01/15
+//=======================================================================================
+struct Edge
+    {
+    friend struct Graph;
+    friend struct EdgeQueue;
+    friend struct TableApi;
+    friend struct ElementDrivesElement;
+
+    DgnElementId   m_ein;
+    DgnElementId   m_eout;
+    BeSQLite::EC::ECInstanceId m_relId;
+    ECN::ECClassId m_relClassId;
+    int64_t       m_priority;
+    bool m_deleted; // if true - represents a deleted relationship
+    union {
+        struct {
+            uint32_t      m_status:8;           // NB: size must match EdgeStatus
+            uint32_t      m_unused2:24;
+            };
+        uint32_t    m_flags;
+        };
+
+    Edge() : m_priority(0), m_flags(0), m_deleted(false) {}
+
+    //! Get the element that is the "input" to this dependency.
+    DgnElementId GetRootElementId() const {return m_ein;}
+    //! Get the element that is the "output" from this dependency.
+    DgnElementId GetDependentElementId() const {return m_eout;}
+    //! Get the ID of the ECRelationship instance that is represented by this edge
+    BeSQLite::EC::ECInstanceId GetECRelationshipId() const {return m_relId;}
+    //! Get the ID of the ECRelationshipClass for this edge
+    ECN::ECClassId GetRelClassId() const {return m_relClassId;}
+    //! Get the priority of this dependency, relative to other dependencies in the same ECRelationshipClass
+    //! @see Graph::SetElementDrivesElementPriority
+    int64_t GetPriority() const {return m_priority;}
+    //! Test if this edge is valid
+    bool IsValid() const {return m_relId.IsValid();}
+    //! Test if this edge is marked as deferred
+    bool IsDeferred() const {return (m_status & EDGESTATUS_Deferred) != 0;}
+    //! Test if this edge is marked as having failed
+    bool IsFailed() const {return (m_status & EDGESTATUS_Failed) != 0;}
+    //! Test if this edge represents a deleted relationship
+    bool IsDeleted() const { return m_deleted; }
+    };
+
+//=======================================================================================
+//! Element dependency graph calls handers in the correct order when a transaction is "validated".
 //! Called by Txns::CheckTxnBoundary.
 //! 
 //! <h3>Only ElementDrivesElement ECRelationships can have Dependency Handlers</h3>
@@ -73,76 +141,14 @@ struct IDependencyGraphNode
 //! 
 //! If it detects any fatal transaction validation error, Txns will roll back the transaction as a whole.
 //! 
-//! See Txns::IValidationError, DgnElementDependencyGraph::CyclesDetectedError, DgnElementDependencyGraph::MissingHandlerError
+//! See Txns::IValidationError, Graph::CyclesDetectedError, Graph::MissingHandlerError
 //=======================================================================================
-struct DgnElementDependencyGraph
+struct Graph
 {
     struct EdgeQueue;
     struct Nodes;
     struct TableApi;
     struct ElementDrivesElement;
-
-    //! Indicates if changes have been propagated through an ECRelationship successfully or not.
-    //! These are bits. The Deferred status and the Satisfied/Deferred status may be changed independently of each other.
-    enum EdgeStatus 
-        {
-        EDGESTATUS_Satisfied=0,     //! The requirements of this dependency relationship are satisfied.
-        EDGESTATUS_Failed=1,        //! The requirements of this dependency relationship were violated.
-        EDGESTATUS_Deferred=0x80    //! Changes are not being propagated through this dependency relationship.
-        };
-
-    //=======================================================================================
-    //  An Edge in the graph is an ECRelationship that has a dependency handler.
-    //  It has an input element and an output element. The dependency handler
-    //  callback is the action taken when the edge is traversed.
-    // @bsiclass                                                    Sam.Wilson  01/15
-    //=======================================================================================
-    struct Edge
-        {
-        friend struct DgnElementDependencyGraph;
-        friend struct EdgeQueue;
-        friend struct TableApi;
-        friend struct ElementDrivesElement;
-
-      private:
-        DgnElementId   m_ein;
-        DgnElementId   m_eout;
-        BeSQLite::EC::ECInstanceId m_relId;
-        ECN::ECClassId m_relClassId;
-        int64_t       m_priority;
-        bool m_deleted; // if true - represents a deleted relationship
-        union {
-            struct {
-                uint32_t      m_status:8;           // NB: size must match EdgeStatus
-                uint32_t      m_unused2:24;
-                };
-            uint32_t    m_flags;
-            };
-
-        Edge() : m_priority(0), m_flags(0), m_deleted(false) {;}
-
-      public:
-        //! Get the element that is the "input" to this dependency.
-        DgnElementId GetRootElementId() const {return m_ein;}
-        //! Get the element that is the "output" from this dependency.
-        DgnElementId GetDependentElementId() const {return m_eout;}
-        //! Get the ID of the ECRelationship instance that is represented by this edge
-        BeSQLite::EC::ECInstanceId GetECRelationshipId() const {return m_relId;}
-        //! Get the ID of the ECRelationshipClass for this edge
-        ECN::ECClassId GetRelClassId() const {return m_relClassId;}
-        //! Get the priority of this dependency, relative to other dependencies in the same ECRelationshipClass
-        //! @see DgnElementDependencyGraph::SetElementDrivesElementPriority
-        int64_t GetPriority() const {return m_priority;}
-        //! Test if this edge is valid
-        bool IsValid() const {return m_relId.IsValid();}
-        //! Test if this edge is marked as deferred
-        bool IsDeferred() const {return (m_status & EDGESTATUS_Deferred) != 0;}
-        //! Test if this edge is marked as having failed
-        bool IsFailed() const {return (m_status & EDGESTATUS_Failed) != 0;}
-        //! Test if this edge represents a deleted relationship
-        bool IsDeleted() const { return m_deleted; }
-        };
-
     friend struct Edge;
     friend struct EdgeQueue;
 
@@ -153,7 +159,6 @@ private:
     ElementDrivesElement* m_elementDrivesElement;
     EdgeQueue* m_edgeQueue;
     Nodes* m_nodes;
-    Napi::Object m_jsTxns;
 
     void Init();
 
@@ -169,36 +174,28 @@ private:
     void LogDependencyFound(BeSQLite::Statement&, Edge const&);
 
     // working with handlers
-    void InvokeHandler(Edge const& rh, size_t indentLevel);
+    void InvokeHandler(Edge const& rh);
     void InvokeHandlerForValidation(Edge const& rh);
-    //void ReportValidationError (TxnManager::ValidationError&, Edge const*);
-
     void DiscoverEdges();
-
-    Napi::Object EdgeToRelProps(Edge const& edge);
     void VerifyOverlappingDependencies();
     void InvokeHandlersInTopologicalOrder();
     void InvokeHandlersInTopologicalOrder_OneGraph(Edge const&, bvector<Edge> const& pathToSupplier);
-
     void InvokeHandlersInDependencyOrder();
     void InvokeHandlerForDeletedRelationship(BeSQLite::EC::ECInstanceId relId);
-
     BeSQLite::DbResult SetFailedEdgeStatusInDb(Edge const&, bool failed);
     BeSQLite::DbResult UpdateEdgeStatusInDb(Edge const&, EdgeStatus);
-
     BentleyStatus CheckDirection(Edge const&);
 
 public:
-    DGNPLATFORM_EXPORT DgnElementDependencyGraph(TxnManager&);
-    ~DgnElementDependencyGraph() {}
+    Napi::Object m_jsTxns;
+
+    DGNPLATFORM_EXPORT Graph(TxnManager&);
+    ~Graph() {}
 
     DgnDbR GetDgnDb() const {return m_txnMgr.GetDgnDb();}
 
-//__PUBLISH_SECTION_END__
     //! Txns calls this when closing a txn
     void InvokeAffectedDependencyHandlers();
-
-//__PUBLISH_SECTION_START__
 
     //! Get the "Edge" that represents the specified ECRelationship instance
     //! @param[in] relid    Identifies the ECRelationship instance
@@ -219,5 +216,7 @@ public:
     //! Get a list of the dependencies, in order, that would be evaluated if the specified element and/or ElementDrivesElement relationship were directly changed
     DGNPLATFORM_EXPORT BentleyStatus WhatIfChanged(bvector<DgnElementId> const& directlyChangedEntities, bvector<BeSQLite::EC::ECInstanceId> const& directlyChangedDepRels);
     };
+
+} // end namespace ElementDependency
 
 END_BENTLEY_DGN_NAMESPACE

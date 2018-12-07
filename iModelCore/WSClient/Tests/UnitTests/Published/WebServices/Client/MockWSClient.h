@@ -48,8 +48,6 @@ struct MockWSClient : public IWSClient
 
         MOCK_METHOD1(UnregisterServerInfoListener, void(std::weak_ptr<IServerInfoListener> listener));
 
-        MOCK_METHOD1(EnableWsgServerHeader, void(bool enable));
-
         MOCK_CONST_METHOD1(GetServerInfo, AsyncTaskPtr<WSInfoResult>
             (
             ICancellationTokenPtr ct
