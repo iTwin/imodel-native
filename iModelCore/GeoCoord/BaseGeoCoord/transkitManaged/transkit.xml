@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Transkit>
+
+    <SatelliteAssembly DllName="Bentley.GeoCoord2" DeliverEnglish="False" RightsCompliant="False">
+        <ResxFile ResourceName="LocalizableStrings" FileName="LocalizableStrings.resx" />
+        <ResxFile ResourceName="SearchSelectionControl" FileName="SearchSelectionControl.resx" />
+    </SatelliteAssembly>
+
+</Transkit>
