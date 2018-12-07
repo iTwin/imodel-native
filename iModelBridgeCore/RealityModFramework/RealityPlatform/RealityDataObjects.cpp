@@ -811,6 +811,9 @@ void RealityData::SetModifiedDateTime(DateTime modifiedDate) { m_modifiedDate = 
 Utf8StringCR RealityData::GetOwner() const { return m_owner; }
 void RealityData::SetOwner(Utf8CP owner) { m_owner = owner; }
 
+Utf8StringCR RealityData::GetCreatorId() const { return m_creatorId; }
+void RealityData::SetCreatorId(Utf8CP creatorId) { m_creatorId = creatorId; }
+
 uint64_t RealityData::GetTotalSize() const { return m_totalSize; }
 void RealityData::SetTotalSize(uint64_t totalSize) { m_totalSize = totalSize; }
 

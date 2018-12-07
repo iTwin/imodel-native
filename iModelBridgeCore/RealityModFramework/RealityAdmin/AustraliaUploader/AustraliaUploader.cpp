@@ -300,7 +300,7 @@ void upload(BeFileName zippedFile, Utf8String fileName, Utf8String resolution, U
         RealityDataServiceUpload* upload = new RealityDataServiceUpload(zippedFile, "", propertyString, false, true, statusFunc);
         if (upload->IsValidTransfer())
             {
-            std::cout << Utf8PrintfString("Upload file : %s \n", zippedFile.GetNameUtf8());
+            std::cout << Utf8PrintfString("Upload file : %s \n", zippedFile.GetNameUtf8().c_str());
 
             upload->SetProgressCallBack(progressFunc);
             upload->SetProgressStep(0.5);

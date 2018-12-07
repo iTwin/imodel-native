@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatformTools/RealityDataServiceFiltersTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -270,7 +270,8 @@ TEST_P(RealityDataFieldFixture, SortBy)
     request.SortBy(GetParam().field, true);
 
     auto requestString = request.GetHttpRequestString();
-    EXPECT_TRUE(requestString.Contains(Utf8PrintfString("$orderby=%s", GetParam().name)));
+    Utf8String searchedPortion = Utf8PrintfString("$orderby=%s",GetParam().name.c_str());
+    EXPECT_TRUE(requestString.Contains(searchedPortion));
     }
  
 
