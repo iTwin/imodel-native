@@ -643,7 +643,7 @@
 
     <Product Name="WSClient-Gtest" >
         <SubPart PartName="Gtest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="RunGtest" DeferType="RunUnitTests"
@@ -652,7 +652,7 @@
         OnlyPlatforms="x86,x64,MacOs*,Linux*"
         >
         <SubProduct ProductName="WSClient-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/WSClientTest.log</Files>
         </Bindings>
@@ -784,9 +784,9 @@
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WSClient-PublishedAPI" />
-        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
-        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02" />
+        <SubPart PartName="google_gmock_lib" PartFile="iModelCore/util/gmock/gmock" Repository="imodel02" />
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">
@@ -869,9 +869,9 @@
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="PrewireForUnitTests" />
-        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
-        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02" />
+        <SubPart PartName="google_gmock_lib" PartFile="iModelCore/util/gmock/gmock" Repository="imodel02" />
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="WSClientCompatibilityTests">
                 Delivery/WSClientCompatibilityTests$(exeext)
@@ -890,23 +890,23 @@
         <RequiredRepository>Bsitools-Doclava</RequiredRepository>
         <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
         <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
-        <RequiredRepository>BeGTest</RequiredRepository>
+        
         <RequiredRepository>Bsitools-Jasmine</RequiredRepository>
 
-        <SubPart PartName="BentleyDll"                  PartFile="Bentley"          Repository="Bentley" />
-        <SubPart PartName="BeHttp"                      PartFile="BeHttp"           Repository="BeHttp"/>
-        <SubPart PartName="BeSecurity"                  PartFile="BeSecurity"       Repository="BeSecurity" />
+        <SubPart PartName="BentleyDll"                  PartFile="iModelCore/Bentley/Bentley"          Repository="imodel02" />
+        <SubPart PartName="BeHttp"                      PartFile="iModelCore/BeHttp/BeHttp"           Repository="imodel02"/>
+        <SubPart PartName="BeSecurity"                  PartFile="iModelBridgeCore/BeSecurity/BeSecurity"       Repository="imodel02" />
         <SubPart PartName="LibXml2"                     PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
-        <SubPart PartName="GeomDlls"                    PartFile="geomlibs"         Repository="GeomLibs" />
-        <SubPart PartName="GeomLibsSerialization"       PartFile="geomlibs"         Repository="GeomLibs" />
-        <SubPart PartName="csmapStatic"                 PartFile="csmap"            Repository="libsrc-csmap" />
-        <SubPart PartName="BeSQLite"                    PartFile="BeSQLite"         Repository="BeSQLite" />
-        <SubPart PartName="ECDb"                        PartFile="ECDb"             Repository="ECDb" />
-        <SubPart PartName="ECObjectsNative"             PartFile="ECObjects"        Repository="ECObjects" />
-        <SubPart PartName="UnitsNative"                 PartFile="Units"            Repository="Units" />
-        <SubPart PartName="BeJsonCpp"                   PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="GeomDlls"                    PartFile="iModelCore/GeomLibs/geomlibs"         Repository="imodel02" />
+        <SubPart PartName="GeomLibsSerialization"       PartFile="iModelCore/GeomLibs/geomlibs"         Repository="imodel02" />
+        <SubPart PartName="csmapStatic"                 PartFile="iModelCore/libsrc/csmap/csmap"            Repository="imodel02" />
+        <SubPart PartName="BeSQLite"                    PartFile="iModelCore/BeSQLite/BeSQLite"         Repository="imodel02" />
+        <SubPart PartName="ECDb"                        PartFile="iModelCore/ECDb/ECDb"             Repository="imodel02" />
+        <SubPart PartName="ECObjectsNative"             PartFile="iModelCore/ecobjects/ECObjects"        Repository="imodel02" />
+        <SubPart PartName="UnitsNative"                 PartFile="iModelCore/Units/Units"            Repository="imodel02" />
+        <SubPart PartName="BeJsonCpp"                   PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"        Repository="imodel02"/>
         <SubPart PartName="Curl"                        PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
-        <SubPart PartName="BeJavaScript" PartFile="BeJavaScript/BeJavaScript" Repository="Bentley"/>
+        <SubPart PartName="BeJavaScript" PartFile="iModelCore/Bentley/BeJavaScript/BeJavaScript" Repository="imodel02"/>
         <SubPart PartName="LoggingManagedInteropShim"/>
     </Part>
 
