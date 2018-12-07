@@ -71,7 +71,9 @@ TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocated)
     DgnElementId rulesetId = embedder.InsertRuleset(*ruleset);
     ASSERT_TRUE(rulesetId.IsValid());
 
-    BentleyApi::RefCountedPtr<BentleyApi::ECPresentation::EmbeddedRuleSetLocater> locater = BentleyApi::ECPresentation::EmbeddedRuleSetLocater::Create(*BentleyApi::ECPresentation::ConnectionManager().CreateConnection(*m_db));
+    BentleyApi::ECPresentation::ConnectionManager manager;
+    BentleyApi::ECPresentation::IConnectionPtr connection = manager.CreateConnection(*m_db);
+    BentleyApi::RefCountedPtr<BentleyApi::ECPresentation::EmbeddedRuleSetLocater> locater = BentleyApi::ECPresentation::EmbeddedRuleSetLocater::Create(*connection);
     BentleyApi::bvector<BentleyApi::ECPresentation::PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_TRUE(1 == rulesets.size());
     ASSERT_TRUE(ruleset->GetRuleSetId() == rulesets[0]->GetRuleSetId());
