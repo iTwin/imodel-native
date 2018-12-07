@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "../RealityPlatformToolsCurl/WSGServices.cpp"
-#include <CCApi/CCPublic.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
