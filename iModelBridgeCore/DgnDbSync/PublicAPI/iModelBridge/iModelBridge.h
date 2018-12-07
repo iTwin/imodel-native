@@ -880,6 +880,15 @@ public:
     Transform GetSpatialDataTransform(SubjectCR jobSubject) {return GetSpatialDataTransform(_GetParams(), jobSubject);}
 
 
+    //! @name Font Resolution
+    //! @{
+
+    //! Override this method if the bridge needs to cooperate in the process of resolving fonts.
+    //! The Host FontAdmin will invoke this callback to ask the bridge to check if a font is already known.
+    virtual DgnFontCP _TryResolveFont(DgnFontCP) {return nullptr;}
+
+    //! @}
+
     //! @name Document Properties Helper Functions
     //! @{
 
