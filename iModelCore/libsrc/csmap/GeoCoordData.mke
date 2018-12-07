@@ -84,6 +84,7 @@ always:
     CreateSymLinks.py   -f"$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionarySourcesDir)UserOverrideGeodeticTransformSeed.asc"
     CreateSymLinks.py   -f"$(GeoCoordData)NameMapper.csv=$(csDictionariesDir)NameMapper.csv"
     CreateSymLinks.py   -f"$(GeoCoordData)WW15MGH.GRD=$(csDictionariesDir)WW15MGH.GRD"
+    CreateSymLinks.py   -f"$(GeoCoordData)WW15MGH._96=$(csDictionariesDir)WW15MGH._96"
     CreateSymLinks.py   -f"$(GeoCoordData)OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
     CreateSymLinks.py   -f"$(GeoCoordData)OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
     CreateSymLinks.py   -d"$(GeoCoordData)Australia=$(csDictionariesDir)Australia"

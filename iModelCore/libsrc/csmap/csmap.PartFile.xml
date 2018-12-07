@@ -25,6 +25,7 @@
                 Delivery/GeoCoordData/NameMapper.csv
                 Delivery/GeoCoordData/GeoidHeight.gdc
                 Delivery/GeoCoordData/WW15MGH.GRD
+                Delivery/GeoCoordData/WW15MGH._96
                 Delivery/GeoCoordData/Vertcon.gdc
                 Delivery/GeoCoordData/UserOverrideGeodeticTransformSeed.asc
             </Files>
