@@ -1,0 +1,110 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BeSQLite.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------------
+#
+# NOTES: If you think you need to edit this file:
+#
+# DO NOT PUT SQLite options in this file. They should ONLY be in bentley-sqlite.c!!!!
+# DO NOT change compiler warning flags here. They should be in bentley-sqlite.c
+# DO NOT edit the sqlite3 source files. They are generated during the build, and the original 
+# source comes from sqlite.org anyway.
+#
+#-----------------------------------------------------------------------------------
+
+# We used to build BeSQLite with GCC_DEFAULT_VISIBILITY=visible. That was required when we built and deployed 
+# our libraries as multiple .SOs or .dylibs on some *nix platforms. That was wrong on two counts. First, we no longer deliver our
+# libraries in the form of shared objects. That was unworkable. Now, apps always link all of our libraries statically. 
+# Second, we must ensure that our libraries and the app itself all use OUR COPY OF SQLITE.
+# That is, we don't an app or our libraries resolve a symbol such as `sqlite3_open_v2` from the libsqlite.so/dylib
+# that the app FRAMEWORK happens to have already loaded. To prevent that, we must HIDE THE SYMBOLS in our
+# copy of sqlite. That causes the linker to mark these symbols as private, telling the loader not to 
+# try to resolve them from other shared objects but only from definitions within the app shared object
+# (which includes our statically linked libraries, including our libBeSQLite.a).
+
+GCC_NOSTRICT = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3 = 1
+
+# VERACODE - requires default runtime checks (e.g. cannot explicitly set any -RTC options).
+%if !defined(IS_VERACODE_BUILD)
+    VCRuntimeCheckOption = -RTCsu
+%endif
+
+%include mdl.mki
+
+cDefs +% -D__BE_SQLITE_HOST_DLL__
+
+%if $(TARGET_PLATFORM) == "WinRT"
+    cDefs + -D__BE_SQLITE_WINRT__
+%endif
+
+baseDir = $(_MakeFilePath)
+SQLiteDir = $(baseDir)SQLite/
+SubpartLibs = $(BuildContext)SubParts/Libs/
+o = $(PartBuildDir)
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+appName = BeSQLite
+CCompPDBName = $(appName)
+
+always:
+    !~@mkdir $(o)
+
+# Generate build version header (so we can embed as a property for diagnostic purposes).
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)BeSQLite$(oext) : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/DownloadAdmin.h ${MultiCompileDepends}
+
+$(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
+
+$(o)RevisionChangesFile$(oext) : $(baseDir)RevisionChangesFile.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/RevisionChangesFile.h ${MultiCompileDepends}
+
+$(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseDir)/BeSQLiteProfileManager.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
+
+$(o)EncryptedDbVfs$(oext) : $(SQLiteDir)EncryptedDbVfs.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
+
+$(o)L10N$(oext) : $(baseDir)L10N.cpp $(baseDir)/PublicAPI/BeSQLite/L10N.h ${MultiCompileDepends}
+
+$(o)BeLzma$(oext) : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h ${MultiCompileDepends}
+
+$(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp $(baseDir)/PublicAPI/BeSQLite/BeBriefcaseBasedIdSequence.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+CCompFpOpts=precise
+
+# Third-party section of this library.
+%include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
+
+$(o)bentley-sqlite$(oext): $(SQLiteDir)bentley-sqlite.c $(SQLiteDir)sqlite3.c $(SQLiteDir)zipvfs.c $(SQLiteDir)closure.c $(SQLiteDir)see-aes128-ofb.c
+
+%include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
+
+objs + $(o)bentley-sqlite$(oext)
+
+BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)BeJsonCpp$(libext)
+
+DLM_OBJECT_FILES    = $(objs)
+DLM_NAME            = $(appName)
+DLM_DEST            = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_NOINITFUNC      = 1
+DLM_NOENTRY         = 1
+DLM_OBJECT_DEST     = $(o)
+
+LINKER_LIBRARIES    =  $(BeSQLiteRequiredLibs)
+
+# We support shared or static linking.
+%include $(sharedMki)linkLibrary.mki
