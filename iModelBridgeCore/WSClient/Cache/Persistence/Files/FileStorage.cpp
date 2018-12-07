@@ -214,6 +214,9 @@ BeFileName FileStorage::GetAbsoluteFilePath(FileCache location, BeFileNameCR rel
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileStorage::SetFileCacheLocation(FileInfo& info, FileCache location, BeFileNameCP externalRelativeDir)
     {
+    if (!ValidateRelativePathValid(externalRelativeDir))
+        return ERROR;
+
     location = info.GetNewLocation(location);
 
     if (FileCache::External == location && nullptr == externalRelativeDir ||
@@ -261,6 +264,9 @@ BentleyStatus FileStorage::CacheFile(FileInfo& info, BeFileNameCR filePath, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileStorage::StoreFile(FileInfoR info, BeFileNameCR filePathIn, FileCache newLocation, BeFileNameCP newExternalRelativeDirIn, bool copyFile)
     {
+    if (!ValidateRelativePathValid(newExternalRelativeDirIn))
+        return ERROR;
+
     if (FileCache::Persistent == newLocation && m_environment.persistentFileCacheDir.empty() ||
         FileCache::Temporary == newLocation && m_environment.temporaryFileCacheDir.empty())
         {
@@ -522,4 +528,31 @@ BentleyStatus FileStorage::RenameCachedFile(FileInfoR info, Utf8String newFileNa
         return ERROR;
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FileStorage::IsRelativePathValid(BeFileNameCR path)
+    {
+    if (path.empty())
+        return true;
+    if (path[0] == L'/')
+        return false;
+    if (path[0] == L'\\')
+        return false;
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FileStorage::ValidateRelativePathValid(BeFileNameCP path)
+    {
+    if (nullptr == path)
+        return true;
+    if (IsRelativePathValid(*path))
+        return true;
+    LOG.errorv(L"Relative path is not valid: '%ls'", path->c_str());
+    return false;
     }
