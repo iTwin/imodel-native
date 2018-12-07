@@ -8,30 +8,6 @@
         <ECEnumerator value="1" displayLabel="SLBB" />
     </ECEnumeration>
 
-    <ECEnumeration typeName="ParametricProfileType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="C" />
-        <ECEnumerator value="1" displayLabel="I" />
-        <ECEnumerator value="2" displayLabel="AsymmetricI" />
-        <ECEnumerator value="3" displayLabel="L" />
-        <ECEnumerator value="4" displayLabel="SchifflerizedL" />
-        <ECEnumerator value="5" displayLabel="T" />
-        <ECEnumerator value="6" displayLabel="TT" />
-        <ECEnumerator value="7" displayLabel="Z" />
-        <ECEnumerator value="8" displayLabel="CenterLineC" />
-        <ECEnumerator value="9" displayLabel="CenterLineL" />
-        <ECEnumerator value="10" displayLabel="CenterLineZ" />
-        <ECEnumerator value="11" displayLabel="BentPlate" />
-        <ECEnumerator value="12" displayLabel="Rectangle" />
-        <ECEnumerator value="13" displayLabel="RoundedRectangle" />
-        <ECEnumerator value="14" displayLabel="Hollowrectangle" />
-        <ECEnumerator value="15" displayLabel="Ellipse" />
-        <ECEnumerator value="16" displayLabel="Circle" />
-        <ECEnumerator value="17" displayLabel="HollowCircle" />
-        <ECEnumerator value="18" displayLabel="Trapezium" />
-        <ECEnumerator value="19" displayLabel="RegularPolygon" />
-        <ECEnumerator value="20" displayLabel="Capsule" />
-    </ECEnumeration>
-
     <!-- Mixins -->
     <ECEntityClass typeName="ICenterLineProfile" modifier="Abstract" displayLabel="Center Line Profile Mixin">
         <ECCustomAttributes>
@@ -109,7 +85,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Type" typeName="ParametricProfileType" description="" />
     </ECEntityClass>
 
     <!-- Letter shapes -->
