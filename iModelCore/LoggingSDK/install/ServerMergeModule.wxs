@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (c) Microsoft Corporation.  All rights reserved.
+
+    The use and distribution terms for this software are cov    Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
+    which can be found in the file CPL.TXT at the root of this distribution.
+    By using this software in any fashion, you are agreeing to be bound by
+    the terms of this license.
+
+    You must not remove this notice, or any other, from this software.
+
+    Product.MSI - example source code for Product from "Getting Started" in help
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Module Id="BentleyLoggingServer" Codepage="1252" Language="0" Version="$(var.INSTALLER_PRODUCT_VERSION)">
+        <Package Id="26739C57-5EC4-4026-802F-AC0D8B8A7A9E" Description="Bentley Logging Server Merge Module" Platforms="$(var.PACKAGE_TARGETPLATFORM)" Comments="Contact:  Your local administrator" InstallerVersion="200" Manufacturer="Bentley Systems, Inc" Keywords="MergeModule,MSI,Database" />
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="INSTALLDIR"  Name="." >
+                <Component Id="LoggingServer" Guid="56DD6BF0-18FD-42d8-9773-AFE3F9BA76A3" Win64="$(var.COMPONENT_WIN64)" >
+                    <File Id="Server"       Name="BentleyLoggingServer-2.0.exe"       Source="$(var.INSTALLER_FILE_BASE)BentleyLoggingServer-2.0.exe"/>
+                    <File Id="config"       Name="BentleyLoggingServer.exe.config"       Source="$(var.INSTALLER_FILE_BASE)BentleyLoggingServer.exe.config"/>
+                    <ServiceInstall Id="LogService" ErrorControl="normal" Name="BentleyLogging" DisplayName="Bentley Logging Server" Start="auto" Type="ownProcess" Vital="yes" />
+                    <ServiceControl Id="LogService" Name="BentleyLogging" Start="install" Stop="both" Remove="uninstall" />
+                </Component>
+            </Directory>
+        </Directory>
+    </Module>
+</Wix>
+
+
