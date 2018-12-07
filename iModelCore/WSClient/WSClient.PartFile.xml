@@ -895,7 +895,7 @@
 
         <SubPart PartName="BentleyDll"                  PartFile="iModelCore/Bentley/Bentley"          Repository="imodel02" />
         <SubPart PartName="BeHttp"                      PartFile="iModelCore/BeHttp/BeHttp"           Repository="imodel02"/>
-        <SubPart PartName="BeSecurity"                  PartFile="iModelBridgeCore/BeSecurity/BeSecurity"       Repository="imodel02" />
+        <SubPart PartName="BeSecurity"                  PartFile="iModelCore/BeSecurity/BeSecurity"       Repository="imodel02" />
         <SubPart PartName="LibXml2"                     PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
         <SubPart PartName="GeomDlls"                    PartFile="iModelCore/GeomLibs/geomlibs"         Repository="imodel02" />
         <SubPart PartName="GeomLibsSerialization"       PartFile="iModelCore/GeomLibs/geomlibs"         Repository="imodel02" />
