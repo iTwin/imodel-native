@@ -1,0 +1,51 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: RealityAdmin/WebTraverser/WebTraverser.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName         = WebTraverser
+baseDir         = $(_MakeFilePath)
+o               = $(OutputRootDir)Build/WebTraverser/
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    ~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)WebTraverser$(oext) : $(baseDir)WebTraverser.cpp $(baseDir)WebTraverser.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+EXE_DEST  = $(o)
+EXE_NAME  = $(appName)
+EXE_OBJS  = $(o)WebTraverser$(oext) 
+#EXE_LOPT1 = -entry:mainCRTStartup
+
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)RealityAdmin$(libext) \
+                       odbc32$(libext)
+
+# windows specific for Unzipfile
+#LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
+
+%include $(SharedMki)linktool.mki
+
+
