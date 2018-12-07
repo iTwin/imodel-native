@@ -3348,7 +3348,6 @@ private:
     };
     typedef bmap<DgnClassId, ECSqlClassInfo> ClassInfoMap;
     typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
-    typedef std::map<DgnClassId, std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>> JsonSelectAdaptorMap;
     std::unique_ptr<struct ElementMRU> m_mruCache;
     uint64_t m_extant = 0;
     BeSQLite::StatementCache m_stmts;
@@ -3360,7 +3359,8 @@ private:
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
-    mutable JsonSelectAdaptorMap m_jsonSelectAdaptors;
+    mutable std::map<uint64_t, std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>> m_jsonSelectAdapterCache;
+
     void Destroy();
     void AddToPool(DgnElementCR) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
@@ -3399,9 +3399,7 @@ public:
     ECSqlClassInfo& FindClassInfo(DgnClassId classId) const;
     
     //! @private
-    BeSQLite::EC::JsonECSqlSelectAdapter const* GetJsonSelectAdapter(DgnClassId) const;
-    //! @private
-    BeSQLite::EC::JsonECSqlSelectAdapter const& GetJsonSelectAdapter(DgnClassId, BeSQLite::EC::ECSqlStatement const& stmt, BeSQLite::EC::JsonECSqlSelectAdapter::FormatOptions const& formatOptions = BeSQLite::EC::JsonECSqlSelectAdapter::FormatOptions()) const;
+    BeSQLite::EC::JsonECSqlSelectAdapter const& GetJsonSelectAdapter(BeSQLite::EC::ECSqlStatement const& stmt) const;
 
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private

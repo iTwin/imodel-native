@@ -1247,12 +1247,13 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
 //---------------------------------------------------------------------------------------
 static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem)
     {
-    auto elClass = elem.GetElementClass();
-    auto autoHandledProps = elem.GetDgnDb().Elements().GetAutoHandledPropertiesSelectECSql(*elClass);
+    ECClassCP eclass = elem.GetElementClass();
+    
+    Utf8StringCR autoHandledProps = elem.GetDgnDb().Elements().GetAutoHandledPropertiesSelectECSql(*eclass);
     if (autoHandledProps.empty())
         return;
 
-    auto stmt = elem.GetDgnDb().GetPreparedECSqlStatement(autoHandledProps.c_str());
+    CachedECSqlStatementPtr stmt = elem.GetDgnDb().GetPreparedECSqlStatement(autoHandledProps.c_str());
     if (!stmt.IsValid())
         {
         BeAssert(false);
@@ -1267,13 +1268,8 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         }
         
 
-    JsonECSqlSelectAdapter const* adapter = elem.GetDgnDb().Elements().GetJsonSelectAdapter(elClass->GetId());
-    if (adapter == nullptr)
-        adapter = &elem.GetDgnDb().Elements().GetJsonSelectAdapter(elClass->GetId(), *stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
-    else
-        adapter->SetStatement(*stmt);
-        
-    adapter->GetRow(elementJson, true);
+    JsonECSqlSelectAdapter const& adapter = elem.GetDgnDb().Elements().GetJsonSelectAdapter(*stmt);
+    adapter.GetRow(elementJson, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

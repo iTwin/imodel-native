@@ -8,7 +8,6 @@
 #include "UrlProviderTests.h"
 
 #include <WebServices/Client/WSClient.h>
-#include "../../../ConnectC/WSLocalState.h"
 #include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -76,9 +75,9 @@ INSTANTIATE_TEST_CASE_P(,UrlProviderParamTests,
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(UrlProviderParamTests, VerifyClientConnection_Success)
     {
-    auto ls = WSLocalState();
+    StubLocalState localState;
     UrlProvider::Environment enviroment = ::testing::get<0>(GetParam());
-    UrlProvider::Initialize(enviroment, UrlProvider::DefaultTimeout, &ls);
+    UrlProvider::Initialize(enviroment, UrlProvider::DefaultTimeout, &localState);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     auto urlDescriptor = ::testing::get<1>(GetParam());

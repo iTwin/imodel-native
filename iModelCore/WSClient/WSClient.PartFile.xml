@@ -5,7 +5,6 @@
 
     <Part Name="WebServiceClientComponents" Sequential="true">
         <SubPart PartName="WebServicesClient"/>
-        <SubPart PartName="ConnectWebServicesClientC" />
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -62,7 +61,6 @@
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesCache-PublicAPI"/>
         <SubPart PartName="iModelHubClient-PublicAPI"/>
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
         </Bindings>
@@ -393,56 +391,6 @@
     </ProductDirectoryList>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // ConnectWebServicesClientC lib                                          // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-
-    <Part Name="ConnectWebServicesClientC">
-        <SubPart PartName="WSClient_en_L10N" />
-        <SubPart PartName="ConnectWebServicesClientC-PC" />
-        <SubPart PartName="ConnectWebServicesClientC-iOS"/>
-        <SubPart PartName="ConnectWebServicesClientC-Android" />
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-PC" ExcludePlatforms="iOS*, Android*">
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
-        <SubPart PartName="ConnectWebServicesClientC-Library" />
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-iOS" OnlyPlatforms="iOS*">
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" LibType="Static" />
-        <SubPart PartName="ConnectWebServicesClientC-Library" LibType="Static" />
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-Android" OnlyPlatforms="Android*">
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" LibType="Static" />
-        <SubPart PartName="ConnectWebServicesClientC-Library-Android" LibType="Static" />
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-PublicAPI" BentleyBuildMakeFile="CWSClientCPrewire.mke">
-        <Bindings>
-            <PublicAPI Domain="WebServices" />
-        </Bindings>
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-Library" BentleyBuildMakeFile="CWSClientCLib.mke" ExcludePlatforms="Android*" ApiNumber="M02">
-        <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="BeSecurity"                    PartFile="iModelCore/BeSecurity/BeSecurity"       Repository="imodel02" />
-        <SubPart PartName="ECDb"                          PartFile="iModelCore/ECDb/ECDb"             Repository="imodel02" />
-        <Bindings>
-            <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
-            <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-    <Part Name="ConnectWebServicesClientC-Library-Android" BentleyBuildMakeFile="CWSClientCLib.mke" OnlyPlatforms="Android*">
-        <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="ECDb"                          PartFile="iModelCore/ECDb/ECDb"             Repository="imodel02" />
-        <Bindings>
-            <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
-            <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
@@ -695,19 +643,16 @@
 
     <Product Name="WSClient-Gtest" >
         <SubPart PartName="Gtest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <!-- Does not build currently on Linux and MacOs 
-            OnlyPlatforms="x86,x64,MacOs*,Linux*"
-    -->
     <Part Name="RunGtest" DeferType="RunUnitTests"
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke"
         BentleyBuildMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest"
-        OnlyPlatforms="x86,x64"
+        OnlyPlatforms="x86,x64,MacOs*,Linux*"
         >
         <SubProduct ProductName="WSClient-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/WSClientTest.log</Files>
         </Bindings>
@@ -838,11 +783,10 @@
         <SubPart PartName="WSClient_en_L10N"/>
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="ConnectWebServicesClientC" />
         <SubPart PartName="WSClient-PublishedAPI" />
-        <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02" />
-        <SubPart PartName="google_gmock_lib" PartFile="iModelCore/util/gmock/gmock" Repository="imodel02" />
-        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">
@@ -923,75 +867,15 @@
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="ConnectWebServicesClientC" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="PrewireForUnitTests" />
-        <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02" />
-        <SubPart PartName="google_gmock_lib" PartFile="iModelCore/util/gmock/gmock" Repository="imodel02" />
-        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="WSClientCompatibilityTests">
                 Delivery/WSClientCompatibilityTests$(exeext)
             </Files>
-        </Bindings>
-    </Part>
-
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // ConnectWebServicesClientC Samples                                      // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <Product Name="CWSCC-Samples" >
-        <Directories DirectoryListName="CWSCCSamplesDirectoryList" />
-        <SubProduct ProductName="GetProjects-Android"/>
-    </Product>
-
-    <Product Name="GetProjects-Android" >
-        <Directories DirectoryListName="CWSCCSamplesDirectoryList" />
-        <SubPart PartName="CWSCC-Android-Samples"/>
-    </Product>
-
-    <ProductDirectoryList ListName="CWSCCSamplesDirectoryList" >
-        <ProductDirectory Name="Assemblies"                         Deliver="false"/>
-        <ProductDirectory Name="Assemblies"                         Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
-        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="Libs"                               Deliver="false"/>
-        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
-        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="MergeModules"                       Deliver="false"/>
-        <ProductDirectory Name="Assets"                             Deliver="false" LibType="static"/>
-        <ProductDirectory Name="VendorNotices"                      Deliver="false"/>
-        <ProductDirectory Name="VendorNotices"                      Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="MavenDependencies"                  Deliver="false"/>
-        <ProductDirectory Name="MavenDependencies"                  Deliver="false" LibType="static"/>
-        <ProductDirectory Name="AndroidSO"                          Deliver="false"/>
-        <ProductDirectory Name="AndroidSO"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="sqlang"                             Deliver="false" />
-        <ProductDirectory Name="sqlang"                             Deliver="false" LibType="static" />
-        <ProductDirectory Name="APK"                                Path=""/>
-        <ProductDirectory Name="APK"                                Path=""  LibType="static"/>
-    </ProductDirectoryList>
-
-    <Part Name="CWSCC-Android-Samples" OnlyPlatforms="Android*">
-        <SubPart PartName="CWSCC-Android-Sample-GetProjects" LibType="Static"/>
-    </Part>
-
-    <Part Name="Tools-AndroidShared" BentleyBuildMakeFile="mki/Android/nativeCodeTools.mke" OnlyPlatforms="Android*">
-        <Bindings>
-            <Directory Required="false" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="CWSCC-Android-Sample-GetProjects" BentleyBuildMakeFile="ConnectC/Samples/Android/GetProjects/GetProjects.mke" OnlyPlatforms="Android*">
-        <SubPart PartName="Tools-AndroidShared" />
-        <SubPart PartName="WebServiceClientComponents" />
-        <SubPart PartName="BeSecurityMavenArchive" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
-        <Bindings>
-            <Files ProductDirectoryName="APK">Delivery/getprojects.apk</Files>
         </Bindings>
     </Part>
 
@@ -1006,23 +890,23 @@
         <RequiredRepository>Bsitools-Doclava</RequiredRepository>
         <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
         <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
-        
+        <RequiredRepository>BeGTest</RequiredRepository>
         <RequiredRepository>Bsitools-Jasmine</RequiredRepository>
 
-        <SubPart PartName="BentleyDll"                  PartFile="iModelCore/Bentley/Bentley"          Repository="imodel02" />
-        <SubPart PartName="BeHttp"                      PartFile="iModelCore/BeHttp/BeHttp"           Repository="imodel02"/>
-        <SubPart PartName="BeSecurity"                  PartFile="iModelCore/BeSecurity/BeSecurity"       Repository="imodel02" />
-        <SubPart PartName="LibXml2" 					PartFile="Libsrc-Nugets" 	Repository="bsicommon"/>
-        <SubPart PartName="GeomDlls"                    PartFile="iModelCore/GeomLibs/geomlibs"         Repository="imodel02" />
-        <SubPart PartName="GeomLibsSerialization"       PartFile="iModelCore/GeomLibs/geomlibs"         Repository="imodel02" />
-        <SubPart PartName="csmapStatic"                 PartFile="iModelCore/libsrc/csmap/csmap"            Repository="imodel02" />
-        <SubPart PartName="BeSQLite"                    PartFile="iModelCore/BeSQLite/BeSQLite"         Repository="imodel02" />
-        <SubPart PartName="ECDb"                        PartFile="iModelCore/ECDb/ECDb"             Repository="imodel02" />
-        <SubPart PartName="ECObjectsNative"             PartFile="iModelCore/ecobjects/ECObjects"        Repository="imodel02" />
-        <SubPart PartName="UnitsNative"                 PartFile="iModelCore/Units/Units"            Repository="imodel02" />
-        <SubPart PartName="BeJsonCpp"                   PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"        Repository="imodel02"/>
-        <SubPart PartName="Curl" 						PartFile="Libsrc-Nugets" 	Repository="bsicommon"/>
-        <SubPart PartName="BeJavaScript" PartFile="iModelCore/Bentley/BeJavaScript/BeJavaScript" Repository="imodel02"/>
+        <SubPart PartName="BentleyDll"                  PartFile="Bentley"          Repository="Bentley" />
+        <SubPart PartName="BeHttp"                      PartFile="BeHttp"           Repository="BeHttp"/>
+        <SubPart PartName="BeSecurity"                  PartFile="BeSecurity"       Repository="BeSecurity" />
+        <SubPart PartName="LibXml2"                     PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
+        <SubPart PartName="GeomDlls"                    PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="GeomLibsSerialization"       PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="csmapStatic"                 PartFile="csmap"            Repository="libsrc-csmap" />
+        <SubPart PartName="BeSQLite"                    PartFile="BeSQLite"         Repository="BeSQLite" />
+        <SubPart PartName="ECDb"                        PartFile="ECDb"             Repository="ECDb" />
+        <SubPart PartName="ECObjectsNative"             PartFile="ECObjects"        Repository="ECObjects" />
+        <SubPart PartName="UnitsNative"                 PartFile="Units"            Repository="Units" />
+        <SubPart PartName="BeJsonCpp"                   PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="Curl"                        PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
+        <SubPart PartName="BeJavaScript" PartFile="BeJavaScript/BeJavaScript" Repository="Bentley"/>
         <SubPart PartName="LoggingManagedInteropShim"/>
     </Part>
 

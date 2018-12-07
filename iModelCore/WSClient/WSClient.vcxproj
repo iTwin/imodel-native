@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -21,12 +21,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -156,16 +156,6 @@
     <ClCompile Include="Configuration\BuddiClient.cpp" />
     <ClCompile Include="Configuration\BuddiError.cpp" />
     <ClCompile Include="Client\ActivityIdGenerator.cpp" />
-    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp" />
-    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp" />
-    <ClCompile Include="ConnectC\CWSCC.cpp" />
-    <ClCompile Include="ConnectC\CWSCCBuffer.cpp" />
-    <ClCompile Include="ConnectC\CWSCCBufferGen.cpp" />
-    <ClCompile Include="ConnectC\CWSCCGen.cpp" />
-    <ClCompile Include="ConnectC\CWSCCGenBuffer.cpp" />
-    <ClCompile Include="ConnectC\CWSCCInternal.cpp" />
-    <ClCompile Include="ConnectC\IMSSearch\IMSSearch.cpp" />
-    <ClCompile Include="ConnectC\IMSSearch\IMSSearchBuffer.cpp" />
     <ClCompile Include="Connect\ConnectionClientInterface.cpp" />
     <ClCompile Include="Connect\IConnectSignInManager.cpp" />
     <ClCompile Include="Connect\ImsClient.cpp" />
@@ -316,11 +306,6 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
     <ClInclude Include="Cache\Schemas.h" />
     <ClInclude Include="Client\WebApi\WebApiV2Utils\JobApi.h" />
-    <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
-    <ClInclude Include="ConnectC\CWSCCBuffer.h" />
-    <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
-    <ClInclude Include="ConnectC\IMSSearch\IMSSearchBuffer.h" />
-    <ClInclude Include="ConnectC\Logging.h" />
     <ClInclude Include="Connect\ConnectionClientInterface.h" />
     <ClInclude Include="Connect\ConnectSessionAuthenticationPersistence.h" />
     <ClInclude Include="Connect\DelegationTokenProvider.h" />
@@ -391,21 +376,8 @@
     <ClInclude Include="Client\ClientConfiguration.h" />
     <ClInclude Include="Client\ClientConnection.h" />
     <ClInclude Include="Configuration\BuddiError.xliff.h" />
-    <ClInclude Include="ConnectC\CWSCCGenBuffer.h" />
-    <ClInclude Include="ConnectC\CWSCCInternal.h" />
-    <ClInclude Include="ConnectC\CWSCCPrivate.h" />
-    <ClInclude Include="ConnectC\WSLocalState.h" />
     <ClInclude Include="iModelHubClient\DgnDbServerUtils.h" />
     <ClInclude Include="iModelHubClient\Logging.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferPublic.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenBufferPublic.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenPublic.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\IMSSearch\IMSSearchBufferPublic.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\IMSSearch\IMSSearchPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\HardiModelDeleteEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\iModelCreatedEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\NamedVersionCreatedEvent.h" />
@@ -568,13 +540,13 @@
     <None Include=".hgignore" />
     <None Include="Azure\Azure.mki" />
     <None Include="CacheLib.mke" />
+    <None Include="CacheLibCompileOptions.mki" />
     <None Include="CachePrewire.mke" />
     <None Include="Cache\Cache.mki" />
     <None Include="ClientLib.mke" />
     <None Include="ClientLibCompileOptions.mki" />
     <None Include="Client\Client.mki" />
     <None Include="Configuration\Configuration.mki" />
-    <None Include="ConnectC\ConnectC.mki" />
     <None Include="Connect\Connect.mki" />
     <None Include="ClientPrewire.mke" />
     <None Include="CacheSchemasDelivery.mke" />

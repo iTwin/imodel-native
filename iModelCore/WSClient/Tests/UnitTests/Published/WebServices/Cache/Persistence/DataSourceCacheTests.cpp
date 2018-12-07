@@ -6955,6 +6955,47 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileW
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithEmptyPath_MovesDirectlyToRootDirectory)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+    BeFileName path1 = cache->ReadFilePath(fileId);
+
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"")));
+
+    EXPECT_FALSE(path1.DoesPathExist());
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path2.GetDirectoryName());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathOnlyIsSeperator_ErrorAsRelativePathsShouldNotStartWithSeperator)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"/")));
+    BeTest::SetFailOnAssert(true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathStartsWithSeperator_ErrorAsRelativePathsShouldNotStartWithSeperator)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"/Foo/Boo")));
+    BeTest::SetFailOnAssert(true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePath_MovesToRootDirectorySubfolder)
     {
     auto cache = GetTestCache();
@@ -7003,18 +7044,6 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileW
 
     BeFileName path = cache->ReadFilePath(fileId);
     EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(L"Foo/Boo/"), path.GetDirectoryName());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathOnlyASlash_Error)
-    {
-    auto cache = GetTestCache();
-    auto fileId = StubFileInCache(*cache);
-    BeTest::SetFailOnAssert(false);
-    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"/")));
-    BeTest::SetFailOnAssert(true);
     }
 
 /*--------------------------------------------------------------------------------------+

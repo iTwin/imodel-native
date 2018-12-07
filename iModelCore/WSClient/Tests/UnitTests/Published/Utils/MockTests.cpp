@@ -31,6 +31,9 @@
 #include "../WebServices/Connect/MockConnectionClientInterface.h"
 #include "../WebServices/Connect/MockConnectSignInManagerListener.h"
 
+// Include iModelHub to test namespace conflicts
+#include <WebServices/iModelHub/Client/FileInfo.h>
+
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     11/15

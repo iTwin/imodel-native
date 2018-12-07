@@ -162,29 +162,30 @@ struct JsonECSqlSelectAdapter final
                 MemberNameCasing GetMemberCasingMode() const { return m_memberNameCasing; }
                 ECN::ECJsonInt64Format GetInt64Format() const { return m_int64Format; }
             };
+
     private:
-        mutable ECSqlStatement const* m_ecsqlStatement;
-        mutable uint64_t m_hashCode;
-        mutable std::unique_ptr<bvector<Utf8String>> m_members;
-        bool m_thisAdaptorCached;
+
+        ECSqlStatement const& m_ecsqlStatement;
+        uint64_t m_ecsqlHash;
         FormatOptions m_formatOptions;
+        bool m_copyMemberNames = true;
+        mutable bvector<Utf8String> m_memberNames;
+        mutable bvector<Utf8String> m_uniqueMemberNames;
         //not copyable
         JsonECSqlSelectAdapter(JsonECSqlSelectAdapter const&) = delete;
         JsonECSqlSelectAdapter& operator=(JsonECSqlSelectAdapter const&) = delete;
-        BentleyStatus Init() const;
-    public:
 
+    public:
         //! Initializes a new JsonECSqlSelectAdapter instance for the specified ECSqlStatement. 
         //! @param[in] ecsqlStatement Prepared ECSqlStatement
         //! @param[in] formatOptions Options to control the output. 
-        //! @param[in] thisAdaptorCached Options to control if Json use StaticString for attribute names for performance. Adaptor must outlive Json::Value that is returned by GetRow().
+        //! @param[in] copyMemberNames if true, the resulting JSON objects own the member name strings.
+        //!            if false, the adapter owns the member names, and the JSON objects just have references to it.
+        //!            This can be used for a performance and memory optimization, but callers must make sure the
+        //!            the adapter object lives at least as long as the generated JSON objects 
         //! @see ECSqlStatement
-        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions(), bool thisAdaptorCached = false) : m_ecsqlStatement(&ecsqlStatement), m_formatOptions(formatOptions) , m_thisAdaptorCached (thisAdaptorCached), m_hashCode (ecsqlStatement.GetHashCode()){}
+        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions(), bool copyMemberNames = true): m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_copyMemberNames(copyMemberNames), m_ecsqlHash(ecsqlStatement.GetHashCode()) {}
         ~JsonECSqlSelectAdapter() {}
-
-        //! Set new statement point but it should have same ecsql
-        //! @param[in] ecsqlStatement Prepared ECSqlStatement
-        ECDB_EXPORT BentleyStatus SetStatement(ECSqlStatementCR ecsqlStatement) const;
 
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.
@@ -240,6 +241,60 @@ struct JsonECSqlSelectAdapter final
         ECDB_EXPORT BentleyStatus GetRow(JsonValueR json, bool appendToJson = false) const;
 
         //! Gets the current row as JSON object with pairs of property name value for each
+        //! item in the ECSQL select clause.
+        //! 
+        //! The ECSQL select clause is what exclusively determines which property name value pairs
+        //! the JSON will contain.
+        //!
+        //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
+        //! The ECSQL system properties are converted to the respective EC JSON format system members:
+        //! ECSQL  | JSON Format | JSON Format Data Type
+        //! ------ | ------------| ---------------------
+        //! @c %ECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::Id "id" | Hex String
+        //! @c ECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "className" | "<Schema Name>.<Class Name>"
+        //! @c SourceECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "sourceId" | Hex String
+        //! @c SourceECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName" | "<Schema Name>.<Class Name>"
+        //! @c TargetECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId" | Hex String
+        //! @c TargetECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName" | "<Schema Name>.<Class Name>"
+        //! &lt;%Navigation Property&gt;.<c>Id</c> | &lt;%Navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
+        //! &lt;%Navigation Property&gt;.<c>RelECClassId</c> | &lt;%Navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
+        //! &lt;Point2d/Point3d Property&gt;.<c>X</c> | &lt;Point2d/Point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
+        //! &lt;Point2d/Point3d Property&gt;.<c>Y</c> | &lt;Point2d/Point3d Property&gt;..@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
+        //! &lt;%Point3d Property&gt;.<c>Z</c> | &lt;Point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
+        //!
+        //! ####Examples
+        //! For the ECSQL <c>SELECT %ECInstanceId, ECClassId, Name, Age FROM myschema.Employee WHERE ...</c>
+        //! the returned JSON format would be this:
+        //! 
+        //!     {
+        //!         "id" : "0x13A",
+        //!         "className" : "mySchema.Employee",
+        //!         "Name": "Sally Smith",
+        //!         "Age": 30
+        //!     }
+        //!
+        //! For the ECSQL <c>SELECT Name, Age FROM myschema.Employee WHERE ...</c>
+        //! the returned JSON format would be this:
+        //! 
+        //!     {
+        //!         "Name": "Sally Smith",
+        //!         "Age": 30
+        //!     }
+        //! 
+        //! Using expressions or aliases or nesting property accessors in the ECSQL select clause
+        //! affect the JSON member names, not the JSON structure.
+        //! @note When using expressions in the SELECT clause it is recommended to assign a column alias to them.
+        //! The JSON member name will then be the alias instead of the full expression.
+        //! @param [out] json current row as JSON object of property name value pairs
+        //! @param[in] allocator Allocator to use to copy the values into the RapidJson value.
+        //! @param[in] appendToJson If true, the JSON property name value pairs of the retrieved row will
+        //! be appended to @p json. In this case, @p json must be a JSON object.
+        //! If false, @p json will just contain the retrieved row data. If @p json contained
+        //! members before the call, those will be cleared.
+        //! @return SUCCESS or ERROR
+        ECDB_EXPORT BentleyStatus GetRow(RapidJsonValueR json, rapidjson::MemoryPoolAllocator<>& allocator, bool appendToJson = false) const;
+
+        //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause that refer to the specified ECClass.
         //!
         //! The ECSQL select clause is what exclusively determines which property name value pairs
@@ -269,6 +324,38 @@ struct JsonECSqlSelectAdapter final
         //! @param [in] classId ECClassId indicating the class of the instance needed from the current row 
         //! @return false if there was an error in retrieving values. true otherwise.
         ECDB_EXPORT BentleyStatus GetRowInstance(JsonValueR json, ECN::ECClassId classId) const;
+
+        //! Gets the current row as JSON object with pairs of property name value for each
+        //! item in the ECSQL select clause that refer to the specified ECClass.
+        //!
+        //! The ECSQL select clause is what exclusively determines which property name value pairs
+        //! the JSON will contain.
+        //!
+        //! @see JsonECSqlSelectAdapter::GetRow for details on the ECJSON format.
+        //!
+        //! Example:
+        //! Assume the ECSQL <c>SELECT Employee.ECInstanceId, Employee.Name, Employee.Age, Company.ECInstanceId, Company.Name FROM myschema.Employee JOIN myschema.Company USING myschema.CompanyEmploysEmployee</c>.
+        //!
+        //! If the %ECClassId of @c Employee was passed to the method, the resulting JSON would be:
+        //! 
+        //!     {
+        //!     "id" : "0x123",
+        //!     "Name": "Sally Smith",
+        //!     "Age": 30
+        //!     }
+        //!
+        //! If the %ECClassId of @c Company was passed to the method, the resulting JSON would be:
+        //! 
+        //!     {
+        //!     "id" : "0x332",
+        //!     "Name": "ACME"
+        //!     }
+        //!
+        //! @param [out] json Current row values of the column of the specified class as JSON object of property name value pairs
+        //! @param [in] classId ECClassId indicating the class of the instance needed from the current row 
+        //! @param[in] allocator Allocator to use to copy the values into the RapidJson value.
+        //! @return false if there was an error in retrieving values. true otherwise.
+        ECDB_EXPORT BentleyStatus GetRowInstance(RapidJsonValueR json, ECN::ECClassId classId, rapidjson::MemoryPoolAllocator<>& allocator) const;
     };
 
 //=================================================================================
@@ -318,6 +405,14 @@ struct JsonReader final
         //! @remarks The returned JSON is a JSON object of property value pairs for the specified instance. See 
         //! @ref JsonECSqlSelectAdapter::GetRowInstance for more details. 
         ECDB_EXPORT BentleyStatus Read(JsonValueR jsonInstance, ECInstanceId ecInstanceId) const;
+
+        //! Reads (only) the specified instance in the JSON format. 
+        //! @param [out] jsonInstance JSON representation of the ECInstance as a JSON object made up of property-value pairs.
+        //! @param ecInstanceId [in] ECInstanceId pointing to the instance that needs to be retrieved. 
+        //! @param[in] allocator Allocator to use to copy the values into the RapidJson value.
+        //! @remarks The returned JSON is a JSON object of property value pairs for the specified instance. See 
+        //! @ref JsonECSqlSelectAdapter::GetRowInstance for more details. 
+        ECDB_EXPORT BentleyStatus Read(RapidJsonValueR jsonInstance, ECInstanceId ecInstanceId, rapidjson::MemoryPoolAllocator<>& allocator) const;
     };
 
 
