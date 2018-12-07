@@ -48,6 +48,8 @@ public:
 protected:
     explicit ZShapeProfile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const override;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ZShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (ZShapeProfile)
@@ -75,6 +77,11 @@ public:
 
     PROFILES_EXPORT double GetFlangeSlope() const;
     PROFILES_EXPORT void SetFlangeSlope (double val);
+
+public:
+    PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
+    PROFILES_EXPORT double GetInnerWebFaceLength() const;
+    PROFILES_EXPORT double GetSlopeHeight() const;
 
     }; // ZShapeProfile
 

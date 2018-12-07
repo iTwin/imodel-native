@@ -8,7 +8,7 @@
 #pragma once
 #include <Bentley\BeTest.h>
 #include <DgnView\DgnViewLib.h>
-#include <Profiles/ProfilesApi.h>
+#include <Profiles\ProfilesApi.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Base class for Profiles domain test cases.

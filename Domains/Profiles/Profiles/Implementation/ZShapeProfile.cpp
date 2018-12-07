@@ -54,6 +54,49 @@ ZShapeProfile::ZShapeProfile (CreateParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ZShapeProfile::_Validate() const
+    {
+    BentleyStatus status = T_Super::_Validate();
+    if (status != BSISUCCESS)
+        return status;
+
+    bool const isValidFlangeWidth = std::isfinite (GetFlangeWidth()) && GetFlangeWidth() > 0.0;
+    if (!isValidFlangeWidth)
+        return BSIERROR;
+
+    bool const isValidDepth = std::isfinite (GetDepth()) && GetDepth() > 0.0;
+    if (!isValidDepth)
+        return BSIERROR;
+
+    bool const isValidFlangeThickness = std::isfinite (GetFlangeThickness()) && GetFlangeThickness() > 0.0 && GetFlangeThickness() < GetDepth() / 2.0;
+    if (!isValidFlangeThickness)
+        return BSIERROR;
+
+    bool const isValidWebThickness = std::isfinite (GetWebThickness()) && GetWebThickness() > 0.0 && GetWebThickness() < GetFlangeWidth();
+    if (!isValidWebThickness)
+        return BSIERROR;
+
+    bool const isFlangeSlopeValid = std::isfinite (GetFlangeSlope()) && GetFlangeSlope() >= 0.0 && GetFlangeSlope() < PI / 2.0
+                                    && GetInnerWebFaceLength() / 2.0 - GetSlopeHeight() >= 0.0;
+    if (!isFlangeSlopeValid)
+        return BSIERROR;
+
+    bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0 && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetSlopeHeight()
+                                     && GetFilletRadius() <= GetInnerFlangeFaceLength() / 2.0;
+    if (!isValidFilletRadius)
+        return BSIERROR;
+
+    bool const isValidFlangeEdgeRadius = std::isfinite (GetFlangeEdgeRadius()) && GetFlangeEdgeRadius() >= 0.0
+                                         && GetFlangeEdgeRadius() <= std::min (GetInnerFlangeFaceLength() / 2.0, GetFlangeThickness() / 2.0);
+    if (!isValidFlangeEdgeRadius)
+        return BSIERROR;
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double ZShapeProfile::GetFlangeWidth() const
@@ -163,6 +206,34 @@ double ZShapeProfile::GetFlangeSlope() const
 void ZShapeProfile::SetFlangeSlope (double val)
     {
     SetPropertyValue (PRF_PROP_ZShapeProfile_FlangeSlope, ECN::ECValue (val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetInnerFlangeFaceLength() const
+    {
+    return GetFlangeWidth() - GetWebThickness();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetInnerWebFaceLength() const
+    {
+    return GetDepth() - GetFlangeThickness();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetSlopeHeight() const
+    {
+    double const flangeSlopeCos = std::cos (GetFlangeSlope());
+    if (flangeSlopeCos == 0.0)
+        return 0.0;
+
+    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * std::sin (GetFlangeSlope());
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
