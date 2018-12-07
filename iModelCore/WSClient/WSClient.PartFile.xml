@@ -638,6 +638,8 @@
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke"
         BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS -dBUILD_AGGREGATE_TESTS"
         >
+        <!-- NODE stub is required here to link DgnPlatform napi dependency for android -->
+        <SubPart PartName="node-addon-stub"  Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="iModelHubClient-Library" />
