@@ -20,10 +20,14 @@ struct GeometryTestCase : ProfilesTestCase
 private:
     Render::GeometryParams m_geometryParams;
 
-public:
+protected:
     GeometryTestCase();
 
-    void InsertProfileGeometry (ProfilePtr profilePtr, bool placeInNewRow = false);
+    template<typename T>
+    void InsertProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow = false);
+
+private:
+    void InsertPhysicalElement (ProfilePtr profilePtr, bool placeInNewRow);
 
     Render::GeometryParams const& GetGeometryParams() const { return m_geometryParams; }
     };
@@ -67,6 +71,24 @@ GeometryTestCase::GeometryTestCase()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Creates a Profile from given CreateParams and creates a PhysicalElement with profiles
+* geometry assigned to it for visual testing.
+* @bsiclass                                                                      12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+void GeometryTestCase::InsertProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow)
+    {
+    RefCountedPtr<T> profilePtr = typename T::Create (createParams);
+    ASSERT_TRUE (profilePtr.IsValid());
+
+    DgnDbStatus status;
+    profilePtr->Insert (&status);
+    ASSERT_EQ (DgnDbStatus::Success, status);
+
+    InsertPhysicalElement (profilePtr, placeInNewRow);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Callculates an offset to translate profile geometry in world space. Keeps track of
 * last profile placement point and offsets other profiles according to that.
 * Used to position profiles in rows at world space.
@@ -104,7 +126,7 @@ static DPoint3d offsetProfilePlacement (IGeometryPtr& geometryPtr, bool placeInN
 * space.
 * @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryTestCase::InsertProfileGeometry (ProfilePtr profilePtr, bool placeInNewRow)
+void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, bool placeInNewRow)
     {
     PhysicalElementPtr physicaleElementPtr = GenericPhysicalObject::Create (GetPhysicalModel(), GetCategoryId());
     physicaleElementPtr->SetUserLabel (profilePtr->GetName().c_str());
@@ -132,45 +154,15 @@ void GeometryTestCase::InsertProfileGeometry (ProfilePtr profilePtr, bool placeI
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GeometryTestCase, CShapeGeometry)
+TEST_F(GeometryTestCase, ProfilesGemetry)
     {
-    CShapeProfile::CreateParams params1 (GetModel(), "CShape_Plain", 6, 10, 1, 1, 0, 0, 0);
-    CShapeProfilePtr profilePtr1 = CShapeProfile::Create (params1);
-    BeAssert (profilePtr1->Insert().IsValid());
-    InsertProfileGeometry (profilePtr1);
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_Plain", 6, 10, 1, 1, 0, 0, 0));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0.0));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_MaxFillet", 6, 10, 1, 1, 2.5, 0.1, 0.0));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, PI / 18));
 
-    CShapeProfile::CreateParams profileParams2 (GetModel(), "CShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0.0);
-    CShapeProfilePtr profilePtr2 = CShapeProfile::Create (profileParams2);
-    BeAssert (profilePtr2->Insert().IsValid());
-    InsertProfileGeometry (profilePtr2);
-
-    CShapeProfile::CreateParams profileParams3 (GetModel(), "CShape_MaxFillet", 6, 10, 1, 1, 2.5, 0.1, 0.0);
-    CShapeProfilePtr profilePtr3 = CShapeProfile::Create (profileParams3);
-    BeAssert (profilePtr3->Insert().IsValid());
-    InsertProfileGeometry (profilePtr3);
-
-    CShapeProfile::CreateParams profileParams4 (GetModel(), "CShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, PI / 18);
-    CShapeProfilePtr profilePtr4 = CShapeProfile::Create (profileParams4);
-    BeAssert (profilePtr4->Insert().IsValid());
-    InsertProfileGeometry (profilePtr4);
-
-    IShapeProfile::CreateParams params5 (GetModel(), "IShape_Plain", 6, 10, 1, 1, 0, 0, 0);
-    IShapeProfilePtr profilePtr5 = IShapeProfile::Create (params5);
-    BeAssert (profilePtr5->Insert().IsValid());
-    InsertProfileGeometry (profilePtr5, true);
-
-    IShapeProfile::CreateParams params6 (GetModel(), "IShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0.0);
-    IShapeProfilePtr profilePtr6 = IShapeProfile::Create (params6);
-    BeAssert (profilePtr6->Insert().IsValid());
-    InsertProfileGeometry (profilePtr6);
-
-    IShapeProfile::CreateParams params7 (GetModel(), "IShape_MaxFillet", 6, 10, 1, 1, 2.5 / 2.0, 0.1, 0.0);
-    IShapeProfilePtr profilePtr7 = IShapeProfile::Create (params7);
-    BeAssert (profilePtr7->Insert().IsValid());
-    InsertProfileGeometry (profilePtr7);
-
-    IShapeProfile::CreateParams profileParams8 (GetModel(), "IShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, PI / 18);
-    IShapeProfilePtr profilePtr8 = IShapeProfile::Create (profileParams8);
-    BeAssert (profilePtr8->Insert().IsValid());
-    InsertProfileGeometry (profilePtr8);
+    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_Plain", 6, 10, 1, 1, 0, 0, 0), true);
+    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0.0));
+    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_MaxFillet", 6, 10, 1, 1, 2.5 / 2.0, 0.1, 0.));
+    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, PI / 18));
     }
