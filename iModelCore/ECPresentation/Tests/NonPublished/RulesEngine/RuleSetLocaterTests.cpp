@@ -863,6 +863,7 @@ TEST(SupplementalRuleSetLocater, FindsSupplementalRuleSetsAndSetsProvidedId)
         << "Got: " << rulesets[1]->GetStyleOverrides()[0]->GetBackColor().c_str();
     }
 
+#ifdef OldEmbeddedRulesetLocater
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                10/2017
 +===============+===============+===============+===============+===============+======*/
@@ -986,7 +987,7 @@ TEST_F(EmbeddedRuleSetLocaterTests, DisposesAllCachedRulesetsWhenInvalidateReque
     EXPECT_EQ(1, rulesets[0]->GetRefCount());
     EXPECT_EQ(1, rulesets[1]->GetRefCount());
     }
-
+#endif
 
 /*=================================================================================**//**
 * @bsiclass                                     Aidas.Kilinskas                05/2018
