@@ -262,7 +262,7 @@ TEST_F(ActivityLoggerTests, messagev_WithActivityIdAndWCharCPMessageAndWithoutNa
 
     auto onAct = [=] (ActivityLogger logger)
         {
-        logger.messagev(NativeLogging::SEVERITY::LOG_INFO, L"Something %s logged", L"is");
+        logger.messagev(NativeLogging::SEVERITY::LOG_INFO, L"Something %ls logged", L"is");
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_INFO;
@@ -302,7 +302,7 @@ TEST_F(ActivityLoggerTests, messageva_WithActivityIdAndWCharCPMessageAndWithoutN
         {
         InvokeActionWithVaList([=, &logger] (va_list args)
             {
-            logger.messageva(NativeLogging::SEVERITY::LOG_WARNING, L"Something %s logged", args);
+            logger.messageva(NativeLogging::SEVERITY::LOG_WARNING, L"Something %ls logged", args);
             }, L"is");
         };
     
@@ -384,7 +384,7 @@ TEST_F(ActivityLoggerTests, messagev_WithActivityIdAndWCharCPMessageAndNameSpace
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        logger.messagev(L"Testing.Namespace", NativeLogging::SEVERITY::LOG_ERROR, L"Something %s logged", L"is");
+        logger.messagev(L"Testing.Namespace", NativeLogging::SEVERITY::LOG_ERROR, L"Something %ls logged", L"is");
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_ERROR;
@@ -426,7 +426,7 @@ TEST_F(ActivityLoggerTests, messageva_WithActivityIdAndWCharCPMessageAndNameSpac
         {
         InvokeActionWithVaList([=, &logger] (va_list args)
             {
-            logger.messageva(L"Testing.Namespace", NativeLogging::SEVERITY::LOG_WARNING, L"Something %s logged", args);
+            logger.messageva(L"Testing.Namespace", NativeLogging::SEVERITY::LOG_WARNING, L"Something %ls logged", args);
             }, L"is");
         };
     
@@ -508,7 +508,7 @@ TEST_F(ActivityLoggerTests, fatalv_WithActivityIdAndWCharCPMessage_LogsExpectedF
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        logger.fatalv(L"Something %s logged", L"is");
+        logger.fatalv(L"Something %ls logged", L"is");
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_FATAL;
@@ -584,7 +584,7 @@ TEST_F(ActivityLoggerTests, errorv_WithActivityIdAndWCharCPMessage_LogsExpectedE
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        logger.errorv(L"Something %s logged", L"is");
+        logger.errorv(L"Something %ls logged", L"is");
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_ERROR;
@@ -660,7 +660,7 @@ TEST_F(ActivityLoggerTests, warningv_WithActivityIdAndWCharCPMessage_LogsExpecte
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        logger.warningv(L"Something %s logged", L"is");
+        logger.warningv(L"Something %ls logged", L"is");
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_WARNING;
@@ -736,7 +736,7 @@ TEST_F(ActivityLoggerTests, infov_WithActivityIdAndWCharCPMessage_LogsExpectedIn
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        logger.infov(L"Something %s logged", L"is");
+        logger.infov(L"Something %ls logged", L"is");
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_INFO;
@@ -812,7 +812,7 @@ TEST_F(ActivityLoggerTests, debugv_WithActivityIdAndWCharCPMessage_LogsExpectedD
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        logger.debugv(L"Something %s logged", L"is");
+        logger.debugv(L"Something %ls logged", L"is");
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_DEBUG;
@@ -888,7 +888,7 @@ TEST_F(ActivityLoggerTests, tracev_WithActivityIdAndWCharCPMessage_LogsExpectedT
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        logger.tracev(L"Something %s logged", L"is");
+        logger.tracev(L"Something %ls logged", L"is");
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_TRACE;

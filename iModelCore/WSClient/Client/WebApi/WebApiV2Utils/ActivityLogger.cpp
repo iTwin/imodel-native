@@ -37,13 +37,13 @@ WString ActivityLogger::CreateLogMessage(WString message) const
     BeStringUtilities::Utf8ToWChar(activityName, m_activityName.c_str());
 
     WString logMessage;
-    logMessage.Sprintf(L"%s: %s", activityName.c_str(), message.c_str());
+    logMessage.Sprintf(L"%ls: %ls", activityName.c_str(), message.c_str());
 
     if (!m_activityId.empty())
         {
         WString activityId;
         BeStringUtilities::Utf8ToWChar(activityId, m_activityId.c_str());
-        logMessage += WPrintfString(L" (ActivityId: %s)", activityId.c_str());
+        logMessage += WPrintfString(L" (ActivityId: %ls)", activityId.c_str());
         }
 
     return logMessage;

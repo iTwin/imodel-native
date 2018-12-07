@@ -164,7 +164,6 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedOnce_R
     ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
     ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
 
-    bool legacyMode = false;
     auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "prefix");
 
     AuthenticationHandler::Attempt attempt("http://test.com", "prefix SomeTestToken", DateTime(), 1);
@@ -232,7 +231,6 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyHandlerWi
     ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
     ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
 
-    bool legacyMode = false;
     auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "token");
 
     AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
@@ -287,7 +285,6 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyHandlerWi
     ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
     ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
 
-    bool legacyMode = false;
     auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "SAML");
 
     AuthenticationHandler::Attempt attempt("http://test.com", "SAML SomeTestToken", DateTime(), 1);

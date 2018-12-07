@@ -247,7 +247,7 @@ TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithoutExternalEnvironmentDir
     CacheEnvironment cacheEnv = cache.GetEnvironment();
     EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), HasSubstr(baseEnv.persistentFileCacheDir.c_str()));
     EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), HasSubstr(cacheEnv.persistentFileCacheDir.c_str()));
-    EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), AnyOf(EndsWith(L"\\ext\\"), EndsWith(L"//ext//")));
+    EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), AnyOf(EndsWith(L"\\ext\\"), EndsWith(L"/ext/")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -4459,7 +4459,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResultContainsChangedOneToOne
     auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToOneHoldingRelationshipClass");
     auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
     CachedResponseKey responseKey(parent, "Foo");
-    auto child = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
+    StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
     CachedResponseKey responseKeyChild(parent, "Foo2");
 
     StubInstances instances;
@@ -5604,7 +5604,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_MultiplePages_ReturnsTheirObj
     CachedResponseKey key({cache->FindOrCreateRoot(nullptr), "TestQuery"});
 
     StubInstances instances;
-    auto response = instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "A"});
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
 
     instances.Clear();
@@ -6952,6 +6952,47 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileW
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithEmptyPath_MovesDirectlyToRootDirectory)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+    BeFileName path1 = cache->ReadFilePath(fileId);
+
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"")));
+
+    EXPECT_FALSE(path1.DoesPathExist());
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path2.GetDirectoryName());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathOnlyIsSeperator_ErrorAsRelativePathsShouldNotStartWithSeperator)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"/")));
+    BeTest::SetFailOnAssert(true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathStartsWithSeperator_ErrorAsRelativePathsShouldNotStartWithSeperator)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"/Foo/Boo")));
+    BeTest::SetFailOnAssert(true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePath_MovesToRootDirectorySubfolder)
     {
     auto cache = GetTestCache();
@@ -7000,18 +7041,6 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileW
 
     BeFileName path = cache->ReadFilePath(fileId);
     EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(L"Foo/Boo/"), path.GetDirectoryName());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathOnlyASlash_Error)
-    {
-    auto cache = GetTestCache();
-    auto fileId = StubFileInCache(*cache);
-    BeTest::SetFailOnAssert(false);
-    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"/")));
-    BeTest::SetFailOnAssert(true);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -8612,7 +8641,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWas
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}});
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse(), &rejected, nullptr));
-    auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
     ASSERT_TRUE(rejected.empty());
 
     rejected.clear();

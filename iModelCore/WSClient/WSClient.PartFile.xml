@@ -317,7 +317,7 @@
         <Directories DirectoryListName="iModelHubNativeTests"/>
     </Product>
 
-    <Part Name="iModelHubGtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke"
+    <Part Name="iModelHubGtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
     BentleyBuildMakeOptions="-dTEST_NAME=iModelHubNativeTests -dTEST_COLLECTION_PRODUCT=iModelHubNativeTestsCollection -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x64">
         <SubProduct ProductName="iModelHubNativeTestsCollection"/>
         <Bindings>
@@ -638,10 +638,12 @@
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke"
         BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS -dBUILD_AGGREGATE_TESTS"
         >
+        <!-- NODE stub is required here to link DgnPlatform napi dependency for android -->
+        <SubPart PartName="node-addon-stub"  Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="iModelHubClient-Library" />
-        <SubPart PartName="iModelHubClient-Library-Android" LibType="Static" />
+        <SubPart PartName="iModelHubClient-Library-Android-Shim" />
 
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
@@ -671,7 +673,10 @@
     <!-- WIP to silence build warnings. -->
     <ProductDirectoryList ListName="WSClient-Tests-Dirs">
         <ProductDirectory Name="Gtest-NativeAssemblies" Deliver="false"/>
-        <ProductDirectory Name="sqlang" LibType="static" Deliver="false"/>
+
+        <!-- This is required on Linux -->
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets"/>
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets" LibType="static"/>
 
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
         <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
@@ -679,7 +684,7 @@
     </ProductDirectoryList>
 
     <Part Name="Gtest" DeferType="BuildUnitTests"
-        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=WSClientTest -dTEST_COLLECTION_PRODUCT=WSClient-Tests"
         OnlyPlatforms="x86,x64,Linux*,MacOS*"
         >
@@ -696,13 +701,10 @@
         <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
-    <!-- Does not build currently on Linux and MacOs 
-            OnlyPlatforms="x86,x64,MacOs*,Linux*"
-    -->
     <Part Name="RunGtest" DeferType="RunUnitTests"
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke"
         BentleyBuildMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest"
-        OnlyPlatforms="x86,x64"
+        OnlyPlatforms="x86,x64,MacOs*,Linux*"
         >
         <SubProduct ProductName="WSClient-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>

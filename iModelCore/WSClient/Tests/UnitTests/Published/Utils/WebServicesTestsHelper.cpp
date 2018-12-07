@@ -19,6 +19,7 @@ void BackDoor::DgnClientFx_Device::Initialize()
 #endif
     }
 
+BEGIN_BENTLEY_NAMESPACE
 bool operator <= (const DateTime& lhs, const DateTime& rhs)
     {
     DateTime::CompareResult result = DateTime::Compare(lhs, rhs);
@@ -32,6 +33,7 @@ bool operator >= (const DateTime& lhs, const DateTime& rhs)
     EXPECT_TRUE(DateTime::CompareResult::Error != result);
     return result == DateTime::CompareResult::Equals || result == DateTime::CompareResult::LaterThan;
     }
+END_BENTLEY_NAMESPACE
 
 bool rapidjson::operator==(const rapidjson::Value& a, const rapidjson::Value& b)
     {
