@@ -263,26 +263,25 @@ int RunBridge(Env env, const char* jsonString)
     // Napi::String encodedToken = BridgeNative::RequestToken();  
     // BridgeNative::logMessage(encodedToken.Utf8Value().c_str());                                
     // BeThreadUtilities::BeSleep(10000);
-    status = 0;     // Indicate success
-
-/* [NEEDSWORK] Below works, but commented out until I finish debugging all the surrounding code.  -- John Majerle      
+    //status = 0;     // Indicate success
+    
     try {
         Dgn::iModelBridgeFwk app;
 
         if (BentleyApi::BSISUCCESS != app.ParseCommandLine(argc, argv)) {
-            printf("\n");
-            printf("BridgeAddon.cpp: RunBridge() ParseCommandLine failure\n");
+            BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() ParseCommandLine failure");
             return status;
         }
 
         status = app.Run(argc, argv);
 
-        printf("BridgeAddon.cpp: RunBridge() Run completed with status = %d\n", status);
+        char buffer [MAX_PATH];
+        sprintf(buffer, "BridgeAddon.cpp: RunBridge() Run completed with status = %d", status);
+        BridgeNative::logMessage(buffer);
     } catch (...) {
-        printf("BridgeAddon.cpp: RunBridge() exception occurred bridging the file\n");
+        BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() exception occurred bridging the file");
         return status;
     }
-*/
 
     BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() END"); // [NEEDSWORK] This line just for testing.  Remove later.
 
