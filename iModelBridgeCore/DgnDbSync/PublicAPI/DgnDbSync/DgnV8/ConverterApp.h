@@ -101,6 +101,8 @@ protected:
     BentleyStatus _DetectDeletedDocuments() override;
     BentleyStatus _MakeSchemaChanges() override;
 
+    DgnFontCP _TryResolveFont(DgnFontCP font) override {return m_converter->TryResolveFont(font);}
+
 public:
     RootModelConverterApp()
         {

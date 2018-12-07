@@ -1369,6 +1369,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     HostTerminator terminateHostOnReturn;
 
+    iModelBridgeBimHost_SetBridge _registerBridgeOnHost(*m_bridge);
+
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);
 
