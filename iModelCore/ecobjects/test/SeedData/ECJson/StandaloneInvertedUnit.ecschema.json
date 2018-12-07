@@ -1,0 +1,11 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/schemaitem",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaItemType": "InvertedUnit",
+  "name": "ExampleInvertedUnit",
+  "invertsUnit": "ExampleSchema.ExampleUnit",
+  "label": "ExampleUnitLabel",
+  "description": "ExampleUnitDescription",
+  "unitSystem": "ExampleSchema.ExampleUnitSystem"
+}

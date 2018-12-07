@@ -1,0 +1,23 @@
+﻿{
+  "$schema" : "https://dev.bentley.com/json_schemas/ec/32/schemaitem",
+  "schema" : "ExampleSchema",
+  "schemaItemType" : "EntityClass",
+  "schemaVersion" : "03.01.00",
+  "name" : "DerivedEntityClass",
+  "baseClass" : "ExampleSchema.BaseEntityClass",
+  "properties" : [
+    {
+      "name" : "PrimitivePropertyNonOverride",
+      "type" : "PrimitiveProperty",
+      "typeName" : "int",
+      "inherited" : true
+    },
+    {
+      "name" : "PrimitivePropertyOverride",
+      "type" : "PrimitiveProperty",
+      "typeName" : "string",
+      "minLength" : 3,
+      "maxLength" : 12
+    }
+  ]
+}
