@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="CompatibilityTestFixture.cpp" />
+    <ClCompile Include="BeDbCompatibilityTests.cpp" />
+    <ClCompile Include="ECDbCompatibilityTests.cpp" />
+    <ClCompile Include="TestECDbCreators.cpp" />
+    <ClCompile Include="TestIModelCreators.cpp" />
+    <ClCompile Include="IModelCompatibilityTests.cpp" />
+    <ClCompile Include="Profiles.cpp" />
+    <ClCompile Include="iModelHubMock\iModelHubMock.cpp" />
+    <ClCompile Include="iModelHubMock\iModelHubMockTests.cpp" />
+    <ClCompile Include="TestDb.cpp" />
+    <ClCompile Include="TestDomain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.0.ecschema.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.1.ecschema.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.2.ecschema.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CompatibilityTestFixture.h" />
+    <ClInclude Include="TestECDbCreators.h" />
+    <ClInclude Include="TestIModelCreators.h" />
+    <ClInclude Include="CompatibilityTests.h" />
+    <ClInclude Include="Profiles.h" />
+    <ClInclude Include="iModelHubMock\iModelHubMock.h" />
+    <ClInclude Include="TestDb.h" />
+    <ClInclude Include="TestDomain.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+</Project>
