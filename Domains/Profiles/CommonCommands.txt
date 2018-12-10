@@ -21,8 +21,13 @@ To run only certain tests add a filter option: "-dGTEST_FILTER=--gtest_filter=[Y
 [UI TESTS]
 Run geometry generation test:
     bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=GeometryTestCase*
+
 Open generated bim with Gist:
     %temp%\ProfilesTests\ProfilesTests_Working.bim
+
+Handy doskey (build and run filtered tests):
+    doskey RunTests = bb re ProfilesTests ^&^& bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=$*
+    Usage: "runtests IShape*"
 
 [CODE COVERAGE]
 Generate code coverage report:
