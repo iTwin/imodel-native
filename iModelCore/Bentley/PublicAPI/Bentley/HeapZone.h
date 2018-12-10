@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/HeapZone.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,7 +40,7 @@ public:
     STYPE* AllocateNode () {if (next_size > MAXBLOCKSIZE) next_size=MAXBLOCKSIZE; return (STYPE*) malloc();}
     void FreeNode (STYPE* node) {free (node);}
     void Clear () {purge_memory();}
-    void SetEntrySize (int n, int firstSize) {*((int*) &requested_size) = n; next_size=firstSize;}
+    void SetEntrySize (int n, int firstSize) {*((int*)const_cast<size_type*>(&requested_size)) = n; next_size=firstSize;}
 
     size_t GetMemoryAllocated() const
         {
@@ -84,7 +84,7 @@ struct FixedSizePool1 : private T_BoostPoolWithMemutilAllocator
 
     void    SetSize (int entrySize, int chunkSize=32)
         {
-        *((int*) &requested_size) = entrySize;
+        *(const_cast<int*>((int const*)&requested_size)) = entrySize;
         m_originalNextSize = next_size = chunkSize;
         }
 
