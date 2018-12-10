@@ -79,11 +79,6 @@ BentleyStatus ZShapeProfile::_Validate() const
     if (!isValidWebThickness)
         return BSIERROR;
 
-    bool const isFlangeSlopeValid = std::isfinite (GetFlangeSlope()) && GetFlangeSlope() >= 0.0 && GetFlangeSlope() < PI / 2.0
-                                    && GetInnerWebFaceLength() / 2.0 - GetSlopeHeight() >= 0.0;
-    if (!isFlangeSlopeValid)
-        return BSIERROR;
-
     bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0 && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetSlopeHeight()
                                      && GetFilletRadius() <= GetInnerFlangeFaceLength() / 2.0;
     if (!isValidFilletRadius)
@@ -92,6 +87,11 @@ BentleyStatus ZShapeProfile::_Validate() const
     bool const isValidFlangeEdgeRadius = std::isfinite (GetFlangeEdgeRadius()) && GetFlangeEdgeRadius() >= 0.0
                                          && GetFlangeEdgeRadius() <= std::min (GetInnerFlangeFaceLength() / 2.0, GetFlangeThickness() / 2.0);
     if (!isValidFlangeEdgeRadius)
+        return BSIERROR;
+
+    bool const isFlangeSlopeValid = std::isfinite (GetFlangeSlope()) && GetFlangeSlope() >= 0.0 && GetFlangeSlope() < PI / 2.0
+                                    && GetInnerWebFaceLength() / 2.0 >= GetSlopeHeight();
+    if (!isFlangeSlopeValid)
         return BSIERROR;
 
     return BSISUCCESS;
