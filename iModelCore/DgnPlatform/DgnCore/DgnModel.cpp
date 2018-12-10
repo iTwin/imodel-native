@@ -1612,7 +1612,7 @@ AxisAlignedBox3d GeometricModel3d::_QueryModelRange() const
         }
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
-    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
+    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) const_cast<void*>(stmt.GetValueBlob(0)) : AxisAlignedBox3d(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1646,7 +1646,7 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
         }
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
-    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
+    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) const_cast<void*>(stmt.GetValueBlob(0)) : AxisAlignedBox3d(); 
     }
 
 /*---------------------------------------------------------------------------------**//**

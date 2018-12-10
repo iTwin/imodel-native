@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationLeaderStyle.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -137,7 +137,7 @@ void dgn_ElementHandler::AnnotationLeaderStyleHandler::_RegisterPropertyAccessor
     params.RegisterPropertyAccessors(layout, PROP_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            AnnotationLeaderStyle& el = (AnnotationLeaderStyle&) elIn;
+            AnnotationLeaderStyle const& el = (AnnotationLeaderStyle const&) elIn;
             value.SetUtf8CP(el.GetDescription().c_str());
             return DgnDbStatus::Success;
             },

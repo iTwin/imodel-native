@@ -2185,8 +2185,8 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    #define GET_DOUBLE(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; YawPitchRollAngles angles; YawPitchRollAngles::TryFromRotMatrix(angles, viewDef.GetRotation()); value.SetDouble(EXPR); return DgnDbStatus::Success;
-    #define GET_POINT(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; value.SetPoint3d(EXPR); return DgnDbStatus::Success;
+    #define GET_DOUBLE(EXPR) ViewDefinition3d const& viewDef = (ViewDefinition3d const&)el; YawPitchRollAngles angles; YawPitchRollAngles::TryFromRotMatrix(angles, viewDef.GetRotation()); value.SetDouble(EXPR); return DgnDbStatus::Success;
+    #define GET_POINT(EXPR) ViewDefinition3d const& viewDef = (ViewDefinition3d const&)el; value.SetPoint3d(EXPR); return DgnDbStatus::Success;
     #define SET_POINT(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; EXPR; return DgnDbStatus::Success;
     #define SET_DOUBLE(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; YawPitchRollAngles angles; YawPitchRollAngles::TryFromRotMatrix(angles, viewDef.GetRotation()); EXPR; viewDef.SetRotation(angles.ToRotMatrix()); return DgnDbStatus::Success;
 
@@ -2321,7 +2321,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    #define GET_POINT2d(EXPR) ViewDefinition2d& viewDef = (ViewDefinition2d&)el; value.SetPoint2d(EXPR); return DgnDbStatus::Success;
+    #define GET_POINT2d(EXPR) ViewDefinition2d const& viewDef = (ViewDefinition2d const&)el; value.SetPoint2d(EXPR); return DgnDbStatus::Success;
     #define SET_POINT2d(EXPR) ViewDefinition2d& viewDef = (ViewDefinition2d&)el; EXPR; return DgnDbStatus::Success;
 
     #define VALIDATE_POINT2d_VALUE(VALUE) if (VALUE.IsNull() || !VALUE.IsPoint2d()) return DgnDbStatus::BadArg;

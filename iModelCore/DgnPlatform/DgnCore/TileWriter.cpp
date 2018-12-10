@@ -42,7 +42,7 @@ BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
 
     return BeFileStatus::Success == inputFile.Open (fileName, BeFileAccess::Read) &&
            BeFileStatus::Success == inputFile.ReadEntireFile (inputData) &&
-           reader.parse ((char*) inputData.GetData(), (char*) (inputData.GetData() + inputData.GetSize()), value) ? SUCCESS : ERROR;
+           reader.parse ((char const*) inputData.GetData(), (char const*) (inputData.GetData() + inputData.GetSize()), value) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

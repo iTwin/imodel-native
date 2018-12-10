@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/charutil/stringop.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -365,7 +365,7 @@ WCharP          output          /* <= output string */
     unsigned short  temp1, temp2;
     WCharP          out;
     WCharP          origOutput = output;
-    short           *input = (short *)inputP;
+    short const     *input = (short const*)inputP;
 
     for (i=0; i<(length+2)/3; i++)
         {

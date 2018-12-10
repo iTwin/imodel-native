@@ -822,7 +822,7 @@ void SnapDetail::SetSnapPoint(DPoint3dCR snapPt, bool forceHot, double hotDistan
 +---------------+---------------+---------------+---------------+---------------+------*/
 IntersectDetail::IntersectDetail(HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR pt) : SnapDetail(firstHit)
     {
-    m_secondHit = (HitDetailP) secondHit;
+    m_secondHit = const_cast<HitDetailP>(secondHit);
 
     if (m_secondHit)
         m_secondHit->AddRef();
@@ -874,7 +874,7 @@ bool IntersectDetail::_IsSameHit(HitDetailCP otherPath) const
         return false;
 
     // now check the "second" paths
-    HitDetailCP o2 = ((IntersectDetail*) otherPath)->GetSecondHit();
+    HitDetailCP o2 = ((IntersectDetail const*) otherPath)->GetSecondHit();
 
     return GetSecondHit()->IsSameHit(o2);
     }

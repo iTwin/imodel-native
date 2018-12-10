@@ -254,7 +254,7 @@ void dgn_TxnTable::Element::_OnAppliedDelete(BeSQLite::Changes::Change const& ch
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
 
     // see if we have this element in memory, if so call its _OnDelete method.
-    DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindLoadedElement(elementId);
+    DgnElementPtr el = const_cast<DgnElementP>(m_txnMgr.GetDgnDb().Elements().FindLoadedElement(elementId));
     if (el.IsValid()) 
         el->_OnAppliedDelete(); // Note: this MUST be a DgnElementPtr, since we can't call _OnAppliedDelete with an element with a zero ref count
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/TextAnnotationSeed.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -125,7 +125,7 @@ void dgn_ElementHandler::TextAnnotationSeedHandler::_RegisterPropertyAccessors(E
     params.RegisterPropertyAccessors(layout, PROP_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            TextAnnotationSeed& el = (TextAnnotationSeed&) elIn;
+            TextAnnotationSeed const& el = (TextAnnotationSeed const&) elIn;
             value.SetUtf8CP(el.GetDescription().c_str());
             return DgnDbStatus::Success;
             },

@@ -1094,7 +1094,7 @@ void dgn_ElementHandler::MarkupExternalLinkHandler::_RegisterPropertyAccessors(E
     params.RegisterPropertyAccessors(layout, MARKUPEXTERNALLINK_LinkedElementId, 
         [](ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (MarkupExternalLink&)elIn;
+            auto const& el = (MarkupExternalLink const&)elIn;
             value.SetNavigationInfo(el.GetLinkedElementId());
             return DgnDbStatus::Success;
             },

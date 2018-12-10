@@ -1418,7 +1418,7 @@ static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint
         double sizeLimit = (s_maxHorizonGrids * colSpacing) / vp.GetViewDelta()->x;
 
         vp.GetRotMatrix().GetRow(viewZ, 2);
-        zCamera = viewZ.DotProduct(*((DVec3d *) &camera.GetEyePoint()));
+        zCamera = viewZ.DotProduct(*((DVec3dCP) &camera.GetEyePoint()));
         zCameraLimit = zCamera - camera.GetFocusDistance() * sizeLimit;
         }
 

@@ -1862,7 +1862,7 @@ void            Centerline::Output (LineStyleContextR context, LsStrokeP pStroke
 static void    getParallelandPerpVecs (DVec3dR parvec, DPoint3dR perpvec, DPoint3dCR normal, DPoint3dCP lineseg)
     {
     parvec.DifferenceOf (*lineseg, lineseg[1]);
-    if (0.0 == perpvec.NormalizedCrossProduct (parvec, *((DVec3d*) &normal)))
+    if (0.0 == perpvec.NormalizedCrossProduct (parvec, *((DVec3dCP)&normal)))
         perpvec.x = 1.0;   // zero length bvector
     }
 
@@ -1902,7 +1902,7 @@ DPoint3dCP pEndTangent
         cross.CrossProduct (*pStartTangent, parVec);
 
         // if the start tangent is not parallel to the normal bvector, we're "twisting" from element-to-element. Skip it.
-        if (cross.IsParallelTo (*((DVec3d*)normal)))
+        if (cross.IsParallelTo (*((DVec3dCP)normal)))
             {
             DPoint3d    perpVec = joint->m_dir;
             joint->m_dir.NormalizedCrossProduct (*normal, *pStartTangent);
@@ -1933,7 +1933,7 @@ DPoint3dCP pEndTangent
         DVec3d cross;
         cross.CrossProduct (*pEndTangent, parVec);
 
-        if (cross.IsParallelTo (*((DVec3d*)normal)))
+        if (cross.IsParallelTo (*((DVec3dCP)normal)))
             {
             DPoint3d    perpVec = joint->m_dir;
             joint->m_dir.NormalizedCrossProduct (*normal, *pEndTangent);

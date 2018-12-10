@@ -114,8 +114,8 @@ struct iModel_placement : BlobFunction
 //=======================================================================================
 struct PlacementFunc : ScalarFunction
 {
-    Placement3d& ToPlacement3d(DbValue* args) {return *(Placement3d*)(args[0].GetValueBlob());}
-    Placement2d& ToPlacement2d(DbValue* args) {return *(Placement2d*)(args[0].GetValueBlob());}
+    Placement3d& ToPlacement3d(DbValue* args) {return *(Placement3d*)const_cast<void*>(args[0].GetValueBlob());}
+    Placement2d& ToPlacement2d(DbValue* args) {return *(Placement2d*)const_cast<void*>(args[0].GetValueBlob());}
 
     PlacementFunc(Utf8CP name, DbValueType valType) : ScalarFunction(name, 1, valType) {}
 };
@@ -391,8 +391,8 @@ struct iModel_angles_maxdiff : ScalarFunction
             args[1].GetValueBytes() != sizeof(YawPitchRollAngles))
             return SetInputError(ctx);
 
-        YawPitchRollAngles& angle1 = *((YawPitchRollAngles*)(args[0].GetValueBlob()));
-        YawPitchRollAngles& angle2 = *((YawPitchRollAngles*)(args[1].GetValueBlob()));
+        YawPitchRollAngles const& angle1 = *((YawPitchRollAngles const*)(args[0].GetValueBlob()));
+        YawPitchRollAngles const& angle2 = *((YawPitchRollAngles const*)(args[1].GetValueBlob()));
 
         ctx.SetResultDouble(angle1.MaxDiffDegrees(angle2));
         }
@@ -457,7 +457,7 @@ struct iModel_bbox_width : ScalarFunction
         if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d))
             return SetInputError(ctx);
 
-        ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetWidth());
+        ctx.SetResultDouble(((ElementAlignedBox3d const*)(args[0].GetValueBlob()))->GetWidth());
         }
     iModel_bbox_width(Utf8CP name) : ScalarFunction(name, 1, DbValueType::FloatVal) {}
 };
@@ -482,7 +482,7 @@ struct iModel_bbox_height : ScalarFunction
         if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d))
             return SetInputError(ctx);
 
-        ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetHeight());
+        ctx.SetResultDouble(((ElementAlignedBox3d const*)(args[0].GetValueBlob()))->GetHeight());
         }
     iModel_bbox_height(Utf8CP name) : ScalarFunction(name, 1, DbValueType::FloatVal) {}
 };
@@ -508,7 +508,7 @@ struct iModel_bbox_depth : ScalarFunction
         if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d))
             return SetInputError(ctx);
 
-        ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetDepth());
+        ctx.SetResultDouble(((ElementAlignedBox3d const*)(args[0].GetValueBlob()))->GetDepth());
         }
     iModel_bbox_depth(Utf8CP name) : ScalarFunction(name, 1, DbValueType::FloatVal) {}
 };
@@ -534,7 +534,7 @@ struct iModel_bbox_volume : ScalarFunction
         if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d))
             return SetInputError(ctx);
 
-        ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->Volume());
+        ctx.SetResultDouble(((ElementAlignedBox3d const*)(args[0].GetValueBlob()))->Volume());
         }
     iModel_bbox_volume(Utf8CP name) : ScalarFunction(name, 1, DbValueType::FloatVal) {}
 };
@@ -567,7 +567,7 @@ struct iModel_bbox_areaxy : ScalarFunction
             return SetInputError(ctx);
 
 
-        ElementAlignedBox3d& box = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
+        ElementAlignedBox3d const& box = *((ElementAlignedBox3d const*)(args[0].GetValueBlob()));
         ctx.SetResultDouble(box.GetWidth() * box.GetDepth());
         }
 
@@ -597,8 +597,8 @@ struct iModel_bbox_overlaps : ScalarFunction
             args[1].GetValueBytes() != sizeof(ElementAlignedBox3d))
             return SetInputError(ctx);
 
-        ElementAlignedBox3d& box1 = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
-        ElementAlignedBox3d& box2 = *((ElementAlignedBox3d*)(args[1].GetValueBlob()));
+        ElementAlignedBox3d const& box1 = *((ElementAlignedBox3d const*)(args[0].GetValueBlob()));
+        ElementAlignedBox3d const& box2 = *((ElementAlignedBox3d const*)(args[1].GetValueBlob()));
         ctx.SetResultInt(box1.IntersectsWith(box2));
         }
     iModel_bbox_overlaps(Utf8CP name) : ScalarFunction(name, 2, DbValueType::IntegerVal) {}
@@ -627,8 +627,8 @@ struct iModel_bbox_contains : ScalarFunction
             args[1].GetValueBytes() != sizeof(ElementAlignedBox3d))
             return SetInputError(ctx);
 
-        ElementAlignedBox3d& box1 = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
-        ElementAlignedBox3d& box2 = *((ElementAlignedBox3d*)(args[1].GetValueBlob()));
+        ElementAlignedBox3d const& box1 = *((ElementAlignedBox3d const*)(args[0].GetValueBlob()));
+        ElementAlignedBox3d const& box2 = *((ElementAlignedBox3d const*)(args[1].GetValueBlob()));
         ctx.SetResultInt(box2.IsContained(box1));
         }
     iModel_bbox_contains(Utf8CP name) : ScalarFunction(name, 2, DbValueType::IntegerVal) {}
@@ -689,7 +689,7 @@ struct iModel_bbox_union : AggregateFunction
         if (args[0].GetValueBytes() != sizeof(DRange3d))
             return SetInputError(ctx);
         
-        DRange3d&  thisRange  = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
+        DRange3d const&  thisRange  = *((ElementAlignedBox3d const*)(args[0].GetValueBlob()));
         Result&    totalRange = *((Result*)ctx.GetAggregateContext(sizeof(Result)));
         if (!totalRange.m_valid)
             {
@@ -737,8 +737,8 @@ struct iModel_point_distance : ScalarFunction
             args[1].GetValueBytes() != sizeof(DPoint3d))
             return SetInputError(ctx);
 
-        DPoint3d& pt1 = *((DPoint3d*)(args[0].GetValueBlob()));
-        DPoint3d& pt2 = *((DPoint3d*)(args[1].GetValueBlob()));
+        DPoint3d const& pt1 = *((DPoint3d const*)(args[0].GetValueBlob()));
+        DPoint3d const& pt2 = *((DPoint3d const*)(args[1].GetValueBlob()));
         ctx.SetResultDouble(pt1.Distance(pt2));
         }
     iModel_point_distance(Utf8CP name) : ScalarFunction(name, 2, DbValueType::FloatVal) {}
@@ -767,8 +767,8 @@ struct iModel_point_min_distance_to_bbox : ScalarFunction
             args[1].GetValueBytes() != sizeof(DRange3d))
             return SetInputError(ctx);
 
-        DPoint3d& pt   = *((DPoint3d*)(args[0].GetValueBlob()));
-        DRange3d& bbox = *((DRange3d*)(args[1].GetValueBlob()));
+        DPoint3d const& pt   = *((DPoint3d const*)(args[0].GetValueBlob()));
+        DRange3d const& bbox = *((DRange3d const*)(args[1].GetValueBlob()));
         ctx.SetResultDouble(bbox.DistanceOutside(pt));
         }
     iModel_point_min_distance_to_bbox(Utf8CP name) : ScalarFunction(name, 2, DbValueType::FloatVal) {}

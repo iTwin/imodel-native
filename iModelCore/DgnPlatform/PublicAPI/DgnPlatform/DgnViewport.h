@@ -534,15 +534,15 @@ public:
     //! If this view is a physical view, get the physical view controller.
     SpatialViewControllerCP GetSpatialViewControllerCP() const {return GetViewController()._ToSpatialView();}
     //! If this view is a physical view, get a writeable pointer to the physical view controller.
-    SpatialViewControllerP GetSpatialViewControllerP() {return (SpatialViewControllerP) GetSpatialViewControllerCP();}
+    SpatialViewControllerP GetSpatialViewControllerP() {return const_cast<SpatialViewControllerP>(GetSpatialViewControllerCP());}
     //! If this view is a drawing view, get the drawing view controller.
     DrawingViewControllerCP GetDrawingViewControllerCP() const {return GetViewController()._ToDrawingView();}
     //! If this view is a drawing view, get a writeable pointer to the drawing view controller.
-    DrawingViewControllerP GetDrawingViewControllerP() {return (DrawingViewControllerP) GetDrawingViewControllerCP();}
+    DrawingViewControllerP GetDrawingViewControllerP() {return const_cast<DrawingViewControllerP>(GetDrawingViewControllerCP());}
     //! If this view is a sheet view, get the sheet view controller.
     Sheet::ViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
-    Sheet::ViewControllerP GetSheetViewControllerP() {return (Sheet::ViewControllerP) GetSheetViewControllerCP();}
+    Sheet::ViewControllerP GetSheetViewControllerP() {return const_cast<Sheet::ViewControllerP>(GetSheetViewControllerCP());}
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.

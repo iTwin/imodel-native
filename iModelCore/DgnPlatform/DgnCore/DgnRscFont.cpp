@@ -122,7 +122,7 @@ RscGlyphElementIterator RscGlyphElementIterator::ToNext()
     if (0 == m_numRemaining)
         return RscGlyphElementIterator(NULL, 0);
 
-    RscGlyphElement const* next = (RscGlyphElement const*)((Byte*)m_curr + sizeof(RscGlyphElement) + (sizeof(RscFontPoint2d) * (m_curr->numVerts - 1)));
+    RscGlyphElement const* next = (RscGlyphElement const*)((Byte const*)m_curr + sizeof(RscGlyphElement) + (sizeof(RscFontPoint2d) * (m_curr->numVerts - 1)));
     return RscGlyphElementIterator(next, m_numRemaining);
     }
 

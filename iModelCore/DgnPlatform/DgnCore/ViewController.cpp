@@ -299,13 +299,13 @@ StandardView ViewController::IsStandardViewRotation(RotMatrixCR rMatrix, bool ch
             RotMatrix  isoMatrix;
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::Iso));
 
-            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3d*)rMatrix.form3d[0]))) &&
-                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3d*)rMatrix.form3d[1]))))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3dCP)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3dCP)rMatrix.form3d[1]))))
                 return StandardView::Iso;
 
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::RightIso));
-            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3d*)rMatrix.form3d[0]))) &&
-                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3d*)rMatrix.form3d[1]))))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3dCP)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3dCP)rMatrix.form3d[1]))))
                 return StandardView::RightIso;
             }
         }

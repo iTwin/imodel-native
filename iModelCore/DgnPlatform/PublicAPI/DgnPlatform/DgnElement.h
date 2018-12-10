@@ -1000,7 +1000,7 @@ public:
     {
         DEFINE_T_SUPER(Aspect)
     protected:
-        static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)&cls;}
+        static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)const_cast<ECN::ECClassP>(&cls);}
         Key& GetKey(DgnDbR db) {return GetKey(*GetKeyECClass(db));}
         static UniqueAspect* Find(DgnElementCR, ECN::ECClassCR);
         static RefCountedPtr<DgnElement::UniqueAspect> Load0(DgnElementCR, DgnClassId); // Loads *but does not call AddAppData*
