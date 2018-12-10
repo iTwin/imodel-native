@@ -348,7 +348,7 @@ class JSON_API Value
          CZString(Utf8CP cstr, DuplicationPolicy policy) : cstr_(policy==duplicate ? Duplicate(cstr) : cstr), index_(policy){}
          CZString(CZString const& other) : cstr_(other.index_ != noDuplication && other.cstr_ != nullptr ?  Duplicate(other.cstr_) : other.cstr_), 
                                            index_(other.cstr_ ? (other.index_ == noDuplication ? noDuplication : duplicate) : other.index_){}
-         ~CZString() {if (cstr_ && index_ == duplicate) Free((Utf8P )cstr_);}
+         ~CZString() {if (cstr_ && index_ == duplicate) Free(const_cast<Utf8P>(cstr_));}
          CZString& operator=(CZString const& other) {CZString temp(other); swap(temp); return *this;}
          bool operator<(CZString const& other) const {if (cstr_) return strcmp(cstr_, other.cstr_) < 0; return index_ < other.index_;}
          bool operator==(CZString const& other) const {if (cstr_) return strcmp(cstr_, other.cstr_) == 0; return index_ == other.index_;}
