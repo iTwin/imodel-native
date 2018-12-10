@@ -98,6 +98,72 @@ TEST_F (CShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CShapeProfileTestCase, GetInnerFlangeFaceLength_FlangeWidthAndWebThickness_CorrectValue)
+    {
+    CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CShapeProfilePtr profilePtr = CreateProfile (params);
+
+    profilePtr->SetFlangeWidth (0.0);
+    profilePtr->SetWebThickness (0.0);
+    EXPECT_EQ (0.0, profilePtr->GetInnerFlangeFaceLength());
+
+    profilePtr->SetFlangeWidth (2.0);
+    profilePtr->SetWebThickness (1.0);
+    EXPECT_EQ (1.0, profilePtr->GetInnerFlangeFaceLength());
+
+    profilePtr->SetFlangeWidth (1.0);
+    profilePtr->SetWebThickness (2.0);
+    EXPECT_EQ (-1.0, profilePtr->GetInnerFlangeFaceLength());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CShapeProfileTestCase, GetInnerWebFaceLength_DepthAndFlangeThickness_CorrectValue)
+    {
+    CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CShapeProfilePtr profilePtr = CreateProfile (params);
+
+    profilePtr->SetDepth (0.0);
+    profilePtr->SetFlangeThickness (0.0);
+    EXPECT_EQ (0.0, profilePtr->GetInnerWebFaceLength());
+
+    profilePtr->SetDepth (3.0);
+    profilePtr->SetFlangeThickness (1.0);
+    EXPECT_EQ (1.0, profilePtr->GetInnerWebFaceLength());
+
+    profilePtr->SetDepth (1.0);
+    profilePtr->SetFlangeThickness (3.0);
+    EXPECT_EQ (-5.0, profilePtr->GetInnerWebFaceLength());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CShapeProfileTestCase, GetSlopeHeight_ProfileWithProperties_CorrectValue)
+    {
+    CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CShapeProfilePtr profilePtr = CreateProfile (params);
+
+    profilePtr->SetFlangeWidth (2.0);
+    profilePtr->SetWebThickness (1.0);
+
+    profilePtr->SetFlangeSlope (PI / 4.0);
+    EXPECT_EQ (1.0, profilePtr->GetSlopeHeight());
+
+    profilePtr->SetFlangeSlope (0.0);
+    EXPECT_EQ (0.0, profilePtr->GetSlopeHeight());
+
+    profilePtr->SetFlangeSlope (PI / 2.0);
+    EXPECT_EQ (0.0, profilePtr->GetSlopeHeight());
+
+    profilePtr->SetFlangeSlope (PI);
+    EXPECT_EQ (0.0, profilePtr->GetSlopeHeight());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, Insert_InvalidProfileName_FailedInsert)
