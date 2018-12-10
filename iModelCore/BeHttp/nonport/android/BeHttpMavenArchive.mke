@@ -53,12 +53,20 @@ always:
 #--------------------------------------------------------------------------------------
 always:
     >$(_MakeFilePath)gradle.properties
-    buildDirectory=$[@subst \, \/, $(buildOut)]
+    buildDir=$[@subst \, \/, ${buildOut}]
     <
     python $(bsiScripts)RegexReplaceInFile.py "\s+" "\n" $(_MakeFilePath)gradle.properties
 
+# Gradle command line options
 _gradleCmd = ${GRADLE_HOME}/bin/gradle
-_gradleOptions = --project-dir ${projectDir}
+
+# Otherwise the daemon seems to lock the build log file, causing BB calls to fail.
+_gradleOptions = --no-daemon
+
+# Don't normally need the extra noise.
+_gradleOptions + --quiet
+
+_gradleOptions + --project-dir ${projectDir}
 
 %if defined (ANDROID_SIGNING_KEYSTORE)
     _gradleOptions + --project-prop ANDROID_SIGNING_KEYSTORE=$(ANDROID_SIGNING_KEYSTORE)              \
@@ -70,10 +78,12 @@ _gradleOptions = --project-dir ${projectDir}
 %if defined(BMAKE_DELETE_ALL_TARGETS)
     _gradleTasks = clean
 %else
-    _gradleTasks = assemble uploadArchives
+    _gradleTasks = assemble publish
 %endif
 
+# I don't think our "DEBUG" environment variable has the same implications for an Android Gradle build, and it makes the output noisy, so remove.
 always:
+    ~putenv DEBUG=
     $(_gradleCmd) $(_gradleOptions) $(_gradleTasks)
     
 #--------------------------------------------------------------------------------------
