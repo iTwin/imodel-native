@@ -40,6 +40,13 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
             Utf8String m_serverUrl;
             };
 
+        enum AuthTokenType
+            {
+            Saml,
+            Jwt,
+            None
+            };
+
         virtual int                     _GetVersion() const {return 1;} // Do not override!
         virtual void _OnHostTermination (bool isProcessShutdown) override {delete this;}
     
@@ -65,7 +72,9 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 
         virtual Utf8String _GetProjectID() const { return Utf8String(); }
 
-        virtual bool _SupplyConnectToken(Utf8StringR) const { return false; }
+        virtual AuthTokenType _SupplyAuthTokenType() const { return AuthTokenType::None; }
+
+        virtual bool _SupplyAuthHeaderValue(Utf8StringR value, Utf8StringCR scope) const { return false; }
 
         virtual uint32_t _SupplyRegionID() const { return 0; }
 
