@@ -927,6 +927,11 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
             propertyString.append(realityData.GetOwner());
             propertyString.append("\"");
             break;
+        case RealityDataField::CreatorId:
+            propertyString.append("\"CreatorId\" : \"");
+            propertyString.append(realityData.GetCreatorId());
+            propertyString.append("\"");
+            break;
         case RealityDataField::Group:
             propertyString.append("\"Group\" : \"");
             propertyString.append(realityData.GetGroup());
