@@ -148,32 +148,32 @@ size_t        iLast,
 BlockedVectorInt::IndexAction           normalArrayIndexAction
 )
     {
-    int *pPointIndex  = (int *)GetPointIndexCP ();
-    int *pNormalIndex = (int *)GetNormalIndexCP ();
-    int *pParamIndex  = (int *)GetParamIndexCP ();
-    int *pColorIndex  = (int *)GetColorIndexCP ();
+    int const*pPointIndex  = (int const*)GetPointIndexCP ();
+    int const*pNormalIndex = (int const*)GetNormalIndexCP ();
+    int const*pParamIndex  = (int const*)GetParamIndexCP ();
+    int const*pColorIndex  = (int const*)GetColorIndexCP ();
     
     //TR #164587: preserve hidden edges in vertex index array
-    ShiftSignsFromCyclicPredecessorsInRange (pPointIndex, iFirst, iLast);
-    ReverseInRange (pPointIndex, iFirst, iLast);
+    ShiftSignsFromCyclicPredecessorsInRange (const_cast<int*>(pPointIndex), iFirst, iLast);
+    ReverseInRange (const_cast<int*>(pPointIndex), iFirst, iLast);
 
     
     if (pNormalIndex)
         {
-        ReverseInRange (pNormalIndex, iFirst, iLast);
+        ReverseInRange (const_cast<int*>(pNormalIndex), iFirst, iLast);
 
         if (normalArrayIndexAction == BlockedVectorInt::ForcePositive)
-            AbsInRange (pNormalIndex, iFirst, iLast);
+            AbsInRange (const_cast<int*>(pNormalIndex), iFirst, iLast);
         else if (normalArrayIndexAction == BlockedVectorInt::ForceNegative)
-            NegativeAbsInRange (pNormalIndex, iFirst, iLast);
+            NegativeAbsInRange (const_cast<int*>(pNormalIndex), iFirst, iLast);
         else if (normalArrayIndexAction == BlockedVectorInt::Negate)
-            NegateInRange (pNormalIndex, iFirst, iLast);
+            NegateInRange (const_cast<int*>(pNormalIndex), iFirst, iLast);
         }
 
     if (pColorIndex)
-        ReverseInRange (pColorIndex, iFirst, iLast);  // No sign effects for color indices.
+        ReverseInRange (const_cast<int*>(pColorIndex), iFirst, iLast);  // No sign effects for color indices.
     if (pParamIndex)
-        ReverseInRange (pParamIndex, iFirst, iLast);  // No sign effects for param indices.
+        ReverseInRange (const_cast<int*>(pParamIndex), iFirst, iLast);  // No sign effects for param indices.
 
     if (GetAuxDataCP().IsValid())
         ReverseInRange(const_cast<int32_t*> (GetAuxDataCP()->GetIndices().data()), iFirst, iLast);
@@ -280,10 +280,10 @@ bool ReverseMeshByBlock (PolyfaceQueryR mesh, bool negateNormals)
         return false;
         }
 
-    DPoint3dP points = (DPoint3d*)mesh.GetPointCP ();
-    DVec3dP normals = (DVec3d*)mesh.GetNormalCP ();
-    DPoint2dP params = (DPoint2d*)mesh.GetParamCP ();
-    uint32_t *intColor = (uint32_t*)mesh.GetIntColorCP ();
+    DPoint3dP points = const_cast<DPoint3d*>(mesh.GetPointCP ());
+    DVec3dP normals = const_cast<DVec3d*>(mesh.GetNormalCP ());
+    DPoint2dP params = const_cast<DPoint2d*>(mesh.GetParamCP ());
+    uint32_t *intColor = const_cast<uint32_t*>(mesh.GetIntColorCP ());
     ReverseByBlock <DPoint3d> (points, n, numPerBlock);
     ReverseByBlock <DVec3d> (normals, n, numPerBlock);
     ReverseByBlock <DPoint2d> (params, n, numPerBlock);
@@ -311,11 +311,11 @@ BlockedVectorInt::IndexAction normalIndexAction
         return true;
 
 
-    int *pPointIndex  = (int *)GetPointIndexCP ();
-    int *pNormalIndex = (int *)GetNormalIndexCP ();
+    int const*pPointIndex  = (int const*)GetPointIndexCP ();
+    int const*pNormalIndex = (int const*)GetNormalIndexCP ();
     //int *pParamIndex  = (int *)GetParamIndexCP ();
     //int *pColorIndex  = (int *)GetColorIndexCP ();
-    DVec3dP pNormal   = (DVec3dP)GetNormalCP ();
+    DVec3dP pNormal   = const_cast<DVec3dP>(GetNormalCP ());
     size_t numNormal  = GetNormalCount ();
     size_t numIndex = GetPointIndexCount ();
 
@@ -330,16 +330,16 @@ BlockedVectorInt::IndexAction normalIndexAction
 
     if ((flipMarked && flipUnMarked) || pPointIndex != NULL)
         {
-        for (;DelimitFace (pPointIndex, numIndex, numPerFace, iFirst, iLast, iNext); iFirst = iNext)
+        for (;DelimitFace (const_cast<int*>(pPointIndex), numIndex, numPerFace, iFirst, iLast, iNext); iFirst = iNext)
             {
             ReverseIndicesOneFace (iFirst, iLast, normalIndexAction);
             }
         }
     else if (flipMarked || flipUnMarked)
         {
-        for (;DelimitFace (pPointIndex, numIndex, numPerFace, iFirst, iLast, iNext); iFirst = iNext)
+        for (;DelimitFace (const_cast<int*>(pPointIndex), numIndex, numPerFace, iFirst, iLast, iNext); iFirst = iNext)
             {
-            if (AllNegativeInRange (pNormalIndex, iFirst, iLast))
+            if (AllNegativeInRange (const_cast<int*>(pNormalIndex), iFirst, iLast))
                 if (flipMarked)
                     ReverseIndicesOneFace (iFirst, iLast, normalIndexAction);
             else

@@ -92,7 +92,7 @@ GEOMDLLIMPEXP CurveLocationDetail (ICurvePrimitiveCP _curve, double _fraction, D
 
 //! Construct with full indexing
 GEOMDLLIMPEXP CurveLocationDetail (ICurvePrimitiveCP _curve, double _fraction, DPoint3dCR _point, size_t _componentIndex, size_t _numComponent, double _componentFraction, double _a)
-    : curve((ICurvePrimitiveP)_curve),
+    : curve(_curve),
       fraction(_fraction),
       componentIndex(_componentIndex),
       numComponent(_numComponent),

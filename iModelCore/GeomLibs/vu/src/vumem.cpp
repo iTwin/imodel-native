@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/vumem.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -987,7 +987,7 @@ void _VuSet::DropMask (VuMask m)
 int _VuSet::CountNodesInSet () const
     {
     int n = 0;
-    VU_SET_LOOP (node, (VuSetP)this)
+    VU_SET_LOOP (node, const_cast<VuSetP>(this))
         {
         n++;
         }
@@ -998,7 +998,7 @@ int _VuSet::CountNodesInSet () const
 int _VuSet::CountMaskedNodesInSet(VuMask mask) const
     {
     int n = 0;
-    VU_SET_LOOP(node, (VuSetP)this)
+    VU_SET_LOOP(node, const_cast<VuSetP>(this))
         {
         if (node->HasMask (mask))
             n++;
@@ -1010,7 +1010,7 @@ int _VuSet::CountMaskedNodesInSet(VuMask mask) const
 int _VuSet::CountUnmaskedNodesInSet(VuMask mask) const
     {
     int n = 0;
-    VU_SET_LOOP(node, (VuSetP)this)
+    VU_SET_LOOP(node, const_cast<VuSetP>(this))
         {
         if (!node->HasMask(mask))
             n++;
@@ -1051,7 +1051,7 @@ DRange3d _VuSet::Range () const
     {
     DRange3d range;
     range.Init ();
-    VU_SET_LOOP (node, (VuSetP)this)
+    VU_SET_LOOP (node, const_cast<VuSetP>(this))
         {
         range.Extend (node->GetXYZ ());
         }

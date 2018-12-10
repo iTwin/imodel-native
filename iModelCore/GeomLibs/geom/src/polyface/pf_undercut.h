@@ -613,7 +613,7 @@ TaggedPolygonVector* debugPolygons
                 hullPoints.resize (points.size () + 10);
                 int numOut;
                 bsiDPoint3dArray_convexHullXY (&hullPoints[0], &numOut,
-                        (DPoint3dP)&points[0], (int)points.size ());
+                        const_cast<DPoint3dP>(&points[0]), (int)points.size ());
                 hullPoints.resize ((size_t)numOut);
                 }
             if (hullPoints.size () > 2)

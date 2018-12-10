@@ -71,8 +71,8 @@ int curveOrder
     for (int axisIndex = 0; axisIndex < 4; axisIndex++)
         {
         bsiBezier_univariateProduct (termCoffs, 0, 1,
-                (double*)curveA, curveOrder, axisIndex, 4,
-                (double*)curveB, curveOrder, axisIndex, 4);
+                const_cast<double*>((double const*)curveA), curveOrder, axisIndex, 4,
+                const_cast<double*>((double const*)curveB), curveOrder, axisIndex, 4);
         for (int i =0; i < productOrder; i++)
             {
             productBezier[i] += scaleFactor[axisIndex] * termCoffs[i];

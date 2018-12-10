@@ -761,7 +761,7 @@ bool closed
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineCurve::CopyFrom (MSBsplineCurveCR input)
     {
-    return bspcurv_copyCurve (this, (MSBsplineCurveP)&input);
+    return bspcurv_copyCurve (this, (MSBsplineCurveCP)&input);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -769,7 +769,7 @@ MSBsplineStatus MSBsplineCurve::CopyFrom (MSBsplineCurveCR input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineCurve::CopyClosed (MSBsplineCurveCR input)
     {
-    return bspcurv_closeCurve (this, (MSBsplineCurveP)&input);
+    return bspcurv_closeCurve (this, const_cast<MSBsplineCurveP>(&input));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -777,18 +777,18 @@ MSBsplineStatus MSBsplineCurve::CopyClosed (MSBsplineCurveCR input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineCurve::CopyOpen (MSBsplineCurveCR input, double unnormalizedKnot)
     {
-    return bspcurv_openCurve (this, (MSBsplineCurveP)&input, input.KnotToFraction (unnormalizedKnot));
+    return bspcurv_openCurve (this, (MSBsplineCurveCP)&input, input.KnotToFraction (unnormalizedKnot));
     }
 
 MSBsplineStatus MSBsplineCurve::CopySegment (MSBsplineCurveCR input, double unnormalizedKnotA, double unnormalizedKnotB)
     {
-    return bspcurv_segmentCurve (this, (MSBsplineCurveP)&input,
+    return bspcurv_segmentCurve (this, (MSBsplineCurveCP)&input,
                             input.KnotToFraction (unnormalizedKnotA), input.KnotToFraction (unnormalizedKnotB));
     }
 
 MSBsplineStatus MSBsplineCurve::CopyFractionSegment (MSBsplineCurveCR input, double fractionA, double fractionB)
     {
-    return bspcurv_segmentCurve (this, (MSBsplineCurveP)&input, fractionA, fractionB);
+    return bspcurv_segmentCurve (this, (MSBsplineCurveCP)&input, fractionA, fractionB);
     }
 
 
@@ -798,7 +798,7 @@ MSBsplineStatus MSBsplineCurve::CopyFractionSegment (MSBsplineCurveCR input, dou
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineCurve::CopyReversed (MSBsplineCurveCR input)
     {
-    return bspcurv_reverseCurve ((MSBsplineCurveP)&input, this);
+    return bspcurv_reverseCurve (const_cast<MSBsplineCurveP>(&input), this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -806,7 +806,7 @@ MSBsplineStatus MSBsplineCurve::CopyReversed (MSBsplineCurveCR input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineCurve::CopyTransformed (MSBsplineCurveCR input, TransformCR trans)
     {
-    return bspcurv_transformCurve (this, (MSBsplineCurveP) &input, &trans);
+    return bspcurv_transformCurve (this, (MSBsplineCurveCP) &input, &trans);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurveConstraint.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -11,7 +11,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 CurveConstraint::CurveConstraint (Type type, CurveLocationDetailCR detail) :
     m_type (type),
     m_location (detail),
-    m_curve ((ICurvePrimitiveP)detail.curve),
+    m_curve (const_cast<ICurvePrimitiveP>(detail.curve)),
     m_ray (DRay3d::FromOriginAndVector (detail.point, DVec3d::UnitX ()))
     {
 
@@ -20,7 +20,7 @@ CurveConstraint::CurveConstraint (Type type, CurveLocationDetailCR detail) :
 CurveConstraint::CurveConstraint (Type type, CurveLocationDetailCR detail, DRay3dCR ray) :
     m_type (type),
     m_location (detail),
-    m_curve ((ICurvePrimitiveP)detail.curve),
+    m_curve (const_cast<ICurvePrimitiveP>(detail.curve)),
     m_ray (ray)
     {
 
@@ -426,8 +426,8 @@ struct FromClosestApproachClosestApproach : ConstructionContext::ITryConstructio
             if (   matchTable.GetCurveConstraintCP(1)->Location ().curve != nullptr
                 && matchTable.GetCurveConstraintCP(0)->Location ().curve != nullptr
                 && CurveCurve::ClosestApproach (locationA, locationB,
-                            (ICurvePrimitiveP)matchTable.GetCurveConstraintCP(0)->Location ().curve,
-                            (ICurvePrimitiveP)matchTable.GetCurveConstraintCP(1)->Location ().curve
+                            const_cast<ICurvePrimitiveP>(matchTable.GetCurveConstraintCP(0)->Location ().curve),
+                            const_cast<ICurvePrimitiveP>(matchTable.GetCurveConstraintCP(1)->Location ().curve)
                             )
                 )
                 {

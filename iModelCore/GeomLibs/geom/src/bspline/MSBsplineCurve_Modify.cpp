@@ -108,7 +108,7 @@ MSBsplineStatus MSBsplineCurve::MakeRational ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineCurve::AppendCurves (MSBsplineCurveCR inCurve1, MSBsplineCurveCR inCurve2, bool forceContinuity, bool reparam)
     {
-    return bspcurv_appendCurves (this, (MSBsplineCurveP) &inCurve1, (MSBsplineCurveP) &inCurve2, forceContinuity, reparam);
+    return bspcurv_appendCurves (this, const_cast<MSBsplineCurveP>(&inCurve1), const_cast<MSBsplineCurveP>(&inCurve2), forceContinuity, reparam);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    peter.yu                        03/2009

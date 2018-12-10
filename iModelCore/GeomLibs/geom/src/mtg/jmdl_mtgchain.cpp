@@ -52,8 +52,8 @@ const void    *pElem1,
 const void    *pElem2
 )
     {
-    MTG_LexicalSortKey *pFirst = (MTG_LexicalSortKey*) pElem1;
-    MTG_LexicalSortKey *pSecond = (MTG_LexicalSortKey*) pElem2;
+    MTG_LexicalSortKey const*pFirst = (MTG_LexicalSortKey const*) pElem1;
+    MTG_LexicalSortKey const*pSecond = (MTG_LexicalSortKey const*) pElem2;
 
     if (pFirst->lowVertexIndex < pSecond->lowVertexIndex)
         return  -1;
@@ -80,8 +80,8 @@ const void    *pElem1,
 const void    *pElem2
 )
     {
-    MTG_LexicalSortKey *pFirst = (MTG_LexicalSortKey*) pElem1;
-    MTG_LexicalSortKey *pSecond = (MTG_LexicalSortKey*) pElem2;
+    MTG_LexicalSortKey const*pFirst = (MTG_LexicalSortKey const*) pElem1;
+    MTG_LexicalSortKey const*pSecond = (MTG_LexicalSortKey const*) pElem2;
 
     if (pFirst->angle < pSecond->angle)
         return  -1;
@@ -103,8 +103,8 @@ const void    *pElem1,
 const void    *pElem2
 )
     {
-    MTG_SortKey *pFirst = (MTG_SortKey*) pElem1;
-    MTG_SortKey *pSecond = (MTG_SortKey*) pElem2;
+    MTG_SortKey const*pFirst = (MTG_SortKey const*) pElem1;
+    MTG_SortKey const*pSecond = (MTG_SortKey const*) pElem2;
 
     return pFirst->dotValue < pSecond->dotValue ? -1: pFirst->dotValue == pSecond->dotValue? 0: 1;
     }
