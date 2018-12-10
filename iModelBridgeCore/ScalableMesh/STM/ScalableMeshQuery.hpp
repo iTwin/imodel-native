@@ -3319,6 +3319,8 @@ template <class POINT> SMNodeViewStatus ScalableMeshNode<POINT>::_IsCorrectForVi
                                        0,
                                        foundNodes);
 
+    delete queryObjectP;
+
     if (digDown == true)
         {
         if (this->m_node->IsLeaf())
