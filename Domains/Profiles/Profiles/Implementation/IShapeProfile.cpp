@@ -25,7 +25,7 @@ IShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pN
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 IShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
-    double webThickness, double filletRadius, double flangeEdgeRadius, double flangeSlope)
+                                           double webThickness, double filletRadius, double flangeEdgeRadius, double flangeSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , flangeWidth (flangeWidth)
     , depth (depth)
