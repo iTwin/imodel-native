@@ -239,7 +239,7 @@ double ZShapeProfile::GetInnerWebFaceLength() const
 double ZShapeProfile::GetSlopeHeight() const
     {
     double const flangeSlopeCos = std::cos (GetFlangeSlope());
-    if (flangeSlopeCos == 0.0)
+    if (flangeSlopeCos <= DBL_EPSILON)
         return 0.0;
 
     return (GetInnerFlangeFaceLength() / flangeSlopeCos) * std::sin (GetFlangeSlope());
