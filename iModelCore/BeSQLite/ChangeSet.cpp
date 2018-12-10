@@ -309,7 +309,7 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
     int outSize=0;
     void* outData=nullptr;
 
-    DbResult rc = (DbResult) sqlite3changeset_concat(GetSize(), (void*) GetData(), second.GetSize(), (void*) second.GetData(), &outSize, &outData);
+    DbResult rc = (DbResult) sqlite3changeset_concat(GetSize(), const_cast<void*>(GetData()), second.GetSize(), const_cast<void*>(second.GetData()), &outSize, &outData);
     if (BE_SQLITE_OK != rc)
         return rc;
 
@@ -324,7 +324,7 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Changes::Changes(ChangeSet const& changeSet, bool invert)
     {
-    m_data = (void*) changeSet.GetData();
+    m_data = const_cast<void*>(changeSet.GetData());
     m_size = changeSet.GetSize();
     m_invert = invert;
     }
@@ -675,7 +675,7 @@ ChangeGroup::~ChangeGroup() {sqlite3changegroup_delete((sqlite3_changegroup*) m_
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeGroup::AddChanges(int size, void const* data)
     {
-    return (DbResult) sqlite3changegroup_add((sqlite3_changegroup*) m_changegroup, size, (void*) data);
+    return (DbResult) sqlite3changegroup_add((sqlite3_changegroup*) m_changegroup, size, const_cast<void*>(data));
     }
 
 /*---------------------------------------------------------------------------------**//**
