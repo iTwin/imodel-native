@@ -49,7 +49,7 @@ void DgnV8FileProvenance::Insert(BeSQLite::BeGuidCR v8FileId, Utf8StringCR v8Pat
     stmt->BindText(1, guidString.c_str(), Statement::MakeCopy::No);
     stmt->BindText(2, v8Name.c_str(), Statement::MakeCopy::No);
     stmt->BindText(3, v8UniqueName.c_str(), Statement::MakeCopy::No);
-    
+
     DbResult result = stmt->Step();
     BeAssert(result == BE_SQLITE_DONE);
     UNUSED_VARIABLE(result);
@@ -78,6 +78,9 @@ BentleyStatus DgnV8FileProvenance::Find(Utf8StringP v8Name, Utf8StringP v8Unique
     {
     if (!dgndb.TableExists(DGN_TABLE_ProvenanceFile))
         return ERROR; // Provenance not supported
+
+    if (!v8FileId.IsValid())
+        return ERROR;
 
     CachedStatementPtr stmt;
     dgndb.GetCachedStatement(stmt, "SELECT V8Name,V8UniqueName FROM " DGN_TABLE_ProvenanceFile " WHERE V8FileId=?");
@@ -112,7 +115,7 @@ BentleyStatus DgnV8FileProvenance::FindFirst(BeSQLite::BeGuid* v8FileId, Utf8CP 
     if (BE_SQLITE_ROW != stmt->Step())
         return ERROR;
 
-    
+
     if (v8FileId)
         {
         Utf8String guidString = stmt->GetValueText(0);
@@ -199,7 +202,7 @@ BentleyStatus DgnV8ModelProvenance::FindFirst(BeSQLite::BeGuid* v8FileId, int* v
 
     if (v8ModelName)
         *v8ModelName = stmt->GetValueText(2);
-    
+
     return SUCCESS;
     }
 
@@ -247,7 +250,7 @@ void DgnV8ElementProvenance::Insert(DgnElementId elementId, BeSQLite::BeGuidCR v
     stmt->BindId(1, elementId);
     stmt->BindInt64(2, v8ElementId);
     stmt->BindInt(3, v8ModelId);
-    
+
     Utf8String guidString = v8FileId.ToString();
     stmt->BindText(4, guidString.c_str(), Statement::MakeCopy::No);
 

@@ -238,6 +238,13 @@ DgnDbStatus DgnElement::_OnInsert()
             return DgnDbStatus::InvalidCode;
         }
 
+    if (m_code.GetValueUtf8().length() > (size_t)IModelHubConstants::MaxCodeValueLength)
+        {
+        BeAssert(false);
+        LOG.errorv("Element insert rejected because code value [%s] is too long. ECClass=%s", m_code.GetValueUtf8CP(), GetHandlerECClassName());
+        return DgnDbStatus::InvalidCode;
+        }
+
     if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
 
@@ -296,7 +303,7 @@ DgnElementCPtr DrawingGraphic::GetRepresentedElement() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const 
+Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const
     {
     DgnElementCPtr source = GetRepresentedElement();
     return source.IsValid() ? source->GetInfoString(delimiter) : T_Super::_GetInfoString(delimiter);
@@ -329,7 +336,7 @@ DgnDbStatus DefinitionElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DefinitionElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
+void DefinitionElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_isPrivate()] = m_isPrivate;
@@ -401,14 +408,14 @@ DgnDbStatus Subject::_OnDelete() const
         BeAssert(false); // can't delete the root Subject
         return DgnDbStatus::WrongElement;
         }
-        
+
     return T_Super::_OnDelete();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Subject::_OnSubModelInsert(DgnModelCR model) const 
+DgnDbStatus Subject::_OnSubModelInsert(DgnModelCR model) const
     {
     BeAssert(false && "A Subject is not directly modeled. Insert a child InformationPartitionElement to be modeled instead.");
     return DgnDbStatus::ElementBlockedChange;
@@ -516,7 +523,7 @@ DgnDbStatus InformationPartitionElement::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DefinitionPartition::_OnSubModelInsert(DgnModelCR model) const 
+DgnDbStatus DefinitionPartition::_OnSubModelInsert(DgnModelCR model) const
     {
     // A DefinitionPartition can only be modeled by an DefinitionModel
     return model.IsDefinitionModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
@@ -550,7 +557,7 @@ DefinitionPartitionCPtr DefinitionPartition::CreateAndInsert(SubjectCR parentSub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DocumentPartition::_OnSubModelInsert(DgnModelCR model) const 
+DgnDbStatus DocumentPartition::_OnSubModelInsert(DgnModelCR model) const
     {
     // A DocumentPartition can only be modeled by an InformationModel
     return model.IsInformationModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
@@ -584,7 +591,7 @@ DocumentPartitionCPtr DocumentPartition::CreateAndInsert(SubjectCR parentSubject
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GroupInformationPartition::_OnSubModelInsert(DgnModelCR model) const 
+DgnDbStatus GroupInformationPartition::_OnSubModelInsert(DgnModelCR model) const
     {
     if (nullptr == dynamic_cast<GroupInformationModelCP>(&model))
         {
@@ -623,7 +630,7 @@ GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(Subject
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus InformationRecordPartition::_OnSubModelInsert(DgnModelCR model) const 
+DgnDbStatus InformationRecordPartition::_OnSubModelInsert(DgnModelCR model) const
     {
     // An InformationRecordPartition can only be modeled by an InformationRecordModel
     return model.IsInformationRecordModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
@@ -657,7 +664,7 @@ InformationRecordPartitionCPtr InformationRecordPartition::CreateAndInsert(Subje
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SpatialLocationPartition::_OnSubModelInsert(DgnModelCR model) const 
+DgnDbStatus SpatialLocationPartition::_OnSubModelInsert(DgnModelCR model) const
     {
     // Only SpatialLocationModels can model a SpatialLocationPartition
     return model.IsSpatialLocationModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
@@ -691,7 +698,7 @@ SpatialLocationPartitionCPtr SpatialLocationPartition::CreateAndInsert(SubjectCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PhysicalPartition::_OnSubModelInsert(DgnModelCR model) const 
+DgnDbStatus PhysicalPartition::_OnSubModelInsert(DgnModelCR model) const
     {
     return model.IsSpatialModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
     }
@@ -774,7 +781,7 @@ DrawingPtr Drawing::Create(DocumentListModelCR model, Utf8StringCR name)
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid())
+    if (!model.GetModelId().IsValid() || !classId.IsValid()) // || (name.empty() && !subModel->IsPrivate()))    A model element can have no name if the model is private. No way of checking the model-is-private condition here.
         {
         BeAssert(false);
         return nullptr;
@@ -791,7 +798,7 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8StringCR
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SectionDrawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid())
+    if (!model.GetModelId().IsValid() || !classId.IsValid()) // || (name.empty() && !subModel->IsPrivate()))    A model element can have no name if the model is private. No way of checking the model-is-private condition here.
         {
         BeAssert(false);
         return nullptr;
@@ -1123,7 +1130,7 @@ DgnDbStatus DgnElement::_InsertInDb()
         return DgnDbStatus::WriteError;
 
     _BindWriteParams(*statement, ForInsert::Yes);
- 
+
     switch (statement->Step())
         {
         case BE_SQLITE_DONE:
@@ -1197,10 +1204,10 @@ DgnDbStatus DgnElement::_LoadFromDb()
     DgnElements::ElementSelectStatement select = GetDgnDb().Elements().GetPreparedSelectStatement(*this);
     if (select.m_statement.IsNull())
         return DgnDbStatus::Success;
-    
+
     if (BE_SQLITE_ROW != select.m_statement->Step())
         return DgnDbStatus::ReadError;
-    
+
     return _ReadSelectParams(*select.m_statement, select.m_params);
     }
 
@@ -1262,14 +1269,14 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         BeAssert(false);
         return;
         }
-        
+
 
     JsonECSqlSelectAdapter const* adapter = elem.GetDgnDb().Elements().GetJsonSelectAdapter(elClass->GetId());
     if (adapter == nullptr)
         adapter = &elem.GetDgnDb().Elements().GetJsonSelectAdapter(elClass->GetId(), *stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
     else
         adapter->SetStatement(*stmt);
-        
+
     adapter->GetRow(elementJson, true);
     }
 
@@ -1304,11 +1311,11 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_FromJson(JsonValueR props) 
+void DgnElement::_FromJson(JsonValueR props)
     {
     if (props.isMember(json_model()))
         m_modelId.FromJson(props[json_model()]);
-        
+
     if (props.isMember(json_code()))
         m_code = DgnCode::FromJson2(props[json_code()]);
 
@@ -1358,7 +1365,7 @@ void DgnElement::_FromJson(JsonValueR props)
     ECN::JsonECInstanceConverter::JsonToECInstance(ec, props, GetDgnDb().GetClassLocater(), shouldSerializeProperty);
     }
 
-   
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1570,7 +1577,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* inStat, DgnElement::CreateParams c
             stat = DgnDbStatus::InvalidId;
             return nullptr;
             }
-            
+
         if (params->m_code == GetCode())
             {
             stat = DgnDbStatus::InvalidName;
@@ -1642,7 +1649,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     if (ecOther.IsValid())
         {
         bool sameClass = (GetElementClassId() == other.GetElementClassId());
-        // Note that we are NOT necessarily going to call _SetPropertyValue on each property. 
+        // Note that we are NOT necessarily going to call _SetPropertyValue on each property.
         // If the subclass needs to validate specific auto-handled properties even during copying, then it
         // must override _CopyFrom and validate after the copy is done.
         // TRICKY: If copying between elements of the same class, don't load my auto-handled properties at the outset. That will typically lead me to allocate a smaller
@@ -1743,7 +1750,7 @@ DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR 
             DgnModelId destMemberModelId = m_context.FindModelId(sourceMemberElement->GetModel()->GetModelId());
             DgnModelPtr destMemberModel = m_context.GetDestinationDb().Models().GetModel(destMemberModelId);
             if (!destMemberModel.IsValid())
-                destMemberModel = &destModel; 
+                destMemberModel = &destModel;
             DgnElementCPtr destMemberElement = ImportElement(nullptr, *destMemberModel, *sourceMemberElement);
             if (destMemberElement.IsValid())
                 ElementGroupsMembers::Insert(*destElement, *destMemberElement, 0); // *** WIP_GROUPS - is this the right way to re-create the member-of relationship? What about the _OnMemberAdded callbacks?  Preserve MemberPriority?
@@ -1930,7 +1937,7 @@ DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member
         return DgnDbStatus::InvalidId; // elements must be inserted to form link table relationship
 
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetNonSelectPreparedECSqlStatement(
-        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) 
+        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementGroupsMembers)
         " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,MemberPriority) VALUES(?,?,?,?,?)", group.GetDgnDb().GetECCrudWriteToken());
 
     if (!statement.IsValid())
@@ -2042,7 +2049,7 @@ DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-dgn_AspectHandler::Aspect* dgn_AspectHandler::Aspect::FindHandler(DgnDbR db, DgnClassId handlerId) 
+dgn_AspectHandler::Aspect* dgn_AspectHandler::Aspect::FindHandler(DgnDbR db, DgnClassId handlerId)
     {
     // quick check for a handler already known
     DgnDomain::Handler* handler = db.Domains().LookupHandler(handlerId);
@@ -2071,7 +2078,7 @@ DgnDbStatus DgnElement::Aspect::InsertThis(DgnElementCR el)
     DgnDbStatus status = _InsertInstance(el, el.GetDgnDb().GetECCrudWriteToken());
     if (DgnDbStatus::Success != status)
         return status;
-    return _UpdateProperties(el, el.GetDgnDb().GetECCrudWriteToken()); 
+    return _UpdateProperties(el, el.GetDgnDb().GetECCrudWriteToken());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2114,7 +2121,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnInserted(DgnElementCR el)
     {
     if (ChangeType::Delete != m_changeType) // (caller can cancel an add by calling Delete)
         InsertThis(el);
-    
+
     m_changeType = ChangeType::None; // (Just in case)
 
     return DropMe::Yes;     // this scheduled change has been processed, so remove it.
@@ -2141,7 +2148,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
             _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
             existing = ECInstanceKey();  //  trigger an insert below
             }
-            
+
         if (!existing.IsValid())
             InsertThis(modified);
         else
@@ -2258,7 +2265,7 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el, BeSQLite::
     BeSQLite::DbResult status = stmt->Step();
     return (BeSQLite::BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2325,7 +2332,7 @@ DgnElement::MultiAspect const* DgnElement::MultiAspect::GetAspect(DgnElementCR e
     RefCountedPtr<MultiAspect> aspect;
 
     dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), DgnClassId(cls.GetId()));
-    if ((nullptr == handler) || handler->_IsMissingHandler() || handler == &dgn_AspectHandler::Aspect::GetHandler()) 
+    if ((nullptr == handler) || handler->_IsMissingHandler() || handler == &dgn_AspectHandler::Aspect::GetHandler())
         aspect = new GenericMultiAspect(cls, id);
     else
         aspect = dynamic_cast<MultiAspect*>(handler->_CreateInstance().get());
@@ -2476,7 +2483,7 @@ RefCountedPtr<DgnElement::UniqueAspect> DgnElement::UniqueAspect::Load0(DgnEleme
     RefCountedPtr<DgnElement::UniqueAspect> aspect;
 
     dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), classid);
-    if ((nullptr == handler) || handler->_IsMissingHandler() || handler == &dgn_AspectHandler::Aspect::GetHandler()) 
+    if ((nullptr == handler) || handler->_IsMissingHandler() || handler == &dgn_AspectHandler::Aspect::GetHandler())
         {
         auto eclass = el.GetDgnDb().Schemas().GetClass(classid);
         if (nullptr == eclass)
@@ -2548,7 +2555,7 @@ DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el, BeSQLite:
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Sam.Wilson                    03/2015
 //---------------------------------------------------------------------------------------
@@ -2578,7 +2585,7 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_FederationGuid, 
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_FederationGuid,
         [](ECValueR value, DgnElementCR el)
             {
             value.SetBinary((Byte*)&el.m_federationGuid, sizeof(el.m_federationGuid));
@@ -2605,7 +2612,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             value.SetUtf8CP(el.GetCode().GetValueUtf8().c_str());
             return DgnDbStatus::Success;
             },
-        
+
         [](DgnElementR el, ECValueCR value)
             {
             return DgnDbStatus::ReadOnly; // must set CodeSpec, CodeScope, and CodeValue together
@@ -2617,57 +2624,57 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             value.SetNavigationInfo(el.GetCode().GetScopeElementId(el.GetDgnDb()));
             return DgnDbStatus::Success;
             },
-        
+
         [](DgnElementR el, ECValueCR value)
             {
             return DgnDbStatus::ReadOnly; // must set CodeSpec, CodeScope, and CodeValue together
             });
-        
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeSpec, 
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeSpec,
         [](ECValueR value, DgnElementCR el)
             {
             value.SetNavigationInfo(el.GetCode().GetCodeSpecId());
             return DgnDbStatus::Success;
             },
-        
+
         [](DgnElementR el, ECValueCR value)
             {
             return DgnDbStatus::ReadOnly; // must set CodeSpec, CodeScope, and CodeValue together
             });
-        
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Model, 
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Model,
         [](ECValueR value, DgnElementCR el)
             {
             value.SetNavigationInfo(el.GetModelId());
             return DgnDbStatus::Success;
             },
-        
+
         [](DgnElementR el, ECValueCR value)
             {
             return DgnDbStatus::ReadOnly;
             });
-        
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Parent, 
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Parent,
         [](ECValueR value, DgnElementCR el)
             {
             value.SetNavigationInfo(el.GetParentId(), el.GetParentRelClassId());
             return DgnDbStatus::Success;
             },
-        
+
         [](DgnElementR el, ECValueCR value)
             {
             if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
             return el.SetParentId(value.GetNavigationInfo().GetId<DgnElementId>(), value.GetNavigationInfo().GetRelationshipClassId());
             });
-        
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_UserLabel, 
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_UserLabel,
         [](ECValueR value, DgnElementCR el)
             {
             value.SetUtf8CP(el.GetUserLabel());
             return DgnDbStatus::Success;
             },
-        
+
         [](DgnElementR el, ECValueCR value)
             {
             if (!value.IsString())
@@ -2675,14 +2682,14 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             el.SetUserLabel(value.ToString().c_str());
             return DgnDbStatus::Success;
             });
-        
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_JsonProperties, 
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_JsonProperties,
         [](ECValueR value, DgnElementCR el)
             {
             value.SetUtf8CP(el.ToJsonPropString().c_str());
             return DgnDbStatus::Success;
             },
-        
+
         [](DgnElementR el, ECValueCR value)
             {
             if (!value.IsUtf8())
@@ -2692,14 +2699,14 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             el._OnLoadedJsonProperties();
             return DgnDbStatus::Success;
             });
-        
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMod, 
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMod,
         [](ECValueR value, DgnElementCR el)
             {
             value.SetDateTime(el.QueryLastModifyTime());
             return DgnDbStatus::Success;
             },
-        
+
         [](DgnElementR el, ECValueCR value)
             {
             return DgnDbStatus::ReadOnly;
@@ -2711,7 +2718,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::RegisterGeometricPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
-    params.RegisterPropertyAccessors(layout, prop_GeometryStream(), 
+    params.RegisterPropertyAccessors(layout, prop_GeometryStream(),
         [](ECValueR, DgnElementCR)
             {
             return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface
@@ -2746,7 +2753,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             }
 
 
-    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Yaw(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Yaw(),
         GETGEOMPLCPROPDBL(plc.GetAngles().GetYaw().Degrees()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetYaw(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
@@ -2754,19 +2761,19 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
         GETGEOMPLCPROPDBL(plc.GetAngles().GetPitch().Degrees()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetPitch(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
-    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Roll(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Roll(),
         GETGEOMPLCPROPDBL(plc.GetAngles().GetRoll().Degrees()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetRoll(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
-    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Origin(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Origin(),
         GETGEOMPLCPROPPT3(plc.GetOrigin()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetOriginR() = value.GetPoint3d()));
 
-    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_BBoxLow(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_BBoxLow(),
         GETGEOMPLCPROPPT3(plc.GetElementBox().low),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().low = value.GetPoint3d()));
 
-    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_BBoxHigh(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_BBoxHigh(),
         GETGEOMPLCPROPPT3(plc.GetElementBox().high),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().high = value.GetPoint3d()));
 
@@ -2774,7 +2781,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 #undef GETGEOMPLCPROPPT3
 #undef SETGEOMPLCPROP
 
-    params.RegisterPropertyAccessors(layout, GeometricElement::prop_Category(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_Category(),
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement3d& el = (GeometricElement3d&)elIn;
@@ -2792,7 +2799,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetCategoryId(value.GetNavigationInfo().GetId<DgnCategoryId>());
             });
 
-    params.RegisterPropertyAccessors(layout, GeometricElement::prop_TypeDefinition(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_TypeDefinition(),
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement3dCR el = static_cast<GeometricElement3dCR>(elIn);
@@ -2810,7 +2817,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetTypeDefinition(value.GetNavigationInfo().GetId<DgnElementId>(), value.GetNavigationInfo().GetRelationshipClassId());
             });
 
-    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_InSpatialIndex(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_InSpatialIndex(),
         [](ECValueR value, DgnElementCR el)
             {
             value.SetBoolean(!el.GetModel()->IsTemplate());
@@ -2858,23 +2865,23 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetPlacement(plc);                                                 \
             }
 
-    params.RegisterPropertyAccessors(layout, GeometricElement::prop_Origin(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_Origin(),
         GETGEOMPLCPROPPT2(plc.GetOrigin()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetOriginR() = value.GetPoint2d()));
 
-    params.RegisterPropertyAccessors(layout, GeometricElement2d::prop_Rotation(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement2d::prop_Rotation(),
         GETGEOMPLCPROPDBL(plc.GetAngle().Degrees()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAngleR() = AngleInDegrees::FromDegrees(value.GetDouble())));
 
-    params.RegisterPropertyAccessors(layout, GeometricElement::prop_BBoxLow(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_BBoxLow(),
         GETGEOMPLCPROPPT2(plc.GetElementBox().low),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().low = value.GetPoint2d()));
 
-    params.RegisterPropertyAccessors(layout, GeometricElement::prop_BBoxHigh(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_BBoxHigh(),
         GETGEOMPLCPROPPT2(plc.GetElementBox().high),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().high = value.GetPoint2d()));
 
-    params.RegisterPropertyAccessors(layout, GeometricElement::prop_Category(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_Category(),
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement2d& el = (GeometricElement2d&)elIn;
@@ -2892,7 +2899,7 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetCategoryId(value.GetNavigationInfo().GetId<DgnCategoryId>());
             });
 
-    params.RegisterPropertyAccessors(layout, GeometricElement::prop_TypeDefinition(), 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_TypeDefinition(),
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement2dCR el = static_cast<GeometricElement2dCR>(elIn);
@@ -2920,7 +2927,7 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
     {
     struct Pair {Utf8CP name; uint64_t action;};
 
-    static const Pair s_pairs[] = 
+    static const Pair s_pairs[] =
         {
             {"clone",          Clone },
             {"setparent",      SetParent },
@@ -2945,7 +2952,7 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR child) const 
+DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR child) const
     {
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild))
         return DgnDbStatus::ParentBlockedChange;
@@ -2962,18 +2969,18 @@ DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR child) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const 
+DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const
     {
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild))
         return DgnDbStatus::ParentBlockedChange;
-    
+
     return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const 
+DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const
     {
     return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;
     }
@@ -2981,11 +2988,11 @@ DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildAdd(DgnElementCR child) const 
+DgnDbStatus DgnElement::_OnChildAdd(DgnElementCR child) const
     {
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild))
         return DgnDbStatus::ParentBlockedChange;
-    
+
     if (GetModelId() != child.GetModelId())
         {
         BeAssert(false);
@@ -2998,11 +3005,11 @@ DgnDbStatus DgnElement::_OnChildAdd(DgnElementCR child) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildDrop(DgnElementCR) const 
+DgnDbStatus DgnElement::_OnChildDrop(DgnElementCR) const
     {
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild))
         return DgnDbStatus::ParentBlockedChange;
-    
+
     return DgnDbStatus::Success;
     }
 
@@ -3219,7 +3226,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
     DgnElementId alreadyCopied = m_context.FindElementId(sourceElement.GetElementId());
     if (alreadyCopied.IsValid())
         return targetModel.GetDgnDb().Elements().Get<PhysicalElement>(alreadyCopied);
-    
+
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
     DgnElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), sourceElement.GetElementClassId(), icode);
@@ -3299,7 +3306,7 @@ DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform co
     transform.InitProduct(transformIn, placementTrans);
     transform.GetTranslation(originPt);
     transform.GetMatrix(rMatrix);
-            
+
     YawPitchRollAngles  angles;
 
     if (!YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix))
@@ -3314,7 +3321,7 @@ DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform co
 
         return geom->GetAsGeometrySource3dP()->SetPlacement(placement);
         }
-        
+
     Placement2d placement = geom->GetAsGeometrySource2d()->GetPlacement();
 
     placement.GetOriginR() = DPoint2d::From(originPt);
@@ -3359,7 +3366,7 @@ void DgnEditElementCollector::CopyFrom(DgnEditElementCollector const& rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnEditElementCollector::AddElement(DgnElementR el) 
+DgnElementPtr DgnEditElementCollector::AddElement(DgnElementR el)
     {
     DgnElementId eid = el.GetElementId();
     if (eid.IsValid())
@@ -3373,7 +3380,7 @@ DgnElementPtr DgnEditElementCollector::AddElement(DgnElementR el)
     auto ifound = std::find(m_elements.begin(), m_elements.end(), &el);
     if (ifound != m_elements.end())
         return &el;
-    
+
     // This element is new. Insert it into the collection.
     m_elements.push_back(&el);
     el.AddRef();
@@ -3413,7 +3420,7 @@ bool DgnEditElementCollector::Equals(DgnEditElementCollector const& other, DgnEl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnEditElementCollector::Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const& filter) const 
+void DgnEditElementCollector::Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const& filter) const
     {
     str.append("{\n");
     for (auto el : *this)
@@ -3445,7 +3452,7 @@ void DgnEditElementCollector::DumpTwo(Utf8StringR str, DgnEditElementCollector c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnEditElementCollector::AddChildren(DgnElementCR el, size_t maxDepth) 
+void DgnEditElementCollector::AddChildren(DgnElementCR el, size_t maxDepth)
     {
     if (0 ==maxDepth)
         return;
@@ -3484,7 +3491,7 @@ DgnElementPtr DgnEditElementCollector::FindElementByClass(ECN::ECClassCR ecclass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnEditElementCollector::RemoveElement(DgnElementR el) 
+void DgnEditElementCollector::RemoveElement(DgnElementR el)
     {
     auto ifound = std::find(m_elements.begin(), m_elements.end(), &el);
     if (ifound == m_elements.end())
@@ -3502,7 +3509,7 @@ void DgnEditElementCollector::RemoveElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnEditElementCollector::RemoveChildren(DgnElementCR el, size_t maxDepth) 
+void DgnEditElementCollector::RemoveChildren(DgnElementCR el, size_t maxDepth)
     {
     if (0 ==maxDepth)
         return;
@@ -3661,11 +3668,11 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
+void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_category()] = m_categoryId.ToHexStr();
-    
+
     if (!opts["wantGeometry"].asBool())
         return;
 
@@ -3682,7 +3689,7 @@ void GeometricElement::_FromJson(JsonValueR props)
     T_Super::_FromJson(props);
     if (props.isMember(json_category()))
         m_categoryId.FromJson(props[json_category()]);
-    
+
     if (props.isMember(json_geom()))
         GeometryBuilder::UpdateFromJson(*ToGeometrySourceP(), props[json_geom()]);
     }
@@ -3806,7 +3813,7 @@ DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_OnInserted(DgnElementP copiedFrom) const 
+void GeometricElement::_OnInserted(DgnElementP copiedFrom) const
     {
     T_Super::_OnInserted(copiedFrom);
     T_HOST.GetTxnAdmin()._OnGraphicElementAdded(GetDgnDb(), m_elementId);
@@ -3822,7 +3829,7 @@ void  GeometricElement3d::_OnDeleted() const { SetUndisplayed(false); T_Super::_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_OnAppliedDelete() const 
+void GeometricElement::_OnAppliedDelete() const
     {
     T_Super::_OnAppliedDelete();
     T_HOST.GetTxnAdmin()._OnGraphicElementDeleted(GetDgnDb(), m_elementId);
@@ -3831,7 +3838,7 @@ void GeometricElement::_OnAppliedDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_OnAppliedAdd() const 
+void GeometricElement::_OnAppliedAdd() const
     {
     T_Super::_OnAppliedAdd();
     T_HOST.GetTxnAdmin()._OnGraphicElementAdded(GetDgnDb(), m_elementId);
@@ -3840,9 +3847,9 @@ void GeometricElement::_OnAppliedAdd() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_OnUpdateFinished() const 
+void GeometricElement::_OnUpdateFinished() const
     {
-    T_Super::_OnUpdateFinished(); 
+    T_Super::_OnUpdateFinished();
     T_HOST.GetTxnAdmin()._OnGraphicElementModified(GetDgnDb(), m_elementId);
     }
 
@@ -3862,7 +3869,7 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (stmt.IsValueNull(originIndex))
         return DgnDbStatus::Success;    // null placement
 
-    DPoint2d boxLow = stmt.GetValuePoint2d(params.GetSelectIndex(prop_BBoxLow())), 
+    DPoint2d boxLow = stmt.GetValuePoint2d(params.GetSelectIndex(prop_BBoxLow())),
              boxHi  = stmt.GetValuePoint2d(params.GetSelectIndex(prop_BBoxHigh()));
 
     m_placement = Placement2d(stmt.GetValuePoint2d(originIndex),
@@ -3875,8 +3882,8 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
-    {        
+void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const
+    {
     T_Super::_ToJson(val, opts);
     val[json_placement()] = m_placement.ToJson();
 
@@ -3894,7 +3901,7 @@ void GeometricElement2d::_FromJson(JsonValueR props)
     if (props.isMember(json_placement()))
         {
         // NOTE: Bounding box should not be updated from json, the GeometryBuilder computes the correct range from the GeometryStream...
-        Placement2d newPlacement;        
+        Placement2d newPlacement;
         newPlacement.FromJson(props[json_placement()]);
         m_placement.GetOriginR() = newPlacement.GetOrigin();
         m_placement.GetAngleR()  = newPlacement.GetAngle();
@@ -3936,7 +3943,7 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_placement()] = m_placement.ToJson();
@@ -3955,7 +3962,7 @@ void GeometricElement3d::_FromJson(JsonValueR props)
     if (props.isMember(json_placement()))
         {
         // NOTE: Bounding box should not be updated from json, the GeometryBuilder computes the correct range from the GeometryStream...
-        Placement3d newPlacement;        
+        Placement3d newPlacement;
         newPlacement.FromJson(props[json_placement()]);
         m_placement.GetOriginR() = newPlacement.GetOrigin();
         m_placement.GetAnglesR() = newPlacement.GetAngles();
@@ -3996,7 +4003,7 @@ DgnDbStatus GeometricElement2d::_OnInsert()
     {
     if (!GetModel()->Is2dModel())
         return DgnDbStatus::WrongModel; // A GeometricElement2d can only reside in a 2D model
-        
+
     if (!DrawingCategory::Get(GetDgnDb(), GetCategoryId()).IsValid())
         return DgnDbStatus::InvalidCategory; // A GeometricElement2d requires an existing DrawingCategory
 
@@ -4040,7 +4047,7 @@ DgnDbStatus GeometricElement3d::_OnInsert()
     {
     if (!GetModel()->Is3dModel())
         return DgnDbStatus::WrongModel; // A GeometricElement3d can only reside in a 3D model
-        
+
     if (!SpatialCategory::Get(GetDgnDb(), GetCategoryId()).IsValid())
         return DgnDbStatus::InvalidCategory; // A GeometricElement3d requires an existing SpatialCategory
 
@@ -4099,7 +4106,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
     {
     return WriteGeomStream();
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4391,7 +4398,7 @@ ECN::IECInstanceCP DgnElement::GenericMultiAspect::GetAspect(DgnElementCR el, EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::GenericMultiAspect::GenericMultiAspect(ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id) 
+DgnElement::GenericMultiAspect::GenericMultiAspect(ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id)
     : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName())
     {
     m_instanceId = id;
@@ -4400,7 +4407,7 @@ DgnElement::GenericMultiAspect::GenericMultiAspect(ECN::ECClassCR cls, BeSQLite:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::GenericMultiAspect::GenericMultiAspect(ECN::IECInstanceR inst, BeSQLite::EC::ECInstanceId id) 
+DgnElement::GenericMultiAspect::GenericMultiAspect(ECN::IECInstanceR inst, BeSQLite::EC::ECInstanceId id)
     : m_instance(&inst), m_ecclassName(inst.GetClass().GetName()), m_ecschemaName(inst.GetClass().GetSchema().GetName())
     {
     m_instanceId = id;
@@ -4453,7 +4460,7 @@ bool DgnElement::IsDescendantOf(DgnElementId ancestorId) const
     auto parent = GetDgnDb().Elements().GetElement(parentId);
     if (!parent.IsValid())
         return false;
-    return parent->IsDescendantOf(ancestorId); 
+    return parent->IsDescendantOf(ancestorId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4469,7 +4476,7 @@ void dgn_ElementHandler::Definition::_RegisterPropertyAccessors(ECSqlClassInfo& 
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, DefinitionElement::prop_IsPrivate(), 
+    params.RegisterPropertyAccessors(layout, DefinitionElement::prop_IsPrivate(),
         [](ECValueR value, DgnElementCR el)
             {
             DefinitionElementCR def = (DefinitionElementCR)el;
@@ -4503,13 +4510,13 @@ BentleyStatus JobSubjectUtils::GetTransform(TransformR trans, SubjectCR jobSubje
     auto json = GetProperty(jobSubject, json_Transform());
 
     // A Transform is stored as 3 rows (each of which is an array of 3 doubles). Check it.
-    if (!json.isArray() || json.size() != 3  || !json[0].isArray() || json[0].size() != 4 || !json[0][0].isDouble()) 
+    if (!json.isArray() || json.size() != 3  || !json[0].isArray() || json[0].size() != 4 || !json[0][0].isDouble())
         {
         BeAssert(false);
         LOG.errorv("JobSubjectUtils::GetTransform: %s.%s is invalid [%s]\n", jobSubject.GetCode().GetValue().GetUtf8CP(), json_Transform(), json.ToString().c_str());
         return BSIERROR;
         }
-    
+
     JsonUtils::TransformFromJson(trans, json);
     return BSISUCCESS;
     }

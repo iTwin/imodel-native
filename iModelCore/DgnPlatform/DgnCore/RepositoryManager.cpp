@@ -38,7 +38,7 @@ private:
 
         return RepositoryStatus::Success;
         }
-    bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus* status) override 
+    bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus* status) override
         {
         if (nullptr != status)
             *status = RepositoryStatus::Success;
@@ -238,7 +238,7 @@ protected:
     void _OnCommit(TxnManager& mgr) override;
     void _OnAppliedChanges(TxnManager& mgr) override;
     void _OnUndoRedo(TxnManager& mgr, TxnAction) override;
-    bool _AreResourcesHeld(DgnLockSet& l, DgnCodeSet& c, RepositoryStatus* status) override 
+    bool _AreResourcesHeld(DgnLockSet& l, DgnCodeSet& c, RepositoryStatus* status) override
         {
         auto ret = T_Super::_AreResourcesHeld(l, c, status);
         if (nullptr != status && _IsBulkOperation() && !m_req.IsEmpty())
@@ -266,7 +266,7 @@ protected:
         // Cache filter code spec set
         if (m_filterCodeSpecs.empty())
             _PopulateFilterCodeSpecs();
-        
+
         return m_filterCodeSpecs;
         }
 
@@ -290,7 +290,7 @@ protected:
     bool _IsBulkOperation() const override {return 0 != m_inBulkUpdate;}
     Response _EndBulkOperation() override;
 
-    void _ExtractRequestFromBulkOperation(Request& reqOut, bool locks, bool codes) override 
+    void _ExtractRequestFromBulkOperation(Request& reqOut, bool locks, bool codes) override
         {
         auto control = GetDgnDb().GetConcurrencyControl();
         if (nullptr != control)
@@ -603,11 +603,11 @@ RepositoryStatus BriefcaseManagerBase::ClearUserHeldCodesLocks()
         {
         return RepositoryStatus::SyncError;
         }
-    
+
     m_exclusivelyLockedModels.clear();
-    
+
     Save();
-    
+
     m_localDbState = DbState::Ready;
     return RepositoryStatus::Success;
     }
@@ -1222,7 +1222,7 @@ ReleaseContext::ReleaseContext(DgnDbR db, bool wantLocks, bool wantCodes) : m_db
         }
 
     BeAssert((wantLocks || wantCodes) && "Waste of time attempting to relinquish/release nothing...");
-    
+
     RevisionStatus revStatus;
     DgnRevisionPtr rev = db.Revisions().StartCreateRevision(&revStatus);
     if (rev.IsValid())
@@ -2626,11 +2626,12 @@ IBriefcaseManager::Response BulkUpdateBriefcaseManager::_EndBulkOperation()
     if (0 != --m_inBulkUpdate)
         return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);
 
+    m_req.SetOptions(ResponseOptions::All); // Get details when requests such as code reservations fail.
     auto resp = T_Super::_ProcessRequest(m_req, RequestPurpose::Acquire);
-    
+
     if (RepositoryStatus::Success != resp.Result())
         return resp;
-        
+
     m_req.Reset();
 
 #ifndef NDEBUG
@@ -2646,7 +2647,7 @@ RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForElementOperation(Request
     {
     if (!m_inBulkUpdate)
         return T_Super::_PrepareForElementOperation(reqOut, el, op);
-    
+
 #ifndef NDEBUG
     BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
 #endif
@@ -2729,7 +2730,7 @@ RepositoryStatus BulkUpdateBriefcaseManager::_OnFinishRevision(DgnRevision const
     {
     if (!m_inBulkUpdate)
         return T_Super::_OnFinishRevision(rev);
-        
+
     BeAssert(false);
     return RepositoryStatus::PendingTransactions;
     }

@@ -21,7 +21,7 @@ struct DgnElementTests : public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnElementTests, UpdateElement)
+TEST_F (DgnElementTests, InsertElement)
     {
     SetupSeedProject();
 
@@ -34,6 +34,16 @@ TEST_F (DgnElementTests, UpdateElement)
     DgnElementId e1id = keyE1->GetElementId();
     DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
     EXPECT_TRUE(e1 != nullptr);
+
+    // Now update without making any change => LASTMOD should change anyway.
+    uint64_t insertTime;
+    ASSERT_EQ(BSISUCCESS, e1->QueryLastModifyTime().ToJulianDay(insertTime));
+    auto ed1 = e1->CopyForEdit();
+    ed1->Update();
+    e1 = m_db->Elements().GetElement(e1id);
+    uint64_t updateTime;
+    ASSERT_EQ(BSISUCCESS, e1->QueryLastModifyTime().ToJulianDay(updateTime));
+    EXPECT_NE(insertTime, updateTime);
     }
 
 /*---------------------------------------------------------------------------------**//**
