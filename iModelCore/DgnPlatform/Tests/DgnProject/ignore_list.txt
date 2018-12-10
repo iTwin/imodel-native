@@ -56,320 +56,320 @@ DgnDbTest.CreateTrackedDgnDb
     # bim0200holdouts, x64, DEBUG
     # [ RUN      ] DgnDbTest.CreateTrackedDgnDb
     # !!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb F:\Bim0200Holdouts\out\Winx64\Product\DgnPlatform-Gtest\run\Output\TrackedDb.ibim
-    # 2017-06-05 14:20:25,813 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # 2017-06-05 14:20:25,813 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:25,813 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:25,813 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:25,891 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:25,891 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:25,907 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:25,907 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:25,907 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:25,907 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:25,922 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:25,922 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:25,922 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:25,922 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:25,922 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:25,922 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,000 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,000 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,000 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,000 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,000 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,000 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,485 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,485 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,485 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,485 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,485 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,485 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,500 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,500 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,500 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,500 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,500 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,500 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,532 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,532 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,532 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,532 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:26,532 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:26,532 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,188 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,188 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,188 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,188 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,188 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,188 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,204 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,204 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,204 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,204 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,204 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,204 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,219 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,219 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,219 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,219 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,235 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,235 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:20:28,329 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:20:28,329 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
     # [  FAILED  ] DgnDbTest.CreateTrackedDgnDb (12057 ms)
 
 #ImportTests.SimpleSchemaImport
     # bim0200holdouts, x64, DEBUG
     # [ RUN      ] ImportTests.SimpleSchemaImport
-    # 2017-06-05 14:21:05,558 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # 2017-06-05 14:21:05,558 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,558 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,558 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,558 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,558 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,605 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,605 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,605 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,605 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,605 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,605 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,636 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,636 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,636 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,636 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,636 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,636 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,652 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,652 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,667 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,667 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,667 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,667 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,683 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,683 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,683 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,683 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,683 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,683 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:21:05,683 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:21:05,683 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
     # [  FAILED  ] ImportTests.SimpleSchemaImport (2306 ms)
 
 #MissingHandlerTest.HandlerRestrictions
     # bim0200holdouts, x64, DEBUG
     # [ RUN      ] MissingHandlerTest.HandlerRestrictions
-    # 2017-06-05 14:22:01,192 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # 2017-06-05 14:22:01,192 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,192 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,192 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,223 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,223 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,239 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,239 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,239 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,239 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,270 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,270 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,270 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,270 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,270 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,270 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,285 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,285 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,285 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,285 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,442 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,442 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,473 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,473 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,473 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,473 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,473 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,473 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,489 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,489 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,489 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,489 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,489 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,489 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,520 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,520 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,520 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,520 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,520 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,520 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,942 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,942 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,942 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,942 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,942 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,942 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,957 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,957 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,957 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,957 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,973 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,973 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,989 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,989 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,989 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,989 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:01,989 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:01,989 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 2017-06-05 14:22:02,067 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
-    # 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    # 2017-06-05 14:22:02,067 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
+    #
     # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA"
     # [  FAILED  ] MissingHandlerTest.HandlerRestrictions (4271 ms)
 
 #CompatibilityTests.ModifyBaseline
@@ -400,7 +400,7 @@ DgnDbTest.CreateTrackedDgnDb
     # [2] __scrt_common_main_seh (0x7ff6006f1b74)
     # [1] BaseThreadInitThunk (0x7ff8f9bc8350)
     # [0] RtlUserThreadStart (0x7ff8f9cd70b0)
-    # 
+    #
     # [  FAILED  ] CompatibilityTests.ModifyBaseline (3259 ms)
 
 #ECInstancesCompatibility.ModifyPreservedBim
@@ -432,7 +432,7 @@ DgnDbTest.CreateTrackedDgnDb
     # [2] __scrt_common_main_seh (0x7ff6006f1b74)
     # [1] BaseThreadInitThunk (0x7ff8f9bc8350)
     # [0] RtlUserThreadStart (0x7ff8f9cd70b0)
-    # 
+    #
     # [  FAILED  ] ECInstancesCompatibility.ModifyPreservedBim (581 ms)
 
 #Test code needs to be adjusted.
@@ -480,9 +480,9 @@ ECInstancesCompatibility.ReadInstances
     # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub1]
     # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub2]
     # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub3]
-    # 2017-10-11 13:17:10,511 ERROR [0x00006508] BeAssert - F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] BeAssert - F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?"
     # F:\Bim0200Dev\src\BeGTest\gtest\BeGTestExe.cpp(370): error: Failed
-    # F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
+    # F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?"
     # [  FAILED  ] ECInstancesCompatibility.ReadInstances (385 ms)
 
 # Fails in Release
@@ -610,9 +610,3 @@ DgnDbTest.ImportSchemaWithLocalChanges
     # c:\build\src\mds06t\DgnPlatform\Tests\DgnProject\NonPublished\DgnProject_Test.cpp(352): error: Value of: dgndb.IsValid()
     # Actual: false
     # Expected: true
-
-DgnElementTests.InsertElement
-    # NDEBUG, x64, seems repeatable on at least BuildMinion05
-    # [ RUN      ] DgnElementTests.InsertElement
-    # D:\vsts_a\13\bbsrc\iModel02\iModelCore\DgnPlatform\Tests\DgnProject\Published\DgnElement_Test.cpp(46): error: Expected: (insertTime) != (updateTime), actual: 212411215712557 vs 212411215712557
-    # [  FAILED  ] DgnElementTests.InsertElement (122 ms)

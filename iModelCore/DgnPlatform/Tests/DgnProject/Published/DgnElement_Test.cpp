@@ -38,6 +38,9 @@ TEST_F (DgnElementTests, InsertElement)
     // Now update without making any change => LASTMOD should change anyway.
     uint64_t insertTime;
     ASSERT_EQ(BSISUCCESS, e1->QueryLastModifyTime().ToJulianDay(insertTime));
+
+    BeThreadUtilities::BeSleep(1); // NB! LASTMOD resolution is 1 millisecond!
+
     auto ed1 = e1->CopyForEdit();
     ed1->Update();
     e1 = m_db->Elements().GetElement(e1id);
