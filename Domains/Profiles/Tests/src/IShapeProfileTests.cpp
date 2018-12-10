@@ -179,8 +179,8 @@ TEST_F (IShapeProfileTestCase, Insert_InvalidFlangeThickness_FailedInsert)
     params.flangeThickness = params.depth / 2.0;
     EXPECT_FAIL_Insert (params) << "Flange thickness should be less than half of the depth.";
 
-    params.flangeThickness = params.depth / 2.0 + 1.0;
-    EXPECT_FAIL_Insert (params) << "Flange thickness should be less than half of the depth.";
+    params.flangeThickness = nextafter<double, double> (params.depth / 2.0, 0.0);
+    EXPECT_SUCCESS_Insert (params) << "Flange thickness should be less than half of the depth.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,10 +231,20 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndZeroFlangeSlope_Corr
 
     TestParameterToBeFiniteAndPositive (params, params.filletRadius, "FilletRadius", true);
 
-    params.filletRadius = 4.0;
+    IShapeProfilePtr profilePtr = CreateProfile (params);
+
+    // Test against inner flange length
+    params.filletRadius = 2.25;
+    EXPECT_EQ (2.25, profilePtr->GetInnerFlangeFaceLength() / 2.0);
+    EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
+
+    params.filletRadius = nextafter<double, double> (2.25, INFINITY);
     EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
 
+    // Test against inner web face length
     params.flangeWidth = 20.0;
+    params.filletRadius = 4.0;
+    EXPECT_EQ (4.0, profilePtr->GetInnerWebFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
 
     params.filletRadius = nextafter<double, double> (4.0, INFINITY);
@@ -249,7 +259,10 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndShortFlange_CorrectI
     CreateParams params (GetModel(), "I_ZeroFlangeSlope_ShortFlange", 3.0, 100.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = 0.0;
 
+    IShapeProfilePtr profilePtr = CreateProfile (params);
+
     params.filletRadius = 0.5;
+    EXPECT_EQ (0.5, profilePtr->GetInnerFlangeFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
 
     params.filletRadius = nextafter<double, double> (0.5, INFINITY);
@@ -264,7 +277,10 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndShortWeb_CorrectInse
     CreateParams params (GetModel(), "I_ZeroFlangeSlope_ShortWeb", 100.0, 3.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = 0.0;
 
+    IShapeProfilePtr profilePtr = CreateProfile (params);
+
     params.filletRadius = 0.5;
+    EXPECT_EQ (0.5, profilePtr->GetInnerWebFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
 
     params.filletRadius = nextafter<double, double> (0.5, INFINITY);
@@ -279,12 +295,10 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndNonZeroFlangeSlope_C
     CreateParams params (GetModel(), "I_NonZeroFlangeSlope", 20.0, 10.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = (PI / 180.0) * 10.0;
 
-    double const innerWebFaceLength = params.depth - params.flangeThickness * 2.0;
-    double const innerFlangeFaceLength = (params.flangeWidth - params.webThickness) / 2.0;
-    double const slopeDepth = (innerFlangeFaceLength / std::cos (params.flangeSlope)) * std::sin (params.flangeSlope);
+    IShapeProfilePtr profilePtr = CreateProfile (params);
 
-    double const maximumFilletRadiusForWeb = innerWebFaceLength / 2.0 - slopeDepth;
-    BeAssert (maximumFilletRadiusForWeb >= 0.0 && "Flange slope height cannot be greater than half of the inner web face length");
+    double const maximumFilletRadiusForWeb = profilePtr->GetInnerWebFaceLength() / 2.0 - profilePtr->GetSlopeHeight();
+    EXPECT_GE (maximumFilletRadiusForWeb, 0.0) << "Flange slope height cannot be greater than half of the inner web face length";
 
     params.filletRadius = 1.0;
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web minus flange slope height.";
