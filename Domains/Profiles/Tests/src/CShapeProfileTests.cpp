@@ -411,9 +411,14 @@ TEST_F (CShapeProfileTestCase, Insert_VariousFlangeSlope_CorrectInsertResult)
 
     TestParameterToBeFiniteAndPositive (params, params.flangeSlope, "FlangeSlope", true);
 
+    params.flangeSlope = PI / 4.0;
+    CShapeProfilePtr profilePtr = CreateProfile (params);
+
     // 45 degree angle means a slope height of 4, when the inner flange face length is 4
     // since inner web face length is 8, a slope of 45 degree should be the maximum allowed value
-    params.flangeSlope = PI / 4.0;
+    EXPECT_EQ (4.0, profilePtr->GetInnerFlangeFaceLength());
+    EXPECT_EQ (8.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_EQ (4.0, profilePtr->GetSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
 
     params.flangeSlope = nextafter<double, double> (PI / 4.0, INFINITY);
