@@ -51,6 +51,8 @@ public:
 protected:
     explicit TShapeProfile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const override;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (TShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (TShapeProfile)
