@@ -40,6 +40,9 @@
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
+#define SOURCEINFO_ECSCHEMA_NAME            "SourceInfo"
+#define SOURCEINFO_CLASS_SoureElementInfo   "SourceElementInfo"
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct iModelBridgeFwk;
@@ -68,6 +71,8 @@ Also see @ref ANCHOR_BridgeConfig "bridge-specific configuration".
 - Subclass from iModelBridge
 
 - Override iModelBridge::_MakeSchemaChanges to import required schemas during @ref ANCHOR_InitializationPhase "initialization phase"
+
+- Override iModelBridge::_MakeDefinitionChanges to import or update definitions such as Categories in public models. This is called during @ref ANCHOR_InitializationPhase "initialization phase"
 
 - Keep track of source data -> iModel element mappings by using something like syncinfo. See @ref ANCHOR_TypicalBridgeConversionLogic "typical bridge conversion logic".
 
@@ -100,8 +105,10 @@ The process shown here is for the case of a bridge doing an incremental update. 
 The framework then makes the following calls on the bridge object:
 
 @anchor ANCHOR_InitializationPhase
-<h3>I. Initialization Phase</h3>
-During this phase, the bridge may register domains and import schemas, and the bridge may call SaveChanges on the DgnDb.
+<h3>I. Initialization and Schema and Definitions Phase</h3>
+During this phase, the bridge may register domains and import schemas, and the bridge may write definitions to public models.
+The bridge may create codes that are scoped to public models and shared elements.
+The schema lock is held exclusively during this phase.
 
 -# iModelBridge::_ParseCommandLine (standalone converters only)
 -# iModelBridge::_Initialize
@@ -113,11 +120,8 @@ registered by the bridge in its _Initialize method are imported into the BIM and
 -# iModelBridge::_MakeSchemaChanges. The framework may close and reopen the briefcase at this point.
 
 The framework will pullmergepush as necessary in order to capture schema changes and push them to iModelHub. 
-If the necessary schema lock cannot be acquired, then the bridge is terminated with an error.
-
-@anchor ANCHOR_ConversionPhase
-<h3>II. Conversion Phase</h3>
-During this phase, the bridge must not try to change the schema and must not call SaveChanges on the DgnDb.
+If that is done, then the bim will be closed and re-opened and so, _CloseSource and _OnCloseBim will be called,
+and then _OnOpenBim and _OpenSource will be called again.
 
 -# Find or initialize the @ref ANCHOR_BridgeJobSubject "job subject"
     -# iModelBridge::_GetParams().SetIsUpdating (true);
@@ -125,6 +129,18 @@ During this phase, the bridge must not try to change the schema and must not cal
     -# If jobsubject.IsInvalid
         -# iModelBridge::_GetParams().SetIsUpdating (false)
         -# jobsubject = iModelBridge::_InitializeJob
+
+-# iModelBridge::_MakeDefinitionChanges. The framework may close and reopen the briefcase at this point.
+The framework will pullmergepush as necessary in order to capture definition changes and push them to iModelHub. 
+The framework will NOT close and reopen the bim when doing this.
+
+@anchor ANCHOR_ConversionPhase
+<h3>II. Data Conversion Phase</h3>
+During this phase, the bridge must not try to change the schema or definitions.
+No locks are held during this phase. Lock and code requirements are handled in bulk mode.
+The bridge should write only to its own private models during the data conversion phase.
+Any codes created in this phase must be scoped to private models or to the bridge's own job subject.
+
 -# iModelBridge::_ConvertToBim
 
 @anchor ANCHOR_FinalizationPhase
@@ -458,11 +474,27 @@ struct iModelBridge
         virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
         };
 
+    //! Interface to enable bridges to perform briefcase operations, such as push while they run.
+    struct IBriefcaseManager
+        {
+        enum PushStatus {Success = 0, PullIsRequired, UnknownError};
+
+        //! Pull and merge recent changesets from the iModel server.
+        virtual BentleyStatus _PullAndMerge() = 0;
+
+        //! Push all changes. 
+        //! @param revisionComment the summary comment for the revision.
+        //! @return non-zero status if the push failed.
+        virtual PushStatus _Push(Utf8CP revisionComment) = 0;
+        };
+
     //! Parameters that are common to all bridges.
     //! These parameters are set up by the iModelBridgeFwk based on job definition parameters and other sources.
     //! In a standalone converter, they are set from the command line.
     struct Params
         {
+        enum PushIntermediateRevisions {None=0, ByModel=1, ByFile=2};
+
       protected:
         friend struct iModelBridge;
         friend struct iModelBridgeFwk;
@@ -472,6 +504,8 @@ struct iModelBridge
         bool m_isUpdating = false;
         bool m_wantThumbnails = true;
         bool m_doDetectDeletedModelsAndElements =  true;
+        bool m_mergeDefinitions = true;  // WIP make this default to false
+        PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
         bvector<BeFileName> m_drawingAndSheetFiles;
@@ -488,6 +522,7 @@ struct iModelBridge
         WebServices::ClientInfoPtr m_clientInfo;
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
         IDocumentPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
+        IBriefcaseManager* m_briefcaseManager = nullptr;
         WString m_thisBridgeRegSubKey;
         Transform m_spatialDataTransform;
         DgnElementId m_jobSubjectId;
@@ -576,6 +611,8 @@ struct iModelBridge
         BeDuration GetThumbnailTimeout() const {return m_thumbnailTimeout;}
         void SetWantThumbnails(bool b) {m_wantThumbnails = b;}
         bool WantThumbnails() const {return m_wantThumbnails;}
+        void SetMergeDefinitions(bool b) {m_mergeDefinitions = b;}
+        bool GetMergeDefinitions() const {return m_mergeDefinitions;}
         void SetBridgeJobName(Utf8StringCR str) {m_converterJobName=str;}
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
@@ -584,6 +621,9 @@ struct iModelBridge
         void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
         void ClearDocumentPropertiesAccessor() {m_documentPropertiesAccessor = nullptr;}
         IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
+        void SetPushIntermediateRevisions(PushIntermediateRevisions v) {m_pushIntermediateRevisions = v;}
+        PushIntermediateRevisions GetPushIntermediateRevisions() const {return m_pushIntermediateRevisions;}
+        void SetBriefcaseManager(IBriefcaseManager& c) {m_briefcaseManager = &c;}
         void SetSpatialDataTransform(Transform const& t) {m_spatialDataTransform = t;} //!< Optional. The transform that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data.
         TransformCR GetSpatialDataTransform() const {return m_spatialDataTransform;} //!< The transform, if any, that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data. See iModelBridge::GetJobTransform
         void SetJobSubjectId(DgnElementId eid) {m_jobSubjectId = eid;}  //!< @private called by framework
@@ -603,6 +643,11 @@ struct iModelBridge
 	    //! @param localFileName    The filename of the source file.
 	    //! @return the document GUID, if available.
 	    IMODEL_BRIDGE_EXPORT BeSQLite::BeGuid QueryDocumentGuid(BeFileNameCR localFileName) const;
+
+	    //! Get the document URN for the specified file, if available.
+	    //! @param localFileName    The filename of the source file.
+	    //! @return the document URN, if available.
+	    IMODEL_BRIDGE_EXPORT Utf8String QueryDocumentURN(BeFileNameCR localFileName) const;
 
         //!Get/Set the client info when talking to iModelHub or other services. 
         //!Individual bridges are supposed to set it up in its constructor so that when briefcase creation is called, appropriate ids are passed along.
@@ -632,6 +677,7 @@ struct iModelBridge
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
     static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName);
+
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
     //! @param[in] db The BIM to be updated
@@ -639,7 +685,9 @@ struct iModelBridge
     //! @return non-zero error status if the bridge cannot convert the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
     //! @see OpenBimAndMergeSchemaChanges
-    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles);
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj, bool detectDeletedFiles);
+
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db);
 
     //! @}
 
@@ -730,29 +778,45 @@ public:
     //! @see _OnCloseBim
     virtual BentleyStatus _OnOpenBim(DgnDbR db) = 0;
 
+    enum ClosePurpose
+        {
+        Finished,
+        SchemaUpgrade
+        };
+
     //! When this function is called, the bridge must let go of any pointer it may be holding to the briefcase, and it must detach
     //! syncinfo from the briefcase. 
     //! @param updateStatus non-zero error status if any step in the conversion failed. If so, the conversion will be rolled back.
     //! @note _OnOpenBim and _OnCloseBim may be called more than once during a conversion.
-    virtual void _OnCloseBim(BentleyStatus updateStatus) = 0;
+    virtual void _OnCloseBim(BentleyStatus updateStatus, ClosePurpose) = 0;
 
     //! Open the data source and be prepared to do the conversion
     //! @return non-zero error status if the bridge cannot open the source. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @see _CloseSource
     virtual BentleyStatus _OpenSource() {return BSISUCCESS;}
 
+
     //! The bridge can close its source data files, because the conversion is finished. It may have been terminated abnormally.
     //! This function will not be called if _OpenSource returned a non-zero error status.
     //! @param updateStatus non-zero error status if any step in the conversion failed. If so, the conversion will be rolled back.
-    virtual void _CloseSource(BentleyStatus updateStatus) {}
+    virtual void _CloseSource(BentleyStatus updateStatus, ClosePurpose) {}
     
     //! By overriding this function, the bridge may make changes to schemas in the briefcase.
     //! This function is called after _OnOpenBim and _OpenSource but before _ConvertToBim.
     //! The bridge may generate a schema dynamically, based on the content of the source files. Or, in the case of an update, the bridge can upgrade or change a previously generated schema. 
     //! @return non-zero error status if the bridge cannot make the schema changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    //! @note The bridge must call dgndb.BriefcaseManager().LockSchemas() before attempting to call dgndb.ImportSchemas. The bridge *must* return a non-zero error status if LockSchemas fails.
     //! @note The bridge should *not* convert elements or models in this function.
+    //! @note The schema lock is held (by the framework) when this function is called.
     virtual BentleyStatus _MakeSchemaChanges() {return BSISUCCESS;}
+
+    //! By overriding this function, the bridge may insert and update definition elements such as Categories in public models such as the dictionary model.
+    //! This function is called after _OnOpenBim, _OpenSource, and _MakeSchemaChanges but before _ConvertToBim.
+    //! @return non-zero error status if the bridge cannot make the changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
+    //! @note The bridge should *not* convert elements or models in this function.
+    //! @note The schema lock is held (by the framework) when this function is called.
+    //! @note If the bridge must make definition changes in public models as part of its _ConvertToBim function, then the bridge
+    //! must override _ConvertToBimRequiresExclusiveLock to return true.
+    virtual BentleyStatus _MakeDefinitionChanges(SubjectCR jobSubject) {return BSISUCCESS;}
 
     //! Try to find an existing @ref ANCHOR_BridgeJobSubject "job subject" in the BIM.
     //! This is called prior to _ConvertToBim.
@@ -799,6 +863,9 @@ public:
     //! @see _OnOpenBim
     virtual BentleyStatus _ConvertToBim(SubjectCR jobSubject) = 0;
 
+    //! Query if the bridge must have exclusive access to the iModel while converting data.
+    virtual bool _ConvertToBimRequiresExclusiveLock() {return false;}
+
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
 
@@ -812,6 +879,15 @@ public:
 
     Transform GetSpatialDataTransform(SubjectCR jobSubject) {return GetSpatialDataTransform(_GetParams(), jobSubject);}
 
+
+    //! @name Font Resolution
+    //! @{
+
+    //! Override this method if the bridge needs to cooperate in the process of resolving fonts.
+    //! The Host FontAdmin will invoke this callback to ask the bridge to check if a font is already known.
+    virtual DgnFontCP _TryResolveFont(DgnFontCP) {return nullptr;}
+
+    //! @}
 
     //! @name Document Properties Helper Functions
     //! @{
@@ -845,6 +921,15 @@ public:
     // @private
     IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
                                                 BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel);
+    // @private
+    IMODEL_BRIDGE_EXPORT static BeSQLite::BeGuid ParseDocGuidFromPwUri(Utf8StringCR pwUrl);
+
+    // @private
+    static bool IsPwUrn(Utf8StringCR urn) {return urn.StartsWith("pw://");}
+
+    // @private
+    static bool IsNonFileURN(Utf8StringCR urn) {return (urn.find("://") != Utf8String::npos) && !urn.StartsWith("file://");}
+
     // @private
     IMODEL_BRIDGE_EXPORT static SHA1 ComputeRepositoryLinkHash(RepositoryLinkCR);
 
@@ -888,6 +973,19 @@ public:
     //! @param db The DgnDb that is being updated.
     //! @param commitComment Optional description of changes made. May be included in final ChangeSet comment.
     IMODEL_BRIDGE_EXPORT static BentleyStatus SaveChanges(DgnDbR db, Utf8CP commitComment = nullptr);
+
+    //! Push all local changes to the iModel server
+    //! @param db The briefcase Db
+    //! @param params The bridge just params
+    //! @param commitComment The summary description of the ChangeSet
+    //! @return the outcome of the attempt to push
+    IMODEL_BRIDGE_EXPORT static IBriefcaseManager::PushStatus PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment);
+
+    IMODEL_BRIDGE_EXPORT static bool AnyChangesToPush(DgnDbR);
+    IMODEL_BRIDGE_EXPORT static bool AnyTxns(DgnDbR);
+    IMODEL_BRIDGE_EXPORT static bool HoldsSchemaLock(DgnDbR);
+
+    IMODEL_BRIDGE_EXPORT virtual Utf8String _FormatPushComment(DgnDbR db, Utf8CP commitComment);
 
     IMODEL_BRIDGE_EXPORT static WString GetArgValueW (WCharCP arg);
     IMODEL_BRIDGE_EXPORT static Utf8String GetArgValue (WCharCP arg);
@@ -944,7 +1042,7 @@ public:
     BentleyStatus _OnOpenBim(DgnDbR db) override {m_db = &db; return BSISUCCESS;}
 
     //! Release the reference to the BIM when the conversion is over.
-    void _OnCloseBim(BentleyStatus) override {m_db = nullptr;}
+    void _OnCloseBim(BentleyStatus, ClosePurpose purpose) override {m_db = nullptr;}
 
     void _Terminate(BentleyStatus) override {}
 

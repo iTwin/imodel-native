@@ -20,6 +20,9 @@ struct ConverterTestsHost : DgnPlatformLib::Host
 {
 protected:
     virtual void _SupplyProductName (BentleyApi::Utf8StringR name) override {name.assign("SampleDgnV8ConverterTests");}
+#if defined (NOT_NOW_PARASOLID)
+    virtual SolidsKernelAdmin& _SupplySolidsKernelAdmin() override {return *new PSolidKernelAdmin();}
+#endif
     virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     virtual BentleyApi::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 };

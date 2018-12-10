@@ -224,32 +224,35 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeoLocation::InitializeProjectExtents() 
+void DgnGeoLocation::InitializeProjectExtents(DRange3dP rangeWithOutliers, size_t* outlierCount) 
     {
-    SetProjectExtents(ComputeProjectExtents());
+    SetProjectExtents(ComputeProjectExtents(rangeWithOutliers, outlierCount));
 
     // We need an immutable origin for Cesium tile publishing that will not
     // change when project extents change.   Set it here only.
-    m_initialProjectCenter = m_extent.LocalToGlobal(.5, .5, 5);
+    m_initialProjectCenter = m_extent.LocalToGlobal(.5, .5, .5);
     Save();
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents() const
+AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents(DRange3dP rangeWithOutliers, size_t* outlierCount) const
     {
+    AxisAlignedBox3d extent;
     auto& models = GetDgnDb().Models();
 
-    // Set the project extents to the union of the ranges of all of the spatial models.
-    // We can't just use the range index for this since some models (e.g. reality models) have volumes of interest
-    // that don't have any elements. This is slower, but it should only be called after an "import from external source" operation
-    AxisAlignedBox3d extent;
+    // Set the project extents to the union of the ranges of all elements - but ignoring outlying (statistically insignificant).
+    // Elements so that we do not get huge project extents for "offending elements".
+    extent.Extend(GetDgnDb().ComputeGeometryExtentsWithoutOutliers(rangeWithOutliers, outlierCount));
+    
+    // Include non element (reality model) ranges.
     for (auto& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel)))
         {
         auto model = models.Get<SpatialModel>(entry.GetModelId());
         if (model.IsValid())
-            extent.Extend(model->QueryElementsRange());
+            extent.Extend(model->QueryNonElementModelRange());
         }
 
     if (extent.IsEmpty()) // if we found nothing in any models, just set the project extents to a reasonable default

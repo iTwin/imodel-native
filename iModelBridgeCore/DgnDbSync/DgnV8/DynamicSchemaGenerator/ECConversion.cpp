@@ -3024,7 +3024,8 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
     Utf8String schemaName(schemaKey.GetName().c_str());
     ECObjectsV8::SchemaKey existingSchemaKey;
     SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
-    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
+    
+    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), SyncInfo::V8FileSyncInfoId()))
         {
         //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
         //and also check whether the existing one and the new one are compatible.
@@ -3075,7 +3076,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                             return BSISUCCESS;
                             }
                         }
-                    else
+                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), Converter::GetV8FileSyncInfoIdFromAppData(*v8Model.GetDgnFileP())))
                         return BSISUCCESS;
                     }
                 }
@@ -3496,8 +3497,8 @@ void SpatialConverterBase::CreateProvenanceTables()
         DgnV8FileProvenance::CreateTable(*m_dgndb);
     if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceModel) && _WantModelProvenanceInBim())
         DgnV8ModelProvenance::CreateTable(*m_dgndb);
-    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceElement))
-        DgnV8ElementProvenance::CreateTable(*m_dgndb);
+    // if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceElement))
+    //     DgnV8ElementProvenance::CreateTable(*m_dgndb);
     
     }
 

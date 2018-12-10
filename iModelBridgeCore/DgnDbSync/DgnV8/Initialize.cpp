@@ -43,7 +43,7 @@ private:
 
 protected:
     virtual bool _DoesHostHaveFocus() override {return false;}
-    virtual DgnV8Api::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override {return nullptr;} 
+    virtual DgnV8Api::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override {return nullptr;}
     virtual DgnV8Api::IndexedViewSet& _GetActiveViewSet() override {return m_activeViewSet;}
     virtual int _GetCurrentViewNumber(void) override {return 0;}
     virtual DgnV8Api::HUDManager* _GetHUDManager () override {return nullptr;}
@@ -91,11 +91,11 @@ protected:
 
     struct Notifications : NotificationAdmin
         {
-        virtual StatusInt _OutputMessage(DgnV8Api::NotifyMessageDetails const& v8Details) override 
+        virtual StatusInt _OutputMessage(DgnV8Api::NotifyMessageDetails const& v8Details) override
             {
             return SUCCESS;
             }
-        }; 
+        };
 
     struct Solids : DgnV8Api::PSolidKernelAdmin
         {
@@ -124,7 +124,7 @@ protected:
     NotificationAdmin&      _SupplyNotificationAdmin() override {return *new Notifications();}
     ExceptionHandler&       _SupplyExceptionHandler() override {return *new Exceptions();}
     SolidsKernelAdmin&      _SupplySolidsKernelAdmin() override {return *new Solids();}
-    GeoCoordinationAdmin&   _SupplyGeoCoordinationAdmin() override {return *Bentley::GeoCoordinates::DgnGeoCoordinationAdmin::Create(NULL, *m_acsManager);} 
+    GeoCoordinationAdmin&   _SupplyGeoCoordinationAdmin() override {return *Bentley::GeoCoordinates::DgnGeoCoordinationAdmin::Create(NULL, *m_acsManager);}
     RasterAttachmentAdmin&  _SupplyRasterAttachmentAdmin() override { return DgnV8Api::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin(); }
     GraphicsAdmin&          _SupplyGraphicsAdmin() override {return *new NulGraphics;}
     DgnAttachmentAdmin&     _SupplyDgnAttachmentAdmin() override {return *new ConverterDgnAttachmentAdmin();}
@@ -139,7 +139,7 @@ protected:
     ConverterV8Host(IDmsSupport* dmsSupport)
         :m_dmsSupport(dmsSupport)
         {}
-    }; 
+    };
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -150,10 +150,10 @@ DgnV8Api::DgnDocumentManager& ConverterV8Host::_SupplyDocumentManager()
     DgnV8Api::DgnDocumentManager* mgr = NULL;
     if (NULL != m_dmsSupport)
         mgr = m_dmsSupport->_GetDgnDocumentManager();
-    
+
     if (NULL != mgr)
         return *mgr;
-    
+
     return *new DgnV8Api::DgnDocumentManager();
     }
 static DgnV8Api::MacroConfigurationAdmin* s_macros;
@@ -175,14 +175,14 @@ static DgnV8Api::IConfigurationAdmin& getConvertMacros()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BentleySystems  
+* @bsimethod                                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void InitCustomGcsDir(int argc, WCharCP argv[])
-    {    
+    {
     BentleyApi::BeFileName customGcsDir;
 
-    Bentley::T_WStringVector assignmentArgs;    
-    WChar                    tmpString[8*MAXFILELENGTH];    
+    Bentley::T_WStringVector assignmentArgs;
+    WChar                    tmpString[8*MAXFILELENGTH];
 
     for ( ; argc > 0; argc--, argv++)
         {
@@ -194,34 +194,34 @@ static void InitCustomGcsDir(int argc, WCharCP argv[])
 
         BeStringUtilities::Wcsncpy (tmpString, _countof (tmpString), thisArg);
         BeStringUtilities::Wcsupr (tmpString);
-               
+
         if (wcsncmp (tmpString, L"CUSTOMGCSDIR=", 13) == 0)
-            {            
+            {
             customGcsDir.assign (thisArg + 13);
             customGcsDir.DropQuotes();
             customGcsDir.AppendSeparator(customGcsDir);
 
-            break;            
-            }                  
+            break;
+            }
         }
-  
+
     if (customGcsDir.size() > 0)
-        {                              
-        BentleyApi::BeDirectoryIterator directoryIter(customGcsDir);        
+        {
+        BentleyApi::BeDirectoryIterator directoryIter(customGcsDir);
 
         bool       isDir;
-        BeFileName gcsFileName; 
-               
+        BeFileName gcsFileName;
+
         while (directoryIter.GetCurrentEntry(gcsFileName, isDir) == SUCCESS)
-            {                                                
+            {
             if (!isDir)
                 {
-                Bentley::GeoCoordinates::LibraryManager::Instance()->AddUserLibrary(gcsFileName.c_str(), nullptr);                                
-                }            
+                Bentley::GeoCoordinates::LibraryManager::Instance()->AddUserLibrary(gcsFileName.c_str(), nullptr);
+                }
 
             directoryIter.ToNext();
-            }        
-        }    
+            }
+        }
     }
 
 //=========================================================================================
@@ -260,7 +260,7 @@ static bool     IsValidConfigFilePath(WCharCP configVar)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BentleySystems  
+* @bsimethod                                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc, WCharCP argv[])
     {
@@ -307,7 +307,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
             }
         else if (0 == wcsncmp(tmpString.c_str(), L"DGN_CFGROOT=", 12))
             {
-            // this command line option isn't documented in the "usage" info, and isn't working yet. 
+            // this command line option isn't documented in the "usage" info, and isn't working yet.
             // It will require shipping fallback .cfg files and specifying the directory where they are shipped in the "fallback" variables below.
             configRootDir.assign(thisArg+12);
             configRootDir.DropQuotes();
@@ -333,13 +333,13 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
 
         else if (0 == wcsncmp(tmpString.c_str(), L"DGN_CFGVAR=", 7))
             {
-            // remaining string must have the format MACRO=value 
+            // remaining string must have the format MACRO=value
             WChar    definitionString[1024];
             // recopy because we don't want strupr version.
             BeStringUtilities::Wcsncpy(definitionString, _countof(definitionString), thisArg+7);
             if (nullptr != wcschr(definitionString, '='))
                 assignmentArgs.push_back(definitionString);
-            }            
+            }
         else if (0 == wcsncmp(tmpString.c_str(), L"DGN_DEBUGCFG", 8))
             {
             if ( (tmpString.length()) > 9 && ('=' == tmpString[8]) )
@@ -363,12 +363,12 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
                                                                              // so Sam implemented this scheme to get it while it's used. It's not really right, but it works. See comment in MicroStation's msmacro.cpp
 
         // If we want to operate without  MicroStation installation we have to ship fallback configuration files for both V8i and CONNECT with the DgnV8 converter. We find those relative to this dll.
-        
+
         // if enough information is supplied, read either CONNECT or V8i configuration files to define the macros.
         if (!isV8i)
             {
             s_macros->DefineBuiltinMacro (L"_DGNV8CONVERTER", L"1");
-            
+
             if (msConfigFileName.empty())
                 s_macros->ReadCONNECTConfigurationFiles(workSpaceOrUser.c_str(), workSetOrProject.c_str(), configRootDir.c_str(), installDir.c_str(), msConfigFileName.c_str(), fallbackConnectConfigDir.c_str(), assignmentArgs, debugOutput, debugLevel);
             else
@@ -378,7 +378,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
                     fileProcessor.SetDebugOutput(debugOutput, debugLevel);
                 fileProcessor.ProcessTopLevelFile(msConfigFileName.c_str(), DgnV8Api::ConfigurationVariableLevel::System, nullptr);
                 if (nullptr != debugOutput)
-                    fileProcessor.PrintSummary();                
+                    fileProcessor.PrintSummary();
                 }
             }
         else
@@ -419,29 +419,29 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
         {
         Bentley::BeFileName seedFilesPath(v8RootDir);
         seedFilesPath.AppendToPath(L"Seed");
-        DgnV8Api::ConfigurationManager::DefineVariable(L"MS_SEEDFILES", seedFilesPath);        
-        }    
-    
+        DgnV8Api::ConfigurationManager::DefineVariable(L"MS_SEEDFILES", seedFilesPath);
+        }
+
     if (!IsValidConfigFilePath(L"MS_TRANSSEED"))
         {
         Bentley::BeFileName transeed(v8RootDir);
         transeed.AppendToPath(L"Seed\\seed3d.dgn");
         DgnV8Api::ConfigurationManager::DefineVariable(L"MS_TRANSEED", transeed);
-        }    
-    
+        }
+
     // If MS_SMARTSOLID is not defined, Vancouver will look for a "schema" sub-directory next to the process's EXE to provide ParaSolid with its schema files.
     // In DgnDb, we place ParaSolid schemas in a "PSolidSchemas" sub-directory for clarity, so we need to inject a better path.
     // Further, might as well ensure V8 uses the schema from the V8 delivery, and not ours.
     if (!IsValidConfigFilePath(L"MS_SMARTSOLID"))
         {
         WString smartSolidDir = v8RootDir;
-        
+
         // Vancouver uses wcscat, not AppendToPath, so must ensure this ends in a slash.
         if (!smartSolidDir.EndsWith(WCSDIR_SEPARATOR))
             smartSolidDir += WCSDIR_SEPARATOR;
 
         DgnV8Api::ConfigurationManager::DefineVariable(L"MS_SMARTSOLID", smartSolidDir.c_str());
-        }    
+        }
 
     // PSolidCore depends on MS_TMP - VSTS 39658:
     if (!IsValidConfigFilePath(L"MS_TMP"))
@@ -465,16 +465,16 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
 void Converter::SetDllSearchPath(BentleyApi::BeFileNameCR v8Path, BentleyApi::BeFileNameCP realdwgPath)
     {
     /*
-    * Note: We use two mechanisms to setup the PATH - it otherwise results in hard to find and/or reproduce bugs 
-    * with the converter:   
+    * Note: We use two mechanisms to setup the PATH - it otherwise results in hard to find and/or reproduce bugs
+    * with the converter:
     *
-    * 1. ::SetDllDirectoryW() by itself was unreliable on some machines - ::SetDllDirectoryA() was getting called 
-    * from other Dlls not under our control clobbering up the DgnV8 path setup here. So we ended up setting 
+    * 1. ::SetDllDirectoryW() by itself was unreliable on some machines - ::SetDllDirectoryA() was getting called
+    * from other Dlls not under our control clobbering up the DgnV8 path setup here. So we ended up setting
     * system PATH environment for these cases (as is done in V8 Microstation)
-    * 
-    * 2. System PATH by itself wasn't sufficient to load some DLLs like SPAXAcis.dll. I couldn't find a reasonable 
-    * explanation for why this is the case. 
-    * 
+    *
+    * 2. System PATH by itself wasn't sufficient to load some DLLs like SPAXAcis.dll. I couldn't find a reasonable
+    * explanation for why this is the case.
+    *
     * See description @ https://msdn.microsoft.com/en-us/library/ms686203(VS.85).aspx
     */
     ::SetDllDirectoryW(v8Path.c_str());
@@ -493,7 +493,7 @@ DGNV8_ELEMENTHANDLER_DEFINE_MEMBERS(ThreeMxElementHandler)
 DGNV8_ELEMENTHANDLER_DEFINE_MEMBERS(ScalableMeshElementHandler)
 
 //=======================================================================================
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
 struct     DomainInitCaller: public DgnV8Api::IEnumerateAvailableHandlers
     {
@@ -508,7 +508,7 @@ struct     DomainInitCaller: public DgnV8Api::IEnumerateAvailableHandlers
     };
 
 //=======================================================================================
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
 struct ConverterV8Txn : DgnV8Api::DgnCacheTxn
     {
@@ -540,7 +540,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                 }
 
             virtual Utf8String _GetProjectID() const override
-                {             
+                {
                 Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
 
                 Bentley::WString projectGUIDw;
@@ -555,7 +555,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
             virtual uint64_t _GetProductId() const override
                 {
                 return 1; //Default product Id for internal product
-                }            
+                }
             };
         return *new CsScalableMeshAdmin;
         };
@@ -590,7 +590,7 @@ struct CifSheetExaggeratedViewHandlerStandin : DgnV8Api::ViewHandler
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir, 
+void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir,
                            BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[], BentleyApi::Dgn::IDmsSupport* dmsSupport)
     {
     if (!isPowerPlatformBased)
@@ -616,14 +616,14 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
         initializeV8HostConfigVars(dllDirectoryV8, argc, argv);
 
         DgnV8Api::DgnViewLib::Initialize (*new ConverterV8Host(dmsSupport), true);
-        DgnV8Api::Raster::RasterCoreLib::Initialize (*new DgnV8Api::Raster::RasterCoreLib::Host());    
+        DgnV8Api::Raster::RasterCoreLib::Initialize (*new DgnV8Api::Raster::RasterCoreLib::Host());
 
         DgnV8Api::ITxnManager::GetManager().SetCurrentTxn(*new ConverterV8Txn);
 
         DgnV8Api::DependencyManager::SetTrackingDisabled(true);
         DgnV8Api::DependencyManager::SetProcessingDisabled(true);
 
-        // We need a V8 handler for ThreeMx attachment elements. That handler is in an MDL app in MicroStation. We don't need it to do anythning, but 
+        // We need a V8 handler for ThreeMx attachment elements. That handler is in an MDL app in MicroStation. We don't need it to do anythning, but
         // we need it to exist so we can put the "ToDgnDbExtension" on it.
         DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, 0), ThreeMxElementHandler::GetInstance());
         DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(ScalableMeshElementHandler::XATTRIBUTEID_ScalableMeshAttachment, 0), ScalableMeshElementHandler::GetInstance());
@@ -749,7 +749,7 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
 
     if (SUCCESS != openStatus)
         return BSIERROR;
-    
+
     if (file->IsIModel())
         {
         // Fulfill the request of VSTS 32629 - assign an i.dgn file to MicroStation Bridge by default:
@@ -783,17 +783,17 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XDomain::Register(XDomain& xd) 
+void XDomain::Register(XDomain& xd)
     {
-    XDomainRegistry::s_xdomains.push_back(&xd); 
+    XDomainRegistry::s_xdomains.push_back(&xd);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XDomain::UnRegister(XDomain& xd) 
+void XDomain::UnRegister(XDomain& xd)
     {
-    auto i = std::find(XDomainRegistry::s_xdomains.begin(), XDomainRegistry::s_xdomains.end(), &xd); 
+    auto i = std::find(XDomainRegistry::s_xdomains.begin(), XDomainRegistry::s_xdomains.end(), &xd);
     if (i != XDomainRegistry::s_xdomains.end())
         XDomainRegistry::s_xdomains.erase(i);
     }
@@ -826,7 +826,7 @@ void            Converter::GetAffinity(WCharP buffer, const size_t bufferSize, i
         }
 
     BentleyM0200::BeFileName sourceFileName(sourceFileNameStr);
-    
+
     if (BSISUCCESS != Converter::GetAuthoringFileInfo(buffer, bufferSize, affinityLevel, sourceFileName))
         {
         //Log error.

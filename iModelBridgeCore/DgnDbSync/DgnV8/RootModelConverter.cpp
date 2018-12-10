@@ -21,26 +21,40 @@ void RootModelConverter::_ConvertSpatialViews()
     if (!IsFileAssignedToBridge(*GetRootV8File()))
         return;
 
-    if (!m_viewGroup.IsValid())
-        m_viewGroup = m_rootFile->GetViewGroupsR().FindByModelId(GetRootModelP()->GetModelId(), true, -1);
-    if (!m_viewGroup.IsValid())
-        {
-        DgnV8Api::ViewGroupStatus vgStatus;
-        if (DgnV8Api::VG_Success != (vgStatus = DgnV8Api::ViewGroup::Create(m_viewGroup, *GetRootModelP(), true, NULL, true)))
-            return;
-        }
+    auto viewTypes = m_config.GetXPathString("/ImportConfig/Views/@viewTypes", "rootviewgroup rootsavedviews");
+    viewTypes.ToLower();
+    bool wantViewGroups = viewTypes.find("rootviewgroup") != Utf8String::npos;
+    bool wantSavedViews = viewTypes.find("rootsavedviews") != Utf8String::npos;
+
+    if (!wantViewGroups && !wantSavedViews)
+        return;
 
     SpatialViewFactory vf(*this);
 
-    DgnViewId firstView;
-    ConvertViewGroup(firstView, *m_viewGroup, m_rootTrans, vf);
+    if (wantViewGroups)
+        {
+        if (!m_viewGroup.IsValid())
+            m_viewGroup = m_rootFile->GetViewGroupsR().FindByModelId(GetRootModelP()->GetModelId(), true, -1);
+        if (!m_viewGroup.IsValid())
+            {
+            DgnV8Api::ViewGroupStatus vgStatus;
+            if (DgnV8Api::VG_Success != (vgStatus = DgnV8Api::ViewGroup::Create(m_viewGroup, *GetRootModelP(), true, NULL, true)))
+                return;
+            }
 
-    if (firstView.IsValid() && !m_defaultViewId.IsValid())
-        m_defaultViewId = firstView;
+        DgnViewId firstView;
+        ConvertViewGroup(firstView, *m_viewGroup, m_rootTrans, vf);
 
-    NamedViewCollectionCR namedViews = GetRootV8File()->GetNamedViews();
-    for (DgnV8Api::NamedViewPtr namedView : namedViews)
-        ConvertNamedView(*namedView, m_rootTrans, vf);
+        if (firstView.IsValid() && !m_defaultViewId.IsValid())
+            m_defaultViewId = firstView;
+        }
+
+    if (wantSavedViews)
+        {
+        NamedViewCollectionCR namedViews = GetRootV8File()->GetNamedViews();
+        for (DgnV8Api::NamedViewPtr namedView : namedViews)
+            ConvertNamedView(*namedView, m_rootTrans, vf);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -756,7 +770,7 @@ RootModelConverter::~RootModelConverter()
     m_viewGroup = nullptr;
     m_rootFile = nullptr;
     m_drawingModelsKeepAlive.clear();
-    if (!m_params.m_keepHostAliveForUnitTests)
+    if (!m_params.GetKeepHostAlive())
         {
         ClearV8ProgressMeter();
 
@@ -814,6 +828,11 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
 
     if (preElementsConverted == m_elementsConverted)
         m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
+    else
+        {
+        if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByModel)
+            PushChangesForModel(v8mm.GetV8Model());
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -833,36 +852,46 @@ void RootModelConverter::ConvertElementsInModelWithExceptionHandling(ResolvedMod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::DoConvertSpatialElements()
     {
-    bmultiset<ResolvedModelMapping> spatialModels;
-    for (auto v8mm : m_v8ModelMappings)
+    bmap<DgnV8FileP, bmultiset<ResolvedModelMapping>> spatialModels;
+    int32_t count = 0;
+    for (auto& v8mm : m_v8ModelMappings)
         {
         if (!IsFileAssignedToBridge(*v8mm.GetV8Model().GetDgnFileP()))
             continue;
 
         if (v8mm.GetDgnModel().Is3dModel())
-            spatialModels.insert(v8mm);
+            {
+            ++count;
+            spatialModels[v8mm.GetV8Model().GetDgnFileP()].insert(v8mm);
+            }
         }
 
     if (spatialModels.empty())
         return;
 
-    AddTasks((int32_t) (spatialModels.size()));
-    for (auto& modelMapping : spatialModels)
+    AddTasks(count);
+    for (auto& v8FileGroup: spatialModels)
         {
-        if (WasAborted())
-            return;
+        for (auto& modelMapping : v8FileGroup.second)
+            {
+            if (WasAborted())
+                return;
 
-        SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), modelMapping.GetDgnModel().GetName().c_str());
+            SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), modelMapping.GetDgnModel().GetName().c_str());
 
-        StopWatch timer(true);
-        uint32_t start = GetElementsConverted();
+            StopWatch timer(true);
+            uint32_t start = GetElementsConverted();
 
-        ConvertElementsInModelWithExceptionHandling(modelMapping);
+            ConvertElementsInModelWithExceptionHandling(modelMapping);
 
-        uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
-        ConverterLogging::LogPerformance(timer, "Convert Spatial Elements> Model '%s' (%" PRIu32 " element(s))",
-                                         modelMapping.GetDgnModel().GetName().c_str(),
-                                         convertedElementCount);
+            uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
+            ConverterLogging::LogPerformance(timer, "Convert Spatial Elements> Model '%s' (%" PRIu32 " element(s))",
+                                             modelMapping.GetDgnModel().GetName().c_str(),
+                                             convertedElementCount);
+            }
+
+        if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByFile)
+            PushChangesForFile(*v8FileGroup.first, ConverterDataStrings::SpatialData());
         }
     }
 
@@ -1326,6 +1355,13 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationshipsInModel(DgnV8ModelR v
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_BeginConversion()
     {
+    if (m_beginConversionCalled)
+        {
+        BeAssert(false && "Call _BeginConversion only once");
+        return;
+        }
+    m_beginConversionCalled = true;
+
     if (!GetImportJob().IsValid() || (GetImportJob().GetConverterType() != SyncInfo::ImportJob::Type::RootModels))
         {
         OnFatalError();
@@ -1391,6 +1427,11 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_FinishConversion()
     {
+    if (!m_beginConversionCalled)
+        {
+        BeAssert(false && "_FinishConversion called without _BeginConversion");
+        return;
+        }
     UnmapModelsNotAssignedToBridge(); // just in case any snuck back in
 
     ConvertNamedGroupsAndECRelationships();   // Now that we know all elements, work on the relationships between elements.
@@ -1440,8 +1481,7 @@ void RootModelConverter::_FinishConversion()
             {
             if (!IsFileAssignedToBridge(*v8File))
                 continue;
-            SyncInfo::V8FileProvenance prov(*v8File, GetSyncInfo(), GetCurrentIdPolicy());
-            prov.Update();
+            GetSyncInfo().UpdateFile(nullptr, *v8File);
             }
         }
 
@@ -1512,22 +1552,93 @@ struct ConvertModelACSTraverser : DgnV8Api::IACSTraversalHandler
 
     }; // ConvertModelACSTraverser
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Keith.Bentley                   02/15
-    +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  RootModelConverter::Process()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverter::DoBeginConversion()
     {
+    _OnConversionStart();
+    _BeginConversion();
+    return WasAborted()? BSIERROR: BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverter::DoFinishConversion()
+    {
+    _FinishConversion();
+    if (WasAborted())
+        return BSIERROR;
+
+    _OnConversionComplete();
+
+    if (ShouldCreateIntermediateRevisions())
+        PushChangesForFile(*GetRootV8File(), ConverterDataStrings::GlobalProperties());
+
+    return WasAborted()? BSIERROR: BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverter::MakeDefinitionChanges()
+    {
+    if (!m_isRootModelSpatial)
+        return BSISUCCESS;
+
+    if (!m_beginConversionCalled)
+        {
+        if (SUCCESS != DoBeginConversion() || WasAborted())     // must call this first, to initialize the ChangeDetector, which MakeDefinitionChanges will use
+            {
+            return BSIERROR;
+            }
+        }
+
+    SetStepName(Converter::ProgressMessage::STEP_CONVERTING_STYLES());
+    _ConvertLineStyles();
+    if (WasAborted())
+        return ERROR;
+
+    for (auto v8Model : m_spatialModelsInAttachmentOrder)
+        {
+        if (IsFileAssignedToBridge(*v8Model->GetDgnFileP()))
+            {
+            SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MATERIALS());
+            ConvertModelMaterials(*v8Model);
+            }
+        }
+
+    _ConvertSpatialLevels();
+
+    // NB: It is up to ConvertData to call DoEndConversion. Don't do that here!
+
+    // The framework (iModelBridgeFwk or SACAdapter) guarantees that ConvertData will be called in the same session. 
+    // The bim and source will NOT be closed and re-opened between the definition and data conversion steps. 
+    // That means I can assume that all current state, including the existing ChangeDetector, m_newlyDiscoveredModels, 
+    // etc. will be carried over to ConvertData.
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus  RootModelConverter::ConvertData()
+    {
+    if (!m_beginConversionCalled)
+        {
+        if (SUCCESS != DoBeginConversion() || WasAborted())     // must call this first, to initialize the ChangeDetector, which MakeDefinitionChanges will use
+            {
+            return BSIERROR;
+            }
+        }
+
     AddSteps(9);
 
     StopWatch totalTimer(true);
 
     StopWatch timer(true);
-
-    _OnConversionStart();
-
-    _BeginConversion();
-    if (WasAborted())
-        return ERROR;
 
     ConverterLogging::LogPerformance(timer, "Begin Conversion");
 
@@ -1541,16 +1652,6 @@ BentleyStatus  RootModelConverter::Process()
 
     ConverterLogging::LogPerformance(timer, "Convert Models");
 
-    
-    SetStepName(Converter::ProgressMessage::STEP_CONVERTING_STYLES());
-
-    timer.Start();
-    _ConvertLineStyles();
-    if (WasAborted())
-        return ERROR;
-
-    ConverterLogging::LogPerformance(timer, "Convert Line Styles");
-
     AddTasks((int32_t) (m_v8ModelMappings.size()));
     for (auto& modelMapping : m_v8ModelMappings)
         {
@@ -1560,9 +1661,6 @@ BentleyStatus  RootModelConverter::Process()
         if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
             continue;
 
-        SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MATERIALS(), modelMapping.GetDgnModel().GetName().c_str());
-        ConvertModelMaterials(modelMapping.GetV8Model());
-
         ConvertModelACSTraverser acsTraverser(modelMapping, ComputeUnitsScaleFactor(modelMapping.GetV8Model()));
         DgnV8Api::IACSManager::GetManager().Traverse(acsTraverser, &modelMapping.GetV8Model());
         }
@@ -1570,16 +1668,12 @@ BentleyStatus  RootModelConverter::Process()
     if (m_isRootModelSpatial)
         {
         timer.Start();
-        _ConvertSpatialLevels();
-        if (WasAborted())
-            return ERROR;
-
-        ConverterLogging::LogPerformance(timer, "Convert Spatial Levels");
-
-        timer.Start();
         _ConvertSpatialViews();
         if (WasAborted())
             return ERROR;
+
+        if (ShouldCreateIntermediateRevisions())
+            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ViewsAndModels());
 
         ConverterLogging::LogPerformance(timer, "Convert Spatial Views");
 
@@ -1589,6 +1683,11 @@ BentleyStatus  RootModelConverter::Process()
             return ERROR;
 
         ConverterLogging::LogPerformance(timer, "Convert Spatial Elements (total)");
+        }
+    else
+        {
+        if (ShouldCreateIntermediateRevisions())
+            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ViewsAndModels());
         }
 
     timer.Start();
@@ -1603,17 +1702,15 @@ BentleyStatus  RootModelConverter::Process()
     if (WasAborted())
         return ERROR;
 
+    if (ShouldCreateIntermediateRevisions())
+        PushChangesForFile(*GetRootV8File(), ConverterDataStrings::Sheets());
+
     ConverterLogging::LogPerformance(timer, "Convert Sheets (total)");
 
-    timer.Start();
-    _FinishConversion();
-    if (WasAborted())
-        return ERROR;
+    if (BSISUCCESS != DoFinishConversion())
+        return BSIERROR;
 
-    _OnConversionComplete();
-    ConverterLogging::LogPerformance(timer, "Finish conversion");
-
-    ConverterLogging::LogPerformance(totalTimer, "Total conversion time (%" PRIu32 " element(s))", (uint32_t) GetElementsConverted());
+    ConverterLogging::LogPerformance(totalTimer, "Total data conversion time (%" PRIu32 " element(s))", (uint32_t) GetElementsConverted());
     return WasAborted() ? ERROR : SUCCESS;
     }
 
@@ -1672,6 +1769,38 @@ ResolvedModelMapping RootModelConverter::_FindResolvedModelMappingBySyncId(SyncI
             return rmm;
         }
     return ResolvedModelMapping();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::PushChangesForFile(DgnV8FileR file, BentleyApi::Utf8StringCR whatData)
+    {
+    BentleyApi::Utf8String comment;
+    if (&file == GetRootV8File())
+        comment = whatData;
+    else
+        {
+        BeFileName filename(file.GetFileName().c_str());
+        comment = BentleyApi::Utf8PrintfString("%s - %s", Utf8String(filename.GetBaseName()).c_str(), whatData.c_str());
+        }
+    iModelBridge::PushChanges(*m_dgndb, _GetParams(), comment.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::PushChangesForFile(DgnV8FileR file, ConverterDataStrings::StringId whatDataNo)
+    {
+    PushChangesForFile(file, ConverterDataStrings::GetString(whatDataNo));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::PushChangesForModel(DgnV8ModelRefCR model)
+    {
+    PushChangesForFile(*model.GetDgnFileP(), BentleyApi::Utf8String(model.GetModelNameCP()));
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

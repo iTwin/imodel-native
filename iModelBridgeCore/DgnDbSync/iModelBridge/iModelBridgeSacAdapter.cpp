@@ -14,12 +14,12 @@
 #include <stdio.h>
 #include <iModelBridge/iModelBridgeSacAdapter.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
+#include <iModelBridge/iModelBridgeErrorHandling.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <DgnPlatform/DgnIModel.h>
 #include "iModelBridgeHelpers.h"
-#include <BeHttp/HttpClient.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -214,7 +214,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
 
         if (madeDynamicSchemaChanges) // if _MakeSchemaChanges made any dynamic schema changes, we close and re-open in order to accommodate them.
             {
-            callCloseOnReturn.CallCloseFunctions();
+            callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade);
 
             _hadDomainSchemaChanges = false;
             db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges, outputFileName);
@@ -228,7 +228,10 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             callCloseOnReturn.CallOpenFunctions(*db);
             }
 
-        BentleyStatus bstatus = bridge.DoConvertToExistingBim(*db, saparams.GetDetectDeletedFiles());
+        SubjectCPtr jobsubj;
+        BentleyStatus bstatus = bridge.DoMakeDefinitionChanges(jobsubj, *db);
+        if (BSISUCCESS == bstatus)
+            bstatus = bridge.DoConvertToExistingBim(*db, *jobsubj, saparams.GetDetectDeletedFiles());
         
         if (BSISUCCESS != bstatus)
             {
@@ -299,6 +302,8 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
 
         isNewFile = !outputFileName.DoesPathExist();
     
+        iModelBridgeBimHost_SetBridge _registerBridgeOnHost(bridge);
+
         bridge._GetParams().SetInputFileName(inputFileName);
         if (BSISUCCESS != CreateOrUpdateBim(bridge, saparams))
             {
@@ -389,6 +394,7 @@ void iModelBridgeSacAdapter::Params::PrintUsage()
 "--input-guid=                  (optional) The document GUID of the input file.\n"
 "--doc-attributes=              (optional) Document atttributes for the input file (in JSON format).\n"
 "--transform=                   (optional) 3x4 transformation matrix in row-major form in JSON wire format. This is an additional transform to to be pre-multiplied to the normal GCS/units conversion matrix that the bridge computes and applies to all converted spatial data.\n"
+"--merge-definitions            (optional) Merge definitions such as levels and materials by name from different root models into the shared dictionary model. The default is to keep definitions for each root model separate.\n"
 "--bridge-assetsDir=            (optional) the full path to the assets directory for the bridge.\n"
     );
     }
@@ -587,6 +593,12 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
+    if (0 == wcscmp(argv[iArg], L"--merge-definitions"))
+        {
+        bparams.SetMergeDefinitions(true);
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
     if (argv[iArg] == wcsstr(argv[iArg], L"--thumbnailTimeout"))
         {
         unSupportedFwkArg(argv[iArg]);
@@ -724,6 +736,8 @@ void iModelBridgeSacAdapter::InitCrt(bool quietAsserts)
 #else
     // unix-specific CRT init
 #endif
+
+    iModelBridgeErrorHandling::Initialize();
     }
 
 //---------------------------------------------------------------------------------------

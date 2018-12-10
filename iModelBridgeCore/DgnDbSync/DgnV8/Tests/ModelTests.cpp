@@ -34,7 +34,7 @@ void ModelTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNa
     {
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
-    params.m_keepHostAliveForUnitTests = true;
+    params.SetKeepHostAlive(true);
     params.SetInputFileName(input);
     params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
 
@@ -49,7 +49,8 @@ void ModelTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNa
     creator.MakeSchemaChanges();
     ASSERT_FALSE(creator.WasAborted());
     ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
-    creator.Process();
+    creator.MakeDefinitionChanges();
+    creator.ConvertData();
     ASSERT_FALSE(creator.WasAborted());
     db->SaveChanges();
 

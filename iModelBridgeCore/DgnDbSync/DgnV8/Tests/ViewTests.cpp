@@ -67,6 +67,8 @@ TEST_F(ViewTests, SavedViewsCRUD)
     DgnV8Api::NamedViewPtr view1 = CreateAndWriteSavedView(*v8editor.m_file, L"View1", 0);
     v8editor.Save();
 
+    m_params.SetConfigFile(GetInputFileName(L"SavedViewsImportConfig.xml"));
+
     DoConvert(m_dgnDbFileName, m_v8FileName);
     DgnViewId view1Id;
         {

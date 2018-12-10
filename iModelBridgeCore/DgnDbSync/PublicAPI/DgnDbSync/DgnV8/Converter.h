@@ -612,7 +612,8 @@ struct Converter
         Utf8String m_pwUser;
         Utf8String m_pwPassword;
         Utf8String m_pwDataSource;
-
+        //!private
+        bool m_keepHostAlive {};
     public:
         Params() : m_v8sdkRelativeDir(L"DgnV8") // it's relative to the library's directory
             {
@@ -648,7 +649,8 @@ struct Converter
         void SetProjectWiseDataSource(Utf8CP pwDataSource) {m_pwDataSource = pwDataSource;}
         void SetProcessAffected(bool processAffected) { m_processAffected = processAffected; }
         void SetConvertViewsOfAllDrawings(bool b) { m_convertViewsOfAllDrawings = b;}
-
+        void SetKeepHostAlive(bool b) { m_keepHostAlive = b; }
+        bool GetKeepHostAlive() const { return m_keepHostAlive; }
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
         BeFileNameCR GetConfigFile2() const {return m_configFile2;}
@@ -822,6 +824,9 @@ struct Converter
         L10N_STRING(TemporaryDirectoryNotFound)  // =="Failed to find/create temporary directory %s"==
         L10N_STRING(RDSUninitialized)            // =="Failed to initialize RDSRequestManager"==
         L10N_STRING(RDSUploadFailed)             // =="Failed to upload tileset to Reality Data Server"==
+        L10N_STRING(GCSHardConversionError)      // =="Geographic Coordinate System conversion error"==
+        L10N_STRING(GCSDatumConversionFailure)   // =="Geographic Coordinate System conversion failure: probably datum transformation issue. Are grid shift files missing?"==
+        L10N_STRING(GCSRangeConversionWarning)   // =="Geographic Coordinate System conversion: coordinates outside the normal useful range of system."==
 
         L10N_STRING(InitProjectWiseLinkError)      // =="Could not initialize ProjectWise extension. Any ProjectWise documents that are target of links will not be embedded."==
         L10N_STRING(TerminateProjectWiseLinkError) // =="Could not terminate ProjectWise extension."==
@@ -834,8 +839,10 @@ struct Converter
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
-        L10N_STRING(FailedToConvertSheet)       // =="Failed to convert sheet %s"==
+        L10N_STRING(FailedToConvertModel)       // =="Failed to convert model"==
+        L10N_STRING(FailedToConvertDrawingElement)  // =="Failed to convert drawing element"==
         L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
+        L10N_STRING(ProjectExtentsAdjusted)      // =="Project Extents have been adjusted to exclude outlying elements"==
             
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -878,10 +885,15 @@ struct Converter
 
     //! Other arbitrary strings required by the conversion process
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ConverterDataStrings,dgnv8_converterDataStrings)
-        L10N_STRING(V8StyleNone) // =="V8 Default Style"==
-        L10N_STRING(V8StyleNoneDescription) // =="Created from V8 active settings to handle Style (none)"==
-        L10N_STRING(LinkModelDefaultName) // =="Default Link Model"==
-        L10N_STRING(RDS_Description) // =="Reality Model Tileset for %s"==
+        L10N_STRING(V8StyleNone)                        // =="V8 Default Style"==
+        L10N_STRING(V8StyleNoneDescription)             // =="Created from V8 active settings to handle Style (none)"==
+        L10N_STRING(LinkModelDefaultName)               // =="Default Link Model"==
+        L10N_STRING(RDS_Description)                    // =="Reality Model Tileset for %s"==
+        L10N_STRING(ViewsAndModels)                     // =="Views and Models"==
+        L10N_STRING(Sheets)                             // =="Sheets and drawings"==
+        L10N_STRING(Drawings)                           // =="Drawings"==
+        L10N_STRING(GlobalProperties)                   // =="Global properties"==
+        L10N_STRING(SpatialData)                        // =="Spatial data"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Reports conversion issues
@@ -956,6 +968,8 @@ protected:
     bool                 m_rootTransHasChanged = false;
     bool                 m_spatialTransformCorrectionsApplied = false;
     bool                 m_hadAnyChanges = false;
+    bool                 m_onConversionStartCalled = false;
+    bool                 m_beginConversionCalled = false;
     uint32_t             m_elementsConverted = 0;
     uint32_t             m_elementsDiscarded = 0;
     uint32_t             m_elementsSinceLastSave = 0;
@@ -999,7 +1013,7 @@ protected:
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
     bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;
-    bool                m_haveCreatedThumbnails;
+    bool                m_haveCreatedThumbnails = false;
 
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
@@ -1010,9 +1024,14 @@ protected:
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
     virtual void _OnSheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) {}
 
+    virtual void _OnFileDiscovered(DgnV8FileR) {;}
+
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
+    virtual DgnV8Api::ViewGroup* _GetMainViewGroup() {return nullptr;}
+
+    bool ShouldCreateIntermediateRevisions() const {return _GetParams().GetPushIntermediateRevisions() != iModelBridge::Params::PushIntermediateRevisions::None;}
 
     bool SkipECContent() const {return m_skipECContent;}
     void SetSkipEContent(bool val) {m_skipECContent = val;}
@@ -1024,6 +1043,8 @@ public:
     bool ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model);
     //! @}
 
+    //!Allows a bridge to store element provenance in an iModel
+    BentleyStatus  AddElementSourceInfo(ElementConversionResults& results, DgnV8EhCR v8eh);
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 
@@ -1036,6 +1057,7 @@ public:
     bool HasRootTransChanged() const {return m_rootTransHasChanged;}
 
     void SetIsUpdating(bool b) {_GetParamsR().SetIsUpdating(b);}
+    void SetKeepHostAlive(bool b) { _GetParamsR().SetKeepHostAlive(b); }
 
     static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME)
         {
@@ -1112,6 +1134,11 @@ public:
     //! Compute the code value and URI that should be used for a RepositoryLink to the specified file
     void ComputeRepositoryLinkCodeValueAndUri(Utf8StringR Code, Utf8StringR uri, DgnV8FileR file);
     
+    DGNDBSYNC_EXPORT static Utf8String GetPwUrnFromFileProvenance(DgnV8FileCR);
+
+    DGNDBSYNC_EXPORT Utf8String GetDocumentURNforFile(DgnV8FileCR);
+    DGNDBSYNC_EXPORT BeSQLite::BeGuid GetDocumentGUIDforFile(DgnV8FileCR);
+
     //! Create a RepositoryLink to represent this file in the BIM and cache it in memory
     DgnElementId WriteRepositoryLink(DgnV8FileR file);
 
@@ -1194,9 +1221,11 @@ public:
 
     //! @name DgnDb properties
     //! @{
+    BentleyStatus GenerateThumbnail(ViewDefinition const& view);
     BentleyStatus GenerateThumbnails();
     void GenerateThumbnailsWithExceptionHandling();
     BentleyStatus GenerateRealityModelTilesets();
+    BentleyStatus ComputeRealityModelFootprint(bvector<GeoPoint2d>& footprint, GeometricModelCP geometricModel, GeoCoordinates::BaseGCSCR targetLatLongGCS);
     void  StoreRealityTilesetTransform(DgnModelR model, TransformCR tilesetToDb);
     BentleyStatus GenerateWebMercatorModel();
 
@@ -1952,6 +1981,9 @@ public:
     //! A subclass must override this to supply the prefix that should be applied to all generated names, such as Category and View codes.
     virtual Utf8String _GetNamePrefix() const = 0;
 
+    //! Should definitions such as levels and materials be merged by name
+    bool ShouldMergeDefinitions() const {return GetParams().GetMergeDefinitions() || m_config.GetOptionValueBool("MergeDefinitions", false);}
+
     Params const& GetParams() const {return _GetParams();}
 
     //! Returns the transform to apply to all in-coming V8 elements. This is usually identity. 
@@ -1991,7 +2023,10 @@ public:
     DGNDBSYNC_EXPORT void ReportSyncInfoIssue(IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details);
 
     DGNDBSYNC_EXPORT void ReportFailedModelConversion(ResolvedModelMapping const& v8mm);
+    DGNDBSYNC_EXPORT void ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle const& inEl);
     DGNDBSYNC_EXPORT void ReportFailedThumbnails();
+    DGNDBSYNC_EXPORT void ReportAdjustedProjectExtents(size_t nOutliers, DRange3dCR unadjustedRange, DRange3dCR adjustedRange);
+
 
     //! Signal a fatal error
     DGNDBSYNC_EXPORT BentleyStatus OnFatalError(IssueCategory::StringId cat=IssueCategory::Unknown(), Issue::StringId num=Issue::FatalError(), ...) const;
@@ -2302,6 +2337,7 @@ protected:
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
     BentleyStatus MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
+
     void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
@@ -2310,6 +2346,10 @@ protected:
 
 public:
     virtual SpatialParams const& _GetSpatialParams() const = 0;
+
+    void PushChangesForFile(DgnV8FileR, BentleyApi::Utf8StringCR whatData);
+    void PushChangesForFile(DgnV8FileR, ConverterDataStrings::StringId);
+    void PushChangesForModel(DgnV8ModelRefCR);
 
     //! Sets the Params BridgeJobName property
     DGNDBSYNC_EXPORT void ComputeDefaultImportJobName();
@@ -2426,6 +2466,20 @@ public:
 //=======================================================================================
 //! Project a single DgnV8 model, plus all of its reference attachments, into a DgnDb.
 //!
+//! Methods must be called in the following order. Notes on *why* the order matters are given.
+//! 1. SetDgnDb
+//! 1. AttachSyncInfo
+//! 1. InitRootModel            -- also initializes root transform and populates m_spatialModelsInAttachmentOrder, et al.
+//! 1. MakeSchemaChanges        -- uses m_spatialModelsInAttachmentOrder et al to find and convert ECSchemas and V8Tags
+//! 1. FindJob or InitializeJob -- uses root model and syncinfo, initializes the ChangeDetector, augments root transform, creates job definition models
+//! 1. MakeDefinitionChanges    -- uses ChangeDetector and configuration.
+//! 1. ConvertData              -- uses definitions, ChangeDetector, and configuration. Writes to job definition models and other job-specific models. Populates m_v8ModelMappings.
+//!
+//! FYI DoBeginConversion prepares ChangeDetector, initializes configuration. Both MakeDefinitionChanges and ConvertData call that internally,
+//! to make sure it happens. If MakeDefinitionChanges calls it first, then ConvertData will not.
+//! DoFinishConversion does post-processing, such as converting named groups, updating project extents, and generating thumbnails.
+//! *Only* ConvertData calls that.
+//! 
 //! Note that the output DgnDb might be new or it might already contain other content.
 //! See IsCreatingNewDgnDb.
 //!
@@ -2504,11 +2558,13 @@ struct RootModelConverter : SpatialConverterBase
         RootModelChoice const& GetRootModelChoice() const {return m_rootModelChoice;}
         void AddDrawingOrSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
 
-        //!private
-        bool m_keepHostAliveForUnitTests {};
         DGNDBSYNC_EXPORT void Legacy_Converter_Init(BeFileNameCR bcName);
 
     };
+
+private:
+    BentleyStatus DoBeginConversion();
+    BentleyStatus DoFinishConversion();
 
 protected:
     RootModelSpatialParams& m_params;   // NB: Must store a *reference* to the bridge's Params, as they may change after our constructor is called
@@ -2530,6 +2586,8 @@ protected:
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}
     DGNDBSYNC_EXPORT void _SetChangeDetector(bool isUpdate) override;
+
+    DgnV8Api::ViewGroup* _GetMainViewGroup() override {return m_viewGroup.get();}
 
     //! @name Params
     //! @{
@@ -2644,8 +2702,9 @@ public:
     //! @return bvector with const v8Files for this converter.
     DGNDBSYNC_EXPORT bvector<DgnV8FileP> const & GetV8Files() const { return m_v8Files; }
 
-    //! Do the conversion. @see HadFatalError
-    DGNDBSYNC_EXPORT BentleyStatus Process();
+    DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
+    DGNDBSYNC_EXPORT BentleyStatus ConvertData();
+
 };
 
 //=======================================================================================

@@ -14,29 +14,65 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct TestRepositoryAdmin : IRepositoryManager
     {
+    BeSQLite::BeBriefcaseId m_holdsSchemaLock;
+
+    static DgnLock GetSchemaLock(DgnDbR db) {return DgnLock(db.Schemas(), LockLevel::Exclusive);}
+
     virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
         {
         Response response(queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire, req.Options());
         response.SetResult(RepositoryStatus::Success);
+        if (req.Locks().GetLockSet().find(GetSchemaLock(db)) != req.Locks().GetLockSet().end())
+            {
+            if (m_holdsSchemaLock == db.GetBriefcaseId())
+                response.SetResult(RepositoryStatus::LockAlreadyHeld);
+            else
+                m_holdsSchemaLock = db.GetBriefcaseId();
+            }
         return response;
         }
 
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
         {
+        if (locks.find(GetSchemaLock(db)) != locks.end())
+            {
+            if (m_holdsSchemaLock != db.GetBriefcaseId())
+                return RepositoryStatus::LockNotHeld;
+            m_holdsSchemaLock = BeSQLite::BeBriefcaseId();
+            }
         return RepositoryStatus::Success;
         }
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db)
         {
+        if (Resources::Locks == (which & Resources::Locks))
+            {
+            if (m_holdsSchemaLock == db.GetBriefcaseId())
+                m_holdsSchemaLock = BeSQLite::BeBriefcaseId();
+            }
         return RepositoryStatus::Success;
         }
     virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
         {
+        if (m_holdsSchemaLock == db.GetBriefcaseId())
+            {
+            locks.insert(GetSchemaLock(db));
+            }
         return RepositoryStatus::Success;
         }
     virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
         {
+        if (m_holdsSchemaLock.IsValid())
+            lockStates.insert(DgnLockInfo(LockableId(LockableType::Schemas, BeInt64Id((uint64_t)1))));
         return RepositoryStatus::Success;
         }
+    };
+
+struct RevisionStats
+    {
+    size_t nSchemaRevs {};
+    size_t nDataRevs {};
+    bset<Utf8String> descriptions;
+    bset<Utf8String> userids;
     };
 
 struct TestIModelHubClientForBridges : IModelHubClientForBridges
@@ -64,6 +100,33 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         repoPath.AppendToPath(L"iModelHub");
         repoPath.AppendToPath(WString(repoName, true).c_str());
         return repoPath;
+        }
+
+    size_t GetChangesetCount() const { return m_revisions.size(); }
+
+    bvector<DgnRevision*> GetDgnRevisions(size_t start = 0, size_t end = -1)
+        {
+        if (end < 0 || end > m_revisions.size())
+            end = m_revisions.size();
+        bvector<DgnRevision*> revs;
+        for (size_t i = start; i < end; ++i)
+            revs.push_back(m_revisions[i].get());
+        return revs;
+        }
+
+    RevisionStats ComputeRevisionStats(DgnDbR db, size_t start = 0, size_t end = -1)
+        {
+        RevisionStats stats;
+        for (auto rev : GetDgnRevisions(start, end))
+            {
+            stats.descriptions.insert(rev->GetSummary());
+            stats.userids.insert(rev->GetUserName());
+            if (rev->ContainsSchemaChanges(db))
+                ++stats.nSchemaRevs;
+            else
+                ++stats.nDataRevs;
+            }
+        return stats;
         }
 
     bool IsConnected() const override { return true; }
@@ -120,16 +183,19 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         m_briefcase = nullptr;
         }
 
-    StatusInt PullMergeAndPush(Utf8CP) override
+    StatusInt JustCaptureRevision(Utf8CP comment)
         {
-        DgnRevisionPtr revision = CaptureChangeSet(m_briefcase);
+        DgnRevisionPtr revision = CaptureChangeSet(m_briefcase, comment);
         if (revision.IsNull())
             return BSISUCCESS;
         m_revisions.push_back(revision);
         return BSISUCCESS;
         }
 
-    virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db)
+    StatusInt Push(Utf8CP comment) override {return JustCaptureRevision(comment);}
+    StatusInt PullMergeAndPush(Utf8CP comment) override {return JustCaptureRevision(comment);}
+
+    virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment)
         {
         BeAssert(db != nullptr);
 
@@ -140,12 +206,16 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         if (!changeSet.IsValid())
             return changeSet;
 
+        if (comment)
+            changeSet->SetSummary(comment);
+
         Dgn::RevisionStatus status = db->Revisions().FinishCreateRevision();
         BeAssert(Dgn::RevisionStatus::Success == status);
         BeSQLite::DbResult result = db->SaveChanges();
         BeAssert(BeSQLite::BE_SQLITE_OK == result);
 
         // *** TBD: test for expected changes
+        printf("CaptureChangeset contains_schema_changes? %d user:[%s] desc:[%s]\n", changeSet->ContainsSchemaChanges(*db), changeSet->GetUserName().c_str(), changeSet->GetSummary().c_str());
         changeSet->Dump(*db);
         return changeSet;
         }

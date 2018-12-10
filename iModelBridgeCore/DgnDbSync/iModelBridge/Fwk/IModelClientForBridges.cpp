@@ -11,6 +11,8 @@
 #include <WebServices/iModelHub/Client/Client.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Configuration/UrlProvider.h>
+
+#include "OidcSignInManager.h"
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_HTTP
@@ -96,7 +98,13 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
     m_args(args)
     {
     Tasks::AsyncError serror;
-    m_client = ClientHelper::GetInstance()->SignInWithCredentials(&serror, args.m_credentials);
+    if (nullptr != args.m_tokenProvider)
+        {
+        m_oidcMgr = OidcSignInManagerPtr(new OidcSignInManager(args.m_tokenProvider));
+        m_client = ClientHelper::GetInstance()->SignInWithManager(m_oidcMgr);
+        }
+    else
+        m_client = ClientHelper::GetInstance()->SignInWithCredentials(&serror, args.m_credentials);
     if (m_client == nullptr)
         {
         GetLogger().fatalv("Connect sign-in failed: %s - %s", serror.GetMessage().c_str(), serror.GetDescription().c_str());
@@ -248,6 +256,20 @@ StatusInt IModelHubClient::CreateRepository(Utf8CP repoName, BeFileNameCR localD
         {
         return SUCCESS;
         }
+
+    m_lastServerError = result.GetError();
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IModelClientBase::Push(Utf8CP descr)
+    {
+    auto progress = getHttpProgressMeter();
+    auto result = m_briefcase->Push(descr, false, progress)->GetResult();
+    if (result.IsSuccess())
+        return SUCCESS;
 
     m_lastServerError = result.GetError();
     return ERROR;

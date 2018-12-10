@@ -230,8 +230,8 @@ void Converter::ConvertDisplayStyle(DisplayStyleR style, DgnV8Api::DisplayStyle 
                 {
                 convertSkyboxDisplay(*style3d, v8displayStyle, dgnFile, *this);
 
-                // due to a bug in MS, when this flag is on, viewInfo.ResolveBGColor returns the wrong answer. 
-                // It matters for transparency with QV. 255 is the right bg color. 
+                // due to a bug in MS, when this flag is on, viewInfo.ResolveBGColor returns the wrong answer.
+                // It matters for transparency with QV. 255 is the right bg color.
                 style.SetBackgroundColor(toColorDef(255, dgnFile));
                 }
             }
@@ -333,7 +333,7 @@ void Converter::ConvertSceneLighting(DisplayStyle3dR displayStyle, DgnV8ViewInfo
     auto& flashLight = setup->GetFlashLight();
     if (flashLight.IsEnabled() && flashLight.GetIntensity() > 0.0)
         displayStyle.SetSceneLight(toLight(Lighting::LightType::Flash, flashLight.GetIntensity()*100., flashLight.GetColor()));
-    
+
     auto& solarLight = setup->GetSolarLight();
     DVec3d dir;
     if (0.0 < solarLight.GetEffectiveVector((Bentley::DVec3dR)dir, model).z)
@@ -437,7 +437,7 @@ ViewDefinitionPtr SpatialViewFactory::_UpdateView(Converter& converter, ViewDefi
     ViewDefinitionPtr newDef = _MakeView(converter, params);
     if (!newDef.IsValid())
         return newDef;
-    
+
     SpatialViewDefinition* spatial = newDef->ToSpatialViewP();
     SpatialViewDefinitionP existingViewDef = existing.ToSpatialViewP();
 
@@ -446,7 +446,7 @@ ViewDefinitionPtr SpatialViewFactory::_UpdateView(Converter& converter, ViewDefi
     ModelSelectorR newModelSelector = spatial->GetModelSelector();
     newModelSelector.ForceElementIdForInsert(existingViewDef->GetModelSelectorId());
 
-    // Update doesn't actually update the 'ModelSelectorRefersToModels' list.  It deletes the old one and creates a new one.  This will cause a changeset to be created for every update, 
+    // Update doesn't actually update the 'ModelSelectorRefersToModels' list.  It deletes the old one and creates a new one.  This will cause a changeset to be created for every update,
     // even if there were no changes.  Therefore, we have to manually determine if there were changes to the list of models and only call Update if there were.
     Json::Value newModelVal = newModelSelector.ToJson();
     Json::Value oldModelVal = existingViewDef->GetModelSelector().ToJson();
@@ -679,7 +679,7 @@ bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, 
             auto const&        modelInfo = v8Model.GetModelInfo();
             value["groundBias"] =  value["groundBias"].asDouble() * (DgnV8Api::ModelInfo::GetUorPerMaster(&modelInfo) / DgnV8Api::ModelInfo::GetUorPerMeter(&modelInfo));
             }
-            
+
         displayStyle.SetStyle(DisplayStyle::json_backgroundMap(), value);
         }
 
@@ -703,7 +703,7 @@ void Converter::ConvertMapSettings(ViewDefinitionPtr view, DgnV8ViewInfoCP viewI
     if (0 == wcsicmp(L"Bing",name.c_str()))
         providerName = WebMercator::BingImageryProvider::prop_BingProvider();
 
-    //view->GetDisplayStyle().SetBackgroundMapSettings(mapType, providerName, offset);
+    // view->GetDisplayStyle().SetBackgroundMapSettings(mapType, providerName, offset);
 
     }
 
@@ -786,7 +786,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     auto v8displayStyle = parms.m_viewInfo.GetDisplayStyleCP();
     if (v8displayStyle)
         {
-        Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());   
+        Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());
         auto existingStyle = m_dgndb->Elements().Get<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
         if (existingStyle.IsValid() && (existingStyle->Is3d() == parms.m_dstyle->Is3d())) // only share display styles if the same dimension (V8 doesn't care)
             parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();

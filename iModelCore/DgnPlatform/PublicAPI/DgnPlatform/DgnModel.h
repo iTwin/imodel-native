@@ -944,6 +944,8 @@ protected:
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryElementsRange() const;//!< @private
+    virtual AxisAlignedBox3d _QueryNonElementModelRange() const { return AxisAlignedBox3d(DRange3d::NullRange()); }
+
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
     void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
     void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element); UpdateLastElementModifiedTime();}
@@ -965,8 +967,11 @@ public:
 
     RangeIndex::Tree* GetRangeIndex() const {return m_rangeIndex.get();}
 
-    //! Get the AxisAlignedBox3d of the geometric elements contained within this model.
+    //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryElementsRange() const {return _QueryElementsRange();}
+
+    //! Get the AxisAlignedBox3d of the non element contents of this model.
+    AxisAlignedBox3d QueryNonElementModelRange() const {return _QueryNonElementModelRange();}
 
     //! Get a writable reference to the Formatter for this model.
     Formatter& GetFormatterR() {return m_displayInfo;}

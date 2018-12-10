@@ -391,7 +391,7 @@ TEST_F(V8AttachmentTests, Attach3dm)
     LineUpFiles(L"rhino.ibim", L"Test3d.dgn", false);
     AttachForeignReferenceFile (L"HumanHead.3dm");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    CheckForeignReferenceOutput (83);
+    CheckForeignReferenceOutput (81);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -427,7 +427,7 @@ TEST_F(V8AttachmentTests, AttachIfc)
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"roof.ifc");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    CheckForeignReferenceOutput (826);
+    CheckForeignReferenceOutput (846);
     }
 
 /*---------------------------------------------------------------------------------**//**

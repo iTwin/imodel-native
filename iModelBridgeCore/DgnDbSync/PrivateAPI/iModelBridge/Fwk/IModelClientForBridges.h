@@ -21,7 +21,7 @@
 #include <iModelBridge/iModelBridgeFwk.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
-
+typedef std::shared_ptr<struct WebServices::IConnectSignInManager> OidcSignInManagerPtr;
 // ========================================================================================================
 //! Interface to be adopted by a class that defines the interface between iModelBridgeFwk and an IModel server.
 // ========================================================================================================
@@ -31,6 +31,7 @@ struct IModelClientForBridges
 
     virtual StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) = 0;
     virtual StatusInt OpenBriefcase(Dgn::DgnDbR db) = 0;
+    virtual StatusInt Push(Utf8CP) = 0;
     virtual StatusInt PullMergeAndPush(Utf8CP) = 0;
     virtual StatusInt PullAndMerge() = 0;
     virtual StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) = 0;
@@ -64,7 +65,7 @@ protected:
     iModel::Hub::Error m_lastServerError;
     uint8_t m_maxRetryCount {};
     WebServices::ClientInfoPtr m_clientInfo;
-
+    OidcSignInManagerPtr m_oidcMgr;
 public:
     IModelClientBase(WebServices::ClientInfoPtr ci, uint8_t maxRetryCount, WebServices::UrlProvider::Environment, int64_t cacheTimeOutMs);
 
@@ -72,6 +73,7 @@ public:
 
     StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repoId) override;
     StatusInt OpenBriefcase(Dgn::DgnDbR db) override;
+    StatusInt Push(Utf8CP) override;
     StatusInt PullMergeAndPush(Utf8CP) override;
     StatusInt PullAndMerge() override;
     StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) override;
