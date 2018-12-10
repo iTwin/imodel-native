@@ -1011,7 +1011,7 @@ void RootModelConverter::UpdateCalculatedProperties()
 //---------------+---------------+---------------+---------------+---------------+-------
 void RootModelConverter::CreatePresentationRules()
     {
-    ElementClassToAspectClassMapping::CreatePresentationRules(GetDgnDb());
+    //ElementClassToAspectClassMapping::CreatePresentationRules(GetDgnDb());
     }
 
 //---------------------------------------------------------------------------------------
