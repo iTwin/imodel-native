@@ -163,6 +163,7 @@
     
     <Part Name="RealityServicesNet" BMakeFile="RealityServicesNet\RealityServicesNet.mke">
         <SubPart PartName="RealityPlatform" />
+	<SubPart PartName="RealityPlatformUnitTests" />
         <Bindings>
             <Assemblies>Delivery/RealityServicesNet$(shlibext)</Assemblies>
         </Bindings>
