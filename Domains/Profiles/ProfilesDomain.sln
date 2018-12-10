@@ -7,6 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProfilesDomainTests", "Test
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProfilesDomain", "Profiles\ProfilesDomain.vcxproj", "{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Notes", "Notes", "{C5A1F86D-999E-4474-8409-B3BA24F4B5DB}"
+	ProjectSection(SolutionItems) = preProject
+		CommonCommands.txt = CommonCommands.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

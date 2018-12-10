@@ -1,0 +1,29 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: CommonCommands.txt $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+
+[BUILD GIST]
+Gist is not included in our buildstrategy/partfile, pull & build it with:
+    bb -r Gist -f Gist -p Gist p && bb -r Gist -f Gist -p Gist b
+
+[RUN GIST]
+    %OutRoot%Winx64\Product\GistWinDesktop\Gist.exe
+
+[RUN TESTS]
+To run only certain tests add a filter option: "-dGTEST_FILTER=--gtest_filter=[YourFilter]" to bmake command:
+    bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=CShapeProfile*
+
+[UI TESTS]
+Run geometry generation test:
+    bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=GeometryTestCase*
+Open generated bim with Gist:
+    %temp%\ProfilesTests\ProfilesTests_Working.bim
+
+[CODE COVERAGE]
+Generate code coverage report:
+    bb -p ProfilesCodeCoverage p && bb -p ProfilesCodeCoverage b
