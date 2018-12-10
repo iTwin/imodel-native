@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\ZShapeProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -94,6 +95,14 @@ BentleyStatus ZShapeProfile::_Validate() const
         return BSIERROR;
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ZShapeProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateZShape (this);
     }
 
 /*---------------------------------------------------------------------------------**//**
