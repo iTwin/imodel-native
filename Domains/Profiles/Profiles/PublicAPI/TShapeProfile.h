@@ -85,6 +85,12 @@ public:
     PROFILES_EXPORT double GetWebSlope() const;
     PROFILES_EXPORT void SetWebSlope (double val);
 
+public:
+    PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
+    PROFILES_EXPORT double GetInnerWebFaceLength() const;
+    PROFILES_EXPORT double GetFlangeSlopeHeight() const;
+    PROFILES_EXPORT double GetWebSlopeHeight() const;
+
     }; // TShapeProfile
 
 //=======================================================================================

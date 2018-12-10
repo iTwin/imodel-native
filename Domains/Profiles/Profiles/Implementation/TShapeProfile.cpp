@@ -202,4 +202,44 @@ void TShapeProfile::SetWebSlope (double val)
     SetPropertyValue (PRF_PROP_TShapeProfile_WebSlope, ECN::ECValue (val));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetInnerFlangeFaceLength() const
+    {
+    return (GetFlangeWidth() - GetWebThickness()) / 2.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetInnerWebFaceLength() const
+    {
+    return GetDepth() - GetFlangeThickness() * 2.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetFlangeSlopeHeight() const
+    {
+    double const flangeSlopeCos = std::cos (GetFlangeSlope());
+    if (flangeSlopeCos <= DBL_EPSILON)
+        return 0.0;
+
+    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * std::sin (GetFlangeSlope());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetWebSlopeHeight() const
+    {
+    double const webSlopeCos = std::cos (GetWebSlope());
+    if (webSlopeCos <= DBL_EPSILON)
+        return 0.0;
+
+    return (GetInnerWebFaceLength() / webSlopeCos) * std::sin (GetWebSlope());
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE
