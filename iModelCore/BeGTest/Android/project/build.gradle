@@ -1,12 +1,19 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+// See https://developer.android.com/studio/build/ for seed file.
 
 buildscript {
-    apply from: "$GradleScriptsDir/buildscript.gradle", to: buildscript
-}
-
-subprojects {
     repositories {
+        google()
         jcenter()
     }
-    apply from: "$GradleScriptsDir/defaultToolVersions.gradle"
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.2.1'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
 }

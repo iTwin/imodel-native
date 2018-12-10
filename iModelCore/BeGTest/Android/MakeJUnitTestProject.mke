@@ -27,9 +27,6 @@ GCC_DEFAULT_VISIBILITY=default
 %if $(TARGET_PLATFORM)!="Android"
     %error This makefile should be used only when TARGET_PLATFORM is Android
 %endif
-%ifndef BENTLEY_ANDROID_AndroidABI
-    %error BENTLEY_ANDROID_AndroidABI must be defined. (Should have been defined by androidToolContext*.mki)
-%endif
 %ifndef BENTLEY_ANDROID_libcpp_shared
     %error BENTLEY_ANDROID_libcpp_shared must be defined. (Should have been defined by androidToolContext*.mki)
 %endif
@@ -141,14 +138,14 @@ cIncs + -I$(baseDir)
 #    !-$(deleteCmd) $(outputDir)JUnitTestFiles.mki
 
 #--------------------------------------------------------------------------------------
-# obj/local/$(BENTLEY_ANDROID_AndroidABI)/libAndroidTestJni.so
+# obj/local/arm64-v8a/libAndroidTestJni.so
 #       The shared object containing the JNI wappers and the pre-built native-code unit test code.
 #       It links with the supporting libraries.
 #--------------------------------------------------------------------------------------
 # Build libAndroidTestJni.so. This is the library that implements the jni methods and is put into the APK file.
 always:
-    ~mkdir $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)
-    ~mkdir $(libsDir)/$(BENTLEY_ANDROID_AndroidABI)
+    ~mkdir $(outputDir)project/obj/local/arm64-v8a
+    ~mkdir $(libsDir)/arm64-v8a
 
     
 %ifndef TEST_FRAMEWORK_SQLANG
@@ -165,7 +162,7 @@ cIncs + -I$(outputDir)
 $(outputDir)betest_static_initialize$(oext) : $(baseDir)betest_static_initialize.cpp
 
 DLM_NAME           = AndroidTestJni
-DLM_DEST           = $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)/
+DLM_DEST           = $(outputDir)project/obj/local/arm64-v8a/
 DLM_OBJECT_DEST    = $(outputDir)
 DLM_NOINITFUNC     = 1
 DLM_NOENTRY        = 1
@@ -188,46 +185,46 @@ DLM_OBJECT_FILES   + $[@wildcard $(unitTestsDir)/*$(oext)]
 # Copy supporting libraries
 #--------------------------------------------------------------------------------------
 always:
-    @$(_MakeFilePath)CopyAllTo.py $(LINKER_LIBRARIES) $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)
+    @$(_MakeFilePath)CopyAllTo.py $(LINKER_LIBRARIES) $(outputDir)project/obj/local/arm64-v8a
 
-$(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)/$(BENTLEY_ANDROID_libcpp_shared) : $(BENTLEY_ANDROID_libcpp_shared_fullpath)
+$(outputDir)project/obj/local/arm64-v8a/$(BENTLEY_ANDROID_libcpp_shared) : $(BENTLEY_ANDROID_libcpp_shared_fullpath)
     $(copyCmd) "$<" $@
 
 #--------------------------------------------------------------------------------------
-# libs/$(BENTLEY_ANDROID_AndroidABI)
+# libs/arm64-v8a
 #--------------------------------------------------------------------------------------
 
-$(libsDir)$(BENTLEY_ANDROID_AndroidABI)/$(shlibprefix)AndroidTestJni$(shlibext) : $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)/$(shlibprefix)AndroidTestJni$(shlibext)
+$(libsDir)arm64-v8a/$(shlibprefix)AndroidTestJni$(shlibext) : $(outputDir)project/obj/local/arm64-v8a/$(shlibprefix)AndroidTestJni$(shlibext)
     $(msg)
     $(copyCmd) $< $@
     ~time
 
-$(libsDir)$(BENTLEY_ANDROID_AndroidABI)/$(BENTLEY_ANDROID_libcpp_shared) : $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)/$(BENTLEY_ANDROID_libcpp_shared)
+$(libsDir)arm64-v8a/$(BENTLEY_ANDROID_libcpp_shared) : $(outputDir)project/obj/local/arm64-v8a/$(BENTLEY_ANDROID_libcpp_shared)
     $(msg)
     $(copyCmd) $< $@
     ~time
 
 always:
-    @$(_MakeFilePath)CopyAllTo.py   $(LINKER_LIBRARIES) $(libsDir)$(BENTLEY_ANDROID_AndroidABI)
+    @$(_MakeFilePath)CopyAllTo.py   $(LINKER_LIBRARIES) $(libsDir)arm64-v8a
 
 # Don't strip the SOs in libs if we plan to debug. VisualStudio needs to find the symbols in the SOs that are in the APK.
 %if !defined (GCC_DEBUG)
 always:
-    -$(BENTLEY_ANDROID_TOOLCHAIN_strip) $(StripCmdOptions) $[@wildcard $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/*$(shlibext)]
+    -$(BENTLEY_ANDROID_TOOLCHAIN_strip) $(BENTLEY_ANDROID_TOOLCHAIN_strip_options) $[@wildcard $(libsDir)arm64-v8a/*$(shlibext)]
 %endif
 
 #--------------------------------------------------------------------------------------
 # Generate some files needed for debugging (see ndk-gdb)
 #--------------------------------------------------------------------------------------
-$(libsDir)$(BENTLEY_ANDROID_AndroidABI)/gdbserver : $(BENTLEY_ANDROID_Gdbserver)
+$(libsDir)arm64-v8a/gdbserver : $(BENTLEY_ANDROID_Gdbserver)
     $(msg)
     $(copyCmd) $< $@
     ~time
 
-$(libsDir)$(BENTLEY_ANDROID_AndroidABI)/gdb.setup : $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/$(shlibprefix)AndroidTestJni$(shlibext)
+$(libsDir)arm64-v8a/gdb.setup : $(libsDir)arm64-v8a/$(shlibprefix)AndroidTestJni$(shlibext)
     $(msg)
     > $@
-        set solib-search-path .\/project\/obj\/local\/$(BENTLEY_ANDROID_AndroidABI)
+        set solib-search-path .\/project\/obj\/local\/arm64-v8a
         directory $[@subst \, \/, $(BENTLEY_ANDROID_GdbUsrInclude)] jni
     <
     ~time
