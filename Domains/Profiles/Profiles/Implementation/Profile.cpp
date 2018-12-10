@@ -90,7 +90,7 @@ DgnDbStatus Profile::ValidateAndCreateGeometry()
     if (geometryPtr.IsNull())
         return DgnDbStatus::NoGeometry;
 
-    SetShape (_CreateGeometry());
+    SetShape (geometryPtr);
     return DgnDbStatus::Success;
     }
 
