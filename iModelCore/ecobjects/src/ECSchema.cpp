@@ -1989,7 +1989,7 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
     if (schema.GetSchemaKey() == GetSchemaKey())
         return ECObjectsStatus::Success;
 
-    bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator = m_referencedSchemaAliasMap.find((ECSchemaP) &schema);
+    bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator = m_referencedSchemaAliasMap.find(const_cast<ECSchemaP>(&schema));
     if (schemaIterator != m_referencedSchemaAliasMap.end())
         {
         alias = schemaIterator->second;
@@ -2914,12 +2914,12 @@ struct ChecksumHelper
     static Utf8String ComputeCheckSumForString(Utf8CP string, size_t len)
         {
         SHA1 sha1;
-        return sha1((Byte*)string, sizeof(Utf8Char) * len);
+        return sha1((Byte const*)string, sizeof(Utf8Char) * len);
         }
     static Utf8String ComputeCheckSumForString(WCharCP string, size_t len)
         {
         SHA1 sha1;
-        return sha1((Byte*)string, sizeof(WChar) * len);
+        return sha1((Byte const*)string, sizeof(WChar) * len);
         }
     static Utf8String ComputeCheckSumForFile(WCharCP schemaFile)
         {
@@ -2939,7 +2939,7 @@ struct ChecksumHelper
             }
 
         SHA1 sha1;
-        return sha1((Byte*)fileContents.GetData(), fileContents.GetSize());
+        return sha1((Byte const*)fileContents.GetData(), fileContents.GetSize());
         }
 };
 
@@ -2966,7 +2966,7 @@ Utf8String ECSchema::ComputeCheckSum()
         return "";
 
     SHA1 sha1;
-    m_key.m_checksum = sha1((Byte*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
+    m_key.m_checksum = sha1((Byte const*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
     return m_key.m_checksum;
     }
 

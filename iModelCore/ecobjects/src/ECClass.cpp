@@ -1332,7 +1332,7 @@ void ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
 
     for (derivedClassIterator = m_derivedClasses.begin(); derivedClassIterator != m_derivedClasses.end(); derivedClassIterator++)
         {
-        if (*derivedClassIterator == (ECClassP)&derivedClass)
+        if (*derivedClassIterator == (ECClassCP)&derivedClass)
             {
             m_derivedClasses.erase(derivedClassIterator);
             return;
@@ -1428,7 +1428,7 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
     ECBaseClassesList::const_iterator baseClassIterator;
     for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
-        if (*baseClassIterator == (ECClassP) &baseClass)
+        if (*baseClassIterator == (ECClassCP) &baseClass)
             {
             LOG.infov("Cannot add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.GetFullName(), GetFullName());
             return ECObjectsStatus::NamedItemAlreadyExists;
@@ -1494,9 +1494,9 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
     // NEEDSWORK - what if the base class being set is just a stub and does not contain 
     // any properties.  How do we handle property overrides?
     if (!insertAtBeginning)
-        m_baseClasses.push_back((ECClassP) &baseClass);
+        m_baseClasses.push_back(const_cast<ECClassP>(&baseClass));
     else
-        m_baseClasses.insert(m_baseClasses.begin(), (ECClassP) &baseClass);
+        m_baseClasses.insert(m_baseClasses.begin(), const_cast<ECClassP>(&baseClass));
 
     InvalidateDefaultStandaloneEnabler();
 
@@ -1554,7 +1554,7 @@ ECObjectsStatus ECClass::_RemoveBaseClass(ECClassCR baseClass)
     ECBaseClassesList::iterator baseClassIterator;
     for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
-        if (*baseClassIterator == (ECClassP)&baseClass)
+        if (*baseClassIterator == (ECClassCP)&baseClass)
             {
             m_baseClasses.erase(baseClassIterator);
             baseClassRemoved = true;
@@ -1803,7 +1803,7 @@ void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>&
     {
     BeXmlNodeP currentNode = &childNode;
     currentNode = currentNode->GetNextSibling(BEXMLNODE_Any);
-    if (nullptr != currentNode && currentNode->type == BEXMLNODE_Comment)
+    if (nullptr != currentNode && (BeXmlNodeType)currentNode->type == BEXMLNODE_Comment)
         {
         Utf8String comment;
         currentNode->GetContent(comment);
@@ -1825,7 +1825,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         {
         if (context.GetPreserveXmlComments())
             {
-            if (childNode->type == BEXMLNODE_Comment)
+            if ((BeXmlNodeType)childNode->type == BEXMLNODE_Comment)
                 {
                 Utf8String comment;
                 childNode->GetContent(comment);
@@ -1833,7 +1833,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 }
              }
 
-        if (childNode->type != BEXMLNODE_Element)
+        if ((BeXmlNodeType)childNode->type != BEXMLNODE_Element)
             continue;
 
         Utf8CP childNodeName = childNode->GetName ();

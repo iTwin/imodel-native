@@ -1719,7 +1719,7 @@ private:
     static bool     AddUniquePropertiesToList(ECClassCP curentBaseClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
 
-    void            AddDerivedClass(ECClassCR derivedClass) const {m_derivedClasses.push_back((ECClassP) &derivedClass);}
+    void            AddDerivedClass(ECClassCR derivedClass) const {m_derivedClasses.push_back(const_cast<ECClassP>(&derivedClass));}
     void            RemoveDerivedClass(ECClassCR derivedClass) const;
     void            RemoveDerivedClasses();
     static void     SetErrorHandling(bool doAssert);
