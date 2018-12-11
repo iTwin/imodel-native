@@ -102,12 +102,17 @@ private:
     bool _WantDebugRangeGraphics() const override;
     void _GetCustomMetadata(Utf8StringR name, Json::Value& data) const override;
 
+#if defined(ANDROID) || defined(__APPLE__)
+    void CleanupUnusedChildren(bvector<Dgn::TileTree::TileCPtr>& selected) const;
+#endif
+
 public:
 
 
-    ScalableMeshModel*   m_3smModel = nullptr;
+    ScalableMeshModel*   m_3smModel = nullptr;    
 
-    SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) : T_Super(root, parent), m_scalableMeshNodePtr(smNodePtr) {}
+    SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr);
+
     virtual ~SMNode();
 
     Utf8String GetFilePath(SMSceneR) const;

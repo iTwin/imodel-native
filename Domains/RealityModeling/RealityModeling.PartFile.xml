@@ -25,8 +25,13 @@
             <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>
         </Bindings>
     </Part>
-    
-    <Part Name="ScalableMeshSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchema.mke" ApiNumber="B02">
+
+    <Part Name="ScalableMeshSchemaIosStatic" OnlyPlatforms="iOSARM64">
+      <SubPart PartName="ScalableMeshSchemaIos" LibType="Static"/>
+    </Part>
+
+
+  <Part Name="ScalableMeshSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchema.mke" ApiNumber="B02">
         <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
         <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" />
         <SubPart PartName="Core"         PartFile="TerrainModelDgnDb"      Repository="TerrainModel" />

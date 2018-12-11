@@ -20,6 +20,13 @@
 #include <DgnView/ViewManager.h>
 #include <DgnView/DgnViewLib.h>
 
+#if defined(_WIN32) && !defined(NDEBUG)
+	#define _X86_
+	#include <debugapi.h>
+	#undef min
+#endif
+
+
 
 #define SCALABLEMESH_MODEL_PROP_Clips           "SmModelClips"
 #define SCALABLEMESH_MODEL_PROP_GroundCoverages "SmGroundCoverages"
@@ -47,6 +54,12 @@ USING_NAMESPACE_TILETREE
 #define PRINT_MSG_IF(condition, ...)
 #define PRINT_MSG(...)
 #endif
+
+#ifndef NDEBUG
+    static int s_activeNodeCounter = 0;
+    static int s_activeLoadedNodeCounter = 0;
+#endif
+
 
 
 //----------------------------------------------------------------------------------------
@@ -452,15 +465,106 @@ void SMNode::_UnloadChildren(BeTimePoint olderThan) const
         if (!m_canUnloadChildren)
             {
             for (auto const& child : m_children)
+                {
+#if defined(ANDROID) || defined(__APPLE__)
+                child->_UnloadChildren(BeTimePoint::Now());
+#else
                 child->_UnloadChildren(olderThan);
-
+#endif
+                }
+            }
+#if defined(ANDROID) || defined(__APPLE__)
+        else
+            {
+            if (true /*IsReady() || IsNotLoaded()*/)
+                {                                      
+                TileTree::Tile::_UnloadChildren(BeTimePoint::Now());
+                }
+            
             return;
             }
+#endif        
+
+
 
         T_Super::_UnloadChildren(olderThan);
         }
     }
 
+#if defined(ANDROID) || defined(__APPLE__)
+void SMNode::CleanupUnusedChildren(bvector<Dgn::TileTree::TileCPtr>& selected) const
+    {
+    if (s_unloadChildren)
+        {
+        if (m_canUnloadChildren)
+            {
+            if (true /*IsReady() || IsNotLoaded()*/)
+                {
+                  //static BeTimePoint Now() {return std::chrono::steady_clock::now();}
+                //TileTree::Tile::_UnloadChildren(olderThan);
+                /*
+                for (auto const& child : m_children)
+                    {
+                    int refCount = child->GetRefCount();
+                    assert(refCount == 1);
+                    refCount = refCount;
+                    }
+                    */
+
+                for (auto const& child : m_children)
+                    {
+                    SMNode* node = static_cast<SMNode*>(child.get());
+                    
+                    if ((node->m_meshes.begin() != node->m_meshes.end()))
+                        {                        
+                        bool found = false;
+
+                        for (auto const& selectChild : selected)
+                            {
+                            const SMNode* selectNode = static_cast<const SMNode*>(selectChild.get());
+
+                            if (node->m_scalableMeshNodePtr->GetNodeId() == selectNode->m_scalableMeshNodePtr->GetNodeId())
+                                {
+                                found = true;
+                                break;
+                                }                                                
+                            }
+
+                        if (!found)
+                            {
+                            node->ClearGeometry();   
+                            node->SetNotLoaded();            
+#ifndef NDEBUG
+                            s_activeLoadedNodeCounter--;
+#if defined(_WIN32)                            
+                            if (selected.size() == 0)
+                                {
+                                wchar_t text_buffer[1000] = { 0 }; //temporary buffer        
+                                swprintf(text_buffer, _countof(text_buffer), L"CLEANUP NODE : %I64d \r\n", node->m_scalableMeshNodePtr->GetNodeId()); // convert
+                                OutputDebugStringW(text_buffer); // print
+                                }
+#endif
+                            }
+#endif
+                        }
+
+                    node->CleanupUnusedChildren(selected);
+                    }                    
+                }      
+
+            return;
+            }
+        else
+            {
+            for (auto const& child : m_children)
+                {
+                SMNode* node = static_cast<SMNode*>(child.get());
+                node->CleanupUnusedChildren(selected);
+                }
+            }
+        }
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
@@ -504,6 +608,11 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
     //if (loadChildren)
         SetIsReady();
 
+#ifndef NDEBUG
+    if (m_meshes.begin() != m_meshes.end())
+        s_activeLoadedNodeCounter++;
+#endif
+
     return SUCCESS;
     }
 
@@ -518,23 +627,42 @@ static double s_firstNodeSearchingDelay = (double)1 / 15 * CLOCKS_PER_SEC;
 static double s_firstNodeSearchingDelay = (double)1 / 60 * CLOCKS_PER_SEC;
 #endif
 
+#if defined(ANDROID) || defined(__APPLE__)
+    static bool s_clearGeometry = true;
+#endif
+
 Dgn::TileTree::Tile::SelectParent SMNode::SelectViewTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args, bool& parentSelected, clock_t& startTime, IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const
     {
-    if ((clock() - startTime) > s_firstNodeSearchingDelay && (m_parent != nullptr) && m_parent->IsReady() && m_parent->_HasGraphics())
-        {
-        args.InsertMissing(*this);
-        parentSelected = true;
-        return SelectParent::Yes;
-        }
-
     DgnDb::VerifyClientThread();
 
     SMNodeViewStatus viewStatus = m_scalableMeshNodePtr->IsCorrectForView(viewDependentQueryParams);
 
     if (viewStatus == SMNodeViewStatus::NotVisible)
-        {
+        {     
+#if defined(ANDROID) || defined(__APPLE__)
+        if (s_clearGeometry)
+            {
+            if (this->GetParent() != nullptr && static_cast<const SMNode*>(this->GetParent())->m_canUnloadChildren && (m_meshes.begin() != m_meshes.end()))
+                {
+                SMNode* node = const_cast<SMNode*>(this);
+                node->ClearGeometry();   
+                node->SetNotLoaded();    
+#ifndef NDEBUG
+                s_activeLoadedNodeCounter--;
+#endif
+                }
+            }
+#endif
+                    
         _UnloadChildren(args.m_purgeOlderThan);
         return SelectParent::No;
+        }
+
+    if ((clock() - startTime) > s_firstNodeSearchingDelay && (m_parent != nullptr) && m_parent->IsReady() && m_parent->_HasGraphics())
+        {
+        args.InsertMissing(*this);
+        parentSelected = true;
+        return SelectParent::Yes;
         }
 
     if (viewStatus == SMNodeViewStatus::Fine)
@@ -652,6 +780,21 @@ Dgn::TileTree::Tile::SelectParent SMNode::SelectViewTiles(bvector<Dgn::TileTree:
         return SelectParent::No;
         }
 
+#if defined(ANDROID) || defined(__APPLE__)
+    if (s_clearGeometry)
+        {        
+        if (this->GetParent() != nullptr && static_cast<const SMNode*>(this->GetParent())->m_canUnloadChildren && (m_meshes.begin() != m_meshes.end()))
+            {
+            SMNode* node = const_cast<SMNode*>(this);
+            node->ClearGeometry(); 
+            node->SetNotLoaded();           
+#ifndef NDEBUG
+            s_activeLoadedNodeCounter--;
+#endif
+            }                
+        }
+#endif
+
     parentSelected = true;
     args.InsertMissing(*this);
     return SelectParent::Yes;
@@ -669,9 +812,11 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
         }
     
     if (s_tryCustomSelect)
-        {        
-        assert(m_parent == nullptr);
-
+        {   
+        assert(selected.size() == 0);
+        assert(args.m_missing.size() == 0);
+                        
+        
         clock_t startTime = 0;
         IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams;
         
@@ -722,8 +867,20 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
         if (parentSelected && args.m_missing.size() == 0)
             {
             parentSelected = true;
-            }
-        
+            }        
+
+#if defined(ANDROID) || defined(__APPLE__)
+        CleanupUnusedChildren(selected);
+#endif
+         
+#if !defined(NDEBUG) && defined(_WIN32)                            
+        wchar_t text_buffer[1000] = { 0 }; //temporary buffer
+        swprintf(text_buffer, _countof(text_buffer), L"Nb SelectedTiles : %zd    Nb MissingTiles : %zd\r\n", selected.size(), args.m_missing.size()); // convert
+        OutputDebugStringW(text_buffer); // print
+        swprintf(text_buffer, _countof(text_buffer), L"ActiveNodeCounter : %d    ActiveLoadedNodeCounter : %d\r\n", s_activeNodeCounter, s_activeLoadedNodeCounter); // convert
+        OutputDebugStringW(text_buffer); // print
+#endif
+                        
         return selectParent;
         }
           
@@ -754,16 +911,35 @@ bool SMNode::ReadHeader(Transform& locationTransform)
 
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                    Mathieu.St-Pierre  12/18
+//----------------------------------------------------------------------------------------
+SMNode::SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) 
+    : T_Super(root, parent), 
+      m_scalableMeshNodePtr(smNodePtr) 
+    {
+#ifndef NDEBUG
+    s_activeNodeCounter++; 
+#endif
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                    Mathieu.St-Pierre  12/17
 //----------------------------------------------------------------------------------------
 SMNode::~SMNode()
     {
+#ifndef NDEBUG
+    s_activeNodeCounter--;
+    
+    if (m_meshes.begin() != m_meshes.end())
+        s_activeLoadedNodeCounter--;    
+#endif
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 static bool s_applyTexture = true;
+static bool s_applyGeometry = true;
 static bool s_applyClips = true;
 
 BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
@@ -821,7 +997,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         {
         IScalableMeshMeshFlagsPtr loadFlagsPtr(IScalableMeshMeshFlags::Create(true, false));
         loadFlagsPtr->SetLoadClips(true);
-        loadFlagsPtr->SetSaveToCache(true); 
+        loadFlagsPtr->SetSaveToCache(false); 
         loadFlagsPtr->SetClipsToShow(m_3smModel->m_activeClips, m_3smModel->m_smPtr->ShouldInvertClips());
         if (!m_scalableMeshNodePtr->IsDataUpToDate()) m_scalableMeshNodePtr->UpdateData();
         m_scalableMeshNodePtr->RefreshMergedClip(scene.m_smPtr->GetReprojectionTransform());
@@ -862,7 +1038,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
    
     if (s_applyTexture && renderSys != nullptr && m_scalableMeshNodePtr->IsTextured() && m_3smModel->m_displayTexture)
-        {                
+        {                  
 #if 1 //NEEDS_WORK_SM GetTextureCompressed doesn't currently work for Cesium. 
         IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
 
@@ -879,6 +1055,8 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
                 textureUv[paramInd].y = uv->y;
                 }
 
+            smMeshPtr = nullptr;
+
             trimesh.m_textureUV = textureUv;
             ByteStream imageBytes(smTexturePtr->GetSize());
 
@@ -893,6 +1071,10 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
             params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
             trimesh.m_texture = renderSys->_CreateTexture(binaryImage, scene.GetDgnDb(), params);            
             }
+        else
+            {
+            smMeshPtr = nullptr;
+            }
 #else
 
         IScalableMeshTexturePtr compressedTexturePtr(m_scalableMeshNodePtr->GetTextureCompressed());
@@ -901,6 +1083,10 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         trimesh.m_texture = renderSys->_CreateTexture(imageSource, Image::Format::Rgb, Image::BottomUp::Yes);
         trimesh.m_textureUV = textureUv;
 #endif                                
+        }
+    else
+        {
+        smMeshPtr = nullptr;
         }
 
     Dgn::TileTree::TriMeshTree::TriMeshList triMeshList;
@@ -925,7 +1111,11 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 SMScene::SMScene(ScalableMeshModelCR model, IScalableMeshPtr& smPtr, TransformCR location, TransformCR toFloatTransform, Utf8CP sceneFile, Dgn::Render::SystemP system)
     : T_Super(model, location, sceneFile, system), m_smPtr(smPtr), m_toFloatTransform(toFloatTransform)
     {
-    //
+#if !defined(NDEBUG) && defined(_WIN32)
+    wchar_t text_buffer[1000] = { 0 }; //temporary buffer
+    swprintf(text_buffer, _countof(text_buffer), L"SMSCENE CREATION : ActiveNodeCounter : %d    ActiveLoadedNodeCounter : %d\r\n", s_activeNodeCounter, s_activeLoadedNodeCounter); // convert
+    OutputDebugStringW(text_buffer); // print        
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -979,6 +1169,12 @@ BentleyStatus SMScene::LoadScene()
     root->m_3smModel = m_3smModel;
 
     LoadOverview(root);
+
+#if !defined(NDEBUG) && defined(_WIN32)
+    wchar_t text_buffer[1000] = { 0 }; //temporary buffer
+    swprintf(text_buffer, _countof(text_buffer), L"SMSCENE CREATION AFTER LOAD OVERVIEW: ActiveNodeCounter : %d    ActiveLoadedNodeCounter : %d\r\n", s_activeNodeCounter, s_activeLoadedNodeCounter); // convert
+    OutputDebugStringW(text_buffer); // print     
+#endif
    
     /*
     auto result = _RequestTile(*root, nullptr, GetRenderSystemP(), BeDuration());
@@ -2662,7 +2858,8 @@ void ScalableMeshModel::_OnSaveJsonProperties()
         Json::Value tilesetVal = m_properties.m_fileId.c_str();
         SetJsonProperties(json_tilesetUrl(), tilesetVal);
         }
-    #if !defined(ANDROID)
+
+#if !defined(ANDROID)
     if (m_clip.IsValid())
         val[json_clip()] = m_clip->ToJson();
 
