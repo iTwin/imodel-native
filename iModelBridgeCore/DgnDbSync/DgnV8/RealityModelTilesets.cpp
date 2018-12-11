@@ -73,7 +73,7 @@ BentleyStatus Converter::ComputeRealityModelFootprint(bvector<GeoPoint2d>& footp
         return SUCCESS;
         }
 
-    AxisAlignedBox3d boundingBox = geometricModel->QueryModelRange();
+    AxisAlignedBox3d boundingBox = geometricModel->QueryNonElementModelRange();
     if (boundingBox.IsNull())
         {
         ReportIssue(Converter::IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::InvalidRange(), "");
