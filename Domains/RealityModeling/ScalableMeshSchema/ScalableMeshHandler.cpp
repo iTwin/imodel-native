@@ -372,9 +372,10 @@ bool SMNode::_WantDebugRangeGraphics() const
 void SMNode::_GetCustomMetadata(Utf8StringR name, Json::Value& data) const
     {
     name = "SMHeader";
-    #if !defined(ANDROID)
+
+#ifdef _WIN32    
     IScalableMeshPublisher::Create(SMPublishType::CESIUM)->ExtractPublishNodeHeader(m_scalableMeshNodePtr, data);
-    #endif
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1791,14 +1792,14 @@ void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR 
     {
     if (_AllowPublishing())
         {
-            #if !defined(ANDROID)
+#ifdef _WIN32
         if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, tileToECEF, dbToTile))
             {
             BeFileName oldRootFile = outputDir;
             oldRootFile.AppendToPath(L"n_0.json");
             BeFileName::BeMoveFile(oldRootFile, outFileName);
             }
-            #endif
+#endif
         }
     }
 
@@ -3036,9 +3037,9 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
         Json::Value publishingMetadata;
         publishingMetadata["name"] = "SMMasterHeader";
 
-        #if !defined(ANDROID)
+#ifdef _WIN32
         IScalableMeshPublisher::Create(SMPublishType::CESIUM)->ExtractPublishMasterHeader(m_smPtr, publishingMetadata["properties"]);
-        #endif
+#endif
         SetJsonProperties(json_publishing(), publishingMetadata);
         }
     }
