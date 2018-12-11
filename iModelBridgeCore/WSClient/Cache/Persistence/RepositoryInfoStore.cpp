@@ -178,8 +178,12 @@ WSRepository RepositoryInfoStore::ReadRepositoryInfo(IDataSourceCache& cache)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RepositoryInfoStore::SetCacheInitialized(IDataSourceCache& cache)
     {
+    Json::Value value;
+    value["date"] = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String valueStr = Json::FastWriter::ToString(value);
+
     PropertySpec prop(ECDbProperty_Initialized, ECDbProperty_NAMESPACE);
-    if (DbResult::BE_SQLITE_OK != cache.GetAdapter().GetECDb().SavePropertyString(prop, ""))
+    if (DbResult::BE_SQLITE_OK != cache.GetAdapter().GetECDb().SavePropertyString(prop, valueStr))
         return ERROR;
     return SUCCESS;
     }
