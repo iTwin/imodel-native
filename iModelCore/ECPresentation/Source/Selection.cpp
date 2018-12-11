@@ -503,32 +503,48 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     // create the selection info
     SelectionInfoCPtr selectionInfo = SelectionInfo::Create(evt.GetSourceName(), evt.IsSubSelection());
     KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetECDb()) : m_manager->GetSelection(evt.GetConnection().GetECDb());
-    bvector<ECClassInstanceKey> selectedKeys;
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).get();
-    if (defaultDescriptor.IsNull())
+    IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(),
+        contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).then([this, evt = SelectionChangedEventCPtr(&evt)](ContentDescriptorCPtr defaultDescriptor)
         {
-        _SelectInstances(evt, selectedKeys);
-        return;
-        }
+        if (defaultDescriptor.IsNull())
+            {
+            CallSelectInstances(*evt, bvector<ECClassInstanceKey>());
+            return;
+            }
 
-    // we only care about keys, so ask to not return anything else
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*defaultDescriptor);
-    descriptor->AddContentFlag(ContentFlags::KeysOnly);
+        // we only care about keys, so ask to not return anything else
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create(*defaultDescriptor);
+        descriptor->AddContentFlag(ContentFlags::KeysOnly);
 
-    // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
-    if (content.IsNull())
+        // request for content
+        IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).then([this, evt](ContentCPtr content)
+            {
+            if (content.IsNull())
+                {
+                CallSelectInstances(*evt, bvector<ECClassInstanceKey>());
+                return;
+                }
+
+            // create the list of selected instances and select it
+            bvector<ECClassInstanceKey> selectedKeys;
+            for (ContentSetItemCPtr const& record : content->GetContentSet())
+                std::copy(record->GetKeys().begin(), record->GetKeys().end(), std::back_inserter(selectedKeys));
+            CallSelectInstances(*evt, selectedKeys);
+            });
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Grigas.Petraitis    11/2018
+//---------------------------------------------------------------------------------------
+void SelectionSyncHandler::CallSelectInstances(SelectionChangedEventCR evt, bvector<ECClassInstanceKey> const& keys)
+    {
+    folly::via(_GetSelectExecutor(), [this, evt = SelectionChangedEventCPtr(&evt), keys]()
         {
-        _SelectInstances(evt, selectedKeys);
-        return;
-        }
-
-    // create the list of selected instances and select it
-    for (ContentSetItemCPtr const& record : content->GetContentSet())
-        std::copy(record->GetKeys().begin(), record->GetKeys().end(), std::back_inserter(selectedKeys));
-    _SelectInstances(evt, selectedKeys);
+        _SelectInstances(*evt, keys);
+        });
     }
 
 //---------------------------------------------------------------------------------------

@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/ECPresentation/ECPresentation.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
 #include <folly/futures/Future.h>
+#include <folly/Executor.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <ECDb/ECDbApi.h>
 
