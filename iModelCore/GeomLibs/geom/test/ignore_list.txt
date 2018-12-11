@@ -114,3 +114,29 @@ CurvePrimitive.ExerciseVirtuals
     # 2018-11-01 03:35:10.841372+0500 BeTestiOS[4362:1808366] TestRunner: CurvePrimitive.ExerciseVirtuals FAILED
     # Nov  1 03:35:10  Be[4362] <Emergency>: TestRunner: CurvePrimitive.ExerciseVirtuals FAILED
     # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/geomlibs/XCodeProject/BeTestiOSTests/UnitTests.mm:383: error: -[GeomLibsCurvePrimitiveTest_CurvePrimitive testExerciseVirtuals] : ((0 == BETEST_TEST_RUNNER_FUNC(CurvePrimitive,ExerciseVirtuals) ()) is true) failed
+
+
+DRange3d.IndependentIntersection
+    # bim0200, NDEBUG, x64
+    # [ RUN      ] DRange3d.IndependentIntersection
+    # 
+    #      (a -9)
+    #      (b -8.9999999999999982)F:\Bim0200\src\GeomLibs\geom\test\src\checkers.cpp(180): error: Value of: false
+    #   Actual: false
+    # Expected: true
+    # 
+    #      (a 6)
+    #      (b 6.0000000000000009)F:\Bim0200\src\GeomLibs\geom\test\src\checkers.cpp(180): error: Value of: false
+    #   Actual: false
+    # Expected: true
+    # 
+    #      (a -6)
+    #      (b -5.9999999999999991)F:\Bim0200\src\GeomLibs\geom\test\src\checkers.cpp(180): error: Value of: false
+    #   Actual: false
+    # Expected: true
+    # 
+    #      (a 9)
+    #      (b 9.0000000000000018)F:\Bim0200\src\GeomLibs\geom\test\src\checkers.cpp(180): error: Value of: false
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DRange3d.IndependentIntersection (5 ms)
