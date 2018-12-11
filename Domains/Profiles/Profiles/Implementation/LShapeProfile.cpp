@@ -14,6 +14,44 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (LShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+LShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+LShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double thickness,
+                                           double filletRadius, double edgeRadius, double legSlope)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , width (width)
+    , depth (depth)
+    , thickness (thickness)
+    , filletRadius (filletRadius)
+    , edgeRadius (edgeRadius)
+    , legSlope (legSlope)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+LShapeProfile::LShapeProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetWidth (params.width);
+    SetDepth (params.depth);
+    SetThickness (params.thickness);
+    SetFilletRadius (params.filletRadius);
+    SetEdgeRadius (params.edgeRadius);
+    SetLegSlope (params.legSlope);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetWidth() const

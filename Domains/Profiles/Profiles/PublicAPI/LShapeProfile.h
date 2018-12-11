@@ -21,8 +21,32 @@ struct LShapeProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_LShapeProfile, ParametricProfile);
     friend struct LShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(LShapeProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double thickness,
+                                               double filletRadius = 0.0, double edgeRadius = 0.0, double legSlope = 0.0);
+
+    public:
+        //! Required properties
+        double width = 0.0;
+        double depth = 0.0;
+        double thickness = 0.0;
+        double webThickness = 0.0;
+
+        //! Optional properties
+        double filletRadius = 0.0;
+        double edgeRadius = 0.0;
+        double legSlope = 0.0;
+        };
+
 protected:
-    explicit LShapeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit LShapeProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (LShapeProfile)
