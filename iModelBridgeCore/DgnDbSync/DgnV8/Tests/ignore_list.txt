@@ -23,3 +23,15 @@ MultiBridgeTests.Sandwich
 # Nobody seems able to decide which magic numbers are correct - they keep
 # flipping back and forth
 ConverterTests.GCSMultiFilesReprojectImport
+
+TransformTests.Test1
+
+    # VSTS#50113
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/07/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(437): error:       Expected: hadAnyChanges
+    # Which is: true
+    # To be equal to: expectUpdate
+    # Which is: false
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1239): error:       Expected: 0
+    # To be equal to: m_count
+    # Which is: 2

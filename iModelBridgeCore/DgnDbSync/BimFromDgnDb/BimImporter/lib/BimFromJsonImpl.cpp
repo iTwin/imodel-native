@@ -314,8 +314,6 @@ void BimFromJsonImpl::FinalizeImport()
 
 //    m_dgndb->Schemas().CreateClassViewsInDb();
 
-    ElementClassToAspectClassMapping::CreatePresentationRules(*m_dgndb);
-
     GenerateThumbnails();
     m_dgndb->SaveChanges();
     m_dgndb->SaveSettings();

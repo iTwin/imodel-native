@@ -10,8 +10,6 @@
 #include "ECDiff.h"
 #include <regex>
 #include <ECObjects/StandardCustomAttributeHelper.h>
-#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
-#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <Units/Units.h>
 #include <Formatting/FormattingApi.h>
 
@@ -20,7 +18,6 @@
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 using namespace BeSQLite::EC;
-USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
     "BaseElementSchema",
@@ -830,129 +827,6 @@ bool V8ElementSecondaryECClassInfo::TryFind(DgnDbR db, DgnV8EhCR el, ECClassName
     }
 
 //****************************************************************************************
-// ElementToAspectMapping
-//****************************************************************************************
-#define ELEMENT_TO_ASPECT_MAPPING_TABLE SYNCINFO_TABLE("ElementClassToAspectClass")
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            12/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ElementClassToAspectClassMapping::CreateTable(DgnDbR db)
-    {
-    if (db.TableExists(SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE)))
-        return BSISUCCESS;
-    if (BE_SQLITE_OK != db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " (ElementClassId INTEGER NOT NULL, ElementSchemaName TEXT NOT NULL, ElementClassName TEXT NOT NULL, AspectClassId INTEGER NOT NULL, AspectSchemaName TEXT NOT NULL, AspectClassName TEXT NOT NULL)"))
-        return BSIERROR;
-    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "ElementClassIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(ElementClassId)");
-    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "AspectClassIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(AspectClassId)");
-    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "AspectSchemaNameIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(AspectSchemaName)");
-    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "ElementSchemaNameIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(ElementSchemaName)");
-    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "ElementClassNameIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(ElementClassName)");
-    return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            12/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ElementClassToAspectClassMapping::TryFind(DgnDbR db, DgnClassId elementId, ECN::ECClassId aspectId)
-    {
-    CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT ElementSchemaName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE ElementClassId = ? AND AspectClassId=?");
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement for ElementClassToAspectClassMapping::Find.");
-        return false;
-        }
-
-    stmt->BindId(1, elementId);
-    stmt->BindId(2, aspectId);
-    if (stmt->Step() != BE_SQLITE_ROW)
-        return false;
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            12/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ElementClassToAspectClassMapping::Insert(DgnDbR db, DgnClassId elementId, Utf8CP elementSchemaName, Utf8CP elementClassName, ECN::ECClassId aspectId, Utf8CP aspectSchemaName, Utf8CP aspectClassName)
-    {
-    if (ElementClassToAspectClassMapping::TryFind(db, elementId, aspectId))
-        return BSISUCCESS;
-
-    CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " (ElementClassId, ElementSchemaName, ElementClassName, AspectClassId, AspectSchemaName, AspectClassName) VALUES (?, ?, ?, ?, ?, ?)");
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement for ElementClassToAspectClassMapping::Insert");
-        return BSIERROR;
-        }
-
-    stmt->BindId(1, elementId);
-    stmt->BindText(2, elementSchemaName, Statement::MakeCopy::No);
-    stmt->BindText(3, elementClassName, Statement::MakeCopy::No);
-    stmt->BindId(4, aspectId);
-    stmt->BindText(5, aspectSchemaName, Statement::MakeCopy::No);
-    stmt->BindText(6, aspectClassName, Statement::MakeCopy::No);
-    stat = stmt->Step();
-
-    return stat == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            12/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-void ElementClassToAspectClassMapping::CreatePresentationRules(DgnDbR db)
-    {
-    Statement stmt;
-    stmt.Prepare(db, "SELECT DISTINCT AspectSchemaName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE));
-    Utf8String fileName(db.GetFileName().GetFileNameWithoutExtension().c_str());
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        Utf8CP aspectSchemaName(stmt.GetValueText(0));
-        bvector<Utf8String> targets;
-        {
-            CachedStatementPtr stmt2 = nullptr;
-            auto stat = db.GetCachedStatement(stmt2, "SELECT DISTINCT ElementSchemaName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE AspectSchemaName = ?");
-            stmt2->BindText(1, aspectSchemaName, Statement::MakeCopy::No);
-            targets.push_back(Utf8String(aspectSchemaName));
-            while (stmt2->Step() == BE_SQLITE_ROW)
-                {
-                targets.push_back(stmt2->GetValueText(0));
-                }
-        }
-        Utf8String supported = BeStringUtilities::Join(targets, ",");
-        Utf8PrintfString purpose("%s specific", aspectSchemaName);
-        PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(fileName, 1, 0, true, purpose, supported, "", false);
-        {
-            CachedStatementPtr stmt3 = nullptr;
-            auto stat = db.GetCachedStatement(stmt3, "SELECT DISTINCT ElementSchemaName, ElementClassName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE AspectSchemaName = ?");
-            stmt3->BindText(1, aspectSchemaName, Statement::MakeCopy::No);
-            while (stmt3->Step() == BE_SQLITE_ROW)
-                {
-                Utf8CP elementSchemaName = stmt3->GetValueText(0);
-                Utf8CP elementClassName = stmt3->GetValueText(1);
-                ContentModifierP modifier = new ContentModifier(elementSchemaName, elementClassName);
-                ruleset->AddPresentationRule(*modifier);
-                CachedStatementPtr stmt4 = nullptr;
-                db.GetCachedStatement(stmt4, "SELECT DISTINCT AspectClassName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE ElementSchemaName = ? AND ElementClassName = ? AND AspectSchemaName = ?");
-                stmt4->BindText(1, elementSchemaName, Statement::MakeCopy::No);
-                stmt4->BindText(2, elementClassName, Statement::MakeCopy::No);
-                stmt4->BindText(3, aspectSchemaName, Statement::MakeCopy::No);
-                while (stmt4->Step() == BE_SQLITE_ROW)
-                    {
-                    Utf8PrintfString fullName("%s:%s", aspectSchemaName, stmt4->GetValueText(0));
-                    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "BisCore:ElementOwnsMultiAspects", fullName, "", RelationshipMeaning::SameInstance));
-                    }
-                }
-
-        }
-        RuleSetEmbedder embedder(db);
-        embedder.Embed(*ruleset);
-        }
-    }
-
-//****************************************************************************************
 // V8ECSchemaXmlInfo
 //****************************************************************************************
 #define V8ECSCHEMAXML_TABLE "V8ECSchemaXml"
@@ -1109,8 +983,6 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
                 if (diff->Merge(merged, CONFLICTRULE_TakeLeft) == MergeStatus::Success)
                     {
                     leftSchema = merged;
-                    Utf8String xml;
-                    merged->WriteToXmlString(xml);
                     leftSchema->ComputeCheckSum();
                     LOG.infov("Merged two versions of ECSchema '%s' successfully. Updated checksum: %s", leftSchema->GetFullSchemaName().c_str(), leftSchema->GetSchemaKey().m_checksum.c_str());
                     }
@@ -2136,6 +2008,13 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
     for (ECN::ECSchemaP sourceSchema : schemas)
         {
         if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(*sourceSchema))
+            {
+            m_flattenedRefs[sourceSchema->GetName()] = sourceSchema;
+            continue;
+            }
+
+        // SP3D schemas are processed later.  The only way we got here is if there are other schemas in the dgn that get flattened, like mixing OpenPlant and SP3d
+        if (sourceSchema->GetName().StartsWithIAscii("SP3D"))
             {
             m_flattenedRefs[sourceSchema->GetName()] = sourceSchema;
             continue;

@@ -824,6 +824,9 @@ struct Converter
         L10N_STRING(TemporaryDirectoryNotFound)  // =="Failed to find/create temporary directory %s"==
         L10N_STRING(RDSUninitialized)            // =="Failed to initialize RDSRequestManager"==
         L10N_STRING(RDSUploadFailed)             // =="Failed to upload tileset to Reality Data Server"==
+        L10N_STRING(GCSHardConversionError)      // =="Geographic Coordinate System conversion error"==
+        L10N_STRING(GCSDatumConversionFailure)   // =="Geographic Coordinate System conversion failure: probably datum transformation issue. Are grid shift files missing?"==
+        L10N_STRING(GCSRangeConversionWarning)   // =="Geographic Coordinate System conversion: coordinates outside the normal useful range of system."==
 
         L10N_STRING(InitProjectWiseLinkError)      // =="Could not initialize ProjectWise extension. Any ProjectWise documents that are target of links will not be embedded."==
         L10N_STRING(TerminateProjectWiseLinkError) // =="Could not terminate ProjectWise extension."==
@@ -1020,6 +1023,8 @@ protected:
     virtual DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) { return v8Model.GetModelInfo(); }
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
     virtual void _OnSheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) {}
+
+    virtual void _OnFileDiscovered(DgnV8FileR) {;}
 
 public:
     virtual Params const& _GetParams() const = 0;
@@ -1220,6 +1225,7 @@ public:
     BentleyStatus GenerateThumbnails();
     void GenerateThumbnailsWithExceptionHandling();
     BentleyStatus GenerateRealityModelTilesets();
+    BentleyStatus ComputeRealityModelFootprint(bvector<GeoPoint2d>& footprint, GeometricModelCP geometricModel, GeoCoordinates::BaseGCSCR targetLatLongGCS);
     void  StoreRealityTilesetTransform(DgnModelR model, TransformCR tilesetToDb);
     BentleyStatus GenerateWebMercatorModel();
 
@@ -2466,11 +2472,13 @@ public:
 //! 1. InitRootModel            -- also initializes root transform and populates m_spatialModelsInAttachmentOrder, et al.
 //! 1. MakeSchemaChanges        -- uses m_spatialModelsInAttachmentOrder et al to find and convert ECSchemas and V8Tags
 //! 1. FindJob or InitializeJob -- uses root model and syncinfo, initializes the ChangeDetector, augments root transform, creates job definition models
-//! 1. DoBeginConversion        -- prepares ChangeDetector, initializes configuration
 //! 1. MakeDefinitionChanges    -- uses ChangeDetector and configuration.
 //! 1. ConvertData              -- uses definitions, ChangeDetector, and configuration. Writes to job definition models and other job-specific models. Populates m_v8ModelMappings.
-//! 1. DoFinishConversion
-//! 
+//!
+//! FYI DoBeginConversion prepares ChangeDetector, initializes configuration. Both MakeDefinitionChanges and ConvertData call that internally,
+//! to make sure it happens. If MakeDefinitionChanges calls it first, then ConvertData will not.
+//! DoFinishConversion does post-processing, such as converting named groups, updating project extents, and generating thumbnails.
+//! *Only* ConvertData calls that.
 //! 
 //! Note that the output DgnDb might be new or it might already contain other content.
 //! See IsCreatingNewDgnDb.
@@ -2553,6 +2561,10 @@ struct RootModelConverter : SpatialConverterBase
         DGNDBSYNC_EXPORT void Legacy_Converter_Init(BeFileNameCR bcName);
 
     };
+
+private:
+    BentleyStatus DoBeginConversion();
+    BentleyStatus DoFinishConversion();
 
 protected:
     RootModelSpatialParams& m_params;   // NB: Must store a *reference* to the bridge's Params, as they may change after our constructor is called
@@ -2690,10 +2702,8 @@ public:
     //! @return bvector with const v8Files for this converter.
     DGNDBSYNC_EXPORT bvector<DgnV8FileP> const & GetV8Files() const { return m_v8Files; }
 
-    DGNDBSYNC_EXPORT BentleyStatus DoBeginConversion();
     DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
     DGNDBSYNC_EXPORT BentleyStatus ConvertData();
-    DGNDBSYNC_EXPORT BentleyStatus DoFinishConversion();
 
 };
 

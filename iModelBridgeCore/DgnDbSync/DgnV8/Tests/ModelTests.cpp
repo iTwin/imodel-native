@@ -49,10 +49,8 @@ void ModelTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNa
     creator.MakeSchemaChanges();
     ASSERT_FALSE(creator.WasAborted());
     ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
-    ASSERT_EQ(BentleyApi::SUCCESS, creator.DoBeginConversion());
     creator.MakeDefinitionChanges();
     creator.ConvertData();
-    ASSERT_EQ(BentleyApi::SUCCESS, creator.DoFinishConversion());
     ASSERT_FALSE(creator.WasAborted());
     db->SaveChanges();
 

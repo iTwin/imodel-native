@@ -33,15 +33,13 @@ DgnFontCR iModelBridgeFontAdmin::_ResolveFont(DgnFontCP font)
     if ((nullptr != font) && (font->IsResolved()))
         return *font;
     
-#ifdef WIP_BRIDGE
     // If a converter was registered, allow it to attempt to look up a workspace font.
-    if (nullptr != m_converter)
+    if (nullptr != m_bridge)
         {
-        DgnFontCP workspaceFont = m_converter->TryResolveFont(font);
+        DgnFontCP workspaceFont = m_bridge->_TryResolveFont(font);
         if ((nullptr != workspaceFont) && (workspaceFont->IsResolved()))
             return *workspaceFont;
         }
-#endif
 
     // Otherwise use fallback behavior (e.g. will look up a last resort font for us).
     return T_Super::_ResolveFont(font);

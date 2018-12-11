@@ -124,7 +124,6 @@ private:
 public:
     static BentleyStatus CreateTable(DgnDbR db);
     static BentleyStatus Insert(DgnDbR db, DgnClassId elementId, Utf8CP elementSchemaName, Utf8CP elementClassName, ECN::ECClassId aspectId, Utf8CP aspectSchemaName, Utf8CP aspectClassName);
-    static void CreatePresentationRules(DgnDbR db);
     };
 
 //=======================================================================================

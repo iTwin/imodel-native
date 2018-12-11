@@ -367,6 +367,9 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
     countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 1);
     countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
     countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
+    // Some tests count physical model elements differently
+    if (expectedElements < 1)
+        return;
 
     BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
     idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
@@ -379,8 +382,12 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
     auto refmodel = db->Models().GetModel(idlist[1]);
     ASSERT_TRUE(refmodel.IsValid());
 
-    // Count elements in the reference model converted from the foreign file format:
-    countElements(*refmodel, expectedElements);
+    // Count parent physical objects in the reference model converted from the foreign file format:
+    auto stmt = db->GetPreparedECSqlStatement("SELECT COUNT(*) from " BIS_SCHEMA(BIS_CLASS_Element) " WHERE Model.Id=? AND ECClassId=? AND Parent.Id IS NULL");
+    stmt->BindId(1, refmodel->GetModelId());
+    stmt->BindId(2, db->Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject));
+    stmt->Step();
+    EXPECT_EQ(expectedElements, stmt->GetValueInt(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -389,6 +396,7 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
 TEST_F(V8AttachmentTests, Attach3dm)
     {
     LineUpFiles(L"rhino.ibim", L"Test3d.dgn", false);
+    ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"HumanHead.3dm");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
     CheckForeignReferenceOutput (81);
@@ -427,7 +435,20 @@ TEST_F(V8AttachmentTests, AttachIfc)
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"roof.ifc");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    CheckForeignReferenceOutput (846);
+
+    // Count common models/elements/etc
+    CheckForeignReferenceOutput (-1);
+
+    auto db = OpenExistingDgnDb(m_dgnDbFileName);
+    auto ids = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
+    auto roof = db->Models().GetModel(ids[1]);
+    ASSERT_TRUE(roof.IsValid()) << "Null physical model created from the IFC DgnAttachment!";
+
+    // The roof model should contain these IFC elements
+    countElementsInModelByClass(*roof, db->Schemas().GetClassId("IFC2x3", "IfcSlab"), 14);
+    countElementsInModelByClass(*roof, db->Schemas().GetClassId("IFC2x3", "IfcWallStandardCase"), 10);
+    countElementsInModelByClass(*roof, db->Schemas().GetClassId("IFC2x3", "IfcShapeRepresentation"), 41);
+    countElementsInModelByClass(*roof, db->Schemas().GetClassId("IFC2x3", "IfcStyledRepresentation"), 27);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -439,8 +460,8 @@ TEST_F(V8AttachmentTests, AttachObj)
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"bottle.obj");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    // a mesh in a cell counts as 2 elements
-    CheckForeignReferenceOutput (2);
+    // a mesh in a cell - only counts the cell header
+    CheckForeignReferenceOutput (1);
     }
 
 /*---------------------------------------------------------------------------------**//**
