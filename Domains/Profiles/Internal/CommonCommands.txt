@@ -1,11 +1,10 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: CommonCommands.txt $
+|     $Source: Internal/CommonCommands.txt $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 
 [BUILD GIST]
 Gist is not included in our buildstrategy/partfile, pull & build it with:
