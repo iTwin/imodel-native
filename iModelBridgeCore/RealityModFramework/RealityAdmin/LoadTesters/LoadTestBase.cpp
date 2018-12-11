@@ -40,7 +40,7 @@ static int s_sleepBiasMilliseconds = 0;
 //+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String FullInfo::LogError() const
     {
-    return Utf8PrintfString("Request %d :\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s\n+----------------------------------------------------------------+\n", id, req.url, req.headers, req.payload, response.responseCode, response.toolCode, response.body);
+    return Utf8PrintfString("Request %d :\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s\n+----------------------------------------------------------------+\n", id, req.url.c_str(), req.headers.c_str(), req.payload.c_str(), response.responseCode, response.toolCode, response.body.c_str());
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -255,7 +255,7 @@ size_t Stats::LogRequest(Utf8String req)
     {
     std::lock_guard<std::mutex> lock(statMutex);
     size_t size = opLog.size();
-    opLog.push_back(Utf8PrintfString("%d\t%s", size, req));
+    opLog.push_back(Utf8PrintfString("%d\t%s", size, req.c_str()));
     return size;
     }
 

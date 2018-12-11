@@ -161,6 +161,7 @@ private:
     Utf8String           m_ownerFilter;
     Utf8String           m_queryFilter;
     Utf8String           m_projectFilter;
+    Utf8String           m_beforeDateFilter;
 
     HANDLE        m_hConsole;
     };

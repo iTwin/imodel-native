@@ -655,6 +655,9 @@ void RealityConversionTools::JsonToRealityData(RealityDataPtr realityData, Json:
     if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
         realityData->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
 
+    if (properties.isMember("CreatorId") && !properties["CreatorId"].isNull())
+        realityData->SetCreatorId(Utf8CP(properties["CreatorId"].asString().c_str()));
+
     if (properties.isMember("Hidden") && !properties["Hidden"].isNull())
         realityData->SetHidden(properties["Hidden"].asBool());
 
@@ -760,6 +763,9 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
 
     if (includeROProps && (includeUnsetProps || (realityData.GetOwner().size() != 0)))
         properties.push_back(RealityDataField::OwnedBy);
+
+    if (includeROProps && (includeUnsetProps || (realityData.GetCreatorId().size() != 0)))
+        properties.push_back(RealityDataField::CreatorId);
 
     if (includeUnsetProps || (realityData.GetGroup().size() != 0))
         properties.push_back(RealityDataField::Group);
@@ -919,6 +925,11 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
         case RealityDataField::OwnedBy:
             propertyString.append("\"OwnedBy\" : \"");
             propertyString.append(realityData.GetOwner());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::CreatorId:
+            propertyString.append("\"CreatorId\" : \"");
+            propertyString.append(realityData.GetCreatorId());
             propertyString.append("\"");
             break;
         case RealityDataField::Group:

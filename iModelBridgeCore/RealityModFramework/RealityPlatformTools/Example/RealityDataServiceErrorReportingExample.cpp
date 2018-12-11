@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/RealityDataServiceErrorReportingExample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,8 +22,8 @@ static void errorCallback(Utf8String basicMessage, const RawServerResponse& rawR
     {
     //std::cout << basicMessage << std::endl;
     std::cout << "Request failed with the following response:\n" << std::endl;
-    std::cout << Utf8PrintfString("response header:\n %s\n", rawResponse.header) << std::endl;
-    std::cout << Utf8PrintfString("response body:\n %s\n", rawResponse.body) << std::endl;
+    std::cout << Utf8PrintfString("response header:\n %s\n", rawResponse.header.c_str()) << std::endl;
+    std::cout << Utf8PrintfString("response body:\n %s\n", rawResponse.body.c_str()) << std::endl;
     std::cout << Utf8PrintfString("response code: %lu\n", rawResponse.responseCode) << std::endl;
     std::cout << Utf8PrintfString("response toolCode: %d - %s\n", rawResponse.toolCode, curl_easy_strerror((CURLcode)(rawResponse.toolCode))) << std::endl;
     }
