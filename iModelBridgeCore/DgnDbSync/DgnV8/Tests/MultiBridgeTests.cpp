@@ -129,8 +129,6 @@ static void doConvert(DefinitionModelIds& defids,
     
     ASSERT_FALSE(converter.WasAborted());
 
-    ASSERT_EQ(BentleyApi::SUCCESS, converter.DoFinishConversion());
-
     defids.m_definitionModelId = converter.GetJobDefinitionModel()->GetModelId();
     defids.m_sheetListModelId = converter.GetSheetListModelId();
     defids.m_drawingListModelId = converter.GetDrawingListModelId();

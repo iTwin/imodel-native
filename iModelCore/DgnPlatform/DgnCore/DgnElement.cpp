@@ -1272,13 +1272,8 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         }
 
 
-    JsonECSqlSelectAdapter const* adapter = elem.GetDgnDb().Elements().GetJsonSelectAdapter(elClass->GetId());
-    if (adapter == nullptr)
-        adapter = &elem.GetDgnDb().Elements().GetJsonSelectAdapter(elClass->GetId(), *stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
-    else
-        adapter->SetStatement(*stmt);
-
-    adapter->GetRow(elementJson, true);
+    JsonECSqlSelectAdapter const& adapter = elem.GetDgnDb().Elements().GetJsonSelectAdapter(*stmt);
+    adapter.GetRow(elementJson, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

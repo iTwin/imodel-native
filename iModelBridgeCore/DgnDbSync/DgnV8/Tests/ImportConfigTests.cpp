@@ -53,7 +53,6 @@ void ImportConfigTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::B
     ASSERT_EQ(BentleyApi::SUCCESS, creator.MakeDefinitionChanges());
     creator.ConvertData();
     ASSERT_FALSE(creator.WasAborted());
-    ASSERT_EQ(BentleyApi::SUCCESS, creator.DoFinishConversion());
     db->SaveChanges();
     m_count = creator.GetElementsConverted();
     }

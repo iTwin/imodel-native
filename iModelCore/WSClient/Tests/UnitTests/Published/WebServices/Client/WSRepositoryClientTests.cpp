@@ -757,7 +757,6 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_PerformedTwiceWithWebApi2
         auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
         EXPECT_NE(nullptr, actualActivityId);
 
-        BeMutexHolder lock(m_mutex);
         requestIds.insert(actualActivityId);
         return StubHttpResponse(HttpStatus::OK);
         });
@@ -768,7 +767,6 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_PerformedTwiceWithWebApi2
         auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
         EXPECT_NE(nullptr, actualActivityId);
 
-        BeMutexHolder lock(m_mutex);
         requestIds.insert(actualActivityId);
         return StubHttpResponse(HttpStatus::OK);
         });

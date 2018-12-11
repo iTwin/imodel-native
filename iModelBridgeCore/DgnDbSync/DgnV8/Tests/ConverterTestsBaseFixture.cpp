@@ -405,7 +405,6 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
             ASSERT_EQ(BentleyApi::SUCCESS, updater.MakeDefinitionChanges());
             updater.ConvertData();
             ASSERT_EQ(expectFailure, updater.WasAborted());
-            ASSERT_EQ(BentleyApi::SUCCESS, updater.DoFinishConversion());
             m_count = updater.GetElementsConverted();
             hadAnyChanges = updater.HadAnyChanges();
             }

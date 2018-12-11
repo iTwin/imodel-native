@@ -72,7 +72,6 @@ void DgnMaterialTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::Be
     creator.MakeDefinitionChanges();
     creator.ConvertData();
     ASSERT_FALSE(creator.WasAborted());
-    creator.DoFinishConversion();
     db->SaveChanges();
     m_count = creator.GetElementsConverted();
     }
