@@ -33,8 +33,11 @@ struct BriefcaseSchemaChangesTests : public iModelTestsBase
         iModelTestsBase::SetUpTestCase();
 
         BriefcasePtr briefcase = AcquireAndOpenBriefcase();
+
         iModelHubHelpers::AddChangeSets(briefcase, 4);
         iModelHubHelpers::CreateNamedVersion(s_version1, s_connection, "Version1", 2);
+
+        EXPECT_EQ(RepositoryStatus::Success, briefcase->GetDgnDb().BriefcaseManager().LockSchemas().Result());
         PushSchemaChanges(briefcase, "BriefcaseSchemaChangesTests");
         iModelHubHelpers::CreateNamedVersion(s_version2, s_connection, "Version2", 5);
 
@@ -42,6 +45,7 @@ struct BriefcaseSchemaChangesTests : public iModelTestsBase
         iModelHubHelpers::CreateNamedVersion(s_version3, s_connection, "Version3", 6);
         iModelHubHelpers::CreateNamedVersion(s_version4, s_connection, "Version4", 7);
 
+        EXPECT_EQ(RepositoryStatus::Success, briefcase->GetDgnDb().BriefcaseManager().LockSchemas().Result());
         PushSchemaChanges(briefcase, "BriefcaseSchemaChangesTests2");
         iModelHubHelpers::CreateNamedVersion(s_version5, s_connection, "Version5", 9);
         }

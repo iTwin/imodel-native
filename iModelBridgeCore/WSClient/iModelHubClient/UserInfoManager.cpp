@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/UserInfoManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/UserInfoManager.h>
@@ -27,8 +27,9 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "UserInfoManager::QueryUserInfoById";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
     InitializeUserCache(cancellationToken);
 
@@ -44,7 +45,7 @@ ICancellationTokenPtr cancellationToken
     return ExecuteWithRetry<UserInfoPtr>([=]()
         {
         //Execute query
-        return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<UserInfoResult>
+        return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<UserInfoResult>
             ([=](const WSObjectsResult& result)
             {
             if (!result.IsSuccess())
@@ -53,12 +54,12 @@ ICancellationTokenPtr cancellationToken
             auto userInfoInstances = result.GetValue().GetInstances();
             if (userInfoInstances.IsEmpty())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "User does not exist.");
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, "User does not exist.");
                 return UserInfoResult::Error(Error::Id::UserDoesNotExist);
                 }
             if (userInfoInstances.Size() > 1)
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Multiple users found.");
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, "Multiple users found.");
                 return UserInfoResult::Error(Error::Id::Unknown);
                 }
             auto user = UserInfo::Parse(*userInfoInstances.begin());
@@ -69,7 +70,7 @@ ICancellationTokenPtr cancellationToken
             lock.unlock();
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), requestOptions, "");
             return UserInfoResult::Success(user);
             });
         });
@@ -85,13 +86,14 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "UserInfoManager::QueryAllUsersInfo";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
 
     return ExecuteWithRetry<bvector<UserInfoPtr> >([=]()
         {
         //Execute query
-        return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)
+        return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)
             ->Then<UsersInfoResult>
             ([=](const WSObjectsResult& result)
             {
@@ -109,7 +111,7 @@ ICancellationTokenPtr cancellationToken
                 }
             s_userInfoCacheMutex.unlock();
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), requestOptions, "");
             return UsersInfoResult::Success(usersList);
             });
         });
@@ -126,7 +128,8 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "UserInfoManager::QueryUsersInfoByIds";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
     InitializeUserCache();
 
@@ -150,7 +153,7 @@ ICancellationTokenPtr cancellationToken
         UsersInfoResultPtr queryUsersResult = ExecuteAsync(ExecuteWithRetry<bvector<UserInfoPtr> > ([=] ()
             {
             //Execute query
-            return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<UsersInfoResult>
+            return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<UsersInfoResult>
                 ([=](const WSObjectsResult& result)
                 {
                 if (!result.IsSuccess())
@@ -180,7 +183,7 @@ ICancellationTokenPtr cancellationToken
         }
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
 
     return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Success(usersList));
     }

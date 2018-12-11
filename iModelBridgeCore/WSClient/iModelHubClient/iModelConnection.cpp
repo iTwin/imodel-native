@@ -40,7 +40,7 @@ GlobalRequestOptionsPtr    globalRequestOptions,
 IHttpHandlerPtr            customHandler
 ) : m_iModelInfo(iModel), m_customHandler(customHandler), m_globalRequestOptionsPtr(globalRequestOptions)
     {
-    auto wsRepositoryClient = WSRepositoryClient::Create(iModel.GetServerURL(), iModel.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
+    auto wsRepositoryClient = WSRepositoryClient::Create(iModel.GetServerURL(), ServerProperties::ServiceVersion(), iModel.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
     CompressionOptions options;
     options.EnableRequestCompression(true, 1024);
     wsRepositoryClient->Config().SetCompressionOptions(options);
@@ -120,8 +120,9 @@ ObjectId              objectId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     const Utf8String methodName = "iModelConnection::QueryFileAccessKey";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions,"Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     WSQuery query(objectId);
@@ -129,17 +130,17 @@ ICancellationTokenPtr cancellationToken
     FileAccessKey::AddDownloadAccessKeySelect(selectString);
     query.SetSelect(selectString);
 
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
+    return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)
         ->Then<FileAccessKeyResult>([=](WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return FileAccessKeyResult::Error(result.GetError());
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
         auto fileAccessKey = FileAccessKey::ParseFromRelated(*result.GetValue().GetInstances().begin());
         return FileAccessKeyResult::Success(fileAccessKey);
         });
@@ -163,9 +164,12 @@ Json::Value iModelConnection::CreateFileJson(FileInfoCR fileInfo)
 //---------------------------------------------------------------------------------------
 FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     const Utf8String methodName = "iModelConnection::CreateNewServerFile";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
     std::shared_ptr<FileResult> finalResult = std::make_shared<FileResult>();
-    return m_wsRepositoryClient->SendCreateObjectRequest(CreateFileJson(fileInfo), BeFileName(), nullptr, cancellationToken)->Then
+    return m_wsRepositoryClient->SendCreateObjectRequestWithOptions(CreateFileJson(fileInfo), BeFileName(), nullptr, requestOptions, cancellationToken)->Then
     ([=](const WSCreateObjectResult& result)
         {
         if (result.IsSuccess())
@@ -184,7 +188,7 @@ FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancella
         if (Error::Id::FileAlreadyExists != error.GetId())
             {
             finalResult->SetError(error);
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, error.GetMessage().c_str());
             return;
             }
 
@@ -193,7 +197,7 @@ FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancella
         if (initialized)
             {
             finalResult->SetError(error);
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, error.GetMessage().c_str());
             return;
             }
 
@@ -207,19 +211,19 @@ FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancella
         FileAccessKey::AddUploadAccessKeySelect(select);
         fileQuery.SetSelect(select);
 
-        m_wsRepositoryClient->SendQueryRequest(fileQuery, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const& queryResult)
+        m_wsRepositoryClient->SendQueryRequestWithOptions(fileQuery, nullptr, nullptr, requestOptions, cancellationToken)->Then([=](WSObjectsResult const& queryResult)
             {
             if (!queryResult.IsSuccess())
                 {
                 finalResult->SetError(queryResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, queryResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, queryResult.GetError().GetMessage().c_str());
                 return;
                 }
 
             if (queryResult.GetValue().GetRapidJsonDocument().IsNull())
                 {
                 finalResult->SetError(error);
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, error.GetMessage().c_str());
                 return;
                 }
 
@@ -264,13 +268,17 @@ StatusTaskPtr iModelConnection::UpdateServerFile(FileInfoCR fileInfo, ICancellat
     const Utf8String methodName = "iModelConnection::UpdateServerFile";
     Json::Value properties = Json::objectValue;
     fileInfo.ToPropertiesJson(properties);
-    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), properties, nullptr, BeFileName(), nullptr, cancellationToken)
+
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
+    return m_wsRepositoryClient->SendUpdateObjectRequestWithOptions(fileInfo.GetObjectId(), properties, nullptr, BeFileName(), nullptr, requestOptions, cancellationToken)
         ->Then<StatusResult>
         ([=](const WSUpdateObjectResult& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return StatusResult::Error(result.GetError());
             }
 
@@ -288,12 +296,15 @@ StatusTaskPtr iModelConnection::InitializeServerFile(FileInfoCR fileInfo, ICance
     fileInfo.ToPropertiesJson(fileProperties);
     fileProperties[ServerSchema::Property::IsUploaded] = true;
 
-    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), fileProperties, nullptr, BeFileName(), nullptr, cancellationToken)
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
+    return m_wsRepositoryClient->SendUpdateObjectRequestWithOptions(fileInfo.GetObjectId(), fileProperties, nullptr, BeFileName(), nullptr, requestOptions, cancellationToken)
         ->Then<StatusResult>([=](const WSUpdateObjectResult& initializeFileResult)
         {
         if (!initializeFileResult.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializeFileResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, initializeFileResult.GetError().GetMessage().c_str());
             return StatusResult::Error(initializeFileResult.GetError());
             }
 
@@ -306,9 +317,13 @@ StatusTaskPtr iModelConnection::InitializeServerFile(FileInfoCR fileInfo, ICance
 //---------------------------------------------------------------------------------------
 FilesTaskPtr iModelConnection::SeedFilesQuery(WSQuery query, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "iModelConnection::SeedFilesQuery";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
     return ExecuteWithRetry<bvector<FileInfoPtr>>([=]()
         {
-        return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
+        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)
             ->Then<FilesResult>([=](WSObjectsResult const& result)
             {
             if (!result.IsSuccess())
@@ -353,7 +368,6 @@ BeBriefcaseId                  briefcaseId
             db->CloseDb();
         return StatusResult::Error(error);
         }
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -397,6 +411,10 @@ IWSRepositoryClient::RequestOptionsPtr requestOptions
     if (options.GetConflictStrategy() == ConflictStrategy::Continue)
         changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::ConflictStrategy, "Continue");
 
+    requestOptions = requestOptions ? requestOptions : std::make_shared<IWSRepositoryClient::RequestOptions>();
+    LogHelper::FilliModelHubRequestOptions(requestOptions);
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
     return m_wsRepositoryClient->SendChangesetRequestWithOptions(request, nullptr, requestOptions, cancellationToken)->Then<StatusResult>
         ([=](const WSChangesetResult& result)
@@ -405,7 +423,7 @@ IWSRepositoryClient::RequestOptionsPtr requestOptions
             return StatusResult::Success();
         else
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return StatusResult::Error(result.GetError());
             }
         });
@@ -679,14 +697,17 @@ ICancellationTokenPtr               cancellationToken
 BriefcasesInfoTaskPtr iModelConnection::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::QueryBriefcaseInfoInternal";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
     return ExecuteWithRetry<bvector<BriefcaseInfoPtr>>([=]()
         {
-        return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
+        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)
             ->Then<BriefcasesInfoResult>([=](const WSObjectsResult& result)
             {
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
                 return BriefcasesInfoResult::Error(result.GetError());
                 }
 
@@ -712,10 +733,14 @@ CodeLocksSetAddFunction addFunction,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "iModelConnection::QueryCodesLocksInternal";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
     return ExecuteWithRetry<void>([=]()
         {
         //Execute query
-        return m_wsRepositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<StatusResult>
+        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<StatusResult>
             ([=](const WSObjectsResult& result)
             {
             if (result.IsSuccess())
@@ -980,14 +1005,15 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "iModelConnection::QueryCodeMaximumIndexInternal";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     auto requestString = changeSet->ToRequestString();
     HttpStringBodyPtr request = HttpStringBody::Create(requestString);
     return ExecuteWithRetry<CodeSequence>([=]()
         {
-        return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<CodeSequenceResult>
+        return m_wsRepositoryClient->SendChangesetRequestWithOptions(request, nullptr, requestOptions, cancellationToken)->Then<CodeSequenceResult>
             ([=](const WSChangesetResult& result)
             {
             if (result.IsSuccess())
@@ -998,17 +1024,17 @@ ICancellationTokenPtr cancellationToken
                 CodeSequence        codeSequence;
                 if (!GetCodeSequenceFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeSequence))
                     {
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Code template parse failed.");
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, "Code template parse failed.");
                     return CodeSequenceResult::Error({Error::Id::InvalidPropertiesValues, ErrorLocalizedString(MESSAGE_CodeSequenceResponseError)});
                     }
 
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
                 return CodeSequenceResult::Success(codeSequence);
                 }
             else
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
                 return CodeSequenceResult::Error(result.GetError());
                 }
             });
@@ -1025,13 +1051,14 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "iModelConnection::QueryCodeNextAvailableInternal";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeSet->ToRequestString());
     return ExecuteWithRetry<CodeSequence>([=]()
         {
-        return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<CodeSequenceResult>
+        return m_wsRepositoryClient->SendChangesetRequestWithOptions(request, nullptr, requestOptions, cancellationToken)->Then<CodeSequenceResult>
             ([=](const WSChangesetResult& result)
             {
             if (result.IsSuccess())
@@ -1042,17 +1069,17 @@ ICancellationTokenPtr cancellationToken
                 CodeSequence        codeSequence;
                 if (!GetCodeSequenceFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeSequence))
                     {
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Code template parse failed.");
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, "Code template parse failed.");
                     return CodeSequenceResult::Error({Error::Id::InvalidPropertiesValues, ErrorLocalizedString(MESSAGE_CodeSequenceResponseError)});
                     }
 
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
                 return CodeSequenceResult::Success(codeSequence);
                 }
             else
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
                 return CodeSequenceResult::Error(result.GetError());
                 }
             });
@@ -1068,7 +1095,12 @@ AsyncTaskPtr<WSCreateObjectResult> iModelConnection::CreateBriefcaseInstance(ICa
     briefcaseIdJson[ServerSchema::Instance] = Json::objectValue;
     briefcaseIdJson[ServerSchema::Instance][ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
     briefcaseIdJson[ServerSchema::Instance][ServerSchema::ClassName] = ServerSchema::Class::Briefcase;
-    return m_wsRepositoryClient->SendCreateObjectRequest(briefcaseIdJson, BeFileName(), nullptr, cancellationToken);
+
+    const Utf8String methodName = "iModelConnection::CreateBriefcaseInstance";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
+    return m_wsRepositoryClient->SendCreateObjectRequestWithOptions(briefcaseIdJson, BeFileName(), nullptr, requestOptions, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1082,7 +1114,9 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "iModelConnection::GetChangeSetByIdInternal";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
     if (changeSetId.empty())
         {
         // Don't log error here since this is a valid case then there are no changeSets locally.
@@ -1099,7 +1133,7 @@ ICancellationTokenPtr cancellationToken
         query.SetSelect(selectString);
         }
 
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<ChangeSetInfoResult>
+    return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)->Then<ChangeSetInfoResult>
         ([=](WSObjectsResult& changeSetResult)
         {
         if (changeSetResult.IsSuccess())
@@ -1107,7 +1141,7 @@ ICancellationTokenPtr cancellationToken
             auto changeSetInstances = changeSetResult.GetValue().GetInstances();
             if (changeSetInstances.IsEmpty())
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "ChangeSet does not exist.");
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, "ChangeSet does not exist.");
                 return ChangeSetInfoResult::Error(Error::Id::ChangeSetDoesNotExist);
                 }
 
@@ -1117,12 +1151,12 @@ ICancellationTokenPtr cancellationToken
                 changeSet->SetFileAccessKey(FileAccessKey::ParseFromRelated(*changeSetResult.GetValue().GetInstances().begin()));
                 }
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
             return ChangeSetInfoResult::Success(changeSet);
             }
         else
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, changeSetResult.GetError().GetMessage().c_str());
             return ChangeSetInfoResult::Error(changeSetResult.GetError());
             }
         });
@@ -1219,7 +1253,10 @@ ICancellationTokenPtr       cancellationToken
 ) const
     {
     const Utf8String methodName = "iModelConnection::ChangeSetsFromQueryInternal";
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<ChangeSetsInfoResult>
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
+    return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)->Then<ChangeSetsInfoResult>
         ([=](const WSObjectsResult& changeSetsInfoResult)
         {
         if (changeSetsInfoResult.IsSuccess())
@@ -1248,7 +1285,7 @@ ICancellationTokenPtr       cancellationToken
             }
         else
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsInfoResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, changeSetsInfoResult.GetError().GetMessage().c_str());
             return ChangeSetsInfoResult::Error(changeSetsInfoResult.GetError());
             }
         });
@@ -1652,6 +1689,8 @@ CodeCallbackFunction*               codesCallback
 ) const
     {
     const Utf8String methodName = "iModelConnection::Push";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     DgnDbP pDgnDb = &dgndb;
 
     // Stage 1. Create changeSet.
@@ -1660,7 +1699,7 @@ CodeCallbackFunction*               codesCallback
     std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
     return ExecuteWithRetry<void>([=]()
         {
-        return m_wsRepositoryClient->SendCreateObjectRequest(*pushJson, BeFileName(), nullptr, cancellationToken)
+        return m_wsRepositoryClient->SendCreateObjectRequestWithOptions(*pushJson, BeFileName(), nullptr, requestOptions, cancellationToken)
             ->Then([=](const WSCreateObjectResult& initializePushResult)
             {
 #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -1676,7 +1715,7 @@ CodeCallbackFunction*               codesCallback
                 else
                     {
                     finalResult->SetError(error);
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializePushResult.GetError().GetMessage().c_str());
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, initializePushResult.GetError().GetMessage().c_str());
                     }
                 return;
                 }
@@ -2120,7 +2159,8 @@ StatusTaskPtr iModelConnection::ValidateBriefcase(BeGuidCR fileId, BeBriefcaseId
 StatusTaskPtr iModelConnection::LockiModel(ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::LockiModel";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     return ExecuteWithRetry<void>([=]()
         {
@@ -2129,17 +2169,17 @@ StatusTaskPtr iModelConnection::LockiModel(ICancellationTokenPtr cancellationTok
         iModelLockJson[ServerSchema::Instance][ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
         iModelLockJson[ServerSchema::Instance][ServerSchema::ClassName] = ServerSchema::Class::iModelLock;
 
-        return m_wsRepositoryClient->SendCreateObjectRequest(iModelLockJson, BeFileName(), nullptr, cancellationToken)
+        return m_wsRepositoryClient->SendCreateObjectRequestWithOptions(iModelLockJson, BeFileName(), nullptr, requestOptions, cancellationToken)
             ->Then<StatusResult>([=](const WSCreateObjectResult& result)
             {
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
                 return StatusResult::Error(result.GetError());
                 }
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
             return StatusResult::Success();
             });
         });
@@ -2151,22 +2191,24 @@ StatusTaskPtr iModelConnection::LockiModel(ICancellationTokenPtr cancellationTok
 StatusTaskPtr iModelConnection::UnlockiModel(ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::LockiModel";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
     return ExecuteWithRetry<void>([=]()
         {
         ObjectId id = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::iModelLock, ServerSchema::Class::iModelLock);
-        return m_wsRepositoryClient->SendDeleteObjectRequest(id, cancellationToken)
+        return m_wsRepositoryClient->SendDeleteObjectRequestWithOptions(id, requestOptions, cancellationToken)
             ->Then<StatusResult>([=](const WSDeleteObjectResult& result)
             {
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
                 return StatusResult::Error(result.GetError());
                 }
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
             return StatusResult::Success();
             });
         });
@@ -2250,42 +2292,45 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
 StatusTaskPtr iModelConnection::CancelSeedFileCreation(ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::CancelSeedFileCreation";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::File);
     Utf8String filter;
     filter.Sprintf("%s+gt+0", ServerSchema::Property::InitializationState);
     query.SetFilter(filter);
+
     std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const& result)
+    return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)->Then([=](WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
             {
             finalResult->SetError(result.GetError());
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return;
             }
         auto instances = result.GetValue().GetInstances();
         if (instances.IsEmpty())
             {
             finalResult->SetError({Error::Id::FileDoesNotExist, ErrorLocalizedString(MESSAGE_SeedFileNotFound)});
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "File does not exist.");
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, "File does not exist.");
             return;
             }
 
         auto fileInfo = FileInfo::Parse(*instances.begin(), FileInfo());
-        m_wsRepositoryClient->SendDeleteObjectRequest(fileInfo->GetObjectId(), cancellationToken)->Then([=](WSVoidResult const& deleteResult)
+        m_wsRepositoryClient->SendDeleteObjectRequestWithOptions(fileInfo->GetObjectId(), requestOptions, cancellationToken)->Then([=](WSVoidResult const& deleteResult)
             {
             if (!deleteResult.IsSuccess())
                 {
                 finalResult->SetError(deleteResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, deleteResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, deleteResult.GetError().GetMessage().c_str());
                 }
             else
                 {
                 finalResult->SetSuccess();
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
                 }
             });
         })->Then<StatusResult>([=]()
@@ -2442,19 +2487,20 @@ BriefcasesInfoTaskPtr iModelConnection::QueryAllBriefcasesInfo(ICancellationToke
 BriefcaseInfoTaskPtr iModelConnection::QueryBriefcaseInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::QueryBriefcaseInfo";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     CHECK_BRIEFCASEID(briefcaseId, BriefcaseInfoResult);
 
     Utf8String briefcaseIdString;
     briefcaseIdString.Sprintf("%d", briefcaseId.GetValue());
     ObjectId briefcaseObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, briefcaseIdString);
 
-    return m_wsRepositoryClient->SendGetObjectRequest(briefcaseObjectId, nullptr, cancellationToken)
+    return m_wsRepositoryClient->SendGetObjectRequestWithOptions(briefcaseObjectId, nullptr, requestOptions, cancellationToken)
         ->Then<BriefcaseInfoResult>([=](WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
             WSError error = result.GetError();
             if (WSError::Id::InstanceNotFound == error.GetId())
                 return BriefcaseInfoResult::Error(Error(Error::Id::BriefcaseDoesNotExist, error.GetMessage(), error.GetDescription()));
@@ -3176,17 +3222,19 @@ ICancellationTokenPtr               cancellationToken
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::VerifyConnection(ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "iModelConnection::VerifyConnection";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
     return ExecuteWithRetry<void>([=]()
         {
-        return m_wsRepositoryClient->VerifyAccess(cancellationToken)->Then<StatusResult>([](const AsyncResult<void, WSError>& result)
+        return m_wsRepositoryClient->VerifyAccessWithOptions(requestOptions, cancellationToken)->Then<StatusResult>([=](const AsyncResult<void, WSError>& result)
             {
-            const Utf8String methodName = "iModelConnection::VerifyConnection";
-            LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
             if (result.IsSuccess())
                 return StatusResult::Success();
             else
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
                 return StatusResult::Error(result.GetError());
                 }
             });
