@@ -202,7 +202,9 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
 
     m_curEntry = 0;
     bool atLeast1Download = false;
-    for (size_t i = 0; i < std::min((int)MAX_NB_CONNECTIONS, (int)m_nbEntry); ++i)
+    int maxConnections = (MAX_NB_CONNECTIONS < (int)m_nbEntry ?  MAX_NB_CONNECTIONS : (int)m_nbEntry);
+
+    for (size_t i = 0; i < maxConnections; ++i)
         {
         if (SetupNextEntry())
             atLeast1Download = true;
