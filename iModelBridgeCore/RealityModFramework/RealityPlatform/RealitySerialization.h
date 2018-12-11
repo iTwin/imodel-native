@@ -9,7 +9,7 @@
 
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <BeXml/BeXml.h>
-#include <geom/GeomApi.h>
+#include <Geom/GeomApi.h>
 
 #define _STRINGIFY(s) #s
 #define STRINGIFY(s) _STRINGIFY(s)

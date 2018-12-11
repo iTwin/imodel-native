@@ -211,7 +211,6 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
         char fullpath[MAX_FILENAME];
         sprintf(fullpath, "%s%s", pi_strDest,filename);
 
-        const size_t fullpath_length = strlen(fullpath);
         WString pathString(fullpath, BentleyCharEncoding::Utf8);
         if(!pathString.EndsWithI(L"/")) //a file
             {

@@ -86,9 +86,15 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)
 
+%if defined (MSVC_VERSION)
 # windows specific for Unzipfile
-LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
+LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib  
+%endif
 
-%include dlmlink.mki
+%if defined (MSVC_VERSION)
+%include $(sharedMki)LinkLibrary.mki
+%else
+%include $(sharedMki)linkLibrary.mki
+%endif
 
 

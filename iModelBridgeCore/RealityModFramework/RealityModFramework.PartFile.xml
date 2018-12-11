@@ -11,7 +11,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a" ApiNumber="B02">
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a, AndroidArm64" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
@@ -37,17 +37,18 @@
     </Part>
     
     <!-- depending on the target platform, use either the RealityPlatformTools definition above or below, comment out the other -->
-    <Part Name="RealityPlatformToolsLight" BentleyBuildMakeFile="RealityPlatformToolsLight\RealityPlatformToolsLight.mke" OnlyPlatforms="x64, androidarm7a" ApiNumber="B02">
+    <Part Name="RealityPlatformToolsLight" BentleyBuildMakeFile="RealityPlatformToolsLight\RealityPlatformToolsLight.mke" OnlyPlatforms="x64, androidarm7a, AndroidArm64" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+      <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformToolsLight$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatformToolsLight$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatformToolsNoCC" BentleyBuildMakeFile="RealityPlatformToolsNoCC\RealityPlatformToolsNoCC.mke" OnlyPlatforms="x64, androidarm7a" ApiNumber="B02">
+    <Part Name="RealityPlatformToolsNoCC" BentleyBuildMakeFile="RealityPlatformToolsNoCC\RealityPlatformToolsNoCC.mke" OnlyPlatforms="x64, androidarm7a, AndroidArm64" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>

@@ -254,7 +254,7 @@ public:
                         TransferReport* tr = it->second;
                         writer->WriteAttribute("url", Utf8CP(tr->url.c_str()));
                         writer->WriteAttribute("filesize", tr->filesize);
-                        writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
+                        writer->WriteAttribute("timeSpent", (uint64_t)tr->timeSpent);
                         for(size_t i = 0; i < tr->retries.size(); ++i)
                             {
                             writer->WriteElementStart("DownloadAttempt");

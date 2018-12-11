@@ -9,6 +9,8 @@
 #include "../RealityPlatformTools/RealityDataDownload.cpp"
 
 #include <curl/curl.h>
+#include <thread>
+#include <chrono>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -200,7 +202,7 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
 
     m_curEntry = 0;
     bool atLeast1Download = false;
-    for (size_t i = 0; i < min(MAX_NB_CONNECTIONS, m_nbEntry); ++i)
+    for (size_t i = 0; i < std::min((int)MAX_NB_CONNECTIONS, (int)m_nbEntry); ++i)
         {
         if (SetupNextEntry())
             atLeast1Download = true;
@@ -243,7 +245,7 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
             {
             repeats++; /* count number of repeated zero numfds */
             if (repeats > 1)
-                Sleep(300); /* sleep 100 milliseconds */
+                std::this_thread::sleep_for(std::chrono::milliseconds(300)); /* sleep 300 milliseconds */
             }
         else
             repeats = 0;
