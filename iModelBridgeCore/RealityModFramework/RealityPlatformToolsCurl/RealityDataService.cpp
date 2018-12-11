@@ -8,6 +8,8 @@
 
 #include <curl/curl.h>
 #include "../RealityPlatformTools/RealityDataService.cpp"
+#include <thread>
+#include <chrono>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -18,7 +20,7 @@ static size_t DownloadWriteCallback(void *buffer, size_t size, size_t nmemb, voi
 
     RealityDataFileDownload *fileDown = (RealityDataFileDownload *)pClient;
     if (fileDown != nullptr)
-        return fileDown->OnWriteData((__int8*)buffer, size * nmemb);
+        return fileDown->OnWriteData((char*)buffer, size * nmemb);
     else
         return 0;
     }
@@ -74,7 +76,7 @@ const TransferReport& RealityDataServiceTransfer::Perform()
 
     m_curEntry = 0;
 
-    for (int i = 0; i < std::min(MAX_NB_CONNECTIONS, (int)m_filesToTransfer.size()); ++i)
+    for (int i = 0; i < std::min((int)MAX_NB_CONNECTIONS, (int)m_filesToTransfer.size()); ++i)
         {
         SetupNextEntry();
         }   
@@ -107,7 +109,7 @@ const TransferReport& RealityDataServiceTransfer::Perform()
             {
             repeats++; /* count number of repeated zero numfds */
             if (repeats > 1)
-                Sleep(300);
+                std::this_thread::sleep_for(std::chrono::milliseconds(300));
             }
         else
             repeats = 0;

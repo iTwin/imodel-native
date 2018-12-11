@@ -258,6 +258,7 @@ RealityDataConsole::RealityDataConsole() :
     m_filterProperties.push_back("OwnedBy");
     m_filterProperties.push_back("Fuzzy Filter");
     m_filterProperties.push_back("ProjectId");
+    m_filterProperties.push_back("Last Access Date");
     m_filterProperties.push_back("-Finish-");
 
     m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);       // see the methods Disp...()
@@ -824,6 +825,18 @@ void RealityDataConsole::ListRoots()
         properties.push_back(RealityDataFilterCreator::FilterByType(m_typeFilter));
     if (m_ownerFilter.length() > 0)
         properties.push_back(RealityDataFilterCreator::FilterByOwner(m_ownerFilter));
+    if (!m_beforeDateFilter.empty())
+        {
+        DateTime beforeDate;
+        DateTime earliestDate;
+        DateTime::FromString(beforeDate, m_beforeDateFilter.c_str());
+        DateTime::FromString(earliestDate, "0001-01-01");
+        if(beforeDate.IsValid())
+            {
+            properties.push_back(RealityDataFilterCreator::FilterByAccessDate(earliestDate, beforeDate));
+            properties.push_back(RealityDataFilterCreator::FilterByCreationDate(earliestDate, beforeDate));
+            }
+        }
     if (properties.size() > 0)
         ultimateReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
 
@@ -2093,6 +2106,7 @@ void RealityDataConsole::Filter()
         DisplayInfo(Utf8PrintfString("OwnedBy : %s\n", m_ownerFilter.c_str()));
         DisplayInfo(Utf8PrintfString("ProjectId : %s\n", m_projectFilter.c_str()));
         DisplayInfo(Utf8PrintfString("Fuzzy Filter : %s\n", m_queryFilter.c_str()));
+        DisplayInfo(Utf8PrintfString("Not Accessed Since : %s\n", m_beforeDateFilter.c_str()));
         DisplayInfo("---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n\n", DisplayOption::Error);
         DisplayInfo("set filters from the list, use the -Finish- option to return\n", DisplayOption::Tip);
 
@@ -2102,6 +2116,8 @@ void RealityDataConsole::Filter()
 
         if (filter.Equals("Fuzzy Filter"))
             DisplayInfo("\nSet Fuzzy Filter (Enter blank field to remove filter)\nThis Filter searches every property of the RealityData for the specified value (case insensitive)\n", DisplayOption::Tip);
+        else if (filter.Equals("Access Date"))
+            DisplayInfo("\nSet the date filter (Enter blank field to remove filter)\nTo return entries that haven't accessed since that date\nFormat : YYYY-MM-DD\n", DisplayOption::Tip);
         else
             DisplayInfo(Utf8PrintfString("Set filter for %s (Enter blank field to remove filter). Careful, filters are case sensitive\n", filter.c_str()), DisplayOption::Tip);
 
@@ -2124,6 +2140,8 @@ void RealityDataConsole::Filter()
             m_queryFilter = value;
         else if (filter.Equals("ProjectId"))
             m_projectFilter = value;
+        else if (filter.Equals("Access Date"))
+            m_beforeDateFilter = value;
         }
     }
 
