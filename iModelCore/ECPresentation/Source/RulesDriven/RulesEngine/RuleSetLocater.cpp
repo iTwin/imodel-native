@@ -526,93 +526,6 @@ void FileRuleSetLocater::_InvalidateCache(Utf8CP rulesetId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-EmbeddedRuleSetLocater::EmbeddedRuleSetLocater(IConnectionCR connection)
-    : m_connection(connection)
-    {
-    BeMutexHolder lock(GetMutex());
-    LoadRuleSets();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void EmbeddedRuleSetLocater::LoadRuleSets() const
-    {
-    Savepoint txn(m_connection.GetDb(), "EmbeddedRuleSetLocater::LoadRuleSets");
-    BeAssert(txn.IsActive());
-
-    DbEmbeddedFileTable& embeddedFiles = m_connection.GetDb().EmbeddedFiles();
-    for (auto const& file : embeddedFiles.MakeIterator())
-        {
-        if (0 != strcmp(file.GetTypeUtf8(), RuleSetEmbedder::FILE_TYPE_PresentationRuleSet))
-            continue;
-
-        bvector<Byte> data;
-        if (BE_SQLITE_OK != embeddedFiles.Read(data, file.GetNameUtf8()))
-            {
-            BeAssert(false);
-            continue;
-            }
-
-        Utf8String rulesetXml;
-        rulesetXml.assign(data.begin(), data.end());
-        PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlString(rulesetXml.c_str());
-        if (!ruleset.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
-
-        OnRulesetCreated(*ruleset);
-        m_cache.push_back(ruleset);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PresentationRuleSetPtr> EmbeddedRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
-    {
-    if (nullptr == rulesetId)
-        return m_cache;
-
-    bvector<PresentationRuleSetPtr> rulesets;
-    for (PresentationRuleSetPtr ruleset : m_cache)
-        {
-        if (ruleset->GetRuleSetId().Equals(rulesetId))
-            rulesets.push_back(ruleset);
-        }
-
-    return rulesets;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> EmbeddedRuleSetLocater::_GetRuleSetIds() const
-    {
-    bvector<Utf8String> rulesetIds;
-    bvector<PresentationRuleSetPtr> rulesets = LocateRuleSets();
-    for (PresentationRuleSetPtr& ruleset : rulesets)
-        rulesetIds.push_back(Utf8String(ruleset->GetRuleSetId().c_str()));
-    return rulesetIds;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void EmbeddedRuleSetLocater::_InvalidateCache(Utf8CP)
-    {
-    for (PresentationRuleSetPtr ruleset : m_cache)
-        OnRulesetDisposed(*ruleset);
-
-    m_cache.clear();
-    LoadRuleSets();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationRuleSetPtr> SupplementalRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
@@ -623,6 +536,18 @@ bvector<PresentationRuleSetPtr> SupplementalRuleSetLocater::_LocateRuleSets(Utf8
         rulesets.erase(iter);
     for (PresentationRuleSetPtr ruleset : rulesets)
         ruleset->SetRuleSetId(rulesetId);
+    return rulesets;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<PresentationRuleSetPtr> NonSupplementalRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
+    {
+    bvector<PresentationRuleSetPtr> rulesets = m_locater->LocateRuleSets(nullptr);
+    auto iter = std::remove_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr r){return r->GetIsSupplemental();});
+    if (rulesets.end() != iter)
+        rulesets.erase(iter);
     return rulesets;
     }
 
@@ -707,4 +632,227 @@ void SimpleRuleSetLocater::Clear()
         OnRulesetDisposed(*entry.second);
         }
     m_cached.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EmbeddedRuleSetLocater::EmbeddedRuleSetLocater(IConnectionCR connection)
+    : m_connection(connection)
+    {
+    LoadRuleSets();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void EmbeddedRuleSetLocater::LoadRuleSets() const
+    {
+    if (!m_connection.GetECDb().Schemas().ContainsSchema(PRESENTATION_RULESET_SCHEMA_NAME))
+        return;
+
+    bvector<RulesetJsonRecord> rulesets = QueryRulesets();
+    for (RulesetJsonRecord& entry : rulesets)
+        {
+        BeInt64Id elementId = entry.first.first;
+        DateTime lastMod = entry.first.second;
+        Utf8String rulesetJson = entry.second;
+        
+        Json::Value asJson = Json::Value::From(rulesetJson);
+
+        PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromJsonString(asJson["jsonProperties"].ToString());
+        if (ruleset.IsNull())
+            {
+            BeAssert(false && "Ruleset Element must contain valid JSon Properties to construct a Presentation Ruleset");
+            continue;
+            }
+        
+        m_cache.push_back(RulesetRecord(RulesetInfo(elementId, lastMod), ruleset));
+        OnRulesetCreated(*ruleset);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<PresentationRuleSetPtr> EmbeddedRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
+    {
+    (const_cast<EmbeddedRuleSetLocater*>(this))->InvalidateCacheIfNeeded();
+
+    if (nullptr == rulesetId)
+        return GetCachedRuleSets();
+
+    bvector<PresentationRuleSetPtr> rulesets;
+    for (PresentationRuleSetPtr ruleset : GetCachedRuleSets())
+        {
+        if (ruleset->GetRuleSetId().Equals(rulesetId))
+            rulesets.push_back(ruleset);
+        }
+
+    return rulesets;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<PresentationRuleSetPtr> EmbeddedRuleSetLocater::GetCachedRuleSets() const
+    {
+    bvector<PresentationRuleSetPtr> results = bvector<PresentationRuleSetPtr>();
+    for (RulesetRecord record : m_cache)
+        results.push_back(record.second);
+
+    return results;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<EmbeddedRuleSetLocater::RulesetJsonRecord> EmbeddedRuleSetLocater::QueryRulesets() const
+    {
+    if (!m_connection.GetECDb().Schemas().ContainsSchema(PRESENTATION_RULESET_SCHEMA_NAME))
+        return bvector<RulesetJsonRecord>();
+
+    Utf8CP sql = "SELECT ECInstanceId, jsonProperties, LastMod FROM " PRESENTATION_RULESET_FULL_CLASS_NAME;
+
+    ECSqlStatement stmt = ECSqlStatement();
+    stmt.Prepare(m_connection.GetECDb(), sql);
+
+    if (!stmt.IsPrepared())
+        {
+        BeAssert(false);
+        return bvector<RulesetJsonRecord>();;
+        }
+
+    bvector<RulesetJsonRecord> rulesets = bvector<RulesetJsonRecord>();
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        BeInt64Id instanceId = stmt.GetValueId<BeInt64Id>(0);
+        Utf8String jsonProps = stmt.GetValueText(1);
+        DateTime lastModified = stmt.GetValueDateTime(2);
+        rulesets.push_back(RulesetJsonRecord(RulesetInfo(instanceId, lastModified), jsonProps));
+        }
+
+    return rulesets;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EmbeddedRuleSetLocater::RulesetJsonRecord EmbeddedRuleSetLocater::QueryRulesetById(BeInt64Id id) const
+    {
+    if (!m_connection.GetECDb().Schemas().ContainsSchema(PRESENTATION_RULESET_SCHEMA_NAME))
+        return RulesetJsonRecord();
+
+    Utf8CP sql = "SELECT jsonProperties, LastMod FROM " PRESENTATION_RULESET_FULL_CLASS_NAME " WHERE ECInstanceId = ?";
+
+    ECSqlStatement stmt = ECSqlStatement();
+    stmt.Prepare(m_connection.GetECDb(), sql);
+
+    if (!stmt.IsPrepared())
+        {
+        BeAssert(false);
+        return RulesetJsonRecord();
+        }
+
+    stmt.BindId(1, id);
+
+    if (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8String jsonProps = stmt.GetValueText(0);
+        DateTime lastModified = stmt.GetValueDateTime(1);
+        return RulesetJsonRecord(RulesetInfo(id, lastModified), jsonProps);
+        }
+
+    return RulesetJsonRecord();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> EmbeddedRuleSetLocater::_GetRuleSetIds() const
+    {
+    bvector<Utf8String> ids;
+    for (PresentationRuleSetPtr ruleset : LocateRuleSets())
+        ids.push_back(ruleset->GetRuleSetId().c_str());    
+
+    return ids;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void EmbeddedRuleSetLocater::_InvalidateCache(Utf8CP rulesetId)
+    {
+    for (PresentationRuleSetPtr ruleset : GetCachedRuleSets())
+        OnRulesetDisposed(*ruleset);
+
+    m_cache.clear();
+    LoadRuleSets();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void EmbeddedRuleSetLocater::InvalidateCacheIfNeeded()
+    {
+    if (m_cache.size() != QueryRuleSetCount())
+        {
+        InvalidateCache();
+        return;
+        }
+
+    for (RulesetRecord& recordR : m_cache)
+        {
+        BeInt64Id rulesetId = recordR.first.first;
+        RulesetJsonRecord rulesetElement = QueryRulesetById(rulesetId);
+        if (Utf8String::IsNullOrEmpty(rulesetElement.second.c_str()))
+            {
+            // This ruleset no longer exists in db. Cache should be invalidated
+            InvalidateCache();
+            return;
+            }
+
+        DateTime ruleSetLoaded = recordR.first.second;
+        DateTime lastModified = rulesetElement.first.second;
+        if (DateTime::CompareResult::EarlierThan != DateTime::Compare(ruleSetLoaded, lastModified))
+            continue;
+        
+        // This ruleset has been modified since being loaded. It should be reloaded
+        PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromJsonString(rulesetElement.second);
+        if (ruleset.IsNull())
+            {
+            BeAssert(false && "Ruleset Element must contain a valid JSon Properties to construct a Presentation Ruleset");
+            continue;
+            }
+
+        OnRulesetDisposed(*recordR.second);
+        recordR.second = ruleset;
+        OnRulesetCreated(*recordR.second);
+        recordR.first.second = lastModified;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t EmbeddedRuleSetLocater::QueryRuleSetCount()
+    {
+    if (!m_connection.GetECDb().Schemas().ContainsSchema(PRESENTATION_RULESET_SCHEMA_NAME))
+        return 0;
+
+    Utf8String sql("SELECT count(*) FROM " PRESENTATION_RULESET_FULL_CLASS_NAME);
+
+    ECSqlStatement stmt = ECSqlStatement();
+    stmt.Prepare(m_connection.GetECDb(), sql.c_str());
+    if (!stmt.IsPrepared())
+        {
+        BeAssert(false);
+        return 0;
+        }
+
+    BeSQLite::DbResult result = stmt.Step();
+    if (BeSQLite::BE_SQLITE_ROW != result)
+        return 0;
+
+    return stmt.GetValueInt(0);
     }

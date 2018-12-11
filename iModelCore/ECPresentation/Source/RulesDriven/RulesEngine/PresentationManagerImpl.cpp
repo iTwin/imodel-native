@@ -619,17 +619,20 @@ void RulesDrivenECPresentationManagerImpl::_OnConnectionEvent(ConnectionEvent co
     {
     if (evt.GetEventType() == ConnectionEventType::Opened)
         {
-#ifdef WIP_EMBEDDED_SUPPLEMENTAL_RULESETS
-        RuleSetLocaterPtr locater = m_embeddedRuleSetLocaters[evt.GetConnection().GetId()] = SupplementalRuleSetLocater::Create(*EmbeddedRuleSetLocater::Create(evt.GetConnection()));
-        GetLocaters().RegisterLocater(*locater);
-#endif
+        RefCountedPtr<EmbeddedRuleSetLocater> embeddedLocater = EmbeddedRuleSetLocater::Create(evt.GetConnection());
+        RuleSetLocaterPtr supplementalLocater = SupplementalRuleSetLocater::Create(*embeddedLocater);
+        RuleSetLocaterPtr nonsupplementalLocater = NonSupplementalRuleSetLocater::Create(*embeddedLocater);
+        m_embeddedRuleSetLocaters[evt.GetConnection().GetId()] = { supplementalLocater, nonsupplementalLocater };
+        GetLocaters().RegisterLocater(*supplementalLocater);
+        GetLocaters().RegisterLocater(*nonsupplementalLocater);
         }
     else if (evt.GetEventType() == ConnectionEventType::Closed)
         {
         auto iter = m_embeddedRuleSetLocaters.find(evt.GetConnection().GetId());
         if (m_embeddedRuleSetLocaters.end() != iter)
             {
-            GetLocaters().UnregisterLocater(*iter->second);
+            for (RuleSetLocaterPtr locater : iter->second )
+                GetLocaters().UnregisterLocater(*locater);
             m_embeddedRuleSetLocaters.erase(iter);
             }
         m_contentCache->ClearCache(evt.GetConnection());

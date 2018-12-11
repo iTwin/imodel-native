@@ -183,34 +183,6 @@ public:
 };
 
 //=======================================================================================
-//! Ruleset locater that finds rulesets embedded in ECDb.
-//! @ingroup GROUP_RulesDrivenPresentation
-// @bsiclass                                    Saulius.Skliutas                10/2017
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE EmbeddedRuleSetLocater : RefCounted<RuleSetLocater>
-{
-private:
-    IConnectionCR m_connection;
-    mutable bvector<PresentationRuleSetPtr> m_cache;
-
-private:
-    ECPRESENTATION_EXPORT EmbeddedRuleSetLocater(IConnectionCR);
-    ECPRESENTATION_EXPORT void LoadRuleSets() const;
-
-protected:
-    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
-    ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
-    ECPRESENTATION_EXPORT void _InvalidateCache(Utf8CP rulesetId) override;
-    int _GetPriority() const override {return 100;}
-    IConnectionCP _GetDesignatedConnection() const override {return &m_connection;}
-
-public:
-    //! Create a new locater.
-    //! @param[in] connection Connection to ECDb that contains embedded rulesets.
-    static RefCountedPtr<EmbeddedRuleSetLocater> Create(IConnectionCR connection) {return new EmbeddedRuleSetLocater(connection);}
-};
-
-//=======================================================================================
 //! Ruleset locater that wraps another locater and changes all its located supplemental
 //! ruleset IDs to the lookup ruleset ID.
 // @bsiclass                                   Aidas.Vaiksnoras                05/2017
@@ -235,6 +207,29 @@ public:
 };
 
 //=======================================================================================
+//! Ruleset locater that wraps another locater and returns only non-supplemental rulesets
+// @bsiclass                                   Haroldas.Vitunskas              11/2018
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE NonSupplementalRuleSetLocater : RefCounted<RuleSetLocater>
+    {
+    private:
+        RuleSetLocaterCPtr m_locater;
+
+    private:
+        NonSupplementalRuleSetLocater(RuleSetLocater const& locater) : m_locater(&locater) {}
+
+    protected:
+        ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+        bvector<Utf8String> _GetRuleSetIds() const override { return m_locater->GetRuleSetIds(); }
+        void _InvalidateCache(Utf8CP rulesetId) override { const_cast<RuleSetLocater&>(*m_locater).InvalidateCache(rulesetId); }
+        int _GetPriority() const override { return m_locater->GetPriority(); }
+
+    public:
+        //! Create a new locater.
+        static RefCountedPtr<NonSupplementalRuleSetLocater> Create(RuleSetLocater const& locater) { return new NonSupplementalRuleSetLocater(locater); }
+    };
+
+//=======================================================================================
 //! Ruleset locater that stores in memory rulesets
 // @bsiclass                                   Aidas.Kilinskas                  05/2018
 //=======================================================================================
@@ -256,6 +251,44 @@ struct EXPORT_VTABLE_ATTRIBUTE SimpleRuleSetLocater : RefCounted<RuleSetLocater>
         ECPRESENTATION_EXPORT void AddRuleSet(PresentationRuleSetR presentationRuleSet);
         ECPRESENTATION_EXPORT void RemoveRuleSet(Utf8StringCR id);
         ECPRESENTATION_EXPORT void Clear();
+    };
+
+//=======================================================================================
+//! Ruleset locater that finds rulesets in iModelDb
+// @bsiclass                                    Haroldas.Vitunskas             10/2018
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE EmbeddedRuleSetLocater : RefCounted<RuleSetLocater>
+    {
+    typedef bpair<BeInt64Id, DateTime> RulesetInfo;
+    typedef bpair<RulesetInfo, PresentationRuleSetPtr> RulesetRecord;
+    typedef bpair<RulesetInfo, Utf8String> RulesetJsonRecord;
+
+    private:
+        IConnectionCR m_connection;
+        mutable bvector<RulesetRecord> m_cache;
+
+    private:
+        EmbeddedRuleSetLocater(IConnectionCR);
+        void LoadRuleSets() const;
+        size_t QueryRuleSetCount();
+        bvector<PresentationRuleSetPtr> GetCachedRuleSets() const;
+        bvector<RulesetJsonRecord> QueryRulesets() const;
+        RulesetJsonRecord QueryRulesetById(BeInt64Id id) const;
+
+    protected:
+        bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+        bvector<Utf8String> _GetRuleSetIds() const override;
+        void _InvalidateCache(Utf8CP rulesetId) override;
+        int _GetPriority() const override { return 100; };
+        IConnectionCP _GetDesignatedConnection() const override { return &m_connection; }
+
+    public:
+        //! Create a new locater.
+        //! @param[in] connection Connection to iModelDb that contains embedded rulesets.
+        ECPRESENTATION_EXPORT static RefCountedPtr<EmbeddedRuleSetLocater> Create(IConnectionCR connection) { return new EmbeddedRuleSetLocater(connection); }
+
+        //! Invalidates cache if rulesets have changed in Db
+        void InvalidateCacheIfNeeded();
     };
 
 //=======================================================================================

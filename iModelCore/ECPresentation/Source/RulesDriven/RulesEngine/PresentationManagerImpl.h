@@ -198,7 +198,7 @@ private:
     RulesetECExpressionsCache* m_rulesetECExpressionsCache;    
     UpdateHandler* m_updateHandler;
     UsedClassesListener* m_usedClassesListener;
-    bmap<Utf8String, RuleSetLocaterPtr> m_embeddedRuleSetLocaters;
+    bmap<Utf8String, bvector<RuleSetLocaterPtr>> m_embeddedRuleSetLocaters;
     
 private:
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavigationOptions const&);
