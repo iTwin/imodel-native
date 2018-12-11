@@ -204,7 +204,6 @@ void SyncInfo::CreateECTables()
     ECInstanceInfo::CreateTable(*m_dgndb);
     V8ECSchemaXmlInfo::CreateTable(*m_dgndb);
     V8ElementSecondaryECClassInfo::CreateTable(*m_dgndb);
-    ElementClassToAspectClassMapping::CreateTable(*m_dgndb);
     }
 
 //---------------------------------------------------------------------------------------
