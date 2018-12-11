@@ -38,7 +38,7 @@ uint64_t FileUtil::GetFileSize(BeFileNameCR filePath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String FileUtil::TruncateFileName(Utf8StringCR fileName)
     {
-#if defined(ANDROID)
+#if defined(ANDROID) || defined(__linux)
     // On Android, trim file name to NAME_MAX *bytes*
     return TruncateFileNameUtf8(fileName, NAME_MAX);
 #else
