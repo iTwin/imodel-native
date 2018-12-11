@@ -53,12 +53,12 @@ protected:
     KeySetCPtr _GetSelection(ECDbCR ecdb) const override
         {
         auto iter = m_selections.find(&ecdb);
-        return (m_selections.end() != iter) ? iter->second : nullptr;
+        return (m_selections.end() != iter) ? iter->second : KeySet::Create();
         }
     KeySetCPtr _GetSubSelection(ECDbCR ecdb) const override
         {
         auto iter = m_subSelections.find(&ecdb);
-        return (m_subSelections.end() != iter) ? iter->second : nullptr;
+        return (m_subSelections.end() != iter) ? iter->second : KeySet::Create();
         }
     void _AddListener(ISelectionChangesListener& listener) override {m_listeners.insert(&listener);}
     void _RemoveListener(ISelectionChangesListener& listener) override {m_listeners.erase(&listener);}
