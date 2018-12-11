@@ -46,11 +46,8 @@ public:
     PROFILES_EXPORT double GetEdgeRadius() const;
     PROFILES_EXPORT void SetEdgeRadius (double val);
 
-    PROFILES_EXPORT double GetHorizontalLegSlope() const;
-    PROFILES_EXPORT void SetHorizontalLegSlope (double val);
-
-    PROFILES_EXPORT double GetVerticalLegSlope() const;
-    PROFILES_EXPORT void SetVerticalLegSlope (double val);
+    PROFILES_EXPORT double GetLegSlope() const;
+    PROFILES_EXPORT void SetLegSlope (double val);
 
     }; // LShapeProfile
 

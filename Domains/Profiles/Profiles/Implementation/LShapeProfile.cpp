@@ -96,33 +96,17 @@ void LShapeProfile::SetEdgeRadius (double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double LShapeProfile::GetHorizontalLegSlope() const
+double LShapeProfile::GetLegSlope() const
     {
-    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_HorizontalLegSlope);
+    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_LegSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetHorizontalLegSlope (double val)
+void LShapeProfile::SetLegSlope (double val)
     {
-    SetPropertyValue (PRF_PROP_LShapeProfile_HorizontalLegSlope, ECN::ECValue (val));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-double LShapeProfile::GetVerticalLegSlope() const
-    {
-    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_VerticalLegSlope);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetVerticalLegSlope (double val)
-    {
-    SetPropertyValue (PRF_PROP_LShapeProfile_VerticalLegSlope, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_LegSlope, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
