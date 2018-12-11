@@ -8,6 +8,10 @@
 #include "ConverterInternal.h"
 
 #include <ScalableMesh/ScalableMeshLib.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
+#include "RuleSetEmbedder.h"
+
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 // We enter this namespace in order to avoid having to qualify all of the types, such as bmap, that are common
 // to bim and v8. The problem is that the V8 Bentley namespace is shifted in.
@@ -1007,11 +1011,22 @@ void RootModelConverter::UpdateCalculatedProperties()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            12/2017
+// @bsimethod                                   Carole.MacDonald            12/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 void RootModelConverter::CreatePresentationRules()
     {
-    //ElementClassToAspectClassMapping::CreatePresentationRules(GetDgnDb());
+    if (!m_dgndb->Schemas().ContainsSchema("IFC2x3"))
+        return;
+
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("IFC2x3", 1, 0, true, "IFC2x3 modifiers", "IFC2x3", "", false);
+    ContentModifierP modifier = new ContentModifier("IFC2x3", "IfcObject");
+    ruleset->AddPresentationRule(*modifier);
+    RelatedPropertiesSpecification *spec = new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "IFC2x3:IfcRelDefinesProperties_RelatedObjects", "IFC2x3:IfcRelDefinesByPropertiesProperties", "_none_", RelationshipMeaning::SameInstance);
+    modifier->AddRelatedProperty(*spec);
+    spec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "IFC2x3:IfcRelDefinesByPropertiesProperties_RelatingPropertyDefinition", "IFC2x3:IfcPropertySetDefinition", "", RelationshipMeaning::RelatedInstance, true));
+
+    RulesetEmbedder embedder(*m_dgndb);
+    embedder.InsertRuleset(*ruleset);
     }
 
 //---------------------------------------------------------------------------------------
