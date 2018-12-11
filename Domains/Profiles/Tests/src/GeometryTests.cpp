@@ -89,9 +89,11 @@ void GeometryTestCase::InsertProfileGeometry (typename T::CreateParams const& cr
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Callculates an offset to translate profile geometry in world space. Keeps track of
-* last profile placement point and offsets other profiles according to that.
-* Used to position profiles in rows at world space.
+* Function used to position multiple profiles in rows at world space.
+* Returns an offset to translate profile geometry in world space.
+* Transforms profile geometry in its local space to be positioned at bottom left corner
+* of its bounding box. Keeps track of last profile placement point and offsets other
+* profiles according to that.
 * @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DPoint3d offsetProfilePlacement (IGeometryPtr& geometryPtr, bool placeInNewRow)
@@ -113,6 +115,9 @@ static DPoint3d offsetProfilePlacement (IGeometryPtr& geometryPtr, bool placeInN
     BeAssert (geometryPtr->TryGetRange (range));
     double width = range.high.x - range.low.x;
     double height = range.high.y - range.low.y;
+
+    Transform translation = Transform::From (DPoint3d::From (width / 2.0, height / 2.0));
+    BeAssert (geometryPtr->TryTransformInPlace (translation));
 
     xPlacement += width + 1.0;
     if (height > maxHeight)
