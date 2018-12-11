@@ -65,14 +65,14 @@ public:
     ECPRESENTATION_EXPORT Utf8String GetNodeHash() const;
     //! Get the path from root to this node.
     bvector<Utf8String> const& GetPathFromRoot() const {return m_pathFromRoot;}
-    
+
     //! Compare this key with the supplied one.
     int Compare(NavNodeKey const& other) const {return _Compare(other);}
     //! Compare this key with the supplied one. Used for storing @ref NavNodeKey objects in maps and sets.
     bool operator<(NavNodeKey const& other) const {return Compare(other) < 0;}
     //! Is this node equal to the supplied one.
     bool operator==(NavNodeKey const& other) const {return 0 == Compare(other);}
-    //! Is this node similar to the supplied one. 
+    //! Is this node similar to the supplied one.
     //! @note Similar nodes can be unequal, e.g. label grouping node keys are similar if labels match, but they're not
     //! equal because they represent different nodes.
     bool IsSimilar(NavNodeKey const& other) const {return _IsSimilar(other);}
@@ -81,7 +81,7 @@ public:
 
     //! Get the type of the @ref NavNode.
     Utf8StringCR GetType() const {return m_type;}
-    
+
     //! Serialize this key to JSON.
     rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(allocator);}
 
@@ -136,7 +136,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECInstanceNodeKey : NavNodeKey
 private:
     ECClassInstanceKey m_instanceKey;
 private:
-    ECInstanceNodeKey(bvector<Utf8String> path, ECClassInstanceKey key) 
+    ECInstanceNodeKey(bvector<Utf8String> path, ECClassInstanceKey key)
         : NavNodeKey(NAVNODE_TYPE_ECInstanceNode, path), m_instanceKey(key)
         {}
 protected:
@@ -188,7 +188,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupingNodeKey : NavNodeKey
 private:
     uint64_t m_groupedInstancesCount;
 protected:
-    GroupingNodeKey(Utf8String type, bvector<Utf8String> path, uint64_t groupedInstancesCount) 
+    GroupingNodeKey(Utf8String type, bvector<Utf8String> path, uint64_t groupedInstancesCount)
         : NavNodeKey(type, path), m_groupedInstancesCount(groupedInstancesCount)
         {}
     GroupingNodeKey const* _AsGroupingNodeKey() const override {return this;}
@@ -208,7 +208,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECClassGroupingNodeKey : GroupingNodeKey
 private:
     ECClassCP m_class;
 private:
-    ECClassGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass, uint64_t groupedInstancesCount) 
+    ECClassGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass, uint64_t groupedInstancesCount)
         : GroupingNodeKey(NAVNODE_TYPE_ECClassGroupingNode, path, groupedInstancesCount), m_class(&ecClass)
         {}
 protected:
@@ -247,7 +247,7 @@ private:
     Utf8String m_propertyName;
     rapidjson::Document const* m_groupingValue;
 private:
-    ECPropertyGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass, Utf8String propertyName, rapidjson::Value const* groupingValue, uint64_t groupedInstancesCount) 
+    ECPropertyGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass, Utf8String propertyName, rapidjson::Value const* groupingValue, uint64_t groupedInstancesCount)
         : GroupingNodeKey(NAVNODE_TYPE_ECPropertyGroupingNode, path, groupedInstancesCount), m_class(&ecClass), m_propertyName(propertyName), m_groupingValue(nullptr)
         {
         if (nullptr != groupingValue)
@@ -294,7 +294,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LabelGroupingNodeKey : GroupingNodeKey
 private:
     Utf8String m_label;
 private:
-    LabelGroupingNodeKey(bvector<Utf8String> path, Utf8String label, uint64_t groupedInstancesCount) 
+    LabelGroupingNodeKey(bvector<Utf8String> path, Utf8String label, uint64_t groupedInstancesCount)
         : GroupingNodeKey(NAVNODE_TYPE_DisplayLabelGroupingNode, path, groupedInstancesCount), m_label(label)
         {}
 protected:
@@ -343,7 +343,7 @@ protected:
     virtual bool _IsEditable() const = 0;
     virtual bool _IsChecked() const = 0;
     virtual bool _IsCheckboxVisible() const = 0;
-    virtual bool _IsCheckboxEnabled() const = 0;  
+    virtual bool _IsCheckboxEnabled() const = 0;
     virtual bool _IsExpanded() const = 0;
 
     virtual void _SetInstanceId(uint64_t instanceId) = 0;
@@ -626,7 +626,7 @@ protected:
 public:
     //! Creates an empty set-driven @ref NavNodeKey container.
     ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create();
-    
+
     //! Creates @ref NavNodeKey container using the supplied @ref NavNodeKey set pointer.
     //! @param[in] set The set to create the container from.
     //! @note The container does not take ownership of the provided set - it has to remain valid
@@ -667,13 +667,13 @@ protected:
 public:
     //! Creates an empty vector-driven @ref NavNodeKey container.
     ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create();
-    
+
     //! Creates @ref NavNodeKey container using the supplied @ref NavNodeKey vector.
     //! @param[in] list The vector to create the container from.
     //! @note The container does not take ownership of the provided list - it has to remain valid
     //! for the container's lifetime and destroyed afterwards by the caller.
     ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeyList const* list);
-        
+
     //! Creates @ref NavNodeKey container using the supplied @ref NavNodeKey vector.
     //! @param[in] list The vector to create the container from.
     ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeyList list);
@@ -687,7 +687,7 @@ typedef GroupedInstanceKeysList const& GroupedInstanceKeysListCR;
 //! @ingroup GROUP_Presentation_Navigation
 // @bsiclass                                    Grigas.Petraitis                09/2016
 //=======================================================================================
-struct INavNodesFactory
+struct INavNodesFactory : IRefCounted
 {
 protected:
     virtual NavNodePtr _CreateECInstanceNode(IConnectionCR, Utf8StringCR, ECClassId, ECInstanceId, Utf8CP label) const = 0;
@@ -699,9 +699,6 @@ protected:
     virtual NavNodePtr _CreateCustomNode(Utf8StringCR, Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const = 0;
 
 public:
-    //! Virtual destructor.
-    virtual ~INavNodesFactory() {}
-
     //! Creates an ECInstance node.
     //! @param[in] connection The connection that the instance belongs to.
     //! @param[in] locale The locale used to localize the node
@@ -712,7 +709,7 @@ public:
         {
         return _CreateECInstanceNode(connection, locale, classId, instanceId, label);
         }
-    
+
     //! Creates an ECInstance node.
     //! @param[in] connectionId Guid of the connection that the instance belongs to.
     //! @param[in] locale The locale used to localize the node
@@ -740,7 +737,7 @@ public:
     //! @param[in] relationshipClass The ECRelationship to create the node for.
     //! @param[in] label The label of the node.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateECRelationshipGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECRelationshipClassCR relationshipClass, 
+    NavNodePtr CreateECRelationshipGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECRelationshipClassCR relationshipClass,
         Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
         return _CreateECRelationshipGroupingNode(connectionId, locale, relationshipClass, label, groupedInstanceKeys);
@@ -749,7 +746,7 @@ public:
     //! Creates an ECProperty grouping node.
     //! @param[in] connectionId Guid of the connection that this ECProperty is persisted in.
     //! @param[in] locale The locale used to localize the node
-    //! @param[in] ecClass The ECClass of the ECProperty. If the property belongs to a base class, but the grouped instances 
+    //! @param[in] ecClass The ECClass of the ECProperty. If the property belongs to a base class, but the grouped instances
     //! are of derived class, this should be the derived class.
     //! @param[in] ecProperty The ECProperty to create the node for.
     //! @param[in] label The label of the node.
@@ -757,7 +754,7 @@ public:
     //! @param[in] groupingValue The grouping value or range index if creating a range grouping node.
     //! @param[in] isRangeGrouping Should a range grouping node be created.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateECPropertyGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, ECPropertyCR ecProperty, 
+    NavNodePtr CreateECPropertyGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, ECPropertyCR ecProperty,
         Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
         return _CreateECPropertyGroupingNode(connectionId, locale, ecClass, ecProperty, label, imageId, groupingValue, isRangeGrouping, groupedInstanceKeys);

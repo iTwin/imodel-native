@@ -282,7 +282,7 @@ void  SelectionManager::RemoveSyncHandler(SelectionSyncHandlerR handler)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, 
+folly::Future<folly::Unit> SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection,
     KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp) const
     {
     // create the selection changed event
@@ -362,7 +362,7 @@ folly::Future<folly::Unit> SelectionManager::_ChangeSelection(ECDbCR ecdb, Utf8C
         BeAssert(false);
         return folly::makeFuture();
         }
-    
+
     BeMutexHolder lock(m_mutex);
     if (!GetStorage(*connection, isSubSelection).ChangeSelection(source, keys))
         return folly::makeFuture();
@@ -514,13 +514,12 @@ folly::Future<folly::Unit> SelectionSyncHandler::_OnSelectionChanged(SelectionCh
     // create the selection info
     SelectionInfoCPtr selectionInfo = SelectionInfo::Create(evt.GetSourceName(), evt.IsSubSelection());
     KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetECDb()) : m_manager->GetSelection(evt.GetConnection().GetECDb());
-    
     Utf8String evtGuid = BeGuid(true).ToString();
     GetLogger().debugv("_OnSelectionChanged [%s]: source = '%s', sub = '%s', keys count = %" PRIu64,
         evtGuid.c_str(), evt.GetSourceName().c_str(), evt.IsSubSelection() ? "true" : "false", (uint64_t)inputKeys->size());
 
     // get the default content descriptor
-    return IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), 
+    return IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(),
         contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).then([this, evtGuid, evt = SelectionChangedEventCPtr(&evt)](ContentDescriptorCPtr defaultDescriptor)
         {
         if (defaultDescriptor.IsNull())
@@ -546,8 +545,8 @@ folly::Future<folly::Unit> SelectionSyncHandler::_OnSelectionChanged(SelectionCh
             bvector<ECClassInstanceKey> selectedKeys;
             for (ContentSetItemCPtr const& record : content->GetContentSet())
                 std::copy(record->GetKeys().begin(), record->GetKeys().end(), std::back_inserter(selectedKeys));
-            
-            GetLogger().debugv("_OnSelectionChanged [%s]: Set size = %" PRIu64 ", keys count = %" PRIu64, 
+
+            GetLogger().debugv("_OnSelectionChanged [%s]: Set size = %" PRIu64 ", keys count = %" PRIu64,
                 evtGuid.c_str(), (uint64_t)content->GetContentSet().GetSize(), (uint64_t)selectedKeys.size());
             return CallSelectInstances(*evt, selectedKeys);
             });

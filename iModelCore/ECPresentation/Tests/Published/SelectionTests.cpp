@@ -410,7 +410,6 @@ TEST_F(AsyncSelectionTest, ChangeSelectionShouldResolveWhenAllListenersAreResolv
     NavNodeKeyPtr key1 = TestNodeKey::Create("1");
     m_manager->AddToSelection(s_project->GetECDb(), "TestSource", false, *key1);
     ASSERT_EQ(1, m_manager->GetSelection(s_project->GetECDb())->size());
-    
     NavNodeKeyPtr key2 = TestNodeKey::Create("2");
     folly::Promise<folly::Unit> promise1;
     folly::Promise<folly::Unit> promise2;
@@ -423,7 +422,6 @@ TEST_F(AsyncSelectionTest, ChangeSelectionShouldResolveWhenAllListenersAreResolv
         return promise2.getFuture();
         };
     auto changeSelection = m_manager->ChangeSelection(s_project->GetECDb(), "TestSource2", false, *key2, CreateExtendedData());
-    
     ASSERT_FALSE(changeSelection.isReady());
 
     promise1.setValue();

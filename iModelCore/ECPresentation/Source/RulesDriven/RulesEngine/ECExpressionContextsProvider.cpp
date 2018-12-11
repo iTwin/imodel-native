@@ -154,10 +154,10 @@ struct NodeECInstanceContextEvaluator : PropertySymbol::ContextEvaluator
 {
 private:
     IConnectionCR m_connection;
-    JsonNavNodeCPtr m_node;
-    NodeECInstanceContextEvaluator(IConnectionCR connection, JsonNavNodeCR node) : m_connection(connection), m_node(&node) {}
+    NavNodeCPtr m_node;
+    NodeECInstanceContextEvaluator(IConnectionCR connection, NavNodeCR node) : m_connection(connection), m_node(&node) {}
 public:
-    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(IConnectionCR connection, JsonNavNodeCR node) {return new NodeECInstanceContextEvaluator(connection, node);}
+    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(IConnectionCR connection, NavNodeCR node) {return new NodeECInstanceContextEvaluator(connection, node);}
     ExpressionContextPtr _GetContext() override
         {
         ECInstanceNodeKey const* key = m_node->GetKey()->AsECInstanceNodeKey();
@@ -228,8 +228,8 @@ struct NodeSymbolsProvider : IECSymbolProvider
     struct Context : ProviderContext
         {
         IConnectionCR m_connection;
-        JsonNavNodeCPtr m_node;
-        Context(IConnectionCR connection, JsonNavNodeCP node) : m_connection(connection), m_node(node) {}
+        NavNodeCPtr m_node;
+        Context(IConnectionCR connection, NavNodeCP node) : m_connection(connection), m_node(node) {}
         };
 
 private:
@@ -319,7 +319,7 @@ protected:
             }
         else
             {
-            JsonNavNodeCR node = *m_context.m_node;
+            NavNodeCR node = *m_context.m_node;
             NavNodeExtendedData nodeExtendedData(node);
 
             ECClassCP nodeClass = nullptr;
@@ -391,15 +391,15 @@ private:
     RulesEngineRootSymbolsContext& m_rootContext;
     IConnectionCR m_connection;
     Utf8String m_locale;
-    INavNodeLocaterCR m_locater;
+    INavNodeLocaterCP m_locater;
     NavNodeKeyCP m_key;
     SymbolExpressionContextPtr m_context;
-    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, Utf8String locale, INavNodeLocaterCR locater, NavNodeKeyCP key)
+    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, Utf8String locale, INavNodeLocaterCP locater, NavNodeKeyCP key)
         : m_rootContext(rootContext), m_connection(connection), m_locale(locale), m_locater(locater), m_key(key), m_context(nullptr)
         {}
 public:
     static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, 
-        Utf8String locale, INavNodeLocaterCR locater, NavNodeKeyCP key)
+        Utf8String locale, INavNodeLocaterCP locater, NavNodeKeyCP key)
         {
         return new NodeContextEvaluator(rootContext, connection, locale, locater, key);
         }
@@ -408,7 +408,7 @@ public:
         if (m_context.IsValid())
             return m_context;
 
-        JsonNavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(m_connection, m_locale, *m_key) : nullptr;
+        JsonNavNodeCPtr node = (nullptr != m_key && nullptr != m_locater) ? m_locater->LocateNode(m_connection, m_locale, *m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
             ECInstanceNodeKey const* instanceKey = m_key->AsECInstanceNodeKey();

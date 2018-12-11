@@ -276,7 +276,7 @@ struct RulesDrivenECPresentationManagerImpl::ECDbCaches : IConnectionsListener, 
 private:
     IConnectionManagerCR m_connections;
     mutable bmap<Utf8String, Caches*> m_caches;
-    
+
 private:
     Caches& GetCaches(IConnectionCR connection) const
         {
@@ -298,7 +298,7 @@ protected:
         }
     ECSqlStatementCache& _GetECSqlStatementCache(IConnectionCR connection) override {return GetStatementsCache(connection);}
 public:
-    ECDbCaches(IConnectionManagerCR connections) 
+    ECDbCaches(IConnectionManagerCR connections)
         : m_connections(connections)
         {
         m_connections.AddListener(*this);
@@ -323,7 +323,7 @@ private:
     RulesDrivenECPresentationManagerImpl& m_manager;
     IConnectionCR m_connection;
     RulesDrivenECPresentationManager::NavigationOptions m_options;
-    
+
 private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                01/2018
@@ -412,20 +412,20 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parent) const
         {
+        RulesPreprocessor preprocessor(m_manager.m_connections, context.GetConnection(), context.GetRuleset(),
+            context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
         NavNodesProviderPtr provider;
         if (nullptr == parent)
             {
-            RulesPreprocessor::RootNodeRuleParameters params(m_manager.m_connections, context.GetConnection(), context.GetRuleset(), TargetTree_MainTree,
-                context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
-            RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
+            RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
+            RootNodeRuleSpecificationsList specs = preprocessor.GetRootNodeSpecifications(params);
             if (!specs.empty())
                 provider = MultiSpecificationNodesProvider::Create(context, specs);
             }
         else
             {
-            RulesPreprocessor::ChildNodeRuleParameters params(m_manager.m_connections, context.GetConnection(), *parent, context.GetRuleset(), TargetTree_MainTree,
-                context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
-            ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
+            RulesPreprocessor::ChildNodeRuleParameters params(*parent, TargetTree_MainTree);
+            ChildNodeRuleSpecificationsList specs = preprocessor.GetChildNodeSpecifications(params);
             if (!specs.empty())
                 provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
@@ -619,17 +619,20 @@ void RulesDrivenECPresentationManagerImpl::_OnConnectionEvent(ConnectionEvent co
     {
     if (evt.GetEventType() == ConnectionEventType::Opened)
         {
-#ifdef WIP_EMBEDDED_SUPPLEMENTAL_RULESETS
-        RuleSetLocaterPtr locater = m_embeddedRuleSetLocaters[evt.GetConnection().GetId()] = SupplementalRuleSetLocater::Create(*EmbeddedRuleSetLocater::Create(evt.GetConnection()));
-        GetLocaters().RegisterLocater(*locater);
-#endif
+        RefCountedPtr<EmbeddedRuleSetLocater> embeddedLocater = EmbeddedRuleSetLocater::Create(evt.GetConnection());
+        RuleSetLocaterPtr supplementalLocater = SupplementalRuleSetLocater::Create(*embeddedLocater);
+        RuleSetLocaterPtr nonsupplementalLocater = NonSupplementalRuleSetLocater::Create(*embeddedLocater);
+        m_embeddedRuleSetLocaters[evt.GetConnection().GetId()] = { supplementalLocater, nonsupplementalLocater };
+        GetLocaters().RegisterLocater(*supplementalLocater);
+        GetLocaters().RegisterLocater(*nonsupplementalLocater);
         }
     else if (evt.GetEventType() == ConnectionEventType::Closed)
         {
         auto iter = m_embeddedRuleSetLocaters.find(evt.GetConnection().GetId());
         if (m_embeddedRuleSetLocaters.end() != iter)
             {
-            GetLocaters().UnregisterLocater(*iter->second);
+            for (RuleSetLocaterPtr locater : iter->second )
+                GetLocaters().UnregisterLocater(*locater);
             m_embeddedRuleSetLocaters.erase(iter);
             }
         m_contentCache->ClearCache(evt.GetConnection());
@@ -811,7 +814,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
     if (!GetNodesCache().IsHierarchyLevelCached(connection.GetId(), options.GetRulesetId(), options.GetLocale()))
         GetRootNodes(connection, PageOptions(), options, cancelationToken);
 
-    NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(), 
+    NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(),
         options.GetLocale(), options.GetDisableUpdates());
     if (provider.IsNull())
         return bvector<NavNodeCPtr>();
@@ -874,7 +877,7 @@ private:
             }
         return instanceKeys;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                07/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -884,7 +887,7 @@ private:
         }
 
 public:
-    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl& manager, IConnectionCR connection, RulesDrivenECPresentationManager::ContentOptions const& options) 
+    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl& manager, IConnectionCR connection, RulesDrivenECPresentationManager::ContentOptions const& options)
         : m_locater(manager, connection, ToNavigationOptions(options))
         {}
 
@@ -947,9 +950,9 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 
     // get content specifications
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Get specifications", NativeLogging::LOG_TRACE);
-    RulesPreprocessor::ContentRuleParameters params(m_connections, connection, inputKeys, key.GetPreferredDisplayType(), 
-        selectionInfo, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache, *m_nodesCache);
-    ContentRuleInputKeysList specs = RulesPreprocessor::GetContentSpecifications(params);
+    RulesPreprocessor preprocessor(m_connections, connection, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache);
+    RulesPreprocessor::ContentRuleParameters params(inputKeys, key.GetPreferredDisplayType(), selectionInfo, m_nodesCache);
+    ContentRuleInputKeysList specs = preprocessor.GetContentSpecifications(params);
     _l2 = nullptr;
 
     ContentRulesSpecificationsInputHandler inputHandler(*this, connection, ruleset->GetRuleSetId().c_str());
@@ -1011,7 +1014,7 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
 
     // locate the classes
     ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &polymorphicallyRelatedClassesCache, &statementsCache, &ecexpressionsCache);
-    ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection, 
+    ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection,
         *ruleset, options.GetLocale(), preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
     return ContentClassesLocater(locaterContext).Locate(classes);
     }
@@ -1223,4 +1226,19 @@ void RulesDrivenECPresentationManagerImpl::_OnNodeCollapsed(IConnectionCR connec
 void RulesDrivenECPresentationManagerImpl::_OnAllNodesCollapsed(IConnectionCR connection, NavigationOptions const& options, ICancelationTokenCR)
     {
     GetNodesCache().ResetExpandedNodes(connection.GetId().c_str(), options.GetRulesetId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Lukasonok                11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IRulesPreprocessorPtr RulesDrivenECPresentationManagerImpl::_GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const
+    {
+    PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, rulesetId.c_str());
+    if (!ruleset.IsValid())
+        return nullptr;
+
+    IUserSettings const& settings = GetUserSettingsManager().GetSettings(ruleset->GetRuleSetId().c_str());
+    ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
+
+    return new RulesPreprocessor(m_connections, connection, *ruleset, locale, settings, usedSettingsListener, ecexpressionsCache);
     }
