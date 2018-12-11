@@ -24,7 +24,7 @@ always:
 #----------------------------------------------------------------------
 PchCompiland        = $(appSrc)ORDBridgeInternal.cpp
 PchOutputDir        = $(o)
-PchExtraOptions     = -Zm160
+PchExtraOptions     = -Zm160 -permissive
 PchExplicitDepends  = $(MultiCompileDepends)
 
 %if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
@@ -38,6 +38,8 @@ CompileOptionsMki =$(SrcRoot)Civil/iModelBridges/ORDBridge/ORDBridge.mki
 
 CCPchOpts = $(UsePrecompiledHeaderOptions)
 CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+CCompOpts + -permissive
 
 #--------------------------------------------------------------------------------------
 #   Compile source
