@@ -85,6 +85,36 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJson)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithPropertyNamesSetToNone)
+    {
+    static Utf8CP jsonString = R"({
+        "propertyNames": "_none_"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    ASSERT_FALSE(json.isNull());
+    
+    RelatedPropertiesSpecification spec;
+    ASSERT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("_none_", spec.GetPropertyNames().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonWithPropertyNamesSetToNone)
+    {
+    RelatedPropertiesSpecification spec;
+    spec.SetPropertyNames("_none_");
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "propertyNames": "_none_"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXml)

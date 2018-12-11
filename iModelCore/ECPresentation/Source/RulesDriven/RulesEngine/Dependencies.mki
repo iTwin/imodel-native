@@ -17,6 +17,7 @@ RulesEngineOutputDirectory      = $(OutputDirectory)RulesEngine/
 # Dependencies
 #--------------------------------------------------------------------------------------
 RulesEnginePublicHeaders      = $(RulesEnginePublicApiDirectory)PresentationManager.h               \
+                                $(RulesEnginePublicApiDirectory)IRulesPreprocessor.h                \
                                 $(RulesEnginePublicApiDirectory)RuleSetLocater.h                    \
                                 $(RulesEnginePublicApiDirectory)UserSettings.h                      \
                                 $(RulesEnginePublicApiDirectory)ECInstanceChangeEvents.h            \

@@ -16,6 +16,8 @@ ECPRESENTATION_TYPEDEFS(IConnection)
 ECPRESENTATION_REFCOUNTED_PTR(IConnection)
 
 ECPRESENTATION_TYPEDEFS(IECPresentationManager)
+ECPRESENTATION_TYPEDEFS(IRulesPreprocessor)
+ECPRESENTATION_REFCOUNTED_PTR(IRulesPreprocessor)
 ECPRESENTATION_TYPEDEFS(PageOptions)
 ECPRESENTATION_TYPEDEFS(RelatedClass)
 ECPRESENTATION_TYPEDEFS(KeySet)
@@ -26,6 +28,8 @@ ECPRESENTATION_REFCOUNTED_PTR(NavNodeKey)
 ECPRESENTATION_TYPEDEFS(NavNode)
 ECPRESENTATION_REFCOUNTED_PTR(NavNode)
 ECPRESENTATION_TYPEDEFS(INavNodeLocater)
+ECPRESENTATION_TYPEDEFS(INavNodesFactory)
+ECPRESENTATION_REFCOUNTED_PTR(INavNodesFactory)
 
 ECPRESENTATION_TYPEDEFS(Content)
 ECPRESENTATION_REFCOUNTED_PTR(Content)
@@ -171,7 +175,7 @@ public:
 
     //! Checks whether this object is equal to the supplied one.
     bool operator==(RelatedClass const& other) const {return IsEqual(other);}
-    
+
     //! Checks whether this object is not equal to the supplied one.
     bool operator!=(RelatedClass const& other) const {return !IsEqual(other);}
 
@@ -183,7 +187,7 @@ public:
 
     //! Set the source class.
     void SetSourceClass(ECN::ECClassCR sourceClass) {m_source = &sourceClass;}
-    
+
     //! Get the source class.
     ECN::ECClassCP GetSourceClass() const {return m_source;}
 
@@ -204,7 +208,7 @@ public:
 
     //! Set the relationship used to access the related class.
     void SetRelationship(ECN::ECRelationshipClassCR relationship) {m_relationship = &relationship;}
-    
+
     //! Set the alias for the relationship.
     void SetRelationshipAlias(Utf8String alias) {m_relationshipAlias = alias;}
 

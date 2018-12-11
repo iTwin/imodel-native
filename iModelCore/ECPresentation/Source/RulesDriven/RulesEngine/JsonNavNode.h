@@ -111,7 +111,7 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                09/2016
 +===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE JsonNavNodesFactory : INavNodesFactory
+struct EXPORT_VTABLE_ATTRIBUTE JsonNavNodesFactory : RefCounted<INavNodesFactory>
 {
 protected:
     virtual NavNodePtr _CreateECInstanceNode(IConnectionCR db, Utf8StringCR locale, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const override {return CreateECInstanceNode(db, locale, classId, instanceId, label);}
