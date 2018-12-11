@@ -19,6 +19,7 @@
 #include <BeHttp\HttpClient.h>
 #include <BeXml\BeXml.h>
 
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 /*----------------------------------------------------------------------------+
@@ -179,83 +180,27 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& pro
 
     // Check if the connect token callback is supplied
     Utf8String token;
-    if(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyConnectToken(token))
+    if(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyAuthHeaderValue(token, Utf8String("")))
         {
-        BeAssert(!token.empty()); // invalid token
+        BeAssert(token.empty()); // Previous call should not have fetched the token yet
+
+        Utf8String authTypes[3] = { Utf8String("Authorization: Token "), Utf8String("Authorization: Bearer "), Utf8String("") };
+
+        auto authorization = authTypes[ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyAuthTokenType()];
+
+        if(authorization == authTypes[1])
+            {
+            BeAssert(false); // OIDC not yet supported
+            return;
+            }
 
         // Set the token callback in RDS (will be called before attempting to query the server)
-        ConnectTokenManager& ctm = ConnectTokenManager::GetInstance();
-        ctm.SetTokenCallback([] (Utf8StringR token, time_t& timer)
-                             {
-                             ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyConnectToken(token);
-                             timer = std::time(nullptr);
-
-                             //CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
-                             //CallStatus status = APIERR_SUCCESS;
-                             //
-                             //bool installed;
-                             //status = CCApi_IsInstalled(api, &installed);
-                             //if(!installed)
-                             //    {
-                             //    std::cout << "Connection client does not seem to be installed" << std::endl;
-                             //    CCApi_FreeApi(api);
-                             //    return;
-                             //    }
-                             //bool running = false;
-                             //status = CCApi_IsRunning(api, &running);
-                             //if(status != APIERR_SUCCESS || !running)
-                             //    {
-                             //    std::cout << "Connection client does not seem to be running" << std::endl;
-                             //    CCApi_FreeApi(api);
-                             //    return;
-                             //    }
-                             //bool loggedIn = false;
-                             //status = CCApi_IsLoggedIn(api, &loggedIn);
-                             //if(status != APIERR_SUCCESS || !loggedIn)
-                             //    {
-                             //    std::cout << "Connection client does not seem to be logged in" << std::endl;
-                             //    CCApi_FreeApi(api);
-                             //    return;
-                             //    }
-                             //bool acceptedEula = false;
-                             //status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
-                             //if(status != APIERR_SUCCESS || !acceptedEula)
-                             //    {
-                             //    std::cout << "Connection client user does not seem to have accepted EULA" << std::endl;
-                             //    CCApi_FreeApi(api);
-                             //    return;
-                             //    }
-                             //bool sessionActive = false;
-                             //status = CCApi_IsUserSessionActive(api, &sessionActive);
-                             //if(status != APIERR_SUCCESS || !sessionActive)
-                             //    {
-                             //    std::cout << "Connection client does not seem to have an active session" << std::endl;
-                             //    CCApi_FreeApi(api);
-                             //    return;
-                             //    }
-                             //
-                             //LPCWSTR relyingParty = L"https://connect-wsg20.bentley.com";//;L"https:://qa-ims.bentley.com"
-                             //UINT32 maxTokenLength = 16384;
-                             //LPWSTR lpwstrToken = new WCHAR[maxTokenLength];
-                             //
-                             //status = CCApi_GetSerializedDelegateSecurityToken(api, relyingParty, lpwstrToken, maxTokenLength);
-                             //if(status != APIERR_SUCCESS)
-                             //    {
-                             //    CCApi_FreeApi(api);
-                             //    return;
-                             //    }
-                             //
-                             //char* charToken = new char[maxTokenLength];
-                             //wcstombs(charToken, lpwstrToken, maxTokenLength);
-                             //
-                             //token = "Authorization: Token ";
-                             //token.append(charToken);
-                             //timer = std::time(nullptr);
-                             //
-                             //delete lpwstrToken;
-                             //delete charToken;
-                             //CCApi_FreeApi(api);
-                             });
+        ConnectTokenManager::GetInstance().SetTokenCallback([authorization] (Utf8StringR token, time_t& timer)
+            {
+            ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyAuthHeaderValue(token, RealityDataService::GetServerName());
+            token = authorization + token;
+            timer = std::time(nullptr);
+            });
         }
 
     }
