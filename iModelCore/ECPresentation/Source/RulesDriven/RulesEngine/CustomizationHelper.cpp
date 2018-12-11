@@ -34,9 +34,10 @@ ExpressionContext& NavNodeCustomizer::GetNodeExpressionContext()
 bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
     {
     bool didOverride = false;
-    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
-        m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
-    LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
+    RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+    RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
+    LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
     if (nullptr != labelOverride)
         {
         ECValue value;
@@ -65,9 +66,10 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
 bool NavNodeCustomizer::ApplyStyleOverride()
     {
     bool didOverride = false;
-    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
-        m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
-    StyleOverrideCP styleOverride = RulesPreprocessor::GetStyleOverride(params);
+    RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+    RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
+    StyleOverrideCP styleOverride = preprocessor.GetStyleOverride(params);
     if (nullptr != styleOverride)
         {
         ECValue value;
@@ -103,9 +105,10 @@ bool NavNodeCustomizer::ApplyStyleOverride()
 bool NavNodeCustomizer::ApplyImageIdOverride()
     {
     bool didOverride = false;
-    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
-        m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
-    ImageIdOverrideCP imageIdOverride = RulesPreprocessor::GetImageIdOverride(params);
+    RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+    RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
+    ImageIdOverrideCP imageIdOverride = preprocessor.GetImageIdOverride(params);
     if (nullptr != imageIdOverride)
         {
         ECValue value;
@@ -156,9 +159,10 @@ bool NavNodeCustomizer::ApplyLocalization()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodeCustomizer::ApplyCheckboxRules()
     {
-    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
-        m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
-    CheckBoxRuleCP rule = RulesPreprocessor::GetCheckboxRule(params);
+    RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+    RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
+    CheckBoxRuleCP rule = preprocessor.GetCheckboxRule(params);
     if (nullptr == rule)
         return false;
 

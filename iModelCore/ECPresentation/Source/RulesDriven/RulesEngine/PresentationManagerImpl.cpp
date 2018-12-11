@@ -412,20 +412,20 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parent) const
         {
+        RulesPreprocessor preprocessor(m_manager.m_connections, context.GetConnection(), context.GetRuleset(),
+            context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
         NavNodesProviderPtr provider;
         if (nullptr == parent)
             {
-            RulesPreprocessor::RootNodeRuleParameters params(m_manager.m_connections, context.GetConnection(), context.GetRuleset(), TargetTree_MainTree,
-                context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
-            RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
+            RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
+            RootNodeRuleSpecificationsList specs = preprocessor.GetRootNodeSpecifications(params);
             if (!specs.empty())
                 provider = MultiSpecificationNodesProvider::Create(context, specs);
             }
         else
             {
-            RulesPreprocessor::ChildNodeRuleParameters params(m_manager.m_connections, context.GetConnection(), *parent, context.GetRuleset(), TargetTree_MainTree,
-                context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
-            ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
+            RulesPreprocessor::ChildNodeRuleParameters params(*parent, TargetTree_MainTree);
+            ChildNodeRuleSpecificationsList specs = preprocessor.GetChildNodeSpecifications(params);
             if (!specs.empty())
                 provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
@@ -950,9 +950,9 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 
     // get content specifications
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Get specifications", NativeLogging::LOG_TRACE);
-    RulesPreprocessor::ContentRuleParameters params(m_connections, connection, inputKeys, key.GetPreferredDisplayType(), 
-        selectionInfo, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache, *m_nodesCache);
-    ContentRuleInputKeysList specs = RulesPreprocessor::GetContentSpecifications(params);
+    RulesPreprocessor preprocessor(m_connections, connection, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache);
+    RulesPreprocessor::ContentRuleParameters params(inputKeys, key.GetPreferredDisplayType(), selectionInfo, *m_nodesCache);
+    ContentRuleInputKeysList specs = preprocessor.GetContentSpecifications(params);
     _l2 = nullptr;
 
     ContentRulesSpecificationsInputHandler inputHandler(*this, connection, ruleset->GetRuleSetId().c_str());
