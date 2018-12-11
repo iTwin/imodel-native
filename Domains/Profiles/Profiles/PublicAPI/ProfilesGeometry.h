@@ -19,6 +19,7 @@ public:
 
     PROFILES_EXPORT static IGeometryPtr CreateCShape (CShapeProfileCPtr profile);
     PROFILES_EXPORT static IGeometryPtr CreateIShape (IShapeProfileCPtr profile);
+    PROFILES_EXPORT static IGeometryPtr CreateTShape (TShapeProfileCPtr profile);
     PROFILES_EXPORT static IGeometryPtr CreateZShape (ZShapeProfileCPtr profile);
 
     };

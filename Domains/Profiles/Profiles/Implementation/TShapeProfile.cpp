@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\TShapeProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -110,6 +111,14 @@ BentleyStatus TShapeProfile::_Validate() const
         return BSIERROR;
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr TShapeProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateTShape (this);
     }
 
 /*---------------------------------------------------------------------------------**//**
