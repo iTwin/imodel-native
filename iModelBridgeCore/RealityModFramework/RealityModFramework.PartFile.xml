@@ -48,7 +48,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatformToolsNoCC" BentleyBuildMakeFile="RealityPlatformToolsNoCC\RealityPlatformToolsNoCC.mke" OnlyPlatforms="x64, androidarm7a, AndroidArm64" ApiNumber="B02">
+    <Part Name="RealityPlatformToolsNoCC" BentleyBuildMakeFile="RealityPlatformToolsNoCC\RealityPlatformToolsNoCC.mke" OnlyPlatforms="x64, androidarm7a, AndroidArm64, iOSArm64" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
