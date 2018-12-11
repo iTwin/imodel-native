@@ -120,7 +120,7 @@ TEST_F(UsageDbTests, OpenOrCreate_OpenAndUpdateExistingDatabase_Success)
 
     Db testDb;
     Statement stmt;
-    double testSchemaVersion = LICENSE_CLIENT_SCHEMA_VERSION - 0.1;
+    double testSchemaVersion = .90;
     Utf8String updateStatement;
     BeFileName tmpDir;
     BeTest::GetHost().GetTempDir(tmpDir);

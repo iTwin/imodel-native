@@ -35,7 +35,7 @@ private:
 	BentleyStatus SetUpOfflineGraceTable();
     BentleyStatus SetUpTables();
 
-    BentleyStatus SetEimVerion();
+    BentleyStatus SetEimVersion();
     BentleyStatus UpdateDb();
     BentleyStatus UpdateDbTables();
 

@@ -78,7 +78,7 @@ BeFileName GetUsageDbPath()
     {
     BeFileName path;
     BeTest::GetHost().GetTempDir(path);
-    path.AppendToPath(L"usage.db");
+    path.AppendToPath(L"License.db");
 
     return path;
     }
@@ -114,7 +114,7 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
     }
 
 ClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
-{
+    {
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
@@ -132,7 +132,7 @@ ClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITim
 		"",
 		"",
 		proxy);
-}
+    }
 
 
 
@@ -142,9 +142,9 @@ ClientImplPtr CreateTestClient(bool signIn)
     }
 
 ClientImplPtr CreateFreeTestClient(bool signIn)
-{
+    {
 	return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-}
+    }
 
 ClientImplPtr CreateTestClient(bool signIn, UrlProvider::Environment env)
     {
@@ -175,19 +175,19 @@ void ClientTests::SetUpTestCase()
     BeSQLiteLib::Initialize(tmpDir);
     }
 
-TEST_F(ClientTests, StartApplication_Success)
+TEST_F(ClientTests, StartApplication_StopApplication_Success)
     {
     auto client = CreateTestClient(true);
-    EXPECT_NE((int) client->StartApplication(), (int) LicenseStatus::Error);
-    client->StopApplication();
+    EXPECT_NE((int) client->StartApplication(), (int) LicenseStatus::Error);    
+    EXPECT_SUCCESS(client->StopApplication());
     }
 
-TEST_F(ClientTests, StartFreeApplication_Success)
+TEST_F(ClientTests, DISABLED_StartFreeApplication_StopApplication_Success)
 	{
 	auto client = CreateFreeTestClient(true);
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-	client->StopApplication();
-	}
+    EXPECT_SUCCESS(client->StopApplication());
+    }
 
 TEST_F(ClientTests, GetCertificate_Success)
     {
@@ -197,18 +197,6 @@ TEST_F(ClientTests, GetCertificate_Success)
         
     EXPECT_NO_THROW(cert = client->GetCertificate().get());
     EXPECT_NE(cert.empty(), true);
-    }
-
-TEST_F(ClientTests, StopApplication_Success)
-    {
-    auto client = CreateTestClient(true);
-    using namespace std::chrono_literals;
-
-    client->StartApplication();
-
-    std::this_thread::sleep_for(10s);
-
-    EXPECT_SUCCESS(client->StopApplication());
     }
 
 TEST_F(ClientTests, GetPolicy_Success)
@@ -319,7 +307,7 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
 	ASSERT_NE(client->GetPolicyWithId(validPolicy3->GetPolicyId()), nullptr);
 	}
 
-TEST_F(ClientTests, SendUsage_Success)
+TEST_F(ClientTests, SendUsageLogs_Success)
     {
     auto client = CreateTestClient(true, UrlProvider::Environment::Qa);
     ASSERT_NE(client, nullptr);
@@ -350,10 +338,10 @@ TEST_F(ClientTests, SendUsage_Success)
 
     EXPECT_SUCCESS(writter.WriteToFile(path));
 
-    EXPECT_NO_THROW(client->SendUsage(path, "1004175881").wait());
+    EXPECT_NO_THROW(client->SendUsageLogs(path, "1004175881").wait());
     }
 
-TEST_F(ClientTests, SendFeatures_Success)
+TEST_F(ClientTests, SendFeatureLogs_Success)
     {
     auto client = CreateTestClient(true, UrlProvider::Environment::Qa);
     ASSERT_NE(client, nullptr);
@@ -387,5 +375,5 @@ TEST_F(ClientTests, SendFeatures_Success)
 
     EXPECT_SUCCESS(writter.WriteToFile(path));
 
-    EXPECT_NO_THROW(client->SendFeatures(path, "1004175881").wait());
+    EXPECT_NO_THROW(client->SendFeatureLogs(path, "1004175881").wait());
     }

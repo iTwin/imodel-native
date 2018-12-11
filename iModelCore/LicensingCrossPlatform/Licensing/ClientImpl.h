@@ -31,6 +31,9 @@
 #define LOGPOSTINGSOURCE_OFFLINE            "Offline"
 #define LOGPOSTINGSOURCE_CHECKOUT           "Checkout"
 
+// Heartbeat thread delay (MS)
+#define HEARTBEAT_THREAD_DELAY_MS           3000
+
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -43,8 +46,6 @@ typedef std::shared_ptr<struct ClientImpl> ClientImplPtr;
 struct ClientImpl : ClientInterface
 {
 protected:
-    enum LogPostingSource { RealTime, Offline, Checkout };
-
     struct Feature
         {
         Utf8String featureId;
@@ -58,34 +59,57 @@ protected:
     IHttpHandlerPtr m_httpHandler;
     ITimeRetrieverPtr m_timeRetriever;
     IDelayedExecutorPtr m_delayedExecutor;
-    int64_t m_lastRunningUsageheartbeatStartTime = 0;
-    int64_t m_lastRunningPolicyheartbeatStartTime = 0;
-    int64_t m_lastRunningLogPostingheartbeatStartTime = 0;
     std::unique_ptr<UsageDb> m_usageDb;
     Utf8String m_featureString;
     Utf8String m_projectId;
     Utf8String m_correlationId;
     bool m_offlineMode;
-	std::shared_ptr<Policy> m_policy;
+    bool m_stopApplicationCalled;
 
-    void UsageHeartbeat(int64_t currentTime);
-    void PolicyHeartbeat(int64_t currentTime);
-    void LogPostingHeartbeat(int64_t currentTime);
+    // Policy
+	std::shared_ptr<Policy> m_policy;
+    void StorePolicyInUsageDb(std::shared_ptr<Policy> policy);
+    std::shared_ptr<Policy> GetPolicyToken();
 
     std::list<std::shared_ptr<Policy>> GetPolicies();
     std::list<std::shared_ptr<Policy>> GetUserPolicies();
     std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId="");
-
+    folly::Future<Utf8String> PerformGetPolicyRequest();
     bool HasOfflineGracePeriodStarted();
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
 
-    void StorePolicyInUsageDb(std::shared_ptr<Policy> policy);
+    // Usage heartbeat
+    int64_t m_lastRunningUsageheartbeatStartTime = 0;
+    bool m_startUsageHeartbeat = true;
+    bool m_stopUsageHeartbeat = false;
+    bool m_usageHeartbeatStopped = false;
+
+    void UsageHeartbeat(int64_t currentTime);
+    void StopUsageHeartbeat();
     BentleyStatus RecordUsage();
-    std::shared_ptr<Policy> GetPolicyToken();
+
+    // Log Posting heartbeat
+    int64_t m_lastRunningLogPostingheartbeatStartTime = 0;
+    bool m_startLogPostingHeartbeat = true;
+    bool m_stopLogPostingHeartbeat = false;
+    bool m_logPostingHeartbeatStopped = false;
+
+    void LogPostingHeartbeat(int64_t currentTime);
+    void StopLogPostingHeartbeat();
     BentleyStatus PostUsageLogs();
     BentleyStatus PostFeatureLogs();
-    folly::Future<Utf8String> PerformGetPolicyRequest();
-    Utf8String GetLoggingPostSource(LogPostingSource lps) const;
+
+    // Policy heartbeat
+    int64_t m_lastRunningPolicyheartbeatStartTime = 0;
+    bool m_startPolicyHeartbeat = true;
+    bool m_stopPolicyHeartbeat = false;
+    bool m_policyHeartbeatStopped = false;
+
+    void PolicyHeartbeat(int64_t currentTime);
+    void StopPolicyHeartbeat();
+
+    // Get the logging post source as a string
+    Utf8String GetLoggingPostSource() const;
 
 public:
 	LICENSING_EXPORT ClientImpl() {};
@@ -105,11 +129,11 @@ public:
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
-    LICENSING_EXPORT folly::Future<folly::Unit> SendUsage(BeFileNameCR usageCSV, Utf8StringCR ultId);
+    LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
     //Features
     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData);
-    LICENSING_EXPORT folly::Future<folly::Unit> SendFeatures(BeFileNameCR featureCSV, Utf8StringCR ultId);
+    LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
 
     // Policy
     LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();

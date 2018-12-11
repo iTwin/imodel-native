@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/Utils/DelayedExecutor.cpp $
+|     $Source: Licensing/Utils/DelayedExecutor.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Utils/DelayedExecutor.h>
@@ -55,9 +55,9 @@ void DelayedExecutor::ProcessQueue()
     {
     auto currentTime = GetCurrentUnixMilliseconds();
 
-    while (true) // TODO: Figure out when to stop this?
+    while (true)
         {
-        std::unique_lock<std::mutex> lk(m_mutex);     
+        std::unique_lock<std::mutex> lk(m_mutex);
 
         PopTimedCallbacks(currentTime);
 
@@ -81,7 +81,7 @@ void DelayedExecutor::ProcessQueue()
 
                 return newSleepFor < timeLeftToSleep;
                 });
-            } 
+            }
         }
     }
 

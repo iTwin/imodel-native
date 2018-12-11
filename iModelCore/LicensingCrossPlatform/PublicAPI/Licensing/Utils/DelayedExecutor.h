@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/PublicAPI/Licensing/Utils/DelayedExecutor.h $
+|     $Source: PublicAPI/Licensing/Utils/DelayedExecutor.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,10 +66,11 @@ private:
 public:
     LICENSING_EXPORT static DelayedExecutorPtr Get();
 
+
     //! Future will be completed after specified time. Time can be slightly bigger due to system lags.
     LICENSING_EXPORT virtual folly::Future<folly::Unit> Delayed(uint64_t ms) override;
 
-    virtual ~DelayedExecutor() {}
+    virtual ~DelayedExecutor() {};
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

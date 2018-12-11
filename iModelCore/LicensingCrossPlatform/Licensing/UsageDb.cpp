@@ -17,6 +17,8 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::OpenOrCreate(BeFileNameCR filePath)
     {
+    LOG.info("OpenorCreate");
+
     if (m_db.IsDbOpen())
         {
         if (filePath.GetNameUtf8().compare(m_db.GetDbFileName()) == 0)
@@ -36,6 +38,8 @@ BentleyStatus UsageDb::OpenOrCreate(BeFileNameCR filePath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::OpenDb(BeFileNameCR filePath)
     {
+    LOG.info("OpenDb");
+
     DbResult result = m_db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite));
 
     if (result == DbResult::BE_SQLITE_OK)
@@ -54,6 +58,7 @@ BentleyStatus UsageDb::OpenDb(BeFileNameCR filePath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UsageDb::IsDbOpen()
     {
+    LOG.debug("IsDbOpen");
     return m_db.IsDbOpen();
     }
 
@@ -62,6 +67,8 @@ bool UsageDb::IsDbOpen()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::CreateDb(BeFileNameCR filePath)
     {
+    LOG.debug("CreateDb");
+
     DbResult result = m_db.CreateNewDb(filePath);
 
     if (result != DbResult::BE_SQLITE_OK)
@@ -75,6 +82,8 @@ BentleyStatus UsageDb::CreateDb(BeFileNameCR filePath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::SetUpTables()
     {
+    LOG.info("SetUpTables");
+
     // Create Policy table
     if (m_db.CreateTable("Policy",
                          "PolicyId NVARCHAR(20) PRIMARY KEY, "
@@ -83,6 +92,7 @@ BentleyStatus UsageDb::SetUpTables()
                          "LastUpdateTime NVARCHAR(20), "
                          "PolicyFile NVARCHAR(900)") != DbResult::BE_SQLITE_OK)
         {
+        LOG.error("Failed to create Policy table.");
         return ERROR;
         }
 
@@ -108,6 +118,7 @@ BentleyStatus UsageDb::SetUpTables()
                          "Country NVARCHAR(20), "
                          "UsageType NVARCHAR(20)") != DbResult::BE_SQLITE_OK)
         {
+        LOG.error("Failed to create Usage table.");
         return ERROR;
         }
 
@@ -137,6 +148,7 @@ BentleyStatus UsageDb::SetUpTables()
                          "EndDate NVARCHAR(20), "
                          "UserData NVARCHAR(900)") != DbResult::BE_SQLITE_OK)
         {
+        LOG.error("Failed to create Feature table.");
         return ERROR;
         }
 
@@ -145,10 +157,11 @@ BentleyStatus UsageDb::SetUpTables()
                          "SchemaName NVARCHAR(20), "
                          "SchemaVersion REAL") != DbResult::BE_SQLITE_OK)
         {
+        LOG.error("Failed to create eimVersion (schema version) table.");
         return ERROR;
         }
 
-    if (SetEimVerion() != SUCCESS)
+    if (SetEimVersion() != SUCCESS)
         {
         return ERROR;
         }
@@ -171,6 +184,7 @@ BentleyStatus UsageDb::SetUpOfflineGraceTable()
 		"GraceId NVARCHAR(20) PRIMARY KEY, "
 		"OfflineGracePeriodStart NVARCHAR(20)") != DbResult::BE_SQLITE_OK)
 	    {
+        LOG.error("Failed to create OfflineGrace table.");
 		return ERROR;
 	    }
 
@@ -182,6 +196,7 @@ BentleyStatus UsageDb::SetUpOfflineGraceTable()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsageDb::Close()
     {
+    LOG.debug("UsageDb::Close");
     m_db.CloseDb();
     }
 
@@ -190,6 +205,8 @@ void UsageDb::Close()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int64_t UsageDb::GetLastUsageRecordRowId()
     {
+    LOG.debug("GetLastUsageRecordRowId");
+
     Statement stmt;
     stmt.Prepare(m_db, "SELECT MAX(rowid) FROM Usage");
 
@@ -205,6 +222,8 @@ int64_t UsageDb::GetLastUsageRecordRowId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UsageDb::GetLastUsageRecordedTime()
     {
+    LOG.debug("GetLastUsageRecordedTime");
+    
     Statement stmt;
 
     stmt.Prepare(m_db, "SELECT MAX(EventTime) FROM Usage");
@@ -221,6 +240,8 @@ Utf8String UsageDb::GetLastUsageRecordedTime()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int64_t UsageDb::GetUsageRecordCount()
     {
+    LOG.debug("GetUsageRecordCount");
+
     Statement stmt;
     stmt.Prepare(m_db, "SELECT COUNT(*) FROM Usage");
 
@@ -228,7 +249,7 @@ int64_t UsageDb::GetUsageRecordCount()
     if (result != DbResult::BE_SQLITE_ROW)
         return -1;
 
-    return stmt.GetValueInt(0);
+    return stmt.GetValueInt64(0);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -236,7 +257,10 @@ int64_t UsageDb::GetUsageRecordCount()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int64_t UsageDb::GetLastFeatureRowId()
     {
+    LOG.debug("GetLastFeatureRowId");
+
     Statement stmt;
+
     stmt.Prepare(m_db, "SELECT MAX(rowid) FROM Feature");
 
     DbResult result = stmt.Step();
@@ -251,6 +275,8 @@ int64_t UsageDb::GetLastFeatureRowId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int64_t UsageDb::GetFeatureRecordCount()
     {
+    LOG.debug("GetFeatureRecordCount");
+
     Statement stmt;
     stmt.Prepare(m_db, "SELECT COUNT(*) FROM Feature");
 
@@ -266,6 +292,8 @@ int64_t UsageDb::GetFeatureRecordCount()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::WriteUsageToCSVFile(BeFileNameCR path)
     {
+    LOG.info("WriteUsageToCSVFile");
+
     SCVWritter writter;
     Statement stmt;
 
@@ -299,7 +327,10 @@ BentleyStatus UsageDb::WriteUsageToCSVFile(BeFileNameCR path)
         }
 
     if (result != DbResult::BE_SQLITE_DONE)
+        {
+        LOG.errorv("Failed to copy usages to CVS file. BE_SQLITE error %d", result);
         return ERROR;
+        }
 
     return writter.WriteToFile(path);
     }
@@ -349,7 +380,10 @@ BentleyStatus UsageDb::WriteFeatureToCSVFile(BeFileNameCR path)
         }
 
     if (result != DbResult::BE_SQLITE_DONE)
+        {
+        LOG.errorv("Failed to copy features to CVS file. BE_SQLITE error %d", result);
         return ERROR;
+        }
 
     return writter.WriteToFile(path);
     }
@@ -359,6 +393,8 @@ BentleyStatus UsageDb::WriteFeatureToCSVFile(BeFileNameCR path)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::list<Json::Value> UsageDb::GetPolicyFiles()
 	{
+    LOG.info("GetPolicyFiles");
+
 	std::list<Json::Value> policyList;
 
 	Statement stmt;
@@ -386,7 +422,9 @@ std::list<Json::Value> UsageDb::GetPolicyFiles()
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::list<Json::Value> UsageDb::GetPolicyFiles(Utf8String userId)
 	{
-	std::list<Json::Value> policyList;
+    LOG.info("GetPolicyFiles (userid)");
+    
+    std::list<Json::Value> policyList;
 
 	Statement stmt;
 	if (m_db.IsDbOpen())
@@ -417,6 +455,8 @@ std::list<Json::Value> UsageDb::GetPolicyFiles(Utf8String userId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
     {
+    LOG.debug("AddOrUpdatePolicyFile");
+
     Statement stmt;
 
     if (m_db.IsDbOpen())
@@ -440,6 +480,8 @@ BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::DeletePolicyFile(Utf8StringCR policyId)
 	{
+    LOG.debug("DeletePolicyFile");
+
 	Statement stmt;
 
 	if (m_db.IsDbOpen())
@@ -458,6 +500,8 @@ BentleyStatus UsageDb::DeletePolicyFile(Utf8StringCR policyId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8StringCR userId)
 	{
+    LOG.debug("DeleteAllOtherUserPolicyFiles");
+
 	Statement stmt;
 
 	if (m_db.IsDbOpen())
@@ -477,6 +521,8 @@ BentleyStatus UsageDb::DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value UsageDb::GetPolicyFile()
     {
+    LOG.debug("GetPolicyFile");
+
     Statement stmt;
 
     stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy");
@@ -498,7 +544,9 @@ Json::Value UsageDb::GetPolicyFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value UsageDb::GetPolicyFile(Utf8StringCR policyId)
 	{
-	Statement stmt;
+    LOG.debug("GetPolicyFile (policyId)");
+    
+    Statement stmt;
 
 	if (m_db.IsDbOpen())
 		{
@@ -520,6 +568,8 @@ Json::Value UsageDb::GetPolicyFile(Utf8StringCR policyId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::SetOfflineGracePeriodStart(Utf8StringCR startTime)
 	{
+    LOG.debug("SetOfflineGracePeriodStart");
+
 	Statement stmt;
     
     if (m_db.IsDbOpen())
@@ -532,7 +582,8 @@ BentleyStatus UsageDb::SetOfflineGracePeriodStart(Utf8StringCR startTime)
 			{
 			return SUCCESS;
 			}
-		}
+        LOG.errorv("SetOfflineGracePeriodStart - Failed to set offline grace period. BE_SQLITE error %d", result);
+        }
 	return ERROR;
 	}
 
@@ -541,6 +592,8 @@ BentleyStatus UsageDb::SetOfflineGracePeriodStart(Utf8StringCR startTime)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UsageDb::GetOfflineGracePeriodStart()
 	{
+    LOG.debug("GetOfflineGracePeriodStart");
+
 	// Return empty string if no grace period (nothing returned)
 	Utf8String returnString = "";
 	Statement stmt;
@@ -562,6 +615,8 @@ Utf8String UsageDb::GetOfflineGracePeriodStart()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::ResetOfflineGracePeriod()
 	{
+    LOG.debug("ResetOfflineGracePeriod");
+
 	if (m_db.IsDbOpen())
 		{
 		return SetOfflineGracePeriodStart("");
@@ -574,8 +629,13 @@ BentleyStatus UsageDb::ResetOfflineGracePeriod()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::CleanUpUsages()
     {
+    LOG.info("CleanUpUsages");
+
     if (!m_db.IsDbOpen())
+        {
+        LOG.error("CleanUpUsages - Database is not open.");
         return ERROR;
+        }
 
     auto maxRowId = GetLastUsageRecordRowId();
 
@@ -589,7 +649,10 @@ BentleyStatus UsageDb::CleanUpUsages()
     DbResult result = stmt.Step();
 
     if (result != DbResult::BE_SQLITE_DONE)
+        {
+        LOG.errorv("CleanUpUsages - Failed to remove usages. BE_SQLITE error %d", result);
         return ERROR;
+        }
 
     return SUCCESS;
     }
@@ -599,8 +662,13 @@ BentleyStatus UsageDb::CleanUpUsages()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::CleanUpFeatures()
     {
+    LOG.info("CleanUpFeatures");
+
     if (!m_db.IsDbOpen())
+        {
+        LOG.error("CleanUpFeatures - Database is not open.");
         return ERROR;
+        }
 
     auto maxRowId = GetLastFeatureRowId();
 
@@ -614,7 +682,10 @@ BentleyStatus UsageDb::CleanUpFeatures()
     DbResult result = stmt.Step();
 
     if (result != DbResult::BE_SQLITE_DONE)
+        {
+        LOG.errorv("CleanUpFeatures - Failed to remove features. BE_SQLITE error %d", result);
         return ERROR;
+        }
 
     return SUCCESS;
     }
@@ -628,6 +699,8 @@ BentleyStatus UsageDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principal
                                    Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
                                    Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType)
     {
+    LOG.info("UsageDb::RecordUsage");
+
     Statement stmt;
 
     if (m_db.IsDbOpen())
@@ -657,6 +730,8 @@ BentleyStatus UsageDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principal
 
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
+
+        LOG.errorv("UsageDb::RecordUsage - Failed to insert usage into the databse. BE_SQLITE error %d", result);
         }
 
     return ERROR;
@@ -672,6 +747,8 @@ BentleyStatus UsageDb::RecordFeature(int64_t ultimateSAPId, Utf8StringCR princip
                                      Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
                                      Utf8StringCR startDate, Utf8String endDate, Utf8String userData)
     {
+    LOG.info("UsageDb::RecordFeature");
+
     Statement stmt;
 
     if (m_db.IsDbOpen())
@@ -705,6 +782,8 @@ BentleyStatus UsageDb::RecordFeature(int64_t ultimateSAPId, Utf8StringCR princip
 
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
+
+        LOG.errorv("UsageDb::RecordFeature - Failed to insert feature into the databse. BE_SQLITE error %d", result);
         }
 
     return ERROR;
@@ -713,8 +792,10 @@ BentleyStatus UsageDb::RecordFeature(int64_t ultimateSAPId, Utf8StringCR princip
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::SetEimVerion()
+BentleyStatus UsageDb::SetEimVersion()
     {
+    LOG.debug("SetEimVersion");
+
     Statement stmt;
 
     if (m_db.IsDbOpen())
@@ -727,6 +808,8 @@ BentleyStatus UsageDb::SetEimVerion()
 
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
+
+        LOG.errorv("Failed to set eimVersion (schema version) value. BE_SQLITE error %d.", result);
         }
 
     return ERROR;
@@ -737,6 +820,8 @@ BentleyStatus UsageDb::SetEimVerion()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::UpdateDb()
     {
+    LOG.debug("UsageDb::UpdateDb");
+
     Statement stmt;
     DbResult result;
 
@@ -747,11 +832,14 @@ BentleyStatus UsageDb::UpdateDb()
 
         if (result == DbResult::BE_SQLITE_ROW)
             {
-            if (stmt.GetValueDouble(1) < LICENSE_CLIENT_SCHEMA_VERSION)
+            double schemaVersion = stmt.GetValueDouble(1);
+            if (schemaVersion < LICENSE_CLIENT_SCHEMA_VERSION)
                 {
+                LOG.infov("UpdateDb - Updating schema version %f to %f...", schemaVersion, LICENSE_CLIENT_SCHEMA_VERSION);
                 Utf8String updateStatement;
+                //Statement updateStmt;
                 stmt.Finalize();
-                updateStatement.Sprintf("UPDATE eimVersion SET SchemaVersion = %f", LICENSE_CLIENT_SCHEMA_VERSION);
+                updateStatement.Sprintf("UPDATE eimVersion SET SchemaVersion = %f WHERE rowid = 1", LICENSE_CLIENT_SCHEMA_VERSION);
                 stmt.Prepare(m_db, (Utf8CP) updateStatement.c_str());
                 result = stmt.Step();
                 if (result == DbResult::BE_SQLITE_DONE)
@@ -760,6 +848,7 @@ BentleyStatus UsageDb::UpdateDb()
                     }
                 else
                     {
+                    LOG.errorv("UpdateDb - Updating schema version failed. BE_SQLITE result  %d", result);
                     return ERROR;
                     }
                 }

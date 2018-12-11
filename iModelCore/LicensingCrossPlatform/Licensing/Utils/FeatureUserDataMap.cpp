@@ -82,17 +82,17 @@ BentleyStatus FeatureUserDataMap::GetValue(Utf8CP key, Utf8StringR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FeatureUserDataMap::Dump() const
     {
-    LOG.debugv("AttributeMap: ==============================================");
+    LOG.debug("AttributeMap: ==============================================");
     bool first = true;
     for (auto const& kvp : m_featureUserDataMap)
         {
         if (!first)
-            LOG.debugv("\n");
+            LOG.debug("\n");
 
         first = false;
         LOG.debugv("Key:   %ls", kvp.first.c_str());
         LOG.debugv("Value: %ls", kvp.second.c_str());
         }
 
-    LOG.debugv("AttributeMap: ==============================================");
+    LOG.debug("AttributeMap: ==============================================");
     }
