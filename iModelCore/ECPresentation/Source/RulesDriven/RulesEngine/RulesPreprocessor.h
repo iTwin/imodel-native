@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/RulesDriven/RuleSetLocater.h>
 #include <ECPresentation/RulesDriven/UserSettings.h>
@@ -32,16 +32,16 @@ public:
 
     //! Copy Constructor.
     NavigationRuleSpecification(NavigationRuleSpecification const& other) : m_specification(other.m_specification), m_rule(other.m_rule) {}
-    
+
     //! Constructor.
     NavigationRuleSpecification(ChildNodeSpecificationCR specification, RuleType const& rule) : m_specification(&specification), m_rule(&rule) {}
-    
+
     //! Get the specification.
     ChildNodeSpecificationCR GetSpecification() const {BeAssert(nullptr != m_specification); return *m_specification;}
-    
+
     //! Get the rule.
     RuleType const& GetRule() const {BeAssert(nullptr != m_rule); return *m_rule;}
-    
+
     //! Get specificaton priority.
     int GetPriority() const {return nullptr == m_specification ? -1 : m_specification->GetPriority();}
 };
@@ -51,7 +51,7 @@ typedef bvector<ChildNodeRuleSpecification> ChildNodeRuleSpecificationsList;
 typedef bvector<RootNodeRuleSpecification> RootNodeRuleSpecificationsList;
 
 //=======================================================================================
-//! Holds a content rule and list of selected @ref NavNodeKey objects that apply for 
+//! Holds a content rule and list of selected @ref NavNodeKey objects that apply for
 //! that rule.
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                04/2016
@@ -90,7 +90,7 @@ public:
 typedef bset<ContentRuleInputKeys> ContentRuleInputKeysList;
 
 //=======================================================================================
-//! Holds a content rule and list of ECIntance keys objects that apply for 
+//! Holds a content rule and list of ECIntance keys objects that apply for
 //! that rule.
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Saulius.Skliutas                01/2018
@@ -128,7 +128,7 @@ typedef bset<ContentRuleInstanceKeys> ContentRuleInstanceKeysList;
 
 //=======================================================================================
 //! A class responsible for finding appropriate presentation rules based on supplied
-//! parameters. 
+//! parameters.
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                03/2015
 //=======================================================================================
@@ -156,9 +156,9 @@ struct RulesPreprocessor
         //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        PreprocessorParameters(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale, 
+        PreprocessorParameters(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale,
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale), m_userSettings(settings), 
+            : m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale), m_userSettings(settings),
             m_usedSettingsListener(settingsListener), m_ecexpressionsCache(ecexpressionsCache)
             {}
         //! Get the connections manager.
@@ -176,7 +176,7 @@ struct RulesPreprocessor
         //! Get ECExpressions cache.
         ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     };
-    
+
     //===================================================================================
     //! Parameters for finding root node rules.
     // @bsiclass                                    Grigas.Petraitis            04/2016
@@ -194,7 +194,7 @@ struct RulesPreprocessor
         //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        RootNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, RuleTargetTree tree, 
+        RootNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, RuleTargetTree tree,
             Utf8String locale, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
             : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), m_tree(tree)
             {}
@@ -221,7 +221,7 @@ struct RulesPreprocessor
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
         ChildNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, NavNodeCR parentNode,
-            PresentationRuleSetCR ruleset, RuleTargetTree tree, Utf8String locale, 
+            PresentationRuleSetCR ruleset, RuleTargetTree tree, Utf8String locale,
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
             : RootNodeRuleParameters(connections, connection, ruleset, tree, locale, settings, settingsListener, ecexpressionsCache), m_parentNode(parentNode)
             {}
@@ -249,7 +249,7 @@ struct RulesPreprocessor
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
         CustomizationRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, NavNodeCR node, NavNodeCP parentNode,
-            PresentationRuleSetCR ruleset, Utf8String locale, 
+            PresentationRuleSetCR ruleset, Utf8String locale,
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
             : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), m_node(node), m_parentNode(parentNode)
             {}
@@ -258,7 +258,7 @@ struct RulesPreprocessor
         //! Get the parent node.
         NavNodeCP GetParentNode() const {return m_parentNode.get();}
     };
-    
+
     //===================================================================================
     //! Parameters for finding aggregate customization rules (grouping and sorting).
     // @bsiclass                                    Grigas.Petraitis            04/2016
@@ -279,9 +279,9 @@ struct RulesPreprocessor
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
         AggregateCustomizationRuleParameters(NavNodeCP parentNode, Utf8StringCR specificationHash, IConnectionManagerCR connections,
-            IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale, 
+            IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale,
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), 
+            : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache),
             m_parentNode(parentNode), m_specificationHash(specificationHash)
             {}
         //! Get the parent node.
@@ -316,7 +316,7 @@ struct RulesPreprocessor
         ContentRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, INavNodeKeysContainerCR inputNodeKeys, Utf8StringCR preferredContentDisplayType,
             SelectionInfo const* selectionInfo, PresentationRuleSetCR ruleset, Utf8String locale, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener,
             ECExpressionsCache& ecexpressionsCache, INavNodeLocaterCR nodeLocater)
-            : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), m_inputNodeKeys(&inputNodeKeys), 
+            : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), m_inputNodeKeys(&inputNodeKeys),
             m_preferredContentDisplayType(preferredContentDisplayType), m_selectionInfo(selectionInfo), m_nodeLocater(nodeLocater)
             {
             }
@@ -333,7 +333,7 @@ struct RulesPreprocessor
         //! Did the last selection event happen in sub-selection.
         bool IsSubSelection() const {return HasSelectionInfo() ? m_selectionInfo->IsSubSelection() : false;}
     };
-    
+
     typedef RootNodeRuleParameters const&               RootNodeRuleParametersCR;
     typedef ChildNodeRuleParameters const&              ChildNodeRuleParametersCR;
     typedef CustomizationRuleParameters const&          CustomizationRuleParametersCR;
@@ -357,7 +357,7 @@ public:
     //! @param[in] locaters Ruleset locater manager which holds all available ruleset locaters.
     //! @param[in] connection The connection to check whether the ruleset is supported.
     //! @param[in] rulesetId ID of the ruleset to find. Returns the first available ruleset if nullptr.
-    ECPRESENTATION_EXPORT static PresentationRuleSetPtr GetPresentationRuleSet(IRulesetLocaterManager const& locaters, 
+    ECPRESENTATION_EXPORT static PresentationRuleSetPtr GetPresentationRuleSet(IRulesetLocaterManager const& locaters,
         IConnectionCR connection, Utf8CP rulesetId = nullptr);
 /** @} */
 
@@ -366,44 +366,44 @@ public:
     //! Get matching root node specifications.
     //! @param[in] params The request parameters.
     ECPRESENTATION_EXPORT static RootNodeRuleSpecificationsList GetRootNodeSpecifications(RootNodeRuleParametersCR params);
-    
+
     //! Get matching child node specifications.
     //! @param[in] params The request parameters.
     ECPRESENTATION_EXPORT static ChildNodeRuleSpecificationsList GetChildNodeSpecifications(ChildNodeRuleParametersCR params);
 /** @} */
-    
+
 /** @name Customization rules */
 /** @{ */
     //! Get matching label override.
     //! @param[in] params The request parameters.
     ECPRESENTATION_EXPORT static LabelOverrideCP GetLabelOverride(CustomizationRuleParametersCR params);
-    
+
     //! Get matching image ID override.
     //! @param[in] params The request parameters.
     ECPRESENTATION_EXPORT static ImageIdOverrideCP GetImageIdOverride(CustomizationRuleParametersCR params);
-    
+
     //! Get matching style override.
     //! @param[in] params The request parameters.
     ECPRESENTATION_EXPORT static StyleOverrideCP GetStyleOverride(CustomizationRuleParametersCR params);
-    
+
     //! Get matching checkbox rule.
     //! @param[in] params The request parameters.
     ECPRESENTATION_EXPORT static CheckBoxRuleCP GetCheckboxRule(CustomizationRuleParametersCR params);
-    
+
     //! Get matching grouping rules.
     //! @param[in] params The request parameters.
     ECPRESENTATION_EXPORT static bvector<GroupingRuleCP> GetGroupingRules(AggregateCustomizationRuleParametersCR params);
-    
+
     //! Get matching sorting rules.
     //! @param[in] params The request parameters.
     ECPRESENTATION_EXPORT static bvector<SortingRuleCP> GetSortingRules(AggregateCustomizationRuleParametersCR params);
-    
+
     //! Get matching localization resource definitions.
     //! @param[in] id Localization resource key definition ID.
     //! @param[in] ruleset The ruleset search in.
     ECPRESENTATION_EXPORT static LocalizationResourceKeyDefinitionCP GetLocalizationResourceKeyDefinition(Utf8StringCR id, PresentationRuleSetCR ruleset);
 /** @} */
-    
+
 /** @name Content rules */
 /** @{ */
     //! Get matching content rules.

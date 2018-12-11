@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
@@ -118,10 +118,10 @@ public:
     void SetECPropertyFormatter(IECPropertyFormatter const* formatter) {m_ecPropertyFormatter = formatter;}
     ECPRESENTATION_EXPORT IECPropertyFormatter const& GetECPropertyFormatter() const;
 /** @} */
-    
+
 /** @name Property Categories */
 /** @{ */
-    void SetCategorySupplier(IPropertyCategorySupplier* supplier) {m_categorySupplier = supplier;}    
+    void SetCategorySupplier(IPropertyCategorySupplier* supplier) {m_categorySupplier = supplier;}
     ECPRESENTATION_EXPORT IPropertyCategorySupplier& GetCategorySupplier() const;
     void NotifyCategoriesChanged() {_OnCategoriesChanged();}
 /** @} */
@@ -177,7 +177,7 @@ public:
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                03/2015
 //=======================================================================================
-struct RulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManager::Impl, ECInstanceChangeEventSource::IEventHandler, 
+struct RulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManager::Impl, ECInstanceChangeEventSource::IEventHandler,
     IRulesetCallbacksHandler, IUserSettingsChangeListener, IConnectionsListener
 {
     struct ECDbCaches;
@@ -195,17 +195,17 @@ private:
     mutable NodesCache* m_nodesCache;
     mutable ContentCache* m_contentCache;
     ECDbCaches* m_ecdbCaches;
-    RulesetECExpressionsCache* m_rulesetECExpressionsCache;    
+    RulesetECExpressionsCache* m_rulesetECExpressionsCache;
     UpdateHandler* m_updateHandler;
     UsedClassesListener* m_usedClassesListener;
     bmap<Utf8String, bvector<RuleSetLocaterPtr>> m_embeddedRuleSetLocaters;
-    
+
 private:
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavigationOptions const&);
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavNodeCR parent, NavigationOptions const&);
     SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
     SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
-        
+
 protected:
     // IRulesetCallbacksHandler
     ECPRESENTATION_EXPORT void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR) override;
@@ -244,10 +244,10 @@ protected:
 
     // RulesDrivenECPresentationManager::Impl: Updating
     ECPRESENTATION_EXPORT bvector<ECInstanceChangeResult> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR) override;
-    
+
     // RulesDrivenECPresentationManager::Impl: Misc
     ECPRESENTATION_EXPORT void _OnECInstanceChangeEventSourceRegistered(ECInstanceChangeEventSource&) override;
-    ECPRESENTATION_EXPORT void _OnECInstanceChangeEventSourceUnregister(ECInstanceChangeEventSource&) override;    
+    ECPRESENTATION_EXPORT void _OnECInstanceChangeEventSourceUnregister(ECInstanceChangeEventSource&) override;
     ECPRESENTATION_EXPORT void _OnUpdateRecordsHandlerChanged() override;
     ECPRESENTATION_EXPORT void _OnCategoriesChanged() override;
 

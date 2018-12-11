@@ -193,12 +193,12 @@ static bool ApplyProperties(Utf8StringR label, bvector<ECPropertyCP> properties,
     {
     ECValue value;
     for (ECPropertyCP ecProperty : properties)
-        {           
+        {
         if (ECObjectsStatus::Success == instance.GetValue(value, ecProperty->GetName().c_str()))
             {
             value.ConvertPrimitiveToString(label);
             if (!label.empty())
-                return true;                            
+                return true;
             }
         }
     return false;
@@ -268,7 +268,7 @@ public:
         ECInstanceId instanceId(args[1].GetValueUInt64());
         ECClassId classId = args[0].GetValueId<ECClassId>();
         ECInstanceKey key(classId, instanceId);
-  
+
         auto iter = GetCache().find(key);
         if (GetCache().end() == iter)
             {
@@ -281,7 +281,7 @@ public:
                     BeAssert(false && "Invalid class");
                     ctx.SetResultError("Invalid ECClassId", BE_SQLITE_ERROR);
                     return;
-                    }  
+                    }
 
                 ProcessLabelAndInstanceLabelOverrides(label, GetContext(), key, *ecClass);
 
@@ -410,7 +410,7 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), GetContext().GetLocale(), classId, instanceId, "");
             // create temporary key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
-            ECExpressionContextsProvider::CalculatedPropertyContextParameters params(*thisNode, GetContext().GetConnection(), 
+            ECExpressionContextsProvider::CalculatedPropertyContextParameters params(*thisNode, GetContext().GetConnection(),
                 GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(params);
 
@@ -684,10 +684,10 @@ struct GetPropertyDisplayValueScalar : ECPresentation::ScalarFunction
             default:
                 value = ValueHelpers::GetECValueFromString(ecProperty->GetAsPrimitiveProperty()->GetType(), args[3].GetValueText());
             }
-        
+
         Utf8String formattedValue(value.ToString());
         if (nullptr != GetContext().GetPropertyFormatter())
-            GetContext().GetPropertyFormatter()->GetFormattedPropertyValue(formattedValue, *ecProperty, value);  
+            GetContext().GetPropertyFormatter()->GetFormattedPropertyValue(formattedValue, *ecProperty, value);
         ctx.SetResultText(formattedValue.c_str(), (int)formattedValue.size(), DbFunction::Context::CopyData::Yes);
         }
     };

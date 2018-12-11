@@ -46,7 +46,7 @@ struct IRulesDrivenECPresentationManagerDependenciesFactory;
 //__PUBLISH_SECTION_START__
 
 //=======================================================================================
-//! Rules-driven presentation manager implementation which uses presentation rules for 
+//! Rules-driven presentation manager implementation which uses presentation rules for
 //! determining the hierarchies and content.
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                03/2015
@@ -59,7 +59,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     struct RulesetLocaterManagerWrapper;
     struct UserSettingsManagerWrapper;
     struct ECInstanceChangeEventSourceWrapper;
-    
+
     //===================================================================================
     //! An object that stores paths used by RulesDrivenECPresentationManager
     // @bsiclass                                    Grigas.Petraitis            08/2017
@@ -76,7 +76,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         BeFileNameCR GetAssetsDirectory() const {return m_assetsDirectory;}
         BeFileNameCR GetTemporaryDirectory() const {return m_tempDirectory;}
     };
-    
+
     //===================================================================================
     //! Parameters for RulesDrivenECPresentationManager
     // @bsiclass                                    Grigas.Petraitis            07/2018
@@ -166,14 +166,14 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! @param[in] ruleTargetTree The target tree.
         //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
         //! @param[in] locale Locale identifier
-        NavigationOptions(Utf8CP rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr) 
+        NavigationOptions(Utf8CP rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr)
             : CommonOptions(rulesetId, locale) {SetRuleTargetTree(ruleTargetTree); SetDisableUpdates(disableUpdates);}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
         //! @param[in] ruleTargetTree The target tree.
         //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
         //! @param[in] locale Locale identifier
-        NavigationOptions(Utf8StringCR rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr) 
+        NavigationOptions(Utf8StringCR rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr)
             : NavigationOptions(rulesetId.c_str(), ruleTargetTree, disableUpdates, locale) {}
 
         //! Get disable updates.
@@ -218,7 +218,7 @@ private:
     CancelableTasksStore* m_cancelableTasks;
     ConnectionManagerWrapper* m_connectionsWrapper;
     bvector<ECInstanceChangeEventSourceWrapper*> m_ecInstanceChangeEventSourceWrappers;
-    
+
 protected:
     // IECPresentationManager: Navigation
     ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR) override;
@@ -252,13 +252,13 @@ public:
     Impl& GetImpl() const {return *m_impl;}
     ECPRESENTATION_EXPORT void SetImpl(Impl&);
     ECPRESENTATION_EXPORT std::unique_ptr<IRulesDrivenECPresentationManagerDependenciesFactory> CreateDependenciesFactory();
-    
+
 //__PUBLISH_SECTION_START__
 public:
     //! Constructor.
     //! @param[in] connections Connection manager used by this presentation manager.
     //! @param[in] paths Application paths provider.
-    //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep 
+    //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep
     //! this enabled unless being used for testing.
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache = false);
 
@@ -326,7 +326,7 @@ public:
 
     //! Register an update records handler.
     ECPRESENTATION_EXPORT void RegisterUpdateRecordsHandler(IUpdateRecordsHandler&);
-    
+
     //! Unregister an update records handler.
     ECPRESENTATION_EXPORT void UnregisterUpdateRecordsHandler(IUpdateRecordsHandler&);
 /** @} */
