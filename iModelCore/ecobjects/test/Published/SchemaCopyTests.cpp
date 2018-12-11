@@ -795,6 +795,37 @@ TEST_F(SchemaCopyTest, CopyInvertedUnit_AllReferencesInSchema)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Gintaras.Volkvicius 11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, CopyInvertedUnit_CopySchemaSucceedsWhenInvertedUnitIsCopiedAfterItsParentUnit)
+    {
+    CreateTestSchema();
+    ECUnitP unit;
+    ECUnitP invUnit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "A_SYSTEM"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "A_PHENOM", "A"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "A", "A", *phenom, *system));
+    // This will be added after parent unit because A < INVERSE_A
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateInvertedUnit(invUnit, *unit, "INVERSE_A", *system));
+
+    CopySchema();
+
+    EXPECT_EQ(2, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetInvertedUnitCP("INVERSE_A");
+    ASSERT_TRUE(nullptr != targetUnit);
+    ASSERT_TRUE(targetUnit->IsInvertedUnit());
+    ASSERT_TRUE(targetUnit->HasUnitSystem());
+    EXPECT_STRCASEEQ("A", targetUnit->GetInvertingUnit()->GetName().c_str());
+    EXPECT_STREQ("INVERSE_A", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("", targetUnit->GetDescription().c_str());
+    EXPECT_STREQ("A_PHENOM", targetUnit->GetPhenomenon()->GetName().c_str());
+    EXPECT_STREQ("A_SYSTEM", targetUnit->GetUnitSystem()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                          Kyle.Abramowitz                           03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopyInvertedUnit_AllReferencesInRefSchema)
