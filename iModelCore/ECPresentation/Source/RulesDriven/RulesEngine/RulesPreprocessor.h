@@ -209,7 +209,7 @@ struct RulesPreprocessor
     struct ChildNodeRuleParameters : RootNodeRuleParameters
     {
     private:
-        JsonNavNodeCR m_parentNode;
+        NavNodeCR m_parentNode;
     public:
         //! Constructor.
         //! @param[in] connections The connections manager.
@@ -220,13 +220,13 @@ struct RulesPreprocessor
         //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        ChildNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, JsonNavNodeCR parentNode, 
+        ChildNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, NavNodeCR parentNode,
             PresentationRuleSetCR ruleset, RuleTargetTree tree, Utf8String locale, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
             : RootNodeRuleParameters(connections, connection, ruleset, tree, locale, settings, settingsListener, ecexpressionsCache), m_parentNode(parentNode)
             {}
         //! Get the parent node.
-        JsonNavNodeCR GetParentNode() const {return m_parentNode;}
+        NavNodeCR GetParentNode() const {return m_parentNode;}
     };
 
     //===================================================================================
@@ -236,8 +236,8 @@ struct RulesPreprocessor
     struct CustomizationRuleParameters : PreprocessorParameters
     {
     private:
-        JsonNavNodeCR m_node;
-        JsonNavNodeCPtr m_parentNode;
+        NavNodeCR m_node;
+        NavNodeCPtr m_parentNode;
     public:
         //! Constructor.
         //! @param[in] connections The connections manager.
@@ -248,15 +248,15 @@ struct RulesPreprocessor
         //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        CustomizationRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, JsonNavNodeCR node, JsonNavNodeCP parentNode, 
+        CustomizationRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, NavNodeCR node, NavNodeCP parentNode,
             PresentationRuleSetCR ruleset, Utf8String locale, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
             : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), m_node(node), m_parentNode(parentNode)
             {}
         //! Get the node.
-        JsonNavNodeCR GetNode() const {return m_node;}
+        NavNodeCR GetNode() const {return m_node;}
         //! Get the parent node.
-        JsonNavNodeCP GetParentNode() const {return m_parentNode.get();}
+        NavNodeCP GetParentNode() const {return m_parentNode.get();}
     };
     
     //===================================================================================
@@ -266,7 +266,7 @@ struct RulesPreprocessor
     struct AggregateCustomizationRuleParameters : PreprocessorParameters
     {
     private:
-        JsonNavNodeCP m_parentNode;
+        NavNodeCP m_parentNode;
         Utf8StringCR m_specificationHash;
     public:
         //! Constructor.
@@ -278,14 +278,14 @@ struct RulesPreprocessor
         //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        AggregateCustomizationRuleParameters(JsonNavNodeCP parentNode, Utf8StringCR specificationHash, IConnectionManagerCR connections, 
+        AggregateCustomizationRuleParameters(NavNodeCP parentNode, Utf8StringCR specificationHash, IConnectionManagerCR connections,
             IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
             : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), 
             m_parentNode(parentNode), m_specificationHash(specificationHash)
             {}
         //! Get the parent node.
-        JsonNavNodeCP GetParentNode() const {return m_parentNode;}
+        NavNodeCP GetParentNode() const {return m_parentNode;}
         //! Get specification Id
         Utf8StringCR GetSpecificationHash() const {return m_specificationHash;}
     };

@@ -45,13 +45,13 @@ struct ECExpressionContextsProvider : NonCopyableClass
     struct NodeRulesContextParameters : ContextParametersBase
     {
     private:
-        JsonNavNodeCP m_parentNode;
+        NavNodeCP m_parentNode;
     public:
-        NodeRulesContextParameters(JsonNavNodeCP parentNode, IConnectionCR connection, Utf8String locale, 
+        NodeRulesContextParameters(NavNodeCP parentNode, IConnectionCR connection, Utf8String locale,
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_parentNode(parentNode)
             {}
-        JsonNavNodeCP GetParentNode() const {return m_parentNode;}
+        NavNodeCP GetParentNode() const {return m_parentNode;}
     };
     
     /*=================================================================================**//**
@@ -84,15 +84,15 @@ struct ECExpressionContextsProvider : NonCopyableClass
     struct CustomizationRulesContextParameters : ContextParametersBase
     {
     private:
-        JsonNavNodeCR m_node;
-        JsonNavNodeCPtr m_parentNode;
+        NavNodeCR m_node;
+        NavNodeCPtr m_parentNode;
     public:
-        CustomizationRulesContextParameters(JsonNavNodeCR node, JsonNavNodeCP parentNode, IConnectionCR connection, Utf8String locale, 
+        CustomizationRulesContextParameters(NavNodeCR node, NavNodeCP parentNode, IConnectionCR connection, Utf8String locale,
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_node(node), m_parentNode(parentNode)
             {}
-        JsonNavNodeCR GetNode() const {return m_node;}
-        JsonNavNodeCP GetParentNode() const {return m_parentNode.get();}
+        NavNodeCR GetNode() const {return m_node;}
+        NavNodeCP GetParentNode() const {return m_parentNode.get();}
     };
     
     /*=================================================================================**//**

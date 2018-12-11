@@ -154,10 +154,10 @@ struct NodeECInstanceContextEvaluator : PropertySymbol::ContextEvaluator
 {
 private:
     IConnectionCR m_connection;
-    JsonNavNodeCPtr m_node;
-    NodeECInstanceContextEvaluator(IConnectionCR connection, JsonNavNodeCR node) : m_connection(connection), m_node(&node) {}
+    NavNodeCPtr m_node;
+    NodeECInstanceContextEvaluator(IConnectionCR connection, NavNodeCR node) : m_connection(connection), m_node(&node) {}
 public:
-    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(IConnectionCR connection, JsonNavNodeCR node) {return new NodeECInstanceContextEvaluator(connection, node);}
+    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(IConnectionCR connection, NavNodeCR node) {return new NodeECInstanceContextEvaluator(connection, node);}
     ExpressionContextPtr _GetContext() override
         {
         ECInstanceNodeKey const* key = m_node->GetKey()->AsECInstanceNodeKey();
@@ -228,8 +228,8 @@ struct NodeSymbolsProvider : IECSymbolProvider
     struct Context : ProviderContext
         {
         IConnectionCR m_connection;
-        JsonNavNodeCPtr m_node;
-        Context(IConnectionCR connection, JsonNavNodeCP node) : m_connection(connection), m_node(node) {}
+        NavNodeCPtr m_node;
+        Context(IConnectionCR connection, NavNodeCP node) : m_connection(connection), m_node(node) {}
         };
 
 private:
@@ -319,7 +319,7 @@ protected:
             }
         else
             {
-            JsonNavNodeCR node = *m_context.m_node;
+            NavNodeCR node = *m_context.m_node;
             NavNodeExtendedData nodeExtendedData(node);
 
             ECClassCP nodeClass = nullptr;
