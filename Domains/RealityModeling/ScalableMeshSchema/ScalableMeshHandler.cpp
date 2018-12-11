@@ -75,7 +75,7 @@ BentleyStatus IScalableMeshLocationProvider::GetExtraFileDirectory(BeFileNameR e
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  12/2017
 //----------------------------------------------------------------------------------------
-bool IsUrl(WCharCP filename)
+bool IsSMNameUrl(WCharCP filename)
     {
     return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
     }
@@ -88,7 +88,7 @@ BentleyStatus ResolveFileName(BeFileNameR fileName, Utf8StringCR fileId, DgnDbCR
     WString fileNameW(fileId.c_str(), true);
     BeFileName fileIdWStr(fileNameW);
 
-    if (BeFileName::DoesPathExist(fileIdWStr.c_str()) || IsUrl(fileIdWStr.c_str()))
+    if (BeFileName::DoesPathExist(fileIdWStr.c_str()) || IsSMNameUrl(fileIdWStr.c_str()))
         {               
         fileName = fileIdWStr;
         return SUCCESS;        
@@ -2031,7 +2031,7 @@ void ScalableMeshModel::CloseFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     {    
-    if (!BeFileName::DoesPathExist(newFilename) && !IsUrl(newFilename.c_str()))
+    if (!BeFileName::DoesPathExist(newFilename) && !IsSMNameUrl(newFilename.c_str()))
         return ERROR;
             
     m_properties.m_fileId = Utf8String(newFilename);
