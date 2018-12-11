@@ -6,17 +6,8 @@
 #--------------------------------------------------------------------------------
 # KNOWN issues
 #--------------------------------------------------------------------------------
-
-# Reproduceable hang that break DEV runs
-BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
-    # bim0200, NDEBUG, x64, random
-    # Hang on line 192 of the test body: while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
-
 # Tests that fail for know reasons and require larger fixes
 *_KnownIssue*
-
-#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
-*ConnectWebServicesClientCTests*
 
 #--------------------------------------------------------------------------------
 # RANDOM reproduceable crashes/hangs that break DEV builds
@@ -25,49 +16,14 @@ BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnecti
 #--------------------------------------------------------------------------------
 # RANDOM crashes/hangs on PRG/FIREBUG (usually can be ran on DEV x64 builds with no problems)
 #--------------------------------------------------------------------------------
-#TFS 775875 (Client SDK Cpp) Calculated properties no linger supported in ecdb, follow-up if it needs fixing on WSClient
-DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue
-#[ RUN      ] DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue
-    #{SRC}\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(4440): error:       Expected: "OldValue"
-    #      Which is: 00007FF6619F9600
-    #To be equal to: properties["TestCalculatedProperty"]
-    #      Which is: {}
-    #{SRC}\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(4447): error:       Expected: "NewValue"
-    #      Which is: 00007FF6619F9610
-    #To be equal to: properties["TestCalculatedProperty"]
-    #      Which is: {}
-    #[  FAILED  ] DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue (129 ms)
 
-#TFS 733272
-CachingDataSourceTests.CacheFiles_TwoFilesDownloading_ProgressReportsSumOfBothDownloads
-CachingDataSourceTests.GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes
-CachingDataSourceTests.GetFile_CalledMultipleTimes*
-    # bim0200, NDEBUG, x64 and x86
-    # The first hung on line 751 of the test body: while (!downloadStarted);
-    # The rest seemed to randomly hang as well.
-
-UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
-    # DgnDb61-16Q4, x64, NDEBUG (PRG)
-    # Crash (no stack printed)
-    # [ RUN      ] UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
-    # e:\Builds\dcsdk06010416\Source\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+UrlProviderTests.GetUrl_ValidateAllGetters
+    # TFS#862962
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/14/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(103): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
     # Expected: to be called once
     # Actual: never called - unsatisfied and active
-
-UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUrl
-    # DgnDb61-16Q4, x64, NDEBUG (PRG)
-    # Crash (no stack printed)
-    # [ RUN      ] UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUrl
-    # e:\Builds\dcsdk06010417\Source\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
-    #          Expected: to be called once
-    #            Actual: never called - unsatisfied and active
-    # *********************************************************************************
-
-ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
-    # bim0200dev, x86, DEBUG
-    # End of tests reports:
-    # f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\client\MockWSClient.h(31): ERROR: this mock object (used in test ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults) should be deleted but never is. Its address is @080BFB7C.
-    # ERROR: 1 leaked mock object found at program exit.
+    # Can not reproduce. Also, test is expecting 17 calls count and it was never expecting called once.
 
 UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi
     # bim0200, x64, NDEBUG
@@ -97,19 +53,14 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
     #          Expected: to be called once
     #            Actual: called twice - over-saturated and active
     # [  FAILED  ] UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi (35 ms)
+    # Can not reproduce the test failure, but it logs GMOCK warnings. This test never had code in line 87.
 
-ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
-# bim0200dev, x64, DEBUG
-# [ RUN      ] ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
-# F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Connect\ConnectSignInManagerTests.cpp(122): error: Mock function called more times than expected - taking default action specified at:
-# f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\connect\MockImsClient.h(26):
-#     Function call: RequestToken(@049A70EC 56-byte object <94-61 57-04 02-01 00-00 60-92 F4-6B 00-00 00-00 00-00 00-00 00-00 00-00 02-00 00-00 17-71 9A-04 77-73 63-5F 4E-6F 64-65 00-5D 00-45 FF-FF FF-FF 00-00 00-00 70-67 0E-04>, { 'h' (104, 0x68), 't' (116, 0x74), 't' (116, 0x74), 'p' (112, 0x70), 's' (115, 0x73), ':' (58, 0x3A), '/' (47, 0x2F), '/' (47, 0x2F), 'c' (99, 0x63), 'o' (111, 0x6F), 'n' (110, 0x6E), 'n' (110, 0x6E), 'e' (101, 0x65), 'c' (99, 0x63), 't' (116, 0x74), '-' (45, 0x2D), 'w' (119, 0x77), 's' (115, 0x73), 'g' (103, 0x67), '2' (50, 0x32), '0' (48, 0x30), '.' (46, 0x2E), 'b' (98, 0x62), 'e' (101, 0x65), 'n' (110, 0x6E), 't' (116, 0x74), 'l' (108, 0x6C), 'e' (101, 0x65), 'y' (121, 0x79), '.' (46, 0x2E), 'c' (99, 0x63), 'o' (111, 0x6F), ... }, 60)
-#           Returns: 040E0560
-#          Expected: to be called once
-#            Actual: called twice - over-saturated and active
-# ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent (10 ms)
-
-
+ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
+    # bim0200dev, x86, DEBUG
+    # End of tests reports:
+    # f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\client\MockWSClient.h(31): ERROR: this mock object (used in test ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults) should be deleted but never is. Its address is @080BFB7C.
+    # ERROR: 1 leaked mock object found at program exit.
+    # Can not reproduce, because fails to pull nuget packages with x86 architecture. I tried with WSClient build strategy. No memory leak with x64 architecture
 
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues

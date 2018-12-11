@@ -2192,13 +2192,47 @@ TEST_F(SchemaChecksumTest, ComputeCheckSumSameAsSerializedXmlStringCheckSum)
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
+    ECVersion ecXmlVersion;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecXmlVersion, schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor()));
+    EXPECT_EQ(ECVersion::V3_1, ecXmlVersion);
+
     Utf8String serializedXml;
-    schema->WriteToXmlString(serializedXml);
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedXml, ecXmlVersion));
     Utf8String serializedXmlChecksum = ECSchema::ComputeSchemaXmlStringCheckSum(serializedXml.c_str(), sizeof(Utf8Char) * serializedXml.length());
-    EXPECT_TRUE(serializedXmlChecksum.EqualsIAscii("b10907978a842848c99639a307e8ed63d367d0b7"));
+    EXPECT_STREQ("564583fb981f70f32e37abaf45e3c544735c0bbc", serializedXmlChecksum.ToLower().c_str());
 
     Utf8String checksum = schema->ComputeCheckSum();
-    EXPECT_TRUE(checksum.EqualsIAscii(serializedXmlChecksum));
+    EXPECT_STREQ(serializedXmlChecksum.ToLower().c_str(), checksum.ToLower().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Gintaras.Volkvicius 11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaChecksumTest, ComputingChecksumTakingIntoAccountSchemaXmlVersion)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass">
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+    EXPECT_STREQ("1de2f27499158c8747d04ab45c36d2b57dd7e9f0", schema->ComputeCheckSum().ToLower().c_str());
+    
+    schema->SetOriginalECXmlVersion(3, 2);
+    EXPECT_STREQ("1de2f27499158c8747d04ab45c36d2b57dd7e9f0", schema->ComputeCheckSum().ToLower().c_str());
+
+    schema->SetOriginalECXmlVersion(3, 1);
+    EXPECT_STREQ("f873d1d8223498533a2567a9badaf4bcd641350c", schema->ComputeCheckSum().ToLower().c_str());
+    
+    schema->SetOriginalECXmlVersion(3, 0);
+    EXPECT_STREQ("58baeba5e12e50c623a3fa30d876c6ae3ac7f563", schema->ComputeCheckSum().ToLower().c_str());
+
+    schema->SetOriginalECXmlVersion(0, 0); // when no schema xml version is found, it falls back to EC3.1
+    EXPECT_STREQ("f873d1d8223498533a2567a9badaf4bcd641350c", schema->ComputeCheckSum().ToLower().c_str());
     }
 
 

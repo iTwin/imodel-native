@@ -285,8 +285,10 @@ const struct WKTKeywordLess : std::binary_function<WKTKeyword, WKTKeyword, bool>
     bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 > _wcsnicmp(lhs.str, rhs, lhs.strLen); }
 #else
     bool operator() (const WKTKeyword& lhs, const WKTKeyword& rhs) const        { return 0 > wcscasecmp(lhs.str, rhs.str); }
-    bool operator() (const WChar* lhs, const WKTKeyword& rhs) const              { return 0 > wcscasecmp(lhs, rhs.str); }
-    bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 > wcscasecmp(lhs.str, rhs); }
+        bool operator() (const WChar* lhs, const WKTKeyword& rhs) const              { return 0 > wcsncasecmp
+            (lhs, rhs.str, rhs.strLen); }
+        bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 > wcsncasecmp
+            (lhs.str, rhs, lhs.strLen); }
 #endif
     } WKT_KEYWORD_LESS = {};
 
@@ -302,8 +304,10 @@ const struct WKTKeywordEqual : std::binary_function<WKTKeyword, WKTKeyword, bool
     bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 == _wcsnicmp(lhs.str, rhs, lhs.strLen); }
 #else
     bool operator() (const WKTKeyword& lhs, const WKTKeyword& rhs) const        { return 0 == wcscasecmp(lhs.str, rhs.str); }
-    bool operator() (const WChar* lhs, const WKTKeyword& rhs) const              { return 0 == wcscasecmp(lhs, rhs.str); }
-    bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 == wcscasecmp(lhs.str, rhs); }
+        bool operator() (const WChar* lhs, const WKTKeyword& rhs) const              { return 0 == wcsncasecmp
+            (lhs, rhs.str, rhs.strLen ); }
+        bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 == wcsncasecmp
+            (lhs.str, rhs, lhs.strLen); }
 #endif
     } WKT_KEYWORD_EQUAL = {};
 

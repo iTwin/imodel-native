@@ -45,9 +45,9 @@ typedef int (*DtmCallBack) ();
 //concurrency::combinable<DTMFeatureCallback> ContourLoadFunctionP;
 //thread_local void* ContourLoadFunctionUserArgP = nullptr;
 
-#if _WIN32
+//#if _WIN32
 BcDTMAppData::Key const DTMPondAppData::AppDataID;
-#endif
+//#endif
 // Prototype Functions
 
 static bool contourIndexCompare(const DTMContourIndex& index1P, const  DTMContourIndex& index2P)

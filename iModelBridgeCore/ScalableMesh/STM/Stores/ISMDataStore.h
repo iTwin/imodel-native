@@ -108,11 +108,11 @@ class IClipDefinitionExtOps : public RefCountedBase
 typedef RefCountedPtr<IClipDefinitionExtOps> IClipDefinitionExtOpsPtr;
 
 
-template <class DataType> class ISMNodeDataStore : public RefCountedBase
+template <class DATATYPE> class ISMNodeDataStore : public RefCountedBase
     {    
     public : 
                 
-        typedef RefCountedPtr<ISMNodeDataStore<DataType>> Ptr;                               
+        typedef RefCountedPtr<ISMNodeDataStore<DATATYPE>> Ptr;
 
         ISMNodeDataStore()
             {
@@ -122,7 +122,7 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
             {
             }        
 
-        virtual HPMBlockID StoreBlock(DataType* DataTypeArray, size_t countData, HPMBlockID blockID) = 0;
+        virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) = 0;
 
         //Valid only for store handling only one type of data.
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const = 0;
@@ -136,7 +136,7 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
         //Valid only for store handling only multiple type of data.
         virtual void   ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) = 0;
 
-        virtual size_t LoadBlock(DataType* DataTypeArray, size_t maxCountData, HPMBlockID blockID) = 0;
+        virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) = 0;
 
         virtual bool DestroyBlock(HPMBlockID blockID) = 0;
 
@@ -145,7 +145,7 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
         a new block can be allocated elsewhere. The new or previous block ID is returned. No compression
         is performed prior to store the block and the block is assumed to be already compressed.
         -----------------------------------------------------------------------------*/
-        virtual HPMBlockID StoreCompressedBlock(DataType* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+        virtual HPMBlockID StoreCompressedBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
             HASSERT(false); // Not implemented;
             return HPMBlockID();

@@ -42,6 +42,8 @@ class DataSourceSessionName;
 
 #define OPEN_OR_CREATE_FILE(beFile, pathStr, accessMode) BeFileStatus::Success == OPEN_FILE(beFile, pathStr, accessMode) || BeFileStatus::Success == beFile.Create(pathStr)
 
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"SMPublisher"))
+
 //#ifndef NDEBUG
 //#define DEBUG_GROUPS
 //#define DEBUG_AZURE
@@ -809,6 +811,13 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             m_totalSize = 2 * sizeof(size_t);
 
             m_isRoot = m_ParentGroup == nullptr;
+
+            BeFileName outDir(m_outputDirPath.c_str());
+            if (!outDir.IsDirectory())
+                {
+                BeFileNameStatus status = BeFileName::CreateNewDirectory(m_outputDirPath.c_str());
+                BeAssert(BeFileNameStatus::Success == status);
+                }
             }
 
 #ifndef LINUX_SCALABLEMESH_BUILD
@@ -1077,6 +1086,7 @@ size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTE
     {
     // Fetch node header data
     size_t headerSize = 0;
+        #ifndef LINUX_SCALABLEMESH_BUILD
     std::unique_ptr<Byte> headerData = nullptr;
     SMStreamingStore<EXTENT>::SerializeHeaderToBinary(&pi_NodeHeader, headerData, headerSize);
 
@@ -1085,7 +1095,7 @@ size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTE
     pi_Group->AppendHeader((uint64_t)pi_NodeHeader.m_id.m_integerID, headerData.get(), headerSize);
 
     this->Apply(pi_NodeHeader, pi_Group);
-
+#endif
     return headerSize;
     }
 
@@ -1219,9 +1229,9 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
                 GeoPoint inLatLong, outLatLong;
                 if (this->m_sourceGCS->LatLongFromCartesian(inLatLong, point) != SUCCESS)
                     assert(false); // Error in reprojection
-                if (this->m_sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *m_destinationGCS) != SUCCESS)
+                if (this->m_sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *this->m_destinationGCS) != SUCCESS)
                     assert(false); // Error in reprojection
-                if (m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
+                if (this->m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
                     assert(false); // Error in reprojection
                 };
             //bvector<DPoint3d> corners(8);
@@ -1263,10 +1273,11 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
         this->m_transform.Multiply(pi_NodeHeader.m_contentExtent, pi_NodeHeader.m_contentExtent);
         TilePublisher::WriteBoundingVolume(nodeTile, pi_NodeHeader.m_contentExtent);
         }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
     pi_Group->Append3DTile(pi_NodeHeader.m_id.m_integerID, pi_NodeHeader.m_parentNodeID.m_integerID, nodeTile);
     this->m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, 0);
+   #endif
     return 0;
     }
 
@@ -1384,9 +1395,27 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
     std::wstring group_filename(buffer);
 
     BeFile file;
-    if (OPEN_OR_CREATE_FILE(file, group_filename.c_str(), BeFileAccess::Write))
+    BeFileStatus status;
+    int numRetries = 0;
+    while (numRetries < 10 && BeFileStatus::FileNotFoundError != (status = file.Open(group_filename.c_str(), BeFileAccess::Write)))
         {
+        BeThreadUtilities::BeSleep(100);
+        ++numRetries;
+        }
+    if (BeFileStatus::FileNotFoundError != status)
+        {
+        LOG.errorv("File still open after 10 retries (shouldn't exist) [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
+        }
+    if (BeFileStatus::Success != status)
+        {
+        //LOG.errorv("Failed to Open [BeFileStatus(%d)]... try to create it: %ls", (uint32_t)status, group_filename.c_str());
+        status = file.Create(group_filename.c_str());
+        }
+    if (BeFileStatus::Success == status)
         file.Write(nullptr, utf8TileTree.c_str(), (uint32_t)utf8TileTree.size());
+    else
+        {
+        LOG.errorv("Failed to open or create json file [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
         }
 #endif
     }

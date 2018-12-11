@@ -612,7 +612,7 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
         DwgDbLinetypeTableRecordPtr    linetype(iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (linetype.IsNull())
             {
-            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("linetype ID=%ld", iter->GetRecordId().ToAscii()).c_str());
+            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("linetype ID=%ld", iter->GetRecordId().ToAscii().c_str()).c_str());
             continue;
             }
 

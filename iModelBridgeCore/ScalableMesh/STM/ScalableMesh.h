@@ -235,8 +235,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         IScalableMeshRDSProviderPtr   m_smRDSProvider = nullptr;
 
+                #ifndef LINUX_SCALABLEMESH_BUILD
         SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr m_streamingSettings = nullptr;
-
+#endif
 		IScalableMeshClippingOptionsPtr m_clippingOptions;
 
 

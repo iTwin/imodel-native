@@ -262,6 +262,7 @@ protected:
             IModelHubArgs* m_iModelHubArgs;
             IModelBankArgs* m_iModelBankArgs;
             };
+        
         };
     Utf8String m_briefcaseBasename;
     int m_maxRetryCount;

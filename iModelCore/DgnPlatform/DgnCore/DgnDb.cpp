@@ -999,7 +999,6 @@ struct RangeWithoutOutlierCalculator
     double              m_maxDiagonal = 0.0;
     BeInt64Id           m_maxId;
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1061,7 +1060,6 @@ DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double 
     return range;
     }
 };  //  RangeWithoutOutlierCalculator.
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2018

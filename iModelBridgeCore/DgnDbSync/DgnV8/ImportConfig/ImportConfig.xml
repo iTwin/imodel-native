@@ -13,6 +13,9 @@
             <If name="Design Model">
                 <Then newName="%file"/>
             </If>
+            <If name="DesignModel">
+                <Then newName="%file"/>
+            </If>
             <If name="Default">
                 <Then newName="%file"/>
             </If>
@@ -28,7 +31,9 @@
     <Raster importAttachments="true" exportNonPortableFormats="false"/>
     <PointCloud importAttachments="true"/>
 
-    <Thumbnails viewTypes="Physical Drawing" pixelResolution="768" renderModeOverride="None"/>
+    <Thumbnails viewTypes="Root Drawing" pixelResolution="768" renderModeOverride="None"/>
+
+    <Views viewTypes="RootViewGroup"/>
     
     <Fonts searchPaths="$(AppRoot)$(v8SdkDir)/Fonts/;$(V8WorkspaceFontPaths)">
         <!--
@@ -42,6 +47,7 @@
         </Font>
     </Fonts>
     <Options>
+        <OptionBool name="MergeDefinitions" value="false"/>         <!-- merge definitions such as levels and materials by name into the shared dictionary model. -->
         <OptionBool name="CompactDatabase" value="false"/>          <!-- compact (vacuum) database after import completes-->
         <OptionBool name="Consider2dModelsSpatial" value="false"/>  <!-- consider 2d models other than Drawing or Sheet models to be spatial models -->
         <OptionBool name="EmbedIssues" value="false"/>              <!-- save a copy of the import issues file in the .bim -->

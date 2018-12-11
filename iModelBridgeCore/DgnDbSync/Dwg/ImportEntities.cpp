@@ -883,6 +883,7 @@ private:
     DwgDbSpatialFilterCP                m_spatialFilter;
     bvector<BlockInfo>                  m_blockStack;
     bvector<int64_t>                    m_parasolidBodies;
+    bool                                m_isTargetModel2d;
     
 public:
 // the constructor
@@ -898,9 +899,10 @@ GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters&
     m_worldToElement.InitIdentity ();
     m_spatialFilter = nullptr;
     m_parasolidBodies.clear ();
+    m_isTargetModel2d = !createParams.GetModel().Is3d ();
 
     // start block stack by input entity's block
-    auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase();
+    auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase().get();
     auto blockId = nullptr == ent ? dwg->GetModelspaceId() : ent->GetOwnerId();
     m_blockStack.push_back (BlockInfo(blockId, L"ModelSpace", DwgSyncInfo::GetDwgFileId(*dwg)));
     }
@@ -942,6 +944,9 @@ void        SetSpatialFilter (DwgDbSpatialFilterCP filter) { m_spatialFilter = f
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ApplyThickness (ICurvePrimitivePtr const& curvePrimitive, DVec3dCR normal, bool closed = false)
     {
+    if (m_isTargetModel2d)
+        return  false;
+
     double  thickness = m_drawParams._GetThickness ();
 
     if (ISVALID_Thickness(thickness) && curvePrimitive.IsValid())
@@ -1179,6 +1184,12 @@ virtual void    _Pline (DwgDbPolylineCR pline, size_t fromIndex = 0, size_t numS
     CurveVectorPtr  curveVector = plineFactory.CreateCurveVector (false);
     if (curveVector.IsValid())
         {
+        if (m_isTargetModel2d)
+            {
+            this->AppendGeometry (*curveVector.get());
+            return;
+            }
+
         // extrude the polyline if it has a thickness
         GeometricPrimitivePtr   extruded = plineFactory.ApplyThicknessTo (curveVector);
         if (extruded.IsValid())
@@ -1197,6 +1208,12 @@ virtual void    _Polygon (size_t nPoints, DPoint3dCP points) override
     CurveVectorPtr  curveVector = plineFactory.CreateCurveVector (false);
     if (curveVector.IsValid())
         {
+        if (m_isTargetModel2d)
+            {
+            this->AppendGeometry (*curveVector.get());
+            return;
+            }
+
         // extrude the polyline if it has a thickness
         GeometricPrimitivePtr   extruded = plineFactory.ApplyThicknessTo (curveVector);
         if (extruded.IsValid())
@@ -1241,7 +1258,11 @@ virtual void    _Mesh (size_t nRows, size_t nColumns, DPoint3dCP points, DwgGiEd
     BlockedVectorDPoint3dR  meshPoints = dgnPolyface->Point ();
 
     for (size_t i = 0; i < nTotal; i++)
+        {
+        if (m_isTargetModel2d && fabs(points[i].z) > 1.0e-4)
+            return;
         meshPoints.push_back (points[i]);
+        }
 
     GeometricPrimitivePtr   pface = GeometricPrimitive::Create (dgnPolyface);
     if (pface.IsValid())
@@ -1263,7 +1284,7 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
     we would want polyface headers for the sake of performance and smaller file size, but 
     at the moment, polyface header is not supported for 2D model!
     -----------------------------------------------------------------------------------*/
-    if (!m_createParams.GetModel().Is3d())
+    if (m_isTargetModel2d)
         {
         // create shapes
         size_t  nVertices=0, maxFaceVertices = 0;
@@ -1311,6 +1332,10 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
             for (size_t kVertex = 0; kVertex < nVertices; kVertex++)
                 {
                 DPoint3d    vertex = points[faces[jFace++]];
+
+                // trivial rejecting 3D element
+                if (fabs(vertex.z) > 1.0e-4)
+                    return;
 
                 if (kVertex == 0 || !faceVertices[0].IsEqual(vertex))
                     faceVertices.push_back (vertex);
@@ -1760,6 +1785,10 @@ BentleyStatus   CreateBlockChildGeometry (DwgDbEntityCP entity)
     {
     auto* objExt = DwgProtocalExtension::Cast (entity->QueryX(DwgProtocalExtension::Desc()));
     if (nullptr == objExt)
+        return  BSIERROR;
+
+    // trivial reject 3D elements in a 2D model
+    if (m_isTargetModel2d && DwgBrepExt::Cast(objExt) != nullptr && DwgDbRegion::Cast(entity) == nullptr && DwgDbPlaneSurface::Cast(entity) == nullptr)
         return  BSIERROR;
 
     auto geom = objExt->_ConvertToGeometry (entity, m_drawParams.GetDwgImporter());
@@ -2319,61 +2348,99 @@ bool    ElementFactory::NeedsSeparateElement (DgnCategoryId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnGeometryPartId ElementFactory::CreateGeometryPart (DRange3dR range, double& partScale, TransformR geomToLocal, Utf8StringCR partTag, DwgImporter::GeometryEntry const& geomEntry)
+    {
+    DgnGeometryPartId   partId;
+    partId.Invalidate ();
+
+    auto& db = m_importer.GetDgnDb ();
+    auto partBuilder = GeometryBuilder::CreateGeometryPart (db, m_is3d);
+    if (!partBuilder.IsValid())
+        return  partId;
+
+    auto geomPart = DgnGeometryPart::Create (*m_partModel);
+    if (!geomPart.IsValid())
+        return  partId;
+
+    // show part name as block name
+    geomPart->SetUserLabel (geomEntry.GetBlockName().c_str());
+
+    // build a valid part transform, and transform geometry in-place as necessary
+    auto geometry = geomEntry.GetGeometry ();
+    this->TransformGeometry (geometry, geomToLocal, &partScale);
+
+    partBuilder->Append (geometry);
+
+    // insert the new part to db
+    if (partBuilder->Finish(*geomPart) != BSISUCCESS || !db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+        return  partId;
+
+    partId = geomPart->GetId ();
+    range = geomPart->GetBoundingBox ();
+
+    // insert the new part into the syncInfo
+    DwgSyncInfo::GeomPart   syncPart(partId, partTag);
+    if (syncPart.Insert(db) != BeSQLite::BE_SQLITE_DONE)
+        m_importer.ReportError (IssueCategory::Sync(), Issue::Error(), "failed adding geometry part in the SyncInfo");
+
+    return  partId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ElementFactory::GetGeometryPart (DRange3dR range, double& partScale, TransformR geomToLocal, DgnGeometryPartId partId, DwgImporter::GeometryEntry const& geomEntry)
+    {
+    auto& db = m_importer.GetDgnDb ();
+    if (DgnGeometryPart::QueryGeometryPartRange(range, db, partId) != BSISUCCESS)
+        {
+        BeAssert (false && "cannot query existing part range!!");
+        return  BSIERROR;
+        }
+
+    // build a valid part transform from DWG transform
+    geomToLocal.InitProduct (m_modelTransform, geomToLocal);
+    DwgHelper::GetTransformForSharedParts (&geomToLocal, &partScale, geomToLocal);
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry, size_t partNo)
     {
     // this method creates a new shared part geometry
     auto& db = m_importer.GetDgnDb ();
-    auto codeValue = this->BuildPartCodeValue (geomEntry, partNo);
-    auto partCode = m_importer.CreateCode (codeValue.c_str());
+    auto partTag = this->BuildPartCodeValue (geomEntry, partNo);
     auto geomToLocal = geomEntry.GetTransform ();
     double partScale = 0.0;
+    DRange3d range;
 
-    auto partId = DgnGeometryPart::QueryGeometryPartId (*m_partModel, partCode.GetValueUtf8());
+    DgnGeometryPartId       partId;
+    DwgSyncInfo::GeomPart   syncPart;
+    if (DwgSyncInfo::GeomPart::FindByTag(syncPart, db, partTag.c_str()) == BSISUCCESS)
+        partId = syncPart.GetPartId ();
+
     if (!partId.IsValid())
         {
         // create a new geometry part:
-        auto partBuilder = GeometryBuilder::CreateGeometryPart (db, m_is3d);
-        if (!partBuilder.IsValid())
+        partId = this->CreateGeometryPart (range, partScale, geomToLocal, partTag, geomEntry);
+        if (!partId.IsValid())
             return  BSIERROR;
-
-        auto geomPart = DgnGeometryPart::Create (*m_partModel, partCode.GetValueUtf8());
-        if (!geomPart.IsValid())
-            return  BSIERROR;
-
-        // show part name as block name
-        geomPart->SetUserLabel (geomEntry.GetBlockName().c_str());
-
-        // build a valid part transform, and transform geometry in-place as necessary
-        auto geometry = geomEntry.GetGeometry ();
-        this->TransformGeometry (geometry, geomToLocal, &partScale);
-
-        partBuilder->Append (geometry);
-        
-        // insert the new part to db
-        if (partBuilder->Finish(*geomPart) != BSISUCCESS || !db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
-            return  BSIERROR;
-
-        part.SetPartId (geomPart->GetId());
-        part.SetPartRange (geomPart->GetBoundingBox());
         }
     else
         {
         // use existing geometry part
-        DRange3d    range;
-        if (DgnGeometryPart::QueryGeometryPartRange(range, db, partId) != BSISUCCESS)
-            BeAssert (false && "cannot query existing part range!!");
-
-        // build a valid part transform from DWG transform
-        geomToLocal.InitProduct (m_modelTransform, geomToLocal);
-        DwgHelper::GetTransformForSharedParts (&geomToLocal, &partScale, geomToLocal);
-
-        part.SetPartId (partId);
-        part.SetPartRange (range);
+        if (this->GetGeometryPart(range, partScale, geomToLocal, partId, geomEntry) != BSISUCCESS)
+            return  BSIERROR;
         }
 
     part.SetTransform (Transform::FromProduct(m_invBaseTransform, geomToLocal));
     part.SetGeometryParams (geomEntry.GetGeometryParams());
     part.SetPartScale (partScale);
+    part.SetPartId (partId);
+    part.SetPartRange (range);
 
     return  BSISUCCESS;
     }
@@ -2984,15 +3051,33 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DwgImporter::_FilterEntity (DwgDbEntityCR entity, DwgDbSpatialFilterP spatialFilter)
+bool            DwgImporter::_FilterEntity (ElementImportInputs& inputs) const
     {
+    auto entity = inputs.GetEntityP ();
+    if (nullptr == entity)
+        return  true;
+
     // don't draw invisible entities:
-    if (DwgDbVisibility::Invisible == entity.GetVisibility())
+    if (DwgDbVisibility::Invisible == entity->GetVisibility())
         return  true;
 
     // trivial reject clipped away entity:
-    if (nullptr != spatialFilter && spatialFilter->IsEntityFilteredOut(entity))
+    auto spatialFilter = inputs.GetSpatialFilter ();
+    if (nullptr != spatialFilter && spatialFilter->IsEntityFilteredOut(*entity))
         return  true;
+
+    // trivial reject 3D elements in a 2D model
+    if (!inputs.GetTargetModel().Is3d())
+        {
+        if (DwgDb3dSolid::Cast(entity) != nullptr ||
+            DwgDbBody::Cast(entity) != nullptr ||
+            DwgDbExtrudedSurface::Cast(entity) != nullptr ||
+            DwgDbLoftedSurface::Cast(entity) != nullptr ||
+            DwgDbNurbSurface::Cast(entity) != nullptr ||
+            DwgDbRevolvedSurface::Cast(entity) != nullptr ||
+            DwgDbSweptSurface::Cast(entity) != nullptr)
+            return  true;
+        }
 
     return  false;
     }
@@ -3098,7 +3183,7 @@ void DwgImporter::OpenAndImportEntity (ElementImportInputs& inputs)
 
     this->Progress ();
 
-    if (!this->_FilterEntity(inputs.GetEntity(), inputs.GetSpatialFilter()))
+    if (!this->_FilterEntity(inputs))
         this->ImportOrUpdateEntity (inputs);
     }
 

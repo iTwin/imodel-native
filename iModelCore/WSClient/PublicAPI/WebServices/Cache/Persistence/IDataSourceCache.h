@@ -309,6 +309,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         virtual BentleyStatus RemoveResponse(CachedResponseKeyCR responseKey) = 0;
         //! Removes temporary cached responses that have no date accessed or it is older than date specified
         virtual BentleyStatus RemoveTemporaryResponses(Utf8StringCR name, DateTimeCR accessedBeforeDateUtc) = 0;
+        //! Removes temporary cached responses beginning with responsePrefix that have no date accessed or it is older than date specified
+        virtual BentleyStatus RemoveTemporaryResponsesByPrefix(Utf8StringCR responsePrefix, DateTimeCR accessedBeforeDateUtc) = 0;
         //! Removes all cached responses that match name
         virtual BentleyStatus RemoveResponses(Utf8StringCR name) = 0;
         //! Removes all cached responses that starts with a given prefix

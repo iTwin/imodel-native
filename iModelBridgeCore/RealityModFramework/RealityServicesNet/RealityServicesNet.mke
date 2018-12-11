@@ -7,6 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
+
 appName = RealityServicesNet
 sAppName    = RealityServicesNet
 baseDir = $(_MakeFilePath)

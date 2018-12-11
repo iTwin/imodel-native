@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonReader.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -100,6 +100,28 @@ BentleyStatus JsonReader::Read(Json::Value& jsonValue, ECInstanceId ecInstanceId
 
     JsonECSqlSelectAdapter jsonAdapter(m_statement, m_formatOptions);
     return jsonAdapter.GetRow(jsonValue);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle           11/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonReader::Read(RapidJsonValueR jsonValue, ECInstanceId ecInstanceId, rapidjson::MemoryPoolAllocator<>& allocator) const
+    {
+    if (!IsValid())
+        return ERROR;
+
+    BeAssert(m_statement.IsPrepared());
+
+    if (ECSqlStatus::Success != m_statement.BindId(1, ecInstanceId))
+        return ERROR;
+
+    StatementResetScope stmtScope(m_statement);
+
+    if (BE_SQLITE_ROW != m_statement.Step())
+        return ERROR;
+
+    JsonECSqlSelectAdapter jsonAdapter(m_statement, m_formatOptions);
+    return jsonAdapter.GetRow(jsonValue, allocator);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

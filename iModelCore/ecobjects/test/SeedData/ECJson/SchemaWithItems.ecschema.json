@@ -1,5 +1,5 @@
 ﻿{
-  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/ecschema",
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/ecschema",
   "name": "ExampleSchema",
   "version": "03.01.00",
   "alias": "ex",

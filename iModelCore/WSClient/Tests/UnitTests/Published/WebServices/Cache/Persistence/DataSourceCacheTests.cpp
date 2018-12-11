@@ -445,7 +445,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DerivedSchemasWithAddedPropertyPassed
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {derivedSchema2}));
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("DynamicSchema"));
 
-    //Update object with new property 
+    //Update object with new property
     instances.Add({"DynamicSchema.TestSubClass", "Foo"}, {{ "A", "ValueA" }, { "B", "ValueB" }, { "C", "ValueC" }, { "D", "ValueD" }});
     ASSERT_EQ(CacheStatus::OK, cache->UpdateInstance({"DynamicSchema.TestSubClass", "Foo"}, instances.ToWSObjectsResponse()));
     EXPECT_TRUE(cache->GetCachedObjectInfo({"DynamicSchema.TestSubClass", "Foo"}).IsFullyCached());
@@ -668,10 +668,10 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_Change
     // Such schema is not supported by ECDb when caching data with WSCache. UpdateSchemas will adjust it.
     auto schema = ParseSchema(
         R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="A" >  
+            <ECClass typeName="A" >
                 <ECProperty propertyName="Name" typeName="string" />
-            </ECClass>            
-            <ECClass typeName="B" >  
+            </ECClass>
+            <ECClass typeName="B" >
                 <ECProperty propertyName="Name" typeName="string" />
             </ECClass>
             <ECRelationshipClass typeName="AB" isDomainClass="True" strength="referencing" strengthDirection="forward">
@@ -716,8 +716,9 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate)
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate_KnownIssue)
     {
     MockECDbSchemaChangeListener listener;
     auto cache = GetTestCache();
@@ -4152,8 +4153,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHa
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsRemoved_RemovesResults)
+TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsRemoved_RemovesResults_KnownIssue)
     {
     auto cache = GetTestCache();
     CachedResponseKey key(cache->FindOrCreateRoot("Parent"), "TestQuery", cache->FindOrCreateRoot("Holder"));
@@ -4170,8 +4172,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsR
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsParentInstanceAndParentRootRemoved_QueryResultsAndParentDeleted)
+TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsParentInstanceAndParentRootRemoved_QueryResultsAndParentDeleted_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7495,8 +7498,9 @@ TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndChangeDeleted_ValidObj
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_ReturnsInvalidKey)
+TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_ReturnsInvalidKey_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7511,8 +7515,9 @@ TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_Returns
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_ReturnsRelationshipKey)
+TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_ReturnsRelationshipKey_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7534,8 +7539,9 @@ TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_Ret
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_ReturnsEmptyObjectId)
+TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_ReturnsEmptyObjectId_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7550,8 +7556,9 @@ TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_Re
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRelationshipObjectId)
+TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRelationshipObjectId_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7568,8 +7575,9 @@ TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRe
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds)
+TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds_KnownIssue)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass", "A"}));
@@ -7591,8 +7599,9 @@ TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInsta
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLinked_ReturnsIds)
+TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLinked_ReturnsIds_KnownIssue)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass", "A"}));
@@ -7613,8 +7622,9 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLi
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_IvalidInstance_Error)
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_IvalidInstance_Error_KnownIssue)
     {
     auto cache = GetTestCache();
     ECInstanceKeyMultiMap map;
@@ -8145,7 +8155,7 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponseWithAccessDateLate
     CachedResponseKey responseKey2(cache->FindOrCreateRoot("B"), "Test");
 
     ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
-    ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("B", CacheRootPersistence::Temporary));
 
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
@@ -8159,9 +8169,126 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponseWithAccessDateLate
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
+* @bsitest                                    Robert.Lukasonok                    11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesResponses)
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_EmptyPrefix_ReturnsError)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey(cache->FindOrCreateRoot("Foo"), "foo_Test");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("Foo", CacheRootPersistence::Temporary));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+
+    EXPECT_EQ(ERROR, cache->RemoveTemporaryResponsesByPrefix("", DateTime::GetCurrentTimeUtc()));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Robert.Lukasonok                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_NoResponsesWithPrefix_ReturnsSuccess)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("Foo"), "foo_Test");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("Foo"), "bar");
+    CachedResponseKey responseKey3(cache->FindOrCreateRoot("Foo"), "barTest");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("Foo", CacheRootPersistence::Temporary));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, StubInstances().ToWSObjectsResponse()));
+
+    EXPECT_EQ(SUCCESS, cache->RemoveTemporaryResponsesByPrefix("bar_", DateTime::GetCurrentTimeUtc()));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey1));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey2));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey3));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Robert.Lukasonok                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_PrefixStartsWithPercent_LeavesResponses)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "%foo_Test1");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("A"), "foo_Test2");
+    CachedResponseKey responseKey3(cache->FindOrCreateRoot("A"), "bar_foo_Test3");
+    CachedResponseKey responseKey4(cache->FindOrCreateRoot("A"), "bar_%foo_Test4");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey4, StubInstances().ToWSObjectsResponse()));
+
+    EXPECT_EQ(SUCCESS, cache->RemoveTemporaryResponsesByPrefix("%foo_", DateTime::GetCurrentTimeUtc()));
+
+    EXPECT_FALSE(cache->IsResponseCached(responseKey1));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey2));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey3));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey4));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Robert.Lukasonok                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_ResponsesWithSamePrefixButPersistent_LeavesResponses)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "foo_Test");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("B"), "foo_Test");
+    CachedResponseKey responseKey3(cache->FindOrCreateRoot("C"), "foo_Test");
+    CachedResponseKey responseKey4(cache->FindOrCreateRoot("D"), "foo_Test");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("B", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("C", CacheRootPersistence::Full));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("D", CacheRootPersistence::Full));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey4, StubInstances().ToWSObjectsResponse()));
+
+    EXPECT_EQ(SUCCESS, cache->RemoveTemporaryResponsesByPrefix("foo_", DateTime::GetCurrentTimeUtc()));
+
+    EXPECT_FALSE(cache->IsResponseCached(responseKey1));
+    EXPECT_FALSE(cache->IsResponseCached(responseKey2));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey3));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey4));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Robert.Lukasonok                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_ResponseWithAccessDateLaterThanUsed_LeavesResponse)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "foo_Test1");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("B"), "foo_Test2");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("B", CacheRootPersistence::Temporary));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->SetResponseAccessDate(responseKey1, DateTime(DateTime::Kind::Utc, 1989, 02, 14, 0, 0, 0)));
+    ASSERT_EQ(SUCCESS, cache->SetResponseAccessDate(responseKey2, DateTime(DateTime::Kind::Utc, 2010, 01, 01, 0, 0, 0)));
+
+    EXPECT_EQ(SUCCESS, cache->RemoveTemporaryResponsesByPrefix("foo_", DateTime(DateTime::Kind::Utc, 2000, 01, 01, 0, 0, 0)));
+    EXPECT_FALSE(cache->IsResponseCached(responseKey1));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey2));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesResponses_KnownIssue)
     {
     auto cache = GetTestCache();
     CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "Test");
@@ -8235,8 +8362,9 @@ TEST_F(DataSourceCacheTests, RemoveResponsesByPrefix_ResponseContainingButNotSta
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForObject_WorksFine)
+TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForObject_WorksFine_KnownIssue)
     {
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache);

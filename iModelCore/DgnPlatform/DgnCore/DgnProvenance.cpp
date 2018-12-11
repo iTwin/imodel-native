@@ -137,7 +137,7 @@ void DgnV8ModelProvenance::CreateTable(DgnDbR dgndb)
                       "V8ModelId INT,"//Maps to V8Id
                       "V8ModelName CHAR NOT NULL,"
                       "Transform BLOB,"
-                      "CONSTRAINT FileModelId UNIQUE(ModelId,Id,V8ModelId,Transform)"
+                      "CONSTRAINT FileModelId UNIQUE(ModelId, V8FileId, V8ModelId,Transform)"
                       );//Maps to V8Name
     dgndb.ExecuteSql("CREATE INDEX " DGN_TABLE_ProvenanceModel "_ModelId ON "  DGN_TABLE_ProvenanceModel "(ModelId)");
     }
@@ -226,6 +226,7 @@ BentleyStatus DgnV8ModelProvenance::FindAll(bvector <ModelProvenanceEntry> &entr
         entry.m_dgnv8ModelId = stmt->GetValueInt(1);
         entry.m_modelName = stmt->GetValueText(2);
         memcpy(&entry.m_trans, stmt->GetValueBlob(3), sizeof(entry.m_trans));
+        entries.push_back(entry);
         }
 
     return SUCCESS;

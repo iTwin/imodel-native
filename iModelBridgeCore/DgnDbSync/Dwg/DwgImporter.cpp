@@ -120,6 +120,7 @@ void   DwgImporter::GetOrCreateJobPartitions ()
     this->InitUncategorizedCategory ();
     this->InitBusinessKeyCodeSpec ();
     this->InitSheetListModel ();
+    this->InitDrawingListModel ();
     this->InitGroupModel ();
     }
 
@@ -173,6 +174,32 @@ BentleyStatus   DwgImporter::InitSheetListModel ()
     m_sheetListModelId = sheetListModel->GetModelId();
 
     return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::InitDrawingListModel ()
+    {
+    Utf8CP partitionName = "Imported Drawings";
+    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), partitionName);
+    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
+    m_drawingListModelId = DgnModelId(partitionId.GetValueUnchecked());
+    
+    if (m_drawingListModelId.IsValid())
+        return BentleyStatus::SUCCESS;
+
+    DocumentPartitionPtr ed = DocumentPartition::Create(GetJobSubject(), partitionName);
+    DocumentPartitionCPtr partition = ed->InsertT<DocumentPartition>();
+    if (!partition.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    DocumentListModelPtr drawingListModel = DocumentListModel::CreateAndInsert(*partition);
+    if (!drawingListModel.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    m_drawingListModelId = drawingListModel->GetModelId();
+    return BentleyStatus::SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -521,7 +548,7 @@ Utf8String      DwgImporter::ComputeModelName (Utf8StringR proposedName, BeFileN
     if (m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel) != modelType)
         return  uniqueName;
 
-    // unique phisical model names will be later handled by PhysicalPartition::CreateUniqueCode
+    // unique physical model names will be later handled by PhysicalPartition::CreateUniqueCode
 
     return uniqueName;
     }
@@ -762,16 +789,30 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
         }
     else if (dgndbSchemas.GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel) == classId)
         {
-        // paperspace model
+        // paperspace model, or app remapped modelspace or xref model
         DocumentListModelPtr    sheetListModel = m_dgndb->Models().Get<DocumentListModel>(m_sheetListModelId);
         if (!sheetListModel.IsValid())
             return modelElementId;
 
-        LayoutFactory   factory (*this, block.GetLayoutId());
-        double          scale = factory.GetUserScale ();
-        DPoint2d        sheetSize = DPoint2d::From (1.0, 1.0);
-
-        factory.CalculateSheetSize (sheetSize);
+        DPoint2d    sheetSize = DPoint2d::From (1.0, 1.0);
+        double      scale = 1.0;
+        if (block.IsPaperspace())
+            {
+            LayoutFactory   factory (*this, block.GetLayoutId());
+            scale = factory.GetUserScale ();
+            factory.CalculateSheetSize (sheetSize);
+            }
+        else
+            {
+            DRange3d    range;
+            if (DwgDbStatus::Success == const_cast<DwgDbBlockTableRecordR>(block).ComputeRange(range))
+                {
+                auto units = this->GetModelUnitsFromBlock (scale, block);
+                double toMeters = units.ToMeters ();
+                sheetSize.Init (range.XLength(), range.YLength());
+                sheetSize.Scale (toMeters);
+                }
+            }
 
         DgnCode             sheetCode = Sheet::Element::CreateUniqueCode(*sheetListModel, modelName.c_str());
         Sheet::ElementPtr   sheet = Sheet::Element::Create (*sheetListModel, scale, sheetSize, sheetCode.GetValueUtf8CP());
@@ -784,6 +825,26 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
 
         if (sheet.IsValid())
             modelElementId = sheet->GetElementId ();
+        else
+            this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), modelName.c_str());
+        }
+    else if (dgndbSchemas.GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel) == classId)
+        {
+        // app remapped modelspace or xref model
+        DocumentListModelPtr drawingListModel = m_dgndb->Models().Get<DocumentListModel>(m_drawingListModelId);
+        if (!drawingListModel.IsValid())
+            return modelElementId;
+
+        DgnCode     drawingCode = Drawing::CreateUniqueCode (*drawingListModel, modelName.c_str());
+        DrawingPtr  drawing = Drawing::Create (*drawingListModel, drawingCode.GetValueUtf8CP());
+        if (!drawing.IsValid())
+            return modelElementId;
+
+        drawing->SetUserLabel (modelName.c_str());
+
+        m_dgndb->Elements().Insert <Drawing> (*drawing);
+        if (drawing.IsValid())
+            modelElementId = drawing->GetElementId ();
         else
             this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), modelName.c_str());
         }
@@ -921,7 +982,7 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
     DgnClassId  modelType = this->_GetModelType (dwgBlock);
     DgnModelId  modelId = this->CreateModel (dwgBlock, modelName.c_str(), modelType);
     if (!modelId.IsValid())
-        return nullptr;
+        return ResolvedModelMapping();
 
     DgnModelP   model = m_dgndb->Models().GetModel(modelId).get ();
     if (nullptr == model)
@@ -1923,7 +1984,7 @@ void            DwgImporter::_FinishImport ()
         }
     changeDetector._Cleanup (*this);
 
-    // that deleted views are deleted, now update survived views and generate thumbnails as needed:
+    // now that not seen views are deleted, update survived views and generate thumbnails as needed:
     _PostProcessViewports ();
     ValidateJob ();
 
@@ -1966,7 +2027,11 @@ BentleyStatus   DwgImporter::Process ()
     DwgImportLogging::LogPerformance(timer, "Create Spaces");
 
     timer.Start();
-    this->_ImportDwgModels ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportDwgModels ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing models"));
     if (this->WasAborted())
         return BSIERROR;
 
@@ -2008,28 +2073,44 @@ BentleyStatus   DwgImporter::Process ()
     DwgImportLogging::LogPerformance(timer, "Import Modelspace Viewports");
 
     timer.Start();
-    this->_ImportEntitySection ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportEntitySection ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing entity section"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Entity Section/ModelSpace");
 
     timer.Start();
-    this->_ImportLayouts ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportLayouts ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing layouts"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Layouts");
 
     timer.Start();
-    this->_ImportGroups ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportGroups ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing groups"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Groups");
 
     timer.Start ();
-    this->_FinishImport ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_FinishImport ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed cleaning up the importer"));
     if (this->WasAborted())
         return BSIERROR;
 

@@ -496,8 +496,12 @@ int                 transmitVersion         // => version of parasolid schema to
     transmitOptions.transmit_format  = PK_transmit_format_binary_c;
     transmitOptions.transmit_version = transmitVersion;
 
-    if (PK_ERROR_no_errors != PK_PART_transmit_b (1, &entityTagIn, &transmitOptions, pBuffer))
+    PK_ERROR_code_t result = PK_PART_transmit_b(1, &entityTagIn, &transmitOptions, pBuffer);
+    if (PK_ERROR_no_errors != result)
+        {
+        LOG.errorv("pki_save_entity_to_memory failed with status %d", result);
         return ERROR;
+        }
 
     return SUCCESS;
     }

@@ -41,21 +41,21 @@ template <class POINT> struct PointOp
     static void   SetZ(POINT& point, double z) {
         point.z = z;
         }
-    static POINT  Create(double x, double y, double z) {
+    inline static POINT  Create(double x, double y, double z) {
         return POINT(x, y, z);
         }
-    static bool   AreEqual(const POINT& point1, const POINT& point2) {
+    inline static bool   AreEqual(const POINT& point1, const POINT& point2) {
         return point1 == point2;
         }
     };
 
 
-template<> bool    PointOp < DPoint3d >::AreEqual(const DPoint3d& point1, const DPoint3d& point2)
+template<> inline bool    PointOp < DPoint3d >::AreEqual(const DPoint3d& point1, const DPoint3d& point2)
     {
     return point1.DistanceSquared(point2) < 1e-8;
     };
 
-template<> DPoint3d   PointOp < DPoint3d >::Create(double x, double y, double z)
+template<> inline DPoint3d   PointOp < DPoint3d >::Create(double x, double y, double z)
     {
     return DPoint3d::From(x, y, z);
     }
@@ -67,24 +67,24 @@ template<> DPoint3d   PointOp < DPoint3d >::Create(double x, double y, double z)
 template <> class ExtentOp <DRange3d>
 {
 public:
-    static double GetXMin(const DRange3d& extent) { return extent.low.x; }
-    static double GetXMax(const DRange3d& extent) { return extent.high.x; }
-    static double GetYMin(const DRange3d& extent) { return extent.low.y; }
-    static double GetYMax(const DRange3d& extent) { return extent.high.y; }
-    static double GetZMin(const DRange3d& extent) { return extent.low.z; }
-    static double GetZMax(const DRange3d& extent) { return extent.high.z; }
-    static void   SetXMin(DRange3d& extent, double xMin) { extent.low.x = xMin; }
-    static void   SetXMax(DRange3d& extent, double xMax) { extent.high.x = xMax; }
-    static void   SetYMin(DRange3d& extent, double yMin) { extent.low.y = yMin; }
-    static void   SetYMax(DRange3d& extent, double yMax) { extent.high.y = yMax; }
-    static void   SetZMin(DRange3d& extent, double zMin) { extent.low.z = zMin; }
-    static void   SetZMax(DRange3d& extent, double zMax) { extent.high.z = zMax; }
-    static double GetWidth(const DRange3d& extent) { return extent.XLength(); }
-    static double GetHeight(const DRange3d& extent) { return extent.YLength(); }
-    static double GetThickness(const DRange3d& extent) { return extent.ZLength(); }
-    static bool   Contains2d(const DRange3d& extent1, const DRange3d& extent2) { return extent2.IsStrictlyContainedXY(extent1); }
-    static bool   Overlap(const DRange3d& extent1, const DRange3d& extent2) { return extent1.IntersectsWith(extent2); }
-    static bool   InnerOverlap(const DRange3d& extent1, const DRange3d& extent2) {
+    inline static double GetXMin(const DRange3d& extent) { return extent.low.x; }
+    inline static double GetXMax(const DRange3d& extent) { return extent.high.x; }
+    inline static double GetYMin(const DRange3d& extent) { return extent.low.y; }
+    inline static double GetYMax(const DRange3d& extent) { return extent.high.y; }
+    inline static double GetZMin(const DRange3d& extent) { return extent.low.z; }
+    inline static double GetZMax(const DRange3d& extent) { return extent.high.z; }
+    inline static void   SetXMin(DRange3d& extent, double xMin) { extent.low.x = xMin; }
+    inline static void   SetXMax(DRange3d& extent, double xMax) { extent.high.x = xMax; }
+    inline static void   SetYMin(DRange3d& extent, double yMin) { extent.low.y = yMin; }
+    inline static void   SetYMax(DRange3d& extent, double yMax) { extent.high.y = yMax; }
+    inline static void   SetZMin(DRange3d& extent, double zMin) { extent.low.z = zMin; }
+    inline static void   SetZMax(DRange3d& extent, double zMax) { extent.high.z = zMax; }
+    inline static double GetWidth(const DRange3d& extent) { return extent.XLength(); }
+    inline static double GetHeight(const DRange3d& extent) { return extent.YLength(); }
+    inline static double GetThickness(const DRange3d& extent) { return extent.ZLength(); }
+    inline static bool   Contains2d(const DRange3d& extent1, const DRange3d& extent2) { return extent2.IsStrictlyContainedXY(extent1); }
+    inline static bool   Overlap(const DRange3d& extent1, const DRange3d& extent2) { return extent1.IntersectsWith(extent2); }
+    inline static bool   InnerOverlap(const DRange3d& extent1, const DRange3d& extent2) {
         return extent1.high.x > extent2.low.x &&
             extent1.low.x < extent2.high.x &&
             extent1.high.y > extent2.low.y &&
@@ -105,7 +105,7 @@ public:
     {
     return DRange3d::From(xMin, yMin, zMin, xMax, yMax, zMax);
         }
-    static DRange3d Create(double xMin, double yMin, double xMax, double yMax)
+    inline static DRange3d Create(double xMin, double yMin, double xMax, double yMax)
         {
         return DRange3d::From(xMin, yMin, 0.0, xMax, yMax, 0.0);
         }
@@ -149,27 +149,27 @@ template<class SPATIAL, class POINT, class EXTENT> class SpatialOp
 template <> class SpatialOp <DPoint3d, DPoint3d, DRange3d>
     {
     public:
-        static DRange3d GetExtent(const DPoint3d& spatial)
+        inline static DRange3d GetExtent(const DPoint3d& spatial)
             {
             return DRange3d::From(spatial);
             }
-        static bool IsPointIn2D(const DPoint3d& spatial, const DPoint3d& point)
+        inline static bool IsPointIn2D(const DPoint3d& spatial, const DPoint3d& point)
             {
             return spatial.AlmostEqualXY(point);
             }
 
-        static bool IsSpatialInExtent2D(const DPoint3d& spatial, const DRange3d& extent)
+        inline static bool IsSpatialInExtent2D(const DPoint3d& spatial, const DRange3d& extent)
             {
             return extent.IsContainedXY(spatial);
             }
 
-        static bool IsSpatialInExtent3D(const DPoint3d& spatial, const DRange3d& extent)
+        inline static bool IsSpatialInExtent3D(const DPoint3d& spatial, const DRange3d& extent)
             {
             return extent.IsContained(spatial);
             }
 
 
-        static size_t GetPointCount(const DPoint3d& spatial)
+        inline static size_t GetPointCount(const DPoint3d& spatial)
             {
             return 1;
             }

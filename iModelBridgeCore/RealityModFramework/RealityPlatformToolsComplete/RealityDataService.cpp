@@ -17,17 +17,10 @@ static size_t DownloadWriteCallback(void *buffer, size_t size, size_t nmemb, voi
         return 0;
 
     RealityDataFileDownload *fileDown = (RealityDataFileDownload *)pClient;
-    if (!(fileDown->GetFileStream().IsOpen()))
-        {
-        if (fileDown->GetFileStream().Open(fileDown->GetFilename().c_str(), BeFileAccess::Write) != BeFileStatus::Success)
-            return 0;   // failure, can't open file to write
-        }
-    fileDown->iAppend += nmemb;
-    uint32_t byteWritten;
-    if (fileDown->GetFileStream().Write(&byteWritten, buffer, (uint32_t)(size*nmemb)) != BeFileStatus::Success)
-        byteWritten = 0;
-
-    return byteWritten;
+    if (fileDown != nullptr)
+        return fileDown->OnWriteData((__int8*)buffer, size * nmemb);
+    else
+        return 0;
     }
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -46,9 +39,7 @@ static int download_progress_callback(void *clientp, curl_off_t dltotal, curl_of
 
     if(fileDown != nullptr)
         {
-        uint64_t currentProgress = (uint64_t) (100.0 * ((double)dlnow / (double)dltotal));
-
-        return fileDown->ProcessProgress(currentProgress);
+        return fileDown->ProcessProgress((uint64_t)dlnow);
         }
     return 0;
     }
@@ -57,7 +48,7 @@ static int download_progress_callback(void *clientp, curl_off_t dltotal, curl_of
 //! @bsimethod                                   Spencer.Mason              02/2017
 //! Callback methods used by the upload/download process.
 //=====================================================================================
-static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, RealityDataFileUpload* request)
+static size_t CurlReadDataCallback(char* buffer, size_t size, size_t count, RealityDataFileUpload* request)
     {
     return request->OnReadData(buffer, size * count);
     }
@@ -133,6 +124,7 @@ const TransferReport& RealityDataServiceTransfer::Perform()
                 RealityDataUrl *request = reinterpret_cast<RealityDataUrl*>(pClient);
                 RealityDataFileTransfer *fileTrans = dynamic_cast<RealityDataFileTransfer*>(request);
                 RealityDataFileUpload *fileUp = dynamic_cast<RealityDataFileUpload*>(request);
+                RealityDataFileDownload *fileDown = dynamic_cast<RealityDataFileDownload*>(request);
 
                 // Retry on error
                 if (msg->data.result == 56 || msg->data.result == 28)     // Recv failure, try again
@@ -173,6 +165,10 @@ const TransferReport& RealityDataServiceTransfer::Perform()
                                     {
                                     UpdateTransferAmount((int64_t)fileUp->GetMessageSize());
                                     m_pProgressFunc(fileTrans->GetFilename(), 1.0, m_progress);
+                                    }
+                                else if (fileDown != nullptr)
+                                    {
+                                    fileDown->ConfirmDownload();
                                     }
                                 }
                             ReportStatus((int)fileTrans->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
@@ -219,7 +215,7 @@ void RealityDataServiceTransfer::SetupRequestforFile(RealityDataUrl* request, bo
     if(fileTransfer != nullptr)
         {
         fileTransfer->SetAzureToken(GetAzureToken());
-        fileTransfer->UpdateTransferedSize();
+        //fileTransfer->UpdateTransferedSize();
         }
     else
         return; //unexpected request
@@ -283,11 +279,11 @@ void RealityDataServiceTransfer::SetupRequestforFile(RealityDataUrl* request, bo
             curl_easy_setopt(pCurl, CURLOPT_XFERINFOFUNCTION, download_progress_callback);
             curl_easy_setopt(pCurl, CURLOPT_XFERINFODATA, fileDownload);
 
-            if (fileDownload->GetFileStream().Create(fileDownload->GetFilename().c_str(), true) != BeFileStatus::Success)
+            /*if (fileDownload->GetFileStream().Create(fileDownload->GetFilename().c_str(), true) != BeFileStatus::Success)
                 {
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("\nFailed to create File %s on local machine\nAborting download of this file", fileDownload->GetFilename().c_str()).c_str());
                 return;   // failure, can't open file to write
-                }
+                }*/
             }
 
         curl_multi_add_handle((CURLM*)m_pRequestHandle, pCurl);

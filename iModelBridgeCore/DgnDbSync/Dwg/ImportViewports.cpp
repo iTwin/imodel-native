@@ -345,7 +345,7 @@ bool            ViewportFactory::ComputeClipperTransformation (TransformR toClip
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewportFactory::ComputeSheetView (SheetViewDefinitionR dgnView)
+void            ViewportFactory::ComputeSheetView (ViewDefinitionR dgnView)
     {
     // compute view delta:
     DVec3d      delta;
@@ -627,7 +627,7 @@ void            ViewportFactory::ComputeSheetDisplayStyle (DisplayStyleR display
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewportFactory::AddSpatialCategories (Utf8StringCR viewName)
+void            ViewportFactory::AddModelspaceCategories (Utf8StringCR viewName)
     {
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == model)
@@ -640,51 +640,71 @@ void            ViewportFactory::AddSpatialCategories (Utf8StringCR viewName)
 
     DgnCategoryIdSet&   categoryIdSet = m_categories->GetCategoriesR ();
 
-    this->UpdateSpatialCategories (categoryIdSet);
+    this->UpdateModelspaceCategories (categoryIdSet);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewportFactory::UpdateSpatialCategories (DgnCategoryIdSet& categoryIdSet) const
+bool    ViewportFactory::IsLayerDisplayed (DwgDbHandleCR layerHandle, DwgDbObjectIdArrayCR vpfrozenLayers, DwgDbDatabaseR dwg) const
+    {
+    DwgDbObjectId   layerId;
+    if (layerHandle.IsNull() || !(layerId = dwg.GetObjectId(layerHandle)).IsValid())
+        return  false;
+
+    // if this is a viewport in layout, check viewport frozen layers:
+    if (!vpfrozenLayers.empty())
+        {
+        // erase category from the view if the layer is viewport frozen:
+        auto found = std::find_if (vpfrozenLayers.begin(), vpfrozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
+        if (found != vpfrozenLayers.end())
+            return  false;
+        }
+
+    // check the layer's global on/off status and global freeze:
+    DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
+    if (layer.OpenStatus() == DwgDbStatus::Success)
+        return !layer->IsOff() && !layer->IsFrozen();
+
+    // default to displaying a layer which has a valid ID.
+    return  true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ViewportFactory::UpdateModelspaceCategories (DgnCategoryIdSet& categoryIdSet) const
     {
     // add all spatial categories to the modelspace view, but only add displayed ones to a viewport view:
     DwgDbObjectIdArray  frozenLayers;
     DwgDbViewportCP     viewportEntity = DwgDbViewport::Cast (m_inputViewport);
 
     // if this is for a viewport entity, get viewport frozen layer ID's:
-    size_t  numFrozenLayers = 0;
-    if (nullptr != viewportEntity && DwgDbStatus::Success == viewportEntity->GetFrozenLayers(frozenLayers))
-        numFrozenLayers = frozenLayers.size ();
+    if (nullptr != viewportEntity)
+        viewportEntity->GetFrozenLayers (frozenLayers);
 
     // lookup current DWG file in syncInfo
     DwgDbDatabaseR          dwg = m_importer.GetDwgDb ();
     DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (dwg);
     DwgSyncInfo&            syncInfo = m_importer.GetSyncInfo ();
+    DgnDbR                  db = m_importer.GetDgnDb ();
 
-    // add all displayed spatial categories to the view:
-    for (ElementIteratorEntry entry : SpatialCategory::MakeIterator(m_importer.GetDgnDb()))
+    // add all displayed categories created from the layer table to the view:
+    for (auto entry : DwgSyncInfo::LayerIterator(db, nullptr))
         {
-        DgnCategoryId   categoryId = entry.GetId <DgnCategoryId> ();
-
-        if (nullptr != viewportEntity && numFrozenLayers > 0)
+        auto    syncLayer = entry.Get ();
+        DgnCategoryId   categoryId = DgnSubCategory::QueryCategoryId (db, syncLayer.GetSubCategoryId());
+        if (!categoryId.IsValid())
             {
-            // this is a viewport entity - check viewport layer freeze:
-            DwgDbObjectId   layerId;
-            DwgDbHandle     objHandle = syncInfo.FindLayerHandle (categoryId, fileId);
-            if (!objHandle.IsNull() && (layerId = dwg.GetObjectId(objHandle)).IsValid())
-                {
-                // erase category from the view if the layer is viewport frozen:
-                auto found = std::find_if (frozenLayers.begin(), frozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
-                if (found != frozenLayers.end())
-                    {
-                    categoryIdSet.erase (categoryId);
-                    continue;
-                    }
-                }
+            m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::Sync(), Issue::Message(), "a layer is not correctly sync'ed");
+            continue;
             }
 
-        categoryIdSet.insert (categoryId);
+        // add the category if displayed and remove it if not:
+        if (this->IsLayerDisplayed(syncLayer.GetLayerHandle(), frozenLayers, dwg))
+            categoryIdSet.insert (categoryId);
+        else
+            categoryIdSet.erase (categoryId);
         }
     }
 
@@ -802,6 +822,105 @@ bool            ViewportFactory::ComputeViewAttachment (Placement2dR placement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void            ViewportFactory::UpdateSyncInfo (DgnViewId viewId, Utf8StringCR viewName, bool isNew)
+    {
+    if (!viewId.IsValid())
+        {
+        BeAssert (false && "DgnView must be inserted before updating the syncInfo!");
+        return;
+        }
+
+    // insert/update viewport into syncInfo
+    if (isNew)
+        m_importer.GetSyncInfo().InsertView (viewId, m_inputViewport->GetObjectId(), m_viewportType, viewName);
+    else
+        m_importer.GetSyncInfo().UpdateView (viewId, m_inputViewport->GetObjectId(), m_viewportType, viewName);
+
+    // update the change detector
+    m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId       ViewportFactory::CreateDrawingView (DgnModelId modelId, Utf8StringCR proposedName)
+    {
+    DgnDbR      dgndb = m_importer.GetDgnDb ();
+    Utf8String  viewName (proposedName);
+    DgnViewId   viewId;
+
+    this->ValidateViewName (viewName);
+
+    DefinitionModelP definitionModel = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == definitionModel)
+        {
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "SpatialView");
+        definitionModel = &dgndb.GetDictionaryModel ();
+        }
+
+    // add all spatial categories to the view, with viewport frozen layers applied:
+    this->AddModelspaceCategories (viewName);
+
+    // create a display style:
+    DisplayStyle2dPtr   displayStyle = new DisplayStyle2d (*definitionModel, viewName.c_str());
+    this->ComputeSheetDisplayStyle (*displayStyle);
+
+    // create a DrawingView and compute its params as if it's a sheet view:
+    DrawingViewDefinitionPtr view = new DrawingViewDefinition (*definitionModel, viewName, modelId, *m_categories, *displayStyle->ToDisplayStyle2dP());
+    this->ComputeSheetView (*view);
+
+    view->SetIsPrivate (m_isPrivate);
+    view->SetUserLabel (DataStrings::GetString(DataStrings::ModelView()).c_str());
+
+    // insert the view to BIM
+    if (!view.IsValid() || view->Insert().IsNull())
+        {
+        m_importer.ReportError(IssueCategory::CorruptData(), Issue::Error(), viewName.c_str());
+        return viewId;
+        }
+
+    viewId = view->GetViewId ();
+    this->UpdateSyncInfo (viewId, viewName, true);
+
+    return  viewId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ViewportFactory::UpdateDrawingView (DgnViewId viewId, Utf8StringCR proposedName)
+    {
+    auto drawingView = m_importer.GetDgnDb().Elements().GetForEdit<DrawingViewDefinition> (viewId);
+    if (!drawingView.IsValid())
+        return  static_cast<BentleyStatus>(DgnDbStatus::ViewNotFound);
+
+    // if the view name has been changed, reset it in affected elements which will be updated as follows
+    this->UpdateViewName (*drawingView, proposedName);
+  
+    // update categories
+    auto& categorySelector = drawingView->GetCategorySelector ();
+    this->UpdateModelspaceCategories (categorySelector.GetCategoriesR());
+    categorySelector.Update ();
+
+    // update display style:
+    auto& displayStyle = drawingView->GetDisplayStyle ();
+    this->ComputeSheetDisplayStyle (displayStyle);
+    displayStyle.Update ();
+
+    // re-compute the view, same as sheet view
+    this->ComputeSheetView (*drawingView);
+
+    if (!drawingView->Update().IsValid())
+        m_importer.ReportError (IssueCategory::Briefcase(), Issue::UpdateFailure(), drawingView->GetName().c_str());
+
+    this->UpdateSyncInfo (viewId, drawingView->GetName(), false);
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8StringCR proposedName)
     {
     DgnDbR      dgndb = m_importer.GetDgnDb ();
@@ -822,7 +941,7 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
     models->AddModel (modelId);
 
     // add all spatial categories to the view, with viewport frozen layers applied:
-    this->AddSpatialCategories (viewName);
+    this->AddModelspaceCategories (viewName);
 
     // create a display style:
     DisplayStyle3dPtr   displayStyle = new DisplayStyle3d (*model, viewName.c_str());
@@ -849,13 +968,7 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
         }
 
     viewId = view->GetViewId ();
-
-    // insert viewport into syncInfo and update the change detector
-    if (viewId.IsValid())
-        {
-        m_importer.GetSyncInfo().InsertView (viewId, m_inputViewport->GetObjectId(), m_viewportType, viewName);
-        m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
-        }
+    this->UpdateSyncInfo (viewId, viewName, true);
 
     return  viewId;
     }
@@ -874,7 +987,7 @@ BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId, Utf8String
   
     // update categories
     auto& categorySelector = spatialView->GetCategorySelector ();
-    this->UpdateSpatialCategories (categorySelector.GetCategoriesR());
+    this->UpdateModelspaceCategories (categorySelector.GetCategoriesR());
     categorySelector.Update ();
 
     // update display style:
@@ -888,8 +1001,7 @@ BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId, Utf8String
     if (!spatialView->Update().IsValid())
         m_importer.ReportError (IssueCategory::Briefcase(), Issue::UpdateFailure(), spatialView->GetName().c_str());
 
-    m_importer.GetSyncInfo().UpdateView (viewId, m_inputViewport->GetObjectId(), m_viewportType, spatialView->GetName());
-    m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
+    this->UpdateSyncInfo (viewId, spatialView->GetName(), false);
 
     return BSISUCCESS;
     }
@@ -943,11 +1055,7 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
     viewId = view->GetViewId ();
 
     // insert viewport into syncInfo and update the change detector:
-    if (viewId.IsValid())
-        {
-        m_importer.GetSyncInfo().InsertView (viewId, m_inputViewport->GetObjectId(), m_viewportType, viewName);
-        m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
-        }
+    this->UpdateSyncInfo (viewId, viewName, true);
 
     return  viewId;
     }
@@ -980,8 +1088,7 @@ BentleyStatus   ViewportFactory::UpdateSheetView (DgnViewId viewId, Utf8StringCR
     if (!sheetView->Update().IsValid())
         m_importer.ReportError (IssueCategory::Briefcase(), Issue::UpdateFailure(), sheetView->GetName().c_str());
 
-    m_importer.GetSyncInfo().UpdateView (viewId, m_inputViewport->GetObjectId(), m_viewportType, sheetView->GetName());
-    m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
+    this->UpdateSyncInfo (viewId, sheetView->GetName(), false);
 
     return BSISUCCESS;
     }
@@ -1050,6 +1157,36 @@ DgnElementPtr   ViewportFactory::UpdateViewAttachment (DgnElementId attachId, Dg
     return  viewAttachment;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ViewportFactory::UpdateModelView (DgnModelCR targetModel, DgnViewId viewId, Utf8StringCR proposedName)
+    {
+    if (targetModel.IsSpatialModel())
+        return  this->UpdateSpatialView (viewId, proposedName);
+    else if (targetModel.IsDrawingModel())
+        return  this->UpdateDrawingView (viewId, proposedName);
+    else if (targetModel.IsSheetModel())
+        return  this->UpdateSheetView (viewId, proposedName);
+    else
+        return  BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId       ViewportFactory::CreateModelView (DgnModelCR targetModel, Utf8StringCR proposedName)
+    {
+    if (targetModel.IsSpatialModel())
+        return  this->CreateSpatialView (targetModel.GetModelId(), proposedName);
+    else if (targetModel.IsDrawingModel())
+        return  this->CreateDrawingView (targetModel.GetModelId(), proposedName);
+    else if (targetModel.IsSheetModel())
+        return  this->CreateSheetView (targetModel.GetModelId(), proposedName);
+    else
+        return  DgnViewId();
+    }
+
 
 
 
@@ -1085,7 +1222,7 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
     if (importer.IsUpdating() && context.GetElementResults().GetExistingElement().IsValid())
         return  this->UpdateBim(context, importer, *rootModel, sheetModel, viewName);
 
-    // create a spatial view from the modelspace/root model:
+    // create a view for the modelspace/root model:
     ViewportFactory factory (importer, *viewport);
     // use white background color for the model view:
     factory.SetBackgroundColor (ColorDef::White());
@@ -1094,8 +1231,8 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
     factory.SetViewSourcePrivate (true);
 #endif
 
-    // create a spatial view of the modelspace model:
-    DgnViewId   modelViewId = factory.CreateSpatialView (rootModel->GetModelId(), viewName);
+    // create a spatial, drawing, or sheet view for the root model
+    DgnViewId   modelViewId = factory.CreateModelView (*rootModel, viewName);
     if (!modelViewId.IsValid())
         {
         BeAssert (false && "failed creating a spatial view for a viewport entity");
@@ -1144,8 +1281,8 @@ BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, Dw
     // create a spatial view from the modelspace/root model:
     ViewportFactory factory (importer, *viewport);
 
-    // get or create a spatial view of the modelspace model:
-    BentleyStatus   status = factory.UpdateSpatialView (modelViewId, viewName);
+    // get or create a view of the modelspace model:
+    BentleyStatus   status = factory.UpdateModelView (rootModel, modelViewId, viewName);
     if (BSISUCCESS != status)
         {
         // delete the view and re-import it anew:
@@ -1154,7 +1291,7 @@ BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, Dw
 
         Utf8PrintfString    viewName ("%s Viewport-%llx", sheetModel.GetName().c_str(), viewport->GetObjectId().ToUInt64());
 
-        modelViewId = factory.CreateSpatialView (rootModel.GetModelId(), viewName);
+        modelViewId = factory.CreateModelView (rootModel, viewName);
         if (modelViewId.IsValid())
             {
             BeAssert (false && "failed creating a spatial view for a viewport entity");
@@ -1238,12 +1375,12 @@ DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR d
         viewId = m_syncInfo.FindView (dwgVport.GetObjectId(), DwgSyncInfo::View::Type::ModelspaceViewport);
         if (viewId.IsValid())
             {
-            factory.UpdateSpatialView (viewId, viewName);
+            factory.UpdateModelView (*rootModel, viewId, viewName);
             return  viewId;
             }
         }
 
-    viewId = factory.CreateSpatialView (rootModel->GetModelId(), viewName);
+    viewId = factory.CreateModelView (*rootModel, viewName);
 
     return viewId;
     }
@@ -1421,7 +1558,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::_PostProcessViewports ()
     {
-    DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (*m_dwgdb);
     bool wantThumbnails = this->GetOptions().WantThumbnails ();
     BeDuration timeout = this->GetOptions().GetThumbnailTimeout ();
 
@@ -1437,15 +1573,16 @@ void            DwgImporter::_PostProcessViewports ()
     Render::RenderMode mode = thumbnailConfig.GetOverriddenRenderMode ();
     Point2d size = {thumbnailConfig.GetResolution(), thumbnailConfig.GetResolution()};
 
-    auto jobModelId = this->GetOrCreateJobDefinitionModel()->GetModelId ();
-
     // update each view with models or categories we have added since the creation of the view:
-    for (auto const& entry : ViewDefinition::MakeIterator(*m_dgndb))
+    for (auto entry : DwgSyncInfo::ViewIterator(*m_dgndb, nullptr))
         {
-        auto viewId = entry.GetId ();
+        auto syncView = entry.Get ();
+        if (!syncView.IsValid())
+            continue;
+
+        auto viewId = syncView.GetViewId ();
         auto view = ViewDefinition::Get (*m_dgndb, viewId);
-        // skip views not created by us:
-        if (!view.IsValid() || view->GetModel()->GetModelId() != jobModelId)
+        if (!view.IsValid())
             continue;
 
         // get an editable view
@@ -1454,117 +1591,175 @@ void            DwgImporter::_PostProcessViewports ()
             continue;
 
         bool changed = false;
-        auto sheetView = view->ToSheetView ();
+        bool createThumbnail = false;
 
-        if (nullptr == sheetView)
+        if (syncView.GetViewType() != DwgSyncInfo::View::Type::PaperspaceViewport)
             {
-            // a modelspace view, a spatial view for a viewport entity, or a spatial view for an xref in a paperspace.
-            auto spatialView = viewController->ToSpatialViewP ();
-            if (nullptr == spatialView)
-                continue;
+            // a modelspace view, a viewport entity view, or a paperspace's xRef view:
+            changed = this->UpdateModelspaceView (viewController.get());
 
-            /*---------------------------------------------------------------------------
-            We can ignore xref spatial views in paperspace in the post process, as we have
-            handled them through updating xref insert entities.  Adding a new DWG layer in 
-            mater file's layer table has no impact on xref layer status.  And we don't want 
-            thumbnail for xref view.
-            ---------------------------------------------------------------------------*/
-            auto viewName =  view->GetName ();
-            if (viewName.StartsWith(LayoutXrefFactory::GetSpatialViewNamePrefix()))
-                continue;
-            
-            // either a modelspace view or a spatial view for a viewport entity
-            if (!m_modelspaceXrefs.empty())
-                {
-                // add xref models in modelspace into the modelspace viewport and viewport entity:
-                auto&   modelSelector = spatialView->GetSpatialViewDefinition().GetModelSelector ();
-                modelSelector.GetModelsR().insert (m_modelspaceXrefs.begin(), m_modelspaceXrefs.end());
-                modelSelector.Update ();
-                }
-            if (this->IsUpdating() && m_layersImported > 0)
-                {
-                // new layers are imported - update spatial categories from a viewport entity:
-                auto handle = this->GetSyncInfo().FindViewportHandle (viewId);
-                DwgDbObjectId   objId;
-                if (!handle.IsNull() && (objId = m_dwgdb->GetObjectId(handle)).IsValid())
-                    {
-                    DwgDbViewportPtr    viewport(objId, DwgDbOpenMode::ForRead);
-                    if (viewport.OpenStatus() == DwgDbStatus::Success)
-                        {
-                        ViewportFactory factory (*this, *viewport.get());
-                        factory.UpdateSpatialCategories (spatialView->GetSpatialViewDefinition().GetCategorySelector().GetCategoriesR());
-                        changed = true;
-                        }
-                    }
-                }
-
-            if (wantThumbnails && thumbnailConfig.WantPhysicalThumbnail() && !viewName.Contains(ViewportFactory::GetSpatialViewNameInsert()))
-                {
-                // create thumbnail for the modelspace view
-                this->SetTaskName (ProgressMessage::TASK_CREATING_THUMBNAIL(), view->GetName().c_str());
-                this->Progress ();
-                view->RenderAndSaveThumbnail (size, thumbnailConfig.IsRenderModeOverridden() ? &mode : nullptr, timeout);
-                }
+            // should we create a thumbnail for a modelspace view?
+            if (wantThumbnails && !view->GetName().Contains(ViewportFactory::GetSpatialViewNameInsert()) &&
+                ((view->IsSpatialView() && thumbnailConfig.WantPhysicalThumbnail()) || (view->IsSheetView() && thumbnailConfig.WantSheetThumbnail())))
+                createThumbnail = true;
             }
         else
             {
-            // a paperspace sheet view - add all drawing categories, except for viewport frozen layers:
-            DwgDbObjectIdArray  frozenLayers;
-            size_t              numFrozenLayers = 0;
+            // a paperspace sheet view - add paperspace drawing categories, except for viewport frozen layers:
+            changed = this->UpdatePaperspaceView (viewController.get(), m_dwgdb->GetObjectId(syncView.GetDwgId()));
 
-            // see if the viewport has frozen layers:
-            auto found = m_paperspaceViews.find (viewId);
-            if (found != m_paperspaceViews.end())
-                {
-                DwgDbViewportPtr    layoutViewport (found->second, DwgDbOpenMode::ForRead);
-                if (layoutViewport.OpenStatus() == DwgDbStatus::Success && layoutViewport->GetFrozenLayers(frozenLayers) == DwgDbStatus::Success)
-                    numFrozenLayers = frozenLayers.size ();
-                }
+            // should we create a thumbnail for a paperspace view?
+            if (wantThumbnails && thumbnailConfig.WantSheetThumbnail())
+                createThumbnail = true;
+            }
 
-            auto& categorySelector = viewController->GetViewDefinitionR().GetCategorySelector ();
-            for (ElementIteratorEntry entry : DrawingCategory::MakeIterator(*m_dgndb))
-                {
-                DgnCategoryId   categoryId = entry.GetId <DgnCategoryId> ();
-                bool isCategoryViewed = categorySelector.IsCategoryViewed (categoryId);
-
-                if (numFrozenLayers > 0)
-                    {
-                    DwgDbObjectId   layerId;
-                    DwgDbHandle     objHandle = m_syncInfo.FindLayerHandle (categoryId, fileId);
-                    if (!objHandle.IsNull() && (layerId = m_dwgdb->GetObjectId(objHandle)).IsValid())
-                        {
-                        // check viewport frozen layer for this view:
-                        auto found = std::find_if (frozenLayers.begin(), frozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
-                        if (found != frozenLayers.end())
-                            {
-                            // if the category is in this view, drop it:
-                            if (isCategoryViewed)
-                                {
-                                categorySelector.DropCategory (categoryId);
-                                changed = true;
-                                }
-                            continue;
-                            }
-                        }
-                    }
-
-                // this category should be viewed - if not add it:
-                if (!isCategoryViewed)
-                    {
-                    categorySelector.AddCategory (categoryId);
-                    changed = true;
-                    }
-                }
-
-            if (wantThumbnails && thumbnailConfig.WantSheetThumbnail() && nullptr != sheetView)
-                {
-                this->SetTaskName (ProgressMessage::TASK_CREATING_THUMBNAIL(), view->GetName().c_str());
-                this->Progress ();
-                view->RenderAndSaveThumbnail (size, thumbnailConfig.IsRenderModeOverridden() ? &mode : nullptr, timeout);
-                }
+        if (createThumbnail)
+            {
+            this->SetTaskName (ProgressMessage::TASK_CREATING_THUMBNAIL(), view->GetName().c_str());
+            this->Progress ();
+            view->RenderAndSaveThumbnail (size, thumbnailConfig.IsRenderModeOverridden() ? &mode : nullptr, timeout);
             }
 
         if (changed)
             this->SaveViewDefinition (*viewController);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgImporter::UpdateModelspaceView (ViewControllerP view)
+    {
+    if (nullptr == view)
+        return  false;
+
+    // Update the input view for the modelspace, a viewport entity, or a paperspace's xRef:
+    auto spatialView = view->ToSpatialViewP ();
+    auto drawingView = view->ToDrawingViewP ();
+    auto sheetView = view->ToSheetViewP ();
+    if (nullptr == spatialView && nullptr == drawingView && nullptr == sheetView)
+        return  false;
+
+    /*---------------------------------------------------------------------------
+    We can ignore xref model views in paperspace in the post process, as we have
+    handled them through updating xref insert entities.  Adding a new DWG layer in
+    mater file's layer table has no impact on xref layer status.  And we don't want
+    thumbnail for xref view.
+    ---------------------------------------------------------------------------*/
+    auto viewName =  view->GetViewDefinition().GetName ();
+    if (viewName.StartsWith(LayoutXrefFactory::GetSpatialViewNamePrefix()))
+        return  false;
+
+    // either a modelspace view or a viewport entity view as a spatial view
+    if (!m_modelspaceXrefs.empty() && spatialView != nullptr)
+        {
+        // add xref models in modelspace into the modelspace viewport and viewport entity:
+        auto& modelSelector = spatialView->GetSpatialViewDefinition().GetModelSelector ();
+        modelSelector.GetModelsR().insert (m_modelspaceXrefs.begin(), m_modelspaceXrefs.end());
+        modelSelector.Update ();
+        }
+
+    if (this->IsUpdating() && m_layersImported > 0)
+        {
+        // new layers are imported - update spatial/drawing categories from a viewport entity:
+        auto handle = this->GetSyncInfo().FindViewportHandle (view->GetViewId());
+        DwgDbObjectId   objId;
+        if (!handle.IsNull() && (objId = m_dwgdb->GetObjectId(handle)).IsValid())
+            {
+            DwgDbViewportPtr    viewport(objId, DwgDbOpenMode::ForRead);
+            if (viewport.OpenStatus() == DwgDbStatus::Success)
+                {
+                ViewportFactory factory (*this, *viewport.get());
+                if (spatialView != nullptr)
+                    factory.UpdateModelspaceCategories (spatialView->GetSpatialViewDefinition().GetCategorySelector().GetCategoriesR());
+                else
+                    factory.UpdateModelspaceCategories (view->GetViewDefinitionR().GetCategorySelector().GetCategoriesR());
+
+                return  true;
+                }
+            }
+        }
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgImporter::UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId)
+    {
+    if (nullptr == view)
+        return  false;
+
+    auto definitionModel = this->GetOrCreateJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return  false;
+
+    // Update a paperspace sheet view - add all drawing categories, except for viewport frozen layers:
+    DwgDbObjectIdArray  frozenLayers;
+    size_t              numFrozenLayers = 0;
+
+    // check if the viewport has frozen layers:
+    DwgDbViewportPtr    layoutViewport (viewportId, DwgDbOpenMode::ForRead);
+    if (layoutViewport.OpenStatus() == DwgDbStatus::Success && layoutViewport->GetFrozenLayers(frozenLayers) == DwgDbStatus::Success)
+        numFrozenLayers = frozenLayers.size ();
+
+    DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (*m_dwgdb);
+    bool isRoot3d = this->GetRootModel().GetModel()->Is3d ();
+    bool changed = false;
+    auto& categorySelector = view->GetViewDefinitionR().GetCategorySelector ();
+    for (ElementIteratorEntry entry : DrawingCategory::MakeIterator(*m_dgndb))
+        {
+        DgnCategoryId   categoryId = entry.GetId <DgnCategoryId> ();
+        bool isCategoryViewed = categorySelector.IsCategoryViewed (categoryId);
+
+        /*---------------------------------------------------------------------------
+        Find layer ID from syncInfo, which has categories created from the layer table only:
+        when the root model is 2d, find the layer directly using current drawing category
+        ID. If the root model is 3d, first find the spatial category from the code value,
+        then find the layer ID from the spatial category ID.
+        ---------------------------------------------------------------------------*/
+        DwgDbObjectId   layerId;
+        DgnCategoryId   searchId = isRoot3d ? SpatialCategory::QueryCategoryId(*definitionModel, entry.GetCodeValue()) : entry.GetId <DgnCategoryId>();
+        DwgDbHandle     objHandle = m_syncInfo.FindLayerHandle (searchId, fileId);
+        if (!objHandle.IsNull() && (layerId = m_dwgdb->GetObjectId(objHandle)).IsValid())
+            {
+            // 1) check layer's global on/off status and global freeze:
+            DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
+            if (layer.OpenStatus() == DwgDbStatus::Success && (layer->IsOff() || layer->IsFrozen()))
+                {
+                // the layer is globally turned off or frozen, if the category is viewed, drop it:
+                if (isCategoryViewed)
+                    {
+                    categorySelector.DropCategory (categoryId);
+                    changed = true;
+                    }
+                continue;
+                }
+
+            // 2) check viewport frozen layer for this view:
+            if (numFrozenLayers > 0)
+                {
+                auto found = std::find_if (frozenLayers.begin(), frozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
+                if (found != frozenLayers.end())
+                    {
+                    // the viewport has this layer frozen - if the category is in this view, drop it:
+                    if (isCategoryViewed)
+                        {
+                        categorySelector.DropCategory (categoryId);
+                        changed = true;
+                        }
+                    continue;
+                    }
+                }
+            }
+
+        // this category should be viewed - if not, add it:
+        if (!isCategoryViewed)
+            {
+            categorySelector.AddCategory (categoryId);
+            changed = true;
+            }
+        }
+
+    return  changed;
     }

@@ -349,6 +349,48 @@ private:
     };
 
 //=====================================================================================
+//! @bsiclass                              Spencer.Mason                10/2018
+//! PreparedPackagesRequest
+//! This class represents a request for all prepared packages for the current user
+//! (as specified by the token)
+//=====================================================================================
+struct PreparedPackagesRequest : public GeoCoordinationServiceRequest
+    {
+public:
+    //! Create a request for spatial entity of the given identifier
+    REALITYDATAPLATFORM_EXPORT PreparedPackagesRequest(Utf8StringCR identifier)
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
+   
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    PreparedPackagesRequest() { m_requestType = HttpRequestType::GET_Request; }
+    };
+
+//=====================================================================================
+//! @bsiclass                                Spencer.Mason                09/2018
+//! LastPackageRequest
+//! This class represents a request for the latest prepared package content.
+//! This request enables obtaining the content of the package.
+//=====================================================================================
+struct LastPackageRequest : public GeoCoordinationServiceRequest
+    {
+public:
+    //! Create a request for spatial entity of the given identifier
+    REALITYDATAPLATFORM_EXPORT LastPackageRequest()
+        { 
+        m_validRequestString = false; 
+        }
+   
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+    };
+
+//=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
 //! DownloadReportUploadRequest
 //! This class represents a request for uploading to the GeoCoordination Service
@@ -493,6 +535,12 @@ public:
 
     //! Returns the content of the Package requested or an empty vector if an error occured
     REALITYDATAPLATFORM_EXPORT static void Request(const PreparedPackageRequest& request, BeFileName filename, RawServerResponse& rawResponse);
+
+    //! Returns the description of the last Package requested by the current user
+    REALITYDATAPLATFORM_EXPORT static bvector<Utf8String> Request(const PreparedPackagesRequest& request, RawServerResponse& rawResponse);
+
+    //! Returns the description of the last Package requested by the current user
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const LastPackageRequest& request, RawServerResponse& rawResponse);
 
     //! Uploads a download report. It is not possible to know if the call worked or not.
     REALITYDATAPLATFORM_EXPORT static void Request(const DownloadReportUploadRequest& request, RawServerResponse& rawResponse);

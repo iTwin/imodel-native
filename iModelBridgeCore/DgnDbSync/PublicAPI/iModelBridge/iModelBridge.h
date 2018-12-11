@@ -118,6 +118,7 @@ registered by the bridge in its _Initialize method are imported into the BIM and
 -# iModelBridge::_OnOpenBim     (may call _OnCloseBim and _OnOpenBim more than once in the Initialization Phase.)
 -# iModelBridge::_OpenSource
 -# iModelBridge::_MakeSchemaChanges. The framework may close and reopen the briefcase at this point.
+-# iModelBridge::_MakeDefinitionChanges. The framework may close and reopen the briefcase at this point.
 
 The framework will pullmergepush as necessary in order to capture schema changes and push them to iModelHub. 
 If that is done, then the bim will be closed and re-opened and so, _CloseSource and _OnCloseBim will be called,

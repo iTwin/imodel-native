@@ -514,7 +514,6 @@ folly::Future<folly::Unit> SelectionSyncHandler::_OnSelectionChanged(SelectionCh
     // create the selection info
     SelectionInfoCPtr selectionInfo = SelectionInfo::Create(evt.GetSourceName(), evt.IsSubSelection());
     KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetECDb()) : m_manager->GetSelection(evt.GetConnection().GetECDb());
-
     Utf8String evtGuid = BeGuid(true).ToString();
     GetLogger().debugv("_OnSelectionChanged [%s]: source = '%s', sub = '%s', keys count = %" PRIu64,
         evtGuid.c_str(), evt.GetSourceName().c_str(), evt.IsSubSelection() ? "true" : "false", (uint64_t)inputKeys->size());

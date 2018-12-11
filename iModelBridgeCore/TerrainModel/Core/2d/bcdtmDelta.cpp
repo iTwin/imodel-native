@@ -12,7 +12,7 @@
 #include <ppl.h>
 #endif
 
-extern long numPrecisionError,numSnapFix ;  //These are only used in Debug Code.
+extern thread_local long numPrecisionError,numSnapFix ;  //These are only used in Debug Code.
 extern thread_local bool justForDelta;
 
 template <class T> class AutoRestore

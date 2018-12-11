@@ -195,7 +195,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                     {         
 #ifndef NDEBUG
                     //Non sharing process should have create the sister file before sharing process can access it.
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(ANDROID)
                     struct stat buffer;
                     assert(stat(sqlNameUtf8.c_str(), &buffer) == 0);
 #else

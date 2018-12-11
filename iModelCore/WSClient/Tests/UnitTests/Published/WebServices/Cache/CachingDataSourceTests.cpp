@@ -961,8 +961,9 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
     }
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Benediktas.Lipnickas              09/16
+* TFS#733272 - was added on ignore list because of hanging on PRG, but issue does not reproduce now
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedForAllCallers)
+TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedForAllCallers_KnownIssue)
     {
     // Arrange
     auto ds = GetTestDataSourceV2();
@@ -1043,8 +1044,9 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#733272 - Hangs on while loop
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes)
+TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes_KnownIssue)
     {
     // Arrange
     auto ds = GetTestDataSourceV2();
@@ -1117,8 +1119,9 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCa
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#733272 - Hangs on while loop
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_SecondCallbackIsCancelledFirstFinishes)
+TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_SecondCallbackIsCancelledFirstFinishes_KnownIssue)
     {
     // Arrange
     auto ds = GetTestDataSourceV2();
@@ -1549,8 +1552,9 @@ TEST_F(CachingDataSourceTests, CacheFiles_FileDownloadRestarts_ProgressReportsSm
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#733272 - Hangs on while loop
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, CacheFiles_TwoFilesDownloading_ProgressReportsSumOfBothDownloads)
+TEST_F(CachingDataSourceTests, CacheFiles_TwoFilesDownloading_ProgressReportsSumOfBothDownloads_KnownIssue)
     {
     // Arrange
     auto ds = GetTestDataSourceV2();
@@ -4025,6 +4029,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequestsAndSucce
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#819835
 +---------------+---------------+---------------+---------------+---------------+------*/
 // TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported)
 //    {
@@ -4066,6 +4071,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequestsAndSucce
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#819835
 +---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds_KnownIssue)
 //    {
@@ -4105,6 +4111,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequestsAndSucce
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#819835
 +---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds_KnownIssue)
 //    {

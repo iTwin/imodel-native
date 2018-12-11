@@ -1182,7 +1182,6 @@ TEST_F(FormattingTestFixture, Simple)
     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
     #if !defined(BENTLEYCONFIG_OS_ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE)
-
         #ifdef BENTLEYCONFIG_OS_UNIX
             fmtP.ImbueLocale("de_DE");
         #else
@@ -1242,9 +1241,9 @@ TEST_F(FormattingTestFixture, Simple)
         fmtP.SetPrecision(DecimalPrecision::Precision3);
         EXPECT_STREQ ("-2828.45", fmtP.Format(-2.0*testV).c_str());
         fmtP.SetPrecision(DecimalPrecision::Precision8);
-    
-    #endif /* BENTLEYCONFIG_OS_ANDROID */
-    
+
+    #endif /* not BENTLEYCONFIG_OS_ANDROID and not BENTLEYCONFIG_OS_APPLE */
+
     NumericFormatSpec numFmt = NumericFormatSpec();
     numFmt.SetSignOption(SignOption::OnlyNegative);
     EXPECT_STREQ ("135", numFmt.Format(135).c_str());

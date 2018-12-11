@@ -255,7 +255,6 @@ BentleyStatus Converter::GenerateThumbnails()
 
             if ((!wantSpatial && view->IsSpatialView()) || (!wantDrawing && view->IsDrawingView()))
                 continue;
-
             GenerateThumbnail(*view);
 
             if (WasAborted())

@@ -94,14 +94,8 @@ BentleyStatus   DwgImporter::GetLayerAppearance (DgnSubCategory::Appearance& app
     bool    applyOverrides = nullptr != viewportId && viewportId->IsValid() && layer.HasOverrides(*viewportId);
     bool    isOverridden = false;
 
-    appearance.SetInvisible (layer.IsOff() || layer.IsFrozen());
-    if (applyOverrides && appearance.IsVisible())
-        {
-        // apply viewport freez
-        DwgDbViewportPtr    viewport(*viewportId, DwgDbOpenMode::ForRead);
-        if (viewport.OpenStatus() == DwgDbStatus::Success && viewport->IsLayerFrozen(layer.GetObjectId()))
-            appearance.SetInvisible (true);
-        }
+    // set category invisible if the layer is hidden from GUI (not about displaying elements in the category)
+    appearance.SetInvisible (layer.IsHidden());
 
     DwgTransparency transparency = applyOverrides ? layer.GetTransparency(isOverridden, *viewportId) : layer.GetTransparency();
     appearance.SetTransparency (DwgHelper::GetTransparencyFromDwg(transparency));
@@ -222,15 +216,16 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
         definitionModel = &db.GetDictionaryModel ();
         }
 
-    DgnCode categoryCode = SpatialCategory::CreateCode (*definitionModel, name.c_str());
+    bool isRoot3d = this->GetRootModel().GetModel()->Is3d ();
+    DgnCode categoryCode = isRoot3d ? SpatialCategory::CreateCode(*definitionModel, name.c_str()) : DrawingCategory::CreateCode(*definitionModel, name.c_str());;
 
-    categoryId = SpatialCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
+    categoryId = isRoot3d ? SpatialCategory::QueryCategoryId(*definitionModel, categoryCode.GetValueUtf8()) : DrawingCategory::QueryCategoryId(*definitionModel, categoryCode.GetValueUtf8());;
     if (categoryId.IsValid())
         {
         if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
             LOG_LAYER.tracev("merged layer %ls (%llx) -> %s (%d)", layer.GetName().c_str(), layer.GetObjectId().GetHandle().AsUInt64(), name.c_str(), categoryId.GetValue());
         }
-    else
+    else if (isRoot3d)
         {
         SpatialCategory newCategory (*definitionModel, name, DgnCategory::Rank::User, Utf8String(layer.GetDescription().c_str()));
 
@@ -240,25 +235,37 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
             {
             BeAssert(DgnDbStatus::DuplicateCode != status && "Caller is responsible for providing a unique layer name");
 
-            if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
-                LOG_LAYER.tracev("failed to insert layer %ls (%llx) as %s", layer.GetName().c_str(), layer.GetObjectId().GetHandle().AsUInt64(), name.c_str());
-
-            this->ReportIssueV (IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::InvalidLayer(), nullptr, name.c_str());
+            this->ReportIssueV (IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::InvalidLayer(), "Spatial Category", name.c_str());
             BeAssert(false);
             return BSIERROR;
             }
-        
         categoryId = newCategory.GetCategoryId ();
+        }
+    else
+        {
+        DrawingCategory newCategory (*definitionModel, name, DgnCategory::Rank::User, Utf8String(layer.GetDescription().c_str()));
+
+        newCategory.Insert (appear, &status);
+
+        if (DgnDbStatus::Success != status || !newCategory.GetCategoryId().IsValid())
+            {
+            this->ReportIssueV (IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::InvalidLayer(), "Drawing Category", name.c_str());
+            return BSIERROR;
+            }
+        categoryId = newCategory.GetCategoryId ();
+        }
+
+    if (!categoryId.IsValid())
+        return  BSIERROR;
 
 #ifdef ADD_SUBCATEGORIES_WHILE_IMPORTING_LAYERS
-        // add another sub-category which has an inversed on/off status of the default sub-category:
-        appear.SetInvisible(!appear.IsInvisible());
-        this->InsertAlternateSubCategory (DgnSubCategory::Get(db, newCategory.GetDefaultSubCategoryId()), appear);
+    // add another sub-category which has an inversed on/off status of the default sub-category:
+    appear.SetInvisible(!appear.IsInvisible());
+    this->InsertAlternateSubCategory (DgnSubCategory::Get(db, newCategory.GetDefaultSubCategoryId()), appear);
 #endif
 
-        if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
-            LOG_LAYER.tracev("inserted layer (%llx) -> %s (%d)", layer.GetObjectId().GetHandle().AsUInt64(), name.c_str(), categoryId.GetValue());
-        }
+    if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
+        LOG_LAYER.tracev("inserted layer (%llx) -> %s (%d)", layer.GetObjectId().GetHandle().AsUInt64(), name.c_str(), categoryId.GetValue());
 
     m_syncInfo.InsertLayer (DgnCategory::GetDefaultSubCategoryId(categoryId), modelSource, layer);
 
@@ -382,19 +389,40 @@ void            DwgImporter::InitUncategorizedCategory ()
         definitionModel = &m_dgndb->GetDictionaryModel ();
         }
 
-    DgnCode categoryCode = SpatialCategory::CreateCode (*definitionModel, name);
-    m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
+    // allow an app to create a 2d model representing the modelspace
+    bool isRoot3d = true;
+    DwgDbBlockTableRecordPtr    modelspace(m_dwgdb->GetModelspaceId(), DwgDbOpenMode::ForRead);
+    if (modelspace.OpenStatus() == DwgDbStatus::Success)
+        isRoot3d = m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME,BIS_CLASS_PhysicalModel) == this->_GetModelType(*modelspace);
+
+    if (isRoot3d)
+        {
+        DgnCode categoryCode = SpatialCategory::CreateCode (*definitionModel, name);
+        m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
+        }
+    else
+        {
+        DgnCode categoryCode = DrawingCategory::CreateCode (*definitionModel, name);
+        m_uncategorizedCategoryId = DrawingCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
+        }
 
     if (m_uncategorizedCategoryId.IsValid())
         return;
 
-    SpatialCategory category (*definitionModel, name, DgnCategory::Rank::Application);
-    if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
+    if (isRoot3d)
         {
-        BeAssert(false);
+        SpatialCategory category (*definitionModel, name, DgnCategory::Rank::Application);
+        if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
+            BeAssert(false);
+        m_uncategorizedCategoryId = category.GetCategoryId();
         }
-
-    m_uncategorizedCategoryId = category.GetCategoryId();
+    else
+        {
+        DrawingCategory category (*definitionModel, name, DgnCategory::Rank::Application);
+        if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
+            BeAssert(false);
+        m_uncategorizedCategoryId = category.GetCategoryId();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

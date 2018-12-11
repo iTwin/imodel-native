@@ -1,0 +1,26 @@
+#--------------------------------------------------------------------------------------
+#      $Source: RealityServicesNet/NuGet/Bentley.RealityServicesNet.NuGetPackage.mke $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+
+%include  mdl.mki
+appName     = RealityServicesNetNuGetPackage
+ContextDeliveryDir = $(BuildContext)Delivery/
+PackageOutputDir = $(OutputRootDir)build/RealityModFramework/RealityServicesNet/
+
+NUGET_BUILD_DIR = $(OutputRootDir)build/
+
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+always:
+    CreateSymLinks.py   -m"$(BuildContext)Subparts/Files=$(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/RealityServicesNet/NuGet/Bentley.RealityServicesNet.targets"
+        
+NUGET_BASE_PATH=$(BuildContext)Subparts/
+
+#The nuget package won't really be built outside of PRG if BUILD_NUGET is not defined. A placeholder file is created instead.
+BUILD_NUGET=1
+
+NuGetBaseName=Bentley.RealityServicesNet
+NuSpecPath=$(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/RealityServicesNet/NuGet/Bentley.RealityServicesNet.nuspec
+NuGetDependencies=\#Json_version\#=$(BuildContext)SubParts\Assemblies\Newtonsoft.Json.dll \#PlatformTech_version\#=$(BuildContext)SubParts\Assemblies\Bentley.Exceptions.dll
+%include $(sharedMki)nuspecCreate.mki

@@ -184,6 +184,7 @@ bool SpawnProcessWin32 (char *command, DWORD &returnCode)
     STARTUPINFOA si;
     PROCESS_INFORMATION pi;
     bool ret = false;
+    DWORD dwExitCode = 0;
 
     ZeroMemory( &si, sizeof(si) );
     si.cb = sizeof(si);
@@ -211,8 +212,6 @@ bool SpawnProcessWin32 (char *command, DWORD &returnCode)
     WaitForSingleObject (pi.hProcess, INFINITE);
 
     // Check exit code
-    DWORD dwExitCode = 0;
-
     GetExitCodeProcess (pi.hProcess, &dwExitCode);
 
     if(dwExitCode == STILL_ACTIVE)    
@@ -386,7 +385,7 @@ extern "C" int main (int argc, char **argv)
         //first snapshot
         //if (!BeFileName::DoesPathExist (L"run"))
 
-        CharP log1Name = "\\FirstSnapshot.log";
+        CharCP log1Name = "\\FirstSnapshot.log";
         currentDirectory.AppendUtf8(log1Name);
         
         BeStringUtilities::WCharToUtf8(pathSnapshot1, currentDirectory.c_str());
@@ -416,8 +415,8 @@ extern "C" int main (int argc, char **argv)
         hostPtr->GetRunRoot(argv[0] , rundirPath);
         WString currentDirectory2(rundirPath.GetName());
         WString currentDirectory3 = currentDirectory2;
-        CharP log2Name = "\\SecondSnapshot.log";
-        CharP logComparisonName = "";
+        CharCP log2Name = "\\SecondSnapshot.log";
+        CharCP logComparisonName = "";
 
         CharCP testName = getTestName(no, args);
         Utf8String utf8Str(testName);

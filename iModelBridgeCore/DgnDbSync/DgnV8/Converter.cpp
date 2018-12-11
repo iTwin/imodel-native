@@ -3895,5 +3895,6 @@ bool Converter::_WantModelProvenanceInBim()
 
     return iModelBridge::WantModelProvenanceInBim(*m_dgndb);
     }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

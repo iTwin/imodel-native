@@ -177,7 +177,7 @@
     </Bindings>
   </Part>
 
-<!-- This part builds our node native code addon -->
+  <!-- This part builds our node native code addon -->
   <Part Name="iModelJsNodeAddonLibCommon">
     <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
     <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
@@ -189,5 +189,4 @@
     <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
     <SubPart PartName="BeSecurity" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
   </Part>
-
 </BuildContext>

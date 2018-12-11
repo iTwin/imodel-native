@@ -21,7 +21,12 @@ BentleyStatus   DwgBrepExt::_ConvertToBim (ProtocalExtensionContext& context, Dw
     {
     // a sanity check:
     m_entity = context.GetEntityPtrR().get ();
-    if (nullptr == m_entity || !context.GetModel().Is3d() || !UtilsLib::IsAsmEntity(m_entity))
+    if (nullptr == m_entity || !UtilsLib::IsAsmEntity(m_entity))
+        return  BSIERROR;
+
+    DwgDbRegionP        region = DwgDbRegion::Cast (m_entity);
+    DwgDbPlaneSurfaceP  planeSurface = DwgDbPlaneSurface::Cast (m_entity);
+    if (!context.GetModel().Is3d() && region == nullptr && planeSurface == nullptr)
         return  BSIERROR;
 
     m_toBimContext = &context;
@@ -31,16 +36,15 @@ BentleyStatus   DwgBrepExt::_ConvertToBim (ProtocalExtensionContext& context, Dw
     ElementInputsR  inputs = context.GetElementInputsR ();
     ElementResultsR results = context.GetElementResultsR ();
 
-    DwgDbPlaneSurfaceP planeSurface = DwgDbPlaneSurface::Cast (m_entity);
-    if (planeSurface != nullptr)
+    if (planeSurface != nullptr || region != nullptr)
         {
-        // single out plance surface from being dropped to proxy - VSTS 32627(Sweco):
+        // single out plane surface and region from being dropped to proxy - VSTS 32627(Sweco):
         DwgImporter::ElementCreateParams  params(inputs.GetTargetModelR());
         status = importer._GetElementCreateParams (params, inputs.GetTransform(), *m_entity);
         if (BSISUCCESS != status)
             return  status;
 
-        GeometricPrimitivePtr   geometry = this->CreateGeometry (planeSurface);
+        GeometricPrimitivePtr   geometry = region == nullptr ? this->CreateGeometry(planeSurface) : this->CreateGeometry(region);
         if (geometry.IsValid())
             return this->CreateElement (*geometry.get(), params);
         }
@@ -86,18 +90,21 @@ GeometricPrimitivePtr DwgBrepExt::_ConvertToGeometry (DwgDbEntityCP entity, DwgI
     if (nullptr == entity || !UtilsLib::IsAsmEntity(entity))
         return  nullptr;
 
-    // single out plance surface from being dropped to proxy - VSTS 32627(Sweco):
+    m_toBimContext = nullptr;
+    m_importer = &importer;
+    m_entity = entity;
+
+    // single out region and plance surface from being dropped to proxy - VSTS 32627(Sweco):
+    DwgDbRegionP       region = DwgDbRegion::Cast (entity);
     DwgDbPlaneSurfaceP planeSurface = DwgDbPlaneSurface::Cast (entity);
     if (planeSurface != nullptr)
         return  this->CreateGeometry (planeSurface);
+    else if (region != nullptr)
+        return  this->CreateGeometry (region);
 
     // if the user does not want Brep, let the caller draw the entity:
     if (!importer.GetOptions().IsAsmAsParasolid())
         return  nullptr;
-
-    m_toBimContext = nullptr;
-    m_importer = &importer;
-    m_entity = entity;
 
 #if defined (BENTLEYCONFIG_PARASOLID)
     PK_BODY_create_topology_2_r_t brep;
@@ -223,7 +230,11 @@ BentleyStatus   DwgBrepExt::CreateElement (GeometricPrimitiveR geometry, DwgImpo
     if (m_toBimContext == nullptr)
         return  BSIERROR;
 
-    auto builder = GeometryBuilder::Create (params.GetModelR(), params.GetCategoryId(), m_placementPoint);
+    GeometryBuilderPtr  builder;
+    if (params.GetModel().Is3d())
+        builder = GeometryBuilder::Create (params.GetModelR(), params.GetCategoryId(), m_placementPoint);
+    else
+        builder = GeometryBuilder::Create (params.GetModelR(), params.GetCategoryId(), DPoint2d::From(m_placementPoint));
     if (!builder.IsValid())
         return  BSIERROR;
 
@@ -256,40 +267,50 @@ GeometricPrimitivePtr DwgBrepExt::CreateGeometry (DwgDbPlaneSurfaceP planeSurfac
     if (status != DwgDbStatus::Success || regions.empty())
         return  nullptr;
 
-    CurveVectorPtr  shape;
-
-    // explode the region to lines, expecting only one region:
-    for (auto& region : regions)
+    CurveVectorPtr  shapes;
+    if (regions.size() == 1)
         {
-        if (!shape.IsValid())
+        // a single shape
+        shapes = DwgHelper::CreateCurveVectorFrom (*regions.front());
+        ::free (regions.front());
+        }
+    else
+        {
+        // unite multiple shapes
+        shapes = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+        for (auto& region : regions)
             {
-            DwgDbObjectPArray   entities;
-            status = region->Explode (entities);
-            if (status != DwgDbStatus::Success || entities.empty())
-                return  nullptr;
-
-            auto numPoints = entities.size ();
-            DPoint3dArray   points(numPoints);
-
-            for (int i = 0; i < numPoints; i++)
-                {
-                auto line = DwgDbLine::Cast (entities[i]);
-                if (nullptr != line)
-                    points[i] = line->GetStartPoint ();
-
-                ::free (entities[i]);
-                }
-
-            // create a shape
-            PolylineFactory plineFactory(numPoints, &points.front(), true);
-            shape = plineFactory.CreateCurveVector (false);
+            auto shape = DwgHelper::CreateCurveVectorFrom (*region, CurveVector::BOUNDARY_TYPE_Outer);
+            if (shape.IsValid())
+                shapes->Add (shape);
+            ::free (region);
             }
-        
-        ::free (region);
         }
 
+    return  this->PlaceGeometry (shapes);
+    }        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometricPrimitivePtr DwgBrepExt::CreateGeometry (DwgDbRegionP region)
+    {
+    if (nullptr == region)
+        return  nullptr;
+
+    CurveVectorPtr  shapes;
+    shapes = DwgHelper::CreateCurveVectorFrom (*region);
+
+    return  this->PlaceGeometry (shapes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometricPrimitivePtr DwgBrepExt::PlaceGeometry (CurveVectorPtr& shapes)
+    {
     // for a model element, get a placement point and move the shape in reverse:
-    if (shape.IsValid() && nullptr != m_toBimContext)
+    if (shapes.IsValid() && nullptr != m_toBimContext)
         {
         Transform   moveToOrigin;
         if (nullptr == m_toBimContext)
@@ -298,10 +319,10 @@ GeometricPrimitivePtr DwgBrepExt::CreateGeometry (DwgDbPlaneSurfaceP planeSurfac
             moveToOrigin = m_toBimContext->GetTransform ();
 
         this->SetPlacementPoint (moveToOrigin);
-        shape->TransformInPlace (moveToOrigin);
+        shapes->TransformInPlace (moveToOrigin);
         }
 
-    return GeometricPrimitive::Create(shape);
+    return GeometricPrimitive::Create(shapes);
     }
 
 /*---------------------------------------------------------------------------------**//**

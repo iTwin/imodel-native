@@ -9,6 +9,8 @@
 #include <regex>
 
 #define HEADER_MasConnectionInfo "Mas-Connection-Info"
+#define HEADER_MasRequestId      "Mas-Request-Id"
+#define HEADER_XCorrelationId    "X-Correlation-Id"
 
 using namespace std::placeholders;
 
@@ -27,9 +29,28 @@ const uint32_t IWSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; /
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IWSRepositoryClient::RequestOptions::RequestOptions() : m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default) 
+IWSRepositoryClient::RequestOptions::RequestOptions() :
+m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default),
+m_activityOptions(std::make_shared<ActivityOptions>()),
+m_jobOptions(std::make_shared<JobOptions>())
     {
-    m_jobOptions = std::make_shared<JobOptions>();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String IWSRepositoryClient::ActivityOptions::HeaderNameToString(HeaderName headerName)
+    {
+    switch (headerName)
+        {
+        case HeaderName::MasRequestId:
+            return HEADER_MasRequestId;
+        case HeaderName::XCorrelationId:
+            return HEADER_XCorrelationId;
+        }
+
+    BeAssert(false && "Unknown header name for ActivityId");
+    return Utf8String();
     }
 
 /*--------------------------------------------------------------------------------------+
