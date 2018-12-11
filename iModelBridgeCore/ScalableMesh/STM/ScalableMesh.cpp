@@ -3753,12 +3753,15 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
         return this->_Reproject(newDgnGcsPtr.get(), dgnProject);
         }
 #endif
-    // Greate a GCS from the ScalableMesh
-    GeoCoords::GCS gcs(this->GetGCS());
 
     DPoint3d globalOrigin = dgnProject.GeoLocation().GetGlobalOrigin();
 
-    Transform computedTransform = Transform::FromIdentity();
+    // Greate a GCS from the ScalableMesh
+    GeoCoords::GCS gcs(this->GetGCS());
+    GeoCoords::Unit unit(gcs.GetHorizontalUnit());
+    double scaleUorPerMeters = unit.GetRatioToBase();
+
+    Transform computedTransform = Transform::FromScaleFactors(scaleUorPerMeters, scaleUorPerMeters, scaleUorPerMeters);
     auto coordInterp = Dgn::GeoCoordInterpretation::Cartesian;
     if (this->IsCesium3DTiles())
         {

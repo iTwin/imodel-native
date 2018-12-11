@@ -257,7 +257,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
     }
 
     IScalableMeshNodePtr ptr(node);
-    if (node->GetPointCount() > 0)
+    if (node->GetPointCount() > 2)
     {
  
         distributor->AddWorkItem(std::move(ptr)/*, false*/);

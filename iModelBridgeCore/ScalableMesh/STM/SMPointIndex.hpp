@@ -7031,7 +7031,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
         {
         doSkip = true;
         }
-    if(GetNbPoints() < 3)
+    if(0 < GetNbPoints() && GetNbPoints() < 3)
         {
         doSkip = true;
         }
