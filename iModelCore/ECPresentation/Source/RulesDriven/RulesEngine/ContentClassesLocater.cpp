@@ -27,7 +27,7 @@ static bset<ECClassCP> CollectRuleConditionClasses(ECSchemaHelper const& schemaH
             Utf8String schemaName, className;
             if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, name))
                 continue;
-            
+
             if (!schemaName.empty())
                 {
                 classes.insert(schemaHelper.GetECClass(schemaName.c_str(), className.c_str()));
@@ -71,7 +71,7 @@ template<typename TList>
 static void SplitPolymorphicClassesList(bvector<ECClassCP>& result, TList const& searchList, bset<ECClassCP> const& splitClasses, SchemaManagerCR schemas)
     {
     for (ECClassCP ecClass : searchList)
-        {        
+        {
         bool checkDerivedClasses = false;
         for (ECClassCP splitClass : splitClasses)
             {
@@ -173,7 +173,7 @@ protected:
         m_currentSpecification = nullptr;
         m_handledSpecifications++;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -192,7 +192,7 @@ protected:
         {
         return new DisplayedPropertyAppender(GetContext(), *m_currentSpecification, propertyClass);
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -203,7 +203,7 @@ protected:
         copy.SetIsSelectPolymorphic(true);
         m_classes.push_back(copy);
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -238,7 +238,7 @@ public:
 bvector<NavNodeKeyCPtr> ContentClassesLocater::GetClassKeys(bvector<ECClassCP> const& input) const
     {
     bvector<ECClassCP> lookup = input;
-    bset<ECClassCP> ruleConditionClasses = CollectRuleConditionClasses(m_context.GetSchemaHelper(), 
+    bset<ECClassCP> ruleConditionClasses = CollectRuleConditionClasses(m_context.GetSchemaHelper(),
         m_context.GetRuleset(), m_context.GetECExpressionsCache());
     SplitPolymorphicClassesList(lookup, input, ruleConditionClasses, m_context.GetSchemaHelper().GetConnection().GetECDb().Schemas());
 
@@ -253,10 +253,11 @@ bvector<NavNodeKeyCPtr> ContentClassesLocater::GetClassKeys(bvector<ECClassCP> c
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<SelectClassInfo> ContentClassesLocater::Locate(bvector<ECClassCP> const& classes) const
     {
-    RulesPreprocessor::ContentRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), *NavNodeKeyListContainer::Create(GetClassKeys(classes)), 
-        m_context.GetPreferredDisplayType(), nullptr, m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), 
-        nullptr, m_context.GetECExpressionsCache(), m_context.GetNodesLocater());
-    ContentRuleInputKeysList ruleSpecs = RulesPreprocessor::GetContentSpecifications(params);
+    RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
+        m_context.GetUserSettings(), nullptr, m_context.GetECExpressionsCache());
+    RulesPreprocessor::ContentRuleParameters params(*NavNodeKeyListContainer::Create(GetClassKeys(classes)),
+        m_context.GetPreferredDisplayType(), nullptr, &m_context.GetNodesLocater());
+    ContentRuleInputKeysList ruleSpecs = preprocessor.GetContentSpecifications(params);
 
     ContentClassesLocaterImpl locater(m_context);
     for (ContentRuleInputKeys const& rule : ruleSpecs)

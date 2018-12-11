@@ -45,13 +45,13 @@ struct ECExpressionContextsProvider : NonCopyableClass
     struct NodeRulesContextParameters : ContextParametersBase
     {
     private:
-        JsonNavNodeCP m_parentNode;
+        NavNodeCP m_parentNode;
     public:
-        NodeRulesContextParameters(JsonNavNodeCP parentNode, IConnectionCR connection, Utf8String locale, 
+        NodeRulesContextParameters(NavNodeCP parentNode, IConnectionCR connection, Utf8String locale,
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_parentNode(parentNode)
             {}
-        JsonNavNodeCP GetParentNode() const {return m_parentNode;}
+        NavNodeCP GetParentNode() const {return m_parentNode;}
     };
     
     /*=================================================================================**//**
@@ -60,21 +60,21 @@ struct ECExpressionContextsProvider : NonCopyableClass
     struct ContentRulesContextParameters : ContextParametersBase
     {
     private:
-        INavNodeLocaterCR m_nodeLocater;
+        INavNodeLocaterCP m_nodeLocater;
         Utf8String m_contentDisplayType;
         Utf8String m_selectionProviderName;
         bool m_isSubSelection;
         NavNodeKeyCP m_selectedNodeKey;
     public:
         ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, IConnectionCR connection, Utf8String locale, 
-            INavNodeLocaterCR nodeLocater, NavNodeKeyCP selectedNodeKey, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
+            INavNodeLocaterCP nodeLocater, NavNodeKeyCP selectedNodeKey, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_contentDisplayType(contentDisplayType), 
             m_selectionProviderName(selectionProviderName), m_isSubSelection(isSubSelection), m_nodeLocater(nodeLocater), m_selectedNodeKey(selectedNodeKey)
             {}
         Utf8StringCR GetContentDisplayType() const {return m_contentDisplayType;}
         Utf8StringCR GetSelectionProviderName() const {return m_selectionProviderName;}
         bool IsSubSelection() const {return m_isSubSelection;}
-        INavNodeLocaterCR GetNodeLocater() const {return m_nodeLocater;}
+        INavNodeLocaterCP GetNodeLocater() const {return m_nodeLocater;}
         NavNodeKeyCP GetSelectedNodeKey() const {return m_selectedNodeKey;}
     };
     
@@ -84,15 +84,15 @@ struct ECExpressionContextsProvider : NonCopyableClass
     struct CustomizationRulesContextParameters : ContextParametersBase
     {
     private:
-        JsonNavNodeCR m_node;
-        JsonNavNodeCPtr m_parentNode;
+        NavNodeCR m_node;
+        NavNodeCPtr m_parentNode;
     public:
-        CustomizationRulesContextParameters(JsonNavNodeCR node, JsonNavNodeCP parentNode, IConnectionCR connection, Utf8String locale, 
+        CustomizationRulesContextParameters(NavNodeCR node, NavNodeCP parentNode, IConnectionCR connection, Utf8String locale,
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_node(node), m_parentNode(parentNode)
             {}
-        JsonNavNodeCR GetNode() const {return m_node;}
-        JsonNavNodeCP GetParentNode() const {return m_parentNode.get();}
+        NavNodeCR GetNode() const {return m_node;}
+        NavNodeCP GetParentNode() const {return m_parentNode.get();}
     };
     
     /*=================================================================================**//**

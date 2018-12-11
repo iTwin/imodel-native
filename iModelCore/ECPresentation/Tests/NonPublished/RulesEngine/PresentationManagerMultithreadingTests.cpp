@@ -218,8 +218,8 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     s_project->GetECDb().GetDefaultTransaction()->Begin();
 
     // verify we do get the result after the lock is released
-    count.wait(std::chrono::seconds(1));
-    ASSERT_TRUE(count.isReady());
+    size_t countResult = count.get();
+    EXPECT_NE(0, countResult);
     }
 
 /*=================================================================================**//**

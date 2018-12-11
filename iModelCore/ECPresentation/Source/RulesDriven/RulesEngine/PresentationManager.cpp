@@ -53,11 +53,11 @@ public:
         : m_connectionId(connectionId), m_rulesetId(rulesetId), m_displayType(displayType), m_selectionInfo(selectionInfo)
         {}
     TaskDependencies(TaskDependencies const& other)
-        : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_displayType(other.m_displayType), 
+        : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_displayType(other.m_displayType),
         m_selectionInfo(other.m_selectionInfo)
         {}
     TaskDependencies(TaskDependencies&& other)
-        : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), 
+        : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)),
         m_displayType(std::move(other.m_displayType)), m_selectionInfo(std::move(other.m_selectionInfo))
         {}
     Utf8StringCR GetConnectionIdDependency() const {return m_connectionId;}
@@ -617,7 +617,7 @@ folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilter
         {
         if (promise->IsCanceled())
             return;
-        
+
         NavigationOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
         bvector<NavNodeCPtr> nodes = m_impl->GetFilteredNodes(*connection, filterText.c_str(), options, promise->GetCancelationToken());
@@ -696,7 +696,7 @@ folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(Content
     {
     if (descriptor.GetSelectionInfo())
         m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), descriptor.GetPreferredDisplayType().c_str(), *descriptor.GetSelectionInfo());
-    
+
     TaskDependencies dependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetPreferredDisplayType().c_str(), descriptor.GetSelectionInfo());
     auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", dependencies);
     folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts]()
@@ -717,7 +717,7 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(Conte
     {
     if (descriptor.GetSelectionInfo())
         m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), descriptor.GetPreferredDisplayType().c_str(), *descriptor.GetSelectionInfo());
-    
+
     TaskDependencies dependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetPreferredDisplayType().c_str(), descriptor.GetSelectionInfo());
     auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", dependencies);
     folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor)]()
@@ -742,7 +742,7 @@ folly::Future<Utf8String> RulesDrivenECPresentationManager::_GetDisplayLabel(ICo
         {
         if (promise->IsCanceled())
             return;
-        
+
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
         Utf8String label = m_impl->GetDisplayLabel(*connection, *keys, promise->GetCancelationToken());
         promise->SetValue(label);
@@ -764,6 +764,22 @@ IUserSettings& RulesDrivenECPresentationManager::GetUserSettings(Utf8CP rulesetI
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManager::SetLocalState(IJsonLocalState* localState) {m_impl->SetLocalState(localState);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Lukasonok                11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IRulesPreprocessorPtr RulesDrivenECPresentationManager::GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const
+{
+    return m_impl->GetRulesPreprocessor(connection, rulesetId, locale, usedSettingsListener);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Lukasonok                11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+INavNodesFactoryPtr RulesDrivenECPresentationManager::GetNavNodesFactory() const
+{
+    return new JsonNavNodesFactory();
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016

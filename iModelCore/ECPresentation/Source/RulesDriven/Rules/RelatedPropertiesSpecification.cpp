@@ -124,11 +124,18 @@ bool RelatedPropertiesSpecification::ReadJson(JsonValueCR json)
     m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
     
     JsonValueCR propertyNamesJson = json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES];
-    for (Json::ArrayIndex i = 0; i < propertyNamesJson.size(); ++i)
+    if (propertyNamesJson.isString() && 0 == BeStringUtilities::Strnicmp(propertyNamesJson.asCString(), "_none_", 6))
         {
-        if (!m_propertyNames.empty())
-            m_propertyNames.append(",");
-        m_propertyNames.append(propertyNamesJson[i].asCString());
+        m_propertyNames = propertyNamesJson.asCString();
+        }
+    else if (propertyNamesJson.isArray())
+        {
+        for (Json::ArrayIndex i = 0; i < propertyNamesJson.size(); ++i)
+            {
+            if (!m_propertyNames.empty())
+                m_propertyNames.append(",");
+            m_propertyNames.append(propertyNamesJson[i].asCString());
+            }
         }
 
     CommonToolsInternal::LoadFromJson(json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES], 
@@ -154,10 +161,17 @@ Json::Value RelatedPropertiesSpecification::WriteJson() const
     if (!m_relatedClassNames.empty())
         json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relatedClassNames);
 
-    bvector<Utf8String> propertyNames;
-    BeStringUtilities::Split(m_propertyNames.c_str(), ",", propertyNames);
-    for (Utf8StringR propertyName : propertyNames)
-        json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES].append(propertyName.Trim());
+    if (m_propertyNames.EqualsI("_none_"))
+        {
+        json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES] = m_propertyNames;
+        }
+    else
+        {
+        bvector<Utf8String> propertyNames;
+        BeStringUtilities::Split(m_propertyNames.c_str(), ",", propertyNames);
+        for (Utf8StringR propertyName : propertyNames)
+            json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES].append(propertyName.Trim());
+        }
 
     if (!m_nestedRelatedPropertiesSpecification.empty())
         {

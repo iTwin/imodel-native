@@ -112,9 +112,10 @@ static void ProcessLabelOverrides(Utf8StringR label, CustomFunctionsContext cons
 
     // look for label override
     ECDbExpressionSymbolContext ecdbSymbols(context.GetSchemaHelper().GetConnection().GetECDb());
-    RulesPreprocessor::CustomizationRuleParameters params(context.GetConnections(), context.GetConnection(), *thisNode, context.GetParentNode(),
-        context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), context.GetUsedUserSettingsListener(), context.GetECExpressionsCache());
-    LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
+    RulesPreprocessor preprocessor(context.GetConnections(), context.GetConnection(), context.GetRuleset(), context.GetLocale(),
+        context.GetUserSettings(), context.GetUsedUserSettingsListener(), context.GetECExpressionsCache());
+    RulesPreprocessor::CustomizationRuleParameters params(*thisNode, context.GetParentNode());
+    LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
     if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
         {
         // evaluate the ECExpression to get the label
@@ -193,12 +194,12 @@ static bool ApplyProperties(Utf8StringR label, bvector<ECPropertyCP> properties,
     {
     ECValue value;
     for (ECPropertyCP ecProperty : properties)
-        {           
+        {
         if (ECObjectsStatus::Success == instance.GetValue(value, ecProperty->GetName().c_str()))
             {
             value.ConvertPrimitiveToString(label);
             if (!label.empty())
-                return true;                            
+                return true;
             }
         }
     return false;
@@ -268,7 +269,7 @@ public:
         ECInstanceId instanceId(args[1].GetValueUInt64());
         ECClassId classId = args[0].GetValueId<ECClassId>();
         ECInstanceKey key(classId, instanceId);
-  
+
         auto iter = GetCache().find(key);
         if (GetCache().end() == iter)
             {
@@ -281,7 +282,7 @@ public:
                     BeAssert(false && "Invalid class");
                     ctx.SetResultError("Invalid ECClassId", BE_SQLITE_ERROR);
                     return;
-                    }  
+                    }
 
                 ProcessLabelAndInstanceLabelOverrides(label, GetContext(), key, *ecClass);
 
@@ -335,9 +336,10 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
             // create temporary key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
 
-            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
-                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
-            LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
+            RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
+            RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
+            LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
@@ -410,7 +412,7 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), GetContext().GetLocale(), classId, instanceId, "");
             // create temporary key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
-            ECExpressionContextsProvider::CalculatedPropertyContextParameters params(*thisNode, GetContext().GetConnection(), 
+            ECExpressionContextsProvider::CalculatedPropertyContextParameters params(*thisNode, GetContext().GetConnection(),
                 GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(params);
 
@@ -526,9 +528,10 @@ public:
             JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
             // create temporary node key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
-            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
-                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
-            LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
+            RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
+            RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
+            LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
@@ -684,10 +687,10 @@ struct GetPropertyDisplayValueScalar : ECPresentation::ScalarFunction
             default:
                 value = ValueHelpers::GetECValueFromString(ecProperty->GetAsPrimitiveProperty()->GetType(), args[3].GetValueText());
             }
-        
+
         Utf8String formattedValue(value.ToString());
         if (nullptr != GetContext().GetPropertyFormatter())
-            GetContext().GetPropertyFormatter()->GetFormattedPropertyValue(formattedValue, *ecProperty, value);  
+            GetContext().GetPropertyFormatter()->GetFormattedPropertyValue(formattedValue, *ecProperty, value);
         ctx.SetResultText(formattedValue.c_str(), (int)formattedValue.size(), DbFunction::Context::CopyData::Yes);
         }
     };

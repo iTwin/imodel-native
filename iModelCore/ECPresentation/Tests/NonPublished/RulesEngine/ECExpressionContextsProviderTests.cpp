@@ -763,7 +763,8 @@ TEST_F (ECExpressionContextsProviderTests, UserSettings_ReactsToChangesInStore)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_ContentDisplayTypeMatches)
     {
-    ECExpressionContextsProvider::ContentRulesContextParameters params("MyContentType", "", false, *s_connection, m_locale, TestNodeLocater(), nullptr, m_userSettings, nullptr);
+    TestNodeLocater nodeLocater;
+    ECExpressionContextsProvider::ContentRulesContextParameters params("MyContentType", "", false, *s_connection, m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetContentRulesContext(params);
     Utf8CP expression = "ContentDisplayType";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
@@ -776,7 +777,8 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_ContentDisplayT
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_SelectionProviderNameMatches)
     {
-    ECExpressionContextsProvider::ContentRulesContextParameters params("", "MySelectionProvider", false, *s_connection, m_locale, TestNodeLocater(), nullptr, m_userSettings, nullptr);
+    TestNodeLocater nodeLocater;
+    ECExpressionContextsProvider::ContentRulesContextParameters params("", "MySelectionProvider", false, *s_connection, m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetContentRulesContext(params);
     Utf8CP expression = "SelectionProviderName";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
@@ -789,14 +791,15 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_SelectionProvid
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_IsSubSelectionMatches)
     {
-    ECExpressionContextsProvider::ContentRulesContextParameters params1("", "", false, *s_connection, m_locale, TestNodeLocater(), nullptr, m_userSettings, nullptr);
+    TestNodeLocater nodeLocater;
+    ECExpressionContextsProvider::ContentRulesContextParameters params1("", "", false, *s_connection, m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetContentRulesContext(params1);
     Utf8CP expression = "IsSubSelection";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
     ASSERT_FALSE(resultValue.GetBoolean());
 
-    ECExpressionContextsProvider::ContentRulesContextParameters params2("", "", true, *s_connection, m_locale, TestNodeLocater(), nullptr, m_userSettings, nullptr);
+    ECExpressionContextsProvider::ContentRulesContextParameters params2("", "", true, *s_connection, m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
     ctx = ECExpressionContextsProvider::GetContentRulesContext(params2);
     resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -818,7 +821,7 @@ TEST_F (ECExpressionContextsProviderTests, Common_Set)
     ASSERT_TRUE(valueResult.IsECValue());
     EXPECT_TRUE(valueResult.GetECValue()->IsInteger());
     EXPECT_EQ(1, valueResult.GetECValue()->GetInteger());
-    
+
     EXPECT_EQ(ExpressionStatus::Success, result->GetValueAt(valueResult, 1));
     ASSERT_TRUE(valueResult.IsECValue());
     EXPECT_TRUE(valueResult.GetECValue()->IsString());

@@ -639,9 +639,7 @@ void SimpleRuleSetLocater::Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 EmbeddedRuleSetLocater::EmbeddedRuleSetLocater(IConnectionCR connection)
     : m_connection(connection)
-    {
-    LoadRuleSets();
-    }
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas                11/18

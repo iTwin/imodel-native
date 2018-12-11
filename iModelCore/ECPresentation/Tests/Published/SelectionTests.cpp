@@ -40,14 +40,16 @@ struct TestSelectionListener : ISelectionChangesListener
     Utf8String m_sourceName;
     bool m_isSubSelection;
     rapidjson::Document m_extendedData;
+    std::function<folly::Future<folly::Unit>()> m_futureFactory;
 
-    TestSelectionListener() : m_isSubSelection(false) {}
+    TestSelectionListener() : m_isSubSelection(false), m_futureFactory([](){return folly::makeFuture();}) {}
 
-    void _OnSelectionChanged(SelectionChangedEventCR evt) override
+    folly::Future<folly::Unit> _OnSelectionChanged(SelectionChangedEventCR evt) override
         {
         m_sourceName = evt.GetSourceName();
         m_isSubSelection = evt.IsSubSelection();
         m_extendedData.CopyFrom(evt.GetExtendedData(), m_extendedData.GetAllocator());
+        return m_futureFactory();
         }
     };
 
@@ -318,3 +320,151 @@ TEST_F(MultipleECDbSelectionTest, ClearSelection)
     ASSERT_TRUE(m_manager->GetSelection(s_project2->GetECDb())->empty());
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Gerardas.Butkevicius            11/2018
++===============+===============+===============+===============+===============+======*/
+struct AsyncSelectionTest : SelectionTests
+    {
+    TestSelectionListener m_listener1;
+
+    void SetUp() override
+        {
+        SelectionTests::SetUp();
+        m_manager->AddListener(m_listener1);
+        }
+
+    void TearDown() override
+        {
+        m_manager->RemoveListener(m_listener1);
+        SelectionTests::TearDown();
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Gerardas.Butkevicius            11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(AsyncSelectionTest, AddToSelectionShouldResolveWhenAllListenersAreResolved)
+    {
+    NavNodeKeyPtr key = TestNodeKey::Create();
+    folly::Promise<folly::Unit> promise1;
+    folly::Promise<folly::Unit> promise2;
+    m_listener.m_futureFactory = [&promise1]()
+        {
+        return promise1.getFuture();
+        };
+    m_listener1.m_futureFactory = [&promise2]()
+        {
+        return promise2.getFuture();
+        };
+    auto addToSelection = m_manager->AddToSelection(s_project->GetECDb(), "TestSource", false, *key, CreateExtendedData());
+
+    ASSERT_FALSE(addToSelection.isReady());
+
+    promise1.setValue();
+
+    ASSERT_FALSE(addToSelection.isReady());
+
+    promise2.setValue();
+
+    ASSERT_TRUE(addToSelection.isReady());
+    ASSERT_TRUE(addToSelection.hasValue());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Gerardas.Butkevicius            11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(AsyncSelectionTest, RemoveFromSelectionShouldResolveWhenAllListenersAreResolved)
+    {
+    NavNodeKeyPtr key = TestNodeKey::Create();
+    m_manager->AddToSelection(s_project->GetECDb(), "TestSource", false, *key);
+
+    folly::Promise<folly::Unit> promise1;
+    folly::Promise<folly::Unit> promise2;
+    m_listener.m_futureFactory = [&promise1]()
+        {
+        return promise1.getFuture();
+        };
+    m_listener1.m_futureFactory = [&promise2]()
+        {
+        return promise2.getFuture();
+        };
+    auto removeFromSelection = m_manager->RemoveFromSelection(s_project->GetECDb(), "TestSource2", false, *key, CreateExtendedData());
+
+    ASSERT_FALSE(removeFromSelection.isReady());
+
+    promise1.setValue();
+
+    ASSERT_FALSE(removeFromSelection.isReady());
+
+    promise2.setValue();
+
+    ASSERT_TRUE(removeFromSelection.isReady());
+    ASSERT_TRUE(removeFromSelection.hasValue());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Gerardas.Butkevicius            11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(AsyncSelectionTest, ChangeSelectionShouldResolveWhenAllListenersAreResolved)
+    {
+    NavNodeKeyPtr key1 = TestNodeKey::Create("1");
+    m_manager->AddToSelection(s_project->GetECDb(), "TestSource", false, *key1);
+    ASSERT_EQ(1, m_manager->GetSelection(s_project->GetECDb())->size());
+
+    NavNodeKeyPtr key2 = TestNodeKey::Create("2");
+    folly::Promise<folly::Unit> promise1;
+    folly::Promise<folly::Unit> promise2;
+    m_listener.m_futureFactory = [&promise1]()
+        {
+        return promise1.getFuture();
+        };
+    m_listener1.m_futureFactory = [&promise2]()
+        {
+        return promise2.getFuture();
+        };
+    auto changeSelection = m_manager->ChangeSelection(s_project->GetECDb(), "TestSource2", false, *key2, CreateExtendedData());
+
+    ASSERT_FALSE(changeSelection.isReady());
+
+    promise1.setValue();
+
+    ASSERT_FALSE(changeSelection.isReady());
+
+    promise2.setValue();
+
+    ASSERT_TRUE(changeSelection.isReady());
+    ASSERT_TRUE(changeSelection.hasValue());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Gerardas.Butkevicius            11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(AsyncSelectionTest, ClearSelectionShouldResolveWhenAllListenersAreResolved)
+    {
+    NavNodeKeyPtr key = TestNodeKey::Create();
+    m_manager->AddToSelection(s_project->GetECDb(), "TestSource", false, *key);
+    ASSERT_EQ(1, m_manager->GetSelection(s_project->GetECDb())->size());
+
+    folly::Promise<folly::Unit> promise1;
+    folly::Promise<folly::Unit> promise2;
+    m_listener.m_futureFactory = [&promise1]()
+        {
+        return promise1.getFuture();
+        };
+    m_listener1.m_futureFactory = [&promise2]()
+        {
+        return promise2.getFuture();
+        };
+    auto clearSelection = m_manager->ClearSelection(s_project->GetECDb(), "TestSource2", false, CreateExtendedData());
+
+    ASSERT_FALSE(clearSelection.isReady());
+
+    promise1.setValue();
+
+    ASSERT_FALSE(clearSelection.isReady());
+
+    promise2.setValue();
+
+    ASSERT_TRUE(clearSelection.isReady());
+    ASSERT_TRUE(clearSelection.hasValue());
+    }
