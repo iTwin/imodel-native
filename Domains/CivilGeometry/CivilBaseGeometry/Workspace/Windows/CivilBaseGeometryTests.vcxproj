@@ -63,6 +63,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\PublicAPI;$(SrcRoot)Civil\Geometry\CivilBaseGeometry\Native\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb r CivilBaseGeometry-GTest CivilBaseGeometry:UnitTests-NonPublished</NMakeBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\PublicAPI;$(SrcRoot)Civil\Geometry\CivilBaseGeometry\Native\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
