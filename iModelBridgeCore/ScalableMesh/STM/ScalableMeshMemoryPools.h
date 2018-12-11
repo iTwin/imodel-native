@@ -53,6 +53,7 @@ inline uint64_t GetAmountOfPhysicalMemory()
 template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPools()
     {    
 	static double S_DEFAULT_PHYSICAL_MEM_USED_RATIO = 0.3;
+    static double S_DEFAULT_PHYSICAL_MEM_USED_RATIO_MOBILE = 0.02;
 
 #ifdef VANCOUVER_API	
 	uint64_t totalPhysicalSize = GetAmountOfPhysicalMemory();
@@ -66,7 +67,12 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPool
 		totalPhysicalSize = std::min((uint64_t)4000000000, totalPhysicalSize);
 		}	
 
-    m_genericPoolSize = (totalPhysicalSize * S_DEFAULT_PHYSICAL_MEM_USED_RATIO);
+#if defined(ANDROID) || defined(__APPLE__)
+    m_genericPoolSize = (totalPhysicalSize * S_DEFAULT_PHYSICAL_MEM_USED_RATIO_MOBILE);        
+#else
+    m_genericPoolSize = (totalPhysicalSize * S_DEFAULT_PHYSICAL_MEM_USED_RATIO);    
+#endif
+
     m_genericPool = SMMemoryPool::GetInstance();
     bool result = m_genericPool->SetMaxSize(m_genericPoolSize);
     assert(result == true);

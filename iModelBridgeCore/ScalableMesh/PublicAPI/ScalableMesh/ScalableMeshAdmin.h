@@ -26,18 +26,25 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct ScalableMeshAdmin : DgnHost::IHostObject
-{
-    private :         
+    {
+    private:
 
         IScalableMeshTextureGeneratorPtr m_textureGeneratorPtr;
 
-    public : 
-       
+    public:
+
         struct ProxyInfo
             {
             Utf8String m_user;
             Utf8String m_password;
             Utf8String m_serverUrl;
+            };
+
+        enum AuthTokenType
+            {
+            Saml,
+            Jwt,
+            None
             };
 
         virtual int                     _GetVersion() const {return 1;} // Do not override!
@@ -65,6 +72,12 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 
         virtual Utf8String _GetProjectID() const { return Utf8String(); }
 
+        virtual AuthTokenType _SupplyAuthTokenType() const { return AuthTokenType::None; }
+
+        virtual bool _SupplyAuthHeaderValue(Utf8StringR value, Utf8StringCR scope) const { return false; }
+
+        virtual uint32_t _SupplyRegionID() const { return 0; }
+
         virtual ProxyInfo _GetProxyInfo() const { return ProxyInfo(); }
 
         virtual uint64_t  _GetProductId() const { return UINT64_MAX; }
@@ -81,32 +94,32 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 
 #ifdef VANCOUVER_API
 struct STMAdmin
-{
-private:
-	std::function<StatusInt(BENTLEY_NAMESPACE_NAME::WString&, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle&)> m_resolveFileName;
+    {
+    private:
+        std::function<StatusInt(BENTLEY_NAMESPACE_NAME::WString&, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle&)> m_resolveFileName;
 
-public:
-	STMAdmin() 
-	    {
-		m_resolveFileName = [](BENTLEY_NAMESPACE_NAME::WString&, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle&)
-		    {
-			return ERROR;
-		};
-	    }
-	STMAdmin(std::function<StatusInt(BENTLEY_NAMESPACE_NAME::WString&, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle&)> NameResolver)
-		: m_resolveFileName(NameResolver)
-	{}
+    public:
+        STMAdmin()
+            {
+            m_resolveFileName = [] (BENTLEY_NAMESPACE_NAME::WString&, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle&)
+                {
+                return ERROR;
+                };
+            }
+        STMAdmin(std::function<StatusInt(BENTLEY_NAMESPACE_NAME::WString&, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle&)> NameResolver)
+            : m_resolveFileName(NameResolver)
+            {}
 
-	STMAdmin(const STMAdmin& myAdmin)
-	    {
-		m_resolveFileName = myAdmin.m_resolveFileName;
-	    }
+        STMAdmin(const STMAdmin& myAdmin)
+            {
+            m_resolveFileName = myAdmin.m_resolveFileName;
+            }
 
-	StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle)
-	{
-		return m_resolveFileName(fileName, elHandle);
-	}
-};
+        StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle)
+            {
+            return m_resolveFileName(fileName, elHandle);
+            }
+    };
 
 #endif
 
