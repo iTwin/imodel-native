@@ -162,8 +162,9 @@
     </Part>
     
     <Part Name="RealityServicesNet" BMakeFile="RealityServicesNet\RealityServicesNet.mke">
+        <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
-	<SubPart PartName="RealityPlatformUnitTests" />
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>         
         <Bindings>
             <Assemblies>Delivery/RealityServicesNet$(shlibext)</Assemblies>
         </Bindings>
@@ -363,8 +364,8 @@
 
     <Part Name="RealityServicesNetNuGet" BMakeFile="RealityServicesNet\NuGet\Bentley.RealityServicesNet.NuGetPackage.mke" OnlyPlatforms="x86,x64">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
-        <SubPart PartName="RealityServicesNetNuGetPackages"/>
         <SubPart PartName="RealityServicesNet" />
+        <SubPart PartName="RealityServicesNetNuGetPackages"/>
         <Bindings>
             <Files ProductDirectoryName="RealityServicesNetNuGetPackages" Required="false">Install\Bentley.RealityServicesNet\Bentley.RealityServicesNet.*.nupkg</Files>
         </Bindings>
@@ -461,7 +462,7 @@
         <SubPart PartName="RealityAdmin-Applications"/>
         <SubPart PartName="RealityModFrameworkTested"/>
         <SubPart PartName="RealityPlatformToolsLight"/>
-	<SubPart PartName="RealityServicesNetNuGet" />
+        <SubPart PartName="RealityServicesNetNuGet" />
         <SubPart PartName="RealityPlatformToolsNoCC"/>
       <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
