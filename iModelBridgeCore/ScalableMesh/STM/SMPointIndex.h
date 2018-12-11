@@ -25,9 +25,7 @@
 #include <ScalableMesh/IScalableMeshQuery.h>
 
 #include "Stores/SMSQLiteStore.h"
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
-#endif
 #include "SMNodeGroup.h"
 
 #include <ScalableMesh/IScalableMeshCreator.h>

@@ -15,9 +15,7 @@
 
 #include "ScalableMeshClippingOptions.h"
 
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
-#endif
 
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 

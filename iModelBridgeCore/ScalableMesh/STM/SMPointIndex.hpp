@@ -8033,7 +8033,6 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
         {
         return ERROR;
         }
-        #ifndef LINUX_SCALABLEMESH_BUILD
     ISMDataStoreTypePtr<Extent3dType> dataStore(
  #ifndef VANCOUVER_API
     new SMStreamingStore<Extent3dType>(pi_pOutputDirPath, pi_pCompress)
@@ -8045,7 +8044,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
     this->SaveMasterHeaderToCloud(dataStore);
 
     this->GetRootNode()->SavePointsToCloud(dataStore);
-    #endif
+
 
     return SUCCESS;
     }

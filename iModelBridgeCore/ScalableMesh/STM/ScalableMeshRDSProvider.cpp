@@ -10,9 +10,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include "ScalableMeshRDSProvider.h"
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CCApi\CCPublic.h>
+#endif
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <BeHttp\HttpClient.h>
@@ -263,7 +264,6 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
 #define DEFAULT_BUDDI_RDS_URL "http://buddi.bentley.com/discovery.asmx/GetUrl?urlName=RealityDataServices&region="
         Utf8String buddiUrl((DEFAULT_BUDDI_RDS_URL + std::to_string(connectRegion)).c_str());
         BENTLEY_HTTP_NAMESPACE_NAME::HttpClient client;
-
         auto request = client.CreateRequest(buddiUrl.c_str(), "GET");
         auto response = request.Perform().get();
         auto body = response.GetContent()->GetBody()->AsString();
@@ -279,6 +279,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         }
     if(serverUrl.empty())
         {
+#ifndef LINUX_SCALABLEMESH_BUILD
         // Unable to retrieve valid RDS url... fall back on CCApi (Windows only)
         CallStatus status = APIERR_SUCCESS;
         try
@@ -346,6 +347,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
             {
             BeAssert(!"Error thrown while fetching RDS server url");
             }
+#endif
         }
     BeAssert(!serverUrl.empty()); // RDS server URL couldn't be found
     return serverUrl;
@@ -376,4 +378,4 @@ Utf8String ScalableMeshRDSProvider::GetRootDocumentName()
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
-#endif
+

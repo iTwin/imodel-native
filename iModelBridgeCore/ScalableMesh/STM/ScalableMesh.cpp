@@ -38,9 +38,7 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/IScalableMeshSources.h>
 
 #include "ScalableMesh/ScalableMeshLib.h"
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
-#endif
 
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshInfo.h"
@@ -844,9 +842,7 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
     
         m_useTempPath = true;
 
-#ifndef LINUX_SCALABLEMESH_BUILD    
     SetDataSourceAccount(nullptr);
-#endif
 }
 
 
@@ -1243,7 +1239,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         ISMDataStoreTypePtr<Extent3dType> dataStore;
         if (!isSingleFile)
             {
-#ifndef LINUX_SCALABLEMESH_BUILD
             m_streamingSettings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(m_path);
 
             if (!m_streamingSettings->IsValid())
@@ -1275,7 +1270,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     (!m_streamingSettings->GetGCSString().empty() && !LoadGCSFrom(m_streamingSettings->GetGCSString())))
                 return BSIERROR; // Error loading layer gcs
             }
-#endif
             }
         else
             {
@@ -3735,7 +3729,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 #else
 template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP targetCS, DgnDbR dgnProject)
     {
-    #ifndef LINUX_SCALABLEMESH_BUILD
     if (this->IsCesium3DTiles() && targetCS == nullptr && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
         {
         // Fall back on the GCS saved in the SM metadata for Cesium tilesets
@@ -3752,7 +3745,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
         DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnProject));
         return this->_Reproject(newDgnGcsPtr.get(), dgnProject);
         }
-#endif
 
     DPoint3d globalOrigin = dgnProject.GeoLocation().GetGlobalOrigin();
 
@@ -3765,7 +3757,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
     auto coordInterp = Dgn::GeoCoordInterpretation::Cartesian;
     if (this->IsCesium3DTiles())
         {
-        #ifndef LINUX_SCALABLEMESH_BUILD
         auto tileToDb = m_streamingSettings->GetTileToDbTransform();
         if (!tileToDb.IsIdentity())
             {
@@ -3782,7 +3773,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
             ecefToTile.InverseOf(tileToECEF);
             computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
             }
-            #endif
         }
 
     if (gcs.HasGeoRef())
