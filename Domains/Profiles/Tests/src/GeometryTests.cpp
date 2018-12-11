@@ -83,7 +83,7 @@ void GeometryTestCase::InsertProfileGeometry (typename T::CreateParams const& cr
 
     DgnDbStatus status;
     profilePtr->Insert (&status);
-    ASSERT_EQ (DgnDbStatus::Success, status);
+    ASSERT_EQ (DgnDbStatus::Success, status) << "Failed to insert Profile to DgnDb.";
 
     InsertPhysicalElement (profilePtr, placeInNewRow);
     }
@@ -170,4 +170,9 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_FilletAndRoundedEdge", 3.5, 10, 1, 1, 0.5, 0.5, 0.0));
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_MaxFillet", 3.5, 10, 1, 1, 1.0, 0.1, 0.));
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_SlopeAndRoundings", 3.5, 10, 1, 1, 0.5, 0.5, PI / 18));
+
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_Plain", 6, 10, 1, 1, 0, 0, 0, 0, 0), true);
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0, 0.5, 0));
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_MaxFillet", 6, 10, 1, 1, 2.5 / 2.0, 0.1, 0, 0.1, 0));
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, PI / 12, 0.5, PI / 48));
     }
