@@ -22,10 +22,10 @@ Run geometry generation test:
     bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=GeometryTestCase*
 
 Open generated bim with Gist:
-    %temp%\ProfilesTests\ProfilesTests_Working.bim
+    %localappdata%\Temp\ProfilesTests\ProfilesTests_Working.bim
 
 Handy doskey (build and run filtered tests):
-    doskey RunTests = bb re ProfilesTests ^&^& bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=$*
+    doskey RunTests = bb re ProfilesTests ^&^& bb re RunProfilesTests -c ^&^& bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=$*
     Usage: "runtests IShape*"
 
 [CODE COVERAGE]
