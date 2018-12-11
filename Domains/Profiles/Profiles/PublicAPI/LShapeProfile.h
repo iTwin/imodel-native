@@ -73,6 +73,12 @@ public:
     PROFILES_EXPORT double GetLegSlope() const;
     PROFILES_EXPORT void SetLegSlope (double val);
 
+public:
+    PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
+    PROFILES_EXPORT double GetInnerWebFaceLength() const;
+    PROFILES_EXPORT double GetFlangeSlopeHeight() const;
+    PROFILES_EXPORT double GetWebSlopeHeight() const;
+
     }; // LShapeProfile
 
 //=======================================================================================

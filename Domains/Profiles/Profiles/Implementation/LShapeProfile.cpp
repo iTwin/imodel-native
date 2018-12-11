@@ -147,4 +147,44 @@ void LShapeProfile::SetLegSlope (double val)
     SetPropertyValue (PRF_PROP_LShapeProfile_LegSlope, ECN::ECValue (val));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetInnerFlangeFaceLength() const
+    {
+    return GetWidth() - GetThickness();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetInnerWebFaceLength() const
+    {
+    return GetDepth() - GetThickness();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetFlangeSlopeHeight() const
+    {
+    double const flangeSlopeCos = std::cos (GetLegSlope());
+    if (flangeSlopeCos <= DBL_EPSILON)
+        return 0.0;
+
+    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * std::sin (GetLegSlope());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetWebSlopeHeight() const
+    {
+    double const webSlopeCos = std::cos (GetLegSlope());
+    if (webSlopeCos <= DBL_EPSILON)
+        return 0.0;
+
+    return (GetInnerWebFaceLength() / webSlopeCos) * std::sin (GetLegSlope());
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE
