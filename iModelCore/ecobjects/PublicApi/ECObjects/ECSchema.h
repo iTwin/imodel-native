@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -101,7 +101,7 @@ protected:
     SchemaWriteStatus                   WriteCustomAttributes(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
     bool                                WriteCustomAttributes(Json::Value& outValue) const;
     //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
-    ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer) const;
+    ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer, bool copyReferences) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
     void                                AddUniquePrimaryCustomAttributesToList(ECCustomAttributeCollection& returnList);
@@ -1724,7 +1724,7 @@ private:
     void            RemoveDerivedClasses();
     static void     SetErrorHandling(bool doAssert);
 
-    static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
+    static bool     ConvertPropertyToPrimitiveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
     ECObjectsStatus FixArrayPropertyOverrides();
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty, Utf8StringR errMsg) const;
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
@@ -1746,6 +1746,7 @@ protected:
     virtual ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass);
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
+
     ECSchemaCP _GetContainerSchema() const override {return &m_schema;}
     Utf8CP _GetContainerName() const override {return GetFullName();}
 

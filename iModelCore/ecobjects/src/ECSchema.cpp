@@ -1561,7 +1561,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             return status;
         }
 
-    return sourceClass.CopyCustomAttributesTo(*targetClass);
+    return sourceClass.CopyCustomAttributesTo(*targetClass, copyReferences);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1874,8 +1874,8 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     ECSchemaReferenceListCR referencedSchemas = GetReferencedSchemas();
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
         schemaOut->AddReferencedSchema(*iter->second.get());
-        
-    for(ECClassP ecClass: m_classContainer)
+
+    for (ECClassP ecClass: m_classContainer)
         {
         ECClassP copyClass;
         status = schemaOut->CopyClass(copyClass, *ecClass, ecClass->GetName(), true);
@@ -1939,7 +1939,7 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
             return status;
         }
 
-    return CopyCustomAttributesTo(*schemaOut);
+    return CopyCustomAttributesTo(*schemaOut, true);
     }
 
 //--------------------------------------------------------------------------------------

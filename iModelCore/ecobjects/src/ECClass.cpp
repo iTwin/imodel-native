@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECClass.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -872,7 +872,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         }
 
     if (copyCustomAttributes)
-        sourceProperty->CopyCustomAttributesTo(*destProperty);
+        sourceProperty->CopyCustomAttributesTo(*destProperty, copyReferences);
 
     ECObjectsStatus status = ECObjectsStatus::Success;
     if (andAddProperty)
@@ -992,7 +992,7 @@ void ECClass::OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP
 // @bsimethod                                   Caleb.Shafer                    12/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses)
+bool ECClass::ConvertPropertyToPrimitiveArray(ECClassP ecClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses)
     {
     if (includeDerivedClasses && ecClass->HasDerivedClasses())
         {
@@ -1001,7 +1001,7 @@ bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startin
             if (ECClass::ClassesAreEqualByName(derivedClass, startingClass))
                 continue;
 
-            if (!ConvertPropertyToPrimitveArray(derivedClass, ecClass, propName, includeDerivedClasses))
+            if (!ConvertPropertyToPrimitiveArray(derivedClass, ecClass, propName, includeDerivedClasses))
                 return false;
             }
         }
@@ -1013,7 +1013,7 @@ bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startin
             if (ECClass::ClassesAreEqualByName(baseClass, startingClass))
                 continue;
 
-            if (!ConvertPropertyToPrimitveArray(baseClass, ecClass, propName))
+            if (!ConvertPropertyToPrimitiveArray(baseClass, ecClass, propName))
                 return false;
             }
         }
@@ -1052,7 +1052,8 @@ bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startin
         newProperty->SetDisplayLabel(primProp->GetInvariantDisplayLabel());
     newProperty->SetIsReadOnly(primProp->IsReadOnlyFlagSet());
 
-    ECObjectsStatus status = primProp->CopyCustomAttributesTo(*newProperty);
+    // doesn't matter if we pass true or false for copyReferences param, because we are copying to the same class
+    ECObjectsStatus status = primProp->CopyCustomAttributesTo(*newProperty, false);
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv("Failed to convert the property, %s.%s, to a primitive array property because could not copy all original custom attributes.", 
@@ -1094,7 +1095,7 @@ bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startin
     delete primProp;
 
     for (ECClassP derivedClass : ecClass->GetDerivedClasses())
-        ConvertPropertyToPrimitveArray(derivedClass, ecClass, propName, true);
+        ConvertPropertyToPrimitiveArray(derivedClass, ecClass, propName, true);
 
     return true;
     }
@@ -1129,7 +1130,7 @@ ECObjectsStatus ECClass::FixArrayPropertyOverrides()
 
             if (ecProp->GetIsPrimitive() != baseProperty->GetIsPrimitive() || ecProp->GetIsPrimitiveArray() != baseProperty->GetIsPrimitiveArray())
                 {
-                if (!ConvertPropertyToPrimitveArray(this, this, propName))
+                if (!ConvertPropertyToPrimitiveArray(this, this, propName))
                     return ECObjectsStatus::Error;
                 break;
                 }
@@ -3948,7 +3949,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
             return status;
         }
 
-    return CopyCustomAttributesTo(toRelationshipConstraint);
+    return CopyCustomAttributesTo(toRelationshipConstraint, copyReferences);
     }
 
 /*---------------------------------------------------------------------------------**//**

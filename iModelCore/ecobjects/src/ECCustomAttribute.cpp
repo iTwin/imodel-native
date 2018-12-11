@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECCustomAttribute.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -766,13 +766,46 @@ bool IECCustomAttributeContainer::WriteCustomAttributes(Json::Value& outValue) c
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus IECCustomAttributeContainer::CopyCustomAttributesTo
 (
-IECCustomAttributeContainerR destContainer
+IECCustomAttributeContainerR destContainer,
+bool copyReferences
 ) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
-    for (IECInstancePtr customAttribute: GetPrimaryCustomAttributes(false))
+    for (auto&& sourceCustomAttribute: GetPrimaryCustomAttributes(false))
         {
-        status = destContainer.SetPrimaryCustomAttribute(*(customAttribute->CreateCopyThroughSerialization()));
+        auto&& sourceCustomAttributeSchema = sourceCustomAttribute->GetClass().GetSchema();
+        if (_GetContainerSchema()->GetSchemaKey().Matches(sourceCustomAttributeSchema.GetSchemaKey(), SchemaMatchType::Exact))
+            {
+            if (nullptr == destContainer.GetContainerSchema()->GetClassCP(sourceCustomAttribute->GetClass().GetName().c_str()))
+                {
+                if (copyReferences)
+                    {
+                    ECClassP ecClass;
+                    status = destContainer.GetContainerSchema()->CopyClass(ecClass, sourceCustomAttribute->GetClass(), sourceCustomAttribute->GetClass().GetName(), copyReferences);
+                    if (ECObjectsStatus::Success != status) 
+                        return status;
+                    }
+                else if (!ECSchema::IsSchemaReferenced(*destContainer.GetContainerSchema(), sourceCustomAttributeSchema))
+                    {
+                    status = destContainer.GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(sourceCustomAttributeSchema));
+                    if (ECObjectsStatus::Success != status)
+                        return status;
+                    }
+                }
+            }
+        else if (!ECSchema::IsSchemaReferenced(*destContainer.GetContainerSchema(), sourceCustomAttributeSchema))
+            {
+            status = destContainer.GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(sourceCustomAttributeSchema));
+            if (ECObjectsStatus::Success != status)
+                return status;
+            }
+
+        auto&& destCustomAttribute = sourceCustomAttribute->CreateCopyThroughSerialization(*destContainer._GetContainerSchema());
+
+        if (destCustomAttribute.IsNull())
+            return ECObjectsStatus::Error;
+
+        status = destContainer.SetPrimaryCustomAttribute(*destCustomAttribute);
         if (ECObjectsStatus::Success != status)
             return status;
         }
