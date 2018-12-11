@@ -252,6 +252,7 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
 
     m_converter->SetIsProcessing(true);
+    m_converter->MakeDefinitionChanges();
     m_converter->ConvertData();
     m_converter->SetIsProcessing(false);
 
@@ -317,7 +318,7 @@ BentleyStatus ORDBridge::CreateSyncInfoIfNecessary()
 BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
     {
     //if (m_converter != nullptr)
-    //    delete m_converter;
+        //delete m_converter;
     if (m_converter == nullptr)
         {
         m_converter = new ORDConverter(m_params);
