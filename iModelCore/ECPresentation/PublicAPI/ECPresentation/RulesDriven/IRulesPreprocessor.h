@@ -217,7 +217,7 @@ struct IRulesPreprocessor
     struct ContentRuleParameters
     {
     private:
-        INavNodeLocaterCR m_nodeLocater;
+        INavNodeLocaterCP m_nodeLocater;
         INavNodeKeysContainerCPtr m_inputNodeKeys;
         Utf8StringCR m_preferredContentDisplayType;
         SelectionInfo const* m_selectionInfo;
@@ -226,14 +226,14 @@ struct IRulesPreprocessor
         //! @param[in] inputNodeKeys A container of input nodes.
         //! @param[in] preferredContentDisplayType Type of content display that the content is going to be displayed in.
         //! @param[in] selectionInfo Info about last selection.
-        //! @param[in] nodeLocater Nodes locater.
-        ContentRuleParameters(INavNodeKeysContainerCR inputNodeKeys, Utf8StringCR preferredContentDisplayType, SelectionInfo const* selectionInfo, INavNodeLocaterCR nodeLocater)
+        //! @param[in] nodeLocater (optional) Nodes locater.
+        ContentRuleParameters(INavNodeKeysContainerCR inputNodeKeys, Utf8StringCR preferredContentDisplayType, SelectionInfo const* selectionInfo, INavNodeLocaterCP nodeLocater = nullptr)
             : m_inputNodeKeys(&inputNodeKeys), m_preferredContentDisplayType(preferredContentDisplayType), m_selectionInfo(selectionInfo), m_nodeLocater(nodeLocater)
             {}
         //! Do these parameters contain selection info.
         bool HasSelectionInfo() const {return nullptr != m_selectionInfo;}
         //! Get the nodes locater.
-        INavNodeLocaterCR GetNodeLocater() const {return m_nodeLocater;}
+        INavNodeLocaterCP GetNodeLocater() const {return m_nodeLocater;}
         //! Get selected node keys.
         INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputNodeKeys;}
         //! Get preferred display type.
