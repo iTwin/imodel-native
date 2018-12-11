@@ -36,6 +36,9 @@ nameToDefine=__REALITYPLATFORM_BUILD__
 nameToDefine=__WMSPARSER_BUILD__
 %include cdefapnd.mki
 
+nameToDefine=NOMINMAX
+%include cdefapnd.mki
+
 #----------------------------------------------------------------------
 #       Build source files
 #----------------------------------------------------------------------
