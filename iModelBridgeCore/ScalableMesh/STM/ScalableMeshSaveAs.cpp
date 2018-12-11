@@ -290,9 +290,9 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
                 "Total number of nodes: %I64d\n"
                 "Convert speed (nodes/sec): %f"
                 , (clock() - startTime) / CLOCKS_PER_SEC,
-                (double)convertTime / CLOCKS_PER_SEC / nbThreads,
-                (double)storeTime / CLOCKS_PER_SEC / nbThreads,
-                tTime, nbProcessedNodes, nbNodes, nbProcessedNodes / tTime);
+                (double)convertTime.load() / CLOCKS_PER_SEC / nbThreads,
+                (double)storeTime.load() / CLOCKS_PER_SEC / nbThreads,
+                tTime, nbProcessedNodes.load(), nbNodes.load(), nbProcessedNodes.load() / tTime);
             }
         }
     return true;

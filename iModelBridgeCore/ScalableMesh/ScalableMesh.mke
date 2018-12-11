@@ -80,7 +80,7 @@ CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-#CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DWIP_MESH_IMPORT
+#CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DWIP_MESH_IMPORT 
 CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
 
 %if !defined (3DMesh)
@@ -502,7 +502,9 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)RealityPlatform.lib \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
-    $(ContextSubpartsLibs)BeCurl.lib
+    $(ContextSubpartsLibs)BeHttp.lib\
+    $(ContextSubpartsLibs)BeFolly.lib\
+    $(ContextSubpartsLibs)BeXml.lib
 
 
 #    $(DgnPlatformV8LibDir)Bentley.lib \

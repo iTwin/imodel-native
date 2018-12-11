@@ -48,6 +48,7 @@ private:
     Utf8String m_ProjectGuid;
     Utf8String m_PWCSMeshGuid;
     AzureConnection m_AzureConnection;
+    std::function<void(Utf8StringR, time_t&)>* m_tokenProviderP = nullptr;
 
     static void InitializeRealityDataService(const Utf8String& projectID);
 

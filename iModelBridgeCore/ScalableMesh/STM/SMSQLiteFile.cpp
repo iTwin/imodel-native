@@ -235,25 +235,39 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         if (result == BE_SQLITE_SCHEMA)
 #endif     
             {
+
+#ifdef DGNDB06_API
+        WString fileNameW(filename, true);
+
+        if (_waccess(fileNameW.c_str(), 06) != 0)
+            {
+            return false;
+            }
+#endif
             Db::OpenParams openParamUpdate(READWRITE);
 
 #ifndef VANCOUVER_API
+	#ifdef DGNDB06_API
+			openParamUpdate.m_skipSchemaCheck = true;
+	#else
             openParamUpdate.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+	#endif			
 #else
         m_database->CloseDb();
 #endif
             result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
-            if (result != BE_SQLITE_OK)
-                {
-                m_database->CloseDb();
-                return false;
-                }
-
-#ifdef VANCOUVER_API
-            UpdateDatabase();
-#endif
+        if (result != BE_SQLITE_OK)
+            {
             m_database->CloseDb();
+            return false;
+            }
+
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
+        UpdateDatabase();
+#endif
+
+        m_database->CloseDb();
 
 
 #ifndef VANCOUVER_API
@@ -264,8 +278,10 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
             else
 #endif
                 result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
-                }
+
             }
+        }
+               
     m_isShared = openShareable;
 
     if (openShareable)

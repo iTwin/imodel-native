@@ -28,6 +28,9 @@
 #include "SMExternalProviderDataStore.h"
 #include "../InternalUtilityFunctions.h"
 
+
+
+
 USING_NAMESPACE_IMAGEPP
 
 template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamingSettings(WString url)
@@ -140,6 +143,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
             auto azureToken = Utf8String(url.substr(azureTokenPos + 1, azureTokenLength));
             // NEEDS_WORK_SM_STREAMING : handle Azure token properly
             }
+#ifndef LINUX_SCALABLEMESH_BUILD
         if (ScalableMeshRDSProvider::IsHostedByRDS(this->m_projectID, this->m_guid))
             {
             // Forward to RDS to properly handle SAS tokens
@@ -152,6 +156,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
             this->m_location = ServerLocation::HTTP_SERVER;
             this->m_url = Utf8String(url.c_str());
             }
+#endif
         }
     else if (url.StartsWith(L"http") || url.StartsWith(L"https"))
         {
@@ -449,15 +454,25 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
             }
 
         DataSourceManager::Get()->destroyDataSource(dataSource);
-
+            
         return status.isOK();
+
+
+
         }
 
     return true;
     }
     
+
+
+
+
+//#ifndef LINUX_SCALABLEMESH_BUILD On Clang this function stops the compiler to compile the stuff after this function, including 
+//what is in SMStreamingDataStore.cpp.
 template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMIndexMasterHeader<EXTENT>* indexHeader, size_t headerSize)
     {
+
     if (indexHeader == NULL || !m_nodeHeaderGroups.empty()) return 0;
 
     SMGroupGlobalParameters::StrategyType groupMode = SMGroupGlobalParameters::StrategyType::NONE;
@@ -466,6 +481,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     if (s_stream_using_cesium_3d_tiles_format) groupMode = SMGroupGlobalParameters::StrategyType::CESIUM;
     if (s_import_from_bim_exported_cesium_3d_tiles) groupMode = SMGroupGlobalParameters::StrategyType::BIMCESIUM;
     bool isGrouped = true;
+
+
     //wchar_t buffer[10000];
     //swprintf(buffer, m_masterFileName.c_str());
     //switch (groupMode)
@@ -1238,6 +1255,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         }
     else if (s_stream_using_cesium_3d_tiles_format)
         {
+#ifndef LINUX_SCALABLEMESH_BUILD            
         std::vector<DataSourceBuffer::BufferData> headerData;
         this->GetNodeHeaderBinary(blockID, headerData);
         if (headerData.empty()) return 1;
@@ -1252,14 +1270,17 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
             }
 
         this->ReadNodeHeaderFromJSON(header, cesiumHeader["root"]["SMHeader"]);
+#endif        
         }
     else {
         //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
         //ReadNodeHeaderFromJSON(header, nodeHeader);
+#ifndef LINUX_SCALABLEMESH_BUILD                    
         std::vector<DataSourceBuffer::BufferData> headerData;
         this->GetNodeHeaderBinary(blockID, headerData);
         if (headerData.empty()) return 0;
         ReadNodeHeaderFromBinary(header, headerData.data(), headerData.size());
+#endif        
         }
     header->m_id = blockID;
     return 1;
@@ -1324,7 +1345,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::EraseClipFile() const
     if (!GetSisterSQLiteFileName(sqlFileName, SMStoreDataType::DiffSet))
         return;
 
-    if (!DoesClipFileExist())
+    if (!DoesClipFileExist()) 
         return;
 
 #if _WIN32
@@ -1899,7 +1920,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                 }
             }
         }
-    }
+    }        
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::vector<DataSourceBuffer::BufferData>& dest)
     {
@@ -1931,7 +1952,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
             {
             assert(false);
             DataSourceManager::Get()->destroyDataSource(dataSource);
-		    return;
+            return;
             }
 
     DataSourceManager::Get()->destroyDataSource(dataSource);
@@ -2174,6 +2195,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
 
     m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
     }
+
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup, bool isPublishing, bool compress)
     : m_dataSourceAccount(dataSourceAccount),
     m_dataSourceSessionName(session),
@@ -2198,7 +2220,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         case SMStoreDataType::TriUvIndices:
             m_dataSourceURL = L"uvindices";
             break;
-        case SMStoreDataType::Texture:
+        case SMStoreDataType::Texture:4
             m_dataSourceURL = L"textures";
             break;
         case SMStoreDataType::Cesium3DTiles:

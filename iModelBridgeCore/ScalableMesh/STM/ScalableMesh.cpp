@@ -2020,7 +2020,7 @@ template <class POINT> Utf8String ScalableMesh<POINT>::_GetProjectWiseContextSha
     {
 #ifndef LINUX_SCALABLEMESH_BUILD
     if (m_smRDSProvider.IsValid()) return m_smRDSProvider->GetRDSURLAddress();
-    #endif
+#endif    
     return Utf8String();
     }
 
