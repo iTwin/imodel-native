@@ -78,17 +78,11 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
     for (int i = 1; i < argc; ++i)
         {
         if (0 == std::strcmp(argv[i], "-h") || 0 == std::strcmp(argv[i], "--help"))
-            {
             return false;
-            }
         if (0 == std::strcmp(argv[i], "--NoStandardSchemas"))
-            {
             options.NoStandardSchemas = true;
-            }
         else if (0 == std::strcmp(argv[i], "--UseStandardUnitsAndFormatsSchemas"))
-            {
             options.UseStandardUnitsAndFormatsSchemas = true;
-            }
         else if (0 == std::strcmp(argv[i], "-i"))
             {
             if (NoParameterNext(argc, argv, i))
@@ -164,9 +158,7 @@ int CompareSchemas(SchemaComparisonOptions& options, BeFileName& assetsDir)
 
         bvector<WString> searchPaths;
         for (auto const& refDir : options.ReferenceDirectories[i])
-            {
             searchPaths.push_back(WString(refDir.GetName()));
-            }
         
         ECN::SearchPathSchemaFileLocaterPtr exactSchemaLocater = ExactSearchPathSchemaFileLocater::CreateExactSearchPathSchemaFileLocater(searchPaths, true);
         contexts[i]->AddSchemaLocater(*exactSchemaLocater);
@@ -268,9 +260,8 @@ int main(int argc, char** argv)
 
     WChar exePathW[MAX_PATH];
     if (0 == ::GetModuleFileNameW(nullptr, exePathW, MAX_PATH))
-        {
         return SCHEMA_COMPARISON_EXIT_FAILURE;
-        }
+
     BeFileName exePath(exePathW);
     BeFileName workingDirectory(exePath.GetDirectoryName());
 
@@ -282,15 +273,13 @@ int main(int argc, char** argv)
     workingDirectory.AppendToPath(L"Assets");
 
     if (progOptions.NoStandardSchemas)
-        {
         s_logger->infov(L"Skipping initialization of ECSchemaReadContext");
-        }
     else
         {
         ECN::ECSchemaReadContext::Initialize(workingDirectory);
         s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory.c_str());    
         }
-    
+
     int comparisonResult = CompareSchemas(progOptions, workingDirectory);
 
     return comparisonResult;
