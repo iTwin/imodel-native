@@ -687,7 +687,7 @@ typedef GroupedInstanceKeysList const& GroupedInstanceKeysListCR;
 //! @ingroup GROUP_Presentation_Navigation
 // @bsiclass                                    Grigas.Petraitis                09/2016
 //=======================================================================================
-struct INavNodesFactory
+struct INavNodesFactory : IRefCounted
 {
 protected:
     virtual NavNodePtr _CreateECInstanceNode(IConnectionCR, Utf8StringCR, ECClassId, ECInstanceId, Utf8CP label) const = 0;
@@ -699,9 +699,6 @@ protected:
     virtual NavNodePtr _CreateCustomNode(Utf8StringCR, Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const = 0;
 
 public:
-    //! Virtual destructor.
-    virtual ~INavNodesFactory() {}
-
     //! Creates an ECInstance node.
     //! @param[in] connection The connection that the instance belongs to.
     //! @param[in] locale The locale used to localize the node

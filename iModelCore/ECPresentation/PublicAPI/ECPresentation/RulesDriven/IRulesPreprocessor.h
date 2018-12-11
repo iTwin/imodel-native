@@ -133,7 +133,7 @@ typedef bset<ContentRuleInstanceKeys> ContentRuleInstanceKeysList;
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                03/2015
 //=======================================================================================
-struct IRulesPreprocessor
+struct IRulesPreprocessor : IRefCounted
 {
     //===================================================================================
     //! Parameters for finding root node rules.
@@ -282,8 +282,6 @@ protected:
 /** @} */
 
 public:
-    virtual ~IRulesPreprocessor() {}
-
 /** @name Navigation rules */
 /** @{ */
     //! Get matching root node specifications.

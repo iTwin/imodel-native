@@ -766,6 +766,22 @@ IUserSettings& RulesDrivenECPresentationManager::GetUserSettings(Utf8CP rulesetI
 void RulesDrivenECPresentationManager::SetLocalState(IJsonLocalState* localState) {m_impl->SetLocalState(localState);}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Lukasonok                11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IRulesPreprocessorPtr RulesDrivenECPresentationManager::GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const
+{
+    return m_impl->GetRulesPreprocessor(connection, rulesetId, locale, usedSettingsListener);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Lukasonok                11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+INavNodesFactoryPtr RulesDrivenECPresentationManager::GetNavNodesFactory() const
+{
+    return new JsonNavNodesFactory();
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManager::RegisterECInstanceChangeEventSource(ECInstanceChangeEventSource& source)
