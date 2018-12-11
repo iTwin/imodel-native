@@ -9,7 +9,6 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <BeSQLite/L10N.h>
 #include <Bentley/BeTextFile.h>
-#include <BeHttp/HttpHeaderProvider.h>
 #include <GeomJsonWireFormat/JsonUtils.h>
 #include <Bentley/BeNumerical.h>
 #include "iModelBridgeHelpers.h"
@@ -134,7 +133,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
         {
         LOG.fatalv("_MakeDefinitionChanges failed");
         return nullptr; // caller must call abandon changes
-        }   
+        }
 
     if (BSISUCCESS != _ConvertToBim(*jobsubj))
         {
@@ -231,11 +230,11 @@ BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR
         {
         LOG.fatalv("_MakeDefinitionChanges failed");
         return BSIERROR; // caller must call abandon changes
-        }        
+        }
 
-    // Must either succeed in getting all required locks and codes ... or abort the whole txn.  
+    // Must either succeed in getting all required locks and codes ... or abort the whole txn.
     BeAssert(!runningInBulkMode || db.BriefcaseManager().IsBulkOperation());
-        
+
     auto response = db.BriefcaseManager().EndBulkOperation();
     if (RepositoryStatus::Success != response.Result())
         {
@@ -398,7 +397,7 @@ BentleyStatus iModelBridge::Params::ParseGcsJson(GCSDefinition& gcsDef, GCSCalcu
         gcsDef.m_coordSysKeyName = json["coordinateSystemKeyName"].asCString();
         return BSISUCCESS;
         }
-    
+
     if (json.isMember("azmea"))
         {
         auto const& member = json["azmea"];
@@ -409,7 +408,7 @@ BentleyStatus iModelBridge::Params::ParseGcsJson(GCSDefinition& gcsDef, GCSCalcu
         gcsDef.m_geoPoint.elevation = geoPoint["elevation"].asDouble();
         return BSISUCCESS;
         }
-    
+
     BeAssert(false);
     return BSIERROR;
     }
@@ -677,7 +676,7 @@ BeSQLite::BeGuid iModelBridge::Params::QueryDocumentGuid(BeFileNameCR localFileN
         return BeGuid();
 
     iModelBridgeDocumentProperties docProps;
-    m_documentPropertiesAccessor->_GetDocumentProperties(docProps, localFileName); 
+    m_documentPropertiesAccessor->_GetDocumentProperties(docProps, localFileName);
     BeGuid docGuid;
     docGuid.FromString(docProps.m_docGuid.c_str());
     return docGuid;
@@ -692,7 +691,7 @@ Utf8String iModelBridge::Params::QueryDocumentURN(BeFileNameCR localFileName) co
         return "";
 
     iModelBridgeDocumentProperties docProps;
-    m_documentPropertiesAccessor->_GetDocumentProperties(docProps, localFileName); 
+    m_documentPropertiesAccessor->_GetDocumentProperties(docProps, localFileName);
     return docProps.m_desktopURN;
     }
 
@@ -737,11 +736,11 @@ SHA1 iModelBridge::ComputeRepositoryLinkHash(RepositoryLinkCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
+void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params,
                                                 BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel)
     {
     if (nullptr != params.GetDocumentPropertiesAccessor())
-        params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
+        params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName);
 
     // URN. The preferred outcome to get a PW URN from document properties.
     if (docProps.m_desktopURN.empty() || (!IsPwUrn(docProps.m_desktopURN) && IsPwUrn(defaultURN)))
@@ -788,7 +787,7 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
     GetRepositoryLinkInfo(code, docProps, db, params, localFileName, defaultCode, defaultURN, *lmodel);
 
     RepositoryLinkCPtr rlinkPersist = db.Elements().Get<RepositoryLink>(db.Elements().QueryElementIdByCode(code));
-    
+
     RepositoryLinkPtr rlink;
     if (rlinkPersist.IsValid())
         rlink = rlinkPersist->MakeCopy<RepositoryLink>();
@@ -843,10 +842,10 @@ DgnDbStatus iModelBridge::InsertLinkTableRelationship(DgnDbR db, Utf8CP relClass
 Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR jobSubject)
     {
     Transform jobTrans = params.GetSpatialDataTransform();
-    
-    // Report the jobTrans in a property of the JobSubject. 
+
+    // Report the jobTrans in a property of the JobSubject.
     // Note that we NOT getting the transform from the JobSubject. We are SETTING
-    // the property on the JobSubject, so that the user and apps can see what the 
+    // the property on the JobSubject, so that the user and apps can see what the
     // bridge configuration transform is.
     Transform jobSubjectTransform;
     auto matrixTolerance = Angle::TinyAngle();
@@ -988,14 +987,14 @@ Utf8String iModelBridge::_FormatPushComment(DgnDbR db, Utf8CP commitComment)
     Params const& params = _GetParams();
 
     auto key = params.GetBridgeRegSubKeyUtf8();
-    
+
     auto localFileName = params.GetInputFileName();
     iModelBridgeDocumentProperties docProps;
     if (nullptr != params.GetDocumentPropertiesAccessor())
-        params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
+        params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName);
 
     Utf8PrintfString comment("%s - %s (%s)", key.c_str(), Utf8String(localFileName.GetBaseName()).c_str(), docProps.m_docGuid.c_str());
-    
+
     if (commitComment)
         comment.append(" - ").append(commitComment);
 
@@ -1058,4 +1057,13 @@ bool iModelBridge::AnyTxns(DgnDbR db)
 bool iModelBridge::AnyChangesToPush(DgnDbR db)
     {
     return db.Txns().HasChanges() || AnyTxns(db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::HoldsSchemaLock(DgnDbR db)
+    {
+    LockableId schemasLock(db.Schemas());
+    return db.BriefcaseManager().QueryLockLevel(schemasLock) == LockLevel::Exclusive;
     }

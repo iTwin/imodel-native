@@ -967,7 +967,7 @@ public:
 
     RangeIndex::Tree* GetRangeIndex() const {return m_rangeIndex.get();}
 
-    //! Get the AxisAlignedBox3d of the geometric elements contained within this model.
+    //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryElementsRange() const {return _QueryElementsRange();}
 
     //! Get the AxisAlignedBox3d of the non element contents of this model.

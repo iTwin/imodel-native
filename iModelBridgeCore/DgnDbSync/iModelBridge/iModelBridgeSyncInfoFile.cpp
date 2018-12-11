@@ -222,7 +222,7 @@ BentleyStatus iModelBridgeSyncInfoFile::OnAttach()
         LOG.warningv("DB schema version mismatch. syncinfo=%s ProjectDbProfileVersion=%s does not match project ProfileVersion=%s.",
                      GetDgnDb().GetDbFileName(), savedProjectDbProfileVersion.c_str(), currentProjectDbProfileVersion.c_str());
         // *** WIP_CONVERTER - Do we really have to throw away project history whenever we make a trivial schema change?
-        return BSISUCCESS;//BSIERROR; *** WIP_CONVERTER - support schema evolution 
+        return BSISUCCESS;//BSIERROR; *** WIP_CONVERTER - support schema evolution
         }
 
     Utf8String currentProjectProfileVersion = GetDgnDb().GetProfileVersion().ToJson();
@@ -233,7 +233,7 @@ BentleyStatus iModelBridgeSyncInfoFile::OnAttach()
         LOG.warningv("project schema version mismatch. syncinfo=%s ProjectProfileVersion=%s does not match project ProjectProfileVersion=%s.",
                      GetDgnDb().GetDbFileName(), savedProjectProfileVersion.c_str(), currentProjectProfileVersion.c_str());
         // *** WIP_CONVERTER - Do we really have to throw away project history whenever we make a trivial schema change?
-        return BSISUCCESS;//BSIERROR; *** WIP_CONVERTER - support schema evolution 
+        return BSISUCCESS;//BSIERROR; *** WIP_CONVERTER - support schema evolution
         }
 
     return CreateTables();  // We STILL call CreateTables. That gives subclass a chance to create its TEMP tables.
@@ -422,7 +422,7 @@ iModelBridgeSyncInfoFile::Iterator::Entry iModelBridgeSyncInfoFile::Iterator::be
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeSyncInfoFile::WriteResults(ROWID rid, ConversionResults& conversionResults, 
+BentleyStatus iModelBridgeSyncInfoFile::WriteResults(ROWID rid, ConversionResults& conversionResults,
                                                      SourceIdentity const& sid, SourceState const& sstate, ChangeDetector& changeDetector)
     {
     bool isUpdate = (0 != rid);
@@ -560,7 +560,7 @@ bool iModelBridgeSyncInfoFile::IsSourceItemMappedToAnElementThatWasSeen(Iterator
         auto othersMappedToSameSourceItemByHash = MakeIteratorByHash(si.GetScopeROWID(), si.GetKind(), entry.GetSourceState().GetHash());
         return isMappedToSameSourceItem(othersMappedToSameSourceItemByHash, known);
         }
-        
+
     auto othersMappedToSameSourceItemById = MakeIteratorBySourceId(si);
     return isMappedToSameSourceItem(othersMappedToSameSourceItemById, known);
     }
@@ -650,7 +650,7 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
     if (!results.m_element.IsValid())
         {
         BeAssert(false);
-        return results; 
+        return results;
         }
 
     //  Compute the state of the document
@@ -706,7 +706,7 @@ BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, 
     auto iterator = m_syncInfo.MakeIterator("Kind=? AND ScopeROWID=?");
     iterator.GetStatement()->BindText(1, kind, Statement::MakeCopy::No);
     iterator.GetStatement()->BindInt64(2, srid);
-    
+
     for (auto it : iterator)
         {
         Utf8String docId = it.GetSourceIdentity().GetId();
@@ -736,7 +736,7 @@ BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, 
 
 //=======================================================================================
 // The "hash" of this item is the JSON representation of a 3x4 Transform
-// @bsiclass                                    BentleySystems 
+// @bsiclass                                    BentleySystems
 //=======================================================================================
 struct JobTransformSourceItem : iModelBridgeSyncInfoFile::ISourceItem
     {

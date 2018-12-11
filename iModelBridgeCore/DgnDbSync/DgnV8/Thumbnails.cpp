@@ -176,10 +176,10 @@ void Converter::GenerateThumbnailsWithExceptionHandling()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateThumbnail(ViewDefinition const& view)
     {
+#if defined(TODO_IMODEL02_THUMBNAILS)
     if (IsUpdating() && !ThumbnailUpdateRequired (view))
         return BSISUCCESS;
 
-#if defined(TODO_IMODEL02_THUMBNAILS)
     ThumbnailConfig thumbnailConfig(m_config);
 
     BeDuration timeout = BeDuration::FromSeconds(m_config.GetOptionValueDouble("ThumbnailTimeout", 30));
@@ -192,7 +192,6 @@ BentleyStatus Converter::GenerateThumbnail(ViewDefinition const& view)
 
     view.RenderAndSaveThumbnail(size, thumbnailConfig.GetUseRenderModeOverride() ? &mode : nullptr, timeout);
 #endif
-
     return BSISUCCESS;
     }
 
@@ -246,7 +245,7 @@ BentleyStatus Converter::GenerateThumbnails()
     if (wantSpatial || wantDrawing)
         {
         AddTasks((int32_t)ViewDefinition::QueryCount(*m_dgndb));
-    
+
         for (auto const& entry : ViewDefinition::MakeIterator(*m_dgndb))
             {
             ReportProgress();
@@ -256,7 +255,6 @@ BentleyStatus Converter::GenerateThumbnails()
 
             if ((!wantSpatial && view->IsSpatialView()) || (!wantDrawing && view->IsDrawingView()))
                 continue;
-    
             GenerateThumbnail(*view);
 
             if (WasAborted())

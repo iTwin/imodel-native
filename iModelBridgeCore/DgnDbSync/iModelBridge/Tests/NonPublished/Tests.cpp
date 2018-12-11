@@ -680,10 +680,15 @@ DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db, Utf
 		{
 		BeAssert(m_expect.haveTxns == anyTxnsInFile(*db));
 		}
+
+    if (!anyTxnsInFile(*db))
+        return nullptr;
+
     DgnRevisionPtr changeSet = db->Revisions().StartCreateRevision();
 
     if (!changeSet.IsValid())
         {
+        db->Revisions().FinishCreateRevision();
 		if (m_expect.checkTxns)
 			{
 			BeAssert(!m_expect.haveTxns);

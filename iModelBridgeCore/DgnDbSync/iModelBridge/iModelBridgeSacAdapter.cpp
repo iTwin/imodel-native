@@ -20,7 +20,6 @@
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <DgnPlatform/DgnIModel.h>
 #include "iModelBridgeHelpers.h"
-#include <BeHttp/HttpClient.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -303,6 +302,8 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
 
         isNewFile = !outputFileName.DoesPathExist();
     
+        iModelBridgeBimHost_SetBridge _registerBridgeOnHost(bridge);
+
         bridge._GetParams().SetInputFileName(inputFileName);
         if (BSISUCCESS != CreateOrUpdateBim(bridge, saparams))
             {

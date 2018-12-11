@@ -69,7 +69,6 @@ void DgnMaterialTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::Be
     creator.MakeSchemaChanges();
     ASSERT_FALSE(creator.WasAborted());
     ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
-    creator.DoBeginConversion();
     creator.MakeDefinitionChanges();
     creator.ConvertData();
     ASSERT_FALSE(creator.WasAborted());

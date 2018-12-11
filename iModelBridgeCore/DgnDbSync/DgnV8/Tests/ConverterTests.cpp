@@ -83,10 +83,10 @@ TEST_F(ConverterTests, DuplicateTile)
 
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
-    
+
     params.SetInputFileName(m_v8FileName);
     params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
-    
+
     TiledFileConverter creator(params);
 
     auto db = OpenExistingDgnDb(m_dgnDbFileName);
@@ -217,7 +217,7 @@ TEST_F(LightTests, LightSetup)
         }
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
-    // Update light 
+    // Update light
     // Do update
     }
 
@@ -319,7 +319,7 @@ TEST_F(ConverterTests, EmbedDir)
     EXPECT_STREQ(EMBEDDEDFILE, entry.GetDescriptionUtf8());
     EXPECT_TRUE(expectedFileSize == entry.GetFileSize());
 
-    // Verify file can be exported 
+    // Verify file can be exported
     if (imageFile.DoesPathExist())
         imageFile.BeDeleteFile();
     Utf8String localFileName(imageFile.c_str());
@@ -498,7 +498,7 @@ TEST_F(ConverterTests, NoGCSNoChange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-// Importing DGN file that does not have a GCS. In that case, specify –inputgcs=lat,lng,angle in order to position the input DGN data in the BIM.
+// Importing DGN file that does not have a GCS. In that case, specify ï¿½inputgcs=lat,lng,angle in order to position the input DGN data in the BIM.
 TEST_F(ConverterTests, InputGCS)
     {
     LineUpFiles(L"inputGCS.ibim", L"Test3d.dgn", false);
@@ -531,7 +531,7 @@ TEST_F(ConverterTests, InputGCS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-// input DGN File that does have a GCS, but it’s not the one we want for the BIM. In that case, specify --outputgcs=csname, and the converter will 
+// input DGN File that does have a GCS, but itï¿½s not the one we want for the BIM. In that case, specify --outputgcs=csname, and the converter will
 // a) create the BIM with the specified GCS.
 // b) reproject the input DGN into it.
 TEST_F(ConverterTests, OutputGCS)
@@ -589,7 +589,7 @@ static RefCountedPtr<GeometricModel3d> FindModel(DgnDbCR db, Utf8StringCR modelN
 static void ValidateModelRange (DgnDbR db, Utf8Char* modelName, double x0, double y0, double z0, double x1, double y1, double z1)
     {
     BentleyApi::DRange3d expectedRange = BentleyApi::DRange3d::From(x0, y0, z0, x1, y1, z1);
-    
+
     RefCountedPtr<GeometricModel3d> model = FindModel (db, modelName);
     ASSERT_TRUE (model.IsValid());
     BentleyApi::AxisAlignedBox3d modelRange = model->QueryElementsRange();
@@ -866,7 +866,7 @@ static void addCell(V8FileEditor& v8editor, DgnV8ModelR v8model)
 static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bentley::DgnModelR rootModel)
     {
     // For purposes of this test, I will create a model and a category in the output BIM.
-    //  In a real converter, you would may have created many models and categories. 
+    //  In a real converter, you would may have created many models and categories.
     auto bimModelFoo = insertPhysicalModel(outputBim, "Foo");
     auto bimCategoryBar = insertSpatialCategory(outputBim, "Bar");
 
@@ -876,7 +876,7 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
     // Call params.AddDrawingOrSheetFile to add files to be processed by ConvertAllDrawingsAndSheets
     ConverterLibrary cvt(outputBim, params);
 
-    // If you choose to add model mappings as you go along as this test does below, then 
+    // If you choose to add model mappings as you go along as this test does below, then
     //  you must at least record file mappings up front, before you try to map in any levels or styles.
     cvt.RecordFileMapping(v8File);
 
@@ -887,7 +887,7 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
     //  Set up mappings for levels and styles.
     //  You must record a mapping for every input V8 level that is used by elements that you plan to convert.
     //  The ConverterLibrary will not write to the output BIM, but it does need to know these mappings.
-    //      Here is an example of defining a custom level->category mapping. 
+    //      Here is an example of defining a custom level->category mapping.
     cvt.RecordLevelMappingForModel(DGNV8_LEVEL_DEFAULT_LEVEL_ID, bimCategoryBar->GetDefaultSubCategoryId(), v8File);
 
     //      You don't have to define mappings one by one.
@@ -937,14 +937,14 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
 
                 // You can get the element's geomstream like this:
                 //      GeometryStreamCR geomStream = geom->GetGeometryStream();
-                // 
+                //
                 //  Note that the geometry has been transformed to meters.
                 //
                 //  You could create a GeometryBuilder on some other element, passing in this converted GeometryStream as the second argument
                 //  in order to create a new element with the same geometry as this one.
 
                 //  Note that if the original V8 element was a cell, then results will contain multiple elements.
-                //      m_element represents the header 
+                //      m_element represents the header
                 //      m_childElements represents the children, each of which could have its own children.
                 //  This is normally meant to be written to a BIM as an assembly.
                 }
@@ -982,7 +982,7 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
     BeFileName outputBimFileName(m_dgnDbFileName);
     auto outputBim = OpenExistingDgnDb(m_dgnDbFileName);
 
-    //  Open some V8 file as the source. 
+    //  Open some V8 file as the source.
     //  A real converter would use the DgnV8 API directly to open a pre-existing V8 file.
     //      For purposes of this test, I will just create and write a few elements to the sample V8 file.
     //      (Note that I am doing this after converting the file above, so these elements won't be in the BIM.)
@@ -1062,7 +1062,7 @@ struct TestXDomain : XDomain
         ++m_counts[0];
         }
 
-    void _ProcessResults(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const&, Converter&) override 
+    void _ProcessResults(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const&, Converter&) override
         {
         if (DgnV8Api::LINE_ELM != v8eh.GetElementType())
             return;
@@ -1077,7 +1077,7 @@ struct TestXDomain : XDomain
 TEST_F(ConverterTests, XDomainTest)
     {
     LineUpFiles(L"XDomainTest.bim", L"Test3d.dgn", false);
-    
+
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     v8editor.AddLine(nullptr, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
@@ -1226,7 +1226,7 @@ void UpdateWithSpatialDataTransform(BentleyApi::DPoint3dCR xlat, double rot, boo
     jobTrans.SetTranslation(xlat);
 
     m_params.SetSpatialDataTransform(jobTrans);
-    
+
     m_count = 0;
     DoUpdate(m_dgnDbFileName, m_v8FileName, false, expectedChanges);
 
@@ -1245,7 +1245,7 @@ void UpdateWithSpatialDataTransform(BentleyApi::DPoint3dCR xlat, double rot, boo
     ASSERT_TRUE(bimLine1.IsValid());
     BentleyApi::DPoint3d obim1AfterUpdate;
     GetLineStartPoint(obim1AfterUpdate, *bimLine1);
-        
+
     auto obim1InitialTransformed = BentleyApi::DPoint3d::FromProduct(jobTrans, m_obim1Initial);
     ASSERT_TRUE(obim1InitialTransformed.AlmostEqual(obim1AfterUpdate, m_pointTolerance)) << " Line1's origin should now be at the transformed location";
 

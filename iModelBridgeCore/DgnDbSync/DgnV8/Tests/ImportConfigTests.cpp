@@ -19,7 +19,7 @@
 struct ImportConfigTests : public ConverterTestBaseFixture
     {
     DEFINE_T_SUPER(ConverterTestBaseFixture);
-    
+
     void SetUp();
     void TearDown();
     void DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input);
@@ -50,7 +50,6 @@ void ImportConfigTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::B
     creator.MakeSchemaChanges();
     ASSERT_FALSE(creator.WasAborted());
     ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
-    ASSERT_EQ(BentleyApi::SUCCESS, creator.DoBeginConversion());
     ASSERT_EQ(BentleyApi::SUCCESS, creator.MakeDefinitionChanges());
     creator.ConvertData();
     ASSERT_FALSE(creator.WasAborted());
@@ -286,7 +285,7 @@ TEST_F(ImportConfigTests, FontImport_Always)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImportConfigTests, CreateANDVerifyECClassViews)
     {
-    LineUpFiles(L"CreateANDVerifyECClassViews.ibim", L"Test3d.dgn", false); 
+    LineUpFiles(L"CreateANDVerifyECClassViews.ibim", L"Test3d.dgn", false);
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     m_wantCleanUp = false;
     V8FileEditor v8editor;
@@ -314,7 +313,7 @@ TEST_F(ImportConfigTests, CreateANDVerifyECClassViews)
 
     BentleyApi::BeSQLite::Statement statement;
     EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, statement.Prepare(*db, "select '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')"));
-   
+
     ASSERT_TRUE(statement.Step() != BE_SQLITE_DONE) << "ECClassViews not found ";
 
     while (statement.Step() == BE_SQLITE_ROW)

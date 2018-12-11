@@ -36,20 +36,19 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeFontAdmin : DgnPlatformLib::Host::Fon
 {
 private:
     DEFINE_T_SUPER(DgnPlatformLib::Host::FontAdmin);
-//    Converter* m_converter;
+    iModelBridge* m_bridge{};
 
 protected:
     IMODEL_BRIDGE_EXPORT virtual DgnFontCR _ResolveFont(DgnFontCP) override;
 
 public:
-//    Converter* GetConverter() const { return m_converter; }
-//    void SetConverter(Converter* value) { m_converter = value; }
+    void SetBridge(iModelBridge* b) {m_bridge = b;}
 };
 
 //=======================================================================================
-//! An implementation of Dgn::DgnPlatformLib::Host that iModelBridgeFwk sets up before running a bridge. 
+//! An implementation of Dgn::DgnPlatformLib::Host that iModelBridgeFwk sets up before running a bridge.
 //! @ingroup GROUP_iModelBridge
-// @bsiclass                                    BentleySystems 
+// @bsiclass                                    BentleySystems
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnPlatformLib::Host
 {
@@ -70,8 +69,18 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnPlatformLib::Host
     //! @param fwkAssetsDir     The full path to the framework's Assets directory
     //! @param fwkSqlangPath    The full path to the framework's .db3 file
     //! @param productName      The name of the product that is using this host
-    iModelBridgeBimHost(RepositoryAdmin* ra, BeFileNameCR fwkAssetsDir, BeFileNameCR fwkSqlangPath, Utf8StringCR productName) 
+    iModelBridgeBimHost(RepositoryAdmin* ra, BeFileNameCR fwkAssetsDir, BeFileNameCR fwkSqlangPath, Utf8StringCR productName)
         : m_repoAdmin(ra), m_fwkAssetsDir(fwkAssetsDir), m_fwkSqlangPath(fwkSqlangPath), m_productName(productName) {}
+};
+
+//=======================================================================================
+//! @private - helper class to register a bridge with the font admin
+// @bsiclass                                                    Jeff.Marker     09/2015
+//=======================================================================================
+struct iModelBridgeBimHost_SetBridge
+{
+    iModelBridgeBimHost_SetBridge(iModelBridge& b) {dynamic_cast<iModelBridgeFontAdmin*>(&T_HOST.GetFontAdmin())->SetBridge(&b);}
+    ~iModelBridgeBimHost_SetBridge() {dynamic_cast<iModelBridgeFontAdmin*>(&T_HOST.GetFontAdmin())->SetBridge(nullptr);}
 };
 
 END_BENTLEY_DGN_NAMESPACE

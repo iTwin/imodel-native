@@ -65,3 +65,177 @@ ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
+
+ConnectSignInManagerTests.CheckAndUpdateToken_AfterSignInAndConfiguredTimeout_RequestsNewToken
+
+    # TFS#821998
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 02/22/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Connect\ConnectSignInManagerTests.cpp(102): error: Actual function call count doesn't match EXPECT_CALL(*imsClient, RequestToken(*token, _, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+
+UrlProviderTests.GetUrl_ValidateAllGetters
+
+    # TFS#862962
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/14/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(103): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+
+DataSourceCacheTests.GetExtendedData_UpdatedDataForObject_WorksFine
+
+    # TFS#927740
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/04/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.RemoveResponses_ResponsesWithSameName_RemovesResponses
+
+    # TFS#927740
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/04/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.CacheResponse_ResponseContainsItsParentInstanceAndParentRootRemoved_QueryResultsAndParentDeleted
+
+    # TFS#930240
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.CacheResponse_KeyHasDifferentHolderAndThenParentIsRemoved_RemovesResults
+
+    # TFS#930240
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.ReadInstancesLinkedToRoot_DifferentClassInstancesLinked_ReturnsIds
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.FindRelationship_CachedRelationshipExists_ReturnsRelationshipObjectId
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.ReadInstanceHierarchy_IvalidInstance_Error
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.FindRelationship_NoRelationshipWithSuchEnds_ReturnsInvalidKey
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.FindRelationship_RelationshipWithSuchEndsExists_ReturnsRelationshipKey
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.FindRelationship_NoCachedRelationshipWithSuchKey_ReturnsEmptyObjectId
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate
+
+    # VSTS#31669
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/07/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(310): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(311): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [4] _C_specific_handler (0x7ffb4bbfbff0)
+    # [3] _chkstk (0x7ffb570d9ec0)
+    # [2] RtlLookupFunctionEntry (0x7ffb57064710)
+    # [1] KiUserExceptionDispatcher (0x7ffb570d9030)
+    # [0] BentleyB0200::BeSQLite::Db::IsReadonly (0x7ffb1d75da80)
+
+WSRepositoryClientTests.SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId
+    # Random, NDEBUG, x64
+    # [ RUN      ] WSRepositoryClientTests.SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId
+    # D:\vsts_a\13\bbsrc\iModel02\iModelCore\WSClient\Tests\UnitTests\Published\WebServices\Client\WSRepositoryClientTests.cpp(774): error:       Expected: 2
+    # To be equal to: uniqueRequestIds
+    #       Which is: 1
+    # [  FAILED  ] WSRepositoryClientTests.SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId (1 ms)

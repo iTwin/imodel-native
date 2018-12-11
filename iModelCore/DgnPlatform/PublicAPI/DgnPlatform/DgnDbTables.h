@@ -749,7 +749,7 @@ public:
 
     //! @private
     //! Compute the project extents by querying the volume of all the spatial models. Should only be used after conversion from external formats.
-    //! ###TODO: Remove once ScalableMesh folks fix their _QueryElementsRange() to produce valid result during conversion from V8
+    //! ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
     DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents(DRange3dP rangeWithOutliers = nullptr, size_t* outlierCount = nullptr) const;
 
     //! @private

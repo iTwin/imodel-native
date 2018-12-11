@@ -987,7 +987,7 @@ struct RangeWithoutOutlierCalculator
     struct Stat
         {
         DRange3d                m_range;
-        BeInt64Id               m_id;
+        BeInt64Id               m_id;                         
         double                  m_diagonal;
 
         Stat() {}
@@ -1015,10 +1015,11 @@ void Add(DRange3dCR range, BeInt64Id id)
 
     static void DumpRange(const char* label, DRange3dCR range) { DEBUG_PRINTF ("%s Range: %lf, %lf, %lf) \t (%lf, %lf, %lf) Diagonal: %lf (KM)\n", label, range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z, range.DiagonalDistance()/1000.0); }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double sigmaMultiplier = 5.0, double minLimit = 100.0)
+DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double sigmaMultiplier = 5.0, double minLimit = 100.0)       
     {
     double      variance = 0.0, sum = 0.0;
     DPoint3d    centroid = DPoint3d::FromZero();
@@ -1046,7 +1047,7 @@ DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double 
     fullRange = DRange3d::NullRange();
     for (auto const& stat : m_stats)
         {
-        fullRange.Extend(stat.m_range);
+        fullRange.Extend (stat.m_range);
         if (stat.GetCenter().Distance(centroid) < limit)
             range.Extend(stat.m_range);
         else
