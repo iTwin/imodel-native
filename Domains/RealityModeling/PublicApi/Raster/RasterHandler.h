@@ -85,6 +85,8 @@ protected:
     
     //! Destruct a RasterModel object.
     ~RasterModel();
+    AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryElementsRange(); }
+
 
     //This how we make our raster pick-able
 //    virtual void _DrawModel(Dgn::ViewContextR) override;

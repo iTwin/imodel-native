@@ -180,6 +180,8 @@ public:
     Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR) override;
     THREEMX_EXPORT void _OnSaveJsonProperties() override;
     THREEMX_EXPORT void _OnLoadedJsonProperties() override;
+    AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryElementsRange(); }
+
 
     //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.
     //! @note New models are not valid until the have a scene file.
