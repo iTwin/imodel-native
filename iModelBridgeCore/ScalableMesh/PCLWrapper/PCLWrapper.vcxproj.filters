@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\PrivateAPI">
+      <UniqueIdentifier>{f51b5bf4-ea7c-4b8a-97ff-ca7fa93b426c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\UtilityFunctions">
+      <UniqueIdentifier>{11c72293-1083-41b3-b946-a71f50e9c2bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Includes\UtilityFunctions\GeometricPropertyEstimators.h">
+      <Filter>Header Files\UtilityFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\UtilityFunctions\GeometricPropertyEstimators.hpp">
+      <Filter>Header Files\UtilityFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\UtilityFunctions\GeometryFunctions.h">
+      <Filter>Header Files\UtilityFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\UtilityFunctions\GeometryFunctions.hpp">
+      <Filter>Header Files\UtilityFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\UtilityFunctions\SampleConsensusEstimators.h">
+      <Filter>Header Files\UtilityFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\UtilityFunctions\SampleConsensusEstimators.hpp">
+      <Filter>Header Files\UtilityFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometricPropertyEstimators.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometricPropertyEstimators.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PCLWrapperPch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Status.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\IDefines.h">
+      <Filter>Header Files\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\IStatus.h">
+      <Filter>Header Files\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\INormalCalculator.h">
+      <Filter>Header Files\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="NormalCalculator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="PCLWrapperPch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Status.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NormalCalculator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PCLWrapper.mke" />
+    <None Include="PCLWrapper.mki" />
+  </ItemGroup>
+</Project>
