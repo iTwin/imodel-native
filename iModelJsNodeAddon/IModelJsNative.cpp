@@ -274,7 +274,7 @@ struct NapiUtils
                         Napi::Array propertyNames = obj.GetPropertyNames();
                         for (uint32_t i = 0; i < propertyNames.Length(); i++)
                             {
-                            Napi::Value propertyName = propertyNames.Get(i);                        
+                            Napi::Value propertyName = propertyNames.Get(i);
                             jsonObject[propertyName.ToString().Utf8Value().c_str()] = Convert(obj.Get(propertyName));
                             }
 
@@ -823,6 +823,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     Napi::Object CreateBentleyReturnObject(STATUSTYPE errCode) {return CreateBentleyReturnObject(errCode, Env().Undefined());}
 
     bool IsOpen() const {return m_dgndb.IsValid();}
+
+    Napi::Value IsDgnDbOpen(Napi::CallbackInfo const &info) { return Napi::Boolean::New(Env(), IsOpen()); }
 
     void SetIModelDb(Napi::CallbackInfo const& info) {
         Napi::Value obj = info[0];
@@ -1440,14 +1442,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             result = m_dgndb->SaveChanges();
         if (BE_SQLITE_OK == result)
             m_dgndb->CloseDb();
-        if (BE_SQLITE_OK == result) 
+        if (BE_SQLITE_OK == result)
             {
             SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
             DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
 
             m_dgndb = DgnDb::OpenDgnDb(&result, name, openParams);
             }
-            
+
         return Napi::Number::New(Env(), (int)result);
         }
 
@@ -1771,7 +1773,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             value = arrayBuf.Data();
             propsize = arrayBuf.ByteLength();
             }
-        if (nullptr == strDataP && nullptr == value) 
+        if (nullptr == strDataP && nullptr == value)
             {
             stat = db.DeleteProperty(spec, id, subId);
             if (stat == BE_SQLITE_DONE)
@@ -1882,6 +1884,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("insertLinkTableRelationship", &NativeDgnDb::InsertLinkTableRelationship),
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
+            InstanceMethod("isOpen", &NativeDgnDb::IsDgnDbOpen),
             InstanceMethod("isRedoPossible", &NativeDgnDb::IsRedoPossible),
             InstanceMethod("isTxnIdValid", &NativeDgnDb::IsTxnIdValid),
             InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),
@@ -3134,7 +3137,7 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             {
             if (m_stmt == nullptr)
                 THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", NapiUtils::CreateErrorObject0((int) BE_SQLITE_ERROR, nullptr, Env()));
-            
+
             if (info.Length() < 2)
                 THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement::Prepare requires two arguments", NapiUtils::CreateErrorObject0((int) BE_SQLITE_ERROR, nullptr, Env()));
 
@@ -3505,7 +3508,7 @@ struct SnapRequest : Napi::ObjectWrap<SnapRequest>
         CheckStop m_checkStop;
         Napi::ObjectReference m_snapRequest;
 
-        void OnComplete() 
+        void OnComplete()
             {
             auto* request = SnapRequest::Unwrap(m_snapRequest.Value());
             BeMutexHolder holder(request->m_mutex);
@@ -3550,7 +3553,7 @@ struct SnapRequest : Napi::ObjectWrap<SnapRequest>
         if (m_pending != nullptr)
             CancelSnap(info);
 
-        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, ); 
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, );
         REQUIRE_ARGUMENT_ANY_OBJ(1, snapObj, );
         REQUIRE_ARGUMENT_FUNCTION(2, callback, );
 
@@ -4027,14 +4030,14 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         ECPresentationResult result = ECPresentationUtils::SetupLocaleDirectories(localeDirectories);
         return CreateReturnValue(result);
         }
-    
+
     Napi::Value GetRulesets(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
         ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_ruleSetLocater, rulesetId);
         return CreateReturnValue(result, true);
         }
-    
+
     Napi::Value AddRuleset(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetJsonString, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetJsonString")));
@@ -4092,7 +4095,7 @@ struct DisableNativeAssertions : Napi::ObjectWrap<DisableNativeAssertions>
         static Napi::FunctionReference s_constructor;
         bool m_enableOnDispose = false;
 
-        void DoDispose() 
+        void DoDispose()
             {
             if (m_enableOnDispose)
                 {
@@ -4104,7 +4107,7 @@ struct DisableNativeAssertions : Napi::ObjectWrap<DisableNativeAssertions>
             }
 
     public:
-        DisableNativeAssertions(Napi::CallbackInfo const& info) : Napi::ObjectWrap<DisableNativeAssertions>(info) 
+        DisableNativeAssertions(Napi::CallbackInfo const& info) : Napi::ObjectWrap<DisableNativeAssertions>(info)
             {
             m_enableOnDispose = NativeAssertionsHelper::SetAssertionsEnabled(false);
             }
