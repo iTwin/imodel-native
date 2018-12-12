@@ -47,6 +47,9 @@
     <ClCompile Include="src\ZShapeProfileTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
+    <ClCompile Include="src\TShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\TestHost.h">
