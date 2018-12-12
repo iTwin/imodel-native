@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealitySerializationV2.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if !defined(ANDROID)
@@ -589,7 +589,7 @@ RealityPackageStatus RealityDataSerializerV2::_Write(BeXmlDomR xmlDom, RealityDa
         return RealityPackageStatus::UnknownError;
 
     // Add version and namespace.
-    pRootNode->AddAttributeStringValue(PACKAGE_ATTRIBUTE_Version, "2.1");
+    pRootNode->AddAttributeStringValue(PACKAGE_ATTRIBUTE_Version, "2.2");
     pRootNode->AddNamespace(NULL, PACKAGE_CURRENT_NAMESPACE);
     pRootNode->AddNamespace(W3SCHEMA_PREFIX, W3SCHEMA_URI);
 
@@ -986,6 +986,9 @@ RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, Spat
 
     if (source.GetServerCP() != nullptr && !source.GetServerCP()->GetOrganisationPage().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerOrgPage, source.GetServerCP()->GetOrganisationPage().c_str());
+
+    if (source.GetVisibility() != RealityDataBase::Visibility::UNDEFINED_VISIBILITY)
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Visibility, source.GetVisibilityTag().c_str());
 
     if (0 != source.GetSize())
         pSourceNode->AddElementUInt64Value(PACKAGE_ELEMENT_Size, source.GetSize());
