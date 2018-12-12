@@ -110,6 +110,8 @@ protected:
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
     AxisAlignedBox3d _QueryModelRange() const override;
+    AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryModelRange(); }
+
     POINTCLOUD_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
     Dgn::TileTree::RootPtr _GetTileTree(Dgn::RenderContextR) override;
 

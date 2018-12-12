@@ -102,12 +102,17 @@ private:
     bool _WantDebugRangeGraphics() const override;
     void _GetCustomMetadata(Utf8StringR name, Json::Value& data) const override;
 
+#if defined(ANDROID) || defined(__APPLE__)
+    void CleanupUnusedChildren(bvector<Dgn::TileTree::TileCPtr>& selected) const;
+#endif
+
 public:
 
 
-    ScalableMeshModel*   m_3smModel = nullptr;
+    ScalableMeshModel*   m_3smModel = nullptr;    
 
-    SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) : T_Super(root, parent), m_scalableMeshNodePtr(smNodePtr) {}
+    SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr);
+
     virtual ~SMNode();
 
     Utf8String GetFilePath(SMSceneR) const;
@@ -380,6 +385,8 @@ protected:
     virtual bool _IsMultiResolution() const override { return true; };
     BentleyApi::AxisAlignedBox3d _GetRange() const override;
     SCALABLEMESH_SCHEMA_EXPORT BentleyApi::AxisAlignedBox3d _QueryModelRange() const override;
+    AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryModelRange(); }
+
 
     BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
     BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;

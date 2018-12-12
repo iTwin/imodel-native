@@ -189,6 +189,8 @@ public:
     THREEMX_EXPORT void _OnSaveJsonProperties() override;
     THREEMX_EXPORT void _OnLoadedJsonProperties() override;
     THREEMX_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
+    AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryModelRange(); }
+
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     // ###TODO_TILE_PUBLISH THREEMX_EXPORT BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override;
 
