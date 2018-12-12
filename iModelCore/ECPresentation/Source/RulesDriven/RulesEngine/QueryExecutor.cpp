@@ -315,12 +315,9 @@ static bool IsValueMerged(Utf8CP value)
     return std::regex_search(value, s_regex);
     }
 
-#define NULL_FORMATTED_VALUE_PRECONDITION(json, sqlValue) \
+#define NULL_FORMATTED_VALUE_PRECONDITION(sqlValue) \
     if (sqlValue.IsNull()) \
-        { \
-        json.SetString(""); \
-        return json; \
-        }
+        return rapidjson::Document();
 
 //=======================================================================================
 // @bsiclass                                     Grigas.Petraitis                10/2016
@@ -355,9 +352,9 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     static rapidjson::Document GetFallbackPrimitiveValue(ECPropertyCR prop, PrimitiveType type, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
         {
+        NULL_FORMATTED_VALUE_PRECONDITION(value);
+        
         rapidjson::Document json(allocator);
-        NULL_FORMATTED_VALUE_PRECONDITION(json, value);
-
         ECValue v = ValueHelpers::GetECValueFromSqlValue(type, value);
         Utf8String stringValue;
         if (v.ConvertPrimitiveToString(stringValue))
@@ -375,9 +372,9 @@ private:
     static rapidjson::Document GetFormattedPrimitiveValue(IECPropertyFormatter const& formatter, ECPropertyCR prop, PrimitiveType type,
         IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
         {
+        NULL_FORMATTED_VALUE_PRECONDITION(value);
+        
         rapidjson::Document json(allocator);
-        NULL_FORMATTED_VALUE_PRECONDITION(json, value);
-
         Utf8String formattedValue;
         if (SUCCESS != formatter.GetFormattedPropertyValue(formattedValue, prop, ValueHelpers::GetECValueFromSqlValue(type, value)))
             return GetFallbackPrimitiveValue(prop, type, value, allocator);
@@ -390,9 +387,9 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     static rapidjson::Document GetFallbackStructValue(IECSqlValue const& structValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
+        NULL_FORMATTED_VALUE_PRECONDITION(structValue);
+        
         rapidjson::Document json(allocator);
-        NULL_FORMATTED_VALUE_PRECONDITION(json, structValue);
-
         json.SetObject();
         for (IECSqlValue const& value : structValue.GetStructIterable())
             {
@@ -408,9 +405,9 @@ private:
     static rapidjson::Document GetFormattedStructValue(IECPropertyFormatter const& formatter, 
         IECSqlValue const& structValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
+        NULL_FORMATTED_VALUE_PRECONDITION(structValue);
+        
         rapidjson::Document json(allocator);
-        NULL_FORMATTED_VALUE_PRECONDITION(json, structValue);
-
         json.SetObject();
         for (IECSqlValue const& value : structValue.GetStructIterable())
             {
@@ -425,9 +422,9 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     static rapidjson::Document GetFallbackArrayValue(ArrayECPropertyCR prop, IECSqlValue const& arrayValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
+        NULL_FORMATTED_VALUE_PRECONDITION(arrayValue);
+        
         rapidjson::Document json(allocator);
-        NULL_FORMATTED_VALUE_PRECONDITION(json, arrayValue);
-
         json.SetArray();
         for (IECSqlValue const& value : arrayValue.GetArrayIterable())
             {
@@ -454,9 +451,9 @@ private:
     static rapidjson::Document GetFormattedArrayValue(IECPropertyFormatter const& formatter, ArrayECPropertyCR prop, 
         IECSqlValue const& arrayValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
+        NULL_FORMATTED_VALUE_PRECONDITION(arrayValue);
+        
         rapidjson::Document json(allocator);
-        NULL_FORMATTED_VALUE_PRECONDITION(json, arrayValue);
-
         json.SetArray();
         for (IECSqlValue const& value : arrayValue.GetArrayIterable())
             {
