@@ -1,0 +1,53 @@
+#----------------------------------------------------------------------
+#
+#     $Source: iModelBridge/Fwk/iModelBridgeFwk.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName     = iModelBridgeFwk
+baseDir     = $(_MakeFilePath)
+
+
+o = $(OutputRootDir)Build/$(appName)/
+always:
+    ~mkdir $(o)
+
+iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+DLM_NAME        =% $(appName)
+CCompPDBName    =% $(appName)
+
+$(o)iModelBridgeFwkMain$(oext): $(baseDir)iModelBridgeFwkMain.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h
+
+objs = $(o)iModelBridgeFwkMain$(oext)
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(objs)
+EXE_TMP_DIR  = $(o)
+EXE_CONTEXT_LOCATION = $(BuildContext)Delivery/exe/
+
+%ifdef __unix
+
+%include $(SharedMki)rollUpSubPartsLibsThin.mki
+EXE_OBJS + $(THIN_ARCHIVE_PATH)
+
+%else
+
+EXE_LOPT1    = -entry:wmainCRTStartup
+
+EXE_OBJS  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelBridgeFwkLib$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+%endif
+
+%include $(sharedMki)linktool.mki
