@@ -1,0 +1,12 @@
+RDSLoadTest - Load testing tool
+======================================
+
+This document only covers aspects unique to the RDS load tester. General information will be contained in the LoadTestBase readme
+
+(Additional) Options: -o,  --project              ProjectId Guid to be used for all operations
+
++---------------------+
+Servers:
++---------------------+
+
+The RDS load tester will attempt to set the server url with a call to Buddi

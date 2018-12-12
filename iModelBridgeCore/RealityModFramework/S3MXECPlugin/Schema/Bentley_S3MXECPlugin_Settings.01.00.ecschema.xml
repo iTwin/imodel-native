@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_RealityDbECPlugin_Settings" nameSpacePrefix="RM" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="DeploymentCustomAttributes" version="01.03" prefix="Bentley_Mas_DCA_"/>
+    <ECClass typeName="Settings" isStruct="True" isDomainClass="True">
+        <ECCustomAttributes>
+            <PluginId xmlns="DeploymentCustomAttributes.01.03">
+                <Id>S3MXECPlugin</Id>
+            </PluginId>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ConnectionString" typeName="string">
+            <ECCustomAttributes>
+                <DeploymentSettingAttributes xmlns="DeploymentCustomAttributes.01.03">
+                    <IsRequired>True</IsRequired>
+                    <IsUserConfigurable>True</IsUserConfigurable>
+                </DeploymentSettingAttributes>
+                <ApplicationSetting xmlns="DeploymentCustomAttributes.01.03">
+                    <SettingKey>S3MXECPConnectionString</SettingKey>
+                </ApplicationSetting>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+</ECSchema>
