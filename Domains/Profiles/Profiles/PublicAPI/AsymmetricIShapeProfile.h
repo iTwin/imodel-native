@@ -21,8 +21,39 @@ struct AsymmetricIShapeProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_AsymmetricIShapeProfile, ParametricProfile);
     friend struct AsymmetricIShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(AsymmetricIShapeProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double topFlangeWidth, double bottomFlangeWidth, double depth,
+                                               double topFlangeThickness, double bottomFlangeThickness, double webThickness, double topFlangeFilletRadius = 0.0,
+                                               double topFlangeEdgeRadius = 0.0, double topFlangeSlope = 0.0, double bottomFlangeFilletRadius = 0.0,
+                                               double bottomFlangeEdgeRadius = 0.0, double bottomFlangeSlope = 0.0);
+
+    public:
+        //! Required properties
+        double topFlangeWidth = 0.0;
+        double bottomFlangeWidth = 0.0;
+        double depth = 0.0;
+        double topFlangeThickness = 0.0;
+        double bottomFlangeThickness = 0.0;
+        double webThickness = 0.0;
+
+        //! Optional properties
+        double topFlangeFilletRadius = 0.0;
+        double topFlangeEdgeRadius = 0.0;
+        double topFlangeSlope = 0.0;
+        double bottomFlangeFilletRadius = 0.0;
+        double bottomFlangeEdgeRadius = 0.0;
+        double bottomFlangeSlope = 0.0;
+        };
+
 protected:
-    explicit AsymmetricIShapeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit AsymmetricIShapeProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (AsymmetricIShapeProfile)

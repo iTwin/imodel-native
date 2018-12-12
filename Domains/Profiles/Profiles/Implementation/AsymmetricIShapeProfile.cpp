@@ -14,6 +14,58 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (AsymmetricIShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsymmetricIShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsymmetricIShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double topFlangeWidth, double bottomFlangeWidth, double depth,
+                                                     double topFlangeThickness, double bottomFlangeThickness, double webThickness, double topFlangeFilletRadius,
+                                                     double topFlangeEdgeRadius, double topFlangeSlope, double bottomFlangeFilletRadius,
+                                                     double bottomFlangeEdgeRadius, double bottomFlangeSlope)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , topFlangeWidth (topFlangeWidth)
+    , bottomFlangeWidth (bottomFlangeWidth)
+    , depth (depth)
+    , topFlangeThickness (topFlangeThickness)
+    , bottomFlangeThickness (bottomFlangeThickness)
+    , webThickness (webThickness)
+    , topFlangeFilletRadius (topFlangeFilletRadius)
+    , topFlangeEdgeRadius (topFlangeEdgeRadius)
+    , topFlangeSlope (topFlangeSlope)
+    , bottomFlangeFilletRadius (bottomFlangeFilletRadius)
+    , bottomFlangeEdgeRadius (bottomFlangeEdgeRadius)
+    , bottomFlangeSlope (bottomFlangeSlope)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsymmetricIShapeProfile::AsymmetricIShapeProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetTopFlangeWidth (params.topFlangeWidth);
+    SetBottomFlangeWidth (params.bottomFlangeWidth);
+    SetDepth (params.depth);
+    SetTopFlangeThickness (params.topFlangeThickness);
+    SetBottomFlangeThickness (params.bottomFlangeThickness);
+    SetWebThickness (params.webThickness);
+    SetTopFlangeFilletRadius (params.topFlangeFilletRadius);
+    SetTopFlangeEdgeRadius (params.topFlangeEdgeRadius);
+    SetTopFlangeSlope (params.topFlangeSlope);
+    SetBottomFlangeFilletRadius (params.bottomFlangeFilletRadius);
+    SetBottomFlangeEdgeRadius (params.bottomFlangeEdgeRadius);
+    SetBottomFlangeSlope (params.bottomFlangeSlope);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AsymmetricIShapeProfile::GetTopFlangeWidth() const
