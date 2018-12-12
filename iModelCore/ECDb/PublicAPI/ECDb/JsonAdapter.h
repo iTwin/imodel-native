@@ -168,6 +168,7 @@ struct JsonECSqlSelectAdapter final
         ECSqlStatement const& m_ecsqlStatement;
         uint64_t m_ecsqlHash;
         FormatOptions m_formatOptions;
+        bool m_copyMemberNames = true;
         mutable bvector<Utf8String> m_memberNames;
         mutable bvector<Utf8String> m_uniqueMemberNames;
         //not copyable
@@ -178,8 +179,12 @@ struct JsonECSqlSelectAdapter final
         //! Initializes a new JsonECSqlSelectAdapter instance for the specified ECSqlStatement. 
         //! @param[in] ecsqlStatement Prepared ECSqlStatement
         //! @param[in] formatOptions Options to control the output. 
+        //! @param[in] copyMemberNames if true, the resulting JSON objects own the member name strings.
+        //!            if false, the adapter owns the member names, and the JSON objects just have references to it.
+        //!            This can be used for a performance and memory optimization, but callers must make sure the
+        //!            the adapter object lives at least as long as the generated JSON objects 
         //! @see ECSqlStatement
-        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions()): m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_ecsqlHash(ecsqlStatement.GetHashCode()) {}
+        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions(), bool copyMemberNames = true): m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_copyMemberNames(copyMemberNames), m_ecsqlHash(ecsqlStatement.GetHashCode()) {}
         ~JsonECSqlSelectAdapter() {}
 
         //! Gets the current row as JSON object with pairs of property name value for each

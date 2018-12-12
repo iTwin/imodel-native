@@ -1516,9 +1516,7 @@ void JoinedTableTestFixture::VerifyInsertedInstance(ECDbR ecdb, Utf8CP ecsql, EC
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Select test instance with '" << ecsql << "' failed. Step failed";
     ASSERT_EQ(sourceInstanceId.GetValue(), stmt.GetValueInt64(2)) << "Get Source InstanceId failed : " << ecsql;
-    ASSERT_EQ(sourceClassId, stmt.GetValueId<ECClassId>(3)) << "Get SourceClassId failed : " << ecsql;
-    ASSERT_EQ(targetInstanceId.GetValue(), stmt.GetValueInt64(4)) << "Get TargetInstanceId failed : " << ecsql;
-    ASSERT_EQ(targetClassId, stmt.GetValueId<ECClassId>(5)) << "Get TargetClassId failed : " << ecsql;
+    ASSERT_EQ(targetInstanceId.GetValue(), stmt.GetValueInt64(3)) << "Get TargetInstanceId failed : " << ecsql;
     }
 //---------------------------------------------------------------------------------------
 //           Foo  (JoinedTablePerDirectSubclass)  

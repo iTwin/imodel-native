@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECInstanceAdapter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,6 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! Note: 
 //!     * When using Polymorphic queries, the SELECT statement must include the ECClassId
 //! column in order to correctly determine the derived class.  Example: "Select Prop1, Prop2, ECClassId FROM"
+//!     * When querying against an ECRelationshipClass, the SELECT clause must include SourceECClassId and TargetECClassId
 //! @see ECSqlStatement
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      08/2013
@@ -29,11 +30,11 @@ private:
     bvector<ColumnHandler> m_columnHandlers;
 
     ECSqlStatement const& m_ecSqlStatement;
-    bool m_isValid;
-    int m_ecClassIdColumnIndex;
-    int m_sourceECClassIdColumnIndex;
-    int m_targetECClassIdColumnIndex;
-    bool m_isSingleClassSelectClause;
+    bool m_isValid = false;
+    int m_ecClassIdColumnIndex = -1;
+    int m_sourceECClassIdColumnIndex = -1;
+    int m_targetECClassIdColumnIndex = -1;
+    bool m_isSingleClassSelectClause = false;
 
     //not copyable
     ECInstanceECSqlSelectAdapter(ECInstanceECSqlSelectAdapter const&) = delete;
