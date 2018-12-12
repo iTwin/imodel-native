@@ -1,0 +1,117 @@
+;CsMapDll.def : Declares the module parameters for the CsMapDll DLL.
+
+LIBRARY      "CsMapDll"
+;DESCRIPTION  'CS-MAP Dynamic Link Library (VB)'
+
+EXPORTS
+;	High Level Interface
+	CS_altdr
+	CS_atof
+	CS_azddll
+	CS_azsphr
+	CS_cnvrg
+	CS_cnvrt
+	CS_cnvrt3D
+	CS_cmpDbls
+	CS_csEnumByGroup
+	CS_csfnm
+	CS_csGrpEnum
+	CS_csIsValid
+	CS_dtfnm
+	CS_dtIsValid
+	CS_elfnm
+	CS_elIsValid
+	CS_errmsg
+	CS_fast
+	CS_ftoa
+	CS_geoctrSetUp
+	CS_geoctrGetLlh
+	CS_geoctrGetXyz
+	CS_gpfnm
+	CS_csGrpEnum
+	CS_gxfnm
+	CS_isgeo
+	CS_llazdd
+	CS_mgrsSetUp
+	CS_recvr
+	CS_scale
+	CS_scalh
+	CS_scalk
+	CS_unEnum
+	CS_unitlu
+	CS_usrdr
+
+;	High Level Interface, but with pointers
+	CS_getcs
+	CS_getdt
+	CS_getel
+	CS_csEnumByGroup
+
+; High Performance Interface, i.e. 'C' and 'C++'
+	CS_audflt
+	CS_cs2ll
+	CS_cs3ll
+	CS_cscnv
+	CS_csdef
+	CS_csdel
+	CS_csloc
+	CS_cssch
+	CS_cssck
+	CS_csscl
+	CS_dtcls
+	CS_dtcsu
+	CS_dtcvt
+	CS_dtcvt3D
+	CS_dtdef
+	CS_dtdel
+	CS_dtdflt
+	CS_eldef
+	CS_eldel
+	CS_eldflt
+	CS_geoidHgt
+	CS_geoidCls
+	CS_dllFree
+	CS_ll2cs
+	CS_ll3cs
+	CS_llchk
+	CS_ludflt
+	CS_xychk
+
+; Special functions specifically for VB/VBA, maybe others
+	CS_csEnumVb
+	CS_csRangeEnumVb
+	CS_dtEnumVb
+	CS_elEnumVb
+	CS_errmsgVb
+	CS_ftoaVb
+	CS_getDataDirectoryVb
+	CS_getDatumOfVb
+	CS_getDescriptionOfVb
+	CS_getEllipsoidOfVb
+	CS_getReferenceOfVb
+	CS_getSourceOfVb
+	CS_getUnitsOfVb
+	CS_mgrsFromLlVb
+	CS_prjEnumVb
+	CS_unEnumVb
+	CS_unEnumPluralVb
+	csMapIdToId
+	csMapNameToIdC
+	csMapNameToNameC
+	csMapIdToNameC
+	csReleaseNameMapper
+
+; Data constants.  Don't know how to access them from VB/VBA, but easily done
+; from C/C++.
+	cs_Unique	DATA
+	cs_Errno	DATA
+	cs_Error	DATA
+	cs_Doserr	DATA
+
+	cs_OptchrC	DATA
+	cs_DecpntC	DATA
+	cs_DigsepC	DATA
+	cs_LngDir	DATA
+	cs_LatDir	DATA
+	cs_Envvar	DATA
+	cs_Protect	DATA
