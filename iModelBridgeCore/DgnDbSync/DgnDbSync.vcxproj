@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DgnV8\ConverterInternal.h" />
+    <ClInclude Include="DgnV8\LinkConverter.h" />
+    <ClInclude Include="DgnV8\SheetAttachmentViewHelper.h" />
+    <ClInclude Include="ImportConfig.h">
+      <DependentUpon>DgnV8\ImportConfig\ImportConfig.xsd</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnDbSync.h" />
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\Converter.h" />
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\DgnV8.h" />
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\DgnV8Font.h" />
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\LightWeightConverter.h" />
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\SyncInfo.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\DgnV8Tags.cpp" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.cpp" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.h" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECDiff.cpp" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECDiff.h" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\EntityConverter.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DgnV8\Converter.cpp" />
+    <ClCompile Include="DgnV8\ConverterInternal.cpp" />
+    <ClCompile Include="DgnV8\ConvertLights.cpp" />
+    <ClCompile Include="DgnV8\ConvertProxyGraphics.cpp" />
+    <ClCompile Include="DgnV8\ConvertView.cpp" />
+    <ClCompile Include="DgnV8\ConvertViewAttachments.cpp" />
+    <ClCompile Include="DgnV8\DgnV8Font.cpp" />
+    <ClCompile Include="DgnV8\DgnV8GeoCoord.cpp" />
+    <ClCompile Include="DgnV8\DgnV8SyncInfo.cpp" />
+    <ClCompile Include="DgnV8\DgnV8Text.cpp" />
+    <ClCompile Include="DgnV8\DrawingConverter.cpp" />
+    <ClCompile Include="DgnV8\ECElementConverter.cpp" />
+    <ClCompile Include="DgnV8\GeometryConversion.cpp" />
+    <ClCompile Include="DgnV8\ImportConfig\ImportConfig.cpp" />
+    <ClCompile Include="DgnV8\includesPublishedApi.cpp" />
+    <ClCompile Include="DgnV8\Initialize.cpp" />
+    <ClCompile Include="DgnV8\Issues.cpp" />
+    <ClCompile Include="DgnV8\Levels.cpp" />
+    <ClCompile Include="DgnV8\LightWeightConverter.cpp" />
+    <ClCompile Include="DgnV8\LineStyleConverter.cpp" />
+    <ClCompile Include="DgnV8\LinkConverter.cpp" />
+    <ClCompile Include="DgnV8\MaterialConverter.cpp" />
+    <ClCompile Include="DgnV8\PointCloudConversion.cpp" />
+    <ClCompile Include="DgnV8\RasterConversion.cpp" />
+    <ClCompile Include="DgnV8\RealityModelTilesets.cpp" />
+    <ClCompile Include="DgnV8\RootModelConverter.cpp" />
+    <ClCompile Include="DgnV8\ScalableMeshConversion.cpp" />
+    <ClCompile Include="DgnV8\ScalableMeshV8Utilities.cpp" />
+    <ClCompile Include="DgnV8\SheetAttachmentViewHelper.cpp" />
+    <ClCompile Include="DgnV8\SheetConverter.cpp" />
+    <ClCompile Include="DgnV8\ThreeMxConversion.cpp" />
+    <ClCompile Include="DgnV8\Thumbnails.cpp" />
+    <ClCompile Include="DgnV8\TiledFileConverter.cpp" />
+    <ClCompile Include="DgnV8\Updater.cpp" />
+    <ClCompile Include="SyncInfo.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="DgnV8\ImportConfig\ImportConfig.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xsd Include="DgnV8\ImportConfig\ImportConfig.xsd" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DgnDbSync.prewire.mke" />
+    <None Include="DgnV8\Converter.mke" />
+    <None Include="DgnV8\ConverterCompileOptions.mki" />
+    <None Include="DgnV8\DgnPlatformV8.Prewire.mke" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B3EDDA21-3A77-492E-8269-FD5C987A17B5}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <OutDir>$(OutRoot)\Winx64\build\DgnDbSync\DgnV8\Converter\</OutDir>
+    <IntDir>$(OutRoot)\Winx64\build\DgnDbSync\DgnV8\Converter\</IntDir>
+    <IntermediateOutputPath>$(OutRoot)\Winx64\build\DgnDbSync\DgnV8\Converter\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(OutRoot)\Winx64\build\DgnDbSync\</BaseIntermediateOutputPath>
+    <NMakeOutput>$(OutRoot)Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(ProjectDir)\PublicAPI\;$(ProjectDir)\PublicAPI\DgnDbSync\;$(ProjectDir)\DgnV8\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\DgnDbSync\VendorAPI\;$(OutRoot)Winx64\BuildContexts\DgnDbSync\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL  </NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   -c
+bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   </NMakeReBuildCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,15 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: DgnDbSync.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+baseDir         = $(_MakeFilePath)
+
+DgnDbSyncAPISrc = $(baseDir)PublicAPI/DgnDbSync
+
+always:
+    ~linkdir "$(BuildContext)PublicAPI/DgnDbSync=$(DgnDbSyncAPISrc)"
