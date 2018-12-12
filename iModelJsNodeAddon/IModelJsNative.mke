@@ -1,0 +1,147 @@
+#----------------------------------------------------------------------
+#
+#     $Source: IModelJsNative.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+CLANG_ALLOW_UNDEFINED=1
+%include mdl.mki
+
+%if !defined(NODE_ADDON_API)
+    %error NODE_ADDON_API must defined to the name of the library that is supplying the node-addon-api
+%endif
+
+appName     = imodeljs-addon-$(NODE_ADDON_API)
+
+# I get the impression that node addons names should be all lower case. At least, that's what I see out there.
+
+baseDir     = $(_MakeFilePath)
+
+# This is how node-gyp on Linux compiles an addon:
+#   g++ '-DNODE_GYP_MODULE_NAME=nodeprime' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' '-DBUILDING_NODE_EXTENSION' -I/home/SamWilson/.node-gyp/7.10.0/include/node -I/home/SamWilson/.node-gyp/7.10.0/src -I/home/SamWilson/.node-gyp/7.10.0/deps/uv/include -I/home/SamWilson/.node-gyp/7.10.0/deps/v8/include -I../../prime4lib -I../node_modules/nan  -fPIC -pthread -Wall -Wextra -Wno-unused-parameter -m64 -Wall -std=c++11 -O3 -fno-omit-frame-pointer -fno-rtti -fno-exceptions -std=gnu++0x -MMD -MF ./Release/.deps/Release/obj.target/nodeprime/../prime4lib/exchange.o.d.raw   -c -o Release/obj.target/nodeprime/../prime4lib/exchange.o ../../prime4lib/exchange.cpp
+
+# On MacOS:
+#   c++ '-DNODE_GYP_MODULE_NAME=libprime' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-D_DARWIN_USE_64_BIT_INODE=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' -I/Users/sam.wilson/.node-gyp/7.10.0/include/node -I/Users/sam.wilson/.node-gyp/7.10.0/src -I/Users/sam.wilson/.node-gyp/7.10.0/deps/uv/include -I/Users/sam.wilson/.node-gyp/7.10.0/deps/v8/include -I../../prime4lib  -Os -gdwarf-2 -mmacosx-version-min=10.7 -arch x86_64 -Wall -Wendif-labels -W -Wno-unused-parameter -std=gnu++0x -stdlib=libc++ -fno-rtti -fno-exceptions -fno-threadsafe-statics -std=c++11 -stdlib=libc++ -MMD -MF ./Release/.deps/Release/obj.target/libprime/../prime4lib/exchange.o.d.raw   -c -o Release/obj.target/libprime/../prime4lib/exchange.o ../../prime4lib/exchange.cpp
+
+
+cDefs + -DBUILDING_NODE_EXTENSION
+
+%if $(TARGET_PLATFORM) == "MacOS"
+  cDefs + -D_DARWIN_USE_64_BIT_INODE=1
+%endif
+
+o = $(OutputRootDir)Build/imodeljs-addon-$(NODE_ADDON_API)/
+always:
+    !~@mkdir $(o)
+
+
+# 
+# Burn the package version # into the code
+#
+PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
+
+$(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.package.version.h.template $(baseDir)/package_version.txt
+    $(msg)
+    $(copyCmd) "$<" $@
+    python $(baseDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
+    ~time
+ 
+cIncs + -I$(o)
+
+# DLM_NAME and CCompPDBName must be the same.
+CCompPDBName    =% $(appName)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)IModelJsNative$(oext) : $(baseDir)IModelJsNative.cpp $(baseDir)IModelJsNative.h $(o)imodeljs-nodeaddonapi.package.version.h ${MultiCompileDepends}
+
+$(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp ${MultiCompileDepends}
+
+$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
+
+$(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
+
+$(o)JsInteropTiles$(oext) : $(baseDir)JsInteropTiles.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+$(o)JsInteropBriefcaseManager$(oext) : $(baseDir)JsInteropBriefcaseManager.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
+
+$(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends} 
+
+$(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends} 
+
+%include MultiCppCompileGo.mki
+
+%if defined(BUILD_FOR_IMODELJS_MOBILE)
+always:
+    ~linkdir "$(BuildContext)Delivery/$(appName)-objs=${o}"
+    ~linkdir "$(BuildContext)Delivery/PresentationRules=$(baseDir)/Assets/PresentationRules"
+    ~linkfile "$(BuildContext)Delivery/IModelJsNative_input_libs.mki=$(_MakeFilePath)IModelJsNative_input_libs.mki"
+
+    %return
+%endif
+
+#----------------------------------------------------------------------
+#   Link the shared library
+#----------------------------------------------------------------------
+
+# This is how node-gyp on Linux links an addon:
+# g++ -shared -pthread -rdynamic -m64  -Wl,-soname=nodeprime.node -o Release/obj.target/nodeprime.node   Release/obj.target/nodeprime/../prime4lib/prime_sieve.o Release/obj.target/nodeprime/../prime4lib/exchange.o Release/obj.target/nodeprime/addon.o -Wl,--end-group
+
+# On MacOS:
+# c++ -shared -stdlib=libc++ -Wl,-no_pie -Wl,-search_paths_first -mmacosx-version-min=10.7 -arch x86_64 -L./Release -install_name @rpath/prime.dylib -stdlib=libc++  -o "Release/prime.dylib" ./Release/obj.target/libprime/../prime4lib/prime_sieve.o ./Release/obj.target/libprime/../prime4lib/exchange.o ./Release/obj.target/libprime/primeapi.o
+
+# DLM_NAME and CCompPDBName must be the same.
+DLM_NAME            =% $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOENTRY         = 1
+DLM_NO_CONTEXT_LINK = 1
+
+%include $(baseDir)IModelJsNative_input_libs.mki
+
+%ifdef __unix
+
+    THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)lib$(NODE_ADDON_API).a
+
+    THIN_ARCHIVE_NAME = libiModelJsNodeAddon.inputs.a
+
+    %include $(sharedMki)rollUpSubPartsLibsThin.mki
+
+    DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
+
+    %ifdef __apple
+        # OSX Specific library
+        LINKER_LIBRARIES  + -framework CoreFoundation
+        LINKER_LIBRARIES  + -framework CFNetwork
+        # This is a hack, Mac is not set up with the various context definitions like linux
+        BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
+    %endif
+
+    # Always produce a .SO (even though this is a static build)
+    %undef CREATE_STATIC_LIBRARIES
+    %include dlmlink.mki
+
+%else
+
+    LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)$(NODE_ADDON_API)$(libext)
+
+    %include $(sharedMki)linkLibrary.mki
+
+%endif
+
+#----------------------------------------------------------------------
+#   Deliver the shared library using the .node extension
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_ADDON_API)/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+    $(LinkFirstDepToFirstTarget)
+	
+#----------------------------------------------------------------------
+# Deliver Presentation Rules
+#----------------------------------------------------------------------
+always:
+    ~linkdir "$(BuildContext)Delivery/PresentationRules=$(baseDir)/Assets/PresentationRules"
+
+	
