@@ -12,15 +12,19 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//*
+* @bsiclass                                                                      11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 struct ProfilesGeomApi
     {
 public:
     ProfilesGeomApi() = delete;
 
-    PROFILES_EXPORT static IGeometryPtr CreateCShape (CShapeProfileCPtr profile);
-    PROFILES_EXPORT static IGeometryPtr CreateIShape (IShapeProfileCPtr profile);
-    PROFILES_EXPORT static IGeometryPtr CreateTShape (TShapeProfileCPtr profile);
-    PROFILES_EXPORT static IGeometryPtr CreateZShape (ZShapeProfileCPtr profile);
+    // TODO Karolis: We should place this header in PrivateAPI so its not visible for users of the domain
+    static IGeometryPtr CreateCShape (CShapeProfileCPtr profile);
+    static IGeometryPtr CreateIShape (IShapeProfileCPtr profile);
+    static IGeometryPtr CreateTShape (TShapeProfileCPtr profile);
+    static IGeometryPtr CreateZShape (ZShapeProfileCPtr profile);
 
     };
 
