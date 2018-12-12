@@ -443,10 +443,6 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
                 }
 
             ECInstanceInfo::Insert(GetDgnDb(), fileId, v8SecondaryInstanceMapping.first, BeSQLite::EC::ECInstanceKey(aspect.GetClass().GetId(), aspectId), false);
-
-            // need to record which element class each aspect is associated with.
-            ElementClassToAspectClassMapping::Insert(GetDgnDb(), drawingGraphic->GetElementClassId(), drawingGraphic->GetElementClass()->GetSchema().GetName().c_str(), drawingGraphic->GetElementClass()->GetName().c_str(),
-                                                     aspect.GetClass().GetId(), aspect.GetClass().GetSchema().GetName().c_str(), aspect.GetClass().GetName().c_str());
             }
         }
 

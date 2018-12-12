@@ -1789,7 +1789,6 @@ int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCal
         GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);
         return RETURN_STATUS_LOCAL_ERROR;
         }
-
     bool madeDefinitionChanges = iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb);
     if (madeDefinitionChanges)
         {

@@ -241,7 +241,7 @@ bool GCSUser::DoNextBody(UserManager* owner)
             m_bench->Init();
             SelectExtents();
             pCurl = SetupCurl(m_bench->CreateSpatialEntityWithDetailsViewUrl(), m_bench->GetSpatialEntityWithDetailsJsonPointer());
-            m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("User %d : Spatial for %s", m_userId, m_bench->CreateSpatialEntityWithDetailsViewUrl()));
+            m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("User %d : Spatial for %s", m_userId, m_bench->CreateSpatialEntityWithDetailsViewUrl().c_str()));
             break;
             }
         case OperationType::PACKID:
@@ -605,7 +605,7 @@ CURL* GCSUser::SetupCurl(Utf8StringCR url, Utf8StringCP retString, FILE* fp, Utf
             }
         headers = curl_slist_append(headers, (*(m_token)).c_str());
 
-        curl_easy_setopt(pCurl, CURLOPT_URL, url);
+        curl_easy_setopt(pCurl, CURLOPT_URL, url.c_str());
 
         curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 0);
         

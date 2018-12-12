@@ -94,7 +94,6 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithPropertyNamesSetTo
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     ASSERT_FALSE(json.isNull());
-
     RelatedPropertiesSpecification spec;
     ASSERT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("_none_", spec.GetPropertyNames().c_str());

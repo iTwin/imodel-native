@@ -90,10 +90,10 @@ CURLcode ContextServicesWorkbench::performCurl(Utf8StringCR url, Utf8StringCP wr
         }
     headers = curl_slist_append(headers, m_authorizationToken.c_str());
 
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
-    curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
+    curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8().c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
     if (nullptr != fp)

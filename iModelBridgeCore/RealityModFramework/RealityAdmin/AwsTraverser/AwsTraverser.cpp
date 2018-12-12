@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/AwsTraverser/AwsTraverser.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -147,7 +147,7 @@ void AwsPinger::ReadPage(Utf8CP url, uint64_t& redSize, uint64_t& greenSize, uin
     curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 1); // Verify the SSL certificate.
     curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 1);
     curl_easy_setopt(m_curl, CURLOPT_URL, url);
-    curl_easy_setopt(m_curl, CURLOPT_CAINFO, m_certificatePath);
+    curl_easy_setopt(m_curl, CURLOPT_CAINFO, m_certificatePath.c_str());
     curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, &ParseXML);
     //curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1L); //tell curl to output its progress
 

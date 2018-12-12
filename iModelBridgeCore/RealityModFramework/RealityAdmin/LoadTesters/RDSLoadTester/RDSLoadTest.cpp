@@ -443,7 +443,7 @@ CURL* RDSUser::Details()
     m_correspondance.req.headers = idReq.GetRequestHeaders();
     m_correspondance.req.payload = idReq.GetRequestPayload();
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Details of RealityData for %s", m_id));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Details of RealityData for %s", m_id.c_str()));
 
     return WSGRequest::GetInstance().PrepareRequest(idReq, m_correspondance.response, false, nullptr);
         
@@ -468,7 +468,7 @@ CURL* RDSUser::AzureAddress()
     m_correspondance.req.headers = m_handshake.GetRequestHeaders();
     m_correspondance.req.payload = m_handshake.GetRequestPayload();
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("azure address for %s -  user %d", m_id, m_userId));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("azure address for %s -  user %d", m_id.c_str(), m_userId));
 
     return WSGRequest::GetInstance().PrepareRequest(m_handshake, m_correspondance.response, false, nullptr);
     }
@@ -567,7 +567,7 @@ CURL* RDSUser::CreateRelationship()
     m_correspondance.req.headers = relReq.GetRequestHeaders();
     m_correspondance.req.payload = relReq.GetRequestPayload();
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Create Relationship for user %d - ID:%s", m_userId, m_id));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Create Relationship for user %d - ID:%s", m_userId, m_id.c_str()));
 
     return WSGRequest::GetInstance().PrepareRequest(relReq, m_correspondance.response, false, nullptr);
     }
@@ -595,7 +595,7 @@ CURL* RDSUser::DeleteRelationship()
     m_correspondance.req.headers = relReq.GetRequestHeaders();
     m_correspondance.req.payload = relReq.GetRequestPayload();
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("DeleteRelationship for user %d- ID:%s", m_userId, m_id));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("DeleteRelationship for user %d- ID:%s", m_userId, m_id.c_str()));
 
     return WSGRequest::GetInstance().PrepareRequest(relReq, m_correspondance.response, false, nullptr);
     }
@@ -621,7 +621,7 @@ CURL* RDSUser::DeleteRealityData()
     m_correspondance.req.headers = realityDataReq.GetRequestHeaders();
     m_correspondance.req.payload = realityDataReq.GetRequestPayload();
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Delete for user %d - ID:%s", m_userId, m_id));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Delete for user %d - ID:%s", m_userId, m_id.c_str()));
 
     return WSGRequest::GetInstance().PrepareRequest(realityDataReq, m_correspondance.response, false, nullptr);
     }

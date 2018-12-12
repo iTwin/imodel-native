@@ -234,8 +234,8 @@ Utf8String rc()
 Utf8String generateGuid()
     {
     return Utf8PrintfString("%s%s%s%s%s%s%s%s-%s%s%s%s-%s%s%s%s-%s%s%s%s-%s%s%s%s%s%s%s%s%s%s%s%s",
-        rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), 
-        rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc());
+        rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), 
+        rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str(), rc().c_str());
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -421,9 +421,9 @@ CURL* ThreeCSUser::AddProject()
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
     m_correspondance.req.url.append("api/v1/projects");
-    m_correspondance.req.payload = Utf8PrintfString("{\"region\": \"eus\", \"connectProjectId\":\"%s\", \"name\":\"Load Test (ERASE)\"}", m_RDGuid);
+    m_correspondance.req.payload = Utf8PrintfString("{\"region\": \"eus\", \"connectProjectId\":\"%s\", \"name\":\"Load Test (ERASE)\"}", m_RDGuid.c_str());
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Add project %s", m_RDGuid));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Add project %s", m_RDGuid.c_str()));
     
     return PrepareRequest();
     }
@@ -432,9 +432,9 @@ CURL* ThreeCSUser::DeleteProject()
     {
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s", m_id.c_str()));
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Delete project %s", m_id));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Delete project %s", m_id.c_str()));
 
     m_id.clear();
 
@@ -445,9 +445,9 @@ CURL* ThreeCSUser::GetProject()
     {
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s", m_id.c_str()));
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Get project %s", m_id));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Get project %s", m_id.c_str()));
 
     return PrepareRequest();
     }
@@ -456,9 +456,9 @@ CURL* ThreeCSUser::SASUri()
     {
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/sas-uri", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/sas-uri", m_id.c_str()));
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("SAS Uri for %s", m_id));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("SAS Uri for %s", m_id.c_str()));
 
     return PrepareRequest();
     }
@@ -467,9 +467,9 @@ CURL* ThreeCSUser::ListClusters()
     {
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/clusters", m_id));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s/clusters", m_id.c_str()));
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("List Clusters for %s", m_id));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("List Clusters for %s", m_id.c_str()));
 
     return PrepareRequest();
     }
@@ -518,11 +518,11 @@ CURL* ThreeCSUser::CreateJob(Utf8String outputGuid)
                             "}"
                         "}";
     
-    m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id, m_RDGuid, outputGuid);
+    m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id.c_str(), m_RDGuid.c_str(), outputGuid.c_str());
 
     m_submitted = false;
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Create Job %s for %s", m_id, m_RDGuid));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Create Job %s for %s", m_id.c_str(), m_RDGuid.c_str()));
 
     return PrepareRequest();
     }
@@ -531,9 +531,9 @@ CURL* ThreeCSUser::SubmitJob()
     {
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s/submit", m_jobId));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s/submit", m_jobId.c_str()));
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Submit job %s", m_jobId));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Submit job %s", m_jobId.c_str()));
 
     return PrepareRequest();
     }
@@ -542,11 +542,11 @@ CURL* ThreeCSUser::DeleteJob()
     {
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s", m_jobId));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s", m_jobId.c_str()));
 
     m_submitted = false;
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Delete job %s", m_jobId));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Delete job %s", m_jobId.c_str()));
 
     m_jobId.clear();
 
@@ -568,9 +568,9 @@ CURL* ThreeCSUser::GetJobById()
     {
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s", m_jobId));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s", m_jobId.c_str()));
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Get Job %s", m_jobId));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Get Job %s", m_jobId.c_str()));
 
     return PrepareRequest();
     }
@@ -588,9 +588,9 @@ CURL* ThreeCSUser::CancelJob()
     {
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
-    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s/cancel", m_jobId));
+    m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s/cancel", m_jobId.c_str()));
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Cancel job %s", m_jobId));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Cancel job %s", m_jobId.c_str()));
 
     return PrepareRequest();
     }
@@ -864,7 +864,7 @@ CURL* ThreeCSUser::PrepareRequest()
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, m_correspondance.req.payload.length());
         }
 
-    curl_easy_setopt(curl, CURLOPT_URL, m_correspondance.req.url);
+    curl_easy_setopt(curl, CURLOPT_URL, m_correspondance.req.url.c_str());
 
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 

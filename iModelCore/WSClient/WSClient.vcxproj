@@ -62,6 +62,7 @@
     <ClCompile Include="Azure\AzureServiceBusSASDTO.cpp" />
     <ClCompile Include="Azure\EventServiceClient.cpp" />
     <ClCompile Include="Cache\BackgroundSyncNotifier.cpp" />
+    <ClCompile Include="Cache\CacheInternal.cpp" />
     <ClCompile Include="Cache\CacheNavigationTask.cpp" />
     <ClCompile Include="Cache\CachingDataSource.cpp" />
     <ClCompile Include="Cache\CachingTaskBase.cpp" />
@@ -249,6 +250,7 @@
     <ClCompile Include="FakeServer\FakeServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Cache\CacheInternal.h" />
     <ClInclude Include="Cache\CacheNavigationTask.h" />
     <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsReader.h" />
     <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsResponse.h" />
