@@ -102,12 +102,12 @@ BentleyStatus TShapeProfile::_Validate() const
 
     bool const isValidWebEdgeRadius = std::isfinite (GetWebEdgeRadius()) && GetWebEdgeRadius() >= 0.0
                                       && GetWebEdgeRadius() <= std::min (GetInnerWebFaceLength() / 2.0, GetWebThickness() / 2.0);
-    if (!isValidFlangeEdgeRadius)
+    if (!isValidWebEdgeRadius)
         return BSIERROR;
 
     bool const isWebSlopeValid = std::isfinite (GetWebSlope()) && GetWebSlope() >= 0.0 && GetWebSlope() < PI / 2.0
-                                 && GetInnerWebFaceLength() / 2.0 >= GetWebSlopeHeight();
-    if (!isFlangeSlopeValid)
+                                 && GetInnerFlangeFaceLength() / 2.0 >= GetWebSlopeHeight();
+    if (!isWebSlopeValid)
         return BSIERROR;
 
     return BSISUCCESS;
