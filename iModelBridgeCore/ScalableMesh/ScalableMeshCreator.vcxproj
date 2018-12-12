@@ -1,0 +1,464 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug Local LKG|Win32">
+      <Configuration>Debug Local LKG</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug Local LKG|x64">
+      <Configuration>Debug Local LKG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugProduct|Win32">
+      <Configuration>DebugProduct</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugProduct|x64">
+      <Configuration>DebugProduct</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseProduct|Win32">
+      <Configuration>ReleaseProduct</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseProduct|x64">
+      <Configuration>ReleaseProduct</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{41C9791E-868E-4148-96CD-13135E6161FD}</ProjectGuid>
+    <RootNamespace>
+    </RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>false</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>false</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>true</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>true</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>false</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>true</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>true</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>true</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='DebugProduct|Win32'">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugProduct|x64'" Label="Configuration">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  ScalableMeshCreator</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  ScalableMeshCreator  -c
+bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  ScalableMeshCreator </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  ScalableMeshCreator -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
+    <NMakeForcedUsingAssemblies>
+    </NMakeForcedUsingAssemblies>
+    <AdditionalOptions>
+    </AdditionalOptions>
+    <NMakeAssemblySearchPath>
+    </NMakeAssemblySearchPath>
+    <SourcePath>$(SourcePath);D:\PointoolsVortexAPI</SourcePath>
+    <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\src\DgnPlatform\DgnCore\;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ScalableMesh\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BePointCloud\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\RealityModeling\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDbSync\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI\DgnPlatform\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMesh -r  ScalableMesh  re  ScalableMeshCreator </NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMesh -r  ScalableMesh  re  ScalableMeshCreator -c
+bb -ax64 -p ScalableMeshCreator  -f  ScalableMesh -r  ScalableMesh  re  ScalableMeshCreator</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMesh -r  ScalableMesh  re  ScalableMeshCreator -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\PublicAPI;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\VendorAPI</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
+    <NMakeForcedUsingAssemblies />
+    <AdditionalOptions>/Yu $(OutRoot)Winx64\build\ScalableMesh\ScalableMesh\ScalableMeshPCH.pch</AdditionalOptions>
+    <NMakeAssemblySearchPath />
+    <SourcePath>$(SourcePath);C:\dev\ConceptStation\src\Pointools\BePointCloud;D:\PointoolsVortexAPI</SourcePath>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64
+xcopy /S /Y /r $(SrcRoot)TerrainModel\ScalableTerrainModel\PublicAPI\*.*  $(Root)\out\LKG\Winx64\TerrainModel\PublicAPI\
+xcopy /Y /r $(OutRoot)Winx64\Build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.lib $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+xcopy /Y /r $(OutRoot)Winx64\Build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
+python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
+</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
+    <NMakeForcedUsingAssemblies />
+    <AdditionalOptions>/clr</AdditionalOptions>
+    <NMakeAssemblySearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\SubParts\Assemblies</NMakeAssemblySearchPath>
+    <SourcePath>$(SourcePath)</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|x64'">
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64
+xcopy /S /Y /r $(SrcRoot)TerrainModel\ScalableTerrainModel\PublicAPI\*.*  $(Root)\out\LKG\Winx64\TerrainModel\PublicAPI\
+xcopy /Y /r $(OutRoot)Winx64\Build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.lib $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+xcopy /Y /r $(OutRoot)Winx64\Build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
+python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
+</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
+    <NMakeForcedUsingAssemblies />
+    <AdditionalOptions>/clr</AdditionalOptions>
+    <NMakeAssemblySearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\SubParts\Assemblies</NMakeAssemblySearchPath>
+    <SourcePath>$(SourcePath)</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  ScalableMeshCreator</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  ScalableMeshCreator  -c
+bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  ScalableMeshCreator </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  ScalableMeshCreator -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <SourcePath>$(SourcePath);D:\PointoolsVortexAPI</SourcePath>
+    <IncludePath>C:\dev\ScalableMesh-Topaz\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ScalableMesh-Topaz\out\release\Winx64\BuildContexts\scalablemesh\PublicAPI;$(IncludePath)</IncludePath>
+    <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMesh -r  ScalableMesh  re  ScalableMeshCreator</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>VANCOUVER_API;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMesh -r  ScalableMesh  re  ScalableMeshCreator -c
+bb -ax64 -p ScalableMeshCreator  -f  ScalableMesh -r  ScalableMesh  re  ScalableMeshCreator</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p ScalableMeshCreator  -f  ScalableMesh -r  ScalableMesh  re  ScalableMeshCreator -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel;$(ProjectDir)PublicAPI\ScalableMesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\DgnDisplay\PublicAPI;$(OutRoot)Winx64\BuildContexts\Bentley\PublicAPI;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\PublicAPI;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\VendorAPI</NMakeIncludeSearchPath>
+    <IncludePath>C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <AdditionalOptions>/Yu $(OutRoot)Winx64\build\ScalableMesh\ScalableMesh\ScalableMeshPCH.pch</AdditionalOptions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'">
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeBuildCommandLine>
+    <NMakeOutput />
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|x64'">
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeBuildCommandLine>
+    <NMakeOutput />
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Data">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Drawing">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Xml">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.h" />
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshPointsProvider.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Algorithm.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Algorithm.hpp" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Definitions.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Error.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Exception.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Iterator.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Log.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Message.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Traits.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Warning.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Definitions.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\DGNModelGeoref.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\GCS.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\LocalTransform.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Reprojection.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.hpp" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\Base.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\All.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Base.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\ScalableMeshConfig.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\GCS.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Layer.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Type.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetScalableMeshConfig.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfig.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfigVisitor.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentDescriptor.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentDescriptor.hpp" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\CustomFilterFactory.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataSQLite.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataType.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataTypeDescription.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataTypeFamily.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Definitions.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Error\Source.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Exceptions.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ExtractionConfig.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Filter.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\FilterFactory.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\FilteringConfig.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportConfig.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportConfigVisitor.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Importer.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportPolicy.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportSequence.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportSequenceVisitor.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Metadata.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\CustomFilterFactoryV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\DataTypeFamilyV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\DataTypeRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\DataTypeV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\ExtractorRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\FilterV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\InputExtractorV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\PacketBinderV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\RegistryTools.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\ReprojectionFilterRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\ReprojectionFilterV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\SourceReferenceV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\SourceRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\SourceV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\TypeConversionFilterRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\TypeConversionFilterV0.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ScalableMeshData.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Source.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\SourceReference.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\SourceReferenceVisitor.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Warnings.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMesh.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshAnalysis.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshClipContainer.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshCreator.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDocumentEnv.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshFeature.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshGroundExtractor.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshMoniker.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshNodeCreator.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshPolicy.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshProgressiveQuery.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshQuery.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCollection.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCollection.hpp" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreator.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreatorWorker.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceDescription.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceImportConfig.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceImporter.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSources.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceVisitor.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshStream.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshStream.hpp" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTextureGenerator.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTime.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshURL.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ITextureProvider.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\Allocation.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\Definitions.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\Exceptions.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\Packet.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\PacketAccess.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\PacketAccess.hpp" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshDefs.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshFrom3MX.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshUtilityFunctions.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshCivilDTMSource.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshFileUtilities.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshFileUtilities.hpp" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshPolicy.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshSTMSource.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshAdmin.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshLib.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Type\IScalableMeshLinear.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Type\IScalableMeshMesh.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Type\IScalableMeshPoint.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\Type\IScalableMeshTIN.h" />
+    <ClInclude Include="stm\ComputeMemoryUseTraits.h" />
+    <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
+    <ClInclude Include="STM\ImportPlugins\CivilDTMHelpers.h" />
+    <ClInclude Include="STM\ImportPlugins\ElementType.h" />
+    <ClInclude Include="STM\ImportPlugins\ElemSourceRef.h" />
+    <ClInclude Include="STM\ImportPlugins\PluginUtils.h" />
+    <ClInclude Include="STM\ImportPlugins\XYZAsciiFormat.h" />
+    <ClInclude Include="STM\ImportPlugins\XYZAsciiFormat.hpp" />
+    <ClInclude Include="STM\ScalableMeshFeature.h" />
+    <ClInclude Include="STM\ScalableMeshMesher.h" />
+    <ClInclude Include="STM\ScalableMeshNodeCreator.h" />
+    <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.h" />
+    <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.hpp" />
+    <ClInclude Include="STM\ScalableMeshSourceCreator.h" />
+    <ClInclude Include="STM\ScalableMeshSourceCreatorWorker.h" />
+    <ClInclude Include="STM\ScalableMeshTime.h" />
+    <ClInclude Include="STM\Stores\SMCesiumPublisher.h" />
+    <ClInclude Include="STM\Stores\SMPublisher.h" />
+    <ClInclude Include="STM\Tracer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.cpp" />
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshPointsProvider.cpp" />
+    <ClCompile Include="Import\DataSQLite.cpp" />
+    <ClCompile Include="STM\CGALEdgeCollapse.cpp" />
+    <ClCompile Include="STM\ImportPlugins\TextureImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\CivilDTMFileImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\CivilDTMHelpers.cpp" />
+    <ClCompile Include="STM\ImportPlugins\CivilElemSource.cpp" />
+    <ClCompile Include="STM\ImportPlugins\DEMRasterImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\DGNLevelImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\DGNModelUtilities.cpp" />
+    <ClCompile Include="STM\ImportPlugins\ElementType.cpp" />
+    <ClCompile Include="STM\ImportPlugins\ElemSourceRef.cpp" />
+    <ClCompile Include="STM\ImportPlugins\GDALFileImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\IDTMFileImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\LandXMLFileImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\PODImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\STMSource.cpp" />
+    <ClCompile Include="STM\ImportPlugins\XYZAsciiFileImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\XYZAsciiSource.cpp" />
+    <ClCompile Include="STM\ImportPlugins\XYZFileImporter.cpp" />
+    <ClCompile Include="STM\ScalableMeshDetectGround.cpp" />
+    <ClCompile Include="STM\ScalableMeshFeature.cpp" />
+    <ClCompile Include="STM\ScalableMeshFrom3MX.cpp" />
+    <ClCompile Include="STM\ScalableMeshMesher.cpp" />
+    <ClCompile Include="STM\ScalableMeshNodeCreator.cpp" />
+    <ClCompile Include="STM\ScalableMeshQuadTreeBCLIBFilters.cpp" />
+    <ClCompile Include="STM\ScalableMeshSaveAs.cpp" />
+    <ClCompile Include="STM\ScalableMeshSourceCreator.cpp" />
+    <ClCompile Include="STM\ScalableMeshSourceCreatorWorker.cpp" />
+    <ClCompile Include="STM\Stores\SMCesiumPublisher.cpp" />
+    <ClCompile Include="STM\Stores\SMPublisher.cpp" />
+    <ClCompile Include="STM\Tracer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ScalableMeshCreator.mke" />
+    <None Include="ScalableMeshCreator.mki" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
