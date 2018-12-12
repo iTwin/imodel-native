@@ -1,0 +1,8 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/schemaitem",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaItemType": "PropertyCategory",
+  "name": "ExamplePropertyCategory",
+  "priority": 5
+}
