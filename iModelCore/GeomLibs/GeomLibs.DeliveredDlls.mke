@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: GeomLibs.DeliveredDlls.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+    
+$(BuildContext)GeomLibsDlls.mki : $(_MakeFilePath)DllNames.mki
+    $(LinkFirstDepToFirstTarget)

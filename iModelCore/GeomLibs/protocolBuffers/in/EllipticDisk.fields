@@ -1,0 +1,12 @@
+PRIMITIVE EllipticDisk
+<def name=SUMMARY>Elliptic disk primitive.
+</def>
+<def name=Interface_BaseList>IGeometry, ISurface</def>
+
+
+<def name=MEMBERS><field ItemType=IPlacement ItemParamName=placement ItemMemberName=mPlacement ItemDescription="Center and orientation" ScaleMode=Length/>
+<field ItemType=double ItemParamName=radiusA ItemMemberName=mRadiusA ItemDescription="x direction radius in local xy plane." ScaleMode=Length/>
+<field ItemType=double ItemParamName=radiusB ItemMemberName=mRadiusB ItemDescription="y direction radius in local xy plane." ScaleMode=Length/>
+</def>
+
+END_PRIMITIVE

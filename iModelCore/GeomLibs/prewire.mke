@@ -1,0 +1,20 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+SrcGeomLibs             = $(SrcRoot)GeomLibs/
+GeomPublicAPISrc        = $(SrcGeomLibs)PublicAPI/
+
+always:
+    @CreateSymLinks.py  -d"$(BuildContextPublicApiDir)Geom=$(GeomPublicAPISrc)Geom"    \
+                        -d"$(BuildContextPublicApiDir)Mtg=$(GeomPublicAPISrc)Mtg"      \
+                        -d"$(BuildContextPublicApiDir)PlacementOnEarth=$(GeomPublicAPISrc)PlacementOnEarth"      \
+                        -d"$(BuildContextPublicApiDir)GeomJsonWireFormat=$(GeomPublicAPISrc)GeomJsonWireFormat"      \
+                        -d"$(BuildContextPublicApiDir)Regions=$(GeomPublicAPISrc)Regions"  \
+                        -d"$(BuildContextPublicApiDir)Vu=$(GeomPublicAPISrc)Vu"\
+                        -d"$(BuildContextPublicApiDir)GeomSerialization=$(GeomPublicAPISrc)GeomSerialization"\
