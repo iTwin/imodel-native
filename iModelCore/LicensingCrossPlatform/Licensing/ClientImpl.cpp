@@ -755,7 +755,7 @@ folly::Future<folly::Unit> ClientImpl::SendUsageRealtime()
 	//auto previousEnvironment = UrlProvider::GetEnvironment();
 	//UrlProvider::SetEnvironment(UrlProvider::Environment::Dev);
 
-	auto url = UrlProvider::UrlDescriptor::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
+	auto url = UrlProvider::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
 
 	//logfile << url << std::endl;
 
