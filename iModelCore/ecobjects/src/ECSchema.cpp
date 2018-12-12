@@ -1765,8 +1765,8 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit)
                 status = this->CopyUnit(copiedParent, *sourceUnit.GetInvertingUnit());
                 if(ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
                     return status;
-                parent = copiedParent;
                 }
+            parent = copiedParent;
             }
         status = CreateInvertedUnit(targetUnit, *parent, sourceUnit.GetName().c_str(), *system);
         }

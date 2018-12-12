@@ -810,7 +810,8 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         destProperty->SetDisplayLabel(sourceProperty->GetInvariantDisplayLabel());
     destProperty->SetName(sourceProperty->GetName());
     destProperty->SetIsReadOnly(sourceProperty->IsReadOnlyFlagSet());
-    destProperty->SetPriority(sourceProperty->GetPriority());
+    if (sourceProperty->IsPriorityLocallyDefined())
+        destProperty->SetPriority(sourceProperty->GetPriority());
 
     if (sourceProperty->IsCategoryDefinedLocally())
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: tools/SchemaResourceGenerator/SchemaResourceGenerator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECObjects/ECObjectsAPI.h>
@@ -277,7 +277,7 @@ static void WriteCustomAttributeValues(BeXmlWriter& writer, ECValuesCollectionR 
             continue;
 
         auto completeKey = Utf8PrintfString("%s:%s:%s", parentKey, 
-                                            propValue.GetValueAccessor().GetManagedAccessString().c_str(), SchemaResourceKeyHelper::ComputeHash(stringValue));
+                                            propValue.GetValueAccessor().GetManagedAccessString().c_str(), SchemaResourceKeyHelper::ComputeHash(stringValue).c_str());
         WriteResource(writer, completeKey.c_str(), stringValue);
         }
     }
@@ -388,14 +388,14 @@ static bool WriteXliff(Options const& options)
                 Utf8CP invariant = source.GetInvariantRoleLabel().c_str();
                 key = SchemaResourceKeyHelper::GetRelationshipSourceRoleLabelKey(*relC, invariant);
                 WriteResource(*xmlWriter, key.c_str(), invariant);
-                Utf8PrintfString sourceConstraintKey("%s.Source", classKey);
+                Utf8PrintfString sourceConstraintKey("%s.Source", classKey.c_str());
                 WriteCustomAttributeContainerResources(*xmlWriter, sourceConstraintKey.c_str(), source);
 
                 ECRelationshipConstraintR target = relC->GetTarget();
                 invariant = target.GetInvariantRoleLabel().c_str();
                 key = SchemaResourceKeyHelper::GetRelationshipTargetRoleLabelKey(*relC, invariant);
                 WriteResource(*xmlWriter, key.c_str(), invariant);
-                Utf8PrintfString targetConstraintKey("%s.Target", classKey);
+                Utf8PrintfString targetConstraintKey("%s.Target", classKey.c_str());
                 WriteCustomAttributeContainerResources(*xmlWriter, targetConstraintKey.c_str(), target);
                 }
 
@@ -482,7 +482,7 @@ static bool WriteSchema(Options const& options)
 
     Utf8String cultureForName = culture;
     cultureForName.ReplaceAll("-", "_");
-    Utf8PrintfString supplementalSchemaName("%s_Supplemental_Localization_%s", schemaKey.GetName(), cultureForName.c_str());
+    Utf8PrintfString supplementalSchemaName("%s_Supplemental_Localization_%s", schemaKey.GetName().c_str(), cultureForName.c_str());
     Utf8String encodedName = ECNameValidation::EncodeToValidName(supplementalSchemaName);
     SchemaKey supplementalKey(encodedName.c_str(), schemaKey.GetVersionRead(), schemaKey.GetVersionWrite(), schemaKey.GetVersionMinor());
 
