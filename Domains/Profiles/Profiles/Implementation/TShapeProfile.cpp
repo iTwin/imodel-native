@@ -85,8 +85,8 @@ BentleyStatus TShapeProfile::_Validate() const
         return BSIERROR;
 
     bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0
-                                     && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetWebSlopeHeight()
-                                     && GetFilletRadius() <= GetInnerFlangeFaceLength() / 2.0 - GetFlangeSlopeHeight();
+                                     && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight()
+                                     && GetFilletRadius() <= GetInnerFlangeFaceLength() / 2.0 - GetWebSlopeHeight();
     if (!isValidFilletRadius)
         return BSIERROR;
 
