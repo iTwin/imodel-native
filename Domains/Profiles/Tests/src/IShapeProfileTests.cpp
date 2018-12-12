@@ -357,19 +357,35 @@ TEST_F (IShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_Correct
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
+* @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (IShapeProfileTestCase, Insert_VariousFlangeEdgeRadius_CorrectInsertResult)
+TEST_F (IShapeProfileTestCase, Insert_InvalidFlangeEdgeRadius_FailedInsert)
     {
     CreateParams params (GetModel(), "I", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
     TestParameterToBeFiniteAndPositive (params, params.flangeEdgeRadius, "EdgeRadius", true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (IShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheFlangeThickness_CorrectInsertResult)
+    {
+    CreateParams params (GetModel(), "I", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
     params.flangeEdgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
 
     params.flangeEdgeRadius = nextafter<double, double> (0.5, INFINITY);
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (IShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheInnerFlangeFace_CorrectInsertResult)
+    {
+    CreateParams params (GetModel(), "I", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
     params.flangeThickness = 4.0;
     params.flangeEdgeRadius = 2.0;
@@ -386,13 +402,21 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFlangeEdgeRadius_CorrectInsertResul
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (IShapeProfileTestCase, Insert_InvalidFlangeSlope_FailedInsert)
+    {
+    CreateParams params (GetModel(), "I", 9.0, 10.0, 1.0, 1.0, 0.0, 0.0, INFINITY);
+
+    TestParameterToBeFiniteAndPositive (params, params.flangeSlope, "FlangeSlope", true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (IShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     {
     CreateParams params (GetModel(), "I", 9.0, 10.0, 1.0, 1.0, 0.0, 0.0, INFINITY);
-
-    TestParameterToBeFiniteAndPositive (params, params.flangeSlope, "FlangeSlope", true);
 
     params.flangeSlope = PI / 4.0;
     IShapeProfilePtr profilePtr = CreateProfile (params);

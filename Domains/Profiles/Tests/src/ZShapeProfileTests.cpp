@@ -359,19 +359,35 @@ TEST_F (ZShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_Correct
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
+* @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ZShapeProfileTestCase, Insert_VariousFlangeEdgeRadius_CorrectInsertResult)
+TEST_F (ZShapeProfileTestCase, Insert_InvalidFlangeEdgeRadius_FailedInsert)
     {
     CreateParams params (GetModel(), "Z", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
     TestParameterToBeFiniteAndPositive (params, params.flangeEdgeRadius, "EdgeRadius", true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ZShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheFlangeThickness_CorrectInsertResult)
+    {
+    CreateParams params (GetModel(), "Z", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
     params.flangeEdgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
 
     params.flangeEdgeRadius = nextafter<double, double> (0.5, INFINITY);
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ZShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheInnerFlangeFace_CorrectInsertResult)
+    {
+    CreateParams params (GetModel(), "Z", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
     params.flangeThickness = 4.0;
     params.flangeEdgeRadius = 2.0;
@@ -388,13 +404,21 @@ TEST_F (ZShapeProfileTestCase, Insert_VariousFlangeEdgeRadius_CorrectInsertResul
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ZShapeProfileTestCase, Insert_InvalidFlangeSlope_FailedInsert)
+    {
+    CreateParams params (GetModel(), "Z", 5.0, 9.0, 1.0, 1.0, 0.0, 0.0, INFINITY);
+
+    TestParameterToBeFiniteAndPositive (params, params.flangeSlope, "FlangeSlope", true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ZShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     {
     CreateParams params (GetModel(), "Z", 5.0, 9.0, 1.0, 1.0, 0.0, 0.0, INFINITY);
-
-    TestParameterToBeFiniteAndPositive (params, params.flangeSlope, "FlangeSlope", true);
 
     params.flangeSlope = PI / 4.0;
     ZShapeProfilePtr profilePtr = CreateProfile (params);
