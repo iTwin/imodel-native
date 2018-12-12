@@ -1,0 +1,111 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Source/RulesDriven/RulesEngine/RulesEngine.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------------------+
+#   Compile
+#---------------------------------------------------------------------------------------+
+# Change the $(o) macro and save the original so we can restore it later
+_o =% $(o)
+o = $(RulesEngineOutputDirectory)
+always:
+    !~@mkdir $(o)
+    
+%include MultiCppCompileRule.mki
+
+$(o)ECExpressionContextsProvider$(oext): $(RulesEngineSourceDirectory)ECExpressionContextsProvider.cpp $(RulesEngineDependencies)
+
+$(o)PresentationManager$(oext):          $(RulesEngineSourceDirectory)PresentationManager.cpp $(RulesEngineDependencies)
+
+$(o)RulesPreprocessor$(oext):            $(RulesEngineSourceDirectory)RulesPreprocessor.cpp $(RulesEngineDependencies)
+
+$(o)QueryContracts$(oext):               $(RulesEngineSourceDirectory)QueryContracts.cpp $(RulesEngineDependencies)
+
+$(o)NavigationQuery$(oext):              $(RulesEngineSourceDirectory)NavigationQuery.cpp $(RulesEngineDependencies)
+
+$(o)NavigationQueryBuilder$(oext):       $(RulesEngineSourceDirectory)NavigationQueryBuilder.cpp $(RulesEngineDependencies)
+
+$(o)ContentQueryBuilder$(oext):          $(RulesEngineSourceDirectory)ContentQueryBuilder.cpp $(RulesEngineDependencies)
+
+$(o)QueryExecutor$(oext):                $(RulesEngineSourceDirectory)QueryExecutor.cpp $(RulesEngineDependencies)
+
+$(o)NavNodeProviders$(oext):             $(RulesEngineSourceDirectory)NavNodeProviders.cpp $(RulesEngineDependencies)
+
+$(o)StatementHandlers$(oext):            $(RulesEngineSourceDirectory)StatementHandlers.cpp $(RulesEngineDependencies)
+
+$(o)CustomFunctions$(oext):              $(RulesEngineSourceDirectory)CustomFunctions.cpp $(RulesEngineDependencies)
+
+$(o)RuleSetLocater$(oext):               $(RulesEngineSourceDirectory)RuleSetLocater.cpp $(RulesEngineDependencies)
+
+$(o)JsonNavNode$(oext):                  $(RulesEngineSourceDirectory)JsonNavNode.cpp $(RulesEngineDependencies)
+
+$(o)ExtendedData$(oext):                 $(RulesEngineSourceDirectory)ExtendedData.cpp $(RulesEngineDependencies)
+
+$(o)ECSchemaHelper$(oext):               $(RulesEngineSourceDirectory)ECSchemaHelper.cpp $(RulesEngineDependencies)
+
+$(o)LocalizationHelper$(oext):           $(RulesEngineSourceDirectory)LocalizationHelper.cpp $(RulesEngineDependencies)
+
+$(o)NavNodesDataSource$(oext):           $(RulesEngineSourceDirectory)NavNodesDataSource.cpp $(RulesEngineDependencies)
+
+$(o)NavNodesCache$(oext):                $(RulesEngineSourceDirectory)NavNodesCache.cpp $(RulesEngineDependencies)
+
+$(o)LoggingHelper$(oext):                $(RulesEngineSourceDirectory)LoggingHelper.cpp $(RulesEngineDependencies)
+
+$(o)ImageHelper$(oext):                  $(RulesEngineSourceDirectory)ImageHelper.cpp $(RulesEngineDependencies)
+
+$(o)UserSettings$(oext):                 $(RulesEngineSourceDirectory)UserSettings.cpp $(RulesEngineDependencies)
+
+$(o)CustomizationHelper$(oext):          $(RulesEngineSourceDirectory)CustomizationHelper.cpp $(RulesEngineDependencies)
+
+$(o)QueryBuilderHelpers$(oext):          $(RulesEngineSourceDirectory)QueryBuilderHelpers.cpp $(RulesEngineDependencies)
+
+$(o)ECInstanceChangeEvents$(oext):       $(RulesEngineSourceDirectory)ECInstanceChangeEvents.cpp $(RulesEngineDependencies)
+
+$(o)ECInstanceChangeHandlers$(oext):     $(RulesEngineSourceDirectory)ECInstanceChangeHandlers.cpp $(RulesEngineDependencies)
+
+$(o)UpdateHandler$(oext):                $(RulesEngineSourceDirectory)UpdateHandler.cpp $(RulesEngineDependencies)
+
+$(o)ContentProviders$(oext):             $(RulesEngineSourceDirectory)ContentProviders.cpp $(RulesEngineDependencies)
+
+$(o)RulesDrivenProviderContext$(oext):   $(RulesEngineSourceDirectory)RulesDrivenProviderContext.cpp $(RulesEngineDependencies)
+
+$(o)ContentCache$(oext):                 $(RulesEngineSourceDirectory)ContentCache.cpp $(RulesEngineDependencies)
+
+$(o)SelectionSyncHandler$(oext):         $(RulesEngineSourceDirectory)SelectionSyncHandler.cpp $(RulesEngineDependencies)
+
+$(o)ECExpressionOptimizer$(oext):        $(RulesEngineSourceDirectory)ECExpressionOptimizer.cpp $(RulesEngineDependencies)
+
+$(o)ContentClassesLocater$(oext):        $(RulesEngineSourceDirectory)ContentClassesLocater.cpp $(RulesEngineDependencies)
+
+$(o)ContentDescriptorBuilder$(oext):     $(RulesEngineSourceDirectory)ContentDescriptorBuilder.cpp $(RulesEngineDependencies)
+
+$(o)ContentSpecificationsHandler$(oext): $(RulesEngineSourceDirectory)ContentSpecificationsHandler.cpp $(RulesEngineDependencies)
+
+$(o)PropertyInfoStore$(oext):            $(RulesEngineSourceDirectory)PropertyInfoStore.cpp $(RulesEngineDependencies)
+
+$(o)RuleSetEmbedder$(oext):              $(RulesEngineSourceDirectory)RuleSetEmbedder.cpp $(RulesEngineDependencies)
+
+$(o)SingleThreadQueueExecutor$(oext):    $(RulesEngineSourceDirectory)SingleThreadQueueExecutor.cpp $(RulesEngineDependencies)
+
+$(o)PresentationManagerImpl$(oext):      $(RulesEngineSourceDirectory)PresentationManagerImpl.cpp $(RulesEngineDependencies)
+
+$(o)SelectionUpdateRecordsHandler$(oext):$(RulesEngineSourceDirectory)SelectionUpdateRecordsHandler.cpp $(RulesEngineDependencies)
+
+%include MultiCppCompileGo.mki
+
+RulesEngineObjs =
+%ifdef MultiCompileObjectList
+    RulesEngineObjs +% $(MultiCompileObjectList)
+%endif
+
+# Restore the $(o) macro
+o =% $(_o)
+
+#--------------------------------------------------------------------------------------
+# Merge Objects
+#--------------------------------------------------------------------------------------
+RulesDrivenECPresentationObjs + $(RulesEngineObjs)

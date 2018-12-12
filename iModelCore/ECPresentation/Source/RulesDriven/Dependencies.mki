@@ -1,0 +1,27 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Source/RulesDriven/Dependencies.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+# Directories
+#--------------------------------------------------------------------------------------
+RulesDrivenSourceDirectory      = $(SourceDirectory)RulesDriven/
+RulesDrivenPublicApiDirectory   = $(PublicApiDirectory)RulesDriven/
+
+#--------------------------------------------------------------------------------------
+# Dependencies
+#--------------------------------------------------------------------------------------
+RulesDrivenECPresentationPublicHeaders      =
+RulesDrivenECPresentationInternalHeaders    = 
+RulesDrivenECPresentationHeaders            = $(RulesDrivenECPresentationPublicHeaders) $(RulesDrivenECPresentationInternalHeaders) $(ECPresentationHeaders)
+RulesDrivenECPresentationMkis               = $(RulesDrivenSourceDirectory)Dependencies.mki $(RulesDrivenSourceDirectory)RulesDrivenECPresentation.mki
+RulesDrivenECPresentationDependencies       = $(RulesDrivenECPresentationHeaders) $(RulesDrivenECPresentationMkis) $(ECPresentationDependencies)
+
+%include $(RulesDrivenSourceDirectory)Rules/Dependencies.mki
+%include $(RulesDrivenSourceDirectory)RulesEngine/Dependencies.mki
+
+ECPresentationMakefiles                     + $(RulesDrivenECPresentationMkis)
