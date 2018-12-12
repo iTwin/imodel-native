@@ -1,0 +1,2673 @@
+2163  19965 9001  4052  US National Atlas Equal Area
+2100  19930 9001  4121  GGRS87 / Greek Grid
+2200  19945 9001  4122  ATS77 / New Brunswick Stereographic (ATS77)
+2219  16019 9001  4122  ATS77 / UTM zone 19N
+2220  16020 9001  4122  ATS77 / UTM zone 20N
+2290  19933 9001  4122  ATS77 / Prince Edward Isl. Stereographic (ATS77)
+2291  19960 9001  4122  NAD83(CSRS98) / Prince Edward Isl. Stereographic (NAD83)
+2294  17794 9001  4122  ATS77 / MTM Nova Scotia zone 4
+2295  17795 9001  4122  ATS77 / MTM Nova Scotia zone 5
+2391  18191 9001  4123  KKJ / Finland zone 1
+2392  18192 9001  4123  KKJ / Finland zone 2
+2393  18193 9001  4123  KKJ / Finland Uniform Coordinate System
+2394  18194 9001  4123  KKJ / Finland zone 4
+3386  18180 9001  4123  KKJ / Finland zone 0
+3387  18205 9001  4123  KKJ / Finland zone 5
+2400  19929 9001  4124  RT90 / 2.5 gon W
+3019  17334 9001  4124  RT90 / 7.5 gon V
+3020  17335 9001  4124  RT90 / 5 gon V
+3021  19929 9001  4124  RT90 / 2.5 gon V
+3022  17336 9001  4124  RT90 / 0 gon
+3023  17337 9001  4124  RT90 / 2.5 gon O
+3024  17338 9001  4124  RT90 / 5 gon O
+2550  16150 9001  4125  Samboja / UTM zone 50S
+2736  16136 9001  4127  Tete / UTM zone 36S
+2737  16137 9001  4127  Tete / UTM zone 37S
+3036  16136 9001  4130  Moznet / UTM zone 36S
+3037  16137 9001  4130  Moznet / UTM zone 37S
+3148  16048 9001  4131  Indian 1960 / UTM zone 48N
+3149  16049 9001  4131  Indian 1960 / UTM zone 49N
+3176  16506 9001  4131  Indian 1960 / TM 106 NE
+3200  19906 9001  4132  FD58 / Iraq zone
+3300  19938 9001  4133  Estonian Coordinate System of 1992
+3439  16039 9001  4134  PSD93 / UTM zone 39N
+3440  16040 9001  4134  PSD93 / UTM zone 40N
+3561  15101 9003  4135  Old Hawaiian / Hawaii zone 1
+3562  15102 9003  4135  Old Hawaiian / Hawaii zone 2
+3563  15103 9003  4135  Old Hawaiian / Hawaii zone 3
+3564  15104 9003  4135  Old Hawaiian / Hawaii zone 4
+3565  15105 9003  4135  Old Hawaiian / Hawaii zone 5
+3920  16020 9001  4139  Puerto Rico / UTM zone 20N
+3991  15201 9003  4139  Puerto Rico / State Plane CS of 1927
+3992  15202 9003  4139  Puerto Rico / St. Croix
+2036  19946 9001  4140  NAD83(CSRS98) / New Brunswick Stereo
+2037  16019 9001  4140  NAD83(CSRS98) / UTM zone 19N
+2038  16020 9001  4140  NAD83(CSRS98) / UTM zone 20N
+2139  17700 9001  4140  NAD83(CSRS98) / SCoPQ zone 2
+2140  17703 9001  4140  NAD83(CSRS98) / MTM zone 3
+2141  17704 9001  4140  NAD83(CSRS98) / MTM zone 4
+2142  17705 9001  4140  NAD83(CSRS98) / MTM zone 5
+2143  17706 9001  4140  NAD83(CSRS98) / MTM zone 6
+2144  17707 9001  4140  NAD83(CSRS98) / MTM zone 7
+2145  17708 9001  4140  NAD83(CSRS98) / MTM zone 8
+2146  17709 9001  4140  NAD83(CSRS98) / MTM zone 9
+2147  17710 9001  4140  NAD83(CSRS98) / MTM zone 10
+2148  16021 9001  4140  NAD83(CSRS98) / UTM zone 21N
+2149  16018 9001  4140  NAD83(CSRS98) / UTM zone 18N
+2150  16017 9001  4140  NAD83(CSRS98) / UTM zone 17N
+2151  16013 9001  4140  NAD83(CSRS98) / UTM zone 13N
+2152  16012 9001  4140  NAD83(CSRS98) / UTM zone 12N
+2153  16011 9001  4140  NAD83(CSRS98) / UTM zone 11N
+2292  19960 9001  4140  NAD83(CSRS98) / Prince Edward Isl. Stereographic (NAD83)
+2039  18204 9001  4141  Israel / Israeli TM Grid
+2040  16030 9001  4142  Locodjo 1965 / UTM zone 30N
+2042  16029 9001  4142  Locodjo 1965 / UTM zone 29N
+2164  17005 9001  4142  Locodjo 1965 / TM 5 NW
+2041  16030 9001  4143  Abidjan 1987 / UTM zone 30N
+2043  16029 9001  4143  Abidjan 1987 / UTM zone 29N
+2165  17005 9001  4143  Abidjan 1987 / TM 5 NW
+24305 16045 9001  4144  Kalianpur 1937 / UTM zone 45N
+24306 16046 9001  4144  Kalianpur 1937 / UTM zone 46N
+24375 18238 9001  4144  Kalianpur 1937 / India zone IIb
+24311 16041 9001  4145  Kalianpur 1962 / UTM zone 41N
+24312 16042 9001  4145  Kalianpur 1962 / UTM zone 42N
+24313 16043 9001  4145  Kalianpur 1962 / UTM zone 43N
+24376 18236 9001  4145  Kalianpur 1962 / India zone I
+24377 18237 9001  4145  Kalianpur 1962 / India zone IIa
+24342 16042 9001  4146  Kalianpur 1975 / UTM zone 42N
+24343 16043 9001  4146  Kalianpur 1975 / UTM zone 43N
+24344 16044 9001  4146  Kalianpur 1975 / UTM zone 44N
+24345 16045 9001  4146  Kalianpur 1975 / UTM zone 45N
+24346 16046 9001  4146  Kalianpur 1975 / UTM zone 46N
+24347 16047 9001  4146  Kalianpur 1975 / UTM zone 47N
+24378 18231 9001  4146  Kalianpur 1975 / India zone I
+24379 18232 9001  4146  Kalianpur 1975 / India zone IIa
+24380 18235 9001  4146  Kalianpur 1975 / India zone IIb
+24381 18233 9001  4146  Kalianpur 1975 / India zone III
+24383 18234 9001  4146  Kalianpur 1975 / India zone IV
+2044  16218 9001  4147  Hanoi 1972 / Gauss-Kruger zone 18
+2045  16219 9001  4147  Hanoi 1972 / Gauss-Kruger zone 19
+2093  16586 9001  4147  Hanoi 1972 / GK 106 NE
+2046  17515 9001  4148  Hartebeesthoek94 / Lo15
+2047  17517 9001  4148  Hartebeesthoek94 / Lo17
+2048  17519 9001  4148  Hartebeesthoek94 / Lo19
+2049  17521 9001  4148  Hartebeesthoek94 / Lo21
+2050  17523 9001  4148  Hartebeesthoek94 / Lo23
+2051  17525 9001  4148  Hartebeesthoek94 / Lo25
+2052  17527 9001  4148  Hartebeesthoek94 / Lo27
+2053  17529 9001  4148  Hartebeesthoek94 / Lo29
+2054  17531 9001  4148  Hartebeesthoek94 / Lo31
+2055  17533 9001  4148  Hartebeesthoek94 / Lo33
+21781 19922 9001  4149  CH1903 / LV03
+2056  19950 9001  4150  CH1903+ / LV95
+2156  16159 9001  4152  NAD83(HARN) / UTM zone 59S
+2195  16102 9001  4152  NAD83(HARN) / UTM zone 2S
+2759  10131 9001  4152  NAD83(HARN) / Alabama East
+2760  10132 9001  4152  NAD83(HARN) / Alabama West
+2761  10231 9001  4152  NAD83(HARN) / Arizona East
+2762  10232 9001  4152  NAD83(HARN) / Arizona Central
+2763  10233 9001  4152  NAD83(HARN) / Arizona West
+2764  10331 9001  4152  NAD83(HARN) / Arkansas North
+2765  10332 9001  4152  NAD83(HARN) / Arkansas South
+2766  10431 9001  4152  NAD83(HARN) / California zone 1
+2767  10432 9001  4152  NAD83(HARN) / California zone 2
+2768  10433 9001  4152  NAD83(HARN) / California zone 3
+2769  10434 9001  4152  NAD83(HARN) / California zone 4
+2770  10435 9001  4152  NAD83(HARN) / California zone 5
+2771  10436 9001  4152  NAD83(HARN) / California zone 6
+2772  10531 9001  4152  NAD83(HARN) / Colorado North
+2773  10532 9001  4152  NAD83(HARN) / Colorado Central
+2774  10533 9001  4152  NAD83(HARN) / Colorado South
+2775  10630 9001  4152  NAD83(HARN) / Connecticut
+2776  10730 9001  4152  NAD83(HARN) / Delaware
+2777  10931 9001  4152  NAD83(HARN) / Florida East
+2778  10932 9001  4152  NAD83(HARN) / Florida West
+2779  10933 9001  4152  NAD83(HARN) / Florida North
+2780  11031 9001  4152  NAD83(HARN) / Georgia East
+2781  11032 9001  4152  NAD83(HARN) / Georgia West
+2782  15131 9001  4152  NAD83(HARN) / Hawaii zone 1
+2783  15132 9001  4152  NAD83(HARN) / Hawaii zone 2
+2784  15133 9001  4152  NAD83(HARN) / Hawaii zone 3
+2785  15134 9001  4152  NAD83(HARN) / Hawaii zone 4
+2786  15135 9001  4152  NAD83(HARN) / Hawaii zone 5
+2787  11131 9001  4152  NAD83(HARN) / Idaho East
+2788  11132 9001  4152  NAD83(HARN) / Idaho Central
+2789  11133 9001  4152  NAD83(HARN) / Idaho West
+2790  11231 9001  4152  NAD83(HARN) / Illinois East
+2791  11232 9001  4152  NAD83(HARN) / Illinois West
+2792  11331 9001  4152  NAD83(HARN) / Indiana East
+2793  11332 9001  4152  NAD83(HARN) / Indiana West
+2794  11431 9001  4152  NAD83(HARN) / Iowa North
+2795  11432 9001  4152  NAD83(HARN) / Iowa South
+2796  11531 9001  4152  NAD83(HARN) / Kansas North
+2797  11532 9001  4152  NAD83(HARN) / Kansas South
+2798  15303 9001  4152  NAD83(HARN) / Kentucky North
+2799  11632 9001  4152  NAD83(HARN) / Kentucky South
+2800  11731 9001  4152  NAD83(HARN) / Louisiana North
+2801  11732 9001  4152  NAD83(HARN) / Louisiana South
+2802  11831 9001  4152  NAD83(HARN) / Maine East
+2803  11832 9001  4152  NAD83(HARN) / Maine West
+2804  11930 9001  4152  NAD83(HARN) / Maryland
+2805  12031 9001  4152  NAD83(HARN) / Massachusetts Mainland
+2806  12032 9001  4152  NAD83(HARN) / Massachusetts Island
+2807  12141 9001  4152  NAD83(HARN) / Michigan North
+2808  12142 9001  4152  NAD83(HARN) / Michigan Central
+2809  12143 9001  4152  NAD83(HARN) / Michigan South
+2810  12231 9001  4152  NAD83(HARN) / Minnesota North
+2811  12232 9001  4152  NAD83(HARN) / Minnesota Central
+2812  12233 9001  4152  NAD83(HARN) / Minnesota South
+2813  12331 9001  4152  NAD83(HARN) / Mississippi East
+2814  12332 9001  4152  NAD83(HARN) / Mississippi West
+2815  12431 9001  4152  NAD83(HARN) / Missouri East
+2816  12432 9001  4152  NAD83(HARN) / Missouri Central
+2817  12433 9001  4152  NAD83(HARN) / Missouri West
+2818  12530 9001  4152  NAD83(HARN) / Montana
+2819  12630 9001  4152  NAD83(HARN) / Nebraska
+2820  12731 9001  4152  NAD83(HARN) / Nevada East
+2821  12732 9001  4152  NAD83(HARN) / Nevada Central
+2822  12733 9001  4152  NAD83(HARN) / Nevada West
+2823  12830 9001  4152  NAD83(HARN) / New Hampshire
+2824  12930 9001  4152  NAD83(HARN) / New Jersey
+2825  13031 9001  4152  NAD83(HARN) / New Mexico East
+2826  13032 9001  4152  NAD83(HARN) / New Mexico Central
+2827  13033 9001  4152  NAD83(HARN) / New Mexico West
+2828  13131 9001  4152  NAD83(HARN) / New York East
+2829  13132 9001  4152  NAD83(HARN) / New York Central
+2830  13133 9001  4152  NAD83(HARN) / New York West
+2831  13134 9001  4152  NAD83(HARN) / New York Long Island
+2832  13331 9001  4152  NAD83(HARN) / North Dakota North
+2833  13332 9001  4152  NAD83(HARN) / North Dakota South
+2834  13431 9001  4152  NAD83(HARN) / Ohio North
+2835  13432 9001  4152  NAD83(HARN) / Ohio South
+2836  13531 9001  4152  NAD83(HARN) / Oklahoma North
+2837  13532 9001  4152  NAD83(HARN) / Oklahoma South
+2838  13631 9001  4152  NAD83(HARN) / Oregon North
+2839  13632 9001  4152  NAD83(HARN) / Oregon South
+2840  13830 9001  4152  NAD83(HARN) / Rhode Island
+2841  14031 9001  4152  NAD83(HARN) / South Dakota North
+2842  14032 9001  4152  NAD83(HARN) / South Dakota South
+2843  14130 9001  4152  NAD83(HARN) / Tennessee
+2844  14231 9001  4152  NAD83(HARN) / Texas North
+2845  14232 9001  4152  NAD83(HARN) / Texas North Central
+2846  14233 9001  4152  NAD83(HARN) / Texas Central
+2847  14234 9001  4152  NAD83(HARN) / Texas South Central
+2848  14235 9001  4152  NAD83(HARN) / Texas South
+2849  14331 9001  4152  NAD83(HARN) / Utah North
+2850  14332 9001  4152  NAD83(HARN) / Utah Central
+2851  14333 9001  4152  NAD83(HARN) / Utah South
+2852  14430 9001  4152  NAD83(HARN) / Vermont
+2853  14531 9001  4152  NAD83(HARN) / Virginia North
+2854  14532 9001  4152  NAD83(HARN) / Virginia South
+2855  14631 9001  4152  NAD83(HARN) / Washington North
+2856  14632 9001  4152  NAD83(HARN) / Washington South
+2857  14731 9001  4152  NAD83(HARN) / West Virginia North
+2858  14732 9001  4152  NAD83(HARN) / West Virginia South
+2859  14831 9001  4152  NAD83(HARN) / Wisconsin North
+2860  14832 9001  4152  NAD83(HARN) / Wisconsin Central
+2861  14833 9001  4152  NAD83(HARN) / Wisconsin South
+2862  14931 9001  4152  NAD83(HARN) / Wyoming East
+2863  14932 9001  4152  NAD83(HARN) / Wyoming East Central
+2864  14933 9001  4152  NAD83(HARN) / Wyoming West Central
+2865  14934 9001  4152  NAD83(HARN) / Wyoming West
+2866  15230 9001  4152  NAD83(HARN) / Puerto Rico & Virgin Is.
+2867  15304 9002  4152  NAD83(HARN) / Arizona East (ft)
+2868  15305 9002  4152  NAD83(HARN) / Arizona Central (ft)
+2869  15306 9002  4152  NAD83(HARN) / Arizona West (ft)
+2870  15307 9003  4152  NAD83(HARN) / California zone 1 (ftUS)
+2871  15308 9003  4152  NAD83(HARN) / California zone 2 (ftUS)
+2872  15309 9003  4152  NAD83(HARN) / California zone 3 (ftUS)
+2873  15310 9003  4152  NAD83(HARN) / California zone 4 (ftUS)
+2874  15311 9003  4152  NAD83(HARN) / California zone 5 (ftUS)
+2875  15312 9003  4152  NAD83(HARN) / California zone 6 (ftUS)
+2876  15313 9003  4152  NAD83(HARN) / Colorado North (ftUS)
+2877  15314 9003  4152  NAD83(HARN) / Colorado Central (ftUS)
+2878  15315 9003  4152  NAD83(HARN) / Colorado South (ftUS)
+2879  15316 9003  4152  NAD83(HARN) / Connecticut (ftUS)
+2880  15317 9003  4152  NAD83(HARN) / Delaware (ftUS)
+2881  15318 9003  4152  NAD83(HARN) / Florida East (ftUS)
+2882  15319 9003  4152  NAD83(HARN) / Florida West (ftUS)
+2883  15320 9003  4152  NAD83(HARN) / Florida North (ftUS)
+2884  15321 9003  4152  NAD83(HARN) / Georgia East (ftUS)
+2885  15322 9003  4152  NAD83(HARN) / Georgia West (ftUS)
+2886  15323 9003  4152  NAD83(HARN) / Idaho East (ftUS)
+2887  15324 9003  4152  NAD83(HARN) / Idaho Central (ftUS)
+2888  15325 9003  4152  NAD83(HARN) / Idaho West (ftUS)
+2889  15326 9003  4152  NAD83(HARN) / Indiana East (ftUS)
+2890  15327 9003  4152  NAD83(HARN) / Indiana West (ftUS)
+2891  15328 9003  4152  NAD83(HARN) / Kentucky North (ftUS)
+2892  15329 9003  4152  NAD83(HARN) / Kentucky South (ftUS)
+2893  15330 9003  4152  NAD83(HARN) / Maryland (ftUS)
+2894  15331 9003  4152  NAD83(HARN) / Massachusetts Mainland (ftUS)
+2895  15332 9003  4152  NAD83(HARN) / Massachusetts Island (ftUS)
+2896  15333 9002  4152  NAD83(HARN) / Michigan North (ft)
+2897  15334 9002  4152  NAD83(HARN) / Michigan Central (ft)
+2898  15335 9002  4152  NAD83(HARN) / Michigan South (ft)
+2899  15336 9003  4152  NAD83(HARN) / Mississippi East (ftUS)
+2900  15337 9003  4152  NAD83(HARN) / Mississippi West (ftUS)
+2901  15338 9002  4152  NAD83(HARN) / Montana (ft)
+2902  15339 9003  4152  NAD83(HARN) / New Mexico East (ftUS)
+2903  15340 9003  4152  NAD83(HARN) / New Mexico Central (ftUS)
+2904  15341 9003  4152  NAD83(HARN) / New Mexico West (ftUS)
+2905  15342 9003  4152  NAD83(HARN) / New York East (ftUS)
+2906  15343 9003  4152  NAD83(HARN) / New York Central (ftUS)
+2907  15344 9003  4152  NAD83(HARN) / New York West (ftUS)
+2908  15345 9003  4152  NAD83(HARN) / New York Long Island (ftUS)
+2909  15347 9002  4152  NAD83(HARN) / North Dakota North (ft)
+2910  15348 9002  4152  NAD83(HARN) / North Dakota South (ft)
+2911  15349 9003  4152  NAD83(HARN) / Oklahoma North (ftUS)
+2912  15350 9003  4152  NAD83(HARN) / Oklahoma South (ftUS)
+2913  15351 9002  4152  NAD83(HARN) / Oregon North (ft)
+2914  15352 9002  4152  NAD83(HARN) / Oregon South (ft)
+2915  15356 9003  4152  NAD83(HARN) / Tennessee (ftUS)
+2916  15357 9003  4152  NAD83(HARN) / Texas North (ftUS)
+2917  15358 9003  4152  NAD83(HARN) / Texas North Central (ftUS)
+2918  15359 9003  4152  NAD83(HARN) / Texas Central (ftUS)
+2919  15360 9003  4152  NAD83(HARN) / Texas South Central (ftUS)
+2920  15361 9003  4152  NAD83(HARN) / Texas South (ftUS)
+2921  15362 9002  4152  NAD83(HARN) / Utah North (ft)
+2922  15363 9002  4152  NAD83(HARN) / Utah Central (ft)
+2923  15364 9002  4152  NAD83(HARN) / Utah South (ft)
+2924  15365 9003  4152  NAD83(HARN) / Virginia North (ftUS)
+2925  15366 9003  4152  NAD83(HARN) / Virginia South (ftUS)
+2926  15367 9003  4152  NAD83(HARN) / Washington North (ftUS)
+2927  15368 9003  4152  NAD83(HARN) / Washington South (ftUS)
+2928  15369 9003  4152  NAD83(HARN) / Wisconsin North (ftUS)
+2929  15370 9003  4152  NAD83(HARN) / Wisconsin Central (ftUS)
+2930  15371 9003  4152  NAD83(HARN) / Wisconsin South (ftUS)
+2967  15372 9003  4152  NAD83(HARN) / Indiana East (ftUS)
+2968  15373 9003  4152  NAD83(HARN) / Indiana West (ftUS)
+2993  13633 9001  4152  NAD83(HARN) / Oregon Lambert
+2994  15374 9002  4152  NAD83(HARN) / Oregon Lambert (ft)
+3071  14841 9001  4152  NAD83(HARN) / Wisconsin Transverse Mercator
+3075  11851 9001  4152  NAD83(HARN) / Maine CS2000 East
+3076  11852 9001  4152  NAD83(HARN) / Maine CS2000 Central
+3077  11853 9001  4152  NAD83(HARN) / Maine CS2000 West
+3079  12150 9001  4152  NAD83(HARN) / Michigan Oblique Mercator
+3084  14253 9001  4152  NAD83(HARN) / Texas Centric Lambert Conformal
+3085  14254 9001  4152  NAD83(HARN) / Texas Centric Albers Equal Area
+3087  10934 9001  4152  NAD83(HARN) / Florida GDL Albers
+3090  11630 9001  4152  NAD83(HARN) / Kentucky Single Zone
+3091  15375 9003  4152  NAD83(HARN) / Kentucky Single Zone (ftUS)
+3311  10420 9001  4152  NAD83(HARN) / California Albers
+3358  13230 9001  4152  NAD83(HARN) / North Carolina
+3359  15346 9003  4152  NAD83(HARN) / North Carolina (ftUS)
+3360  13930 9001  4152  NAD83(HARN) / South Carolina
+3361  15355 9002  4152  NAD83(HARN) / South Carolina (ft)
+3362  13731 9001  4152  NAD83(HARN) / Pennsylvania North
+3363  15353 9003  4152  NAD83(HARN) / Pennsylvania North (ftUS)
+3364  13732 9001  4152  NAD83(HARN) / Pennsylvania South
+3365  15354 9003  4152  NAD83(HARN) / Pennsylvania South (ftUS)
+2057  19951 9001  4153  Rassadiran / Nakhl e Taqi
+2058  16038 9001  4154  ED50(ED77) / UTM zone 38N
+2059  16039 9001  4154  ED50(ED77) / UTM zone 39N
+2060  16040 9001  4154  ED50(ED77) / UTM zone 40N
+2061  16041 9001  4154  ED50(ED77) / UTM zone 41N
+2066  19924 9039  4157  Mount Dillon / Tobago Grid
+2067  16020 9001  4158  Naparima 1955 / UTM zone 20N
+2068  18240 9001  4159  ELD79 / Libya zone 5
+2069  18241 9001  4159  ELD79 / Libya zone 6
+2070  18242 9001  4159  ELD79 / Libya zone 7
+2071  18243 9001  4159  ELD79 / Libya zone 8
+2072  18244 9001  4159  ELD79 / Libya zone 9
+2073  18245 9001  4159  ELD79 / Libya zone 10
+2074  18246 9001  4159  ELD79 / Libya zone 11
+2075  18247 9001  4159  ELD79 / Libya zone 12
+2076  18248 9001  4159  ELD79 / Libya zone 13
+2077  16032 9001  4159  ELD79 / UTM zone 32N
+2078  16033 9001  4159  ELD79 / UTM zone 33N
+2079  16034 9001  4159  ELD79 / UTM zone 34N
+2080  16035 9001  4159  ELD79 / UTM zone 35N
+2087  16412 9001  4159  ELD79 / TM 12 NE
+2081  18032 9001  4160  Chos Malal 1914 / Argentina zone 2
+2082  18032 9001  4161  Pampa del Castillo / Argentina zone 2
+2096  18251 9001  4162  Korean 1985 / Korea East Belt
+2097  18252 9001  4162  Korean 1985 / Korea Central Belt
+2098  18253 9001  4162  Korean 1985 / Korea West Belt
+2089  16038 9001  4163  Yemen NGN96 / UTM zone 38N
+2090  16039 9001  4163  Yemen NGN96 / UTM zone 39N
+2091  16208 9001  4164  South Yemen / Gauss Kruger zone 8
+2092  16209 9001  4164  South Yemen / Gauss Kruger zone 9
+2395  16208 9001  4164  South Yemen / Gauss-Kruger zone 8
+2396  16209 9001  4164  South Yemen / Gauss-Kruger zone 9
+2095  16028 9001  4165  Bissau / UTM zone 28N
+2105  17931 9001  4167  NZGD2000 / Mount Eden Circuit 2000
+2106  17932 9001  4167  NZGD2000 / Bay of Plenty Circuit 2000
+2107  17933 9001  4167  NZGD2000 / Poverty Bay Circuit 2000
+2108  17934 9001  4167  NZGD2000 / Hawkes Bay Circuit 2000
+2109  17935 9001  4167  NZGD2000 / Taranaki Circuit 2000
+2110  17936 9001  4167  NZGD2000 / Tuhirangi Circuit 2000
+2111  17937 9001  4167  NZGD2000 / Wanganui Circuit 2000
+2112  17938 9001  4167  NZGD2000 / Wairarapa Circuit 2000
+2113  17939 9001  4167  NZGD2000 / Wellington Circuit 2000
+2114  17940 9001  4167  NZGD2000 / Collingwood Circuit 2000
+2115  17941 9001  4167  NZGD2000 / Nelson Circuit 2000
+2116  17942 9001  4167  NZGD2000 / Karamea Circuit 2000
+2117  17943 9001  4167  NZGD2000 / Buller Circuit 2000
+2118  17944 9001  4167  NZGD2000 / Grey Circuit 2000
+2119  17945 9001  4167  NZGD2000 / Amuri Circuit 2000
+2120  17946 9001  4167  NZGD2000 / Marlborough Circuit 2000
+2121  17947 9001  4167  NZGD2000 / Hokitika Circuit 2000
+2122  17948 9001  4167  NZGD2000 / Okarito Circuit 2000
+2123  17949 9001  4167  NZGD2000 / Jacksons Bay Circuit 2000
+2124  17950 9001  4167  NZGD2000 / Mount Pleasant Circuit 2000
+2125  17951 9001  4167  NZGD2000 / Gawler Circuit 2000
+2126  17952 9001  4167  NZGD2000 / Timaru Circuit 2000
+2127  17953 9001  4167  NZGD2000 / Lindis Peak Circuit 2000
+2128  17954 9001  4167  NZGD2000 / Mount Nicholas Circuit 2000
+2129  17955 9001  4167  NZGD2000 / Mount York Circuit 2000
+2130  17956 9001  4167  NZGD2000 / Observation Point Circuit 2000
+2131  17957 9001  4167  NZGD2000 / North Taieri Circuit 2000
+2132  17958 9001  4167  NZGD2000 / Bluff Circuit 2000
+2133  16158 9001  4167  NZGD2000 / UTM zone 58S
+2134  16159 9001  4167  NZGD2000 / UTM zone 59S
+2135  16160 9001  4167  NZGD2000 / UTM zone 60S
+2193  19971 9001  4167  NZGD2000 / New Zealand Transverse Mercator
+2136  19959 9094  4168  Accra / Ghana National Grid
+2137  17001 9001  4168  Accra / TM 1 NW
+2155  15300 9003  4169  American Samoa 1962 / American Samoa Lambert
+2194  15301 9003  4169  American Samoa 1962 / American Samoa Lambert
+3102  15376 9003  4169  American Samoa 1962 / American Samoa Lambert
+31986 16017 9001  4170  SIRGAS / UTM zone 17N
+31987 16018 9001  4170  SIRGAS / UTM zone 18N
+31988 16019 9001  4170  SIRGAS / UTM zone 19N
+31989 16020 9001  4170  SIRGAS / UTM zone 20N
+31990 16021 9001  4170  SIRGAS / UTM zone 21N
+31991 16022 9001  4170  SIRGAS / UTM zone 22N
+31992 16117 9001  4170  SIRGAS / UTM zone 17S
+31993 16118 9001  4170  SIRGAS / UTM zone 18S
+31994 16119 9001  4170  SIRGAS / UTM zone 19S
+31995 16120 9001  4170  SIRGAS / UTM zone 20S
+31996 16121 9001  4170  SIRGAS / UTM zone 21S
+31997 16122 9001  4170  SIRGAS / UTM zone 22S
+31998 16123 9001  4170  SIRGAS / UTM zone 23S
+31999 16124 9001  4170  SIRGAS / UTM zone 24S
+32000 16125 9001  4170  SIRGAS / UTM zone 25S
+2154  18085 9001  4171  RGF93 / Lambert-93
+2157  19962 9001  4173  IRENET95 / Irish Transverse Mercator
+2158  16029 9001  4173  IRENET95 / UTM zone 29N
+2159  19963 9094  4174  Sierra Leone 1924 / New Colony Grid
+2160  19964 9094  4174  Sierra Leone 1924 / New War Office Grid
+2161  16028 9001  4175  Sierra Leone 1968 / UTM zone 28N
+2162  16029 9001  4175  Sierra Leone 1968 / UTM zone 29N
+2166  16263 9001  4178  Pulkovo 1942(83) / Gauss Kruger zone 3
+2167  16264 9001  4178  Pulkovo 1942(83) / Gauss Kruger zone 4
+2168  16265 9001  4178  Pulkovo 1942(83) / Gauss Kruger zone 5
+2397  16263 9001  4178  Pulkovo 1942(83) / Gauss-Kruger zone 3
+2398  16264 9001  4178  Pulkovo 1942(83) / Gauss-Kruger zone 4
+2399  16265 9001  4178  Pulkovo 1942(83) / Gauss-Kruger zone 5
+2171  18281 9001  4179  Pulkovo 1942(58) / Poland zone I
+2172  18282 9001  4179  Pulkovo 1942(58) / Poland zone II
+2173  18283 9001  4179  Pulkovo 1942(58) / Poland zone III
+2174  18284 9001  4179  Pulkovo 1942(58) / Poland zone IV
+2175  18285 9001  4179  Pulkovo 1942(58) / Poland zone V
+3120  18280 9001  4179  Pulkovo 1942(58) / Poland zone I
+3328  18286 9001  4179  Pulkovo 1942(58) / GUGiK-80
+3329  16265 9001  4179  Pulkovo 1942(58) / 3-degree Gauss-Kruger zone 5
+3330  16266 9001  4179  Pulkovo 1942(58) / 3-degree Gauss-Kruger zone 6
+3331  16267 9001  4179  Pulkovo 1942(58) / 3-degree Gauss-Kruger zone 7
+3332  16268 9001  4179  Pulkovo 1942(58) / 3-degree Gauss-Kruger zone 8
+3333  16203 9001  4179  Pulkovo 1942(58) / Gauss-Kruger zone 3
+3334  16204 9001  4179  Pulkovo 1942(58) / Gauss-Kruger zone 4
+3335  16205 9001  4179  Pulkovo 1942(58) / Gauss-Kruger zone 5
+3301  19938 9001  4180  Estonian Coordinate System of 1997
+2169  19966 9001  4181  Luxembourg 1930 / Gauss
+2188  16025 9001  4182  Azores Occidental 1939 / UTM zone 25N
+2189  16026 9001  4183  Azores Central 1948 / UTM zone 26N
+2190  16026 9001  4184  Azores Oriental 1940 / UTM zone 26N
+2191  16028 9001  4185  Madeira 1936 / UTM zone 28N
+29901 19973 9001  4188  OSNI 1952 / Irish National Grid
+2201  16018 9001  4189  REGVEN / UTM zone 18N
+2202  16019 9001  4189  REGVEN / UTM zone 19N
+2203  16020 9001  4189  REGVEN / UTM zone 20N
+22171 18031 9001  4190  POSGAR 98 / Argentina 1
+22172 18032 9001  4190  POSGAR 98 / Argentina 2
+22173 18033 9001  4190  POSGAR 98 / Argentina 3
+22174 18034 9001  4190  POSGAR 98 / Argentina 4
+22175 18035 9001  4190  POSGAR 98 / Argentina 5
+22176 18036 9001  4190  POSGAR 98 / Argentina 6
+22177 18037 9001  4190  POSGAR 98 / Argentina 7
+2199  16204 9001  4191  Albanian 1987 / Gauss Kruger zone 4
+2462  16204 9001  4191  Albanian 1987 / Gauss-Kruger zone 4
+2214  18415 9001  4192  Douala 1948 / AOF west
+3119  18415 9001  4192  Douala 1948 / AEF west
+2215  16032 9001  4193  Manoca 1962 / UTM zone 32N
+2216  16022 9001  4194  Qornoq 1927 / UTM zone 22N
+2217  16023 9001  4194  Qornoq 1927 / UTM zone 23N
+2297  18421 9001  4194  Qornoq 1927 / Greenland zone 1 east
+2298  18422 9001  4194  Qornoq 1927 / Greenland zone 2 east
+2299  18432 9001  4194  Qornoq 1927 / Greenland zone 2 west
+2300  18423 9001  4194  Qornoq 1927 / Greenland zone 3 east
+2301  18433 9001  4194  Qornoq 1927 / Greenland zone 3 west
+2302  18424 9001  4194  Qornoq 1927 / Greenland zone 4 east
+2303  18434 9001  4194  Qornoq 1927 / Greenland zone 4 west
+2304  18435 9001  4194  Qornoq 1927 / Greenland zone 5 west
+2305  18436 9001  4194  Qornoq 1927 / Greenland zone 6 west
+2306  18437 9001  4194  Qornoq 1927 / Greenland zone 7 west
+2307  18428 9001  4194  Qornoq 1927 / Greenland zone 8 east
+2218  18425 9001  4195  Scoresbysund 1952 / Greenland zone 5 east
+2221  18426 9001  4195  Scoresbysund 1952 / Greenland zone 6 east
+2296  18427 9001  4196  Ammassalik 1958 / Greenland zone 7 east
+2312  16033 9001  4197  Garoua / UTM zone 33N
+2313  16033 9001  4198  Kousseri / UTM zone 33N
+2463  16304 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 21E
+2464  16305 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 27E
+2465  16306 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 33E
+2466  16307 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 39E
+2467  16308 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 45E
+2468  16309 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 51E
+2469  16310 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 57E
+2470  16311 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 63E
+2471  16312 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 69E
+2472  16313 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 75E
+2473  16314 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 81E
+2474  16315 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 87E
+2475  16316 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 93E
+2476  16317 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 99E
+2477  16318 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 105E
+2478  16319 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 111E
+2479  16320 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 117E
+2480  16321 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 123E
+2481  16322 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 129E
+2482  16323 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 135E
+2483  16324 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 141E
+2484  16325 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 147E
+2485  16326 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 153E
+2486  16327 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 159E
+2487  16328 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 165E
+2488  16329 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 171E
+2489  16330 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 177E
+2490  16331 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 177W
+2491  16332 9001  4200  Pulkovo 1995 / Gauss-Kruger CM 171W
+2641  16267 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 7
+2642  16268 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 8
+2643  16269 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 9
+2644  16270 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 10
+2645  16271 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 11
+2646  16272 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 12
+2647  16273 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 13
+2648  16274 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 14
+2649  16275 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 15
+2650  16276 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 16
+2651  16277 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 17
+2652  16278 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 18
+2653  16279 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 19
+2654  16280 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 20
+2655  16281 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 21
+2656  16282 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 22
+2657  16283 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 23
+2658  16284 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 24
+2659  16285 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 25
+2660  16286 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 26
+2661  16287 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 27
+2662  16288 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 28
+2663  16289 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 29
+2664  16290 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 30
+2665  16291 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 31
+2666  16292 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 32
+2667  16293 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 33
+2668  16294 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 34
+2669  16295 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 35
+2670  16296 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 36
+2671  16297 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 37
+2672  16298 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 38
+2673  16299 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 39
+2674  16070 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 40
+2675  16071 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 41
+2676  16072 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 42
+2677  16073 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 43
+2678  16074 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 44
+2679  16075 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 45
+2680  16076 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 46
+2681  16077 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 47
+2682  16078 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 48
+2683  16079 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 49
+2684  16080 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 50
+2685  16081 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 51
+2686  16082 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 52
+2687  16083 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 53
+2688  16084 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 54
+2689  16085 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 55
+2690  16086 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 56
+2691  16087 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 57
+2692  16088 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 58
+2693  16089 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 59
+2694  16090 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 60
+2695  16091 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 61
+2696  16092 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 62
+2697  16093 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 63
+2698  16094 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger zone 64
+2699  16367 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 21E
+2700  16368 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 24E
+2701  16369 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 27E
+2702  16370 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 30E
+2703  16371 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 33E
+2704  16372 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 36E
+2705  16373 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 39E
+2706  16374 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 42E
+2707  16375 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 45E
+2708  16376 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 48E
+2709  16377 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 51E
+2710  16378 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 54E
+2711  16379 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 57E
+2712  16380 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 60E
+2713  16381 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 63E
+2714  16382 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 66E
+2715  16383 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 69E
+2716  16384 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 72E
+2717  16385 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 75E
+2718  16386 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 78E
+2719  16387 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 81E
+2720  16388 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 84E
+2721  16389 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 87E
+2722  16390 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 90E
+2723  16391 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 93E
+2724  16392 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 96E
+2725  16393 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 99E
+2726  16394 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 102E
+2727  16395 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 105E
+2728  16396 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 108E
+2729  16397 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 111E
+2730  16398 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 114E
+2731  16399 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 117E
+2732  16170 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 120E
+2733  16171 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 123E
+2734  16172 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 126E
+2735  16173 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 129E
+2738  16174 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 132E
+2739  16175 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 135E
+2740  16176 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 138E
+2741  16177 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 141E
+2742  16178 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 144E
+2743  16179 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 147E
+2744  16180 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 150E
+2745  16181 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 153E
+2746  16182 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 156E
+2747  16183 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 159E
+2748  16184 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 162E
+2749  16185 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 165E
+2750  16186 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 168E
+2751  16187 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 171E
+2752  16188 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 174E
+2753  16189 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 177E
+2754  16190 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 180E
+2755  16191 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 177W
+2756  16192 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 174W
+2757  16193 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 171W
+2758  16194 9001  4200  Pulkovo 1995 / 3-degree Gauss-Kruger CM 168W
+20004 16204 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 4
+20005 16205 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 5
+20006 16206 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 6
+20007 16207 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 7
+20008 16208 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 8
+20009 16209 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 9
+20010 16210 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 10
+20011 16211 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 11
+20012 16212 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 12
+20013 16213 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 13
+20014 16214 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 14
+20015 16215 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 15
+20016 16216 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 16
+20017 16217 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 17
+20018 16218 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 18
+20019 16219 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 19
+20020 16220 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 20
+20021 16221 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 21
+20022 16222 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 22
+20023 16223 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 23
+20024 16224 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 24
+20025 16225 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 25
+20026 16226 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 26
+20027 16227 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 27
+20028 16228 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 28
+20029 16229 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 29
+20030 16230 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 30
+20031 16231 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 31
+20032 16232 9001  4200  Pulkovo 1995 / Gauss-Kruger zone 32
+20064 16304 9001  4200  Pulkovo 1995 / Gauss-Kruger 4N
+20065 16305 9001  4200  Pulkovo 1995 / Gauss-Kruger 5N
+20066 16306 9001  4200  Pulkovo 1995 / Gauss-Kruger 6N
+20067 16307 9001  4200  Pulkovo 1995 / Gauss-Kruger 7N
+20068 16308 9001  4200  Pulkovo 1995 / Gauss-Kruger 8N
+20069 16309 9001  4200  Pulkovo 1995 / Gauss-Kruger 9N
+20070 16310 9001  4200  Pulkovo 1995 / Gauss-Kruger 10N
+20071 16311 9001  4200  Pulkovo 1995 / Gauss-Kruger 11N
+20072 16312 9001  4200  Pulkovo 1995 / Gauss-Kruger 12N
+20073 16313 9001  4200  Pulkovo 1995 / Gauss-Kruger 13N
+20074 16314 9001  4200  Pulkovo 1995 / Gauss-Kruger 14N
+20075 16315 9001  4200  Pulkovo 1995 / Gauss-Kruger 15N
+20076 16316 9001  4200  Pulkovo 1995 / Gauss-Kruger 16N
+20077 16317 9001  4200  Pulkovo 1995 / Gauss-Kruger 17N
+20078 16318 9001  4200  Pulkovo 1995 / Gauss-Kruger 18N
+20079 16319 9001  4200  Pulkovo 1995 / Gauss-Kruger 19N
+20080 16320 9001  4200  Pulkovo 1995 / Gauss-Kruger 20N
+20081 16321 9001  4200  Pulkovo 1995 / Gauss-Kruger 21N
+20082 16322 9001  4200  Pulkovo 1995 / Gauss-Kruger 22N
+20083 16323 9001  4200  Pulkovo 1995 / Gauss-Kruger 23N
+20084 16324 9001  4200  Pulkovo 1995 / Gauss-Kruger 24N
+20085 16325 9001  4200  Pulkovo 1995 / Gauss-Kruger 25N
+20086 16326 9001  4200  Pulkovo 1995 / Gauss-Kruger 26N
+20087 16327 9001  4200  Pulkovo 1995 / Gauss-Kruger 27N
+20088 16328 9001  4200  Pulkovo 1995 / Gauss-Kruger 28N
+20089 16329 9001  4200  Pulkovo 1995 / Gauss-Kruger 29N
+20090 16330 9001  4200  Pulkovo 1995 / Gauss-Kruger 30N
+20091 16331 9001  4200  Pulkovo 1995 / Gauss-Kruger 31N
+20092 16332 9001  4200  Pulkovo 1995 / Gauss-Kruger 32N
+20135 16035 9001  4201  Adindan / UTM zone 35N
+20136 16036 9001  4201  Adindan / UTM zone 36N
+20137 16037 9001  4201  Adindan / UTM zone 37N
+20138 16038 9001  4201  Adindan / UTM zone 38N
+3110  17360 9001  4202  AGD66 / Vicgrid66
+20248 17448 9001  4202  AGD66 / AMG zone 48
+20249 17449 9001  4202  AGD66 / AMG zone 49
+20250 17450 9001  4202  AGD66 / AMG zone 50
+20251 17451 9001  4202  AGD66 / AMG zone 51
+20252 17452 9001  4202  AGD66 / AMG zone 52
+20253 17453 9001  4202  AGD66 / AMG zone 53
+20254 17454 9001  4202  AGD66 / AMG zone 54
+20255 17455 9001  4202  AGD66 / AMG zone 55
+20256 17456 9001  4202  AGD66 / AMG zone 56
+20257 17457 9001  4202  AGD66 / AMG zone 57
+20258 17458 9001  4202  AGD66 / AMG zone 58
+20348 17448 9001  4203  AGD84 / AMG zone 48
+20349 17449 9001  4203  AGD84 / AMG zone 49
+20350 17450 9001  4203  AGD84 / AMG zone 50
+20351 17451 9001  4203  AGD84 / AMG zone 51
+20352 17452 9001  4203  AGD84 / AMG zone 52
+20353 17453 9001  4203  AGD84 / AMG zone 53
+20354 17454 9001  4203  AGD84 / AMG zone 54
+20355 17455 9001  4203  AGD84 / AMG zone 55
+20356 17456 9001  4203  AGD84 / AMG zone 56
+20357 17457 9001  4203  AGD84 / AMG zone 57
+20358 17458 9001  4203  AGD84 / AMG zone 58
+2318  19977 9001  4204  Ain el Abd / Aramco Lambert
+20436 16036 9001  4204  Ain el Abd / UTM zone 36N
+20437 16037 9001  4204  Ain el Abd / UTM zone 37N
+20438 16038 9001  4204  Ain el Abd / UTM zone 38N
+20439 16039 9001  4204  Ain el Abd / UTM zone 39N
+20440 16040 9001  4204  Ain el Abd / UTM zone 40N
+20499 19900 9001  4204  Ain el Abd / Bahrain Grid
+20538 16038 9001  4205  Afgooye / UTM zone 38N
+20539 16039 9001  4205  Afgooye / UTM zone 39N
+20822 16122 9001  4208  Aratu / UTM zone 22S
+20823 16123 9001  4208  Aratu / UTM zone 23S
+20824 16124 9001  4208  Aratu / UTM zone 24S
+20934 16134 9001  4209  Arc 1950 / UTM zone 34S
+20935 16135 9001  4209  Arc 1950 / UTM zone 35S
+20936 16136 9001  4209  Arc 1950 / UTM zone 36S
+21035 16135 9001  4210  Arc 1960 / UTM zone 35S
+21036 16136 9001  4210  Arc 1960 / UTM zone 36S
+21037 16137 9001  4210  Arc 1960 / UTM zone 37S
+21095 16035 9001  4210  Arc 1960 / UTM zone 35N
+21096 16036 9001  4210  Arc 1960 / UTM zone 36N
+21097 16037 9001  4210  Arc 1960 / UTM zone 37N
+2308  16709 9001  4211  Batavia / TM 109 SE
+3001  19905 9001  4211  Batavia / NEIEZ
+21148 16148 9001  4211  Batavia / UTM zone 48S
+21149 16149 9001  4211  Batavia / UTM zone 49S
+21150 16150 9001  4211  Batavia / UTM zone 50S
+21291 19942 9001  4212  Barbados 1938 / British West Indies Grid
+21292 19943 9001  4212  Barbados 1938 / Barbados National Grid
+2931  16413 9001  4213  Beduaram / TM 13 NE
+2401  16285 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 25
+2402  16286 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 26
+2403  16287 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 27
+2404  16288 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 28
+2405  16289 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 29
+2406  16290 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 30
+2407  16291 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 31
+2408  16292 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 32
+2409  16293 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 33
+2410  16294 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 34
+2411  16295 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 35
+2412  16296 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 36
+2413  16297 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 37
+2414  16298 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 38
+2415  16299 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 39
+2416  16070 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 40
+2417  16071 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 41
+2418  16072 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 42
+2419  16073 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 43
+2420  16074 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 44
+2421  16075 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger zone 45
+2422  16385 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 75E
+2423  16386 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 78E
+2424  16387 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 81E
+2425  16388 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 84E
+2426  16389 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 87E
+2427  16390 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 90E
+2428  16391 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 93E
+2429  16392 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 96E
+2430  16393 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 99E
+2431  16394 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 102E
+2432  16395 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 105E
+2433  16396 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 108E
+2434  16397 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 111E
+2435  16398 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 114E
+2436  16399 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 117E
+2437  16170 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 120E
+2438  16171 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 123E
+2439  16172 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 126E
+2440  16173 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 129E
+2441  16174 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 132E
+2442  16175 9001  4214  Beijing 1954 / 3-degree Gauss-Kruger CM 135E
+21413 16213 9001  4214  Beijing 1954 / Gauss-Kruger zone 13
+21414 16214 9001  4214  Beijing 1954 / Gauss-Kruger zone 14
+21415 16215 9001  4214  Beijing 1954 / Gauss-Kruger zone 15
+21416 16216 9001  4214  Beijing 1954 / Gauss-Kruger zone 16
+21417 16217 9001  4214  Beijing 1954 / Gauss-Kruger zone 17
+21418 16218 9001  4214  Beijing 1954 / Gauss-Kruger zone 18
+21419 16219 9001  4214  Beijing 1954 / Gauss-Kruger zone 19
+21420 16220 9001  4214  Beijing 1954 / Gauss-Kruger zone 20
+21421 16221 9001  4214  Beijing 1954 / Gauss-Kruger zone 21
+21422 16222 9001  4214  Beijing 1954 / Gauss-Kruger zone 22
+21423 16223 9001  4214  Beijing 1954 / Gauss-Kruger zone 23
+21453 16313 9001  4214  Beijing 1954 / Gauss-Kruger CM 75E
+21454 16314 9001  4214  Beijing 1954 / Gauss-Kruger CM 81E
+21455 16315 9001  4214  Beijing 1954 / Gauss-Kruger CM 87E
+21456 16316 9001  4214  Beijing 1954 / Gauss-Kruger CM 93E
+21457 16317 9001  4214  Beijing 1954 / Gauss-Kruger CM 99E
+21458 16318 9001  4214  Beijing 1954 / Gauss-Kruger CM 105E
+21459 16319 9001  4214  Beijing 1954 / Gauss-Kruger CM 111E
+21460 16320 9001  4214  Beijing 1954 / Gauss-Kruger CM 117E
+21461 16321 9001  4214  Beijing 1954 / Gauss-Kruger CM 123E
+21462 16322 9001  4214  Beijing 1954 / Gauss-Kruger CM 129E
+21463 16323 9001  4214  Beijing 1954 / Gauss-Kruger CM 135E
+21473 16313 9001  4214  Beijing 1954 / Gauss-Kruger 13N
+21474 16314 9001  4214  Beijing 1954 / Gauss-Kruger 14N
+21475 16315 9001  4214  Beijing 1954 / Gauss-Kruger 15N
+21476 16316 9001  4214  Beijing 1954 / Gauss-Kruger 16N
+21477 16317 9001  4214  Beijing 1954 / Gauss-Kruger 17N
+21478 16318 9001  4214  Beijing 1954 / Gauss-Kruger 18N
+21479 16319 9001  4214  Beijing 1954 / Gauss-Kruger 19N
+21480 16320 9001  4214  Beijing 1954 / Gauss-Kruger 20N
+21481 16321 9001  4214  Beijing 1954 / Gauss-Kruger 21N
+21482 16322 9001  4214  Beijing 1954 / Gauss-Kruger 22N
+21483 16323 9001  4214  Beijing 1954 / Gauss-Kruger 23N
+21817 16017 9001  4218  Bogota 1975 / UTM zone 17N
+21818 16018 9001  4218  Bogota 1975 / UTM zone 18N
+21891 18051 9001  4218  Bogota 1975 / Colombia West zone
+21892 18052 9001  4218  Bogota 1975 / Colombia Bogota zone
+21893 18053 9001  4218  Bogota 1975 / Colombia East Central zone
+21894 18054 9001  4218  Bogota 1975 / Colombia East
+21896 18051 9001  4218  Bogota 1975 / Colombia West zone
+21897 18052 9001  4218  Bogota 1975 / Colombia Bogota zone
+21898 18053 9001  4218  Bogota 1975 / Colombia East Central zone
+21899 18054 9001  4218  Bogota 1975 / Colombia East
+22032 16132 9001  4220  Camacupa / UTM zone 32S
+22033 16133 9001  4220  Camacupa / UTM zone 33S
+22091 16611 9001  4220  Camacupa / TM 11.30 SE
+22092 16612 9001  4220  Camacupa / TM 12 SE
+2315  16119 9001  4221  Campo Inchauspe / UTM zone 19S
+2316  16120 9001  4221  Campo Inchauspe / UTM zone 20S
+22191 18031 9001  4221  Campo Inchauspe / Argentina 1
+22192 18032 9001  4221  Campo Inchauspe / Argentina 2
+22193 18033 9001  4221  Campo Inchauspe / Argentina 3
+22194 18034 9001  4221  Campo Inchauspe / Argentina 4
+22195 18035 9001  4221  Campo Inchauspe / Argentina 5
+22196 18036 9001  4221  Campo Inchauspe / Argentina 6
+22197 18037 9001  4221  Campo Inchauspe / Argentina 7
+22234 16134 9001  4222  Cape / UTM zone 34S
+22235 16135 9001  4222  Cape / UTM zone 35S
+22236 16136 9001  4222  Cape / UTM zone 36S
+22275 17515 9001  4222  South African Coordinate System / zone 15
+22277 17517 9001  4222  South African Coordinate System / zone 17
+22279 17519 9001  4222  South African Coordinate System / zone 19
+22281 17521 9001  4222  South African Coordinate System / zone 21
+22283 17523 9001  4222  South African Coordinate System / zone 23
+22285 17525 9001  4222  South African Coordinate System / zone 25
+22287 17527 9001  4222  South African Coordinate System / zone 27
+22289 17529 9001  4222  South African Coordinate System / zone 29
+22291 17531 9001  4222  South African Coordinate System / zone 31
+22293 17533 9001  4222  South African Coordinate System / zone 33
+2088  16411 9001  4223  Carthage / TM 11 NE
+22332 16032 9001  4223  Carthage / UTM zone 32N
+22391 18181 9001  4223  Carthage / Nord Tunisie
+22392 18182 9001  4223  Carthage / Sud Tunisie
+22521 16121 9001  4225  Corrego Alegre / UTM zone 21S
+22522 16122 9001  4225  Corrego Alegre / UTM zone 22S
+22523 16123 9001  4225  Corrego Alegre / UTM zone 23S
+22524 16124 9001  4225  Corrego Alegre / UTM zone 24S
+22525 16125 9001  4225  Corrego Alegre / UTM zone 25S
+22700 19940 9001  4227  Deir ez Zor / Levant Zone
+22770 19948 9001  4227  Deir ez Zor / Syria Lambert
+22780 19949 9001  4227  Deir ez Zor / Levant Stereographic
+22832 16032 9001  4228  Douala / UTM zone 32N
+22991 18071 9001  4229  Egypt 1907 / Blue Belt
+22992 18072 9001  4229  Egypt 1907 / Red Belt
+22993 18073 9001  4229  Egypt 1907 / Purple Belt
+22994 18074 9001  4229  Egypt 1907 / Extended Purple Belt
+2192  18086 9001  4230  ED50 / France EuroLambert
+2206  16269 9001  4230  ED50 / 3-degree Gauss-Kruger zone 9
+2207  16270 9001  4230  ED50 / 3-degree Gauss-Kruger zone 10
+2208  16271 9001  4230  ED50 / 3-degree Gauss-Kruger zone 11
+2209  16272 9001  4230  ED50 / 3-degree Gauss-Kruger zone 12
+2210  16273 9001  4230  ED50 / 3-degree Gauss-Kruger zone 13
+2211  16274 9001  4230  ED50 / 3-degree Gauss-Kruger zone 14
+2212  16275 9001  4230  ED50 / 3-degree Gauss-Kruger zone 15
+2319  16369 9001  4230  ED50 / TM27
+2320  16370 9001  4230  ED50 / TM30
+2321  16371 9001  4230  ED50 / TM33
+2322  16372 9001  4230  ED50 / TM36
+2323  16373 9001  4230  ED50 / TM39
+2324  16374 9001  4230  ED50 / TM42
+2325  16375 9001  4230  ED50 / TM45
+3066  19995 9001  4230  ED50 / Jordan TM
+23028 16028 9001  4230  ED50 / UTM zone 28N
+23029 16029 9001  4230  ED50 / UTM zone 29N
+23030 16030 9001  4230  ED50 / UTM zone 30N
+23031 16031 9001  4230  ED50 / UTM zone 31N
+23032 16032 9001  4230  ED50 / UTM zone 32N
+23033 16033 9001  4230  ED50 / UTM zone 33N
+23034 16034 9001  4230  ED50 / UTM zone 34N
+23035 16035 9001  4230  ED50 / UTM zone 35N
+23036 16036 9001  4230  ED50 / UTM zone 36N
+23037 16037 9001  4230  ED50 / UTM zone 37N
+23038 16038 9001  4230  ED50 / UTM zone 38N
+23090 16400 9001  4230  ED50 / TM 0 N
+23095 16405 9001  4230  ED50 / TM 5 NE
+23239 16039 9001  4232  Fahud / UTM zone 39N
+23240 16040 9001  4232  Fahud / UTM zone 40N
+23433 16033 9001  4234  Garoua / UTM zone 33N
+23700 19931 9001  4237  HD72 / EOV
+23846 16046 9001  4238  ID74 / UTM zone 46N
+23847 16047 9001  4238  ID74 / UTM zone 47N
+23848 16048 9001  4238  ID74 / UTM zone 48N
+23849 16049 9001  4238  ID74 / UTM zone 49N
+23850 16050 9001  4238  ID74 / UTM zone 50N
+23851 16051 9001  4238  ID74 / UTM zone 51N
+23852 16052 9001  4238  ID74 / UTM zone 52N
+23853 16053 9001  4238  ID74 / UTM zone 53N
+23886 16146 9001  4238  ID74 / UTM zone 46S
+23887 16147 9001  4238  ID74 / UTM zone 47S
+23888 16148 9001  4238  ID74 / UTM zone 48S
+23889 16149 9001  4238  ID74 / UTM zone 49S
+23890 16150 9001  4238  ID74 / UTM zone 50S
+23891 16151 9001  4238  ID74 / UTM zone 51S
+23892 16152 9001  4238  ID74 / UTM zone 52S
+23893 16153 9001  4238  ID74 / UTM zone 53S
+23894 16154 9001  4238  ID74 / UTM zone 54S
+23946 16046 9001  4239  Indian 1954 / UTM zone 46N
+23947 16047 9001  4239  Indian 1954 / UTM zone 47N
+23948 16048 9001  4239  Indian 1954 / UTM zone 48N
+24047 16047 9001  4240  Indian 1975 / UTM zone 47N
+24048 16048 9001  4240  Indian 1975 / UTM zone 48N
+24100 19909 9005  4241  Jamaica 1875 / Jamaica (Old Grid)
+24200 19910 9001  4242  JAD69 / Jamaica National Grid
+24370 18110 9084  4243  Kalianpur 1880 / India zone 0
+24371 18111 9084  4243  Kalianpur 1880 / India zone I
+24372 18112 9084  4243  Kalianpur 1880 / India zone IIa
+24373 18114 9084  4243  Kalianpur 1880 / India zone III
+24374 18116 9084  4243  Kalianpur 1880 / India zone IV
+24382 18113 9084  4243  Kalianpur 1880 / India zone IIb
+24500 19920 9001  4245  Kertau / Singapore Grid
+24547 16047 9001  4245  Kertau / UTM zone 47N
+24548 16048 9001  4245  Kertau / UTM zone 48N
+24571 19935 9062  4245  Kertau / R.S.O. Malaya (ch)
+24600 19906 9001  4246  KOC Lambert
+24718 16018 9001  4247  La Canoa / UTM zone 18N
+24719 16019 9001  4247  La Canoa / UTM zone 19N
+24720 16020 9001  4247  La Canoa / UTM zone 20N
+2317  19976 9001  4248  PSAD56 / ICN Regional
+24817 16017 9001  4248  PSAD56 / UTM zone 17N
+24818 16018 9001  4248  PSAD56 / UTM zone 18N
+24819 16019 9001  4248  PSAD56 / UTM zone 19N
+24820 16020 9001  4248  PSAD56 / UTM zone 20N
+24821 16021 9001  4248  PSAD56 / UTM zone 21N
+24877 16117 9001  4248  PSAD56 / UTM zone 17S
+24878 16118 9001  4248  PSAD56 / UTM zone 18S
+24879 16119 9001  4248  PSAD56 / UTM zone 19S
+24880 16120 9001  4248  PSAD56 / UTM zone 20S
+24881 16121 9001  4248  PSAD56 / UTM zone 21S
+24882 16122 9001  4248  PSAD56 / UTM zone 22S
+24891 18161 9001  4248  PSAD56 / Peru west zone
+24892 18162 9001  4248  PSAD56 / Peru central zone
+24893 18163 9001  4248  PSAD56 / Peru east zone
+2101  18260 9001  4249  Lake / Maracaibo Grid M1
+2102  18261 9001  4249  Lake / Maracaibo Grid
+2103  18262 9001  4249  Lake / Maracaibo Grid M3
+2104  18263 9001  4249  Lake / Maracaibo La Rosa Grid
+25000 19904 9001  4250  Leigon / Ghana Metre Grid
+25231 16031 9001  4252  Lome / UTM zone 31N
+25391 18171 9001  4253  Luzon 1911 / Philippines zone I
+25392 18172 9001  4253  Luzon 1911 / Philippines zone II
+25393 18173 9001  4253  Luzon 1911 / Philippines zone III
+25394 18174 9001  4253  Luzon 1911 / Philippines zone IV
+25395 18175 9001  4253  Luzon 1911 / Philippines zone V
+2083  18032 9001  4254  Hito XVIII 1963 / Argentina zone 2
+2084  16119 9001  4254  Hito XVIII 1963 / UTM zone 19S
+3002  19905 9001  4257  Makassar / NEIEZ
+2176  18305 9001  4258  ETRS89 / Poland CS2000 zone 5
+2177  18306 9001  4258  ETRS89 / Poland CS2000 zone 6
+2178  18307 9001  4258  ETRS89 / Poland CS2000 zone 7
+2179  18308 9001  4258  ETRS89 / Poland CS2000 zone 8
+2180  18300 9001  4258  ETRS89 / Poland CS92
+2196  18401 9001  4258  ETRS89 / Kp2000 Jutland
+2197  18402 9001  4258  ETRS89 / Kp2000 Zealand
+2198  18403 9001  4258  ETRS89 / Kp2000 Bornholm
+2213  16430 9001  4258  ETRS89 / TM 30 NE
+3034  19985 9001  4258  ETRS89 / ETRS-LCC
+3035  19986 9001  4258  ETRS89 / ETRS-LAEA
+3038  16026 9001  4258  ETRS89 / ETRS-TM26
+3039  16027 9001  4258  ETRS89 / ETRS-TM27
+3040  16028 9001  4258  ETRS89 / ETRS-TM28
+3041  16029 9001  4258  ETRS89 / ETRS-TM29
+3042  16030 9001  4258  ETRS89 / ETRS-TM30
+3043  16031 9001  4258  ETRS89 / ETRS-TM31
+3044  16032 9001  4258  ETRS89 / ETRS-TM32
+3045  16033 9001  4258  ETRS89 / ETRS-TM33
+3046  16034 9001  4258  ETRS89 / ETRS-TM34
+3047  16035 9001  4258  ETRS89 / ETRS-TM35
+3048  16036 9001  4258  ETRS89 / ETRS-TM36
+3049  16037 9001  4258  ETRS89 / ETRS-TM37
+3050  16038 9001  4258  ETRS89 / ETRS-TM38
+3051  16039 9001  4258  ETRS89 / ETRS-TM39
+3067  16065 9001  4258  ETRS89 / ETRS-TM35FIN
+3108  19998 9001  4258  ETRS89 / Guernsey Grid
+3109  19999 9001  4258  ETRS89 / Jersey Transverse Mercator
+3126  18183 9001  4258  ETRS89 / ETRS-GK19FIN
+3127  18184 9001  4258  ETRS89 / ETRS-GK20FIN
+3128  18185 9001  4258  ETRS89 / ETRS-GK21FIN
+3129  18186 9001  4258  ETRS89 / ETRS-GK22FIN
+3130  18187 9001  4258  ETRS89 / ETRS-GK23FIN
+3131  18188 9001  4258  ETRS89 / ETRS-GK24FIN
+3132  18189 9001  4258  ETRS89 / ETRS-GK25FIN
+3133  18190 9001  4258  ETRS89 / ETRS-GK26FIN
+3134  18195 9001  4258  ETRS89 / ETRS-GK27FIN
+3135  18196 9001  4258  ETRS89 / ETRS-GK28FIN
+3136  18197 9001  4258  ETRS89 / ETRS-GK29FIN
+3137  18198 9001  4258  ETRS89 / ETRS-GK30FIN
+3138  18199 9001  4258  ETRS89 / ETRS-GK31FIN
+25828 16028 9001  4258  ETRS89 / UTM zone 28N
+25829 16029 9001  4258  ETRS89 / UTM zone 29N
+25830 16030 9001  4258  ETRS89 / UTM zone 30N
+25831 16031 9001  4258  ETRS89 / UTM zone 31N
+25832 16032 9001  4258  ETRS89 / UTM zone 32N
+25833 16033 9001  4258  ETRS89 / UTM zone 33N
+25834 16034 9001  4258  ETRS89 / UTM zone 34N
+25835 16035 9001  4258  ETRS89 / UTM zone 35N
+25836 16036 9001  4258  ETRS89 / UTM zone 36N
+25837 16037 9001  4258  ETRS89 / UTM zone 37N
+25838 16038 9001  4258  ETRS89 / UTM zone 38N
+25884 19939 9001  4258  ETRS89 / TM Baltic93
+25932 16132 9001  4259  Malongo 1987 / UTM zone 32S
+26191 18131 9001  4261  Merchich / Nord Maroc
+26192 18132 9001  4261  Merchich / Sud Maroc
+26193 18133 9001  4261  Merchich / Sahara
+26194 18134 9001  4261  Merchich / Sahara Nord
+26195 18135 9001  4261  Merchich / Sahara Sud
+26237 16037 9001  4262  Massawa / UTM zone 37N
+26331 16031 9001  4263  Minna / UTM zone 31N
+26332 16032 9001  4263  Minna / UTM zone 32N
+26391 18151 9001  4263  Minna / Nigeria West Belt
+26392 18152 9001  4263  Minna / Nigeria Mid Belt
+26393 18153 9001  4263  Minna / Nigeria East Belt
+26432 16132 9001  4264  Mhast / UTM zone 32S
+3003  18121 9001  4265  Monte Mario / Italy zone 1
+3004  18122 9001  4265  Monte Mario / Italy zone 2
+26632 16032 9001  4266  M'poraloko / UTM zone 32N
+26692 16132 9001  4266  M'poraloko / UTM zone 32S
+2085  18061 9001  4267  NAD27 / Cuba Norte
+2086  18062 9001  4267  NAD27 / Cuba Sur
+2204  15302 9003  4267  NAD27 / Tennessee
+2964  15020 9003  4267  NAD27 / Alaska Albers
+3069  14811 9001  4267  NAD27 / Wisconsin Transverse Mercator
+3080  14252 9002  4267  NAD27 / Shackleford
+3309  10420 9001  4267  NAD27 / California Albers
+3370  16059 9001  4267  NAD27 / UTM zone 59N
+3371  16060 9001  4267  NAD27 / UTM zone 60N
+26701 16001 9001  4267  NAD27 / UTM zone 1N
+26702 16002 9001  4267  NAD27 / UTM zone 2N
+26703 16003 9001  4267  NAD27 / UTM zone 3N
+26704 16004 9001  4267  NAD27 / UTM zone 4N
+26705 16005 9001  4267  NAD27 / UTM zone 5N
+26706 16006 9001  4267  NAD27 / UTM zone 6N
+26707 16007 9001  4267  NAD27 / UTM zone 7N
+26708 16008 9001  4267  NAD27 / UTM zone 8N
+26709 16009 9001  4267  NAD27 / UTM zone 9N
+26710 16010 9001  4267  NAD27 / UTM zone 10N
+26711 16011 9001  4267  NAD27 / UTM zone 11N
+26712 16012 9001  4267  NAD27 / UTM zone 12N
+26713 16013 9001  4267  NAD27 / UTM zone 13N
+26714 16014 9001  4267  NAD27 / UTM zone 14N
+26715 16015 9001  4267  NAD27 / UTM zone 15N
+26716 16016 9001  4267  NAD27 / UTM zone 16N
+26717 16017 9001  4267  NAD27 / UTM zone 17N
+26718 16018 9001  4267  NAD27 / UTM zone 18N
+26719 16019 9001  4267  NAD27 / UTM zone 19N
+26720 16020 9001  4267  NAD27 / UTM zone 20N
+26721 16021 9001  4267  NAD27 / UTM zone 21N
+26722 16022 9001  4267  NAD27 / UTM zone 22N
+26729 10101 9003  4267  NAD27 / Alabama East
+26730 10102 9003  4267  NAD27 / Alabama West
+26731 15001 9003  4267  NAD27 / Alaska zone 1
+26732 15002 9003  4267  NAD27 / Alaska zone 2
+26733 15003 9003  4267  NAD27 / Alaska zone 3
+26734 15004 9003  4267  NAD27 / Alaska zone 4
+26735 15005 9003  4267  NAD27 / Alaska zone 5
+26736 15006 9003  4267  NAD27 / Alaska zone 6
+26737 15007 9003  4267  NAD27 / Alaska zone 7
+26738 15008 9003  4267  NAD27 / Alaska zone 8
+26739 15009 9003  4267  NAD27 / Alaska zone 9
+26740 15010 9003  4267  NAD27 / Alaska zone 10
+26741 10401 9003  4267  NAD27 / California zone I
+26742 10402 9003  4267  NAD27 / California zone II
+26743 10403 9003  4267  NAD27 / California zone III
+26744 10404 9003  4267  NAD27 / California zone IV
+26745 10405 9003  4267  NAD27 / California zone V
+26746 10406 9003  4267  NAD27 / California zone VI
+26747 10407 9003  4267  NAD27 / California zone VII
+26748 10201 9003  4267  NAD27 / Arizona East
+26749 10202 9003  4267  NAD27 / Arizona Central
+26750 10203 9003  4267  NAD27 / Arizona West
+26751 10301 9003  4267  NAD27 / Arkansas North
+26752 10302 9003  4267  NAD27 / Arkansas South
+26753 10501 9003  4267  NAD27 / Colorado North
+26754 10502 9003  4267  NAD27 / Colorado Central
+26755 10503 9003  4267  NAD27 / Colorado South
+26756 10600 9003  4267  NAD27 / Connecticut
+26757 10700 9003  4267  NAD27 / Delaware
+26758 10901 9003  4267  NAD27 / Florida East
+26759 10902 9003  4267  NAD27 / Florida West
+26760 10903 9003  4267  NAD27 / Florida North
+26766 11001 9003  4267  NAD27 / Georgia East
+26767 11002 9003  4267  NAD27 / Georgia West
+26768 11101 9003  4267  NAD27 / Idaho East
+26769 11102 9003  4267  NAD27 / Idaho Central
+26770 11103 9003  4267  NAD27 / Idaho West
+26771 11201 9003  4267  NAD27 / Illinois East
+26772 11202 9003  4267  NAD27 / Illinois West
+26773 11301 9003  4267  NAD27 / Indiana East
+26774 11302 9003  4267  NAD27 / Indiana West
+26775 11401 9003  4267  NAD27 / Iowa North
+26776 11402 9003  4267  NAD27 / Iowa South
+26777 11501 9003  4267  NAD27 / Kansas North
+26778 11502 9003  4267  NAD27 / Kansas South
+26779 11601 9003  4267  NAD27 / Kentucky North
+26780 11602 9003  4267  NAD27 / Kentucky South
+26781 11701 9003  4267  NAD27 / Louisiana North
+26782 11702 9003  4267  NAD27 / Louisiana South
+26783 11801 9003  4267  NAD27 / Maine East
+26784 11802 9003  4267  NAD27 / Maine West
+26785 11900 9003  4267  NAD27 / Maryland
+26786 12001 9003  4267  NAD27 / Massachusetts Mainland
+26787 12002 9003  4267  NAD27 / Massachusetts Island
+26791 12201 9003  4267  NAD27 / Minnesota North
+26792 12202 9003  4267  NAD27 / Minnesota Central
+26793 12203 9003  4267  NAD27 / Minnesota South
+26794 12301 9003  4267  NAD27 / Mississippi East
+26795 12302 9003  4267  NAD27 / Mississippi West
+26796 12401 9003  4267  NAD27 / Missouri East
+26797 12402 9003  4267  NAD27 / Missouri Central
+26798 12403 9003  4267  NAD27 / Missouri West
+26799 10408 9003  4267  NAD27 / California zone VII
+32001 12501 9003  4267  NAD27 / Montana North
+32002 12502 9003  4267  NAD27 / Montana Central
+32003 12503 9003  4267  NAD27 / Montana South
+32005 12601 9003  4267  NAD27 / Nebraska North
+32006 12602 9003  4267  NAD27 / Nebraska South
+32007 12701 9003  4267  NAD27 / Nevada East
+32008 12702 9003  4267  NAD27 / Nevada Central
+32009 12703 9003  4267  NAD27 / Nevada West
+32010 12800 9003  4267  NAD27 / New Hampshire
+32011 12900 9003  4267  NAD27 / New Jersey
+32012 13001 9003  4267  NAD27 / New Mexico East
+32013 13002 9003  4267  NAD27 / New Mexico Central
+32014 13003 9003  4267  NAD27 / New Mexico West
+32015 13101 9003  4267  NAD27 / New York East
+32016 13102 9003  4267  NAD27 / New York Central
+32017 13103 9003  4267  NAD27 / New York West
+32018 13104 9003  4267  NAD27 / New York Long Island
+32019 13200 9003  4267  NAD27 / North Carolina
+32020 13301 9003  4267  NAD27 / North Dakota North
+32021 13302 9003  4267  NAD27 / North Dakota South
+32022 13401 9003  4267  NAD27 / Ohio North
+32023 13402 9003  4267  NAD27 / Ohio South
+32024 13501 9003  4267  NAD27 / Oklahoma North
+32025 13502 9003  4267  NAD27 / Oklahoma South
+32026 13601 9003  4267  NAD27 / Oregon North
+32027 13602 9003  4267  NAD27 / Oregon South
+32028 13701 9003  4267  NAD27 / Pennsylvania North
+32029 13702 9003  4267  NAD27 / Pennsylvania South
+32030 13800 9003  4267  NAD27 / Rhode Island
+32031 13901 9003  4267  NAD27 / South Carolina North
+32033 13902 9003  4267  NAD27 / South Carolina South
+32034 14001 9003  4267  NAD27 / South Dakota North
+32035 14002 9003  4267  NAD27 / South Dakota South
+32036 14100 9003  4267  NAD27 / Tennessee
+32037 14201 9003  4267  NAD27 / Texas North
+32038 14202 9003  4267  NAD27 / Texas North Central
+32039 14203 9003  4267  NAD27 / Texas Central
+32040 14204 9003  4267  NAD27 / Texas South Central
+32041 14205 9003  4267  NAD27 / Texas South
+32042 14301 9003  4267  NAD27 / Utah North
+32043 14302 9003  4267  NAD27 / Utah Central
+32044 14303 9003  4267  NAD27 / Utah South
+32045 14400 9003  4267  NAD27 / Vermont
+32046 14501 9003  4267  NAD27 / Virginia North
+32047 14502 9003  4267  NAD27 / Virginia South
+32048 14601 9003  4267  NAD27 / Washington North
+32049 14602 9003  4267  NAD27 / Washington South
+32050 14701 9003  4267  NAD27 / West Virginia North
+32051 14702 9003  4267  NAD27 / West Virginia South
+32052 14801 9003  4267  NAD27 / Wisconsin North
+32053 14802 9003  4267  NAD27 / Wisconsin Central
+32054 14803 9003  4267  NAD27 / Wisconsin South
+32055 14901 9003  4267  NAD27 / Wyoming East
+32056 14902 9003  4267  NAD27 / Wyoming East Central
+32057 14903 9003  4267  NAD27 / Wyoming West Central
+32058 14904 9003  4267  NAD27 / Wyoming West
+32061 18211 9001  4267  NAD27 / Guatemala Norte
+32062 18212 9001  4267  NAD27 / Guatemala Sur
+32064 15914 9003  4267  NAD27 / BLM 14N (ftUS)
+32065 15915 9003  4267  NAD27 / BLM 15N (ftUS)
+32066 15916 9003  4267  NAD27 / BLM 16N (ftUS)
+32067 15917 9003  4267  NAD27 / BLM 17N (ftUS)
+32074 15914 9003  4267  NAD27 / BLM 14N (feet)
+32075 15915 9003  4267  NAD27 / BLM 15N (feet)
+32076 15916 9003  4267  NAD27 / BLM 16N (feet)
+32077 15917 9003  4267  NAD27 / BLM 17N (feet)
+32081 17701 9001  4267  NAD27 / MTM zone 1
+32082 17702 9001  4267  NAD27 / MTM zone 2
+32083 17703 9001  4267  NAD27 / MTM zone 3
+32084 17704 9001  4267  NAD27 / MTM zone 4
+32085 17705 9001  4267  NAD27 / MTM zone 5
+32086 17706 9001  4267  NAD27 / MTM zone 6
+32098 19944 9001  4267  NAD27 / Quebec Lambert
+26801 12101 9003  4268  NAD Michigan / Michigan East
+26802 12102 9003  4268  NAD Michigan / Michigan Old Central
+26803 12103 9003  4268  NAD Michigan / Michigan West
+26811 12111 9003  4268  NAD Michigan / Michigan North
+26812 12112 9003  4268  NAD Michigan / Michigan Central
+26813 12113 9003  4268  NAD Michigan / Michigan South
+2205  15303 9001  4269  NAD83 / Kentucky North
+2222  15304 9002  4269  NAD83 / Arizona East (ft)
+2223  15305 9002  4269  NAD83 / Arizona Central (ft)
+2224  15306 9002  4269  NAD83 / Arizona West (ft)
+2225  15307 9003  4269  NAD83 / California zone 1 (ftUS)
+2226  15308 9003  4269  NAD83 / California zone 2 (ftUS)
+2227  15309 9003  4269  NAD83 / California zone 3 (ftUS)
+2228  15310 9003  4269  NAD83 / California zone 4 (ftUS)
+2229  15311 9003  4269  NAD83 / California zone 5 (ftUS)
+2230  15312 9003  4269  NAD83 / California zone 6 (ftUS)
+2231  15313 9003  4269  NAD83 / Colorado North (ftUS)
+2232  15314 9003  4269  NAD83 / Colorado Central (ftUS)
+2233  15315 9003  4269  NAD83 / Colorado South (ftUS)
+2234  15316 9003  4269  NAD83 / Connecticut (ftUS)
+2235  15317 9003  4269  NAD83 / Delaware (ftUS)
+2236  15318 9003  4269  NAD83 / Florida East (ftUS)
+2237  15319 9003  4269  NAD83 / Florida West (ftUS)
+2238  15320 9003  4269  NAD83 / Florida North (ftUS)
+2239  15321 9003  4269  NAD83 / Georgia East (ftUS)
+2240  15322 9003  4269  NAD83 / Georgia West (ftUS)
+2241  15323 9003  4269  NAD83 / Idaho East (ftUS)
+2242  15324 9003  4269  NAD83 / Idaho Central (ftUS)
+2243  15325 9003  4269  NAD83 / Idaho West (ftUS)
+2244  15326 9003  4269  NAD83 / Indiana East (ftUS)
+2245  15327 9003  4269  NAD83 / Indiana West (ftUS)
+2246  15328 9003  4269  NAD83 / Kentucky North (ftUS)
+2247  15329 9003  4269  NAD83 / Kentucky South (ftUS)
+2248  15330 9003  4269  NAD83 / Maryland (ftUS)
+2249  15331 9003  4269  NAD83 / Massachusetts Mainland (ftUS)
+2250  15332 9003  4269  NAD83 / Massachusetts Island (ftUS)
+2251  15333 9002  4269  NAD83 / Michigan North (ft)
+2252  15334 9002  4269  NAD83 / Michigan Central (ft)
+2253  15335 9002  4269  NAD83 / Michigan South (ft)
+2254  15336 9003  4269  NAD83 / Mississippi East (ftUS)
+2255  15337 9003  4269  NAD83 / Mississippi West (ftUS)
+2256  15338 9002  4269  NAD83 / Montana (ft)
+2257  15339 9003  4269  NAD83 / New Mexico East (ftUS)
+2258  15340 9003  4269  NAD83 / New Mexico Central (ftUS)
+2259  15341 9003  4269  NAD83 / New Mexico West (ftUS)
+2260  15342 9003  4269  NAD83 / New York East (ftUS)
+2261  15343 9003  4269  NAD83 / New York Central (ftUS)
+2262  15344 9003  4269  NAD83 / New York West (ftUS)
+2263  15345 9003  4269  NAD83 / New York Long Island (ftUS)
+2264  15346 9003  4269  NAD83 / North Carolina (ftUS)
+2265  15347 9002  4269  NAD83 / North Dakota North (ft)
+2266  15348 9002  4269  NAD83 / North Dakota South (ft)
+2267  15349 9003  4269  NAD83 / Oklahoma North (ftUS)
+2268  15350 9003  4269  NAD83 / Oklahoma South (ftUS)
+2269  15351 9002  4269  NAD83 / Oregon North (ft)
+2270  15352 9002  4269  NAD83 / Oregon South (ft)
+2271  15353 9003  4269  NAD83 / Pennsylvania North (ftUS)
+2272  15354 9003  4269  NAD83 / Pennsylvania South (ftUS)
+2273  15355 9002  4269  NAD83 / South Carolina (ft)
+2274  15356 9003  4269  NAD83 / Tennessee (ftUS)
+2275  15357 9003  4269  NAD83 / Texas North (ftUS)
+2276  15358 9003  4269  NAD83 / Texas North Central (ftUS)
+2277  15359 9003  4269  NAD83 / Texas Central (ftUS)
+2278  15360 9003  4269  NAD83 / Texas South Central (ftUS)
+2279  15361 9003  4269  NAD83 / Texas South (ftUS)
+2280  15362 9002  4269  NAD83 / Utah North (ft)
+2281  15363 9002  4269  NAD83 / Utah Central (ft)
+2282  15364 9002  4269  NAD83 / Utah South (ft)
+2283  15365 9003  4269  NAD83 / Virginia North (ftUS)
+2284  15366 9003  4269  NAD83 / Virginia South (ftUS)
+2285  15367 9003  4269  NAD83 / Washington North (ftUS)
+2286  15368 9003  4269  NAD83 / Washington South (ftUS)
+2287  15369 9003  4269  NAD83 / Wisconsin North (ftUS)
+2288  15370 9003  4269  NAD83 / Wisconsin Central (ftUS)
+2289  15371 9003  4269  NAD83 / Wisconsin South (ftUS)
+2965  15372 9003  4269  NAD83 / Indiana East (ftUS)
+2966  15373 9003  4269  NAD83 / Indiana West (ftUS)
+2991  13633 9001  4269  NAD83 / Oregon Lambert
+2992  15374 9002  4269  NAD83 / Oregon Lambert (ft)
+3005  19984 9001  4269  NAD83 / BC Albers
+3070  14841 9001  4269  NAD83 / Wisconsin Transverse Mercator
+3072  11851 9001  4269  NAD83 / Maine CS2000 East
+3073  11852 9001  4269  NAD83 / Maine CS2000 Central
+3074  11853 9001  4269  NAD83 / Maine CS2000 West
+3078  12150 9001  4269  NAD83 / Michigan Oblique Mercator
+3081  14251 9001  4269  NAD83 / Texas State Mapping System
+3082  14253 9001  4269  NAD83 / Texas Centric Lambert Conformal
+3083  14254 9001  4269  NAD83 / Texas Centric Albers Equal Area
+3086  10934 9001  4269  NAD83 / Florida GDL Albers
+3088  11630 9001  4269  NAD83 / Kentucky Single Zone
+3089  15375 9003  4269  NAD83 / Kentucky Single Zone (ftUS)
+3310  10420 9001  4269  NAD83 / California Albers
+3347  19897 9001  4269  NAD83 / Statistics Canada Lambert
+3372  16059 9001  4269  NAD83 / UTM zone 59N
+3373  16060 9001  4269  NAD83 / UTM zone 60N
+26901 16001 9001  4269  NAD83 / UTM zone 1N
+26902 16002 9001  4269  NAD83 / UTM zone 2N
+26903 16003 9001  4269  NAD83 / UTM zone 3N
+26904 16004 9001  4269  NAD83 / UTM zone 4N
+26905 16005 9001  4269  NAD83 / UTM zone 5N
+26906 16006 9001  4269  NAD83 / UTM zone 6N
+26907 16007 9001  4269  NAD83 / UTM zone 7N
+26908 16008 9001  4269  NAD83 / UTM zone 8N
+26909 16009 9001  4269  NAD83 / UTM zone 9N
+26910 16010 9001  4269  NAD83 / UTM zone 10N
+26911 16011 9001  4269  NAD83 / UTM zone 11N
+26912 16012 9001  4269  NAD83 / UTM zone 12N
+26913 16013 9001  4269  NAD83 / UTM zone 13N
+26914 16014 9001  4269  NAD83 / UTM zone 14N
+26915 16015 9001  4269  NAD83 / UTM zone 15N
+26916 16016 9001  4269  NAD83 / UTM zone 16N
+26917 16017 9001  4269  NAD83 / UTM zone 17N
+26918 16018 9001  4269  NAD83 / UTM zone 18N
+26919 16019 9001  4269  NAD83 / UTM zone 19N
+26920 16020 9001  4269  NAD83 / UTM zone 20N
+26921 16021 9001  4269  NAD83 / UTM zone 21N
+26922 16022 9001  4269  NAD83 / UTM zone 22N
+26923 16023 9001  4269  NAD83 / UTM zone 23N
+26929 10131 9001  4269  NAD83 / Alabama East
+26930 10132 9001  4269  NAD83 / Alabama West
+26931 15031 9001  4269  NAD83 / Alaska zone 1
+26932 15032 9001  4269  NAD83 / Alaska zone 2
+26933 15033 9001  4269  NAD83 / Alaska zone 3
+26934 15034 9001  4269  NAD83 / Alaska zone 4
+26935 15035 9001  4269  NAD83 / Alaska zone 5
+26936 15036 9001  4269  NAD83 / Alaska zone 6
+26937 15037 9001  4269  NAD83 / Alaska zone 7
+26938 15038 9001  4269  NAD83 / Alaska zone 8
+26939 15039 9001  4269  NAD83 / Alaska zone 9
+26940 15040 9001  4269  NAD83 / Alaska zone 10
+26941 10431 9001  4269  NAD83 / California zone 1
+26942 10432 9001  4269  NAD83 / California zone 2
+26943 10433 9001  4269  NAD83 / California zone 3
+26944 10434 9001  4269  NAD83 / California zone 4
+26945 10435 9001  4269  NAD83 / California zone 5
+26946 10436 9001  4269  NAD83 / California zone 6
+26948 10231 9001  4269  NAD83 / Arizona East
+26949 10232 9001  4269  NAD83 / Arizona Central
+26950 10233 9001  4269  NAD83 / Arizona West
+26951 10331 9001  4269  NAD83 / Arkansas North
+26952 10332 9001  4269  NAD83 / Arkansas South
+26953 10531 9001  4269  NAD83 / Colorado North
+26954 10532 9001  4269  NAD83 / Colorado Central
+26955 10533 9001  4269  NAD83 / Colorado South
+26956 10630 9001  4269  NAD83 / Connecticut
+26957 10730 9001  4269  NAD83 / Delaware
+26958 10931 9001  4269  NAD83 / Florida East
+26959 10932 9001  4269  NAD83 / Florida West
+26960 10933 9001  4269  NAD83 / Florida North
+26961 15131 9001  4269  NAD83 / Hawaii zone 1
+26962 15132 9001  4269  NAD83 / Hawaii zone 2
+26963 15133 9001  4269  NAD83 / Hawaii zone 3
+26964 15134 9001  4269  NAD83 / Hawaii zone 4
+26965 15135 9001  4269  NAD83 / Hawaii zone 5
+26966 11031 9001  4269  NAD83 / Georgia East
+26967 11032 9001  4269  NAD83 / Georgia West
+26968 11131 9001  4269  NAD83 / Idaho East
+26969 11132 9001  4269  NAD83 / Idaho Central
+26970 11133 9001  4269  NAD83 / Idaho West
+26971 11231 9001  4269  NAD83 / Illinois East
+26972 11232 9001  4269  NAD83 / Illinois West
+26973 11331 9001  4269  NAD83 / Indiana East
+26974 11332 9001  4269  NAD83 / Indiana West
+26975 11431 9001  4269  NAD83 / Iowa North
+26976 11432 9001  4269  NAD83 / Iowa South
+26977 11531 9001  4269  NAD83 / Kansas North
+26978 11532 9001  4269  NAD83 / Kansas South
+26979 11631 9001  4269  NAD83 / Kentucky North
+26980 11632 9001  4269  NAD83 / Kentucky South
+26981 11731 9001  4269  NAD83 / Louisiana North
+26982 11732 9001  4269  NAD83 / Louisiana South
+26983 11831 9001  4269  NAD83 / Maine East
+26984 11832 9001  4269  NAD83 / Maine West
+26985 11930 9001  4269  NAD83 / Maryland
+26986 12031 9001  4269  NAD83 / Massachusetts Mainland
+26987 12032 9001  4269  NAD83 / Massachusetts Island
+26988 12141 9001  4269  NAD83 / Michigan North
+26989 12142 9001  4269  NAD83 / Michigan Central
+26990 12143 9001  4269  NAD83 / Michigan South
+26991 12231 9001  4269  NAD83 / Minnesota North
+26992 12232 9001  4269  NAD83 / Minnesota Central
+26993 12233 9001  4269  NAD83 / Minnesota South
+26994 12331 9001  4269  NAD83 / Mississippi East
+26995 12332 9001  4269  NAD83 / Mississippi West
+26996 12431 9001  4269  NAD83 / Missouri East
+26997 12432 9001  4269  NAD83 / Missouri Central
+26998 12433 9001  4269  NAD83 / Missouri West
+32100 12530 9001  4269  NAD83 / Montana
+32104 12630 9001  4269  NAD83 / Nebraska
+32107 12731 9001  4269  NAD83 / Nevada East
+32108 12732 9001  4269  NAD83 / Nevada Central
+32109 12733 9001  4269  NAD83 / Nevada West
+32110 12830 9001  4269  NAD83 / New Hampshire
+32111 12930 9001  4269  NAD83 / New Jersey
+32112 13031 9001  4269  NAD83 / New Mexico East
+32113 13032 9001  4269  NAD83 / New Mexico Central
+32114 13033 9001  4269  NAD83 / New Mexico West
+32115 13131 9001  4269  NAD83 / New York East
+32116 13132 9001  4269  NAD83 / New York Central
+32117 13133 9001  4269  NAD83 / New York West
+32118 13134 9001  4269  NAD83 / New York Long Island
+32119 13230 9001  4269  NAD83 / North Carolina
+32120 13331 9001  4269  NAD83 / North Dakota North
+32121 13332 9001  4269  NAD83 / North Dakota South
+32122 13431 9001  4269  NAD83 / Ohio North
+32123 13432 9001  4269  NAD83 / Ohio South
+32124 13531 9001  4269  NAD83 / Oklahoma North
+32125 13532 9001  4269  NAD83 / Oklahoma South
+32126 13631 9001  4269  NAD83 / Oregon North
+32127 13632 9001  4269  NAD83 / Oregon South
+32128 13731 9001  4269  NAD83 / Pennsylvania North
+32129 13732 9001  4269  NAD83 / Pennsylvania South
+32130 13830 9001  4269  NAD83 / Rhode Island
+32133 13930 9001  4269  NAD83 / South Carolina
+32134 14031 9001  4269  NAD83 / South Dakota North
+32135 14032 9001  4269  NAD83 / South Dakota South
+32136 14130 9001  4269  NAD83 / Tennessee
+32137 14231 9001  4269  NAD83 / Texas North
+32138 14232 9001  4269  NAD83 / Texas North Central
+32139 14233 9001  4269  NAD83 / Texas Central
+32140 14234 9001  4269  NAD83 / Texas South Central
+32141 14235 9001  4269  NAD83 / Texas South
+32142 14331 9001  4269  NAD83 / Utah North
+32143 14332 9001  4269  NAD83 / Utah Central
+32144 14333 9001  4269  NAD83 / Utah South
+32145 14430 9001  4269  NAD83 / Vermont
+32146 14531 9001  4269  NAD83 / Virginia North
+32147 14532 9001  4269  NAD83 / Virginia South
+32148 14631 9001  4269  NAD83 / Washington North
+32149 14632 9001  4269  NAD83 / Washington South
+32150 14731 9001  4269  NAD83 / West Virginia North
+32151 14732 9001  4269  NAD83 / West Virginia South
+32152 14831 9001  4269  NAD83 / Wisconsin North
+32153 14832 9001  4269  NAD83 / Wisconsin Central
+32154 14833 9001  4269  NAD83 / Wisconsin South
+32155 14931 9001  4269  NAD83 / Wyoming East
+32156 14932 9001  4269  NAD83 / Wyoming East Central
+32157 14933 9001  4269  NAD83 / Wyoming West Central
+32158 14934 9001  4269  NAD83 / Wyoming West
+32161 15230 9001  4269  NAD83 / Puerto Rico & Virgin Is.
+32180 17700 9001  4269  NAD83 / SCoPQ zone 2
+32181 17701 9001  4269  NAD83 / MTM zone 1
+32182 17702 9001  4269  NAD83 / MTM zone 2
+32183 17703 9001  4269  NAD83 / MTM zone 3
+32184 17704 9001  4269  NAD83 / MTM zone 4
+32185 17705 9001  4269  NAD83 / MTM zone 5
+32186 17706 9001  4269  NAD83 / MTM zone 6
+32187 17707 9001  4269  NAD83 / MTM zone 7
+32188 17708 9001  4269  NAD83 / MTM zone 8
+32189 17709 9001  4269  NAD83 / MTM zone 9
+32190 17710 9001  4269  NAD83 / MTM zone 10
+32191 17711 9001  4269  NAD83 / MTM zone 11
+32192 17712 9001  4269  NAD83 / MTM zone 12
+32193 17713 9001  4269  NAD83 / MTM zone 13
+32194 17714 9001  4269  NAD83 / MTM zone 14
+32195 17715 9001  4269  NAD83 / MTM zone 15
+32196 17716 9001  4269  NAD83 / MTM zone 16
+32197 17717 9001  4269  NAD83 / MTM zone 17
+32198 19944 9001  4269  NAD83 / Quebec Lambert
+27038 16038 9001  4270  Nahrwan 1967 / UTM zone 38N
+27039 16039 9001  4270  Nahrwan 1967 / UTM zone 39N
+27040 16040 9001  4270  Nahrwan 1967 / UTM zone 40N
+27120 16020 9001  4271  Naparima 1972 / UTM zone 20N
+27200 19917 9001  4272  NZGD49 / New Zealand Map Grid
+27205 17901 9001  4272  NZGD49 / Mount Eden Circuit
+27206 17902 9001  4272  NZGD49 / Bay of Plenty Circuit
+27207 17903 9001  4272  NZGD49 / Poverty Bay Circuit
+27208 17904 9001  4272  NZGD49 / Hawkes Bay Circuit
+27209 17905 9001  4272  NZGD49 / Taranaki Circuit
+27210 17906 9001  4272  NZGD49 / Tuhirangi Circuit
+27211 17907 9001  4272  NZGD49 / Wanganui Circuit
+27212 17908 9001  4272  NZGD49 / Wairarapa Circuit
+27213 17909 9001  4272  NZGD49 / Wellington Circuit
+27214 17910 9001  4272  NZGD49 / Collingwood Circuit
+27215 17911 9001  4272  NZGD49 / Nelson Circuit
+27216 17912 9001  4272  NZGD49 / Karamea Circuit
+27217 17913 9001  4272  NZGD49 / Buller Circuit
+27218 17914 9001  4272  NZGD49 / Grey Circuit
+27219 17915 9001  4272  NZGD49 / Amuri Circuit
+27220 17916 9001  4272  NZGD49 / Marlborough Circuit
+27221 17917 9001  4272  NZGD49 / Hokitika Circuit
+27222 17918 9001  4272  NZGD49 / Okarito Circuit
+27223 17919 9001  4272  NZGD49 / Jacksons Bay Circuit
+27224 17920 9001  4272  NZGD49 / Mount Pleasant Circuit
+27225 17921 9001  4272  NZGD49 / Gawler Circuit
+27226 17922 9001  4272  NZGD49 / Timaru Circuit
+27227 17923 9001  4272  NZGD49 / Lindis Peak Circuit
+27228 17924 9001  4272  NZGD49 / Mount Nicholas Circuit
+27229 17925 9001  4272  NZGD49 / Mount York Circuit
+27230 17926 9001  4272  NZGD49 / Observation Point Circuit
+27231 17927 9001  4272  NZGD49 / North Taieri Circuit
+27232 17928 9001  4272  NZGD49 / Bluff Circuit
+27258 16158 9001  4272  NZGD49 / UTM zone 58S
+27259 16159 9001  4272  NZGD49 / UTM zone 59S
+27260 16160 9001  4272  NZGD49 / UTM zone 60S
+27291 18141 9040  4272  NZGD49 / North Island Grid
+27292 18142 9040  4272  NZGD49 / South Island Grid
+27429 16029 9001  4274  Datum 73 / UTM zone 29N
+27492 19974 9001  4274  Datum 73 / Modified Portuguese Grid
+27700 19916 9001  4277  OSGB 1936 / British National Grid
+28191 18201 9001  4281  Palestine 1923 / Palestine Grid
+28192 18202 9001  4281  Palestine 1923 / Palestine Belt
+28193 18203 9001  4281  Palestine 1923 / Israeli CS Grid
+28232 16132 9001  4282  Pointe Noire / UTM zone 32S
+3107  17359 9001  4283  GDA94 / SA Lambert
+3111  17361 9001  4283  GDA94 / Vicgrid94
+3112  17362 9001  4283  GDA94 / Geoscience Australia Lambert
+3113  17363 9001  4283  GDA94 / BCSG02
+3308  17364 9001  4283  GDA94 / NSW Lambert
+28348 17348 9001  4283  GDA94 / MGA zone 48
+28349 17349 9001  4283  GDA94 / MGA zone 49
+28350 17350 9001  4283  GDA94 / MGA zone 50
+28351 17351 9001  4283  GDA94 / MGA zone 51
+28352 17352 9001  4283  GDA94 / MGA zone 52
+28353 17353 9001  4283  GDA94 / MGA zone 53
+28354 17354 9001  4283  GDA94 / MGA zone 54
+28355 17355 9001  4283  GDA94 / MGA zone 55
+28356 17356 9001  4283  GDA94 / MGA zone 56
+28357 17357 9001  4283  GDA94 / MGA zone 57
+28358 17358 9001  4283  GDA94 / MGA zone 58
+2492  16302 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 9E
+2493  16303 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 15E
+2494  16304 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 21E
+2495  16305 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 27E
+2496  16306 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 33E
+2497  16307 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 39E
+2498  16308 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 45E
+2499  16309 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 51E
+2500  16310 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 57E
+2501  16311 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 63E
+2502  16312 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 69E
+2503  16313 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 75E
+2504  16314 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 81E
+2505  16315 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 87E
+2506  16316 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 93E
+2507  16317 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 99E
+2508  16318 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 105E
+2509  16319 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 111E
+2510  16320 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 117E
+2511  16321 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 123E
+2512  16322 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 129E
+2513  16323 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 135E
+2514  16324 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 141E
+2515  16325 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 147E
+2516  16326 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 153E
+2517  16327 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 159E
+2518  16328 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 165E
+2519  16329 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 171E
+2520  16330 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 177E
+2521  16331 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 177W
+2522  16332 9001  4284  Pulkovo 1942 / Gauss-Kruger CM 171W
+2523  16267 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 7
+2524  16268 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 8
+2525  16269 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 9
+2526  16270 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 10
+2527  16271 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 11
+2528  16272 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 12
+2529  16273 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 13
+2530  16274 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 14
+2531  16275 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 15
+2532  16276 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 16
+2533  16277 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 17
+2534  16278 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 18
+2535  16279 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 19
+2536  16280 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 20
+2537  16281 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 21
+2538  16282 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 22
+2539  16283 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 23
+2540  16284 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 24
+2541  16285 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 25
+2542  16286 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 26
+2543  16287 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 27
+2544  16288 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 28
+2545  16289 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 29
+2546  16290 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 30
+2547  16291 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 31
+2548  16292 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 32
+2549  16293 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 33
+2551  16294 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 34
+2552  16295 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 35
+2553  16296 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 36
+2554  16297 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 37
+2555  16298 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 38
+2556  16299 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 39
+2557  16070 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 40
+2558  16071 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 41
+2559  16072 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 42
+2560  16073 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 43
+2561  16074 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 44
+2562  16075 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 45
+2563  16076 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 46
+2564  16077 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 47
+2565  16078 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 48
+2566  16079 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 49
+2567  16080 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 50
+2568  16081 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 51
+2569  16082 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 52
+2570  16083 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 53
+2571  16084 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 54
+2572  16085 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 55
+2573  16086 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 56
+2574  16087 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 57
+2575  16088 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 58
+2576  16089 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 59
+2577  16090 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 60
+2578  16091 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 61
+2579  16092 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 62
+2580  16093 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 63
+2581  16094 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger zone 64
+2582  16367 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 21E
+2583  16368 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 24E
+2584  16369 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 27E
+2585  16370 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 30E
+2586  16371 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 33E
+2587  16372 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 36E
+2588  16373 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 39E
+2589  16374 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 42E
+2590  16375 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 45E
+2591  16376 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 48E
+2592  16377 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 51E
+2593  16378 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 54E
+2594  16379 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 57E
+2595  16380 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 60E
+2596  16381 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 63E
+2597  16382 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 66E
+2598  16383 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 69E
+2599  16384 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 72E
+2601  16385 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 75E
+2602  16386 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 78E
+2603  16387 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 81E
+2604  16388 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 84E
+2605  16389 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 87E
+2606  16390 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 90E
+2607  16391 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 93E
+2608  16392 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 96E
+2609  16393 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 99E
+2610  16394 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 102E
+2611  16395 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 105E
+2612  16396 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 108E
+2613  16397 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 111E
+2614  16398 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 114E
+2615  16399 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 117E
+2616  16170 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 120E
+2617  16171 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 123E
+2618  16172 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 126E
+2619  16173 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 129E
+2620  16174 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 132E
+2621  16175 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 135E
+2622  16176 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 138E
+2623  16177 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 141E
+2624  16178 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 144E
+2625  16179 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 147E
+2626  16180 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 150E
+2627  16181 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 153E
+2628  16182 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 156E
+2629  16183 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 159E
+2630  16184 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 162E
+2631  16185 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 165E
+2632  16186 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 168E
+2633  16187 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 171E
+2634  16188 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 174E
+2635  16189 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 177E
+2636  16190 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 180E
+2637  16191 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 177W
+2638  16192 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 174W
+2639  16193 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 171W
+2640  16194 9001  4284  Pulkovo 1942 / 3-degree Gauss-Kruger CM 168W
+2935  18441 9001  4284  Pulkovo 1942 / CS63 zone A1
+2936  18442 9001  4284  Pulkovo 1942 / CS63 zone A2
+2937  18443 9001  4284  Pulkovo 1942 / CS63 zone A3
+2938  18444 9001  4284  Pulkovo 1942 / CS63 zone A4
+2939  18446 9001  4284  Pulkovo 1942 / CS63 zone K2
+2940  18447 9001  4284  Pulkovo 1942 / CS63 zone K3
+2941  18448 9001  4284  Pulkovo 1942 / CS63 zone K4
+3350  18450 9001  4284  Pulkovo 1942 / CS63 zone C0
+3351  18451 9001  4284  Pulkovo 1942 / CS63 zone C1
+3352  18452 9001  4284  Pulkovo 1942 / CS63 zone C2
+28402 16202 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 2
+28403 16203 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 3
+28404 16204 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 4
+28405 16205 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 5
+28406 16206 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 6
+28407 16207 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 7
+28408 16208 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 8
+28409 16209 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 9
+28410 16210 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 10
+28411 16211 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 11
+28412 16212 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 12
+28413 16213 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 13
+28414 16214 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 14
+28415 16215 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 15
+28416 16216 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 16
+28417 16217 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 17
+28418 16218 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 18
+28419 16219 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 19
+28420 16220 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 20
+28421 16221 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 21
+28422 16222 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 22
+28423 16223 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 23
+28424 16224 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 24
+28425 16225 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 25
+28426 16226 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 26
+28427 16227 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 27
+28428 16228 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 28
+28429 16229 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 29
+28430 16230 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 30
+28431 16231 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 31
+28432 16232 9001  4284  Pulkovo 1942 / Gauss-Kruger zone 32
+28462 16302 9001  4284  Pulkovo 1942 / Gauss-Kruger 2N
+28463 16303 9001  4284  Pulkovo 1942 / Gauss-Kruger 3N
+28464 16304 9001  4284  Pulkovo 1942 / Gauss-Kruger 4N
+28465 16305 9001  4284  Pulkovo 1942 / Gauss-Kruger 5N
+28466 16306 9001  4284  Pulkovo 1942 / Gauss-Kruger 6N
+28467 16307 9001  4284  Pulkovo 1942 / Gauss-Kruger 7N
+28468 16308 9001  4284  Pulkovo 1942 / Gauss-Kruger 8N
+28469 16309 9001  4284  Pulkovo 1942 / Gauss-Kruger 9N
+28470 16310 9001  4284  Pulkovo 1942 / Gauss-Kruger 10N
+28471 16311 9001  4284  Pulkovo 1942 / Gauss-Kruger 11N
+28472 16312 9001  4284  Pulkovo 1942 / Gauss-Kruger 12N
+28473 16313 9001  4284  Pulkovo 1942 / Gauss-Kruger 13N
+28474 16314 9001  4284  Pulkovo 1942 / Gauss-Kruger 14N
+28475 16315 9001  4284  Pulkovo 1942 / Gauss-Kruger 15N
+28476 16316 9001  4284  Pulkovo 1942 / Gauss-Kruger 16N
+28477 16317 9001  4284  Pulkovo 1942 / Gauss-Kruger 17N
+28478 16318 9001  4284  Pulkovo 1942 / Gauss-Kruger 18N
+28479 16319 9001  4284  Pulkovo 1942 / Gauss-Kruger 19N
+28480 16320 9001  4284  Pulkovo 1942 / Gauss-Kruger 20N
+28481 16321 9001  4284  Pulkovo 1942 / Gauss-Kruger 21N
+28482 16322 9001  4284  Pulkovo 1942 / Gauss-Kruger 22N
+28483 16323 9001  4284  Pulkovo 1942 / Gauss-Kruger 23N
+28484 16324 9001  4284  Pulkovo 1942 / Gauss-Kruger 24N
+28485 16325 9001  4284  Pulkovo 1942 / Gauss-Kruger 25N
+28486 16326 9001  4284  Pulkovo 1942 / Gauss-Kruger 26N
+28487 16327 9001  4284  Pulkovo 1942 / Gauss-Kruger 27N
+28488 16328 9001  4284  Pulkovo 1942 / Gauss-Kruger 28N
+28489 16329 9001  4284  Pulkovo 1942 / Gauss-Kruger 29N
+28490 16330 9001  4284  Pulkovo 1942 / Gauss-Kruger 30N
+28491 16331 9001  4284  Pulkovo 1942 / Gauss-Kruger 31N
+28492 16332 9001  4284  Pulkovo 1942 / Gauss-Kruger 32N
+28600 19919 9001  4285  Qatar 1974 / Qatar National Grid
+2099  19953 9001  4286  Qatar 1948 / Qatar Grid
+28991 19913 9001  4289  Amersfoort / RD Old
+28992 19914 9001  4289  Amersfoort / RD New
+29100 19941 9001  4291  SAD69 / Brazil Polyconic
+29118 16018 9001  4291  SAD69 / UTM zone 18N
+29119 16019 9001  4291  SAD69 / UTM zone 19N
+29120 16020 9001  4291  SAD69 / UTM zone 20N
+29121 16021 9001  4291  SAD69 / UTM zone 21N
+29122 16022 9001  4291  SAD69 / UTM zone 22N
+29177 16117 9001  4291  SAD69 / UTM zone 17S
+29178 16118 9001  4291  SAD69 / UTM zone 18S
+29179 16119 9001  4291  SAD69 / UTM zone 19S
+29180 16120 9001  4291  SAD69 / UTM zone 20S
+29181 16121 9001  4291  SAD69 / UTM zone 21S
+29182 16122 9001  4291  SAD69 / UTM zone 22S
+29183 16123 9001  4291  SAD69 / UTM zone 23S
+29184 16124 9001  4291  SAD69 / UTM zone 24S
+29185 16125 9001  4291  SAD69 / UTM zone 25S
+29220 16120 9001  4292  Sapper Hill 1943 / UTM zone 20S
+29221 16121 9001  4292  Sapper Hill 1943 / UTM zone 21S
+29333 16133 9001  4293  Schwarzeck / UTM zone 33S
+29371 17611 9031  4293  South West African Coord. System / zone 11
+29373 17613 9031  4293  South West African Coord. System / zone 13
+29375 17615 9031  4293  South West African Coord. System / zone 15
+29377 17617 9031  4293  South West African Coord. System / zone 17
+29379 17619 9031  4293  South West African Coord. System / zone 19
+29381 17621 9031  4293  South West African Coord. System / zone 21
+29383 17623 9031  4293  South West African Coord. System / zone 23
+29385 17625 9031  4293  South West African Coord. System / zone 25
+29635 16035 9001  4296  Sudan / UTM zone 35N
+29636 16036 9001  4296  Sudan / UTM zone 36N
+29738 16138 9001  4297  Tananarive / UTM zone 38S
+29739 16139 9001  4297  Tananarive / UTM zone 39S
+29849 16049 9001  4298  Timbalai 1948 / UTM zone 49N
+29850 16050 9001  4298  Timbalai 1948 / UTM zone 50N
+29871 19956 9042  4298  Timbalai 1948 / R.S.O. Borneo (ch)
+29872 19957 9041  4298  Timbalai 1948 / R.S.O. Borneo (ft)
+29873 19958 9001  4298  Timbalai 1948 / R.S.O. Borneo (m)
+29900 19908 9001  4299  TM65 / Irish National Grid
+29902 19972 9001  4299  TM65 / Irish Grid
+29903 19972 9001  4300  TM75 / Irish Grid
+3092  16051 9001  4301  Tokyo / UTM zone 51N
+3093  16052 9001  4301  Tokyo / UTM zone 52N
+3094  16053 9001  4301  Tokyo / UTM zone 53N
+3095  16054 9001  4301  Tokyo / UTM zone 54N
+3096  16055 9001  4301  Tokyo / UTM zone 55N
+30161 17801 9001  4301  Tokyo / Japan Plane Rectangular CS I
+30162 17802 9001  4301  Tokyo / Japan Plane Rectangular CS II
+30163 17803 9001  4301  Tokyo / Japan Plane Rectangular CS III
+30164 17804 9001  4301  Tokyo / Japan Plane Rectangular CS IV
+30165 17805 9001  4301  Tokyo / Japan Plane Rectangular CS V
+30166 17806 9001  4301  Tokyo / Japan Plane Rectangular CS VI
+30167 17807 9001  4301  Tokyo / Japan Plane Rectangular CS VII
+30168 17808 9001  4301  Tokyo / Japan Plane Rectangular CS VIII
+30169 17809 9001  4301  Tokyo / Japan Plane Rectangular CS IX
+30170 17810 9001  4301  Tokyo / Japan Plane Rectangular CS X
+30171 17811 9001  4301  Tokyo / Japan Plane Rectangular CS XI
+30172 17812 9001  4301  Tokyo / Japan Plane Rectangular CS XII
+30173 17813 9001  4301  Tokyo / Japan Plane Rectangular CS XIII
+30174 17814 9001  4301  Tokyo / Japan Plane Rectangular CS XIV
+30175 17815 9001  4301  Tokyo / Japan Plane Rectangular CS XV
+30176 17816 9001  4301  Tokyo / Japan Plane Rectangular CS XVI
+30177 17817 9001  4301  Tokyo / Japan Plane Rectangular CS XVII
+30178 17818 9001  4301  Tokyo / Japan Plane Rectangular CS XVIII
+30179 17819 9001  4301  Tokyo / Japan Plane Rectangular CS XIX
+2314  19975 9005  4302  Trinidad 1903 / Trinidad Grid (ftCla)
+30200 19925 9039  4302  Trinidad 1903 / Trinidad Grid
+30339 16039 9001  4303  TC(1948) / UTM zone 39N
+30340 16040 9001  4303  TC(1948) / UTM zone 40N
+30491 18011 9001  4304  Voirol 1875 / Nord Algerie (ancienne)
+30492 18012 9001  4304  Voirol 1875 / Sud Algerie (ancienne)
+30729 16029 9001  4307  Nord Sahara 1959 / UTM zone 29N
+30730 16030 9001  4307  Nord Sahara 1959 / UTM zone 30N
+30731 16031 9001  4307  Nord Sahara 1959 / UTM zone 31N
+30732 16032 9001  4307  Nord Sahara 1959 / UTM zone 32N
+30791 18021 9001  4307  Nord Sahara 1959 / Voirol Unifie Nord
+30792 18022 9001  4307  Nord Sahara 1959 / Voirol Unifie Sud
+3025  17334 9001  4308  RT38 / 7.5 gon V
+3026  17335 9001  4308  RT38 / 5 gon V
+3027  19929 9001  4308  RT38 / 2.5 gon V
+3028  17336 9001  4308  RT38 / 0 gon
+3029  17337 9001  4308  RT38 / 2.5 gon O
+3030  17338 9001  4308  RT38 / 5 gon O
+30800 19929 9001  4308  RT38 / 2.5 gon W
+31028 16028 9001  4310  Yoff / UTM zone 28N
+31121 16021 9001  4311  Zanderij / UTM zone 21N
+31154 17054 9001  4311  Zanderij / TM 54 NW
+31170 19954 9001  4311  Zanderij / Suriname Old TM
+31171 19955 9001  4311  Zanderij / Suriname TM
+2170  19967 9001  4312  MGI / Slovenia Grid
+31265 16265 9001  4312  MGI / 3-degree Gauss zone 5
+31266 16266 9001  4312  MGI / 3-degree Gauss zone 6
+31267 16267 9001  4312  MGI / 3-degree Gauss zone 7
+31268 16268 9001  4312  MGI / 3-degree Gauss zone 8
+31275 18275 9001  4312  MGI / Balkans zone 5
+31276 18276 9001  4312  MGI / Balkans zone 6
+31277 18277 9001  4312  MGI / Balkans zone 7
+31278 18277 9001  4312  MGI / Balkans zone 8
+31279 18278 9001  4312  MGI / Balkans zone 8
+31284 18044 9001  4312  MGI / M28
+31285 18045 9001  4312  MGI / M31
+31286 18046 9001  4312  MGI / M34
+31287 19947 9001  4312  MGI / Austria Lambert
+31294 18044 9001  4312  MGI / M28
+31295 18045 9001  4312  MGI / M31
+31296 18046 9001  4312  MGI / M34
+31297 19947 9001  4312  MGI / Austria Lambert
+31300 19902 9001  4313  Belge 1972 / Belge Lambert 72
+31370 19961 9001  4313  Belge 1972 / Belgian Lambert 72
+3068  19996 9001  4314  DHDN / Soldner Berlin
+31461 16261 9001  4314  DHDN / 3-degree Gauss zone 1
+31462 16262 9001  4314  DHDN / 3-degree Gauss zone 2
+31463 16263 9001  4314  DHDN / 3-degree Gauss zone 3
+31464 16264 9001  4314  DHDN / 3-degree Gauss zone 4
+31465 16265 9001  4314  DHDN / 3-degree Gauss zone 5
+31466 16262 9001  4314  DHDN / Gauss-Kruger zone 2
+31467 16263 9001  4314  DHDN / Gauss-Kruger zone 3
+31468 16264 9001  4314  DHDN / Gauss-Kruger zone 4
+31469 16265 9001  4314  DHDN / Gauss-Kruger zone 5
+2063  16028 9001  4315  Dabola 1981 / UTM zone 28N
+2064  16029 9001  4315  Dabola 1981 / UTM zone 29N
+31528 16028 9001  4315  Conakry 1905 / UTM zone 28N
+31529 16029 9001  4315  Conakry 1905 / UTM zone 29N
+31600 19927 9001  4316  Dealul Piscului 1933/ Stereo 33
+31700 19926 9001  4317  Dealul Piscului 1970/ Stereo 70
+31838 16038 9001  4318  NGN / UTM zone 38N
+31839 16039 9001  4318  NGN / UTM zone 39N
+31900 19928 9001  4319  KUDAMS / KTM
+31901 19997 9001  4319  KUDAMS / KTM
+32201 16001 9001  4322  WGS 72 / UTM zone 1N
+32202 16002 9001  4322  WGS 72 / UTM zone 2N
+32203 16003 9001  4322  WGS 72 / UTM zone 3N
+32204 16004 9001  4322  WGS 72 / UTM zone 4N
+32205 16005 9001  4322  WGS 72 / UTM zone 5N
+32206 16006 9001  4322  WGS 72 / UTM zone 6N
+32207 16007 9001  4322  WGS 72 / UTM zone 7N
+32208 16008 9001  4322  WGS 72 / UTM zone 8N
+32209 16009 9001  4322  WGS 72 / UTM zone 9N
+32210 16010 9001  4322  WGS 72 / UTM zone 10N
+32211 16011 9001  4322  WGS 72 / UTM zone 11N
+32212 16012 9001  4322  WGS 72 / UTM zone 12N
+32213 16013 9001  4322  WGS 72 / UTM zone 13N
+32214 16014 9001  4322  WGS 72 / UTM zone 14N
+32215 16015 9001  4322  WGS 72 / UTM zone 15N
+32216 16016 9001  4322  WGS 72 / UTM zone 16N
+32217 16017 9001  4322  WGS 72 / UTM zone 17N
+32218 16018 9001  4322  WGS 72 / UTM zone 18N
+32219 16019 9001  4322  WGS 72 / UTM zone 19N
+32220 16020 9001  4322  WGS 72 / UTM zone 20N
+32221 16021 9001  4322  WGS 72 / UTM zone 21N
+32222 16022 9001  4322  WGS 72 / UTM zone 22N
+32223 16023 9001  4322  WGS 72 / UTM zone 23N
+32224 16024 9001  4322  WGS 72 / UTM zone 24N
+32225 16025 9001  4322  WGS 72 / UTM zone 25N
+32226 16026 9001  4322  WGS 72 / UTM zone 26N
+32227 16027 9001  4322  WGS 72 / UTM zone 27N
+32228 16028 9001  4322  WGS 72 / UTM zone 28N
+32229 16029 9001  4322  WGS 72 / UTM zone 29N
+32230 16030 9001  4322  WGS 72 / UTM zone 30N
+32231 16031 9001  4322  WGS 72 / UTM zone 31N
+32232 16032 9001  4322  WGS 72 / UTM zone 32N
+32233 16033 9001  4322  WGS 72 / UTM zone 33N
+32234 16034 9001  4322  WGS 72 / UTM zone 34N
+32235 16035 9001  4322  WGS 72 / UTM zone 35N
+32236 16036 9001  4322  WGS 72 / UTM zone 36N
+32237 16037 9001  4322  WGS 72 / UTM zone 37N
+32238 16038 9001  4322  WGS 72 / UTM zone 38N
+32239 16039 9001  4322  WGS 72 / UTM zone 39N
+32240 16040 9001  4322  WGS 72 / UTM zone 40N
+32241 16041 9001  4322  WGS 72 / UTM zone 41N
+32242 16042 9001  4322  WGS 72 / UTM zone 42N
+32243 16043 9001  4322  WGS 72 / UTM zone 43N
+32244 16044 9001  4322  WGS 72 / UTM zone 44N
+32245 16045 9001  4322  WGS 72 / UTM zone 45N
+32246 16046 9001  4322  WGS 72 / UTM zone 46N
+32247 16047 9001  4322  WGS 72 / UTM zone 47N
+32248 16048 9001  4322  WGS 72 / UTM zone 48N
+32249 16049 9001  4322  WGS 72 / UTM zone 49N
+32250 16050 9001  4322  WGS 72 / UTM zone 50N
+32251 16051 9001  4322  WGS 72 / UTM zone 51N
+32252 16052 9001  4322  WGS 72 / UTM zone 52N
+32253 16053 9001  4322  WGS 72 / UTM zone 53N
+32254 16054 9001  4322  WGS 72 / UTM zone 54N
+32255 16055 9001  4322  WGS 72 / UTM zone 55N
+32256 16056 9001  4322  WGS 72 / UTM zone 56N
+32257 16057 9001  4322  WGS 72 / UTM zone 57N
+32258 16058 9001  4322  WGS 72 / UTM zone 58N
+32259 16059 9001  4322  WGS 72 / UTM zone 59N
+32260 16060 9001  4322  WGS 72 / UTM zone 60N
+32301 16101 9001  4322  WGS 72 / UTM zone 1S
+32302 16102 9001  4322  WGS 72 / UTM zone 2S
+32303 16103 9001  4322  WGS 72 / UTM zone 3S
+32304 16104 9001  4322  WGS 72 / UTM zone 4S
+32305 16105 9001  4322  WGS 72 / UTM zone 5S
+32306 16106 9001  4322  WGS 72 / UTM zone 6S
+32307 16107 9001  4322  WGS 72 / UTM zone 7S
+32308 16108 9001  4322  WGS 72 / UTM zone 8S
+32309 16109 9001  4322  WGS 72 / UTM zone 9S
+32310 16110 9001  4322  WGS 72 / UTM zone 10S
+32311 16111 9001  4322  WGS 72 / UTM zone 11S
+32312 16112 9001  4322  WGS 72 / UTM zone 12S
+32313 16113 9001  4322  WGS 72 / UTM zone 13S
+32314 16114 9001  4322  WGS 72 / UTM zone 14S
+32315 16115 9001  4322  WGS 72 / UTM zone 15S
+32316 16116 9001  4322  WGS 72 / UTM zone 16S
+32317 16117 9001  4322  WGS 72 / UTM zone 17S
+32318 16118 9001  4322  WGS 72 / UTM zone 18S
+32319 16119 9001  4322  WGS 72 / UTM zone 19S
+32320 16120 9001  4322  WGS 72 / UTM zone 20S
+32321 16121 9001  4322  WGS 72 / UTM zone 21S
+32322 16122 9001  4322  WGS 72 / UTM zone 22S
+32323 16123 9001  4322  WGS 72 / UTM zone 23S
+32324 16124 9001  4322  WGS 72 / UTM zone 24S
+32325 16125 9001  4322  WGS 72 / UTM zone 25S
+32326 16126 9001  4322  WGS 72 / UTM zone 26S
+32327 16127 9001  4322  WGS 72 / UTM zone 27S
+32328 16128 9001  4322  WGS 72 / UTM zone 28S
+32329 16129 9001  4322  WGS 72 / UTM zone 29S
+32330 16130 9001  4322  WGS 72 / UTM zone 30S
+32331 16131 9001  4322  WGS 72 / UTM zone 31S
+32332 16132 9001  4322  WGS 72 / UTM zone 32S
+32333 16133 9001  4322  WGS 72 / UTM zone 33S
+32334 16134 9001  4322  WGS 72 / UTM zone 34S
+32335 16135 9001  4322  WGS 72 / UTM zone 35S
+32336 16136 9001  4322  WGS 72 / UTM zone 36S
+32337 16137 9001  4322  WGS 72 / UTM zone 37S
+32338 16138 9001  4322  WGS 72 / UTM zone 38S
+32339 16139 9001  4322  WGS 72 / UTM zone 39S
+32340 16140 9001  4322  WGS 72 / UTM zone 40S
+32341 16141 9001  4322  WGS 72 / UTM zone 41S
+32342 16142 9001  4322  WGS 72 / UTM zone 42S
+32343 16143 9001  4322  WGS 72 / UTM zone 43S
+32344 16144 9001  4322  WGS 72 / UTM zone 44S
+32345 16145 9001  4322  WGS 72 / UTM zone 45S
+32346 16146 9001  4322  WGS 72 / UTM zone 46S
+32347 16147 9001  4322  WGS 72 / UTM zone 47S
+32348 16148 9001  4322  WGS 72 / UTM zone 48S
+32349 16149 9001  4322  WGS 72 / UTM zone 49S
+32350 16150 9001  4322  WGS 72 / UTM zone 50S
+32351 16151 9001  4322  WGS 72 / UTM zone 51S
+32352 16152 9001  4322  WGS 72 / UTM zone 52S
+32353 16153 9001  4322  WGS 72 / UTM zone 53S
+32354 16154 9001  4322  WGS 72 / UTM zone 54S
+32355 16155 9001  4322  WGS 72 / UTM zone 55S
+32356 16156 9001  4322  WGS 72 / UTM zone 56S
+32357 16157 9001  4322  WGS 72 / UTM zone 57S
+32358 16158 9001  4322  WGS 72 / UTM zone 58S
+32359 16159 9001  4322  WGS 72 / UTM zone 59S
+32360 16160 9001  4322  WGS 72 / UTM zone 60S
+2094  16506 9001  4324  WGS 72BE / TM 106 NE
+32401 16001 9001  4324  WGS 72BE / UTM zone 1N
+32402 16002 9001  4324  WGS 72BE / UTM zone 2N
+32403 16003 9001  4324  WGS 72BE / UTM zone 3N
+32404 16004 9001  4324  WGS 72BE / UTM zone 4N
+32405 16005 9001  4324  WGS 72BE / UTM zone 5N
+32406 16006 9001  4324  WGS 72BE / UTM zone 6N
+32407 16007 9001  4324  WGS 72BE / UTM zone 7N
+32408 16008 9001  4324  WGS 72BE / UTM zone 8N
+32409 16009 9001  4324  WGS 72BE / UTM zone 9N
+32410 16010 9001  4324  WGS 72BE / UTM zone 10N
+32411 16011 9001  4324  WGS 72BE / UTM zone 11N
+32412 16012 9001  4324  WGS 72BE / UTM zone 12N
+32413 16013 9001  4324  WGS 72BE / UTM zone 13N
+32414 16014 9001  4324  WGS 72BE / UTM zone 14N
+32415 16015 9001  4324  WGS 72BE / UTM zone 15N
+32416 16016 9001  4324  WGS 72BE / UTM zone 16N
+32417 16017 9001  4324  WGS 72BE / UTM zone 17N
+32418 16018 9001  4324  WGS 72BE / UTM zone 18N
+32419 16019 9001  4324  WGS 72BE / UTM zone 19N
+32420 16020 9001  4324  WGS 72BE / UTM zone 20N
+32421 16021 9001  4324  WGS 72BE / UTM zone 21N
+32422 16022 9001  4324  WGS 72BE / UTM zone 22N
+32423 16023 9001  4324  WGS 72BE / UTM zone 23N
+32424 16024 9001  4324  WGS 72BE / UTM zone 24N
+32425 16025 9001  4324  WGS 72BE / UTM zone 25N
+32426 16026 9001  4324  WGS 72BE / UTM zone 26N
+32427 16027 9001  4324  WGS 72BE / UTM zone 27N
+32428 16028 9001  4324  WGS 72BE / UTM zone 28N
+32429 16029 9001  4324  WGS 72BE / UTM zone 29N
+32430 16030 9001  4324  WGS 72BE / UTM zone 30N
+32431 16031 9001  4324  WGS 72BE / UTM zone 31N
+32432 16032 9001  4324  WGS 72BE / UTM zone 32N
+32433 16033 9001  4324  WGS 72BE / UTM zone 33N
+32434 16034 9001  4324  WGS 72BE / UTM zone 34N
+32435 16035 9001  4324  WGS 72BE / UTM zone 35N
+32436 16036 9001  4324  WGS 72BE / UTM zone 36N
+32437 16037 9001  4324  WGS 72BE / UTM zone 37N
+32438 16038 9001  4324  WGS 72BE / UTM zone 38N
+32439 16039 9001  4324  WGS 72BE / UTM zone 39N
+32440 16040 9001  4324  WGS 72BE / UTM zone 40N
+32441 16041 9001  4324  WGS 72BE / UTM zone 41N
+32442 16042 9001  4324  WGS 72BE / UTM zone 42N
+32443 16043 9001  4324  WGS 72BE / UTM zone 43N
+32444 16044 9001  4324  WGS 72BE / UTM zone 44N
+32445 16045 9001  4324  WGS 72BE / UTM zone 45N
+32446 16046 9001  4324  WGS 72BE / UTM zone 46N
+32447 16047 9001  4324  WGS 72BE / UTM zone 47N
+32448 16048 9001  4324  WGS 72BE / UTM zone 48N
+32449 16049 9001  4324  WGS 72BE / UTM zone 49N
+32450 16050 9001  4324  WGS 72BE / UTM zone 50N
+32451 16051 9001  4324  WGS 72BE / UTM zone 51N
+32452 16052 9001  4324  WGS 72BE / UTM zone 52N
+32453 16053 9001  4324  WGS 72BE / UTM zone 53N
+32454 16054 9001  4324  WGS 72BE / UTM zone 54N
+32455 16055 9001  4324  WGS 72BE / UTM zone 55N
+32456 16056 9001  4324  WGS 72BE / UTM zone 56N
+32457 16057 9001  4324  WGS 72BE / UTM zone 57N
+32458 16058 9001  4324  WGS 72BE / UTM zone 58N
+32459 16059 9001  4324  WGS 72BE / UTM zone 59N
+32460 16060 9001  4324  WGS 72BE / UTM zone 60N
+32501 16101 9001  4324  WGS 72BE / UTM zone 1S
+32502 16102 9001  4324  WGS 72BE / UTM zone 2S
+32503 16103 9001  4324  WGS 72BE / UTM zone 3S
+32504 16104 9001  4324  WGS 72BE / UTM zone 4S
+32505 16105 9001  4324  WGS 72BE / UTM zone 5S
+32506 16106 9001  4324  WGS 72BE / UTM zone 6S
+32507 16107 9001  4324  WGS 72BE / UTM zone 7S
+32508 16108 9001  4324  WGS 72BE / UTM zone 8S
+32509 16109 9001  4324  WGS 72BE / UTM zone 9S
+32510 16110 9001  4324  WGS 72BE / UTM zone 10S
+32511 16111 9001  4324  WGS 72BE / UTM zone 11S
+32512 16112 9001  4324  WGS 72BE / UTM zone 12S
+32513 16113 9001  4324  WGS 72BE / UTM zone 13S
+32514 16114 9001  4324  WGS 72BE / UTM zone 14S
+32515 16115 9001  4324  WGS 72BE / UTM zone 15S
+32516 16116 9001  4324  WGS 72BE / UTM zone 16S
+32517 16117 9001  4324  WGS 72BE / UTM zone 17S
+32518 16118 9001  4324  WGS 72BE / UTM zone 18S
+32519 16119 9001  4324  WGS 72BE / UTM zone 19S
+32520 16120 9001  4324  WGS 72BE / UTM zone 20S
+32521 16121 9001  4324  WGS 72BE / UTM zone 21S
+32522 16122 9001  4324  WGS 72BE / UTM zone 22S
+32523 16123 9001  4324  WGS 72BE / UTM zone 23S
+32524 16124 9001  4324  WGS 72BE / UTM zone 24S
+32525 16125 9001  4324  WGS 72BE / UTM zone 25S
+32526 16126 9001  4324  WGS 72BE / UTM zone 26S
+32527 16127 9001  4324  WGS 72BE / UTM zone 27S
+32528 16128 9001  4324  WGS 72BE / UTM zone 28S
+32529 16129 9001  4324  WGS 72BE / UTM zone 29S
+32530 16130 9001  4324  WGS 72BE / UTM zone 30S
+32531 16131 9001  4324  WGS 72BE / UTM zone 31S
+32532 16132 9001  4324  WGS 72BE / UTM zone 32S
+32533 16133 9001  4324  WGS 72BE / UTM zone 33S
+32534 16134 9001  4324  WGS 72BE / UTM zone 34S
+32535 16135 9001  4324  WGS 72BE / UTM zone 35S
+32536 16136 9001  4324  WGS 72BE / UTM zone 36S
+32537 16137 9001  4324  WGS 72BE / UTM zone 37S
+32538 16138 9001  4324  WGS 72BE / UTM zone 38S
+32539 16139 9001  4324  WGS 72BE / UTM zone 39S
+32540 16140 9001  4324  WGS 72BE / UTM zone 40S
+32541 16141 9001  4324  WGS 72BE / UTM zone 41S
+32542 16142 9001  4324  WGS 72BE / UTM zone 42S
+32543 16143 9001  4324  WGS 72BE / UTM zone 43S
+32544 16144 9001  4324  WGS 72BE / UTM zone 44S
+32545 16145 9001  4324  WGS 72BE / UTM zone 45S
+32546 16146 9001  4324  WGS 72BE / UTM zone 46S
+32547 16147 9001  4324  WGS 72BE / UTM zone 47S
+32548 16148 9001  4324  WGS 72BE / UTM zone 48S
+32549 16149 9001  4324  WGS 72BE / UTM zone 49S
+32550 16150 9001  4324  WGS 72BE / UTM zone 50S
+32551 16151 9001  4324  WGS 72BE / UTM zone 51S
+32552 16152 9001  4324  WGS 72BE / UTM zone 52S
+32553 16153 9001  4324  WGS 72BE / UTM zone 53S
+32554 16154 9001  4324  WGS 72BE / UTM zone 54S
+32555 16155 9001  4324  WGS 72BE / UTM zone 55S
+32556 16156 9001  4324  WGS 72BE / UTM zone 56S
+32557 16157 9001  4324  WGS 72BE / UTM zone 57S
+32558 16158 9001  4324  WGS 72BE / UTM zone 58S
+32559 16159 9001  4324  WGS 72BE / UTM zone 59S
+32560 16160 9001  4324  WGS 72BE / UTM zone 60S
+2309  16716 9001  4326  WGS 84 / TM 116 SE
+2310  16732 9001  4326  WGS 84 / TM 132 SE
+2311  16406 9001  4326  WGS 84 / TM 6 NE
+3031  19992 9001  4326  WGS 84 / Antarctic Polar Stereographic
+3032  19993 9001  4326  WGS 84 / Australian Antarctic Polar Stereographic
+3033  19994 9001  4326  WGS 84 / Australian Antarctic Lambert
+3204  17204 9001  4326  WGS 84 / SCAR IMW SP19-20
+3205  17205 9001  4326  WGS 84 / SCAR IMW SP21-22
+3206  17206 9001  4326  WGS 84 / SCAR IMW SP23-24
+3207  17207 9001  4326  WGS 84 / SCAR IMW SQ01-02
+3208  17208 9001  4326  WGS 84 / SCAR IMW SQ19-20
+3209  17209 9001  4326  WGS 84 / SCAR IMW SQ21-22
+3210  17210 9001  4326  WGS 84 / SCAR IMW SQ37-38
+3211  17211 9001  4326  WGS 84 / SCAR IMW SQ39-40
+3212  17212 9001  4326  WGS 84 / SCAR IMW SQ41-42
+3213  17213 9001  4326  WGS 84 / SCAR IMW SQ43-44
+3214  17214 9001  4326  WGS 84 / SCAR IMW SQ45-46
+3215  17215 9001  4326  WGS 84 / SCAR IMW SQ47-48
+3216  17216 9001  4326  WGS 84 / SCAR IMW SQ49-50
+3217  17217 9001  4326  WGS 84 / SCAR IMW SQ51-52
+3218  17218 9001  4326  WGS 84 / SCAR IMW SQ53-54
+3219  17219 9001  4326  WGS 84 / SCAR IMW SQ55-56
+3220  17220 9001  4326  WGS 84 / SCAR IMW SQ57-58
+3221  17221 9001  4326  WGS 84 / SCAR IMW SR13-14
+3222  17222 9001  4326  WGS 84 / SCAR IMW SR15-16
+3223  17223 9001  4326  WGS 84 / SCAR IMW SR17-18
+3224  17224 9001  4326  WGS 84 / SCAR IMW SR19-20
+3225  17225 9001  4326  WGS 84 / SCAR IMW SR27-28
+3226  17226 9001  4326  WGS 84 / SCAR IMW SR29-30
+3227  17227 9001  4326  WGS 84 / SCAR IMW SR31-32
+3228  17228 9001  4326  WGS 84 / SCAR IMW SR33-34
+3229  17229 9001  4326  WGS 84 / SCAR IMW SR35-36
+3230  17230 9001  4326  WGS 84 / SCAR IMW SR37-38
+3231  17231 9001  4326  WGS 84 / SCAR IMW SR39-40
+3232  17232 9001  4326  WGS 84 / SCAR IMW SR41-42
+3233  17233 9001  4326  WGS 84 / SCAR IMW SR43-44
+3234  17234 9001  4326  WGS 84 / SCAR IMW SR45-46
+3235  17235 9001  4326  WGS 84 / SCAR IMW SR47-48
+3236  17236 9001  4326  WGS 84 / SCAR IMW SR49-50
+3237  17237 9001  4326  WGS 84 / SCAR IMW SR51-52
+3238  17238 9001  4326  WGS 84 / SCAR IMW SR53-54
+3239  17239 9001  4326  WGS 84 / SCAR IMW SR55-56
+3240  17240 9001  4326  WGS 84 / SCAR IMW SR57-58
+3241  17241 9001  4326  WGS 84 / SCAR IMW SR59-60
+3242  17242 9001  4326  WGS 84 / SCAR IMW SS04-06
+3243  17243 9001  4326  WGS 84 / SCAR IMW SS07-09
+3244  17244 9001  4326  WGS 84 / SCAR IMW SS10-12
+3245  17245 9001  4326  WGS 84 / SCAR IMW SS13-15
+3246  17246 9001  4326  WGS 84 / SCAR IMW SS16-18
+3247  17247 9001  4326  WGS 84 / SCAR IMW SS19-21
+3248  17248 9001  4326  WGS 84 / SCAR IMW SS25-27
+3249  17249 9001  4326  WGS 84 / SCAR IMW SS28-30
+3250  17250 9001  4326  WGS 84 / SCAR IMW SS31-33
+3251  17251 9001  4326  WGS 84 / SCAR IMW SS34-36
+3252  17252 9001  4326  WGS 84 / SCAR IMW SS37-39
+3253  17253 9001  4326  WGS 84 / SCAR IMW SS40-42
+3254  17254 9001  4326  WGS 84 / SCAR IMW SS43-45
+3255  17255 9001  4326  WGS 84 / SCAR IMW SS46-48
+3256  17256 9001  4326  WGS 84 / SCAR IMW SS49-51
+3257  17257 9001  4326  WGS 84 / SCAR IMW SS52-54
+3258  17258 9001  4326  WGS 84 / SCAR IMW SS55-57
+3259  17259 9001  4326  WGS 84 / SCAR IMW SS58-60
+3260  17260 9001  4326  WGS 84 / SCAR IMW ST01-04
+3261  17261 9001  4326  WGS 84 / SCAR IMW ST05-08
+3262  17262 9001  4326  WGS 84 / SCAR IMW ST09-12
+3263  17263 9001  4326  WGS 84 / SCAR IMW ST13-16
+3264  17264 9001  4326  WGS 84 / SCAR IMW ST17-20
+3265  17265 9001  4326  WGS 84 / SCAR IMW ST21-24
+3266  17266 9001  4326  WGS 84 / SCAR IMW ST25-28
+3267  17267 9001  4326  WGS 84 / SCAR IMW ST29-32
+3268  17268 9001  4326  WGS 84 / SCAR IMW ST33-36
+3269  17269 9001  4326  WGS 84 / SCAR IMW ST37-40
+3270  17270 9001  4326  WGS 84 / SCAR IMW ST41-44
+3271  17271 9001  4326  WGS 84 / SCAR IMW ST45-48
+3272  17272 9001  4326  WGS 84 / SCAR IMW ST49-52
+3273  17273 9001  4326  WGS 84 / SCAR IMW ST53-56
+3274  17274 9001  4326  WGS 84 / SCAR IMW ST57-60
+3275  17275 9001  4326  WGS 84 / SCAR IMW SU01-05
+3276  17276 9001  4326  WGS 84 / SCAR IMW SU06-10
+3277  17277 9001  4326  WGS 84 / SCAR IMW SU11-15
+3278  17278 9001  4326  WGS 84 / SCAR IMW SU16-20
+3279  17279 9001  4326  WGS 84 / SCAR IMW SU21-25
+3280  17280 9001  4326  WGS 84 / SCAR IMW SU26-30
+3281  17281 9001  4326  WGS 84 / SCAR IMW SU31-35
+3282  17282 9001  4326  WGS 84 / SCAR IMW SU36-40
+3283  17283 9001  4326  WGS 84 / SCAR IMW SU41-45
+3284  17284 9001  4326  WGS 84 / SCAR IMW SU46-50
+3285  17285 9001  4326  WGS 84 / SCAR IMW SU51-55
+3286  17286 9001  4326  WGS 84 / SCAR IMW SU56-60
+3287  17287 9001  4326  WGS 84 / SCAR IMW SV01-10
+3288  17288 9001  4326  WGS 84 / SCAR IMW SV11-20
+3289  17289 9001  4326  WGS 84 / SCAR IMW SV21-30
+3290  17290 9001  4326  WGS 84 / SCAR IMW SV31-40
+3291  17291 9001  4326  WGS 84 / SCAR IMW SV41-50
+3292  17292 9001  4326  WGS 84 / SCAR IMW SV51-60
+3293  17293 9001  4326  WGS 84 / SCAR IMW SW01-60
+3294  17294 9001  4326  WGS 84 / USGS Transantarctic Mountains
+3349  19898 9001  4326  WGS 84 / PDC Mercator
+32600 16000 9001  4326  WGS 84 / UTM grid system (northern hemisphere)
+32601 16001 9001  4326  WGS 84 / UTM zone 1N
+32602 16002 9001  4326  WGS 84 / UTM zone 2N
+32603 16003 9001  4326  WGS 84 / UTM zone 3N
+32604 16004 9001  4326  WGS 84 / UTM zone 4N
+32605 16005 9001  4326  WGS 84 / UTM zone 5N
+32606 16006 9001  4326  WGS 84 / UTM zone 6N
+32607 16007 9001  4326  WGS 84 / UTM zone 7N
+32608 16008 9001  4326  WGS 84 / UTM zone 8N
+32609 16009 9001  4326  WGS 84 / UTM zone 9N
+32610 16010 9001  4326  WGS 84 / UTM zone 10N
+32611 16011 9001  4326  WGS 84 / UTM zone 11N
+32612 16012 9001  4326  WGS 84 / UTM zone 12N
+32613 16013 9001  4326  WGS 84 / UTM zone 13N
+32614 16014 9001  4326  WGS 84 / UTM zone 14N
+32615 16015 9001  4326  WGS 84 / UTM zone 15N
+32616 16016 9001  4326  WGS 84 / UTM zone 16N
+32617 16017 9001  4326  WGS 84 / UTM zone 17N
+32618 16018 9001  4326  WGS 84 / UTM zone 18N
+32619 16019 9001  4326  WGS 84 / UTM zone 19N
+32620 16020 9001  4326  WGS 84 / UTM zone 20N
+32621 16021 9001  4326  WGS 84 / UTM zone 21N
+32622 16022 9001  4326  WGS 84 / UTM zone 22N
+32623 16023 9001  4326  WGS 84 / UTM zone 23N
+32624 16024 9001  4326  WGS 84 / UTM zone 24N
+32625 16025 9001  4326  WGS 84 / UTM zone 25N
+32626 16026 9001  4326  WGS 84 / UTM zone 26N
+32627 16027 9001  4326  WGS 84 / UTM zone 27N
+32628 16028 9001  4326  WGS 84 / UTM zone 28N
+32629 16029 9001  4326  WGS 84 / UTM zone 29N
+32630 16030 9001  4326  WGS 84 / UTM zone 30N
+32631 16031 9001  4326  WGS 84 / UTM zone 31N
+32632 16032 9001  4326  WGS 84 / UTM zone 32N
+32633 16033 9001  4326  WGS 84 / UTM zone 33N
+32634 16034 9001  4326  WGS 84 / UTM zone 34N
+32635 16035 9001  4326  WGS 84 / UTM zone 35N
+32636 16036 9001  4326  WGS 84 / UTM zone 36N
+32637 16037 9001  4326  WGS 84 / UTM zone 37N
+32638 16038 9001  4326  WGS 84 / UTM zone 38N
+32639 16039 9001  4326  WGS 84 / UTM zone 39N
+32640 16040 9001  4326  WGS 84 / UTM zone 40N
+32641 16041 9001  4326  WGS 84 / UTM zone 41N
+32642 16042 9001  4326  WGS 84 / UTM zone 42N
+32643 16043 9001  4326  WGS 84 / UTM zone 43N
+32644 16044 9001  4326  WGS 84 / UTM zone 44N
+32645 16045 9001  4326  WGS 84 / UTM zone 45N
+32646 16046 9001  4326  WGS 84 / UTM zone 46N
+32647 16047 9001  4326  WGS 84 / UTM zone 47N
+32648 16048 9001  4326  WGS 84 / UTM zone 48N
+32649 16049 9001  4326  WGS 84 / UTM zone 49N
+32650 16050 9001  4326  WGS 84 / UTM zone 50N
+32651 16051 9001  4326  WGS 84 / UTM zone 51N
+32652 16052 9001  4326  WGS 84 / UTM zone 52N
+32653 16053 9001  4326  WGS 84 / UTM zone 53N
+32654 16054 9001  4326  WGS 84 / UTM zone 54N
+32655 16055 9001  4326  WGS 84 / UTM zone 55N
+32656 16056 9001  4326  WGS 84 / UTM zone 56N
+32657 16057 9001  4326  WGS 84 / UTM zone 57N
+32658 16058 9001  4326  WGS 84 / UTM zone 58N
+32659 16059 9001  4326  WGS 84 / UTM zone 59N
+32660 16060 9001  4326  WGS 84 / UTM zone 60N
+32661 16061 9001  4326  WGS 84 / UPS North
+32700 16100 9001  4326  WGS 84 / UTM grid system (southern hemisphere)
+32701 16101 9001  4326  WGS 84 / UTM zone 1S
+32702 16102 9001  4326  WGS 84 / UTM zone 2S
+32703 16103 9001  4326  WGS 84 / UTM zone 3S
+32704 16104 9001  4326  WGS 84 / UTM zone 4S
+32705 16105 9001  4326  WGS 84 / UTM zone 5S
+32706 16106 9001  4326  WGS 84 / UTM zone 6S
+32707 16107 9001  4326  WGS 84 / UTM zone 7S
+32708 16108 9001  4326  WGS 84 / UTM zone 8S
+32709 16109 9001  4326  WGS 84 / UTM zone 9S
+32710 16110 9001  4326  WGS 84 / UTM zone 10S
+32711 16111 9001  4326  WGS 84 / UTM zone 11S
+32712 16112 9001  4326  WGS 84 / UTM zone 12S
+32713 16113 9001  4326  WGS 84 / UTM zone 13S
+32714 16114 9001  4326  WGS 84 / UTM zone 14S
+32715 16115 9001  4326  WGS 84 / UTM zone 15S
+32716 16116 9001  4326  WGS 84 / UTM zone 16S
+32717 16117 9001  4326  WGS 84 / UTM zone 17S
+32718 16118 9001  4326  WGS 84 / UTM zone 18S
+32719 16119 9001  4326  WGS 84 / UTM zone 19S
+32720 16120 9001  4326  WGS 84 / UTM zone 20S
+32721 16121 9001  4326  WGS 84 / UTM zone 21S
+32722 16122 9001  4326  WGS 84 / UTM zone 22S
+32723 16123 9001  4326  WGS 84 / UTM zone 23S
+32724 16124 9001  4326  WGS 84 / UTM zone 24S
+32725 16125 9001  4326  WGS 84 / UTM zone 25S
+32726 16126 9001  4326  WGS 84 / UTM zone 26S
+32727 16127 9001  4326  WGS 84 / UTM zone 27S
+32728 16128 9001  4326  WGS 84 / UTM zone 28S
+32729 16129 9001  4326  WGS 84 / UTM zone 29S
+32730 16130 9001  4326  WGS 84 / UTM zone 30S
+32731 16131 9001  4326  WGS 84 / UTM zone 31S
+32732 16132 9001  4326  WGS 84 / UTM zone 32S
+32733 16133 9001  4326  WGS 84 / UTM zone 33S
+32734 16134 9001  4326  WGS 84 / UTM zone 34S
+32735 16135 9001  4326  WGS 84 / UTM zone 35S
+32736 16136 9001  4326  WGS 84 / UTM zone 36S
+32737 16137 9001  4326  WGS 84 / UTM zone 37S
+32738 16138 9001  4326  WGS 84 / UTM zone 38S
+32739 16139 9001  4326  WGS 84 / UTM zone 39S
+32740 16140 9001  4326  WGS 84 / UTM zone 40S
+32741 16141 9001  4326  WGS 84 / UTM zone 41S
+32742 16142 9001  4326  WGS 84 / UTM zone 42S
+32743 16143 9001  4326  WGS 84 / UTM zone 43S
+32744 16144 9001  4326  WGS 84 / UTM zone 44S
+32745 16145 9001  4326  WGS 84 / UTM zone 45S
+32746 16146 9001  4326  WGS 84 / UTM zone 46S
+32747 16147 9001  4326  WGS 84 / UTM zone 47S
+32748 16148 9001  4326  WGS 84 / UTM zone 48S
+32749 16149 9001  4326  WGS 84 / UTM zone 49S
+32750 16150 9001  4326  WGS 84 / UTM zone 50S
+32751 16151 9001  4326  WGS 84 / UTM zone 51S
+32752 16152 9001  4326  WGS 84 / UTM zone 52S
+32753 16153 9001  4326  WGS 84 / UTM zone 53S
+32754 16154 9001  4326  WGS 84 / UTM zone 54S
+32755 16155 9001  4326  WGS 84 / UTM zone 55S
+32756 16156 9001  4326  WGS 84 / UTM zone 56S
+32757 16157 9001  4326  WGS 84 / UTM zone 57S
+32758 16158 9001  4326  WGS 84 / UTM zone 58S
+32759 16159 9001  4326  WGS 84 / UTM zone 59S
+32760 16160 9001  4326  WGS 84 / UTM zone 60S
+32761 16161 9001  4326  WGS 84 / UPS South
+32766 16636 9001  4326  WGS 84 / TM 36 SE
+2000  19942 9001  4600  Anguilla 1957 / British West Indies Grid
+2001  19942 9001  4601  Antigua 1943 / British West Indies Grid
+2002  19942 9001  4602  Dominica 1945 / British West Indies Grid
+2003  19942 9001  4603  Grenada 1953 / British West Indies Grid
+2004  19942 9001  4604  Montserrat 1958 / British West Indies Grid
+2005  19942 9001  4605  St. Kitts 1955 / British West Indies Grid
+2006  19942 9001  4606  St. Lucia 1955 / British West Indies Grid
+2007  19942 9001  4607  St. Vincent 45 / British West Indies Grid
+2017  17708 9001  4608  NAD27(76) / MTM zone 8
+2018  17709 9001  4608  NAD27(76) / MTM zone 9
+2019  17710 9001  4608  NAD27(76) / MTM zone 10
+2020  17711 9001  4608  NAD27(76) / MTM zone 11
+2021  17712 9001  4608  NAD27(76) / MTM zone 12
+2022  17713 9001  4608  NAD27(76) / MTM zone 13
+2023  17714 9001  4608  NAD27(76) / MTM zone 14
+2024  17715 9001  4608  NAD27(76) / MTM zone 15
+2025  17716 9001  4608  NAD27(76) / MTM zone 16
+2026  17717 9001  4608  NAD27(76) / MTM zone 17
+2027  16015 9001  4608  NAD27(76) / UTM zone 15N
+2028  16016 9001  4608  NAD27(76) / UTM zone 16N
+2029  16017 9001  4608  NAD27(76) / UTM zone 17N
+2030  16018 9001  4608  NAD27(76) / UTM zone 18N
+2008  17700 9001  4609  NAD27(CGQ77) / SCoPQ zone 2
+2009  17703 9001  4609  NAD27(CGQ77) / SCoPQ zone 3
+2010  17704 9001  4609  NAD27(CGQ77) / SCoPQ zone 4
+2011  17705 9001  4609  NAD27(CGQ77) / SCoPQ zone 5
+2012  17706 9001  4609  NAD27(CGQ77) / SCoPQ zone 6
+2013  17707 9001  4609  NAD27(CGQ77) / SCoPQ zone 7
+2014  17708 9001  4609  NAD27(CGQ77) / SCoPQ zone 8
+2015  17709 9001  4609  NAD27(CGQ77) / SCoPQ zone 9
+2016  17710 9001  4609  NAD27(CGQ77) / SCoPQ zone 10
+2031  16017 9001  4609  NAD27(CGQ77) / UTM zone 17N
+2032  16018 9001  4609  NAD27(CGQ77) / UTM zone 18N
+2033  16019 9001  4609  NAD27(CGQ77) / UTM zone 19N
+2034  16020 9001  4609  NAD27(CGQ77) / UTM zone 20N
+2035  16021 9001  4609  NAD27(CGQ77) / UTM zone 21N
+2138  19944 9001  4609  NAD27(CGQ77) / Quebec Lambert
+2327  16213 9001  4610  Xian 1980 / Gauss-Kruger zone 13
+2328  16214 9001  4610  Xian 1980 / Gauss-Kruger zone 14
+2329  16215 9001  4610  Xian 1980 / Gauss-Kruger zone 15
+2330  16216 9001  4610  Xian 1980 / Gauss-Kruger zone 16
+2331  16217 9001  4610  Xian 1980 / Gauss-Kruger zone 17
+2332  16218 9001  4610  Xian 1980 / Gauss-Kruger zone 18
+2333  16219 9001  4610  Xian 1980 / Gauss-Kruger zone 19
+2334  16220 9001  4610  Xian 1980 / Gauss-Kruger zone 20
+2335  16221 9001  4610  Xian 1980 / Gauss-Kruger zone 21
+2336  16222 9001  4610  Xian 1980 / Gauss-Kruger zone 22
+2337  16223 9001  4610  Xian 1980 / Gauss-Kruger zone 23
+2338  16313 9001  4610  Xian 1980 / Gauss-Kruger CM 75E
+2339  16314 9001  4610  Xian 1980 / Gauss-Kruger CM 81E
+2340  16315 9001  4610  Xian 1980 / Gauss-Kruger CM 87E
+2341  16316 9001  4610  Xian 1980 / Gauss-Kruger CM 93E
+2342  16317 9001  4610  Xian 1980 / Gauss-Kruger CM 99E
+2343  16318 9001  4610  Xian 1980 / Gauss-Kruger CM 105E
+2344  16319 9001  4610  Xian 1980 / Gauss-Kruger CM 111E
+2345  16320 9001  4610  Xian 1980 / Gauss-Kruger CM 117E
+2346  16321 9001  4610  Xian 1980 / Gauss-Kruger CM 123E
+2347  16322 9001  4610  Xian 1980 / Gauss-Kruger CM 129E
+2348  16323 9001  4610  Xian 1980 / Gauss-Kruger CM 135E
+2349  16285 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 25
+2350  16286 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 26
+2351  16287 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 27
+2352  16288 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 28
+2353  16289 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 29
+2354  16290 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 30
+2355  16291 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 31
+2356  16292 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 32
+2357  16293 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 33
+2358  16294 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 34
+2359  16295 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 35
+2360  16296 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 36
+2361  16297 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 37
+2362  16298 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 38
+2363  16299 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 39
+2364  16070 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 40
+2365  16071 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 41
+2366  16072 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 42
+2367  16073 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 43
+2368  16074 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 44
+2369  16075 9001  4610  Xian 1980 / 3-degree Gauss-Kruger zone 45
+2370  16385 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 75E
+2371  16386 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 78E
+2372  16387 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 81E
+2373  16388 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 84E
+2374  16389 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 87E
+2375  16390 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 90E
+2376  16391 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 93E
+2377  16392 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 96E
+2378  16393 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 99E
+2379  16394 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 102E
+2380  16395 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 105E
+2381  16396 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 108E
+2382  16397 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 111E
+2383  16398 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 114E
+2384  16399 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 117E
+2385  16170 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 120E
+2386  16171 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 123E
+2387  16172 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 126E
+2388  16173 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 129E
+2389  16174 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 132E
+2390  16175 9001  4610  Xian 1980 / 3-degree Gauss-Kruger CM 135E
+2326  19978 9001  4611  Hong Kong 1980 Grid System
+2443  17801 9001  4612  JGD2000 / Japan Plane Rectangular CS I
+2444  17802 9001  4612  JGD2000 / Japan Plane Rectangular CS II
+2445  17803 9001  4612  JGD2000 / Japan Plane Rectangular CS III
+2446  17804 9001  4612  JGD2000 / Japan Plane Rectangular CS IV
+2447  17805 9001  4612  JGD2000 / Japan Plane Rectangular CS V
+2448  17806 9001  4612  JGD2000 / Japan Plane Rectangular CS VI
+2449  17807 9001  4612  JGD2000 / Japan Plane Rectangular CS VII
+2450  17808 9001  4612  JGD2000 / Japan Plane Rectangular CS VIII
+2451  17809 9001  4612  JGD2000 / Japan Plane Rectangular CS IX
+2452  17810 9001  4612  JGD2000 / Japan Plane Rectangular CS X
+2453  17811 9001  4612  JGD2000 / Japan Plane Rectangular CS XI
+2454  17812 9001  4612  JGD2000 / Japan Plane Rectangular CS XII
+2455  17813 9001  4612  JGD2000 / Japan Plane Rectangular CS XIII
+2456  17814 9001  4612  JGD2000 / Japan Plane Rectangular CS XIV
+2457  17815 9001  4612  JGD2000 / Japan Plane Rectangular CS XV
+2458  17816 9001  4612  JGD2000 / Japan Plane Rectangular CS XVI
+2459  17817 9001  4612  JGD2000 / Japan Plane Rectangular CS XVII
+2460  17818 9001  4612  JGD2000 / Japan Plane Rectangular CS XVIII
+2461  17819 9001  4612  JGD2000 / Japan Plane Rectangular CS XIX
+3097  16051 9001  4612  JGD2000 / UTM zone 51N
+3098  16052 9001  4612  JGD2000 / UTM zone 52N
+3099  16053 9001  4612  JGD2000 / UTM zone 53N
+3100  16054 9001  4612  JGD2000 / UTM zone 54N
+3101  16055 9001  4612  JGD2000 / UTM zone 55N
+2933  16150 9001  4613  Segara / UTM zone 50S
+3000  19905 9001  4613  Segara / NEIEZ
+2932  19919 9001  4614  QND95 / Qatar National Grid
+2942  16028 9001  4615  Porto Santo / UTM zone 28N
+2943  16028 9001  4616  Selvagem Grande / UTM zone 28N
+2944  17700 9001  4617  NAD83(CSRS) / SCoPQ zone 2
+2945  17703 9001  4617  NAD83(CSRS) / MTM zone 3
+2946  17704 9001  4617  NAD83(CSRS) / MTM zone 4
+2947  17705 9001  4617  NAD83(CSRS) / MTM zone 5
+2948  17706 9001  4617  NAD83(CSRS) / MTM zone 6
+2949  17707 9001  4617  NAD83(CSRS) / MTM zone 7
+2950  17708 9001  4617  NAD83(CSRS) / MTM zone 8
+2951  17709 9001  4617  NAD83(CSRS) / MTM zone 9
+2952  17710 9001  4617  NAD83(CSRS) / MTM zone 10
+2953  19946 9001  4617  NAD83(CSRS) / New Brunswick Stereo
+2954  19960 9001  4617  NAD83(CSRS) / Prince Edward Isl. Stereographic (NAD83)
+2955  16011 9001  4617  NAD83(CSRS) / UTM zone 11N
+2956  16012 9001  4617  NAD83(CSRS) / UTM zone 12N
+2957  16013 9001  4617  NAD83(CSRS) / UTM zone 13N
+2958  16017 9001  4617  NAD83(CSRS) / UTM zone 17N
+2959  16018 9001  4617  NAD83(CSRS) / UTM zone 18N
+2960  16019 9001  4617  NAD83(CSRS) / UTM zone 19N
+2961  16020 9001  4617  NAD83(CSRS) / UTM zone 20N
+2962  16021 9001  4617  NAD83(CSRS) / UTM zone 21N
+3348  19897 9001  4617  NAD83(CSRS) / Statistics Canada Lambert
+29101 19941 9001  4618  SAD69 / Brazil Polyconic
+29168 16018 9001  4618  SAD69 / UTM zone 18N
+29169 16019 9001  4618  SAD69 / UTM zone 19N
+29170 16020 9001  4618  SAD69 / UTM zone 20N
+29171 16021 9001  4618  SAD69 / UTM zone 21N
+29172 16022 9001  4618  SAD69 / UTM zone 22N
+29187 16117 9001  4618  SAD69 / UTM zone 17S
+29188 16118 9001  4618  SAD69 / UTM zone 18S
+29189 16119 9001  4618  SAD69 / UTM zone 19S
+29190 16120 9001  4618  SAD69 / UTM zone 20S
+29191 16121 9001  4618  SAD69 / UTM zone 21S
+29192 16122 9001  4618  SAD69 / UTM zone 22S
+29193 16123 9001  4618  SAD69 / UTM zone 23S
+29194 16124 9001  4618  SAD69 / UTM zone 24S
+29195 16125 9001  4618  SAD69 / UTM zone 25S
+3006  17333 9001  4619  SWEREF99 TM
+3007  17321 9001  4619  SWEREF99 12 00
+3008  17322 9001  4619  SWEREF99 13 30
+3009  17323 9001  4619  SWEREF99 15 00
+3010  17324 9001  4619  SWEREF99 16 30
+3011  17325 9001  4619  SWEREF99 18 00
+3012  17326 9001  4619  SWEREF99 14 15
+3013  17327 9001  4619  SWEREF99 15 45
+3014  17328 9001  4619  SWEREF99 17 15
+3015  17329 9001  4619  SWEREF99 18 45
+3016  17330 9001  4619  SWEREF99 20 15
+3017  17331 9001  4619  SWEREF99 21 45
+3018  17332 9001  4619  SWEREF99 23 15
+2969  16020 9001  4621  Fort Marigot / UTM zone 20N
+2970  16020 9001  4622  Guadeloupe 1948 / UTM zone 20N
+2971  16022 9001  4623  CSG67 / UTM zone 22N
+3312  16021 9001  4623  CSG67 / UTM zone 21N
+2972  16022 9001  4624  RGFG95 / UTM zone 22N
+3313  16021 9001  4624  RGFG95 / UTM zone 21N
+2973  16020 9001  4625  Martinique 1938 / UTM zone 20N
+2990  19982 9001  4626  Reunion 1947 / TM Reunion
+2975  16140 9001  4627  RGR92 / UTM zone 40S
+2976  16106 9001  4628  Tahiti 52 / UTM zone 6S
+2977  16105 9001  4629  Tahaa 54 / UTM zone 5S
+2978  16107 9001  4630  IGN72 Nuku Hiva / UTM zone 7S
+2979  16142 9001  4631  K0 1949 / UTM zone 42S
+2980  16138 9001  4632  Combani 1950 / UTM zone 38S
+2981  16158 9001  4633  IGN56 Lifou / UTM zone 58S
+2982  16158 9001  4634  IGN72 Grand Terre / UTM zone 58S
+2983  16158 9001  4635  ST87 Ouvea / UTM zone 58S
+2985  19983 9001  4636  Petrels 1972 / Terre Adelie Polar Stereographic
+2986  19983 9001  4637  Perroud 1950 / Terre Adelie Polar Stereographic
+2987  16021 9001  4638  Saint Pierre et Miquelon 1950 / UTM zone 21N
+2988  16101 9001  4639  MOP78 / UTM zone 1S
+2989  16020 9001  4640  RRAF 1991 / UTM zone 20N
+2995  16158 9001  4641  IGN53 Mare / UTM zone 58S
+2996  16158 9001  4642  ST84 Ile des Pins / UTM zone 58S
+2997  16158 9001  4643  ST71 Belep / UTM zone 58S
+2998  16158 9001  4644  NEA74 Noumea / UTM zone 58S
+2984  19981 9001  4645  RGNC 1991 / Lambert New Caledonia
+2999  16138 9001  4646  Grand Comoros / UTM zone 38S
+3052  19987 9001  4657  Reykjavik 1900 / Lambert 1900
+3053  19988 9001  4658  Hjorsey 1955 / Lambert 1955
+3054  16026 9001  4658  Hjorsey 1955 / UTM zone 26N
+3055  16027 9001  4658  Hjorsey 1955 / UTM zone 27N
+3056  16028 9001  4658  Hjorsey 1955 / UTM zone 28N
+3057  19989 9001  4659  ISN93 / Lambert 1993
+3058  19991 9001  4660  Helle 1954 / Jan Mayen Grid
+3059  19990 9001  4661  LKS92 / Latvia TM
+3060  16158 9001  4662  IGN72 Grande Terre / UTM zone 58S
+3061  16028 9001  4663  Porto Santo 1995 / UTM zone 28N
+3062  16026 9001  4664  Azores Oriental 1995 / UTM zone 26N
+3063  16026 9001  4665  Azores Central 1995 / UTM zone 26N
+2600  19934 9001  4669  Lietuvos Koordinoei Sistema 1994
+3346  19934 9001  4669  LKS94 / Lithuania TM
+3064  16032 9001  4670  IGM95 / UTM zone 32N
+3065  16033 9001  4670  IGM95 / UTM zone 33N
+30493 18011 9001  4671  Voirol 1879 / Nord Algerie (ancienne)
+30494 18012 9001  4671  Voirol 1879 / Sud Algerie (ancienne)
+31971 16017 9001  4674  SIRGAS 2000 / UTM zone 17N
+31972 16018 9001  4674  SIRGAS 2000 / UTM zone 18N
+31973 16019 9001  4674  SIRGAS 2000 / UTM zone 19N
+31974 16020 9001  4674  SIRGAS 2000 / UTM zone 20N
+31975 16021 9001  4674  SIRGAS 2000 / UTM zone 21N
+31976 16022 9001  4674  SIRGAS 2000 / UTM zone 22N
+31977 16117 9001  4674  SIRGAS 2000 / UTM zone 17S
+31978 16118 9001  4674  SIRGAS 2000 / UTM zone 18S
+31979 16119 9001  4674  SIRGAS 2000 / UTM zone 19S
+31980 16120 9001  4674  SIRGAS 2000 / UTM zone 20S
+31981 16121 9001  4674  SIRGAS 2000 / UTM zone 21S
+31982 16122 9001  4674  SIRGAS 2000 / UTM zone 22S
+31983 16123 9001  4674  SIRGAS 2000 / UTM zone 23S
+31984 16124 9001  4674  SIRGAS 2000 / UTM zone 24S
+31985 16125 9001  4674  SIRGAS 2000 / UTM zone 25S
+3295  15399 9001  4675  Guam 1963 / Yap Islands
+3993  15400 9001  4675  Guam 1963 / Guam SPCS
+3103  16028 9001  4681  Mauritania 1999 / UTM zone 28N
+3104  16029 9001  4681  Mauritania 1999 / UTM zone 29N
+3105  16030 9001  4681  Mauritania 1999 / UTM zone 30N
+3106  16490 9001  4682  Gulshan 303 / Bangladesh Transverse Mercator
+3121  18171 9001  4683  PRS92 / Philippines zone 1
+3122  18172 9001  4683  PRS92 / Philippines zone 2
+3123  18173 9001  4683  PRS92 / Philippines zone 3
+3124  18174 9001  4683  PRS92 / Philippines zone 4
+3125  18175 9001  4683  PRS92 / Philippines zone 5
+3114  18055 9001  4686  MAGNA-SIRGAS / Colombia Far West zone
+3115  18056 9001  4686  MAGNA-SIRGAS / Colombia West zone
+3116  18057 9001  4686  MAGNA-SIRGAS / Colombia Bogota zone
+3117  18058 9001  4686  MAGNA-SIRGAS / Colombia East Central zone
+3118  18059 9001  4686  MAGNA-SIRGAS / Colombia East zone
+3296  16105 9001  4687  RGPF / UTM zone 5S
+3297  16106 9001  4687  RGPF / UTM zone 6S
+3298  16107 9001  4687  RGPF / UTM zone 7S
+3299  16108 9001  4687  RGPF / UTM zone 8S
+3303  16107 9001  4688  Fatu Iva 72 / UTM zone 7S
+3302  16107 9001  4689  IGN63 Hiva Oa / UTM zone 7S
+3304  16106 9001  4690  Tahiti 79 / UTM zone 6S
+3305  16106 9001  4691  Moorea 87 / UTM zone 6S
+3306  16105 9001  4692  Maupiti 83 / UTM zone 5S
+3307  16039 9001  4693  Nakhl-e Ghanem / UTM zone 39N
+22181 18031 9001  4694  POSGAR 94 / Argentina 1
+22182 18032 9001  4694  POSGAR 94 / Argentina 2
+22183 18033 9001  4694  POSGAR 94 / Argentina 3
+22184 18034 9001  4694  POSGAR 94 / Argentina 4
+22185 18035 9001  4694  POSGAR 94 / Argentina 5
+22186 18036 9001  4694  POSGAR 94 / Argentina 6
+22187 18037 9001  4694  POSGAR 94 / Argentina 7
+3314  17401 9001  4695  Katanga 1955 / Katanga Lambert
+3315  17402 9001  4695  Katanga 1955 / Katanga TM
+3316  17422 9001  4696  Kasai 1953 / Congo TM zone 22
+3317  17424 9001  4696  Kasai 1953 / Congo TM zone 24
+3318  17412 9001  4697  IGC 1962 / Congo TM zone 12
+3319  17414 9001  4697  IGC 1962 / Congo TM zone 14
+3320  17416 9001  4697  IGC 1962 / Congo TM zone 16
+3321  17418 9001  4697  IGC 1962 / Congo TM zone 18
+3322  17420 9001  4697  IGC 1962 / Congo TM zone 20
+3323  17422 9001  4697  IGC 1962 / Congo TM zone 22
+3324  17424 9001  4697  IGC 1962 / Congo TM zone 24
+3325  17426 9001  4697  IGC 1962 / Congo TM zone 26
+3326  17428 9001  4697  IGC 1962 / Congo TM zone 28
+3327  17430 9001  4697  IGC 1962 / Congo TM zone 30
+3336  16142 9001  4698  IGN 1962 Kerguelen / UTM zone 42S
+3337  19899 9001  4699  Le Pouce 1934 / Mauritius Grid
+3367  16028 9001  4700  IGN Astro 1960 / UTM zone 28N
+3368  16029 9001  4700  IGN Astro 1960 / UTM zone 29N
+3369  16030 9001  4700  IGN Astro 1960 / UTM zone 30N
+3339  17412 9001  4701  IGCB 1955 / Congo TM zone 12
+3340  17414 9001  4701  IGCB 1955 / Congo TM zone 14
+3341  17416 9001  4701  IGCB 1955 / Congo TM zone 16
+3342  16133 9001  4701  IGCB 1955 / UTM zone 33S
+3343  16028 9001  4702  Mauritania 1999 / UTM zone 28N
+3344  16029 9001  4702  Mauritania 1999 / UTM zone 29N
+3345  16030 9001  4702  Mauritania 1999 / UTM zone 30N
+3353  16132 9001  4704  Mhast (onshore) / UTM zone 32S
+3354  16132 9001  4705  Mhast (offshore) / UTM zone 32S
+3355  18072 9001  4706  Egypt Gulf of Suez S-650 TL / Red Belt
+3356  16017 9001  4723  Grand Cayman 1959 / UTM zone 17N
+3357  16017 9001  4726  Little Cayman 1961 / UTM zone 17N
+3366  19896 9005  4738  Hong Kong 1963 Grid System
+3374  16029 9001  4741  FD54 / UTM zone 29N
+3375  19895 9001  4742  GDM2000 / Peninsula RSO
+3376  19894 9001  4742  GDM2000 / East Malaysia BRSO
+3377  19893 9001  4742  GDM2000 / Johor Grid
+3378  19892 9001  4742  GDM2000 / Sembilan and Melaka Grid
+3379  19891 9001  4742  GDM2000 / PahangGrid
+3380  19890 9001  4742  GDM2000 / Selangor Grid
+3381  19889 9001  4742  GDM2000 / Terengganu Grid
+3382  19888 9001  4742  GDM2000 / Pinang Grid
+3383  19887 9001  4742  GDM2000 / Kedah and Perlis Grid
+3384  19886 9001  4742  GDM2000 / Perak Grid
+3385  19885 9001  4742  GDM2000 / Kelantan Grid
+21780 19923 9001  4801  Bern 1898 (Bern) / LV03C
+20790 19936 9001  4803  Lisbon (Lisbon) / Portuguese National Grid
+20791 19969 9001  4803  Lisbon (Lisbon) / Portuguese Grid
+25700 19905 9001  4804  Makassar (Jakarta) / NEIEZ
+31281 18041 9001  4805  MGI (Ferro) / Austria West Zone
+31282 18042 9001  4805  MGI (Ferro) / Austria Central Zone
+31283 18043 9001  4805  MGI (Ferro) / Austria East Zone
+31288 18047 9001  4805  MGI (Ferro) / M28
+31289 18048 9001  4805  MGI (Ferro) / M31
+31290 18049 9001  4805  MGI (Ferro) / M34
+31291 18041 9001  4805  MGI (Ferro) / Austria West Zone
+31292 18042 9001  4805  MGI (Ferro) / Austria Central Zone
+31293 18043 9001  4805  MGI (Ferro) / Austria East Zone
+26591 18121 9001  4806  Monte Mario (Rome) / Italy zone 1
+26592 18122 9001  4806  Monte Mario (Rome) / Italy zone 2
+27561 18091 9001  4807  NTF (Paris) / Lambert Nord France
+27562 18092 9001  4807  NTF (Paris) / Lambert Centre France
+27563 18093 9001  4807  NTF (Paris) / Lambert Sud France
+27564 18094 9001  4807  NTF (Paris) / Lambert Corse
+27571 18081 9001  4807  NTF (Paris) / Lambert zone I
+27572 18082 9001  4807  NTF (Paris) / Lambert zone II
+27573 18083 9001  4807  NTF (Paris) / Lambert zone III
+27574 18084 9001  4807  NTF (Paris) / Lambert zone IV
+27581 18081 9001  4807  NTF (Paris) / France I
+27582 18082 9001  4807  NTF (Paris) / France II
+27583 18083 9001  4807  NTF (Paris) / France III
+27584 18084 9001  4807  NTF (Paris) / France IV
+27591 18091 9001  4807  NTF (Paris) / Nord France
+27592 18092 9001  4807  NTF (Paris) / Centre France
+27593 18093 9001  4807  NTF (Paris) / Sud France
+27594 18094 9001  4807  NTF (Paris) / Corse
+21500 19901 9001  4809  Belge 1950 (Brussels) / Belge Lambert 50
+29700 19911 9001  4810  Tananarive (Paris) / Laborde Grid
+21100 19905 9001  4813  Batavia (Jakarta) / NEIEZ
+22300 19937 9036  4816  Carthage (Paris) / Tunisia Mining Grid
+27391 18221 9001  4817  NGO 1948 (Oslo) / NGO zone I
+27392 18222 9001  4817  NGO 1948 (Oslo) / NGO zone II
+27393 18223 9001  4817  NGO 1948 (Oslo) / NGO zone III
+27394 18224 9001  4817  NGO 1948 (Oslo) / NGO zone IV
+27395 18225 9001  4817  NGO 1948 (Oslo) / NGO zone V
+27396 18226 9001  4817  NGO 1948 (Oslo) / NGO zone VI
+27397 18227 9001  4817  NGO 1948 (Oslo) / NGO zone VII
+27398 18228 9001  4817  NGO 1948 (Oslo) / NGO zone VIII
+2065  19952 9001  4818  S-JTSK (Ferro) / Krovak
+2934  19905 9001  4820  Segara (Jakarta) / NEIEZ
+27500 19903 9001  4901  ATF (Paris) / Nord de Guerre
+2062  19921 9001  4903  Madrid 1870 (Madrid) / Spain
+2963  19979 9001  4904  Lisbon 1890 (Lisbon) / Portugal Bonne
