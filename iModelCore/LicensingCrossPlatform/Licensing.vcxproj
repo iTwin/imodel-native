@@ -8,7 +8,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Licensing\Client.cpp" />
+    <ClCompile Include="Licensing\ClientFreeImpl.cpp" />
     <ClCompile Include="Licensing\ClientImpl.cpp" />
+    <ClCompile Include="Licensing\ClientWithKeyImpl.cpp" />
     <ClCompile Include="Licensing\Policy.cpp" />
     <ClCompile Include="Licensing\PolicyToken.cpp" />
     <ClCompile Include="Licensing\UsageDb.cpp" />
@@ -22,8 +24,12 @@
     <ClCompile Include="Licensing\Utils\UrlSafeBase64Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Licensing\ClientFreeImpl.h" />
     <ClInclude Include="Licensing\ClientImpl.h" />
+    <ClInclude Include="Licensing\ClientInterface.h" />
+    <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
     <ClInclude Include="Licensing\DateHelper.h" />
+    <ClInclude Include="Licensing\FreeApplicationPolicyHelper.h" />
     <ClInclude Include="Licensing\Logging.h" />
     <ClInclude Include="Licensing\Policy.h" />
     <ClInclude Include="Licensing\PolicyHelper.h" />

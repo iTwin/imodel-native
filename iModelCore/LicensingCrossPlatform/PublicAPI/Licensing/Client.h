@@ -29,29 +29,11 @@ typedef std::shared_ptr<struct Client> ClientPtr;
 struct Client
 {
 private:
-    std::unique_ptr<struct ClientInterface> m_impl;
-
-    Client
-        (
-		const ConnectSignInManager::UserInfo& userInfo,
-        ClientInfoPtr clientInfo,
-        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
-        BeFileNameCR dbPath,
-        bool offlineMode,
-        Utf8String projectId,
-        Utf8String featureString,
-        IHttpHandlerPtr httpHandler
-        );
+    std::shared_ptr<struct ClientInterface> m_impl;
 
 	Client
 		(
-		Utf8String username,
-		ClientInfoPtr clientInfo,
-		BeFileNameCR dbPath,
-		bool offlineMode,
-		Utf8String projectId,
-		Utf8String featureString,
-		IHttpHandlerPtr httpHandler
+		std::shared_ptr<struct ClientInterface> implementation
 		);
 
 public:
@@ -75,7 +57,18 @@ public:
 
 	LICENSING_EXPORT static ClientPtr CreateFree
 	(
-		Utf8String username, /** Username */
+		Utf8String accessToken, /** AccessToken from OIDC */
+		ClientInfoPtr clientInfo, /** A ClientInfoPtr */
+		BeFileNameCR dbPath, /** Path for LicenseClient database */
+		bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
+		Utf8String projectId = "", /** ProjectID string, defaults to an empty string */
+		Utf8String featureString = "", /** FeatureString, defaults to an empty string */
+		IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
+	);
+
+	LICENSING_EXPORT static ClientPtr CreateWithKey
+	(
+		Utf8String accessKey, /** AccessKey */
 		ClientInfoPtr clientInfo, /** A ClientInfoPtr */
 		BeFileNameCR dbPath, /** Path for LicenseClient database */
 		bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */

@@ -8,6 +8,7 @@
 #include <Licensing/Client.h>
 #include "ClientImpl.h"
 #include "ClientFreeImpl.h"
+#include "ClientWithKeyImpl.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -16,37 +17,11 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 Client::Client
 (
-	Utf8String username,
-	ClientInfoPtr clientInfo,
-	BeFileNameCR dbPath,
-	bool offlineMode,
-	Utf8String projectId,
-	Utf8String featureString,
-	IHttpHandlerPtr httpHandler
+	std::shared_ptr<struct ClientInterface> implementation
 )
 {
-	m_impl = std::make_unique<ClientFreeImpl>(username, clientInfo, dbPath, offlineMode, projectId, featureString, httpHandler);
+	m_impl = implementation;
 }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Client::Client
-(
-const ConnectSignInManager::UserInfo& userInfo,
-ClientInfoPtr clientInfo,
-std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
-BeFileNameCR dbPath,
-bool offlineMode,
-Utf8String projectId,
-Utf8String featureString,
-IHttpHandlerPtr httpHandler
-)
-    {
-    m_impl = std::make_unique<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler);
-    }
-
-
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -63,25 +38,42 @@ Utf8String featureString,
 IHttpHandlerPtr httpHandler
 )
     {
-    return std::shared_ptr<Client>(new Client(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler));
-    }
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler)));
+	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::CreateFree
 (
-	Utf8String username,
+	Utf8String accessToken,
 	ClientInfoPtr clientInfo,
 	BeFileNameCR dbPath,
 	bool offlineMode,
 	Utf8String projectId,
 	Utf8String featureString,
-	IHttpHandlerPtr customHttpHandler
+	IHttpHandlerPtr httpHandler
 )
 	{
-	return std::shared_ptr<Client>(new Client(username, clientInfo, dbPath, offlineMode, projectId, featureString, customHttpHandler));
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientFreeImpl>(accessToken, clientInfo, dbPath, offlineMode, projectId, featureString, httpHandler)));
 	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientPtr Client::CreateWithKey
+(
+	Utf8String accessKey,
+	ClientInfoPtr clientInfo,
+	BeFileNameCR dbPath,
+	bool offlineMode,
+	Utf8String projectId,
+	Utf8String featureString,
+	IHttpHandlerPtr httpHandler
+)
+{
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, projectId, featureString, httpHandler)));
+}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

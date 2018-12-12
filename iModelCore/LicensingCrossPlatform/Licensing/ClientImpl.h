@@ -32,7 +32,7 @@
 #define LOGPOSTINGSOURCE_CHECKOUT           "Checkout"
 
 // Heartbeat thread delay (MS)
-#define HEARTBEAT_THREAD_DELAY_MS           3000
+#define HEARTBEAT_THREAD_DELAY_MS           1000
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_HTTP
@@ -64,6 +64,7 @@ protected:
     Utf8String m_projectId;
     Utf8String m_correlationId;
     bool m_offlineMode;
+    Utf8String m_accessTokenString;
     bool m_stopApplicationCalled;
 
     // Policy
@@ -85,6 +86,7 @@ protected:
     bool m_usageHeartbeatStopped = false;
 
     void UsageHeartbeat(int64_t currentTime);
+    void UsageHeartbeatRealTime(int64_t currentTime);
     void StopUsageHeartbeat();
     BentleyStatus RecordUsage();
 
@@ -127,8 +129,9 @@ public:
         );
 
     // Usages
-    LICENSING_EXPORT LicenseStatus StartApplication(); 
+    LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
+    LICENSING_EXPORT folly::Future<folly::Unit> SendUsageRealtime();
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
     //Features

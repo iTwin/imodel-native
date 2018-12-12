@@ -7,10 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientImpl.h"
 #include "GenerateSID.h"
-#include "../PublicAPI/Licensing/Utils/LogFileHelper.h"
+#include <Licensing/Utils/LogFileHelper.h>
+#include <Licensing/Utils/UsageJsonHelper.h>
 #include "Logging.h"
 #include "UsageDb.h"
-#include "FreeApplicationPolicyHelper.h"
 
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
@@ -201,6 +201,44 @@ void ClientImpl::UsageHeartbeat(int64_t currentTime)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::UsageHeartbeatRealTime(int64_t currentTime)
+{
+	LOG.debug("ClientImpl::UsageHeartbeatRealTime");
+
+	if (m_startUsageHeartbeat)
+	{
+		SendUsageRealtime();
+		m_startUsageHeartbeat = false;
+		m_lastRunningUsageheartbeatStartTime = currentTime;
+	}
+
+	m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
+	{
+		int64_t heartbeatInterval = m_policy->GetHeartbeatInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
+
+		int64_t time_elapsed = currentTime - m_lastRunningUsageheartbeatStartTime;
+
+		if (time_elapsed >= heartbeatInterval)
+		{
+			RecordUsage();
+			m_lastRunningUsageheartbeatStartTime = currentTime;
+		}
+
+		if (!m_stopUsageHeartbeat)
+		{
+			int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+			UsageHeartbeat(currentTimeUnixMs);
+		}
+		else
+		{
+			m_usageHeartbeatStopped = true;
+		}
+	});
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ClientImpl::StopUsageHeartbeat()
     {
     LOG.debug("ClientImpl::StopUsageHeartbeat");
@@ -212,7 +250,7 @@ void ClientImpl::StopUsageHeartbeat()
 
     while (!m_usageHeartbeatStopped)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
     // Reset
@@ -287,7 +325,7 @@ void ClientImpl::StopPolicyHeartbeat()
 
     while (!m_policyHeartbeatStopped)
         {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
     // Reset
@@ -355,7 +393,7 @@ void ClientImpl::StopLogPostingHeartbeat()
 
     while (!m_logPostingHeartbeatStopped)
         {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
     // Reset
@@ -703,6 +741,65 @@ folly::Future<folly::Unit> ClientImpl::SendUsageLogs(BeFileNameCR usageCSV, Utf8
             });
         });
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<folly::Unit> ClientImpl::SendUsageRealtime()
+	{
+	LOG.trace("SendUsageRealtime");
+	
+	//std::ofstream logfile("D:/performSendUsageRealtime.txt");
+	
+	// set environment to dev for the time being
+	//auto previousEnvironment = UrlProvider::GetEnvironment();
+	//UrlProvider::SetEnvironment(UrlProvider::Environment::Dev);
+
+	auto url = UrlProvider::UrlDescriptor::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
+
+	//logfile << url << std::endl;
+
+	// set environment back to original
+	//UrlProvider::SetEnvironment(previousEnvironment);
+
+	HttpClient client(nullptr, m_httpHandler);
+	auto uploadRequest = client.CreateRequest(url, "POST");
+	uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + m_accessTokenString);
+	uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
+
+	// create Json body
+	auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids(
+		m_clientInfo->GetDeviceId(),
+		m_featureString,
+		m_clientInfo->GetApplicationVersion(),
+		m_projectId
+	);
+	
+	//auto writer = Json::StyledWriter();
+	//logfile << writer.write(jsonBody) << std::endl;
+	//logfile << jsonBody.ToString() << std::endl;
+	//logfile.close();
+
+	uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody.ToString()));
+
+	return uploadRequest.Perform().then(
+		[=](Response response)
+		{
+		if (!response.IsSuccess()) {
+			/*std::ofstream logfile("D:/performSendUsageRealtimeResponse.txt");
+			logfile << response.GetBody().AsString() << std::endl;
+			logfile << (int)response.GetHttpStatus() << std::endl;
+			logfile.close();*/
+			throw HttpError(response);
+		}
+		/*std::ofstream logfile("D:/performSendUsageRealtimeResponse.txt");
+		logfile << response.GetBody().AsString() << std::endl;
+		logfile << (int)response.GetHttpStatus() << std::endl;
+		logfile.close();*/
+		return folly::makeFuture();
+		});
+	
+	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

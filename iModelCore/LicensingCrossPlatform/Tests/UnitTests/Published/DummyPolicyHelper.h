@@ -8,11 +8,10 @@
 #pragma once
 
 #include <Licensing/Licensing.h>
+#include <Licensing/Utils/DateHelper.h>
 #include <json/json.h>
 #include <sstream>
 #include <random>
-
-#include "../../../Licensing/DateHelper.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 

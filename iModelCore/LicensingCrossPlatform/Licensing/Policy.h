@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "DateHelper.h"
+#include <Licensing/Utils/DateHelper.h>
 
 #include <Bentley/Base64Utilities.h>
 

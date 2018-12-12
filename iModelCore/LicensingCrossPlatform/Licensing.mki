@@ -9,14 +9,14 @@
 %include MultiCppCompileRule.mki
 
 Headers =
-Headers + $(SourceDir)DateHelper.h
-Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(SourceDir)ClientInterface.h
 Headers + $(SourceDir)ClientImpl.h
 Headers + $(SourceDir)ClientFreeImpl.h
+Headers + $(SourceDir)ClientWithKeyImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
 Headers + $(SourceDir)UsageDb.h
+Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(PublicApiDir)Client.h
 Headers + $(PublicApiDir)LicenseStatus.h
 Headers + $(PublicApiDir)Licensing.h
@@ -28,6 +28,7 @@ Headers + $(PublicApiDir)Utils/LogFileHelper.h
 Headers + $(PublicApiDir)Utils/SCVWritter.h
 Headers + $(PublicApiDir)Utils/TimeRetriever.h
 Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
+Headers + $(PublicApiDir)Utils/DateHelper.h
 
 
 #---------------------------------------------------------------------------------------+
@@ -38,6 +39,8 @@ $(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${Multi
 $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)ClientFreeImpl$(oext)            : $(SourceDir)ClientFreeImpl.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ClientWithKeyImpl$(oext)         : $(SourceDir)ClientWithKeyImpl.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
 

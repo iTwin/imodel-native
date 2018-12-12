@@ -7,10 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientFreeImpl.h"
 #include "GenerateSID.h"
-#include "../PublicAPI/Licensing/Utils/LogFileHelper.h"
 #include "Logging.h"
 #include "UsageDb.h"
 #include "FreeApplicationPolicyHelper.h"
+
+#include <Licensing/Utils/LogFileHelper.h>
+#include <fstream>
 
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
@@ -19,12 +21,19 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 ClientFreeImpl::ClientFreeImpl(
-	Utf8String username, ClientInfoPtr clientInfo, BeFileNameCR db_path, bool offlineMode, Utf8String projectId, Utf8String featureString, IHttpHandlerPtr httpHandler
+	Utf8String accessToken,
+	ClientInfoPtr clientInfo,
+	BeFileNameCR db_path,
+	bool offlineMode,
+	Utf8String projectId,
+	Utf8String featureString,
+	IHttpHandlerPtr httpHandler
 )
-{
+	{
 	m_userInfo = ConnectSignInManager::UserInfo();
-	m_userInfo.username = username;
+	//m_userInfo.username = username;
 
+	m_accessTokenString = accessToken;
 	m_clientInfo = clientInfo;
 	m_dbPath = db_path;
 	m_offlineMode = offlineMode;
@@ -41,49 +50,90 @@ ClientFreeImpl::ClientFreeImpl(
 		m_projectId = "00000000-0000-0000-0000-000000000000";
 
 	if (m_offlineMode)
-	{
+		{
 		// Fake use m_offlineMode in order to avoid unused variable warning 
 		// that is treated as error on clang compilers for iOS.
+		}
 	}
-}
 
 LicenseStatus ClientFreeImpl::StartApplication()
-{
+	{
+	LOG.trace("ClientFreeImpl::StartApplication");
+
 	if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
+		{
+		LOG.error("ClientFreeImpl::StartApplication ERROR - Database creation failed.");
 		return LicenseStatus::Error;
+		}
 
 	// Create dummy policy for free application usage
 	m_policy = FreeApplicationPolicyHelper::CreatePolicy();
 
-	if (ERROR == RecordUsage())
-		return LicenseStatus::Error;
-
 	// Begin heartbeats
 	int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-	UsageHeartbeat(currentTimeUnixMs);
-	LogPostingHeartbeat(currentTimeUnixMs);
-
-	// This is only a logging example
-	LOG.trace("StartApplication");
+	
+	UsageHeartbeatRealTime(currentTimeUnixMs);
 
 	return LicenseStatus::Ok;
-}
+	}
 
 BentleyStatus ClientFreeImpl::StopApplication()
-{
-	LOG.trace("StopApplication");
+	{
+	LOG.trace("ClientFreeImpl::StopApplication");
 
-	m_lastRunningPolicyheartbeatStartTime = 0;      // This will stop Policy heartbeat
-	m_lastRunningUsageheartbeatStartTime = 0;       // This will stop Usage heartbeat
-	m_lastRunningLogPostingheartbeatStartTime = 0;  // This will stop log posting heartbeat
-
-	if (m_usageDb->GetUsageRecordCount() > 0)
-		PostUsageLogs();
-
-	if (m_usageDb->GetFeatureRecordCount() > 0)
-		PostFeatureLogs();
+	StopUsageHeartbeat();
 
 	m_usageDb->Close();
 
 	return SUCCESS;
-}
+	}
+/*
+folly::Future<Utf8String> ClientFreeImpl::PerformGetUserInfo()
+	{
+	LOG.info("PerformGetUserInfo");
+
+	auto requestEndpointUrl = UrlProvider::Urls::IMSOpenID.Get(); 
+	requestEndpointUrl += "/.well-known/openid-configuration"; // Change this to match actual endpoint for getting userInfo endpoint
+
+	HttpClient client(nullptr, m_httpHandler);
+
+	// request Json containing URLs to OIDC endpoints
+	Json::Value endpointJson = client.CreateGetRequest(requestEndpointUrl).Perform().then(
+		[=](Response response)
+		{
+		std::ofstream logfile("D:/performgetuserinfo.txt");
+		if (!response.IsSuccess())
+			{
+			logfile << (int)response.GetHttpStatus() << std::endl;
+			logfile.close();
+			throw HttpError(response);
+			}
+		logfile << response.GetBody().AsString() << std::endl;
+		logfile.close();
+		return Json::Value::From(response.GetBody().AsString());
+		}).get();
+
+	std::ofstream logfile("D:/performgIntrospectionEndpoint.txt");
+	// parse Json to get Introspection endpoint
+	auto introspectionUrl = endpointJson["introspection_endpoint"].asString();
+	logfile << introspectionUrl << std::endl;
+	logfile << m_accessTokenString << std::endl;
+	logfile.close();
+	// submit token to Introspection endpoint and get user info
+	return "";
+	/*return client.CreatePostRequest(introspectionUrl).Perform().then(
+		[=](Response response)
+		{
+		std::ofstream logfile("D:/performPostIntrospection.txt");
+		if (!response.IsSuccess())
+			{
+			logfile << (int)response.GetHttpStatus() << std::endl;
+			logfile.close();
+			throw HttpError(response);
+			}
+		logfile << response.GetBody().AsString() << std::endl;
+		logfile.close();
+		return response.GetBody().AsString();
+		});
+	}
+*/

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/ClientFreeImpl.h $
+|     $Source: Licensing/ClientWithKeyImpl.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,16 +15,16 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef std::shared_ptr<struct ClientFreeImpl> ClientFreeImplPtr;
+typedef std::shared_ptr<struct ClientWithKeyImpl> ClientWithKeyImplPtr;
 
-struct ClientFreeImpl : ClientImpl
+struct ClientWithKeyImpl : ClientImpl
 {
 protected:
 
 public:
-	LICENSING_EXPORT ClientFreeImpl
+	LICENSING_EXPORT ClientWithKeyImpl
 		(
-		Utf8String accessToken,
+		Utf8String accessKey,
 		ClientInfoPtr clientInfo,
 		BeFileNameCR db_path,
 		bool offlineMode,
@@ -34,6 +34,8 @@ public:
 		);
 	LICENSING_EXPORT LicenseStatus StartApplication();
 	LICENSING_EXPORT BentleyStatus StopApplication();
+
+	LICENSING_EXPORT folly::Future<folly::Unit> SendUsageRealtimeWithKey();
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

@@ -10,10 +10,11 @@
 #include "DummyPolicyHelper.h"
 
 #include <Licensing/Client.h>
+#include <Licensing/Utils/DateHelper.h>
 #include "../../../Licensing/ClientImpl.h"
 #include "../../../Licensing/ClientFreeImpl.h"
+#include "../../../Licensing/ClientWithKeyImpl.h"
 #include "../../../Licensing/UsageDb.h"
-#include "../../../Licensing/DateHelper.h"
 #include "../../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
 #include <BeHttp/HttpClient.h>
@@ -92,14 +93,12 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
-
     if (signIn)
         {
         Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
         if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
             return nullptr;
         }
-
     BeFileName dbPath = GetUsageDbPath();
     
     return std::make_shared<ClientImpl>(
@@ -113,8 +112,8 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         proxy);
     }
 
-ClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
-    {
+ClientFreeImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+{
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
@@ -122,10 +121,121 @@ ClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITim
 
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
+
+	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+
 	BeFileName dbPath = GetUsageDbPath();
+	
+	Utf8String tokenstring = "7b9869c580a35aa6c4d2a4e4a290d26e7d327b6f77b448787d298793506d30b7";
 
 	return std::make_shared<ClientFreeImpl>(
-		"qa2_devuser2",
+		tokenstring,
+		clientInfo,
+		dbPath,
+		true,
+		"",
+		"",
+		proxy);
+}
+
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+{
+	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+
+	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+
+	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+
+	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+
+	BeFileName dbPath = GetUsageDbPath();
+
+	Utf8String accesskey = "somekey";
+
+	return std::make_shared<ClientWithKeyImpl>(
+		accesskey,
+		clientInfo,
+		dbPath,
+		true,
+		"",
+		"",
+		proxy);
+}
+
+ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+{
+	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+
+	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+
+	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+	if (signIn)
+	{
+		Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
+		if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
+			return nullptr;
+	}
+	BeFileName dbPath = GetUsageDbPath();
+
+	return Client::Create(
+		manager->GetUserInfo(),
+		clientInfo,
+		manager,
+		dbPath,
+		true,
+		"",
+		"",
+		proxy);
+}
+
+ClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+{
+	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+
+	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+
+	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+
+	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+
+	BeFileName dbPath = GetUsageDbPath();
+
+	Utf8String tokenstring = "36aa7ff687353dce8b035b5ab6644f90e9980b860d22afd90642f2f879cb5993";
+
+	return Client::CreateFree(
+		tokenstring,
+		clientInfo,
+		dbPath,
+		true,
+		"",
+		"",
+		proxy);
+}
+
+ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+{
+	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+
+	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+
+	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+
+	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+
+	BeFileName dbPath = GetUsageDbPath();
+
+	Utf8String accesskey = "somekey";
+
+	return Client::CreateWithKey(
+		accesskey,
 		clientInfo,
 		dbPath,
 		true,
@@ -135,16 +245,35 @@ ClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITim
     }
 
 
-
 ClientImplPtr CreateTestClient(bool signIn)
     {
     return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
     }
 
-ClientImplPtr CreateFreeTestClient(bool signIn)
+ClientPtr CreateTestClientFromFactory(bool signIn)
+{
+	return CreateTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+}
+
+ClientFreeImplPtr CreateFreeTestClient(bool signIn)
     {
 	return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
     }
+
+ClientPtr CreateFreeTestClientFromFactory(bool signIn)
+{
+	return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+}
+
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn)
+{
+	return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+}
+
+ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
+{
+	return CreateWithKeyTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+}
 
 ClientImplPtr CreateTestClient(bool signIn, UrlProvider::Environment env)
     {
@@ -182,12 +311,50 @@ TEST_F(ClientTests, StartApplication_StopApplication_Success)
     EXPECT_SUCCESS(client->StopApplication());
     }
 
+TEST_F(ClientTests, StartApplication_StopApplication_Repeat_Success)
+	{
+	auto client = CreateTestClient(true);
+	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+	EXPECT_SUCCESS(client->StopApplication());
+	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+	EXPECT_SUCCESS(client->StopApplication());
+	}
+
 TEST_F(ClientTests, DISABLED_StartFreeApplication_StopApplication_Success)
 	{
 	auto client = CreateFreeTestClient(true);
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+	//client->SendUsageRealtime().wait();
     EXPECT_SUCCESS(client->StopApplication());
     }
+
+TEST_F(ClientTests, StartWithKeyApplication_StopApplication_Success)
+{
+	auto client = CreateWithKeyTestClient(true);
+	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+	EXPECT_SUCCESS(client->StopApplication());
+}
+
+TEST_F(ClientTests, StartApplicationFromFactory_Success)
+{
+	auto client = CreateTestClientFromFactory(true);
+	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+	client->StopApplication();
+}
+
+TEST_F(ClientTests, DISABLED_StartFreeApplicationFromFactory_Success)
+{
+	auto client = CreateFreeTestClientFromFactory(true);
+	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+	client->StopApplication();
+}
+
+TEST_F(ClientTests, StartWithKeyApplicationFromFactory_Success)
+{
+	auto client = CreateWithKeyTestClientFromFactory(true);
+	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+	client->StopApplication();
+}
 
 TEST_F(ClientTests, GetCertificate_Success)
     {
