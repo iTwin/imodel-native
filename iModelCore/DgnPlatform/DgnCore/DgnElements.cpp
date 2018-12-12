@@ -885,7 +885,11 @@ JsonECSqlSelectAdapter const& DgnElements::GetJsonSelectAdapter(BeSQLite::EC::EC
     if (it != m_jsonSelectAdapterCache.end())
         return *it->second;
 
-    std::unique_ptr<JsonECSqlSelectAdapter> adapter = std::make_unique<JsonECSqlSelectAdapter>(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
+    // As the adapter is cached, we can avoid that the member names are copied into the generated JSON. Instead
+    // the generated JSON objects reference the member names held by the adapter.
+    // Note: Must make sure the JSON objects don't live longer than the adapter.
+    std::unique_ptr<JsonECSqlSelectAdapter> adapter = std::make_unique<JsonECSqlSelectAdapter>(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString), 
+                                                                   false); // don't make copy of member names for every JSON as the adapter is cached.
     JsonECSqlSelectAdapter* adapterP = adapter.get();
     m_jsonSelectAdapterCache[stmt.GetHashCode()] = std::move(adapter);
     return *adapterP;
