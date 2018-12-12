@@ -1,0 +1,23 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: PointCloudSchema/PointCloud.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+appName         = PointCloud
+o               = $(OutBuildDir)PointCloud/
+
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+#----------------------------------------------------------------------
+# We're building the PointCloud lib
+#----------------------------------------------------------------------
+nameToDefine = __POINTCLOUD_BUILD__
+%include cdefapnd.mki
+
