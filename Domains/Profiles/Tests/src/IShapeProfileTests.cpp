@@ -437,14 +437,16 @@ TEST_F (IShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (IShapeProfileTestCase, Insert_FlangeSlopeOf90Degrees_FailedInsert)
     {
-    CreateParams params (GetModel(), "I", 1.0, DBL_MAX, 0.1, 0.1, 0.0, 0.0, INFINITY);
+    // Can't use DBL_MAX as it will assert in geometry generation
+    double const depth = DBL_MAX / 4.0;
+    CreateParams params (GetModel(), "I", 1.0, depth, 0.1, 0.1, 0.0, 0.0, INFINITY);
 
     params.flangeSlope = 0.0;
     EXPECT_SUCCESS_Insert (params) << "Profile should succeed to insert.";
 
     params.flangeSlope = PI / 2.0;
-    EXPECT_FAIL_Insert (params) << "Flange slope should be less than PI.";
+    EXPECT_FAIL_Insert (params) << "Flange slope should be less than 90 degrees.";
 
     params.flangeSlope = PI / 2.0 - PI / 10000;
-    EXPECT_SUCCESS_Insert (params) << "Flange slope should be less than PI.";
+    EXPECT_SUCCESS_Insert (params) << "Flange slope should be less than 90 degrees.";
     }
