@@ -294,7 +294,7 @@ TEST_F (ZShapeProfileTestCase, Insert_ValidWebThickness_SuccessfulInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ZShapeProfileTestCase, Insert_VariousFilletRadiusAndZeroFlangeSlope_CorrectInsertResult)
     {
-    CreateParams params (GetModel(), "I_ZeroFlangeSlope", 10.0, 10.0, 1.0, 1.0, INFINITY);
+    CreateParams params (GetModel(), "Z_ZeroFlangeSlope", 10.0, 10.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = 0.0;
 
     TestParameterToBeFiniteAndPositive (params, params.filletRadius, "FilletRadius", true);
@@ -325,9 +325,9 @@ TEST_F (ZShapeProfileTestCase, Insert_VariousFilletRadiusAndZeroFlangeSlope_Corr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ZShapeProfileTestCase, Insert_VariousFilletRadiusAndShortFlange_CorrectInsertResult)
+TEST_F (ZShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlange_CorrectInsertResult)
     {
-    CreateParams params (GetModel(), "I_ZeroFlangeSlope_ShortFlange", 3.0, 100.0, 1.0, 1.0, INFINITY);
+    CreateParams params (GetModel(), "Z_ZeroFlangeSlope_ShortFlange", 3.0, 100.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = 0.0;
 
     ZShapeProfilePtr profilePtr = CreateProfile (params);
@@ -343,9 +343,9 @@ TEST_F (ZShapeProfileTestCase, Insert_VariousFilletRadiusAndShortFlange_CorrectI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ZShapeProfileTestCase, Insert_VariousFilletRadiusAndShortWeb_CorrectInsertResult)
+TEST_F (ZShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertResult)
     {
-    CreateParams params (GetModel(), "I_ZeroFlangeSlope_ShortWeb", 100.0, 3.0, 1.0, 1.0, INFINITY);
+    CreateParams params (GetModel(), "Z_ZeroFlangeSlope_ShortWeb", 100.0, 3.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = 0.0;
 
     ZShapeProfilePtr profilePtr = CreateProfile (params);
@@ -361,9 +361,9 @@ TEST_F (ZShapeProfileTestCase, Insert_VariousFilletRadiusAndShortWeb_CorrectInse
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ZShapeProfileTestCase, Insert_VariousFilletRadiusAndNonZeroFlangeSlope_CorrectInsertResult)
+TEST_F (ZShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_CorrectInsertResult)
     {
-    CreateParams params (GetModel(), "I_NonZeroFlangeSlope", 20.0, 10.0, 1.0, 1.0, INFINITY);
+    CreateParams params (GetModel(), "Z_NonZeroFlangeSlope", 20.0, 10.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = (PI / 180.0) * 10.0;
 
     ZShapeProfilePtr profilePtr = CreateProfile (params);
@@ -413,7 +413,7 @@ TEST_F (ZShapeProfileTestCase, Insert_VariousFlangeEdgeRadius_CorrectInsertResul
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ZShapeProfileTestCase, Insert_VariousFlangeSlope_CorrectInsertResult)
+TEST_F (ZShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     {
     CreateParams params (GetModel(), "Z", 5.0, 9.0, 1.0, 1.0, 0.0, 0.0, INFINITY);
 
@@ -436,7 +436,7 @@ TEST_F (ZShapeProfileTestCase, Insert_VariousFlangeSlope_CorrectInsertResult)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ZShapeProfileTestCase, Insert_FlangeSlopeOfPIRadians_FailedInsert)
+TEST_F (ZShapeProfileTestCase, Insert_FlangeSlopeOf90Degrees_FailedInsert)
     {
     CreateParams params (GetModel(), "Z", 1.0, DBL_MAX, 0.1, 0.1, 0.0, 0.0, INFINITY);
 

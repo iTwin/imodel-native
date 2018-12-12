@@ -320,7 +320,7 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndZeroFlangeSlope_Corr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndShortFlange_CorrectInsertResult)
+TEST_F (IShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlange_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "I_ZeroFlangeSlope_ShortFlange", 3.0, 100.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = 0.0;
@@ -338,7 +338,7 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndShortFlange_CorrectI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndShortWeb_CorrectInsertResult)
+TEST_F (IShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "I_ZeroFlangeSlope_ShortWeb", 100.0, 3.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = 0.0;
@@ -356,7 +356,7 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndShortWeb_CorrectInse
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (IShapeProfileTestCase, Insert_VariousFilletRadiusAndNonZeroFlangeSlope_CorrectInsertResult)
+TEST_F (IShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "I_NonZeroFlangeSlope", 20.0, 10.0, 1.0, 1.0, INFINITY);
     params.flangeSlope = (PI / 180.0) * 10.0;
@@ -408,7 +408,7 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFlangeEdgeRadius_CorrectInsertResul
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (IShapeProfileTestCase, Insert_VariousFlangeSlope_CorrectInsertResult)
+TEST_F (IShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     {
     CreateParams params (GetModel(), "I", 9.0, 10.0, 1.0, 1.0, 0.0, 0.0, INFINITY);
 
@@ -431,7 +431,7 @@ TEST_F (IShapeProfileTestCase, Insert_VariousFlangeSlope_CorrectInsertResult)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (IShapeProfileTestCase, Insert_FlangeSlopeOfPIRadians_FailedInsert)
+TEST_F (IShapeProfileTestCase, Insert_FlangeSlopeOf90Degrees_FailedInsert)
     {
     CreateParams params (GetModel(), "I", 1.0, DBL_MAX, 0.1, 0.1, 0.0, 0.0, INFINITY);
 
