@@ -1,0 +1,26 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: FakeServer/FakeServer.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+FakeServerMkiPublicApiDir = $(FakeServerPublicApiDirectory)FakeServer/
+FakeServerMkiSourceDir = $(FakeServerSourceDirectory)FakeServer/
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+FakeServerMkiHeaders =  $(FakeServerMkiPublicApiDir)MockIMHubHttpHandler.h  \
+                        $(FakeServerMkiPublicApiDir)RequestHandler.h        \
+                        $(FakeServerMkiPublicApiDir)FakeServer.h
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+$(o)MockIMHubHttpHandler$(oext)     : $(FakeServerMkiSourceDir)MockIMHubHttpHandler.cpp $(FakeServerMkiHeaders) ${MultiCompileDepends}
+
+$(o)RequestHandler$(oext)           : $(FakeServerMkiSourceDir)RequestHandler.cpp $(FakeServerMkiHeaders) ${MultiCompileDepends}
+
+$(o)FakeServer$(oext)               : $(FakeServerMkiSourceDir)FakeServer.cpp $(FakeServerMkiHeaders) ${MultiCompileDepends}

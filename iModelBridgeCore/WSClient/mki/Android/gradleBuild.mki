@@ -1,0 +1,127 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: mki/Android/gradleBuild.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%if !defined (ANDROID)
+    %error Android only
+%endif
+
+# ------------------------------------------------
+# Inputs:
+# ------------------------------------------------
+%if !defined (ANDROID_SDK_ROOT)
+    %error Must set ANDROID_SDK_ROOT
+%endif
+
+%if !defined(__mdlMKI__)
+    %include mdl.mki
+%endif
+
+%include $(SrcRoot)bsicommon/sharedmki/stdversion.mki
+
+# APP_ProjectRoot         Is the app's project root directory, just above libs and obj. This is used to compute DGNCLIENTAPP_LINK_OutputDir if DGNCLIENTAPP_LINK_OutputDir is not defined.
+# GRADLE_APK_BASE_NAME              Optional. May be defined to override the default app base name "app"
+# GRADLE_OPTIONS                    Optional. May be defined to additional gradle options
+# GRADLE_PROPERTIES                 Optional. May be defined to additional properties that should be generated to gradle.properties file.
+# GRADLE_TASKS                      Optional. May be defined to override given tasks to Gradle. The default task(s) are: 'build'.
+# ANDROID_SIGNING_KEYSTORE          Optional. May be defined to identify a .keystore file
+# ANDROID_SIGNING_STORE_PASSWORD    Optional. May be defined to the keystore password
+# ANDROID_SIGNING_KEY_PASSWORD      Optional. May be defined to the key password
+# ANDROID_SIGNING_ALIAS             Optional. May be defined to the signing alias
+# VERBOSE                           Optional. May be defined to turn on build diagnostics output.
+
+# ------------------------------------------------
+# Outputs:
+# ------------------------------------------------
+_gradleCmd = ${GRADLE_HOME}/bin/gradle
+
+%if defined (winNT)
+    sdkroot = $[@subst / \\\\ $(ANDROID_SDK_ROOT)]
+    ndkroot = $[@subst / \\\\ $(ANDROID_NDK_ROOT)]
+%else
+    sdkroot = $(ANDROID_SDK_ROOT)
+    ndkroot = $(ANDROID_NDK_ROOT)
+%endif
+
+# Generate properties' files
+always:
+    >$(APP_ProjectRoot)local.properties
+    sdk.dir=$(sdkroot)
+    ndk.dir=$(ndkroot)
+    <
+    >$(APP_ProjectRoot)gradle.properties
+    %if defined (DGNCLIENTSDK_ROOT)
+        GradleScriptsDir=$[@subst \, \/, $(DGNCLIENTSDK_DIR_BuildPlatform)\Gradle]
+    %else
+        GradleScriptsDir=$[@subst \, \/, $(BuildContext)\SubParts\AndroidTools\Gradle] \
+    %endif
+	BentleyVersionStr=$(STDVER_fileversion)
+    %if defined (GRADLE_APK_BASE_NAME)
+		ApkBaseName=$(GRADLE_APK_BASE_NAME)
+	%else
+		ApkBaseName=app
+	%endif	
+    $(GRADLE_PROPERTIES)
+    <
+    python $(bsiScripts)RegexReplaceInFile.py "\s+" "\n" $(APP_ProjectRoot)gradle.properties
+
+# Gradle command line options
+_gradleOptions = --project-dir ${APP_ProjectRoot}
+
+%if defined (GRADLE_OPTIONS)
+    _gradleOptions + $(GRADLE_OPTIONS)
+%endif
+
+%if defined (ANDROID_SIGNING_KEYSTORE)
+    _gradleOptions + --project-prop ANDROID_SIGNING_KEYSTORE=$(ANDROID_SIGNING_KEYSTORE)              \
+                     --project-prop ANDROID_SIGNING_ALIAS=$(ANDROID_SIGNING_ALIAS)                    \
+                     --project-prop ANDROID_SIGNING_STORE_PASSWORD=$(ANDROID_SIGNING_STORE_PASSWORD)  \
+                     --project-prop ANDROID_SIGNING_KEY_PASSWORD=$(ANDROID_SIGNING_KEY_PASSWORD)
+%endif
+
+%if defined (Verbose)
+    _gradleOptions + --info
+    %if $(Verbose) > 1
+        _gradleOptions + --debug
+    %endif
+%endif
+
+SAVED_GRADLE_OPTS=%$(GRADLE_OPTS)
+
+# Trying to diagnose / work around PRG error "Could not create the Java Virtual Machine."
+GRADLE_OPTS + -Xms512m -Xmx1536M
+
+%if defined(BMAKE_DELETE_ALL_TARGETS)
+    GRADLE_TASKS = clean
+%elif !defined(GRADLE_TASKS)
+    GRADLE_TASKS = build
+%endif
+
+always:
+    ~putenv GRADLE_OPTS=$(GRADLE_OPTS)
+
+# The goal behind GRADLE_FilterDocOutputPath is to find/replace strings that
+# flood firebug summary reports. It seems to be infeasible to solve all of the
+# javadoc warnings and errors, so we are finding a way to live with them. When
+# GRADLE_FilterDocOutputPath is defined, the output of javadoc is redirected
+# to said file, and keywords such as error and warning are mangled to a
+# limited extent to fool the firebug regexes. The contents of the mangled file
+# are then printed to stdout for developer reference.
+
+%if defined(GRADLE_FilterDocOutputPath) && defined(winNT)
+    always:
+        $(_gradleCmd) $(_gradleOptions) $(GRADLE_TASKS) > $(GRADLE_FilterDocOutputPath) 2>&1
+        @$(bsiScripts)RegexReplaceInFile.py error: error(doc): $(GRADLE_FilterDocOutputPath)
+        @$(bsiScripts)RegexReplaceInFile.py "warning -" warn(doc): $(GRADLE_FilterDocOutputPath)
+        type $(GRADLE_FilterDocOutputPath)
+%else
+    always:
+        $(_gradleCmd) $(_gradleOptions) $(GRADLE_TASKS)
+%endif
+
+always:
+    ~putenv GRADLE_OPTS=$(SAVED_GRADLE_OPTS)
+
