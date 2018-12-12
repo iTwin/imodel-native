@@ -51,6 +51,9 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)BridgeAddon$(oext) : $(baseDir)BridgeAddon.cpp $(baseDir)BridgeAddon.h ${MultiCompileDepends}
 
+$(o)OidcTokenProvider$(oext) : $(baseDir)OidcTokenProvider.cpp $(baseDir)OidcTokenProvider.h ${MultiCompileDepends}
+
+$(o)OidcToken$(oext) : $(baseDir)OidcToken.cpp $(baseDir)OidcToken.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
