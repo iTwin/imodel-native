@@ -462,10 +462,11 @@ namespace pod
 	// then roll into new format
 	std::wstring readString(ReadBlock &rb, int numbytes)
 	{
-		char buffer[512];
+        char buffer[513];
 		memset(buffer, 0, sizeof(buffer));
-		debugAssertM(numbytes < sizeof(buffer), "Buffer overflow in pod::readString");
+		debugAssertM(numbytes < sizeof(buffer) - 1, "Buffer overflow in pod::readString");
 		rb.read(buffer, numbytes);
+        buffer[sizeof(buffer) - 1] = 0;
 
 		std::wstring ws;
 		/* check if this is wide char */ 
