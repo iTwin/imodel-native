@@ -11,7 +11,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform/RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a, AndroidArm64" ApiNumber="B02">
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform/RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a, AndroidArm64, iOSArm64" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
