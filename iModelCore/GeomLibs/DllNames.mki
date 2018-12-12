@@ -1,0 +1,20 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: DllNames.mki $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+# Specify assembly names to simplify replacement when changing version numbers.
+
+ BentleyGeomVersion = 4
+
+BentleyGeomDllBase = BentleyGeom$(BentleyGeomVersion)
+BentleyGeomLib = $(libprefix)BentleyGeom$(libext)
+
+BentleyGeomFlatBufferDllBase = BentleyGeomFlatBuffer$(BentleyGeomVersion)
+BentleyGeomFlatbufferLib = $(libprefix)BentleyGeomFlatbuffer$(libext)
+
+
+

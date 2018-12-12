@@ -1,0 +1,136 @@
+<def name=SEPARATOR>,</def>
+<defExpansion name=COMMASEPFIELDS>$(SEPARATEDFIELDS)</defExpansion>
+<defExpansion name=COMMASEPFIELDSUFFIXES>$(SEPARATEDFIELDSUFFIXES)</defExpansion>
+
+
+<def name=SEPARATOR> &&</def>
+<defExpansion name=ANDOVERFIELDS>$(SEPARATEDFIELDS)</defExpansion>
+
+<def name=SEPARATOR> </def>
+<defExpansion name=FIELDS>$(SEPARATEDFIELDS)</defExpansion>
+<defExpansion name=FIELDSUFFIXES>$(SEPARATEDFIELDSUFFIXES)</defExpansion>
+OPERATOR
+
+/// <summary>Multiply $(ThisType) on the left by a factor.</summary>
+static $(ThisType) operator *(
+INPUT_STRUCT($(ThisType), left, " left operand"), 
+INPUT_BYVALUE(double, factor, "factor"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand left.field * factor END_FOREACH);
+    }
+ENDMETHOD
+ENDOPERATOR
+
+/// <summary>Multiply $(ThisType) on the left by a factor.</summary>
+CLASSMETHOD(public, $(ThisType), Multiply, $(ThisShortType)Scale)(
+INPUT_STRUCT($(ThisType), left, " left operand"), 
+INPUT_BYVALUE(double, factor, "factor"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand left.field * factor END_FOREACH);
+    }
+ENDMETHOD
+
+OPERATOR
+/// <summary>Multiply a factor by $(ThisType) on the right.</summary>
+static $(ThisType) operator *(
+INPUT_BYVALUE(double, factor, "factor"), 
+INPUT_STRUCT($(ThisType), right, " right operand"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand right.field * factor END_FOREACH);
+    }
+ENDOPERATOR
+
+/// <summary>Multiply a factor by $(ThisType) on the right.</summary>
+CLASSMETHOD(public, $(ThisType), Multiply, Scale$(ThisShortType))(
+INPUT_BYVALUE(double, factor, "factor"), 
+INPUT_STRUCT($(ThisType), right, " right operand"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand right.field * factor END_FOREACH);
+    }
+ENDMETHOD
+
+OPERATOR
+/// <summary>Add $(ThisType) and $(ThisType).</summary>
+static $(ThisType) operator +(
+INPUT_STRUCT($(ThisType), left, " left operand"), 
+INPUT_STRUCT($(ThisType), right, " right operand"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand left.field + right.field END_FOREACH);
+    }
+ENDOPERATOR
+/// <summary>Add $(ThisType) and $(ThisType).</summary>
+CLASSMETHOD(public, $(ThisType), Add)(
+(
+INPUT_STRUCT($(ThisType), left, " left operand"), 
+INPUT_STRUCT($(ThisType), right, " right operand"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand left.field + right.field END_FOREACH);
+    }
+ENDMETHOD
+
+
+OPERATOR
+/// <summary>Subtract $(ThisType) by $(ThisType).</summary>
+static $(SubtractionResultType) operator -(
+INPUT_STRUCT($(ThisType), left, " left operand"), 
+INPUT_STRUCT($(ThisType), right, " right operand"))
+    {
+    return NEW $(SubtractionResultType) (FOREACH field in $(COMMASEPFIELDS) expand left.field - right.field END_FOREACH);
+    }
+ENDOPERATOR
+/// <summary>Subtract $(ThisType) by $(ThisType).</summary>
+CLASSMETHOD(public, $(SubtractionResultType), Subtract) (
+INPUT_STRUCT($(ThisType), left, " left operand"), 
+INPUT_STRUCT($(ThisType), right, " right operand"))
+    {
+    return NEW $(SubtractionResultType) (FOREACH field in $(COMMASEPFIELDS) expand left.field - right.field END_FOREACH);
+    }
+ENDMETHOD
+OPERATOR
+/// <summary>Negate $(ThisType).</summary>
+static $(ThisType) operator -(
+INPUT_STRUCT($(ThisType), term, "term"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand -term.field END_FOREACH);
+    }
+ENDOPERATOR
+
+/// <summary>Negate $(ThisType).</summary>
+CLASSMETHOD(public, $(ThisType), Negate) (
+INPUT_STRUCT($(ThisType), term, "term"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand -term.field END_FOREACH);
+    }
+ENDMETHOD
+/// <summary>Return the interpolation of $(ThisType), a fraction, and $(ThisType).</summary>
+CLASSMETHOD(public, $(ThisType), Interpolate)
+(
+INPUT_STRUCT($(ThisType), left, " left operand"),
+INPUT_BYVALUE(double, fraction, "fraction"),
+INPUT_STRUCT($(ThisType), right, " right operand")
+)
+    {
+    if (fraction < 0.5)
+        {
+        return NEW_BY_ALL_FIELDS (
+            FOREACH field in $(COMMASEPFIELDS) expand left.field + fraction * (right.field - left.field) END_FOREACH
+            );
+        }
+    else
+        {
+        double g = 1.0 - fraction;
+        return NEW_BY_ALL_FIELDS (
+            FOREACH field in $(COMMASEPFIELDS) expand right.field + g * (left.field - right.field) END_FOREACH
+            );
+        }
+    }
+ENDMETHOD
+/// <summary>Add an origin, and $(ThisType) times a scale.</summary>
+CLASSMETHOD(public, $(ThisType), Add,Scaled) (
+INPUT_STRUCT($(ThisType), origin, " base"), 
+INPUT_STRUCT($(ThisType), termA, " first term"), 
+INPUT_BYVALUE(double, scaleA, "scaleA"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand origin.field + termA.field * scaleA END_FOREACH);
+    }
+ENDMETHOD

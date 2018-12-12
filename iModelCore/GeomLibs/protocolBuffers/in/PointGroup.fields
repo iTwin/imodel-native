@@ -1,0 +1,10 @@
+PRIMITIVE PointGroup
+<def name=SUMMARY>A collection of IPoint objects -- i.e. points in space or collections of points.
+</def>
+<def name=Interface_BaseList>IAggregate, IPoint</def>
+
+
+<def name=MEMBERS><list ItemType=IPoint ItemTagName=Member ItemSemanticName=Member ItemParamName=member ListName=mMember ItemDescription="Point or IPointChain" ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE

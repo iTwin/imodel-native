@@ -1,0 +1,5 @@
+message Coordinate
+{
+required DPoint3d xyz = 1;
+}
+

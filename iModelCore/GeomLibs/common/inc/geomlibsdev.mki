@@ -1,0 +1,74 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: common/inc/geomlibsdev.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+
+GEOMLIBS_ROOT               = $(SrcRoot)GeomLibs/
+srcGeomLibs                 = $(GEOMLIBS_ROOT)
+OutGeomLibs                 = $(OutputRootDir)build/geomlibs/
+
+BuildContext                = $(OutBuildContexts)geomlibs/
+GeomPublicAPISrc            = $(SrcGeomLibs)PublicAPI/
+
+#----------------------------------------------------------------------
+#   Standard setup for all make files in this product
+#----------------------------------------------------------------------
+%include $(GEOMLIBS_ROOT)common/inc/geomlibsoutdirs.mki
+
+#----------------------------------------------------------------------
+#   Source directories
+#----------------------------------------------------------------------
+geomRoot                    = $(GEOMLIBS_ROOT)geom/
+geomSrcPublicAPI            = $(GEOMLIBS_ROOT)PublicAPI/
+geomSrcPrivateAPI           = $(GEOMLIBS_ROOT)PrivateAPI/
+geomSrcPubGeom              = $(geomSrcPublicAPI)Geom/
+geomSrc                     = $(geomRoot)src/
+geomSrcBezier               = $(geomSrc)bezier/
+geomSrcRimsbs               = $(geomSrc)rimsbs/
+geomSrcFuncs                = $(geomSrc)funcs/
+geomSrcBspline              = $(geomSrc)bspline/
+geomSrcPlatform             = $(geomSrc)platform/
+geomSrcInterfac             = $(geomSrc)interfac/
+geomSrcPubinc               = $(geomSrc)pubinc/
+geomSrcPubincGeom           = $(geomSrcPubinc)Geom/
+geomSrcStructs              = $(geomSrc)structs/
+geomSrcPlacementOnEarth     = $(geomSrc)PlacementOnEarth/
+geomSrcRegions              = $(geomSrc)regions/
+geomSrcMemory               = $(geomSrc)memory/
+geomSrcGPA                  = $(geomSrc)gpa/
+geomSrcSolidPrimitive       = $(geomSrc)SolidPrimitive/
+geomSrcCurvePrimitive       = $(geomSrc)CurvePrimitive/
+geomSrcPolyface             = $(geomSrc)polyface/
+geomSrcMTG                  = $(geomSrc)mtg/
+geomSrcStructsCpp           = $(geomSrcStructs)cpp/
+geomSrcIntegerTYpes         = $(geomSrc)IntegerTypes/
+nlibRoot                    = $(GEOMLIBS_ROOT)nlib/
+nlibSrc                     = $(nlibRoot)src/
+vuRoot                      = $(GEOMLIBS_ROOT)vu/
+vuSrc                       = $(vuRoot)src/
+vuSrcInclude                = $(vuSrc)include/
+vuSrcIncludeVu              = $(vuSrcInclude)vu/
+vuBuildInc                  = $(vuRoot)build/inc/
+vuExamplesSrc               = $(vuRoot)doc/build/bsivudoc/examples/
+
+geomBuild                   = $(geomRoot)build/
+geomBuildInc                = $(geomBuild)inc/
+
+
+commonInc                   = $(GEOMLIBS_ROOT)common/inc/
+commonTest                  = $(GEOMLIBS_ROOT)common/test/
+
+#----------------------------------------------------------------------
+#       Build item directories - names used in dlmlink.mki, etc.
+#----------------------------------------------------------------------
+privmki                     = $(GEOMLIBS_ROOT)common/inc/
+utilSharedMki               = $(SrcRoot)bsicommon/sharedmki/
+utilSharedInc               = $(SrcRoot)bsicommon/sharedinc/
+COMPENVMKI_DIR              = $(baseGeom_buildGensrc)
+
+
+
