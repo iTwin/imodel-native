@@ -205,7 +205,7 @@ int RunBridge(Env env, const char* jsonString)
     // BridgeNative::logMessage("BridgeAddon.cpp: List of json members:");
     // bvector<Utf8String> memberNames = json.getMemberNames();
     // for(unsigned int ii = 0; ii < memberNames.size(); ++ii) {
-    //     BentleyB0200::Utf8String memberName = memberNames[ii];
+    //     BentleyM0200::Utf8String memberName = memberNames[ii];
     //     Json::Value value = json[memberName];
     //     printf("printf: BridgeAddon.cpp: RunBridge() json[%s] = %s\n", memberName.c_str(), value.toStyledString().c_str());
     // }

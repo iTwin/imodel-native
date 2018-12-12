@@ -37,7 +37,7 @@ RequestHandler::~RequestHandler()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CreateTable(Utf8CP tableName, BentleyB0200::BeSQLite::Db& db, Utf8CP ddl)
+void CreateTable(Utf8CP tableName, BentleyM0200::BeSQLite::Db& db, Utf8CP ddl)
     {
     if (!db.TableExists(tableName))
         if (DbResult::BE_SQLITE_OK != db.CreateTable(tableName, ddl))
@@ -129,7 +129,7 @@ Response RequestHandler::ImsTokenRequest(Request req)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RequestHandler::CreateTables(BentleyB0200::BeSQLite::Db *m_db)
+void RequestHandler::CreateTables(BentleyM0200::BeSQLite::Db *m_db)
     {
     if (!m_db->TableExists("Instances"))
         CreateTable("Instances", *m_db, "Id STRING, Name STRING, Description STRING, Briefcases INTEGER DEFAULT 1, UserCreated String, CreatedDate STRING, Initialized STRING");
@@ -150,11 +150,11 @@ void RequestHandler::CreateTables(BentleyB0200::BeSQLite::Db *m_db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RequestHandler::CheckDb()
     {
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
     BeFileName dbPath = GetDbPath();
     if (dbPath.DoesPathExist())
         {
-        if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+        if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
             return;
         CreateTables(&m_db);
         }
@@ -231,8 +231,8 @@ Utf8CP ParseUrlFilter(Utf8String filter, Utf8CP table = "")
 void RequestHandler::Insert(bvector<Utf8String> insertStr)
     {
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    BentleyM0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         return;
 
     Statement insertSt;
@@ -289,8 +289,8 @@ Response RequestHandler::CreateiModelInstance(Request req)
     const auto iModelAlreadyExists = [&](Utf8StringCR name)
         {
         BeFileName dbPath = GetDbPath();
-        BentleyB0200::BeSQLite::Db m_db;
-        if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+        BentleyM0200::BeSQLite::Db m_db;
+        if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
             {
             Statement st;
             st.Prepare(m_db, "SELECT Name FROM Instances WHERE Name = ?");
@@ -349,8 +349,8 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
         };
 
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    BentleyM0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement insertSt;
         insertSt.Prepare(m_db, "INSERT INTO SeedFile (Id, FileName, FileDescription, FileSize, iModelId) VALUES (?,?,?,?,?)");
@@ -424,8 +424,8 @@ Response RequestHandler::UploadSeedFile(Request req)
     BeFileName filePath(fileBody->GetFilePath());
 
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+    BentleyM0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         BeFileName serverFilePath(serverPath);
         serverFilePath.AppendToPath(BeFileName(instanceid).GetWCharCP());
@@ -457,8 +457,8 @@ Response RequestHandler::FileCreationConfirmation(Request req)
         };
 
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    BentleyM0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement insertSt;
         insertSt.Prepare(m_db, "Update SeedFile SET IsUploaded = ? where Id = ? AND iModelid = ?");
@@ -502,8 +502,8 @@ Response RequestHandler::GetInitializationState(Request req)
     Utf8String iModelid = GetInstanceid(args[4]);
 
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+    BentleyM0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
         st.Prepare(m_db, "Select Id, FileName, FileDescription, FileSize from SeedFile where iModelId = ?");
@@ -555,8 +555,8 @@ Response RequestHandler::UploadNewSeedFile(Request req)
     BeFileName filePath(fileBody->GetFilePath());
     BeFileName dbPath = GetDbPath();
 
-    BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    BentleyM0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         BeFileName serverFilePath(serverPath);
         serverFilePath.AppendToPath(BeFileName(instanceid).GetWCharCP());
@@ -609,8 +609,8 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String instanceid = GetInstanceid(args[4]);
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    BentleyM0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement st;
         st.Prepare(m_db, "SELECT A.Briefcases, B.Id, B.FileName, B.FileDescription, B.FileSize FROM Instances As A Inner Join SeedFile As B ON A.id = B.iModelid where A.id = ? ");
@@ -686,9 +686,9 @@ Response RequestHandler::DeleteBriefcaseInstance(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String instanceid = GetInstanceid(args[4]);
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
     int briefcaseId = 0;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement st;
         st.Prepare(m_db, "DELETE from Briefcases where iModelId = ? AND BriefcaseId = ?");
@@ -717,7 +717,7 @@ Response RequestHandler::GetBriefcaseInfo(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelId = GetInstanceid(args[4]);
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
 
     int briefcaseId = 0;
     Utf8String sql = "SELECT B.BriefcaseId, S.Id, S.FileName, S.FileDescription, S.FileSize FROM Briefcases As B Inner Join SeedFile As S ON B.iModelid = S.iModelid where B.iModelid = ? ";
@@ -728,7 +728,7 @@ Response RequestHandler::GetBriefcaseInfo(Request req)
         sql.append(args[7]);
         }
 
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement st;
         st.Prepare(m_db, sql.c_str());
@@ -780,7 +780,7 @@ Response RequestHandler::DownloadiModel(Request req)
         BeStringUtilities::Split(args[3].c_str(), "?", nullptr, tokens);
         }
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
     CharCP filetoDownload;
     //instanceid = tokens[0];
 
@@ -790,7 +790,7 @@ Response RequestHandler::DownloadiModel(Request req)
     HttpFileBody* fileBody = dynamic_cast<HttpFileBody*>(ptr1);
     BeFileName fileDownloadPath(fileBody->GetFilePath());
 
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
         if (flag == 0)
@@ -822,7 +822,7 @@ Response RequestHandler::GetiModels(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
 
     Utf8String sql = "Select * from Instances";
     if (args[6].Contains("$filter"))
@@ -831,7 +831,7 @@ Response RequestHandler::GetiModels(Request req)
         sql.append(ParseUrlFilter(req.GetUrl()));
         }
 
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
         st.Prepare(m_db, sql.c_str());
@@ -867,8 +867,8 @@ Response RequestHandler::GetiModels(Request req)
 void RequestHandler::DeleteTables(Utf8String tableName)
     {
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    BentleyM0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement stDropTable;
         stDropTable.Prepare(m_db, "DROP table ?");
@@ -887,9 +887,9 @@ Response RequestHandler::DeleteiModels(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelId = args[7];
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
 
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         if (BeFileNameStatus::Success == FakeServer::DeleteiModel(serverPath, iModelId))
             {
@@ -933,8 +933,8 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
 
     CheckDb();
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    BentleyM0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement st;
         st.Prepare(m_db, "Select IndexNo from ChangeSets where Id = ? AND iModelid = ?");
@@ -1012,7 +1012,7 @@ Response RequestHandler::GetChangeSetInfo(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelId = GetInstanceid(args[4]);
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
 
     int fileAccessKey = 0;
     if (args[6].Contains("FileAccessKey"))
@@ -1024,7 +1024,7 @@ Response RequestHandler::GetChangeSetInfo(Request req)
         sql.append(" AND ");
         sql.append(ParseUrlFilter(req.GetUrl(), "ChangeSets"));
         }
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
         st.Prepare(m_db, sql.c_str());
@@ -1086,7 +1086,7 @@ Response RequestHandler::GetChangeSetInfo(Request req)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CheckConflict(BentleyB0200::BeSQLite::Db* m_db, Json::Value properties, Utf8String iModelid, Utf8String ObjectId)
+bool CheckConflict(BentleyM0200::BeSQLite::Db* m_db, Json::Value properties, Utf8String iModelid, Utf8String ObjectId)
     {
     Statement st;
     Utf8String sql = "";
@@ -1112,9 +1112,9 @@ Response RequestHandler::PushAcquiredLocks(Request req)
     Utf8String iModelid = GetInstanceid(args[4]);
     Json::Value settings = ParsedJson(req);
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
     CheckDb();
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement st;
         if (settings[ServerSchema::Instances][0][ServerSchema::ClassName] == "ChangeSet")
@@ -1290,7 +1290,7 @@ Response RequestHandler::MultiLocksInfo(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
 
     Utf8String sql = "Select Count(*), LockLevel, LockType, BriefcaseId from Locks where iModelId = ?";
     if (args[6].Contains("filter"))
@@ -1300,7 +1300,7 @@ Response RequestHandler::MultiLocksInfo(Request req)
         }
 
     sql.append(" Group By LockLevel, LockType, BriefcaseId");
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
         st.Prepare(m_db, sql.c_str());
@@ -1359,7 +1359,7 @@ Response RequestHandler::LocksInfo(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
     BeFileName dbPath = GetDbPath();
-    BentleyB0200::BeSQLite::Db m_db;
+    BentleyM0200::BeSQLite::Db m_db;
 
     Utf8String sql = "Select * from Locks where iModelId = ?";
     if (args[6].Contains("filter"))
@@ -1368,7 +1368,7 @@ Response RequestHandler::LocksInfo(Request req)
         sql.append(ParseUrlFilter(req.GetUrl(), "Locks"));
         }
     printf("%s\n", sql.c_str());
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyM0200::BeSQLite::Db::OpenParams(BentleyM0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
         st.Prepare(m_db, sql.c_str());

@@ -271,7 +271,7 @@ int BimExporter0601::Run(int argc, WCharCP argv[])
 
     BeFileName assetsDirectory = executableDirectory;
     assetsDirectory.AppendToPath(L"Assets");
-    BentleyB0200::Dgn::BimTeleporter::DgnDb0601ToJson exporter(m_inputFileName.GetName(), tempPathW, assetsDirectory.GetName());
+    BentleyM0200::Dgn::BimTeleporter::DgnDb0601ToJson exporter(m_inputFileName.GetName(), tempPathW, assetsDirectory.GetName());
 
     LOG->infov(L"Successfully opened %ls\n", m_inputFileName.GetName());
 

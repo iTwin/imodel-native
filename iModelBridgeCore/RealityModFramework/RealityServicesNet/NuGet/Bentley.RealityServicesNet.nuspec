@@ -13,12 +13,12 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="Assemblies\BeIcu4cB02.dll" target="build" />
-    <file src="Assemblies\BeLibxml2B02.dll" target="build" />
-    <file src="Assemblies\BentleyB02.dll" target="build" />
-    <file src="Assemblies\BentleyGeomB02.dll" target="build" />
-    <file src="Assemblies\BeXmlB02.dll" target="build" />
-    <file src="Assemblies\RealityPlatformB02.dll" target="build" />
+    <file src="Assemblies\BeIcu4cM02.dll" target="build" />
+    <file src="Assemblies\BeLibxml2M02.dll" target="build" />
+    <file src="Assemblies\BentleyM02.dll" target="build" />
+    <file src="Assemblies\BentleyGeomM02.dll" target="build" />
+    <file src="Assemblies\BeXmlM02.dll" target="build" />
+    <file src="Assemblies\RealityPlatformM02.dll" target="build" />
     <file src="Files\Bentley.RealityServicesNet.targets" target="build" />
     <file src="Assemblies\RealityServicesNet.dll" target="lib\net40\RealityServicesNet.dll" />
   </files>

@@ -10,7 +10,7 @@
 #define NULL 0
 
 //  The Vancouver header files will not compile unless the there is a "using namespace Bentley".  Therefore we
-//  have to disallow "using namespace BentleyB0200".
+//  have to disallow "using namespace BentleyM0200".
 #define NO_USING_NAMESPACE_BENTLEY 1
 
 #include <DgnDbSync/DgnV8/DgnV8.h> // NB: Must include this first!

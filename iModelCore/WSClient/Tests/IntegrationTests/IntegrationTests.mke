@@ -97,7 +97,7 @@ GUNITTEST_NOEXEC = 1
 
 %include $(SrcRoot)bsicommon/sharedmki/gunittest.mki
 
-ApiNumber = B02
+ApiNumber = M02
 
 subparts:
     @CreateSymLinks.py -f "$(BuildContext)Delivery/$(libprefix)BaseGeoCoord$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)BaseGeoCoord$(ApiNumber)$(shlibext)"

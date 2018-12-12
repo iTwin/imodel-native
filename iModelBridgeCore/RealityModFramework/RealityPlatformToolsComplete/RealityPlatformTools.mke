@@ -9,6 +9,7 @@
 
 appName         = RealityPlatformTools
 baseDir         = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/RealityPlatformTools/
+curlDir         = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/RealityPlatformToolsCurl/
 childDir        = $(_MakeFilePath)
 
 %include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
