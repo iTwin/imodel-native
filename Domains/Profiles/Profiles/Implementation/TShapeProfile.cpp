@@ -278,7 +278,7 @@ double TShapeProfile::GetInnerFlangeFaceLength() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetInnerWebFaceLength() const
     {
-    return GetDepth() - GetFlangeThickness() * 2.0;
+    return GetDepth() - GetFlangeThickness();
     }
 
 /*---------------------------------------------------------------------------------**//**
