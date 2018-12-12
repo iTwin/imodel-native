@@ -45,6 +45,8 @@ struct FileStorage
         void CleanupDirsNotContainingFiles(BeFileNameCR baseDir, BeFileName relativeDir);
         //! Check if directory or any sub-directories contain any files
         bool DoesDirContainFiles(BeFileNameCR dir);
+        static bool IsRelativePathValid(BeFileNameCR path);
+        static bool ValidateRelativePathValid(BeFileNameCP path);
 
     public:
         FileStorage

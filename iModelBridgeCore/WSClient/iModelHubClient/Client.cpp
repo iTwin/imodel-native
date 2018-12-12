@@ -36,7 +36,7 @@ IWSRepositoryClientPtr Client::CreateProjectConnection(Utf8StringCR projectId) c
     {
     Utf8String project;
     project.Sprintf("%s--%s", ServerSchema::Plugin::Project, projectId.c_str());
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, ServerProperties::ServiceVersion(), project, m_clientInfo, nullptr, m_customHandler);
     client->SetCredentials(m_credentials);
     return client;
     }
@@ -146,14 +146,15 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
         query.SetFilter("Initialized+eq+true");
         }
 
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", projectId.c_str());
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, requestOptions, "Getting iModels from project %s.", projectId.c_str());
 
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelsResult>([=] (WSObjectsResult& result)
+    return client->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)->Then<iModelsResult>([=] (WSObjectsResult& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return iModelsResult::Error(result.GetError());
             }
         bvector<iModelInfoPtr> iModels;
@@ -163,7 +164,7 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Success.");
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "Success.");
         return iModelsResult::Success(iModels);
         });
     }
@@ -186,23 +187,26 @@ iModelTaskPtr Client::GetiModelInternal(Utf8StringCR projectId, WSQuery query, U
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult& result)
+
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, requestOptions, "Getting iModels from project %s.", projectId.c_str());
+    return client->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return iModelResult::Error(result.GetError());
             }
         auto iModelInfoInstances = result.GetValue().GetInstances();
         if (iModelInfoInstances.Size() == 0)
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, "iModel does not exist.");
             return iModelResult::Error(Error::Id::iModelDoesNotExist);
             }
         iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, requestOptions, "");
         return iModelResult::Success(iModelInfo);
         });
     }
@@ -287,7 +291,8 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "ThumbnailsManager::GetiModelThumbnail";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     ObjectId thumbnailObjectId(ServerSchema::Schema::Project, Thumbnail::GetClassName(size), imodelId);
@@ -296,12 +301,12 @@ ICancellationTokenPtr cancellationToken
         {
         IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
         HttpByteStreamBodyPtr responseBody = HttpByteStreamBody::Create();
-        return client->SendGetFileRequest(thumbnailObjectId, responseBody, nullptr, nullptr, cancellationToken)
+        return client->SendGetFileRequestWithOptions(thumbnailObjectId, responseBody, nullptr, nullptr, requestOptions, cancellationToken)
             ->Then<ThumbnailImageResult>([=](const WSResult& streamResult)
             {
             if (!streamResult.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, streamResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, streamResult.GetError().GetMessage().c_str());
                 return ThumbnailImageResult::Error(streamResult.GetError());
                 }
 
@@ -309,7 +314,7 @@ ICancellationTokenPtr cancellationToken
             Render::Image image = Render::Image::FromPng(byteStream.GetData(), byteStream.GetSize());
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
             return ThumbnailImageResult::Success(image);
             });
         });
@@ -344,9 +349,10 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR 
     Json::Value imodelCreationJson = iModelCreationJson(iModelName, description);
     m_globalRequestOptionsPtr->InsertRequestOptions(imodelCreationJson);
 
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending create iModel request for project %s.", projectId.c_str());
-    return client->SendCreateObjectRequest(imodelCreationJson, BeFileName(), nullptr, cancellationToken)
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, requestOptions, "Sending create iModel request for project %s.", projectId.c_str());
+    return client->SendCreateObjectRequestWithOptions(imodelCreationJson, BeFileName(), nullptr, requestOptions, cancellationToken)
         ->Then([=](const WSCreateObjectResult& createiModelResult)
         {
 #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -367,7 +373,7 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR 
         if (Error::Id::iModelAlreadyExists != error.GetId())
             {
             finalResult->SetError(error);
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, error.GetMessage().c_str());
             return;
             }
 
@@ -376,7 +382,7 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR 
         if (initialized)
             {
             finalResult->SetError(error);
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, error.GetMessage().c_str());
             return;
             }
 
@@ -1046,7 +1052,7 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     CHECK_BRIEFCASEID(briefcaseId, StatusResult);
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, iModelInfo.GetWSRepositoryName(), m_clientInfo, nullptr, 
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, ServerProperties::ServiceVersion(), iModelInfo.GetWSRepositoryName(), m_clientInfo, nullptr,
                                                                m_customHandler);
     client->SetCredentials(m_credentials);
 
@@ -1054,18 +1060,19 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
     briefcaseIdString.Sprintf("%u", briefcaseId);
     ObjectId iModelId = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, briefcaseIdString);
 
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending abandon briefcase request. iModel ID: %s.", iModelInfo.GetId().c_str());
-    return client->SendDeleteObjectRequest(iModelId, cancellationToken)->Then<StatusResult>([=](WSDeleteObjectResult const& result)
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, requestOptions, "Sending abandon briefcase request. iModel ID: %s.", iModelInfo.GetId().c_str());
+    return client->SendDeleteObjectRequestWithOptions(iModelId, requestOptions, cancellationToken)->Then<StatusResult>([=](WSDeleteObjectResult const& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return StatusResult::Error(result.GetError());
             }
         else
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, requestOptions, "Success.");
             return StatusResult::Success();
             }
         });
@@ -1077,7 +1084,8 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
 StatusTaskPtr Client::UpdateiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::UpdateiModel";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     if (iModelInfo.GetId().empty())
@@ -1091,17 +1099,17 @@ StatusTaskPtr Client::UpdateiModel(Utf8StringCR projectId, iModelInfoCR iModelIn
 
     return client->SendUpdateObjectRequestWithOptions(ObjectId(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelInfo.GetId()),
                                                iModelJson[ServerSchema::Instance][ServerSchema::Properties], nullptr, BeFileName(), nullptr,
-                                               nullptr, cancellationToken)
+                                               requestOptions, cancellationToken)
         ->Then<StatusResult>([=] (const WSUpdateObjectResult& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return StatusResult::Error(result.GetError());
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "Success.");
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), requestOptions, "Success.");
         return StatusResult::Success();
         });
     }
@@ -1121,19 +1129,20 @@ StatusTaskPtr Client::DeleteiModel(Utf8StringCR projectId, iModelInfoCR iModelIn
     changeset->AddInstance(iModelId, WSChangeset::ChangeState::Deleted, std::make_shared<Json::Value>());
     m_globalRequestOptionsPtr->InsertRequestOptions(changeset);
 
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending delete iModel request. iModel ID: %s.", iModelInfo.GetId().c_str());
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, requestOptions, "Sending delete iModel request. iModel ID: %s.", iModelInfo.GetId().c_str());
     const HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
-    return client->SendChangesetRequestWithOptions(request, nullptr, nullptr, cancellationToken)->Then<StatusResult>([=](WSChangesetResult const& result)
+    return client->SendChangesetRequestWithOptions(request, nullptr, requestOptions, cancellationToken)->Then<StatusResult>([=](WSChangesetResult const& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return StatusResult::Error(result.GetError());
             }
         else
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Success.");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "Success.");
             return StatusResult::Success();
             }
         });

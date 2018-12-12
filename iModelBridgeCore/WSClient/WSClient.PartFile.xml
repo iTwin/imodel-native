@@ -5,7 +5,6 @@
 
     <Part Name="WebServiceClientComponents" Sequential="true">
         <SubPart PartName="WebServicesClient"/>
-        <SubPart PartName="ConnectWebServicesClientC" />
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -62,7 +61,6 @@
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesCache-PublicAPI"/>
         <SubPart PartName="iModelHubClient-PublicAPI"/>
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
         </Bindings>
@@ -391,56 +389,6 @@
         <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
         <ProductDirectory Name="BentleyDesktopClientApi_Native" />
     </ProductDirectoryList>
-
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // ConnectWebServicesClientC lib                                          // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-
-    <Part Name="ConnectWebServicesClientC">
-        <SubPart PartName="WSClient_en_L10N" />
-        <SubPart PartName="ConnectWebServicesClientC-PC" />
-        <SubPart PartName="ConnectWebServicesClientC-iOS"/>
-        <SubPart PartName="ConnectWebServicesClientC-Android" />
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-PC" ExcludePlatforms="iOS*, Android*">
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
-        <SubPart PartName="ConnectWebServicesClientC-Library" />
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-iOS" OnlyPlatforms="iOS*">
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" LibType="Static" />
-        <SubPart PartName="ConnectWebServicesClientC-Library" LibType="Static" />
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-Android" OnlyPlatforms="Android*">
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" LibType="Static" />
-        <SubPart PartName="ConnectWebServicesClientC-Library-Android" LibType="Static" />
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-PublicAPI" BentleyBuildMakeFile="CWSClientCPrewire.mke">
-        <Bindings>
-            <PublicAPI Domain="WebServices" />
-        </Bindings>
-    </Part>
-
-    <Part Name="ConnectWebServicesClientC-Library" BentleyBuildMakeFile="CWSClientCLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
-        <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="BeSecurity"                    PartFile="BeSecurity"       Repository="BeSecurity" />
-        <SubPart PartName="ECDb"                          PartFile="ECDb"             Repository="ECDb" />
-        <Bindings>
-            <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
-            <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-    <Part Name="ConnectWebServicesClientC-Library-Android" BentleyBuildMakeFile="CWSClientCLib.mke" OnlyPlatforms="Android*">
-        <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="ECDb"                          PartFile="ECDb"             Repository="ECDb" />
-        <Bindings>
-            <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
-            <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
@@ -835,7 +783,6 @@
         <SubPart PartName="WSClient_en_L10N"/>
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="ConnectWebServicesClientC" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
@@ -920,7 +867,6 @@
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="ConnectWebServicesClientC" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
@@ -930,65 +876,6 @@
             <Files ProductDirectoryName="WSClientCompatibilityTests">
                 Delivery/WSClientCompatibilityTests$(exeext)
             </Files>
-        </Bindings>
-    </Part>
-
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // ConnectWebServicesClientC Samples                                      // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <Product Name="CWSCC-Samples" >
-        <Directories DirectoryListName="CWSCCSamplesDirectoryList" />
-        <SubProduct ProductName="GetProjects-Android"/>
-    </Product>
-
-    <Product Name="GetProjects-Android" >
-        <Directories DirectoryListName="CWSCCSamplesDirectoryList" />
-        <SubPart PartName="CWSCC-Android-Samples"/>
-    </Product>
-
-    <ProductDirectoryList ListName="CWSCCSamplesDirectoryList" >
-        <ProductDirectory Name="Assemblies"                         Deliver="false"/>
-        <ProductDirectory Name="Assemblies"                         Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
-        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="Libs"                               Deliver="false"/>
-        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
-        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="MergeModules"                       Deliver="false"/>
-        <ProductDirectory Name="Assets"                             Deliver="false" LibType="static"/>
-        <ProductDirectory Name="VendorNotices"                      Deliver="false"/>
-        <ProductDirectory Name="VendorNotices"                      Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="MavenDependencies"                  Deliver="false"/>
-        <ProductDirectory Name="MavenDependencies"                  Deliver="false" LibType="static"/>
-        <ProductDirectory Name="AndroidSO"                          Deliver="false"/>
-        <ProductDirectory Name="AndroidSO"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="sqlang"                             Deliver="false" />
-        <ProductDirectory Name="sqlang"                             Deliver="false" LibType="static" />
-        <ProductDirectory Name="APK"                                Path=""/>
-        <ProductDirectory Name="APK"                                Path=""  LibType="static"/>
-    </ProductDirectoryList>
-
-    <Part Name="CWSCC-Android-Samples" OnlyPlatforms="Android*">
-        <SubPart PartName="CWSCC-Android-Sample-GetProjects" LibType="Static"/>
-    </Part>
-
-    <Part Name="Tools-AndroidShared" BentleyBuildMakeFile="mki/Android/nativeCodeTools.mke" OnlyPlatforms="Android*">
-        <Bindings>
-            <Directory Required="false" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="CWSCC-Android-Sample-GetProjects" BentleyBuildMakeFile="ConnectC/Samples/Android/GetProjects/GetProjects.mke" OnlyPlatforms="Android*">
-        <SubPart PartName="Tools-AndroidShared" />
-        <SubPart PartName="WebServiceClientComponents" />
-        <SubPart PartName="BeSecurityMavenArchive" PartFile="BeSecurity" Repository="BeSecurity"/>
-        <Bindings>
-            <Files ProductDirectoryName="APK">Delivery/getprojects.apk</Files>
         </Bindings>
     </Part>
 
