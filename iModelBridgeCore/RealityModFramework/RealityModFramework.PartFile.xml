@@ -51,8 +51,8 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
-        <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeHttp"                     PartFile="iModelCore/BeHttp/BeHttp"                    Repository="imodel02"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformToolsNoCC$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatformToolsNoCC$(ApiNumber)$(shlibext)</Assemblies>
