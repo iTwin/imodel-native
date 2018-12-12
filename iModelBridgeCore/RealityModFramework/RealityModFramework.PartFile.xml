@@ -469,6 +469,7 @@
     </Product>
 
     <Product Name="RealityContextServices" PrgOutputDir="RealityContextServices">
+        <SubPart PartName="RealityServicesNetNuGet" />
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
