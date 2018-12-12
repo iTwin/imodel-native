@@ -1,0 +1,24 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: RasterSchema/Raster.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+
+appName         = Raster
+o               = $(OutBuildDir)Raster/
+
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+#----------------------------------------------------------------------
+# We're building the Raster lib
+#----------------------------------------------------------------------
+nameToDefine = __RASTER_BUILD__
+%include cdefapnd.mki
+
