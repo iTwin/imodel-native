@@ -343,10 +343,8 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         creator.MakeSchemaChanges();
         ASSERT_FALSE(creator.WasAborted());
         ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::Success, creator.InitializeJob());
-        ASSERT_EQ(BentleyApi::SUCCESS, creator.DoBeginConversion());
         ASSERT_EQ(BentleyApi::SUCCESS, creator.MakeDefinitionChanges());
         creator.ConvertData();
-        ASSERT_EQ(BentleyApi::SUCCESS, creator.DoFinishConversion());
         DgnDbR db = creator.GetDgnDb();
         AddExternalDataModels (db);
         ASSERT_FALSE(creator.WasAborted());
@@ -404,11 +402,9 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         if (!updater.WasAborted())
             {
             ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
-            ASSERT_EQ(BentleyApi::SUCCESS, updater.DoBeginConversion());
             ASSERT_EQ(BentleyApi::SUCCESS, updater.MakeDefinitionChanges());
             updater.ConvertData();
             ASSERT_EQ(expectFailure, updater.WasAborted());
-            ASSERT_EQ(BentleyApi::SUCCESS, updater.DoFinishConversion());
             m_count = updater.GetElementsConverted();
             hadAnyChanges = updater.HadAnyChanges();
             }

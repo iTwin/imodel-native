@@ -116,6 +116,8 @@ $(o)ItemTypeTests.obj           : $(BEGTEST_INPUT)ItemTypeTests.cpp             
 
 $(o)ViewTests.obj               : $(BEGTEST_INPUT)ViewTests.cpp                 $(TestsHeaders) ${MultiCompileDepends}
 
+$(o)RulesetEmbedderTests.obj    : $(BEGTEST_INPUT)RulesetEmbedderTests.cpp      $(TestsHeaders) ${MultiCompileDepends}
+
 $(o)ConvertToDgnDbElementExtensionTests.obj : $(BEGTEST_INPUT)ConvertToDgnDbElementExtensionTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

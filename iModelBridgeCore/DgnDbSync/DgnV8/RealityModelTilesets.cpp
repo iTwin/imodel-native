@@ -9,6 +9,7 @@
 #include <RealityPlatformTools/SimpleRDSApi.h>
 #include <ScalableMeshSchema/ScalableMeshHandler.h>
 #include <DgnPlatform/WebMercator.h>
+#include <GeoCoord/BaseGeoCoord.h>
 
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -50,6 +51,99 @@ BentleyStatus Converter::GenerateWebMercatorModel()
     DgnDbStatus insertStatus = model->Insert();
     BeAssert (DgnDbStatus::Success == insertStatus);
     return DgnDbStatus::Success == insertStatus ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::ComputeRealityModelFootprint(bvector<GeoPoint2d>& footprint, GeometricModelCP geometricModel, GeoCoordinates::BaseGCSCR targetLatLongGCS)
+    {
+    footprint.clear();
+
+    if (!targetLatLongGCS.IsValid())
+        return ERROR;
+
+    // Obtain the DgnDb GCS
+    DgnGCSP dgnDbGCS = geometricModel->GetDgnDb().GeoLocation().GetDgnGCS();
+
+    if (nullptr == dgnDbGCS || !dgnDbGCS->IsValid())
+        {
+        // We should never get here normally but if we do we will let it pass with a simple warning
+        ReportIssue(Converter::IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::MissingGCS(), "");
+        return SUCCESS;
+        }
+
+    AxisAlignedBox3d boundingBox = geometricModel->QueryModelRange();
+    if (boundingBox.IsNull())
+        {
+        ReportIssue(Converter::IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::InvalidRange(), "");
+        }
+    else
+        {
+        DPoint2d lowPoint = DPoint2d::From(boundingBox.low.x, boundingBox.low.y);
+        DPoint2d highPoint = DPoint2d::From(boundingBox.high.x, boundingBox.high.y);
+
+        // Convert model range from DgnDb GCS to target GCS latitude/longitude coordinates
+        GeoPoint2d lowGeoPtDB;
+        GeoPoint2d highGeoPtDB;
+        ReprojectStatus stat1 = dgnDbGCS->LatLongFromUors2D(lowGeoPtDB, lowPoint);
+        ReprojectStatus stat2 = dgnDbGCS->LatLongFromUors2D(highGeoPtDB, highPoint);
+
+        if (stat1 != REPROJECT_Success || stat2 != REPROJECT_Success)
+            {
+            // Something went wrong during conversion ... could be a warning
+            if (stat1 != REPROJECT_CSMAPERR_OutOfUsefulRange && stat2 != REPROJECT_CSMAPERR_OutOfUsefulRange)
+                {
+                // Hard error
+                ReportIssue(Converter::IssueSeverity::Error, IssueCategory::CorruptData(), Issue::GCSHardConversionError(), "");
+                return ERROR;
+                }
+            else
+                {
+                // Out of useful range warning only ... coordinate are probably somewhat value. We continue.
+                ReportIssue(Converter::IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::GCSRangeConversionWarning(), "");
+                }
+            } 
+
+        GeoPoint2d lowGeoPtWGS84;
+        GeoPoint2d highGeoPtWGS84;
+        stat1 = dgnDbGCS->LatLongFromLatLong2D(lowGeoPtWGS84, lowGeoPtDB, targetLatLongGCS);
+        stat2 = dgnDbGCS->LatLongFromLatLong2D(highGeoPtWGS84, highGeoPtDB, targetLatLongGCS);
+
+        if (stat1 != REPROJECT_Success || stat2 != REPROJECT_Success)
+            {
+            // Something went wrong during conversion ... could be a warning
+            if (stat1 != REPROJECT_CSMAPERR_OutOfUsefulRange && stat2 != REPROJECT_CSMAPERR_OutOfUsefulRange &&
+                stat1 != REPROJECT_CSMAPERR_DatumConverterNotSet && stat2 != REPROJECT_CSMAPERR_DatumConverterNotSet)
+                {
+                // Hard error
+                ReportIssue(Converter::IssueSeverity::Error, IssueCategory::CorruptData(), Issue::GCSHardConversionError(), "");
+                return ERROR;
+                }
+            else
+                {
+                if (stat1 == REPROJECT_CSMAPERR_DatumConverterNotSet || stat2 == REPROJECT_CSMAPERR_DatumConverterNotSet)
+                    {
+                    // Datum transformation could not be set. Since this is for a footprint we will consider this
+                    // a warning though serious. The remainder of the process will likely fail at reprojection anyway.
+                    ReportIssue(Converter::IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::GCSDatumConversionFailure(), "");
+                    }
+                else
+                    {
+                    // Out of useful range warning only ... coordinate are probably somewhat value. We continue.
+                    ReportIssue(Converter::IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::GCSRangeConversionWarning(), "");
+                    }
+                }
+            }
+
+            footprint.push_back(GeoPoint2d::From(lowGeoPtWGS84.longitude,  lowGeoPtWGS84.latitude));
+            footprint.push_back(GeoPoint2d::From(lowGeoPtWGS84.longitude,  highGeoPtWGS84.latitude));
+            footprint.push_back(GeoPoint2d::From(highGeoPtWGS84.longitude, highGeoPtWGS84.latitude));
+            footprint.push_back(GeoPoint2d::From(highGeoPtWGS84.longitude, lowGeoPtWGS84.latitude));
+            footprint.push_back(GeoPoint2d::From(lowGeoPtWGS84.longitude,  lowGeoPtWGS84.latitude));
+
+        }
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -131,6 +225,8 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
     auto    ecefLocation = m_dgndb->GeoLocation().GetEcefLocation();
     auto    dbToEcefTransform = ecefLocation.m_isValid ? Transform::From(ecefLocation.m_angles.ToRotMatrix(), ecefLocation.m_origin) : Transform::FromIdentity();
+    GeoCoordinates::BaseGCSCPtr  wgs84GCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
+
 
     for (auto const& curr : m_modelsRequiringRealityTiles)
         {
@@ -190,12 +286,20 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
                 return ERROR;
                 }
             }
+
+        bvector<GeoPoint2d> footprint;
+
+        if (SUCCESS != ComputeRealityModelFootprint(footprint, geometricModel, *wgs84GCS))
+            return ERROR;
+
+        
         BeFileName  rootJsonFile(nullptr, modelDir.c_str(), L"TileRoot", L"json");
         auto smModel = dynamic_cast<ScalableMeshModelCP>(geometricModel);
         if (smModel != nullptr)
             {
             DPoint3d initialCenter = m_dgndb->GeoLocation().GetInitialProjectCenter();
-            smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform, Transform::From(initialCenter.x, initialCenter.y, initialCenter.z));
+            dbToEcefTransform = Transform::FromProduct(dbToEcefTransform, Transform::From(initialCenter.x, initialCenter.y, initialCenter.z));
+            smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform, Transform::From(-initialCenter.x, -initialCenter.y, -initialCenter.z));
             }
         else
             {
@@ -226,6 +330,13 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             crd.SetClassification(RealityDataBase::MODEL);
             crd.SetVisibility(RealityDataBase::Visibility::PERMISSION);
             crd.SetDataset(model->GetName().c_str());
+            if (footprint.size() >= 5)
+                {
+                crd.SetFootprint(footprint);
+                // Most of the time the footprint is not alligned to the lat/long axis and is considered approximate (not tightly bounding data)
+                crd.SetApproximateFootprint(true); 
+                }
+
             crd.SetRealityDataType("RealityMesh3DTiles");
             BeGuid guid = GetDgnDb().QueryProjectGuid();
             Utf8String projectId;

@@ -419,10 +419,6 @@ BentleyStatus GenericElementAspectReader::_Read(Json::Value& aspect)
         return ERROR;
         }
 
-    // need to record which element class each aspect is associated with.
-    ElementClassToAspectClassMapping::Insert(*GetDgnDb(), element->GetElementClassId(), element->GetElementClass()->GetSchema().GetName().c_str(), element->GetElementClass()->GetName().c_str(),
-                                             ecInstance->GetClass().GetId(), ecInstance->GetClass().GetSchema().GetName().c_str(), ecInstance->GetClass().GetName().c_str());
-
     return SUCCESS;
     }
 

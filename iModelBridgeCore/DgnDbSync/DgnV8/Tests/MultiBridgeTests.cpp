@@ -123,14 +123,11 @@ static void doConvert(DefinitionModelIds& defids,
         ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, converter.FindJob());
         }
 
-    ASSERT_EQ(BentleyApi::SUCCESS, converter.DoBeginConversion());
     ASSERT_EQ(BentleyApi::SUCCESS, converter.MakeDefinitionChanges());
 
     converter.ConvertData();
     
     ASSERT_FALSE(converter.WasAborted());
-
-    ASSERT_EQ(BentleyApi::SUCCESS, converter.DoFinishConversion());
 
     defids.m_definitionModelId = converter.GetJobDefinitionModel()->GetModelId();
     defids.m_sheetListModelId = converter.GetSheetListModelId();
@@ -169,6 +166,7 @@ static bool isCodeValueInList(std::vector<DgnElementCPtr> const& elems, BentleyA
 struct MultiBridgeTests : public ConverterTestBaseFixture
     {
     void RunBridge(DefinitionModelIds&, WCharCP bridgeName, MultiBridgeTestDocumentAccessor&, bool isFirstTime);
+    void DoMergeDefinitions(bool mergeDefinitions);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -250,6 +248,80 @@ TEST_F(MultiBridgeTests, FileSpecificDefinitions)
         printf("%s\n", c->GetCode().GetValueUtf8CP());
         }
         */
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This test verifies that multiple bridges will create a common set of definitions 
+* such as Categories in the dictionary model with no dups, merging by name.
+* @bsimethod                                    Sam.Wilson                      05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void MultiBridgeTests::DoMergeDefinitions(bool mergeDefinitions)
+    {
+    LineUpFiles(WPrintfString(L"MergedDefinitions%d.bim", mergeDefinitions).c_str(), L"master3d.dgn", false);
+    BentleyApi::BeFileName master1 = m_v8FileName;
+    BentleyApi::BeFileName master2;
+    MakeWritableCopyOf(master2, GetInputFileName(L"master3d.dgn"), L"master3d_2.dgn");
+    
+    BentleyApi::BeFileName ref1;
+    MakeWritableCopyOf(ref1, L"ref3d.dgn");
+    BentleyApi::BeFileName ref2;
+    MakeWritableCopyOf(ref2, GetInputFileName(L"ref3d.dgn"), L"ref3d_2.dgn");
+
+    MultiBridgeTestDocumentAccessor docaccessor;
+    // m is assigned to the master files
+    docaccessor.m_assignments[L"m"].push_back(m_v8FileName);
+    docaccessor.m_assignments[L"m"].push_back(master2);
+    // r is assigned to the reference files
+    docaccessor.m_assignments[L"r"].push_back(ref1);
+    docaccessor.m_assignments[L"r"].push_back(ref2);
+
+    m_params.SetMergeDefinitions(mergeDefinitions);
+
+    m_v8FileName = master1;
+    DefinitionModelIds m1Defs, r1Defs;
+    RunBridge(m1Defs, L"m", docaccessor, true);
+    RunBridge(r1Defs, L"r", docaccessor, true);
+
+    m_v8FileName = master2;
+    DefinitionModelIds m2Defs, r2Defs;
+    RunBridge(m2Defs, L"m", docaccessor, true);
+    RunBridge(r2Defs, L"r", docaccessor, true);
+
+    auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    ASSERT_TRUE(db.IsValid());
+
+    std::vector<DgnElementCPtr> commonCats, m1Categories, r1Categories, m2Categories, r2Categories;
+    getElementsInModel(commonCats,  *db, db->GetDictionaryModel().GetModelId(), "bis.Category");
+    getElementsInModel(m1Categories, *db, m1Defs.m_definitionModelId, "bis.Category");
+    getElementsInModel(r1Categories, *db, r1Defs.m_definitionModelId, "bis.Category");
+    getElementsInModel(m2Categories, *db, m2Defs.m_definitionModelId, "bis.Category");
+    getElementsInModel(r2Categories, *db, r2Defs.m_definitionModelId, "bis.Category");
+
+    EXPECT_EQ(mergeDefinitions, isCodeValueInList(commonCats,  "MasterLevel"))   << "Levels should be merged by name into the dictionary model";
+    EXPECT_EQ(!mergeDefinitions, isCodeValueInList(m1Categories, "MasterLevel"));
+    EXPECT_EQ(false,             isCodeValueInList(r1Categories, "MasterLevel"));
+    EXPECT_EQ(!mergeDefinitions, isCodeValueInList(m2Categories, "MasterLevel"));
+    EXPECT_EQ(false,             isCodeValueInList(r2Categories, "MasterLevel"));
+    EXPECT_EQ(mergeDefinitions, isCodeValueInList(commonCats,  "ReferenceLevel"))<< "Levels should be merged by name into the dictionary model";
+    EXPECT_EQ(!mergeDefinitions, isCodeValueInList(r1Categories, "ReferenceLevel"));
+    EXPECT_EQ(false,             isCodeValueInList(m2Categories, "ReferenceLevel"));
+    EXPECT_EQ(!mergeDefinitions, isCodeValueInList(r2Categories, "ReferenceLevel"));
+    EXPECT_EQ(false,             isCodeValueInList(m1Categories, "ReferenceLevel"));
+    EXPECT_TRUE (isCodeValueInList(m1Categories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
+    EXPECT_TRUE (isCodeValueInList(r1Categories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
+    EXPECT_TRUE (isCodeValueInList(m2Categories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
+    EXPECT_TRUE (isCodeValueInList(r2Categories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This test verifies that multiple bridges will create a common set of definitions 
+* such as Categories in the dictionary model with no dups, merging by name.
+* @bsimethod                                    Sam.Wilson                      05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiBridgeTests, MergedDefinitions)
+    {
+    DoMergeDefinitions(true);
+    DoMergeDefinitions(false);
     }
 
 static void attach(BentleyApi::BeFileNameCR masterFileName, DgnV8Api::ModelId masterModelId, BentleyApi::BeFileNameCR refFileName, WCharCP refModelName)

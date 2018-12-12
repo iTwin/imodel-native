@@ -302,6 +302,8 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
 
         isNewFile = !outputFileName.DoesPathExist();
     
+        iModelBridgeBimHost_SetBridge _registerBridgeOnHost(bridge);
+
         bridge._GetParams().SetInputFileName(inputFileName);
         if (BSISUCCESS != CreateOrUpdateBim(bridge, saparams))
             {
