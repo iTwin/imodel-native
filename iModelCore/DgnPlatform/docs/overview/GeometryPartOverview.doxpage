@@ -1,0 +1,67 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/GeometryPartOverview.doxpage $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+/** @page PAGE_GeometryPartOverview GeometryPart Overview
+
+@tableofcontents
+
+A @b DgnGeometryPart is used to persist geometry that is in common between multiple elements.
+This has the potential benefit of greatly reducing file size and improving ease of maintenance.
+
+@see DgnGeometryPart
+@see DgnGeometryPartId
+@see DgnGeometryParts
+@see GeometryBuilder
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section PAGE_GeometryPartOverview1 Insert a DgnGeometryPart
+
+The following code demonstrates how to create and insert a DgnGeometryPart.
+The basic steps are:
+
+- Create desired geometric primitives.  A convenient local origin is defined.
+- Use a GeometryBuilder to append geometric primitives into a single <i>geometry stream</i>
+- Create a %DgnGeometryPart with a given name (DgnCode)
+- Associate the geometry stream with the geometry part
+- Insert the geometry part into the %DgnDb
+
+@note A geometry stream must be entirely 2D or entirely 3D
+
+__PUBLISH_INSERT_FILE__ ToyTile_InsertGeometryPart.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section PAGE_GeometryPartOverview2 Query for a DgnGeometryPartId
+
+The following code demonstrates how to query for a DgnGeometryPartId by its name (DgnCode).
+
+__PUBLISH_INSERT_FILE__ ToyTile_QueryGeometryPartId.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section PAGE_GeometryPartOverview3 Use a DgnGeometryPart
+
+The following code demonstrates how to reference a geometry part so that its geometry gets shared by (and at display-time, incorporated into) the GeometricElement.
+@note Each time a geometry part is used, a placement (DPoint3d origin + YawPitchRollAngles rotation) or Transform must also be supplied.  This places the part relative to the element's local origin.
+
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_StaticCreate.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section PAGE_GeometryPartOverview4 See Also
+
+@see GROUP_Geometry
+@see GROUP_DgnElement
+
+<!-- ---------------------------------------------------------------------------------- -->
+*/
+
+END_BENTLEY_DGN_NAMESPACE
