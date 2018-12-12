@@ -292,34 +292,11 @@ TEST_F (ZShapeProfileTestCase, Insert_ValidWebThickness_SuccessfulInsert)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ZShapeProfileTestCase, Insert_VariousFilletRadiusAndZeroFlangeSlope_CorrectInsertResult)
+TEST_F (ZShapeProfileTestCase, Insert_InvalidFilletRadius_FailedInsert)
     {
-    CreateParams params (GetModel(), "Z_ZeroFlangeSlope", 10.0, 10.0, 1.0, 1.0, INFINITY);
-    params.flangeSlope = 0.0;
+    CreateParams params (GetModel(), "Z", 10.0, 10.0, 1.0, 1.0, INFINITY);
 
     TestParameterToBeFiniteAndPositive (params, params.filletRadius, "FilletRadius", true);
-
-    ZShapeProfilePtr profilePtr = CreateProfile (params);
-
-    // Test against inner flange length
-    params.depth = 100.0;
-    params.flangeWidth = 10.0;
-    params.filletRadius = 4.5;
-    EXPECT_EQ (4.5, profilePtr->GetInnerFlangeFaceLength() / 2.0);
-    EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
-
-    params.filletRadius = nextafter<double, double> (4.5, INFINITY);
-    EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
-
-    // Test against inner web face length
-    params.flangeWidth = 100.0;
-    params.depth = 10.0;
-    params.filletRadius = 4.5;
-    EXPECT_EQ (4.5, profilePtr->GetInnerWebFaceLength() / 2.0);
-    EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
-
-    params.filletRadius = nextafter<double, double> (4.5, INFINITY);
-    EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
     }
 
 /*---------------------------------------------------------------------------------**//**
