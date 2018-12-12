@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6C910554-8927-4C81-B80B-EABE83C35FEB}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\Product\WSClient-IntegrationGTest\WSClientIntegrationTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest re  WSClientIntegrationTests *WebServices* *google*</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest re  WSClientIntegrationTests WebServices* *google* -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(OutRoot)Winx64\build\WSClientIntegrationTests\gensrc\;$(IncludePath)</IncludePath>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <NMakeOutput>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</NMakeOutput>
+    <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest re  WSClientIntegrationTests *WebServices* *google*</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest re  WSClientIntegrationTests WebServices* *google* -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath);$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(OutRoot)Winx64\build\WSClientIntegrationTests\gensrc\;$(IncludePath)</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)util\gtest\include;$(SrcRoot)FieldApps\Shared\Native;$(SrcRoot)FieldApps\MobileUtils\Native\PublicAPI;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include;$(IncludePath)</IncludePath>
+    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Cache\CachingDataSourceTests.cpp" />
+    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp" />
+    <ClCompile Include="Cache\ECDbAdapterTests.cpp" />
+    <ClCompile Include="Configuration\BuddiClientTests.cpp" />
+    <ClCompile Include="Configuration\UrlProviderTests.cpp" />
+    <ClCompile Include="Connect\DelegationTokenProviderTests.cpp" />
+    <ClCompile Include="Connect\IdentityTokenProviderTests.cpp" />
+    <ClCompile Include="Examples\ExampleTests.cpp" />
+    <ClCompile Include="Repository\Extensions\HierarchicalSearchTests.cpp" />
+    <ClCompile Include="Repository\Extensions\NavigationTests.cpp" />
+    <ClCompile Include="Repository\Extensions\WorkflowStateManagerTests.cpp" />
+    <ClCompile Include="Repository\RepositoryCacheFactoryTests.cpp" />
+    <ClCompile Include="Repository\WorkspaceTests.cpp" />
+    <ClCompile Include="Repository\WorkspaceUpgradeTests.cpp" />
+    <ClCompile Include="Ims\SolrClientTests.cpp" />
+    <ClCompile Include="TestUtils\WSClientIntegrationTestsHost.cpp" />
+    <ClCompile Include="TestUtils\TestMain.cpp" />
+    <ClCompile Include="Repository\ConnectWorkspaceManagerTests.cpp" />
+    <ClCompile Include="Connect\ImsClientTests.cpp" />
+    <ClCompile Include="Client\WSClientTests.cpp" />
+    <ClCompile Include="Client\WSRepositoryClientTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Cache\CachingDataSourceTests.h" />
+    <ClInclude Include="Cache\ECDbAdapterTests.h" />
+    <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h" />
+    <ClInclude Include="Configuration\BuddiClientTests.h" />
+    <ClInclude Include="Configuration\UrlProviderTests.h" />
+    <ClInclude Include="Examples\ExampleTests.h" />
+    <ClInclude Include="Repository\Extensions\HierarchicalSearchTests.h" />
+    <ClInclude Include="Repository\Extensions\NavigationTests.h" />
+    <ClInclude Include="Repository\Extensions\WorkflowStateManagerTests.h" />
+    <ClInclude Include="Repository\RepositoryCacheFactoryTests.h" />
+    <ClInclude Include="Repository\StubRepositoryCachePathProvider.h" />
+    <ClInclude Include="Repository\WorkspaceTests.h" />
+    <ClInclude Include="Repository\WorkspaceUpgradeTests.h" />
+    <ClInclude Include="Repository\ConnectWorkspaceManagerTests.h" />
+    <ClInclude Include="Client\WSClientTests.h" />
+    <ClInclude Include="Client\WSRepositoryClientTests.h" />
+    <ClInclude Include="Ims\SolrClientTests.h" />
+    <ClInclude Include="TestUtils\WSClientIntegrationTestsHost.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="IntegrationTests.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

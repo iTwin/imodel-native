@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_SP" nameSpacePrefix="dmsws" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECRelationshipClass typeName="CustomColumnsForListItem">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DocumentParent">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FolderParent">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="WebChildren">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+</ECSchema>

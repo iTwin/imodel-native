@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iModelHubClient.NuGetPackage.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+NUGET_BUILD_DIR=$(OutBuildDir)NuGet/
+NUGET_BASE_PATH=$(BuildContext)
+
+NuGetBaseName=iModelHubClient
+NuGetDependencies=\#DgnClientSdk_version\#=$(BuildContext)SubParts\Assemblies\Bentley.dll
+%include $(sharedMki)nuspecCreate.mki
