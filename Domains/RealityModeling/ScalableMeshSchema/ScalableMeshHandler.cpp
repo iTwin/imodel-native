@@ -290,7 +290,7 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
     {
     return false;
     }
-
+ 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -298,9 +298,13 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 
 static double s_minScreenPixelsPerPoint = 800;
 
-//For now keep the old value (i.e. : 1) for already support sources but set a higher level for streaming texture source because 1 seems a bit too low anyway.
-static double s_maxPixelError = 3;
-static double s_maxPixelErrorStreamingTexture = 3;
+#if defined(ANDROID) || defined(__APPLE__)
+    static double s_maxPixelError = 10;
+    static double s_maxPixelErrorStreamingTexture = 10;
+#else
+ static double s_maxPixelError = 3;
+    static double s_maxPixelErrorStreamingTexture = 3;
+#endif
 
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
