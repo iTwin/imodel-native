@@ -39,7 +39,7 @@ TEST_F (IShapeProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
     EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
 
     CreateParams fullParams (GetModel(), "I", 10, 10, 1, 1, 1, 0.5, PI / 18);
-    EXPECT_SUCCESS_Insert (fullParams) << "Profile should succeed to insert with valid required create parameters.";
+    EXPECT_SUCCESS_Insert (fullParams) << "Profile should succeed to insert with valid full create parameters.";
     }
 
 /*---------------------------------------------------------------------------------**//**

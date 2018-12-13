@@ -39,7 +39,7 @@ TEST_F (TShapeProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
     EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
 
     CreateParams fullParams (GetModel(), "T", 10, 10, 1, 1, 1, 0.5, PI / 18, 0.5, PI / 32);
-    EXPECT_SUCCESS_Insert (fullParams) << "Profile should succeed to insert with valid required create parameters.";
+    EXPECT_SUCCESS_Insert (fullParams) << "Profile should succeed to insert with valid full create parameters.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,7 +132,7 @@ TEST_F (TShapeProfileTestCase, GetInnerFlangeFaceLength_FlangeWidthAndWebThickne
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TShapeProfileTestCase, GetInnerWebFaceLength_DepthAndFlangeThickness_CorrectValue)
     {
-    CreateParams params (GetModel(), "T", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "T", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
     TShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetDepth (0.0);
@@ -153,7 +153,7 @@ TEST_F (TShapeProfileTestCase, GetInnerWebFaceLength_DepthAndFlangeThickness_Cor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TShapeProfileTestCase, GetFlangeSlopeHeight_ProfileWithProperties_CorrectValue)
     {
-    CreateParams params (GetModel(), "T", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "T", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
     TShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetFlangeWidth (3.0);
@@ -177,23 +177,23 @@ TEST_F (TShapeProfileTestCase, GetFlangeSlopeHeight_ProfileWithProperties_Correc
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TShapeProfileTestCase, GetWebSlopeHeight_ProfileWithProperties_CorrectValue)
     {
-    CreateParams params (GetModel(), "T", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "T", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
     TShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetDepth (2.0);
     profilePtr->SetFlangeThickness (1.0);
 
-    profilePtr->SetFlangeSlope (PI / 4.0);
-    EXPECT_EQ (1.0, profilePtr->GetFlangeSlopeHeight());
+    profilePtr->SetWebSlope (PI / 4.0);
+    EXPECT_EQ (1.0, profilePtr->GetWebSlopeHeight());
 
-    profilePtr->SetFlangeSlope (0.0);
-    EXPECT_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
+    profilePtr->SetWebSlope (0.0);
+    EXPECT_EQ (0.0, profilePtr->GetWebSlopeHeight());
 
-    profilePtr->SetFlangeSlope (PI / 2.0);
-    EXPECT_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
+    profilePtr->SetWebSlope (PI / 2.0);
+    EXPECT_EQ (0.0, profilePtr->GetWebSlopeHeight());
 
-    profilePtr->SetFlangeSlope (PI);
-    EXPECT_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
+    profilePtr->SetWebSlope (PI);
+    EXPECT_EQ (0.0, profilePtr->GetWebSlopeHeight());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -467,7 +467,7 @@ TEST_F (TShapeProfileTestCase, Insert_InvalidFlangeSlope_FailedInsert)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
+* @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     {
@@ -488,7 +488,7 @@ TEST_F (TShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
+* @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TShapeProfileTestCase, Insert_FlangeSlopeOf90Degrees_FailedInsert)
     {
@@ -517,7 +517,7 @@ TEST_F (TShapeProfileTestCase, Insert_InvalidWebSlope_FailedInsert)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
+* @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TShapeProfileTestCase, Insert_WebSlopeOf45Degrees_SuccessfulInsert)
     {
