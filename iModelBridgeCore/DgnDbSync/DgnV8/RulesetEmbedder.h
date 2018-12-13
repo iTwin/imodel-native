@@ -50,6 +50,13 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesetElement : Dgn::DefinitionElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RulesetEmbedder
     {
+    public:
+        enum class DuplicateHandlingStrategy
+            {
+            SKIP,       /* Skip inserting current ruleset and leave ruleset in db unchanged */
+            REPLACE     /* Replace ruleset in db with current ruleset */
+            };
+
     private:
         Dgn::DgnDbR m_db;
 
@@ -68,6 +75,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesetEmbedder
         Dgn::CodeSpecCPtr InsertCodeSpec(Utf8CP name);
 
         void HandleElementOperationPrerequisites();
+        Dgn::DgnElementId HandleDuplicateRuleset(ECPresentation::PresentationRuleSetR ruleset, DuplicateHandlingStrategy duplicateHandlingStrategy, Dgn::DgnElementId rulesetId);
+        Dgn::DgnElementId InsertNewRuleset(ECPresentation::PresentationRuleSetR ruleset, Dgn::DgnModelCPtr model, Dgn::DgnCode rulesetCode);
 
     public:
         //! Create a new embedder.
@@ -75,10 +84,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesetEmbedder
         DGNDBSYNC_EXPORT RulesetEmbedder(Dgn::DgnDbR dgnDb) : m_db(dgnDb) { PresentationRulesDomain::RegisterSchema(dgnDb); }
         
         //! Embeds a ruleset to Db
-        //! @param[in] ruleset  a presentation ruleset to embed
+        //! @param[in] ruleset                      a presentation ruleset to embed
+        //! @param[in] duplicateHandlingStrategy    strategy for handling duplicate ruleset
         //! @returns in case of successful insert returns DgnElementId of inserted element.
         //!          in case of failure inserts invalid ID (0)
-        DGNDBSYNC_EXPORT Dgn::DgnElementId InsertRuleset(ECPresentation::PresentationRuleSetR ruleset);
+        DGNDBSYNC_EXPORT Dgn::DgnElementId InsertRuleset(ECPresentation::PresentationRuleSetR ruleset, DuplicateHandlingStrategy duplicateHandlingStrategy = DuplicateHandlingStrategy::SKIP);
     };
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
