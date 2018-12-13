@@ -2088,7 +2088,7 @@ struct DiskNodesCacheTests : NodesCacheTests
         cacheDb.BeDeleteFile();
         }
 
-    NodesCache* _CreateNodesCache(BeFileName tempDir) override
+    virtual NodesCache* _CreateNodesCache(BeFileName tempDir) override
         {
         return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
         }
@@ -2324,4 +2324,81 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     // verify the cache is still valid
     m_connection = m_connections.NotifyConnectionOpened(GetDb());
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2018
++===============+===============+===============+===============+===============+======*/
+struct DiskNodesCacheLocationTests : ECPresentationTest
+    {    
+    TestConnectionManager m_connections;
+    TestUserSettingsManager m_userSettings;
+    JsonNavNodesFactory m_nodesFactory;
+    TestNodesProviderContextFactory m_nodesProviderContextFactory;
+    TestECSqlStatementsCacheProvider m_ecsqlStatements;
+    BeFileName m_directory;
+    DiskNodesCacheLocationTests() : m_nodesProviderContextFactory(m_connections) {}
+    void SetUp() override
+        {
+        BeTest::GetHost().GetOutputRoot(m_directory);
+        m_directory.AppendToPath(L"DiskNodesCacheLocationTests");
+        if (!m_directory.DoesPathExist())
+            BeFileName::CreateNewDirectory(m_directory.c_str());
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheLocationTests, CreatesCacheInSpecifiedDirectory)
+    {
+    BeFileName expectedPath = m_directory;
+    expectedPath.AppendToPath(L"HierarchyCache.db");
+
+    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache.GetDb().GetDbFileName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheLocationTests, ReusesExistingCache)
+    {
+    BeFileName expectedPath = m_directory;
+    expectedPath.AppendToPath(L"HierarchyCache.db");
+
+    {
+    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    }
+    EXPECT_TRUE(expectedPath.DoesPathExist());
+
+    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache.GetDb().GetDbFileName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheLocationTests, CreatesSeparateCacheWhenExistingIsLocked)
+    {
+    BeFileName expectedPath1 = m_directory;
+    expectedPath1.AppendToPath(L"HierarchyCache.db");
+    NodesCache cache1(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    EXPECT_STREQ(expectedPath1.GetNameUtf8().c_str(), cache1.GetDb().GetDbFileName());
+
+    BeFileName cache2Path;
+    {
+    NodesCache cache2(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    cache2Path = BeFileName(cache2.GetDb().GetDbFileName());
+    BeFileName expectedDirectory2 = BeFileName(m_directory).AppendSeparator();
+    EXPECT_STREQ(expectedDirectory2.c_str(), cache2Path.GetDirectoryName().c_str());
+
+    bvector<WString> nameParts;
+    BeStringUtilities::Split(cache2Path.GetFileNameAndExtension().c_str(), L".", nullptr, nameParts);
+    ASSERT_EQ(3, nameParts.size());
+    EXPECT_STREQ(L"HierarchyCache", nameParts[0].c_str());
+    EXPECT_EQ(SUCCESS, BeGuid().FromString(Utf8String(nameParts[1].c_str()).c_str()));
+    EXPECT_STREQ(L"db", nameParts[2].c_str());
+    }
+    EXPECT_FALSE(cache2Path.DoesPathExist());
     }
