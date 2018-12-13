@@ -152,3 +152,12 @@ ICurvePrimitivePtr PointManipulationStrategy::_FinishPrimitive() const
 
     return ICurvePrimitive::CreatePointString(keyPoints);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void PointManipulationStrategy::_Clear()
+    {
+    m_keyPoints.clear();
+    m_nonDynamicKeypointSet = false;
+    }

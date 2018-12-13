@@ -82,3 +82,22 @@ TEST_F(PointManipulationStrategyTestFixture, AppendKeyPoint_ReplacesPreviousDyna
     ASSERT_EQ(sut->GetKeyPoints().size(), 1);
     ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({ 2,2,2 }));
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PointManipulationStrategyTestFixture, Clear_RemovesAllKeyPoints)
+    {
+    PointManipulationStrategyPtr sut = PointManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    ASSERT_EQ(sut->GetKeyPoints().size(), 0);
+    sut->AppendDynamicKeyPoint({1,1,1});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    sut->Clear();
+    ASSERT_EQ(sut->GetKeyPoints().size(), 0);
+    sut->AppendKeyPoint({2,2,2});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    sut->Clear();
+    ASSERT_EQ(sut->GetKeyPoints().size(), 0);
+    }
