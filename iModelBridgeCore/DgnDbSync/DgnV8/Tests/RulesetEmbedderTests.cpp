@@ -33,6 +33,7 @@ struct RulesetEmbedderTests : public ConverterTestBaseFixture
             ]
         }
     )";
+
     BentleyApi::Utf8CP RuleSetJsonString2 = R"(
         {
             "id" : "default",
@@ -64,6 +65,9 @@ struct RulesetEmbedderTests : public ConverterTestBaseFixture
     void TearDown();
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                12/18
++---------------+---------------+---------------+---------------+---------------+------*/
 void RulesetEmbedderTests::SetUp()
     {
     T_Super::SetUp();
@@ -75,6 +79,9 @@ void RulesetEmbedderTests::SetUp()
     ASSERT_TRUE(m_db->IsDbOpen());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                12/18
++---------------+---------------+---------------+---------------+---------------+------*/
 void RulesetEmbedderTests::TearDown()
     {
     m_db->AbandonChanges();
@@ -82,6 +89,9 @@ void RulesetEmbedderTests::TearDown()
     T_Super::TearDown();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                12/18
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyApi::ECPresentation::RulesDrivenECPresentationManager::Paths GetPaths(BentleyApi::BeTest::Host& host)
     {
     BentleyApi::BeFileName assetsDirectory, temporaryDirectory;
@@ -90,6 +100,9 @@ BentleyApi::ECPresentation::RulesDrivenECPresentationManager::Paths GetPaths(Ben
     return BentleyApi::ECPresentation::RulesDrivenECPresentationManager::Paths(assetsDirectory, temporaryDirectory);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocated)
     {
     BentleyApi::ECPresentation::PresentationRuleSetPtr ruleset = BentleyApi::ECPresentation::PresentationRuleSet::ReadFromJsonString(RuleSetJsonString1);
@@ -108,6 +121,9 @@ TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocated)
     ASSERT_TRUE(ruleset->WriteToJsonValue() == rulesets[0]->WriteToJsonValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocatedFromPresentationManager)
     {
     RulesetEmbedder embedder = RulesetEmbedder(*m_db);
@@ -128,6 +144,9 @@ TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocatedFromPresentationManager)
     ASSERT_TRUE(1 == rulesets.size() - countBefore);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesetEmbedderTests, SameRulesetIsNotEmbeddedTwice)
     {
     BentleyApi::ECPresentation::PresentationRuleSetPtr ruleset = BentleyApi::ECPresentation::PresentationRuleSet::ReadFromJsonString(RuleSetJsonString1);
@@ -142,6 +161,9 @@ TEST_F(RulesetEmbedderTests, SameRulesetIsNotEmbeddedTwice)
     ASSERT_EQ(rulesetId1, rulesetId2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesetEmbedderTests, DuplicateRulesetIsSkipped)
     {
     BentleyApi::ECPresentation::PresentationRuleSetPtr ruleset = BentleyApi::ECPresentation::PresentationRuleSet::ReadFromJsonString(RuleSetJsonString1);
@@ -171,6 +193,9 @@ TEST_F(RulesetEmbedderTests, DuplicateRulesetIsSkipped)
     ASSERT_FALSE(changedRuleset->WriteToJsonValue() == locatedRuleset->WriteToJsonValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesetEmbedderTests, DuplicateRulesetIsReplaced)
     {
     BentleyApi::ECPresentation::PresentationRuleSetPtr ruleset = BentleyApi::ECPresentation::PresentationRuleSet::ReadFromJsonString(RuleSetJsonString1);

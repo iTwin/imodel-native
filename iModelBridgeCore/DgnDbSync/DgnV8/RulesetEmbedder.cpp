@@ -187,30 +187,25 @@ Dgn::DgnElementId RulesetEmbedder::HandleDuplicateRuleset(ECPresentation::Presen
     {
     Dgn::DefinitionElementPtr rulesetElement;
     Dgn::DgnElementCPtr updated;
-    switch (duplicateHandlingStrategy)
-        {
-        case BentleyB0200::Dgn::DgnDbSync::DgnV8::RulesetEmbedder::SKIP:
-            return rulesetId;
-        case BentleyB0200::Dgn::DgnDbSync::DgnV8::RulesetEmbedder::REPLACE:
-            rulesetElement = m_db.Elements().GetForEdit<DefinitionElement>(rulesetId);
-            if (rulesetElement.IsNull())
-                {
-                BeAssert(false);
-                return Dgn::DgnElementId();
-                }
 
-            rulesetElement->SetJsonProperties(rulesetElement->json_jsonProperties(), ruleset.WriteToJsonValue());
-            updated = rulesetElement->Update();
-            if (updated.IsNull())
-                {
-                BeAssert(false);
-                return Dgn::DgnElementId();
-                }
-            return rulesetId;
-        default:
-            BeAssert(false && "Unhandled Duplicate handling strategy case");
-            return Dgn::DgnElementId();
+    if (DuplicateHandlingStrategy::SKIP == duplicateHandlingStrategy)
+        return rulesetId;
+
+    rulesetElement = m_db.Elements().GetForEdit<DefinitionElement>(rulesetId);
+    if (rulesetElement.IsNull())
+        {
+        BeAssert(false);
+        return Dgn::DgnElementId();
         }
+
+    rulesetElement->SetJsonProperties(rulesetElement->json_jsonProperties(), ruleset.WriteToJsonValue());
+    updated = rulesetElement->Update();
+    if (updated.IsNull())
+        {
+        BeAssert(false);
+        return Dgn::DgnElementId();
+        }
+    return rulesetId;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

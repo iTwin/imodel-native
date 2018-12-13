@@ -51,10 +51,10 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesetElement : Dgn::DefinitionElement
 struct EXPORT_VTABLE_ATTRIBUTE RulesetEmbedder
     {
     public:
-        enum DuplicateHandlingStrategy
+        enum class DuplicateHandlingStrategy
             {
-            SKIP,
-            REPLACE
+            SKIP,       /* Skip inserting current ruleset and leave ruleset in db unchanged */
+            REPLACE     /* Replace ruleset in db with current ruleset */
             };
 
     private:
@@ -85,12 +85,10 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesetEmbedder
         
         //! Embeds a ruleset to Db
         //! @param[in] ruleset                      a presentation ruleset to embed
-        //! @param[in] duplicateHandlingStrategy    strategy for handling duplicate ruleset:
-        //!                                         SKIP    Skip inserting this ruleset and leave ruleset in db unchanged
-        //!                                         REPLACE Replace ruleset in db with this ruleset
+        //! @param[in] duplicateHandlingStrategy    strategy for handling duplicate ruleset
         //! @returns in case of successful insert returns DgnElementId of inserted element.
         //!          in case of failure inserts invalid ID (0)
-        DGNDBSYNC_EXPORT Dgn::DgnElementId InsertRuleset(ECPresentation::PresentationRuleSetR ruleset, DuplicateHandlingStrategy duplicateHandlingStrategy = SKIP);
+        DGNDBSYNC_EXPORT Dgn::DgnElementId InsertRuleset(ECPresentation::PresentationRuleSetR ruleset, DuplicateHandlingStrategy duplicateHandlingStrategy = DuplicateHandlingStrategy::SKIP);
     };
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
