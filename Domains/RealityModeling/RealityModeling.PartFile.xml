@@ -12,33 +12,26 @@
         </Bindings>
     </Part>
 
-    <Part Name="ScalableMeshSchemaIos" OnlyPlatforms="iOSARM64,AndroidArm64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchemaIos.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
+    <Part Name="ScalableMeshSchemaMobile" OnlyPlatforms="iOSARM64,AndroidArm64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchemaIos.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
         <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
         <SubPart PartName="ScalableMeshCoreStaticLinux" PartFile="ScalableMesh" Repository="ScalableMesh" LibType="Static"/>
-        <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" LibType="Static"/>
-        <SubPart PartName="Core"            PartFile="TerrainModelDgnDb"      Repository="TerrainModel" LibType="Static"/>
-        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"         Repository="DgnPlatform" LibType="Static"/>
-        <SubPart PartName="DgnView"         PartFile="DgnDisplay"          Repository="DgnDisplay" LibType="Static"/>
-        
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"                  Repository="ImagePP" LibType="Static"/>
+        <SubPart PartName="Core"            PartFile="TerrainModelDgnDb"        Repository="TerrainModel" LibType="Static"/>
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"              Repository="DgnPlatform" LibType="Static"/>
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"               Repository="DgnDisplay" LibType="Static"/>
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(ApiNumber)$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>
         </Bindings>
     </Part>
 
-    <Part Name="ScalableMeshSchemaIosStatic" OnlyPlatforms="iOSARM64">
-      <SubPart PartName="ScalableMeshSchemaIos" LibType="Static"/>
-    </Part>
-
-
   <Part Name="ScalableMeshSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchema.mke" ApiNumber="B02">
         <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
-        <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" />
-        <SubPart PartName="Core"         PartFile="TerrainModelDgnDb"      Repository="TerrainModel" />
-        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"         Repository="DgnPlatform" />
-        <SubPart PartName="ScalableMesh"    PartFile="ScalableMesh"        Repository="ScalableMesh" />
-        <SubPart PartName="DgnView"         PartFile="DgnDisplay"          Repository="DgnDisplay" />
-        
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"              Repository="ImagePP" />
+        <SubPart PartName="Core"            PartFile="TerrainModelDgnDb"    Repository="TerrainModel" />
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"          Repository="DgnPlatform" />
+        <SubPart PartName="ScalableMesh"    PartFile="ScalableMesh"         Repository="ScalableMesh" />
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"           Repository="DgnDisplay" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(ApiNumber)$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>
