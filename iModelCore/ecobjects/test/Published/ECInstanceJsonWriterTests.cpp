@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-// Hash implementation for BentleyB0200::Utf8String type
+// Hash implementation for BentleyM0200::Utf8String type
 namespace std
     {
     template<> struct hash<Utf8String>

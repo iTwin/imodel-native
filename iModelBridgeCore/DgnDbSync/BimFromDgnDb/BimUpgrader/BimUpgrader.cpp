@@ -35,7 +35,7 @@ static WCharCP s_configFileName = L"BimUpgrader.logging.config.xml";
 BEGIN_BIM_FROM_DGNDB_NAMESPACE
 
 
-struct KnownDesktopLocationsAdmin : BentleyB0200::Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin
+struct KnownDesktopLocationsAdmin : BentleyM0200::Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin
     {
     BeFileName m_tempDirectory;
     BeFileName m_executableDirectory;
@@ -70,18 +70,18 @@ struct KnownDesktopLocationsAdmin : BentleyB0200::Dgn::DgnPlatformLib::Host::IKn
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            04/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-struct BimUpgraderHost : BentleyB0200::Dgn::DgnPlatformLib::Host
+struct BimUpgraderHost : BentleyM0200::Dgn::DgnPlatformLib::Host
     {
     virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimUpgrader"); }
     virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
 
-    virtual BentleyB0200::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
+    virtual BentleyM0200::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
         BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
         sqlangFile.AppendToPath(L"sqlang");
         sqlangFile.AppendToPath(L"BimFromJson_en-US.sqlang.db3");
 
-        return BentleyB0200::BeSQLite::L10N::SqlangFiles(sqlangFile);
+        return BentleyM0200::BeSQLite::L10N::SqlangFiles(sqlangFile);
         }
     };
 
@@ -311,7 +311,7 @@ int BimUpgrader::Run(int argc, WCharCP argv[])
         return _PrintUsage(argv[0]);
         }
 
-    bool converted = BentleyB0200::Dgn::BimFromDgnDb::BimFromDgnDb::Upgrade(m_inputFileName.GetName(), m_outputPath.GetName());
+    bool converted = BentleyM0200::Dgn::BimFromDgnDb::BimFromDgnDb::Upgrade(m_inputFileName.GetName(), m_outputPath.GetName());
     Http::HttpClient::Uninitialize();
 
     if (!converted)
@@ -337,6 +337,6 @@ END_BIM_FROM_DGNDB_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, wchar_t const* argv[])
     {
-    BentleyB0200::Dgn::BimFromDgnDb::BimUpgrader app;
+    BentleyM0200::Dgn::BimFromDgnDb::BimUpgrader app;
     return app.Run(argc, argv);
     }

@@ -52,7 +52,7 @@ class RequestHandler
         FAKESERVER_EXPORT BeFileName GetServerPath() {return BeFileName(serverPath);}
 
         FAKESERVER_EXPORT void CheckDb();
-        FAKESERVER_EXPORT void CreateTables(BentleyB0200::BeSQLite::Db *m_db);
+        FAKESERVER_EXPORT void CreateTables(BentleyM0200::BeSQLite::Db *m_db);
         FAKESERVER_EXPORT void DeleteTables(Utf8String tableName);
         FAKESERVER_EXPORT void Insert(bvector<Utf8String> insertStr);
 

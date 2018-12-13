@@ -637,7 +637,7 @@ void RealityDataPackageNet::SetBoundingPolygon(List<double>^ polygonPts)
 String^ RealityDataPackageNet::GetContext()
 {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pPackage)->GetId().c_str());
+    return ctx.marshal_as<String^>((*m_pPackage)->GetContext().c_str());
 }
 
 //-------------------------------------------------------------------------------------

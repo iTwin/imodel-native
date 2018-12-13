@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/WebTraverser/WebTraverser.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -102,9 +102,9 @@ int main(int argc, char *argv[])
 
     auto argIt = argv;
     int UrlCount = 0;
-    char* ftp = "ftp://";
-    char* http = "http://";
-    char* https = "https://";
+    char ftp[10] = "ftp://";
+    char http[10] = "http://";
+    char https[10] = "https://";
     for (int i = 0; i < argc - 1; ++i)
         {
         char* input = *++argIt;

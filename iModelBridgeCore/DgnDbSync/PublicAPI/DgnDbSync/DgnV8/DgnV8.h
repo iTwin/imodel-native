@@ -18,7 +18,7 @@
 #define NO_IODEFS
 
 //  The Vancouver header files will not compile unless the there is a "using namespace Bentley".  Therefore we
-//  have to disallow "using namespace BentleyB0200".
+//  have to disallow "using namespace BentleyM0200".
 #ifndef NO_USING_NAMESPACE_BENTLEY
 #define NO_USING_NAMESPACE_BENTLEY 1
 #endif // !NO_USING_NAMESPACE_BENTLEY

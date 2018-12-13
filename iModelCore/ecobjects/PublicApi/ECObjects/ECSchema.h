@@ -3310,6 +3310,7 @@ struct ECSchema : RefCountedBase, IECCustomAttributeContainer
 private:
     ECSchema (ECSchema const&);
     ECSchema& operator= (ECSchema const&);
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 10000; }
 
 // This is needed to force removal of the Units schema from downconverted schemas.
 friend struct ECSchemaDownConverter;

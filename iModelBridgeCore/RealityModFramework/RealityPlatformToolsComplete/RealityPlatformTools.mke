@@ -9,6 +9,7 @@
 
 appName         = RealityPlatformTools
 baseDir         = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/RealityPlatformTools/
+curlDir         = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/RealityPlatformToolsCurl/
 childDir        = $(_MakeFilePath)
 
 %include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
@@ -50,19 +51,19 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)RealityConversionTools$(oext) : $(baseDir)RealityConversionTools.cpp $(PublicApiDir)RealityConversionTools.h ${MultiCompileDepends}
 
-$(o)RealityDataDownload$(oext) : $(childDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
+$(o)RealityDataDownload$(oext) : $(curlDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
 
-$(o)WSGServices$(oext) : $(childDir)WSGServices.cpp $(PublicApiDir)WSGServices.h ${MultiCompileDepends}
+$(o)WSGServices$(oext) : $(childDir)WSGServices.cpp $(curlDir)WSGServices.cpp $(PublicApiDir)WSGServices.h ${MultiCompileDepends}
 
-$(o)RealityDataService$(oext) : $(childDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
+$(o)RealityDataService$(oext) : $(curlDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
 
-$(o)GeoCoordinationService$(oext) : $(childDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
+$(o)GeoCoordinationService$(oext) : $(curlDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
 
-$(o)SimpleWSGBase$(oext) : $(childDir)SimpleWSGBase.cpp $(PublicApiDir)SimpleWSGBase.h ${MultiCompileDepends}
+$(o)SimpleWSGBase$(oext) : $(childDir)SimpleWSGBase.cpp $(baseDir)SimpleWSGBase.cpp $(PublicApiDir)SimpleWSGBase.h ${MultiCompileDepends}
 
 $(o)SimpleRDSApi$(oext) : $(baseDir)SimpleRDSApi.cpp $(PublicApiDir)SimpleRDSApi.h ${MultiCompileDepends}
 
-$(o)SimpleGCSApi$(oext) : $(childDir)SimpleGCSApi.cpp $(PublicApiDir)SimpleGCSApi.h ${MultiCompileDepends}
+$(o)SimpleGCSApi$(oext) : $(curlDir)SimpleGCSApi.cpp $(PublicApiDir)SimpleGCSApi.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

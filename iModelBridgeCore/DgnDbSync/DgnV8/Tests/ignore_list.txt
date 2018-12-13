@@ -20,48 +20,18 @@ MultiBridgeTests.Sandwich
     #To be equal to: masterModels.size()
     #     Which is: 2
 
+# Nobody seems able to decide which magic numbers are correct - they keep
+# flipping back and forth
+ConverterTests.GCSMultiFilesReprojectImport
+
 TransformTests.Test1
-    # fails on imodel02 CI jobs
-    # https://bentleycs.visualstudio.com/iModelTechnologies/_build/results?buildId=36993&_a=summary&view=logs
-    # [ RUN      ] TransformTests.Test1
-    # D:\vsts_a\39\bbsrc\imodel02\iModelBridgeCore\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(435): error:       Expected: hadAnyChanges
-    #       Which is: true
+
+    # VSTS#50113
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/07/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(437): error:       Expected: hadAnyChanges
+    # Which is: true
     # To be equal to: expectUpdate
-    #       Which is: false
-    # D:\vsts_a\39\bbsrc\imodel02\iModelBridgeCore\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1181): error:       Expected: 0
+    # Which is: false
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1239): error:       Expected: 0
     # To be equal to: m_count
-    #       Which is: 2
-    # [  FAILED  ] TransformTests.Test1 (718 ms)
-
-MstnBridgeTests.ConvertAttachmentSingleBridge
-    # crashes on imodel02 CI jobs
-    # [ RUN      ] MstnBridgeTests.ConvertAttachmentSingleBridge
-    # D:\vsts_a\39\bbsrc\imodel02\iModelBridgeCore\DgnDbSync\DgnV8\Tests\MstnBridgeTestsFixture.cpp(289): error:       Expected: BentleyApi::BSISUCCESS
-    #       Which is: 0
-    # To be equal to: fwk.ParseCommandLine(argc, argv)
-    #       Which is: 32768
-    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
-    # *********************** STACK TRACE ************************
-    # [17] _chkstk (0x7ffb0ceaec10)
-    # [16] RtlWalkFrameChain (0x7ffb0ce15890)
-    # [15] KiUserExceptionDispatcher (0x7ffb0ceadc30)
-    # [14] BentleyM0200::Dgn::DgnElements::GetStatement (0x7ffaf1e71e30)
-    # [13] MstnBridgeTestsFixture::DbFileInfo::GetModelCount (0x7ff693aacf00)
-    # [12] MstnBridgeTests_ConvertAttachmentSingleBridge_Test::TestBody (0x7ff693aa8010)
-    # [11] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff693ab8c40)
-    # [10] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff693ab8ad0)
-    # [9] testing::TestInfo::Run (0x7ff693ac9cb0)
-    # [8] testing::TestCase::Run (0x7ff693ac9ad0)
-    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff693aca060)
-    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff693ab8ce0)
-    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff693ab8bc0)
-    # [4] testing::UnitTest::Run (0x7ff693ac9f40)
-    # [3] main (0x7ff693ab4270)
-    # [2] __scrt_common_main_seh (0x7ff693ad758c)
-    # [1] BaseThreadInitThunk (0x7ffb0bd43020)
-    # [0] RtlUserThreadStart (0x7ffb0ce81440)
-    #
-    # [  FAILED  ] MstnBridgeTests.ConvertAttachmentSingleBridge (1491 ms)
-
-V8AttachmentTests.AttachIfc # WIP merge from bim0200dev - difference are in expected element count, and the difference is small. I have no way of telling if the change is intended.
-V8AttachmentTests.Attach3dm # WIP merge from bim0200dev - difference are in expected element count, and the difference is small. I have no way of telling if the change is intended.
+    # Which is: 2

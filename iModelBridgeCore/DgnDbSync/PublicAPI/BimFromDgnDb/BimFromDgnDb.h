@@ -11,7 +11,7 @@
 
 /** @namespace BimFromDgnDb Contains types defined by %Bentley Systems that are used to upgrade < 2.0 iModels to 2.0 iModels. */
 #define BIM_FROM_DGNDB_NAMESPACE_NAME BimFromDgnDb
-#define BEGIN_BIM_FROM_DGNDB_NAMESPACE namespace BentleyB0200 { namespace Dgn { namespace BIM_FROM_DGNDB_NAMESPACE_NAME {
+#define BEGIN_BIM_FROM_DGNDB_NAMESPACE namespace BentleyM0200 { namespace Dgn { namespace BIM_FROM_DGNDB_NAMESPACE_NAME {
 #define END_BIM_FROM_DGNDB_NAMESPACE   } } }
 
 #if defined (__GNUC__) || defined (__clang__)

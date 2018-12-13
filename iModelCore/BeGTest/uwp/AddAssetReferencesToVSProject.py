@@ -1,4 +1,4 @@
-import sys,re
+import sys,re,shlex
 
 def getAssetsXml (assetsFilePath):
     file = open (assetsFilePath, 'r')
@@ -7,8 +7,9 @@ def getAssetsXml (assetsFilePath):
     
     xml = ''
     for line in lines:
-        assets = line.split ()
+        assets = shlex.split(line, posix=False)
         for asset in assets:
+            asset = asset.strip('"')
             xml = xml + '<None Include="' + asset + '"><DeploymentContent>true</DeploymentContent></None>\n'
     return xml
 

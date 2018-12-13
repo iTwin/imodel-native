@@ -13,7 +13,7 @@
 #include <folly/futures/Future.h>
 #include <Bentley/BeFileName.h>
 
-namespace BentleyB0200
+namespace BentleyM0200
     {
     namespace Dgn
         {

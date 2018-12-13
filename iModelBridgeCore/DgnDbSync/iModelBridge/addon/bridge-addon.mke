@@ -11,6 +11,8 @@ DLM_NO_IMPLIB=1
 
 appName     = bridge-addon
 
+%message Howdy from bridge-addon.mke! $(appName)
+
 # I get the impression that node addons names should be all lower case. At least, that's what I see out there.
 
 baseDir     = $(_MakeFilePath)

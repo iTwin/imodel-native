@@ -29,6 +29,10 @@
     <ClInclude Include="Published\WebServices\Client\ActivityIdGeneratorTests.h" />
     <ClInclude Include="Published\WebServices\Client\ActivityLoggerTests.h" />
     <ClInclude Include="Published\WebServices\Client\MockRepositoryInfoListener.h" />
+    <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
+    <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Published\Utils\MockTests.h" />
+    <ClInclude Include="Published\Utils\MockHttpHandler.h" />
     <ClInclude Include="Published\Utils\StubInstances.h" />
     <ClInclude Include="Published\Utils\ValuePrinter.h" />
     <ClInclude Include="Published\Utils\WebServicesUnitTests.h" />
@@ -184,6 +188,10 @@
     <ClCompile Include="Published\WebServices\Client\ActivityIdGeneratorTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ActivityLoggerTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSRepositoryTests.cpp" />
+    <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />
+    <ClCompile Include="NonPublished\ConfigurableUiTests.cpp" />
+    <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
+    <ClCompile Include="NonPublished\NonPublishedBackstageTests.cpp" />
     <ClCompile Include="NonPublished\NonPublishedTaskManagerTests.cpp" />
     <ClCompile Include="NonPublished\PortableUiTests.cpp" />
     <ClCompile Include="NonPublished\UiEventHandlerTests.cpp" />

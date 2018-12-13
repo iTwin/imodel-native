@@ -5,7 +5,10 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+// Disable addition of -permissive- compiler option as it does not apply to C++/CLI
+ALLOW_MSVC_PERMISSIVE = 1
 %include mdl.mki
+
 
 
 appName = RealityServicesNet

@@ -123,7 +123,7 @@ BentleyStatus BimFromJsonImpl::AttachSyncInfo()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BimFromJsonImpl::ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue, folly::Future<bool>& exporterFuture)
+BentleyStatus BimFromJsonImpl::ImportJson(folly::ProducerConsumerQueue<BentleyM0200::Json::Value>& objectQueue, folly::Future<bool>& exporterFuture)
     {
     Json::Value entry;
     m_importTimer.Start();
@@ -313,8 +313,6 @@ void BimFromJsonImpl::FinalizeImport()
     BentleyApi::NativeLogging::LoggingManager::GetLogger("BimFromDgnDbUpgrader.Performance")->info(message.c_str());
 
 //    m_dgndb->Schemas().CreateClassViewsInDb();
-
-    ElementClassToAspectClassMapping::CreatePresentationRules(*m_dgndb);
 
     GenerateThumbnails();
     m_dgndb->SaveChanges();

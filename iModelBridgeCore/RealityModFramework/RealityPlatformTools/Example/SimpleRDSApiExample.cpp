@@ -170,7 +170,7 @@ Utf8String CreateUpload()
 void FolderOperations(Utf8String guid)
     {
     //create a local folder to receive the download
-    Utf8String folderGuid = Utf8PrintfString("%s~2F%s", guid, "DummySubFolder");
+    Utf8String folderGuid = Utf8PrintfString("%s~2F%s", guid.c_str(), "DummySubFolder");
     ConnectedRealityDataFolder crdf = ConnectedRealityDataFolder(folderGuid);
 
     WChar exePath[MAX_PATH];
@@ -205,7 +205,7 @@ void FolderOperations(Utf8String guid)
 void DocumentOperations(Utf8String guid)
     {
     //create a local path to the downloaded document
-    Utf8String documentGuid = Utf8PrintfString("%s~2F%s", guid, "DummyRootDocument.json");
+    Utf8String documentGuid = Utf8PrintfString("%s~2F%s", guid.c_str(), "DummyRootDocument.json");
     ConnectedRealityDataDocument crdf = ConnectedRealityDataDocument(documentGuid);
 
     WChar exePath[MAX_PATH];

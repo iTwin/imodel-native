@@ -815,6 +815,7 @@ void ConnectedRealityData::Clone(RealityDataPtr rd)
     m_termsOfUse = rd->GetTermsOfUse();
     m_listable = rd->IsListable();
     m_owner = rd->GetOwner();
+    m_creatorId = rd->GetCreatorId();
     m_group = rd->GetGroup();
     m_totalSize = rd->GetTotalSize();
     }
@@ -954,6 +955,7 @@ ConnectedResponse ConnectedRealityData::UpdateInfo()
     propertyString.append(m_listable ? "\"Listable\" : true," : "\"Listable\" : false,");
     if (!m_owner.empty())
         propertyString.append(Utf8PrintfString("\"OwnedBy\" : \"%s\",", m_owner.c_str()));
+    // CreatorId is not set but automatically generated
     propertyString.append(m_hidden ? "\"Hidden\" : true," : "\"Hidden\" : false,");
     propertyString.append(m_delegatePermissions ? "\"DelegatePermissions\" : true," : "\"DelegatePermissions\" : false,");
     
@@ -1010,6 +1012,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
     properties.Insert(RealityDataField::Streamed, m_streamed ? "true" : "false");
     if (!m_footprintString.empty() || !m_footprint.empty())
         properties.Insert(RealityDataField::Footprint, GetFootprintString());
+    properties.Insert(RealityDataField::ApproximateFootprint, m_approximateFootprint ? "true" : "false");
     if (!m_thumbnailDocument.empty())
         properties.Insert(RealityDataField::ThumbnailDocument, m_thumbnailDocument);
     if (!m_metadataUrl.empty())
