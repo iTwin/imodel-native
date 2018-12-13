@@ -37,7 +37,6 @@ public:
         double width = 0.0;
         double depth = 0.0;
         double thickness = 0.0;
-        double webThickness = 0.0;
 
         //! Optional properties
         double filletRadius = 0.0;
