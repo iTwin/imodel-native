@@ -889,9 +889,10 @@ V8ECSchemaXmlInfo::Iterable::const_iterator V8ECSchemaXmlInfo::Iterable::begin()
 //---------------------------------------------------------------------------------------
 BECN::SchemaKey V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaKey() const
     {
-    return BECN::SchemaKey(m_sql->GetValueText(0),
-        (uint32_t) m_sql->GetValueInt(1),
-                           (uint32_t) m_sql->GetValueInt(2));
+    BECN::SchemaKey key(m_sql->GetValueText(0), (uint32_t) m_sql->GetValueInt(1), (uint32_t) m_sql->GetValueInt(2));
+    Utf8String xml(GetSchemaXml());
+    key.m_checksum = ECN::ECSchema::ComputeSchemaXmlStringCheckSum(xml.c_str(), xml.length());
+    return key;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1020,6 +1021,13 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
 //---------------+---------------+---------------+---------------+---------------+-------
 void ECSchemaXmlDeserializer::AddSchemaXml(Utf8CP schemaName, ECN::SchemaKeyCR key, Utf8CP xml)
     {
+    bvector<bpair<ECN::SchemaKey, Utf8String>> map = m_schemaXmlMap[schemaName];
+    auto mapIter = map.begin();
+    for (; mapIter != map.end(); mapIter++)
+        {
+        if (mapIter->first == key)
+            return;
+        }
     m_schemaXmlMap[schemaName].push_back({key, xml});
     }
 
@@ -1286,7 +1294,6 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
         targetSchemaNames.insert(schemaName);
         Utf8CP schemaXml = entry.GetSchemaXml();
-
         if (entry.GetMappingType() == SyncInfo::ECSchemaMappingType::Dynamic)
             schemaXmlDeserializer.AddSchemaXml(schemaName.c_str(), key, schemaXml);
         else
@@ -2867,8 +2874,6 @@ BentleyStatus DynamicSchemaGenerator::ProcessReferenceSchemasFromExternal(ECObje
 BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::SchemaKey& schemaKey, Utf8CP schemaXml, bool isDynamicSchema, DgnV8ModelR v8Model)
     {
     Utf8String schemaName(schemaKey.GetName().c_str());
-    //if (schemaName.StartsWith("EWR"))
-    //    schemaName.AssignOrClear("EWR");
 
     ECObjectsV8::SchemaKey existingSchemaKey;
     SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
