@@ -143,7 +143,7 @@ void RulesetEmbedder::HandleElementOperationPrerequisites()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas                12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnElementId RulesetEmbedder::InsertRuleset(ECPresentation::PresentationRuleSetR ruleset)
+Dgn::DgnElementId RulesetEmbedder::InsertRuleset(ECPresentation::PresentationRuleSetR ruleset, RulesetEmbedder::DuplicateHandlingStrategy duplicateHandlingStrategy)
     {
     HandleElementOperationPrerequisites();
 
@@ -154,10 +154,63 @@ Dgn::DgnElementId RulesetEmbedder::InsertRuleset(ECPresentation::PresentationRul
         return Dgn::DgnElementId();
         }
 
-    Dgn::DgnElement::CreateParams params(m_db, model->GetModelId(), m_db.Schemas().GetClassId(PRESENTATION_RULES_DOMAIN, PRESENTATION_RULESET_ELEMENT_CLASS_NAME), RulesetElement::CreateRulesetCode(*model, ruleset.GetRuleSetId(), m_db));
+    Dgn::DgnCode rulesetCode = RulesetElement::CreateRulesetCode(*model, ruleset.GetRuleSetId(), m_db);
+    Dgn::DgnElementId rulesetId = m_db.Elements().QueryElementIdByCode(rulesetCode);
+    if (rulesetId.IsValid())
+        return HandleDuplicateRuleset(ruleset, duplicateHandlingStrategy, rulesetId);
+
+    return InsertNewRuleset(ruleset, model, rulesetCode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnElementId RulesetEmbedder::InsertNewRuleset(ECPresentation::PresentationRuleSetR ruleset, Dgn::DgnModelCPtr model, Dgn::DgnCode rulesetCode)
+    {
+    Dgn::DgnElement::CreateParams params(m_db, model->GetModelId(), m_db.Schemas().GetClassId(PRESENTATION_RULES_DOMAIN, PRESENTATION_RULESET_ELEMENT_CLASS_NAME), rulesetCode);
     Dgn::DefinitionElementPtr rulesetElement = new Dgn::DefinitionElement(params);
     rulesetElement->SetJsonProperties(rulesetElement->json_jsonProperties(), ruleset.WriteToJsonValue());
-    return rulesetElement->Insert()->GetElementId();
+    Dgn::DgnElementCPtr inserted = rulesetElement->Insert();
+    if (inserted.IsNull())
+        {
+        BeAssert(false);
+        return Dgn::DgnElementId();
+        }
+
+    return inserted->GetElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnElementId RulesetEmbedder::HandleDuplicateRuleset(ECPresentation::PresentationRuleSetR ruleset, RulesetEmbedder::DuplicateHandlingStrategy duplicateHandlingStrategy, Dgn::DgnElementId rulesetId)
+    {
+    Dgn::DefinitionElementPtr rulesetElement;
+    Dgn::DgnElementCPtr updated;
+    switch (duplicateHandlingStrategy)
+        {
+        case BentleyB0200::Dgn::DgnDbSync::DgnV8::RulesetEmbedder::SKIP:
+            return rulesetId;
+        case BentleyB0200::Dgn::DgnDbSync::DgnV8::RulesetEmbedder::REPLACE:
+            rulesetElement = m_db.Elements().GetForEdit<DefinitionElement>(rulesetId);
+            if (rulesetElement.IsNull())
+                {
+                BeAssert(false);
+                return Dgn::DgnElementId();
+                }
+
+            rulesetElement->SetJsonProperties(rulesetElement->json_jsonProperties(), ruleset.WriteToJsonValue());
+            updated = rulesetElement->Update();
+            if (updated.IsNull())
+                {
+                BeAssert(false);
+                return Dgn::DgnElementId();
+                }
+            return rulesetId;
+        default:
+            BeAssert(false && "Unhandled Duplicate handling strategy case");
+            return Dgn::DgnElementId();
+        }
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
