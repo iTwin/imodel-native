@@ -48,6 +48,16 @@ public:
 protected:
     explicit LShapeProfile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const override;
+
+private:
+    bool ValidateWidth() const;
+    bool ValidateDepth() const;
+    bool ValidateThickness() const;
+    bool ValidateFilletRadius() const;
+    bool ValidateEdgeRadius() const;
+    bool ValidateLegSlope() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (LShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (LShapeProfile)

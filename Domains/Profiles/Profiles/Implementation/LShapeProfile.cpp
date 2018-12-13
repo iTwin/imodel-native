@@ -52,6 +52,111 @@ LShapeProfile::LShapeProfile (CreateParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus LShapeProfile::_Validate() const
+    {
+    BentleyStatus status = T_Super::_Validate();
+    if (status != BSISUCCESS)
+        return status;
+
+    bool const isWidthValid = ValidateWidth();
+    bool const isDepthValid = ValidateDepth();
+    bool const isThicknessValid = ValidateThickness();
+    bool const isFilletRadiusValid = ValidateFilletRadius();
+    bool const isEdgeRadiusValid = ValidateEdgeRadius();
+    bool const isLegSlopeValid  = ValidateLegSlope();
+
+    if (isWidthValid && isDepthValid && isThicknessValid && isFilletRadiusValid && isEdgeRadiusValid && isLegSlopeValid)
+        return BSISUCCESS;
+
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LShapeProfile::ValidateWidth() const
+    {
+    double const width = GetWidth();
+    return std::isfinite (width) && width > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LShapeProfile::ValidateDepth() const
+    {
+    double const depth = GetDepth();
+    return std::isfinite (depth) && depth > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LShapeProfile::ValidateThickness() const
+    {
+    double const thickness = GetThickness();
+    bool const isPositive = std::isfinite (thickness) && thickness >= 0.0;
+    bool const isLessThanWidth = thickness < GetWidth();
+    bool const isLessThanDepth = thickness < GetDepth();
+
+    return isPositive && isLessThanDepth && isLessThanWidth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LShapeProfile::ValidateFilletRadius() const
+    {
+    double const filletRadius = GetFilletRadius();
+    if (std::isfinite (filletRadius) && filletRadius == 0.0)
+        return true;
+
+    double const availableWebLength = GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
+    double const availableFlangeLength = GetInnerFlangeFaceLength() / 2.0 - GetWebSlopeHeight();
+
+    bool const isPositive = std::isfinite (filletRadius) && filletRadius >= 0.0;
+    bool const isLessThanAvailableWebLength = filletRadius <= availableWebLength;
+    bool const isLessThanAvailableFlangeLength = filletRadius <= availableFlangeLength;
+
+    return isPositive && isLessThanAvailableFlangeLength && isLessThanAvailableWebLength;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LShapeProfile::ValidateEdgeRadius() const
+    {
+    double const edgeRadius = GetEdgeRadius();
+    if (std::isfinite (edgeRadius) && edgeRadius == 0.0)
+        return true;
+
+    bool const isPositive = std::isfinite (edgeRadius) && edgeRadius >= 0.0;
+    bool const isLessThanThickness = edgeRadius <= GetThickness();
+    bool const isLessThanAvailableFlangeLength = edgeRadius <= GetInnerFlangeFaceLength() / 2.0;
+
+    return isPositive && isLessThanThickness && isLessThanAvailableFlangeLength;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LShapeProfile::ValidateLegSlope() const
+    {
+    double const legSlope = GetLegSlope();
+    if (std::isfinite (legSlope) && legSlope == 0.0)
+        return true;
+
+    bool const isPositive = std::isfinite (legSlope) && legSlope >= 0.0;
+    bool const isLessThan90Degrees = legSlope < PI / 2.0;
+    bool const slopeHeightIsLessThanAvailableFlangeLength = GetWebSlopeHeight() <= GetInnerFlangeFaceLength() / 2.0;
+    bool const slopeHeightIsLessThanAvailableWebLength = GetFlangeSlopeHeight() <= GetInnerWebFaceLength() / 2.0;
+
+    return isPositive && isLessThan90Degrees && slopeHeightIsLessThanAvailableFlangeLength && slopeHeightIsLessThanAvailableWebLength;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetWidth() const
