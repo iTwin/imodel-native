@@ -67,7 +67,7 @@ LicenseStatus ClientWithKeyImpl::StartApplication()
 	//	return LicenseStatus::Error;
 
 	// Begin heartbeats
-	int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+	//int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
 	//UsageHeartbeat(currentTimeUnixMs);
 	//LogPostingHeartbeat(currentTimeUnixMs);
 
