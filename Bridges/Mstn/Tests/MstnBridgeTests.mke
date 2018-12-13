@@ -17,7 +17,7 @@ dirToSearch = $(BuildContext)SubParts/UnitTests/include
 %include cincapnd.mki
 
 # -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK --
-iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+iModelBridgePrivateAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateAPI/
 dirToSearch  = $(iModelBridgePrivateAPISrc)
 %include cincapnd.mki
 # -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK --
