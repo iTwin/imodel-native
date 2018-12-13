@@ -32,7 +32,8 @@ Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> OidcTokenProvider::UpdateTok
 
     auto task = std::make_shared<PackagedAsyncTask<WebServices::ISecurityTokenPtr>> ([&] 
         {
-        return std::make_shared<OidcToken>(Utf8String(nodeFunction({ }).ToString().Utf8Value().c_str()));
+        m_token = std::make_shared<OidcToken>(Utf8String(nodeFunction({ }).ToString().Utf8Value().c_str()));
+        return m_token;
         }
         );
 
