@@ -548,8 +548,8 @@ void SMNode::CleanupUnusedChildren(bvector<Dgn::TileTree::TileCPtr>& selected) c
                                 OutputDebugStringW(text_buffer); // print
                                 }
 #endif
-                            }
 #endif
+                            }
                         }
 
                     node->CleanupUnusedChildren(selected);
