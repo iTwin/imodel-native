@@ -23,6 +23,7 @@ public:
     // TODO Karolis: We should place this header in PrivateAPI so its not visible for users of the domain
     static IGeometryPtr CreateCShape (CShapeProfileCPtr profile);
     static IGeometryPtr CreateIShape (IShapeProfileCPtr profile);
+    static IGeometryPtr CreateLShape (LShapeProfileCPtr profile);
     static IGeometryPtr CreateTShape (TShapeProfileCPtr profile);
     static IGeometryPtr CreateZShape (ZShapeProfileCPtr profile);
 

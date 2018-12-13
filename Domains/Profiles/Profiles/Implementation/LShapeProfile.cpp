@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\LShapeProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -71,6 +72,14 @@ BentleyStatus LShapeProfile::_Validate() const
         return BSISUCCESS;
 
     return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr LShapeProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateLShape (this);
     }
 
 /*---------------------------------------------------------------------------------**//**
