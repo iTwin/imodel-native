@@ -12,6 +12,10 @@ CLANG_ALLOW_UNDEFINED=1
     %error NODE_ADDON_API must defined to the name of the library that is supplying the node-addon-api
 %endif
 
+%if !defined(NODE_LIB)
+    %error NODE_LIB must be defined to the basename of the .lib file to link with (node or iojs)
+%endif
+
 appName     = imodeljs-addon-$(NODE_ADDON_API)
 
 # I get the impression that node addons names should be all lower case. At least, that's what I see out there.
@@ -36,7 +40,7 @@ always:
     !~@mkdir $(o)
 
 
-# 
+#
 # Burn the package version # into the code
 #
 PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
@@ -46,7 +50,7 @@ $(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.pa
     $(copyCmd) "$<" $@
     python $(baseDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
     ~time
- 
+
 cIncs + -I$(o)
 
 # DLM_NAME and CCompPDBName must be the same.
@@ -59,19 +63,19 @@ $(o)IModelJsNative$(oext) : $(baseDir)IModelJsNative.cpp $(baseDir)IModelJsNativ
 
 $(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp ${MultiCompileDepends}
 
-$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
+$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
-$(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
+$(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
 $(o)JsInteropTiles$(oext) : $(baseDir)JsInteropTiles.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
-$(o)JsInteropBriefcaseManager$(oext) : $(baseDir)JsInteropBriefcaseManager.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
+$(o)JsInteropBriefcaseManager$(oext) : $(baseDir)JsInteropBriefcaseManager.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
-$(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends} 
+$(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends}
 
-$(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends} 
+$(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends}
 
-$(o)UlasClient$(oext) : $(baseDir)UlasClient.cpp $(baseDir)UlasClient.h $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
+$(o)UlasClient$(oext) : $(baseDir)UlasClient.cpp $(baseDir)UlasClient.h $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -106,8 +110,6 @@ DLM_NO_CONTEXT_LINK = 1
 
 %ifdef __unix
 
-    THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)lib$(NODE_ADDON_API).a
-
     THIN_ARCHIVE_NAME = libiModelJsNodeAddon.inputs.a
 
     %include $(sharedMki)rollUpSubPartsLibsThin.mki
@@ -128,7 +130,7 @@ DLM_NO_CONTEXT_LINK = 1
 
 %else
 
-    LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)$(NODE_ADDON_API)$(libext)
+    LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(NODE_LIB).lib
 
     %include $(sharedMki)linkLibrary.mki
 
@@ -139,11 +141,11 @@ DLM_NO_CONTEXT_LINK = 1
 #----------------------------------------------------------------------
 $(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_ADDON_API)/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
     $(LinkFirstDepToFirstTarget)
-	
+
 #----------------------------------------------------------------------
 # Deliver Presentation Rules
 #----------------------------------------------------------------------
 always:
     ~linkdir "$(BuildContext)Delivery/PresentationRules=$(baseDir)/Assets/PresentationRules"
 
-	
+

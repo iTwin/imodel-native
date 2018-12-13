@@ -75,39 +75,42 @@ If you need to support a newer version of node, do the following:
 If you haven't already, install node-gyp:
 `npm install -g node-gyp`
 
-Tell node-gyp to install the version of nodejs that you want.
+Tell node-gyp to install the version of nodejs that you want. Suppose, for example, you want to install v10.13.0. You would do this:
 ```
-node-gyp install <nodevernum>
+node-gyp install 10.13.0
 ```
 
-That will install the headers and libs to the .node-gyp directory in your %homedrive%%homepath% directory.
+That will install headers and libs to a directory called `%homedrive%%homepath%\.node-gyp\10.13.0`
 
-Copy the files to the appropriate subdirectory of thirdparty\node-addon-api\node-gyp. The name of the target directory in thirdparty\node-addon-api\node-gyp should be N_v, where v is the major node version number.
+Copy the following files from there into `%SrcRoot%\thirdparty\node-addon-api\napi-v10`:
+* include\node\node_api.h
+* include\node\node_api_types.h
+* x64\node.lib
 
-Finally, change thirdparty\node-addon-api\node-addon-api.PartFile.xml and update the part that refers to the version of the node API.
+# How to move to a new version of the napi headers
+
+If you need a newer version of napi.h
+```
+npm install -g node-addon-api
+```
+
+That will install the napi package in the `%homedrive%%homepath%\AppData\Roaming\npm\node_modules\node-addon-api` directory.
+
+Copy the following files from there into `%SrcRoot%\thirdparty\node-addon-api\napi-v10`:
+* napi.h
+* napi-inl.h
+* napi-inl.deprecated.h
 
 # How to Move to a New Version of Electron
 
-If you need to support a newer version of node, do the following:
+If you need to support a newer version of Electron, do the following:
 
 Tell node-gyp to install the version of electron that you want. For example, to install version 2.0.8, do this:
 ```
 node-gyp install --target=2.0.8 --arch=x64 --dist-url=https://atom.io/download/electron
 ```
 
-That will install the headers and libs to the %homedrive%%homepath%\.node-gyp\iojs-2.0.8 directory.
+That will install the lib you need to the `%homedrive%%homepath%\.node-gyp\iojs-2.0.8` directory.
 
-Copy the files to the appropriate subdirectory of thirdparty\node-addon-api\node-gyp, as follows:
-
-The name of the target directory in thirdparty\node-addon-api\node-gyp should be E_v, where v is the major electron version number.
-
-Copy all of the files in the following directories into the target directory:
-* %homedrive%%homepath%\.node-gyp\iojs-2.0.8\src
-* %homedrive%%homepath%\.node-gyp\iojs-2.0.8\deps\v8\include
-* %homedrive%%homepath%\.node-gyp\iojs-2.0.8\deps\uv\include
-
-Copy the the following directory as a directory into the target directory:
-* %homedrive%%homepath%\.node-gyp\iojs-2.0.8\deps\v8\include\libplatform
-
-
-Finally, change thirdparty\node-addon-api\node-addon-api.PartFile.xml and update the part that refers to the version of the electron API.
+Copy *only* the following file from there into `%SrcRoot%\thirdparty\node-addon-api\napi-v10`:
+* x64\iojs.lib

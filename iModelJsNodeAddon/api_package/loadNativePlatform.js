@@ -6,12 +6,14 @@ var formatPackageName = require('./formatPackageName.js').formatPackageName;
 
 // Compute the part of the addon name that corresponds to the platform that we are running on right now
 function getCurrentPlatformPrefix() {
-    const electronVersion = process.versions.electron;
-    if (typeof electronVersion !== "undefined") {
-        const electronVersionParts = electronVersion.split(".");
-        return "e_" + electronVersionParts[0]; // use only major version number
-    } 
-    
+    if (process.os == "win32") {
+        const electronVersion = process.versions.electron;
+        if (typeof electronVersion !== "undefined") {
+            const electronVersionParts = electronVersion.split(".");
+            return "e_" + electronVersionParts[0]; // use only major version number
+        }
+    }
+
     const nodeVersion = process.version.substring(1).split("."); // strip off the character 'v' from the start of the string
     return "n_" + nodeVersion[0]; // use only major version number
 }

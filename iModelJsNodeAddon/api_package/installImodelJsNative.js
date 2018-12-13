@@ -52,7 +52,16 @@ function installNativePlatformPackage(packages) {
 
 // Install both flavors of the addon for the current platform
 // *** KEEP THIS CONSISTENT WITH iModelJsNodeAddon/MakePackages.py IN MERCURIAL ***
+let engineVersion = process.version.substring(1).split(".")[0];
+let electronVersion = (engineVersion == "10")? "3": "?";    // Record well-known correspondence between node and electron versions here.
 
-let packages = `${formatPackageName('n_8')}@${version} ${formatPackageName('e_2')}@${version}`;
+console.log(`Node major version is ${engineVersion}`);
+console.log(`Electron major version is ${electronVersion}`);
+
+let packages;
+if (process.os == "win32")
+    packages = `${formatPackageName('n_'+engineVersion)}@${version} ${formatPackageName('e_'+electronVersion)}@${version}`;
+else
+    packages = `${formatPackageName('n_'+engineVersion)}@${version}`;
 
 installNativePlatformPackage(packages);

@@ -25,13 +25,11 @@
 
   <Product Name="iModelJsNodeAddon-Linux">
     <SubPart PartName="iModelJsNodeAddonLib-Linux" LibType="Static" />
-    <SubPart PartName="iModelJsNodeAddonLibElectron-Linux" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
 
   <Product Name="iModelJsNodeAddon-Darwin">
     <SubPart PartName="iModelJsNodeAddonLib-Darwin" LibType="Static" />
-    <SubPart PartName="iModelJsNodeAddonLibElectron-Darwin" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
 
@@ -52,19 +50,19 @@
     <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices" LibType="static"/>
   </ProductDirectoryList>
 
-  <!-- 
+  <!--
             *** ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="<version>" ***
-      
+
             *** Keep this consistent with makePackages.mke/py and imodeljs-core/nodeaddon/NodeAddon.ts. ***
-      
-      In the addon-creation parts below, the ProductSubDirectory name contains the version of nodejs that the addon requires.
-      Downstream consumers expect the major_minor[_patch] formatting of the name.
-      
+
+      In the addon-creation parts below, the ProductSubDirectory name encodes the version of nodejs or electron that the addon requires.
+      Downstream consumers will use api_package/loadNativePlatform.js to load the addon, and that script understands the naming convention.
+
   -->
 
   <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
     <!-- Get the node-addon-api (declaration) from iModelJs, not from node! -->
-    <SubPart PartName="node-addon-api" PartFile="iModelJsMobile/iModelJsMobile" Repository="imodel02"/>
+    <SubPart PartName="VendorAPI-node-addon-api" PartFile="iModelJsMobile" Repository="iModelJsMobile"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
@@ -77,14 +75,16 @@
         </Files>
     </Bindings>
   </Part>
-  
-  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
-    <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
+
+  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api -dNODE_LIB=node"  >
+    <SubPart PartName="VendorAPI-node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
+    <SubPart PartName="winx64-node-lib" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
-      <!-- KEEP THIS CONSISTENT WITH api_package\install-imodeljs-native.js -->
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8">
+      <!-- The ProductSubDirectory name determines the name of subdirectory created by makeImodelJsAddonPackages.mke, and that must match the version of electron node that is running. -->
+      <!-- KEEP THIS CONSISTENT WITH api_package\installImodeljsNative.js -->
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_10">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
@@ -93,15 +93,14 @@
     </Bindings>
   </Part>
 
-  <!-- NB: Keep this version number consistent with nodejs:node-gyp-electron -->
-  <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api" >
-    <SubPart PartName="electron-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api" />
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+  <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api -dNODE_LIB=iojs" >
+    <SubPart PartName="VendorAPI-node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
+    <SubPart PartName="winx64-iojs-lib" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
       <!-- The ProductSubDirectory name determines the name of subdirectory created by makeImodelJsAddonPackages.mke, and that must match the version of electron node that is running. -->
-      <!-- KEEP THIS CONSISTENT WITH api_package\install-imodeljs-native.js -->
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="e_2">
+      <!-- KEEP THIS CONSISTENT WITH api_package\installImodeljsNative.js -->
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="e_3">
         Delivery/iModelJsNodeAddon/electron-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
@@ -111,64 +110,33 @@
   </Part>
 
   <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
-    <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
+    <SubPart PartName="VendorAPI-node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
-        <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8">
+        <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_10">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
-      </Files>	  
-    </Bindings>
-  </Part>
-
-  <Part Name="iModelJsNodeAddonLibElectron-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api" >
-    <SubPart PartName="electron-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <SubPart PartName="iModelJsNodeAddonSqlang"/>
-
-    <!-- This calls the same MKE file, so cannot run at the same time, lest they fight over common output files. -->
-    <SubPart PartName="iModelJsNodeAddonLib-Linux"/>
-    
-    <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="e_2">
-        Delivery/iModelJsNodeAddon/electron-addon-api/imodeljs.node
       </Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>	  
     </Bindings>
   </Part>
 
   <Part Name="iModelJsNodeAddonLib-Darwin" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
-    <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
+    <SubPart PartName="VendorAPI-node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8">
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_10">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
-      </Files>	  
+      </Files>
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsNodeAddonLibElectron-Darwin" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api" >
-    <SubPart PartName="electron-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <SubPart PartName="iModelJsNodeAddonSqlang"/>
-    <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="e_2">
-        Delivery/iModelJsNodeAddon/electron-addon-api/imodeljs.node
-      </Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>	  
-    </Bindings>
-  </Part>
 
   <Part Name="iModelJsNodeAddonSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelJsNodeAddon/iModelJsNodeAddon_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
     <SubPart PartName="iModelJsNodeAddonLibCommon" />
