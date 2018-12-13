@@ -406,19 +406,7 @@ TEST_F (TShapeProfileTestCase, Insert_InvalidFlangeEdgeRadius_FailedInsert)
     {
     CreateParams params (GetModel(), "T", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
-    double parameterToCheck = std::numeric_limits<double>::signaling_NaN();
-    if (std::isfinite (parameterToCheck) && parameterToCheck == 0.0)
-        {
-        int dummy = 0;
-        dummy++;
-        }
-    if (parameterToCheck != 0.0)
-        {
-        int dummy = 0;
-        dummy++;
-        }
-
-    TestParameterToBeFiniteAndPositive (params, params.flangeEdgeRadius, "EdgeRadius", true);
+    TestParameterToBeFiniteAndPositive (params, params.flangeEdgeRadius, "FlangeEdgeRadius", true);
     }
 
 /*---------------------------------------------------------------------------------**//**

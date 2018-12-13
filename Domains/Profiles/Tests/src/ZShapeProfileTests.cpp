@@ -365,7 +365,7 @@ TEST_F (ZShapeProfileTestCase, Insert_InvalidFlangeEdgeRadius_FailedInsert)
     {
     CreateParams params (GetModel(), "Z", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
-    TestParameterToBeFiniteAndPositive (params, params.flangeEdgeRadius, "EdgeRadius", true);
+    TestParameterToBeFiniteAndPositive (params, params.flangeEdgeRadius, "FlangeEdgeRadius", true);
     }
 
 /*---------------------------------------------------------------------------------**//**
