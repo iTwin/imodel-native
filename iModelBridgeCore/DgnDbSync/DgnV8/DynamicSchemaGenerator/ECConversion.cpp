@@ -941,6 +941,12 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
             return leftSchema;
             }
 
+        if (key.GetName().Equals("EWR"))
+            {
+            leftSchema->SetName("EWR");
+            return leftSchema;
+            }
+
         m_converter.SetTaskName(Converter::ProgressMessage::TASK_MERGING_V8_ECSCHEMA(), kvPairs.first.c_str());
         schemaIter++;
         for (; schemaIter != kvPairs.second.end(); schemaIter++)
@@ -1271,7 +1277,13 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
     for (auto const& entry : V8ECSchemaXmlInfo::Iterable(GetDgnDb()))
         {
         BECN::SchemaKey key = entry.GetSchemaKey();
-        Utf8StringCR schemaName = key.GetName();
+        Utf8String schemaName(key.GetName().c_str());
+        if (0 == BeStringUtilities::Strnicmp("EWR", schemaName.c_str(), 3))
+            {
+            schemaName.AssignOrClear("EWR");
+            key.m_schemaName = schemaName;
+            }
+
         targetSchemaNames.insert(schemaName);
         Utf8CP schemaXml = entry.GetSchemaXml();
 
@@ -1728,8 +1740,8 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
             }
         else
             targetPropertyClass = flatSchema->GetClassP(sourceProperty->GetClass().GetName().c_str());
-        if (targetClass->Is(targetPropertyClass))
-            return BSISUCCESS;
+        //if (targetClass->Is(targetPropertyClass))
+        //    return BSISUCCESS;
         }
 
     ECN::ECPropertyP destProperty = nullptr;
@@ -2329,6 +2341,9 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
             if (nullptr != ecClass)
                 namedGroupOwnsMembers = ecClass->GetCustomAttribute("NamedGroupOwnsMembers") != nullptr;
             }
+        if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3))
+            v8ClassName = ECClassName("EWR", v8ClassName.GetClassName());
+
         if (BentleyApi::SUCCESS != V8ECClassInfo::Insert(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModelInfo))
             return BSIERROR;
         if (!isPrimary && (BentleyApi::SUCCESS != V8ElementSecondaryECClassInfo::Insert(GetDgnDb(), v8Element, v8ClassName)))
@@ -2852,6 +2867,9 @@ BentleyStatus DynamicSchemaGenerator::ProcessReferenceSchemasFromExternal(ECObje
 BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::SchemaKey& schemaKey, Utf8CP schemaXml, bool isDynamicSchema, DgnV8ModelR v8Model)
     {
     Utf8String schemaName(schemaKey.GetName().c_str());
+    //if (schemaName.StartsWith("EWR"))
+    //    schemaName.AssignOrClear("EWR");
+
     ECObjectsV8::SchemaKey existingSchemaKey;
     SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
     
@@ -2973,6 +2991,7 @@ bool DynamicSchemaGenerator::IsWellKnownDynamicSchema(Bentley::Utf8StringCR sche
         schemaName.EqualsI("BuildingDataGroup") ||
         schemaName.Equals("V8TagSetDefinitions") ||
         BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0 ||
+        schemaName.StartsWith("EWR") ||
         schemaName.StartsWith("DgnCustomItemTypes_");
     }
 
@@ -3112,7 +3131,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
         if (ECN::ECSchema::IsStandardSchema(v8SchemaName))
             continue;
 
-        bmap<Utf8String, uint32_t>::const_iterator syncEntry = syncInfoChecksums.find(Utf8String(v8SchemaInfo.GetSchemaName()));
+        bmap<Utf8String, uint32_t>::const_iterator syncEntry = syncInfoChecksums.find(v8SchemaName);
         // If schema was not in the original DgnDb, we need to import it
         if (syncEntry == syncInfoChecksums.end())
             {
@@ -3125,7 +3144,11 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             continue;
 
         // It is possible we scanned the schema previously, but didn't import it.  Make sure it is actually in the db
-        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(v8SchemaName))
+        Utf8String bimSchemaName(v8SchemaName);
+        if (0 == BeStringUtilities::Strnicmp("EWR", v8SchemaName.c_str(), 3))
+            bimSchemaName.AssignOrClear("EWR");
+
+        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(bimSchemaName))
             {
             m_needReimportSchemas = true;
             continue;
