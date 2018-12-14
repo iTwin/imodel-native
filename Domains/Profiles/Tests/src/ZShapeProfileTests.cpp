@@ -31,7 +31,6 @@ TEST_F (ZShapeProfileTestCase, Create_MinimalCreateParams_ValidInstance)
     EXPECT_TRUE (profilePtr.IsValid());
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

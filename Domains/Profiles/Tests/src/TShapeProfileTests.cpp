@@ -367,13 +367,13 @@ TEST_F (TShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlangeWithSlope_Corr
     EXPECT_GE (maximumFilletRadiusForFlange, 0.0) << "Web slope height cannot be greater than half of the inner flange face length";
 
     params.filletRadius = 1.0;
-    EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web minus flange slope height.";
+    EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange minus web slope height.";
 
     params.filletRadius = maximumFilletRadiusForFlange;
-    EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web minus flange slope height.";
+    EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange minus web slope height.";
 
     params.filletRadius = nextafter<double, double> (maximumFilletRadiusForFlange, INFINITY);
-    EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web minus flange slope height.";
+    EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange minus web slope height.";
     }
 
 /*---------------------------------------------------------------------------------**//**
