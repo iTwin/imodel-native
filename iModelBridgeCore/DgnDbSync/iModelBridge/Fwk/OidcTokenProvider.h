@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <WebServices/Connect/IConnectTokenProvider.h>
+#include <BeHttp/HttpClient.h>
 #include "OidcToken.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -16,10 +17,13 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct OidcTokenProvider : WebServices::IConnectTokenProvider
     {
     private:
-        OidcTokenPtr m_token;
+        OidcTokenPtr        m_token;
+        BeTimePoint         m_tokenValidUntil;
+        Utf8String          m_callBackUrl;
+        Http::HttpClient    m_client;
 
     public:
-        OidcTokenProvider();
+        OidcTokenProvider(Utf8StringCR callBackUrl);
         Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> UpdateToken() override;
         WebServices::ISecurityTokenPtr GetToken() override;
     };

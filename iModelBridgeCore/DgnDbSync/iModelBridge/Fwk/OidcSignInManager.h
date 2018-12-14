@@ -41,6 +41,6 @@ struct OidcSignInManager : WebServices::IConnectSignInManager
             ) const override;
 
     public:
-        OidcSignInManager(WebServices::IConnectTokenProviderPtr m_tokenProvider);
+        OidcSignInManager(Utf8StringCR callBackUrl);
     };
 END_BENTLEY_DGN_NAMESPACE

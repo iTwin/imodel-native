@@ -192,6 +192,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String          m_bcsProjectId;       //!< iModelHub project 
         Utf8String          m_repositoryName;     //!< A repository in the iModelHub project
         Http::Credentials   m_credentials;        //!< User credentials
+        Utf8String          m_callBackurl;
         WebServices::UrlProvider::Environment m_environment;    //!< Connect environment
         uint8_t             m_maxRetryCount = 3;  //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         bvector<WString>    m_bargs;
@@ -200,7 +201,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BentleyStatus Validate(int argc, WCharCP argv[]);
         static void PrintUsage();
         bool ParsedAny() const {return m_parsedAny;}
-        WebServices::IConnectTokenProviderPtr m_tokenProvider;
         };
 
     struct DmsServerArgs
