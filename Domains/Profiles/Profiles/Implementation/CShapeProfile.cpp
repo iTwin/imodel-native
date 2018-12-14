@@ -79,7 +79,7 @@ BentleyStatus CShapeProfile::_Validate() const
     if (!isValidWebThickness)
         return BSIERROR;
 
-    bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0 && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetSlopeHeight()
+    bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0 && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight()
                                      && GetFilletRadius() <= GetInnerFlangeFaceLength() / 2.0;
     if (!isValidFilletRadius)
         return BSIERROR;
@@ -90,7 +90,7 @@ BentleyStatus CShapeProfile::_Validate() const
         return BSIERROR;
 
     bool const isFlangeSlopeValid = std::isfinite (GetFlangeSlope()) && GetFlangeSlope() >= 0.0 && GetFlangeSlope() < PI / 2.0
-                                    && GetInnerWebFaceLength() / 2.0 >= GetSlopeHeight();
+                                    && GetInnerWebFaceLength() / 2.0 >= GetFlangeSlopeHeight();
     if (!isFlangeSlopeValid)
         return BSIERROR;
 
@@ -236,7 +236,7 @@ double CShapeProfile::GetInnerWebFaceLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CShapeProfile::GetSlopeHeight() const
+double CShapeProfile::GetFlangeSlopeHeight() const
     {
     double const flangeSlopeCos = std::cos (GetFlangeSlope());
     if (flangeSlopeCos <= DBL_EPSILON)

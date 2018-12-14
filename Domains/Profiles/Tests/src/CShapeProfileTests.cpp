@@ -142,7 +142,7 @@ TEST_F (CShapeProfileTestCase, GetInnerWebFaceLength_DepthAndFlangeThickness_Cor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (CShapeProfileTestCase, GetSlopeHeight_ProfileWithProperties_CorrectValue)
+TEST_F (CShapeProfileTestCase, GetFlangeSlopeHeight_ProfileWithProperties_CorrectValue)
     {
     CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
     CShapeProfilePtr profilePtr = CreateProfile (params);
@@ -151,16 +151,16 @@ TEST_F (CShapeProfileTestCase, GetSlopeHeight_ProfileWithProperties_CorrectValue
     profilePtr->SetWebThickness (1.0);
 
     profilePtr->SetFlangeSlope (PI / 4.0);
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetSlopeHeight());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeSlopeHeight());
 
     profilePtr->SetFlangeSlope (0.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetSlopeHeight());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
 
     profilePtr->SetFlangeSlope (PI / 2.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetSlopeHeight());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
 
     profilePtr->SetFlangeSlope (PI);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetSlopeHeight());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -340,7 +340,7 @@ TEST_F (CShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_Correct
 
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
-    double const maximumFilletRadiusForWeb = profilePtr->GetInnerWebFaceLength() / 2.0 - profilePtr->GetSlopeHeight();
+    double const maximumFilletRadiusForWeb = profilePtr->GetInnerWebFaceLength() / 2.0 - profilePtr->GetFlangeSlopeHeight();
     EXPECT_GE (maximumFilletRadiusForWeb, 0.0) << "Flange slope height cannot be greater than half of the inner web face length";
 
     params.filletRadius = 1.0;
@@ -422,7 +422,7 @@ TEST_F (CShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     // since inner web face length is 8, a slope of 45 degree should be the maximum allowed value
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetInnerFlangeFaceLength());
     EXPECT_DOUBLE_EQ (8.0, profilePtr->GetInnerWebFaceLength());
-    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetSlopeHeight());
+    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetFlangeSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
 
     params.flangeSlope = nextafter<double, double> (PI / 4.0, INFINITY);

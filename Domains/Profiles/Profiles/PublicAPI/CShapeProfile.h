@@ -82,7 +82,7 @@ public:
 public:
     PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
     PROFILES_EXPORT double GetInnerWebFaceLength() const;
-    PROFILES_EXPORT double GetSlopeHeight() const;
+    PROFILES_EXPORT double GetFlangeSlopeHeight() const;
 
     }; // CShapeProfile
 
