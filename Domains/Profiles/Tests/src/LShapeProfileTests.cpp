@@ -142,7 +142,7 @@ TEST_F (LShapeProfileTestCase, GetInnerWebFaceLength_DepthAndThickness_CorrectVa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (LShapeProfileTestCase, GetFlangeSlopeHeight_WidthAndThickness_CorrectValue)
+TEST_F (LShapeProfileTestCase, GetHorizontalLegSlopeHeight_WidthAndThickness_CorrectValue)
     {
     CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
     LShapeProfilePtr profilePtr = CreateProfile (params);
@@ -151,22 +151,22 @@ TEST_F (LShapeProfileTestCase, GetFlangeSlopeHeight_WidthAndThickness_CorrectVal
     profilePtr->SetThickness (1.0);
 
     profilePtr->SetLegSlope (PI / 4.0);
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeSlopeHeight());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetHorizontalLegSlopeHeight());
 
     profilePtr->SetLegSlope (0.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetHorizontalLegSlopeHeight());
 
     profilePtr->SetLegSlope (PI / 2.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetHorizontalLegSlopeHeight());
 
     profilePtr->SetLegSlope (PI);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetHorizontalLegSlopeHeight());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (LShapeProfileTestCase, GetWebSlopeHeight_DepthAndThickness_CorrectValue)
+TEST_F (LShapeProfileTestCase, GetVerticalLegSlopeHeight_DepthAndThickness_CorrectValue)
     {
     CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
     LShapeProfilePtr profilePtr = CreateProfile (params);
@@ -175,16 +175,16 @@ TEST_F (LShapeProfileTestCase, GetWebSlopeHeight_DepthAndThickness_CorrectValue)
     profilePtr->SetThickness (1.0);
 
     profilePtr->SetLegSlope (PI / 4.0);
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWebSlopeHeight());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetVerticalLegSlopeHeight());
 
     profilePtr->SetLegSlope (0.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetWebSlopeHeight());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetVerticalLegSlopeHeight());
 
     profilePtr->SetLegSlope (PI / 2.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetWebSlopeHeight());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetVerticalLegSlopeHeight());
 
     profilePtr->SetLegSlope (PI);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetWebSlopeHeight());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetVerticalLegSlopeHeight());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -349,7 +349,7 @@ TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlangeWithSlope_Corr
 
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
-    double const maximumFilletRadiusForFlange = profilePtr->GetInnerFlangeFaceLength() / 2.0 - profilePtr->GetWebSlopeHeight();
+    double const maximumFilletRadiusForFlange = profilePtr->GetInnerFlangeFaceLength() / 2.0 - profilePtr->GetVerticalLegSlopeHeight();
     EXPECT_GE (maximumFilletRadiusForFlange, 0.0) << "Web slope height cannot be greater than half of the inner flange face length";
 
     params.filletRadius = 1.0;
@@ -372,7 +372,7 @@ TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_Correct
 
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
-    double const maximumFilletRadiusForWeb = profilePtr->GetInnerWebFaceLength() / 2.0 - profilePtr->GetFlangeSlopeHeight();
+    double const maximumFilletRadiusForWeb = profilePtr->GetInnerWebFaceLength() / 2.0 - profilePtr->GetHorizontalLegSlopeHeight();
     EXPECT_GE (maximumFilletRadiusForWeb, 0.0) << "Flange slope height cannot be greater than half of the inner web face length";
 
     params.filletRadius = 1.0;
@@ -454,8 +454,8 @@ TEST_F (LShapeProfileTestCase, Insert_LegSlopeOf30Degrees_SuccessfulInsert)
     // Both leg face lengths is 2.0 so maximum alowed slope height should be half of that = 1.0
     EXPECT_DOUBLE_EQ (2.0, profilePtr->GetInnerFlangeFaceLength());
     EXPECT_DOUBLE_EQ (2.0, profilePtr->GetInnerWebFaceLength());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeSlopeHeight());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWebSlopeHeight());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetHorizontalLegSlopeHeight());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetVerticalLegSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Leg slope should be such, that the slope height should be less or equal to half of inner web and flange face lengths.";
 
     params.legSlope = nextafter<double, double> (angle, INFINITY);

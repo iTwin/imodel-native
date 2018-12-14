@@ -240,8 +240,8 @@ IGeometryPtr ProfilesGeomApi::CreateLShape (LShapeProfileCPtr profile)
     double const thickness = profile->GetThickness();
     double const filletRadius = profile->GetFilletRadius();
     double const edgeRadius = profile->GetEdgeRadius();
-    double const flangeSlopeHeight = profile->GetFlangeSlopeHeight();
-    double const webSlopeHeight = profile->GetWebSlopeHeight();
+    double const flangeSlopeHeight = profile->GetHorizontalLegSlopeHeight();
+    double const webSlopeHeight = profile->GetVerticalLegSlopeHeight();
 
     DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
     DPoint3d const topRight = { -halfWidth + thickness, halfDepth, 0.0 };

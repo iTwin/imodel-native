@@ -86,8 +86,8 @@ public:
 public:
     PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
     PROFILES_EXPORT double GetInnerWebFaceLength() const;
-    PROFILES_EXPORT double GetFlangeSlopeHeight() const;
-    PROFILES_EXPORT double GetWebSlopeHeight() const;
+    PROFILES_EXPORT double GetHorizontalLegSlopeHeight() const;
+    PROFILES_EXPORT double GetVerticalLegSlopeHeight() const;
 
     }; // LShapeProfile
 

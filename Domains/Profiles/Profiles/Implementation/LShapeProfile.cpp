@@ -122,8 +122,8 @@ bool LShapeProfile::ValidateFilletRadius() const
     if (std::isfinite (filletRadius) && filletRadius == 0.0)
         return true;
 
-    double const availableWebLength = GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
-    double const availableFlangeLength = GetInnerFlangeFaceLength() / 2.0 - GetWebSlopeHeight();
+    double const availableWebLength = GetInnerWebFaceLength() / 2.0 - GetHorizontalLegSlopeHeight();
+    double const availableFlangeLength = GetInnerFlangeFaceLength() / 2.0 - GetVerticalLegSlopeHeight();
 
     bool const isPositive = std::isfinite (filletRadius) && filletRadius >= 0.0;
     bool const isLessThanAvailableWebLength = filletRadius <= availableWebLength;
@@ -159,8 +159,8 @@ bool LShapeProfile::ValidateLegSlope() const
 
     bool const isPositive = std::isfinite (legSlope) && legSlope >= 0.0;
     bool const isLessThan90Degrees = legSlope < PI / 2.0;
-    bool const slopeHeightIsLessThanAvailableFlangeLength = GetWebSlopeHeight() <= GetInnerFlangeFaceLength() / 2.0;
-    bool const slopeHeightIsLessThanAvailableWebLength = GetFlangeSlopeHeight() <= GetInnerWebFaceLength() / 2.0;
+    bool const slopeHeightIsLessThanAvailableFlangeLength = GetVerticalLegSlopeHeight() <= GetInnerFlangeFaceLength() / 2.0;
+    bool const slopeHeightIsLessThanAvailableWebLength = GetHorizontalLegSlopeHeight() <= GetInnerWebFaceLength() / 2.0;
 
     return isPositive && isLessThan90Degrees && slopeHeightIsLessThanAvailableFlangeLength && slopeHeightIsLessThanAvailableWebLength;
     }
@@ -280,7 +280,7 @@ double LShapeProfile::GetInnerWebFaceLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double LShapeProfile::GetFlangeSlopeHeight() const
+double LShapeProfile::GetHorizontalLegSlopeHeight() const
     {
     double const flangeSlopeCos = std::cos (GetLegSlope());
     if (flangeSlopeCos <= DBL_EPSILON)
@@ -292,7 +292,7 @@ double LShapeProfile::GetFlangeSlopeHeight() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double LShapeProfile::GetWebSlopeHeight() const
+double LShapeProfile::GetVerticalLegSlopeHeight() const
     {
     double const webSlopeCos = std::cos (GetLegSlope());
     if (webSlopeCos <= DBL_EPSILON)
