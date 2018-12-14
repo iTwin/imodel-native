@@ -376,7 +376,7 @@ IGeometryPtr ProfilesGeomApi::CreateZShape (ZShapeProfileCPtr profile)
     double const halfDepth = profile->GetDepth() / 2.0;
     double const webThickness = profile->GetWebThickness();
     double const halfWebThickness = webThickness / 2.0;
-    double const slopeHeight = profile->GetSlopeHeight();
+    double const slopeHeight = profile->GetFlangeSlopeHeight();
 
     DPoint3d const topLeft = { -flangeWidth + halfWebThickness, halfDepth, 0.0 };
     DPoint3d const topRight = { 0.0 + halfWebThickness, halfDepth, 0.0 };
