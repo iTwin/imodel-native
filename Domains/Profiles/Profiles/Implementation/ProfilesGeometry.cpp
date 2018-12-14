@@ -165,7 +165,7 @@ IGeometryPtr ProfilesGeomApi::CreateIShape (IShapeProfileCPtr profile)
     double const flangeEdgeRadius = profile->GetFlangeEdgeRadius();
     double const halfWidth = profile->GetFlangeWidth() / 2.0;
     double const halfDepth = profile->GetDepth() / 2.0;
-    double const slopeHeight = profile->GetSlopeHeight();
+    double const slopeHeight = profile->GetFlangeSlopeHeight();
 
     DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
     DPoint3d const topMiddle = { 0.0, halfDepth, 0.0 };
