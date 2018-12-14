@@ -106,7 +106,7 @@ bool LShapeProfile::ValidateDepth() const
 bool LShapeProfile::ValidateThickness() const
     {
     double const thickness = GetThickness();
-    bool const isPositive = std::isfinite (thickness) && thickness >= 0.0;
+    bool const isPositive = std::isfinite (thickness) && thickness > 0.0;
     bool const isLessThanWidth = thickness < GetWidth();
     bool const isLessThanDepth = thickness < GetDepth();
 
@@ -142,10 +142,10 @@ bool LShapeProfile::ValidateEdgeRadius() const
         return true;
 
     bool const isPositive = std::isfinite (edgeRadius) && edgeRadius >= 0.0;
-    bool const isLessThanThickness = edgeRadius <= GetThickness();
+    bool const isLessThanHalfThickness = edgeRadius <= GetThickness() / 2.0;
     bool const isLessThanAvailableFlangeLength = edgeRadius <= GetInnerFlangeFaceLength() / 2.0;
 
-    return isPositive && isLessThanThickness && isLessThanAvailableFlangeLength;
+    return isPositive && isLessThanHalfThickness && isLessThanAvailableFlangeLength;
     }
 
 /*---------------------------------------------------------------------------------**//**
