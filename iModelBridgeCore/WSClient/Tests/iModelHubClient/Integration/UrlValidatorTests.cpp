@@ -64,7 +64,7 @@ Utf8String extractUrl(Utf8String url)
         return Utf8String("");
 
     // Match imodelhubapi URLs (dev and qa)
-    std::regex regex(R"(> HTTP #(\d+) (\w+) https://(dev|qa)-imodelhubapi.bentley.com/s?v(\d+).(\d+)/Repositories/(iModel|Project)--\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/)", std::regex::ECMAScript);
+    std::regex regex(R"(> HTTP #(\d+) (\w+) https://(dev|qa)-imodelhubapi(-eus|-uks)?.bentley.com/s?v(\d+).(\d+)/Repositories/(iModel|Project)--\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/)", std::regex::ECMAScript);
     std::cmatch matches;
     std::regex_search(url.c_str(), matches, regex);
 
