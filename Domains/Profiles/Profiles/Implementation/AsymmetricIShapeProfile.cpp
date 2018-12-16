@@ -257,4 +257,52 @@ void AsymmetricIShapeProfile::SetBottomFlangeSlope (double val)
     SetPropertyValue (PRF_PROP_AsymmetricIShapeProfile_BottomFlangeSlope, ECN::ECValue (val));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetInnerTopFlangeFaceLength() const
+    {
+    return (GetTopFlangeWidth() - GetWebThickness()) / 2.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetInnerBottomFlangeFaceLength() const
+    {
+    return (GetBottomFlangeWidth() - GetWebThickness()) / 2.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetInnerWebFaceLength() const
+    {
+    return GetDepth() - GetTopFlangeThickness() - GetBottomFlangeThickness();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetTopFlangeSlopeHeight() const
+    {
+    double const topFlangeSlopeCos = std::cos (GetTopFlangeSlope());
+    if (topFlangeSlopeCos <= DBL_EPSILON)
+        return 0.0;
+
+    return (GetInnerTopFlangeFaceLength() / topFlangeSlopeCos) * std::sin (GetTopFlangeSlope());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetBottomFlangeSlopeHeight() const
+    {
+    double const bottomFlangeSlopeCos = std::cos (GetBottomFlangeSlope());
+    if (bottomFlangeSlopeCos <= DBL_EPSILON)
+        return 0.0;
+
+    return (GetInnerBottomFlangeFaceLength() / bottomFlangeSlopeCos) * std::sin (GetBottomFlangeSlope());
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE

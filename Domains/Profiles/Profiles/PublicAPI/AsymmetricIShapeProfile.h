@@ -98,6 +98,13 @@ public:
     PROFILES_EXPORT double GetBottomFlangeSlope() const;
     PROFILES_EXPORT void SetBottomFlangeSlope (double val);
 
+public:
+    PROFILES_EXPORT double GetInnerTopFlangeFaceLength() const;
+    PROFILES_EXPORT double GetInnerBottomFlangeFaceLength() const;
+    PROFILES_EXPORT double GetInnerWebFaceLength() const;
+    PROFILES_EXPORT double GetTopFlangeSlopeHeight() const;
+    PROFILES_EXPORT double GetBottomFlangeSlopeHeight() const;
+
     }; // AsymmetricIShapeProfile
 
 //=======================================================================================
