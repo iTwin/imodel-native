@@ -32,25 +32,27 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 %include MultiCppCompileRule.mki
 
-$(o)Main.obj                    : $(BEGTEST_INPUT)Main.cpp ${MultiCompileDepends}
+$(o)Main.obj                            : $(BEGTEST_INPUT)Main.cpp ${MultiCompileDepends}
 
-$(o)TestHost.obj                : $(BEGTEST_INPUT)TestHost.cpp ${MultiCompileDepends}
+$(o)TestHost.obj                        : $(BEGTEST_INPUT)TestHost.cpp ${MultiCompileDepends}
 
-$(o)ProfilesTestCase.obj        : $(BEGTEST_INPUT)ProfilesTestCase.cpp ${MultiCompileDepends}
+$(o)ProfilesTestCase.obj                : $(BEGTEST_INPUT)ProfilesTestCase.cpp ${MultiCompileDepends}
 
-$(o)DomainTests.obj             : $(BEGTEST_INPUT)DomainTests.cpp ${MultiCompileDepends}
+$(o)DomainTests.obj                     : $(BEGTEST_INPUT)DomainTests.cpp ${MultiCompileDepends}
 
-$(o)GeometryTests.obj           : $(BEGTEST_INPUT)GeometryTests.cpp ${MultiCompileDepends}
+$(o)GeometryTests.obj                   : $(BEGTEST_INPUT)GeometryTests.cpp ${MultiCompileDepends}
 
-$(o)CShapeProfileTests.obj      : $(BEGTEST_INPUT)CShapeProfileTests.cpp ${MultiCompileDepends}
+$(o)CShapeProfileTests.obj              : $(BEGTEST_INPUT)CShapeProfileTests.cpp ${MultiCompileDepends}
 
-$(o)IShapeProfileTests.obj      : $(BEGTEST_INPUT)IShapeProfileTests.cpp ${MultiCompileDepends}
+$(o)IShapeProfileTests.obj              : $(BEGTEST_INPUT)IShapeProfileTests.cpp ${MultiCompileDepends}
 
-$(o)LShapeProfileTests.obj      : $(BEGTEST_INPUT)LShapeProfileTests.cpp ${MultiCompileDepends}
+$(o)AsymmetricIShapeProfileTests.obj    : $(BEGTEST_INPUT)AsymmetricIShapeProfileTests.cpp ${MultiCompileDepends}
 
-$(o)TShapeProfileTests.obj      : $(BEGTEST_INPUT)TShapeProfileTests.cpp ${MultiCompileDepends}
+$(o)LShapeProfileTests.obj              : $(BEGTEST_INPUT)LShapeProfileTests.cpp ${MultiCompileDepends}
 
-$(o)ZShapeProfileTests.obj      : $(BEGTEST_INPUT)ZShapeProfileTests.cpp ${MultiCompileDepends}
+$(o)TShapeProfileTests.obj              : $(BEGTEST_INPUT)TShapeProfileTests.cpp ${MultiCompileDepends}
+
+$(o)ZShapeProfileTests.obj              : $(BEGTEST_INPUT)ZShapeProfileTests.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
