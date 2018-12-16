@@ -88,6 +88,7 @@ IGeometryPtr LShapeProfile::_CreateGeometry() const
 bool LShapeProfile::ValidateWidth() const
     {
     double const width = GetWidth();
+
     return std::isfinite (width) && width > 0.0;
     }
 
@@ -97,6 +98,7 @@ bool LShapeProfile::ValidateWidth() const
 bool LShapeProfile::ValidateDepth() const
     {
     double const depth = GetDepth();
+
     return std::isfinite (depth) && depth > 0.0;
     }
 

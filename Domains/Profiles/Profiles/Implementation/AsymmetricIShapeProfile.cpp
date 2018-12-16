@@ -66,6 +66,200 @@ AsymmetricIShapeProfile::AsymmetricIShapeProfile (CreateParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus AsymmetricIShapeProfile::_Validate() const
+    {
+    BentleyStatus status = T_Super::_Validate();
+    if (status != BSISUCCESS)
+        return status;
+
+    bool const isTopFlangeWidthValid = ValidateTopFlangeWidth();
+    bool const isBottomFlangeWidthValid = ValidateBottomFlangeWidth();
+    bool const isDepthValid = ValidateDepth();
+    bool const isTopFlangeThicknessValid = ValidateTopFlangeThickness();
+    bool const isBottomFlangeThicknessValid = ValidateBottomFlangeThickness();
+    bool const isWebThicknessValid = ValidateWebThickness();
+    bool const isTopFlangeFilletRadiusValid = ValidateTopFlangeFilletRadius();
+    bool const isTopFlangeEdgeRadiusValid = ValidateTopFlangeEdgeRadius();
+    bool const isTopFlangeSlopeValid = ValidateTopFlangeSlope();
+    bool const isBottomFlangeFilletRadiusValid = ValidateBottomFlangeFilletRadius();
+    bool const isBottomFlangeEdgeRadiusValid = ValidateBottomFlangeEdgeRadius();
+    bool const isBottomFlangeSlopeValid = ValidateBottomFlangeSlope();
+
+    if (isTopFlangeWidthValid && isBottomFlangeWidthValid && isDepthValid && isTopFlangeThicknessValid && isBottomFlangeThicknessValid
+       && isWebThicknessValid && isTopFlangeFilletRadiusValid && isTopFlangeEdgeRadiusValid && isTopFlangeSlopeValid
+       && isBottomFlangeFilletRadiusValid && isBottomFlangeEdgeRadiusValid && isBottomFlangeSlopeValid)
+       return BSISUCCESS;
+
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateTopFlangeWidth() const
+    {
+    double const topFlangeWidth = GetTopFlangeWidth();
+
+    return std::isfinite (topFlangeWidth) && topFlangeWidth > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateBottomFlangeWidth() const
+    {
+    double const bottomFlangeWidth = GetBottomFlangeWidth();
+
+    return std::isfinite (bottomFlangeWidth) && bottomFlangeWidth > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateDepth() const
+    {
+    double const depth = GetDepth();
+
+    return std::isfinite (depth) && depth > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateTopFlangeThickness() const
+    {
+    double const topFlangeThickness = GetTopFlangeThickness();
+    bool const isPositive = std::isfinite (topFlangeThickness) && topFlangeThickness > 0.0;
+    bool const isLessThanDepth = GetDepth() > topFlangeThickness + GetBottomFlangeThickness();
+
+    return isPositive && isLessThanDepth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateBottomFlangeThickness() const
+    {
+    double const bottomFlangeThickness = GetBottomFlangeThickness();
+    bool const isPositive = std::isfinite (bottomFlangeThickness) && bottomFlangeThickness > 0.0;
+    bool const isLessThanDepth = GetDepth() > bottomFlangeThickness + GetTopFlangeThickness();
+
+    return isPositive && isLessThanDepth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateWebThickness() const
+    {
+    double const webThickness = GetWebThickness();
+    bool const isPositive = std::isfinite (webThickness) && webThickness > 0.0;
+    bool const isLessThanTopFlangeWidth = webThickness < GetTopFlangeWidth();
+    bool const isLessThanBottomFlangeWidth = webThickness < GetBottomFlangeWidth();
+
+    return isPositive && isLessThanTopFlangeWidth && isLessThanBottomFlangeWidth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateFlangeFilletRadius (double filletRadius, double innerFlangeFaceLength, double flangeSlopeHeight, double innerWebFaceLength)
+    {
+    if (std::isfinite (filletRadius) && filletRadius == 0.0)
+        return true;
+
+    double const availableWebLength = innerWebFaceLength / 2.0 - flangeSlopeHeight;
+    double const availableFlangeLength = innerFlangeFaceLength / 2.0;
+
+    bool const isPositive = std::isfinite (filletRadius) && filletRadius >= 0.0;
+    bool const isLessThanAvailableWebLength = filletRadius <= availableWebLength;
+    bool const isLessThanAvailableFlangeLength = filletRadius <= availableFlangeLength;
+
+    return isPositive && isLessThanAvailableWebLength && isLessThanAvailableFlangeLength;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateFlangeEdgeRadius (double edgeRadius, double innerFlangeFaceLength, double flangeThickness)
+    {
+    if (std::isfinite (edgeRadius) && edgeRadius == 0.0)
+        return true;
+
+    bool const isPositive = std::isfinite (edgeRadius) && edgeRadius >= 0.0;
+    bool const isLessThanHalfFlangeThickness = edgeRadius <= flangeThickness / 2.0;
+    bool const isLessThanAvailableFlangeLength = edgeRadius <= innerFlangeFaceLength / 2.0;
+
+    return isPositive && isLessThanHalfFlangeThickness && isLessThanAvailableFlangeLength;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateFlangeSlope (Angle const& flangeSlope, double flangeSlopeHeight, double innerWebFaceLength)
+    {
+    double const angle = flangeSlope.Radians();
+    if (std::isfinite (angle) && angle == 0.0)
+        return true;
+
+    bool const isPositive = std::isfinite (angle) && angle >= 0.0;
+    bool const isLessThan90Degrees = angle < PI / 2.0;
+    bool const slopeHeightIsLessThanAvailableWebLength = flangeSlopeHeight <= innerWebFaceLength / 2.0;
+
+    return isPositive && isLessThan90Degrees && slopeHeightIsLessThanAvailableWebLength;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateTopFlangeFilletRadius() const
+    {
+    return validateFlangeFilletRadius (GetTopFlangeFilletRadius(), GetInnerTopFlangeFaceLength(), GetTopFlangeSlopeHeight(), GetInnerWebFaceLength());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateTopFlangeEdgeRadius() const
+    {
+    return validateFlangeEdgeRadius (GetTopFlangeEdgeRadius(), GetInnerTopFlangeFaceLength(), GetTopFlangeThickness());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateTopFlangeSlope() const
+    {
+    return validateFlangeSlope (GetTopFlangeSlope(), GetTopFlangeSlopeHeight(), GetInnerWebFaceLength());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateBottomFlangeFilletRadius() const
+    {
+    return validateFlangeFilletRadius (GetBottomFlangeFilletRadius(), GetInnerBottomFlangeFaceLength(), GetBottomFlangeSlopeHeight(), GetInnerWebFaceLength());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateBottomFlangeEdgeRadius() const
+    {
+    return validateFlangeEdgeRadius (GetBottomFlangeEdgeRadius(), GetInnerBottomFlangeFaceLength(), GetBottomFlangeThickness());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsymmetricIShapeProfile::ValidateBottomFlangeSlope() const
+    {
+    return validateFlangeSlope (GetBottomFlangeSlope(), GetBottomFlangeSlopeHeight(), GetInnerWebFaceLength());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AsymmetricIShapeProfile::GetTopFlangeWidth() const

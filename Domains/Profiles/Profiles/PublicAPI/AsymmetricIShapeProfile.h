@@ -55,6 +55,22 @@ public:
 protected:
     explicit AsymmetricIShapeProfile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const override;
+
+private:
+    bool ValidateTopFlangeWidth() const;
+    bool ValidateBottomFlangeWidth() const;
+    bool ValidateDepth() const;
+    bool ValidateTopFlangeThickness() const;
+    bool ValidateBottomFlangeThickness() const;
+    bool ValidateWebThickness() const;
+    bool ValidateTopFlangeFilletRadius() const;
+    bool ValidateTopFlangeEdgeRadius() const;
+    bool ValidateTopFlangeSlope() const;
+    bool ValidateBottomFlangeFilletRadius() const;
+    bool ValidateBottomFlangeEdgeRadius() const;
+    bool ValidateBottomFlangeSlope() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (AsymmetricIShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (AsymmetricIShapeProfile)
