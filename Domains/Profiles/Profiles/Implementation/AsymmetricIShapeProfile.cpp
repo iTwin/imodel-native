@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\AsymmetricIShapeProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -93,6 +94,14 @@ BentleyStatus AsymmetricIShapeProfile::_Validate() const
        return BSISUCCESS;
 
     return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr AsymmetricIShapeProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateAsymmetricIShape (this);
     }
 
 /*---------------------------------------------------------------------------------**//**
