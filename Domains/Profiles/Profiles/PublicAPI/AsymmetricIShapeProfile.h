@@ -31,8 +31,8 @@ public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double topFlangeWidth, double bottomFlangeWidth, double depth,
                                                double topFlangeThickness, double bottomFlangeThickness, double webThickness, double topFlangeFilletRadius = 0.0,
-                                               double topFlangeEdgeRadius = 0.0, double topFlangeSlope = 0.0, double bottomFlangeFilletRadius = 0.0,
-                                               double bottomFlangeEdgeRadius = 0.0, double bottomFlangeSlope = 0.0);
+                                               double topFlangeEdgeRadius = 0.0, Angle const& topFlangeSlope = Angle::FromRadians (0.0), double bottomFlangeFilletRadius = 0.0,
+                                               double bottomFlangeEdgeRadius = 0.0, Angle const& bottomFlangeSlope = Angle::FromRadians (0.0));
 
     public:
         //! Required properties
@@ -46,10 +46,10 @@ public:
         //! Optional properties
         double topFlangeFilletRadius = 0.0;
         double topFlangeEdgeRadius = 0.0;
-        double topFlangeSlope = 0.0;
+        Angle topFlangeSlope = Angle::FromRadians (0.0);
         double bottomFlangeFilletRadius = 0.0;
         double bottomFlangeEdgeRadius = 0.0;
-        double bottomFlangeSlope = 0.0;
+        Angle bottomFlangeSlope = Angle::FromRadians (0.0);
         };
 
 protected:
@@ -86,8 +86,8 @@ public:
     PROFILES_EXPORT double GetTopFlangeEdgeRadius() const;
     PROFILES_EXPORT void SetTopFlangeEdgeRadius (double val);
 
-    PROFILES_EXPORT double GetTopFlangeSlope() const;
-    PROFILES_EXPORT void SetTopFlangeSlope (double val);
+    PROFILES_EXPORT Angle GetTopFlangeSlope() const;
+    PROFILES_EXPORT void SetTopFlangeSlope (Angle const& val);
 
     PROFILES_EXPORT double GetBottomFlangeFilletRadius() const;
     PROFILES_EXPORT void SetBottomFlangeFilletRadius (double val);
@@ -95,8 +95,8 @@ public:
     PROFILES_EXPORT double GetBottomFlangeEdgeRadius() const;
     PROFILES_EXPORT void SetBottomFlangeEdgeRadius (double val);
 
-    PROFILES_EXPORT double GetBottomFlangeSlope() const;
-    PROFILES_EXPORT void SetBottomFlangeSlope (double val);
+    PROFILES_EXPORT Angle GetBottomFlangeSlope() const;
+    PROFILES_EXPORT void SetBottomFlangeSlope (Angle const& val);
 
 public:
     PROFILES_EXPORT double GetInnerTopFlangeFaceLength() const;

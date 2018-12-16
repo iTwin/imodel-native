@@ -11,6 +11,7 @@
 #include <Bentley/WString.h>
 #include <ECDb/ECDbApi.h>
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <Geom\Angle.h>
 
 #ifdef __PROFILES_BUILD__
 #define PROFILES_EXPORT EXPORT_ATTRIBUTE

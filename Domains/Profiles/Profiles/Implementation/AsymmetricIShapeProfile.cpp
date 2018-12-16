@@ -25,8 +25,8 @@ AsymmetricIShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsymmetricIShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double topFlangeWidth, double bottomFlangeWidth, double depth,
                                                      double topFlangeThickness, double bottomFlangeThickness, double webThickness, double topFlangeFilletRadius,
-                                                     double topFlangeEdgeRadius, double topFlangeSlope, double bottomFlangeFilletRadius,
-                                                     double bottomFlangeEdgeRadius, double bottomFlangeSlope)
+                                                     double topFlangeEdgeRadius, Angle const& topFlangeSlope, double bottomFlangeFilletRadius,
+                                                     double bottomFlangeEdgeRadius, Angle const& bottomFlangeSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , topFlangeWidth (topFlangeWidth)
     , bottomFlangeWidth (bottomFlangeWidth)
@@ -196,17 +196,17 @@ void AsymmetricIShapeProfile::SetTopFlangeEdgeRadius (double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AsymmetricIShapeProfile::GetTopFlangeSlope() const
+Angle AsymmetricIShapeProfile::GetTopFlangeSlope() const
     {
-    return GetPropertyValueDouble (PRF_PROP_AsymmetricIShapeProfile_TopFlangeSlope);
+    return Angle::FromRadians (GetPropertyValueDouble (PRF_PROP_AsymmetricIShapeProfile_TopFlangeSlope));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AsymmetricIShapeProfile::SetTopFlangeSlope (double val)
+void AsymmetricIShapeProfile::SetTopFlangeSlope (Angle const& val)
     {
-    SetPropertyValue (PRF_PROP_AsymmetricIShapeProfile_TopFlangeSlope, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_AsymmetricIShapeProfile_TopFlangeSlope, ECN::ECValue (val.Radians()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -244,17 +244,17 @@ void AsymmetricIShapeProfile::SetBottomFlangeEdgeRadius (double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AsymmetricIShapeProfile::GetBottomFlangeSlope() const
+Angle AsymmetricIShapeProfile::GetBottomFlangeSlope() const
     {
-    return GetPropertyValueDouble (PRF_PROP_AsymmetricIShapeProfile_BottomFlangeSlope);
+    return Angle::FromRadians (GetPropertyValueDouble (PRF_PROP_AsymmetricIShapeProfile_BottomFlangeSlope));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AsymmetricIShapeProfile::SetBottomFlangeSlope (double val)
+void AsymmetricIShapeProfile::SetBottomFlangeSlope (Angle const& val)
     {
-    SetPropertyValue (PRF_PROP_AsymmetricIShapeProfile_BottomFlangeSlope, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_AsymmetricIShapeProfile_BottomFlangeSlope, ECN::ECValue (val.Radians()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -286,11 +286,11 @@ double AsymmetricIShapeProfile::GetInnerWebFaceLength() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AsymmetricIShapeProfile::GetTopFlangeSlopeHeight() const
     {
-    double const topFlangeSlopeCos = std::cos (GetTopFlangeSlope());
+    double const topFlangeSlopeCos = GetTopFlangeSlope().Cos();
     if (topFlangeSlopeCos <= DBL_EPSILON)
         return 0.0;
 
-    return (GetInnerTopFlangeFaceLength() / topFlangeSlopeCos) * std::sin (GetTopFlangeSlope());
+    return (GetInnerTopFlangeFaceLength() / topFlangeSlopeCos) * GetTopFlangeSlope().Sin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -298,11 +298,11 @@ double AsymmetricIShapeProfile::GetTopFlangeSlopeHeight() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AsymmetricIShapeProfile::GetBottomFlangeSlopeHeight() const
     {
-    double const bottomFlangeSlopeCos = std::cos (GetBottomFlangeSlope());
+    double const bottomFlangeSlopeCos = GetBottomFlangeSlope().Cos();
     if (bottomFlangeSlopeCos <= DBL_EPSILON)
         return 0.0;
 
-    return (GetInnerBottomFlangeFaceLength() / bottomFlangeSlopeCos) * std::sin (GetBottomFlangeSlope());
+    return (GetInnerBottomFlangeFaceLength() / bottomFlangeSlopeCos) * GetBottomFlangeSlope().Sin();
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
