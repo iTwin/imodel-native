@@ -510,4 +510,18 @@ IGeometryPtr ProfilesGeomApi::CreateZShape (ZShapeProfileCPtr profile)
     return createGeometryFromPrimitiveArray (orderedCurves);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateCircle (CircleProfileCPtr profile)
+    {
+    DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius());
+    ICurvePrimitivePtr circleCurve = ICurvePrimitive::CreateArc (ellipse);
+
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Inner);
+    curveVector->Add (circleCurve);
+
+    return IGeometry::Create (curveVector);
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE

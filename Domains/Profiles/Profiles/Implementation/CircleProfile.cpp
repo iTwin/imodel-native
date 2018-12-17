@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\CircleProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -53,6 +54,14 @@ BentleyStatus CircleProfile::_Validate() const
         return BSISUCCESS;
 
     return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CircleProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateCircle (this);
     }
 
 /*---------------------------------------------------------------------------------**//**
