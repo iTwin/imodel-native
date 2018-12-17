@@ -40,6 +40,12 @@ public:
 protected:
     explicit EllipseProfile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const override;
+
+private:
+    bool ValidateXRadius() const;
+    bool ValidateYRadius() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (EllipseProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (EllipseProfile)

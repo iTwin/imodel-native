@@ -42,6 +42,46 @@ EllipseProfile::EllipseProfile (CreateParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus EllipseProfile::_Validate() const
+    {
+    BentleyStatus status = T_Super::_Validate();
+    if (status != BSISUCCESS)
+        return status;
+
+    bool const isValidXRadius = ValidateXRadius();
+    bool const isValidYRadius = ValidateYRadius();
+
+    if (isValidXRadius && isValidYRadius)
+        return BSISUCCESS;
+
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EllipseProfile::ValidateXRadius() const
+    {
+    double const xRadius = GetXRadius();
+    bool const isPositive = std::isfinite (xRadius) && xRadius > 0.0;
+
+    return isPositive;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EllipseProfile::ValidateYRadius() const
+    {
+    double const yRadius = GetYRadius();
+    bool const isPositive = std::isfinite (yRadius) && yRadius > 0.0;
+
+    return isPositive;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double EllipseProfile::GetXRadius() const
