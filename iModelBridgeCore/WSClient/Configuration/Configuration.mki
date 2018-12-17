@@ -1,0 +1,27 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Configuration/Configuration.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+ConfigurationMkiPublicApiDir = $(ClientPublicApiDirectory)Configuration/
+ConfigurationMkiSourceDir = $(ClientSourceDirectory)Configuration/
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+ConfigurationMkiHeaders = $(ConfigurationMkiPublicApiDir)BuddiClient.h          \
+                          $(ConfigurationMkiPublicApiDir)BuddiError.h           \
+                          $(ConfigurationMkiPublicApiDir)UrlProvider.h          \
+                          $(ConfigurationMkiSourceDir)BuddiError.xliff.h
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+$(o)BuddiClient$(oext)  : $(ConfigurationMkiSourceDir)BuddiClient.cpp $(ConfigurationMkiHeaders) ${MultiCompileDepends}
+
+$(o)BuddiError$(oext)   : $(ConfigurationMkiSourceDir)BuddiError.cpp $(ConfigurationMkiHeaders) ${MultiCompileDepends}
+
+$(o)UrlProvider$(oext)  : $(ConfigurationMkiSourceDir)UrlProvider.cpp $(ConfigurationMkiHeaders) ${MultiCompileDepends}
