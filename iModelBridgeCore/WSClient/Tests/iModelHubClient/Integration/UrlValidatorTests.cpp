@@ -179,6 +179,36 @@ bset<Utf8String> loadUrlFile(Utf8String path, Utf8String(*callback)(Utf8String))
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsitest                                      Algirdas.Mikoliunas             12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String GetLogFileName(BeFileName assetsPath)
+    {
+    Utf8String defaultFileName("iModelHubIntegrationTests.log");
+
+    BeFileName logConfigFile(assetsPath);
+    logConfigFile.AppendToPath(L"iModelHubIntegrationTests.logging.config.xml");
+
+    // Read config file contents
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(logConfigFile, BeFileAccess::Read))
+        return defaultFileName;
+
+    ByteStream byteStream;
+    if (BeFileStatus::Success != file.ReadEntireFile(byteStream))
+        return defaultFileName;
+
+    Utf8String contents((Utf8CP) byteStream.GetData(), byteStream.GetSize());
+    file.Close();
+
+    size_t logFileTagStart = contents.find("<param name=\"File\"");
+    size_t logFileNameStart = contents.find("iModelHubIntgerationTests", logFileTagStart);
+    size_t logFileNameEnd = contents.find("\"", logFileNameStart);
+
+    // Reads configured logging file name, currently used for region log file name
+    return contents.substr(logFileNameStart, logFileNameEnd - logFileNameStart);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Daniel.Bednarczyk                08/27
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(UrlValidator, WhitelistCheck)
@@ -187,8 +217,10 @@ TEST(UrlValidator, WhitelistCheck)
     iModelHubHost& host = iModelHubHost::Instance();
     BeFileName assetsPath = host.GetDgnPlatformAssetsDirectory();
     Utf8String whitelistPath = assetsPath.GetNameUtf8().append("whitelist.txt");
+    
     Utf8String localAppDataPath = getenv("LOCALAPPDATA");
-    Utf8String logPath = localAppDataPath.append("\\Bentley\\Logs\\iModelHubIntgerationTests.log");
+    Utf8String logFileName = GetLogFileName(assetsPath);
+    Utf8String logPath = localAppDataPath.append("\\Bentley\\Logs\\").append(logFileName);
 
     // Load whitelist
     bset<Utf8String> whitelistURLs = loadUrlFile(whitelistPath, nullptr);
