@@ -76,6 +76,7 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_SlopeAndRoundings", 3.5, 10, 1, 1, 0.5, 0.5, PI / 18));
 
     InsertProfileGeometry<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Circle", 3.0), true);
+    InsertProfileGeometry<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "Circle", 3.0, 0.5));
     }
 
 /*---------------------------------------------------------------------------------**//**
