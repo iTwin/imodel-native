@@ -54,6 +54,8 @@ $(o)TShapeProfileTests.obj              : $(BEGTEST_INPUT)TShapeProfileTests.cpp
 
 $(o)ZShapeProfileTests.obj              : $(BEGTEST_INPUT)ZShapeProfileTests.cpp ${MultiCompileDepends}
 
+$(o)CircleProfileTests.obj              : $(BEGTEST_INPUT)CircleProfileTests.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts
