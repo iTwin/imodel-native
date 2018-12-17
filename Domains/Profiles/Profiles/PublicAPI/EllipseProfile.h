@@ -21,8 +21,24 @@ struct EllipseProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_EllipseProfile, ParametricProfile);
     friend struct EllipseProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(EllipseProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double xRadius, double yRadius);
+
+    public:
+        //! Required properties
+        double xRadius = 0.0;
+        double yRadius = 0.0;
+        };
+
 protected:
-    explicit EllipseProfile (CreateParams const& params) : T_Super (params) {}
+    explicit EllipseProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (EllipseProfile)

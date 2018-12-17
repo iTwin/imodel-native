@@ -13,6 +13,35 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (EllipseProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+EllipseProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+EllipseProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double xRadius, double yRadius)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , xRadius (xRadius)
+    , yRadius (yRadius)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+EllipseProfile::EllipseProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetXRadius (params.xRadius);
+    SetYRadius (params.yRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double EllipseProfile::GetXRadius() const
