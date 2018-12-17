@@ -108,7 +108,6 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
 
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
     dstaddondir = os.path.join(outputpackagedir, 'addon')
-    dstnodefile = os.path.join(dstaddondir, 'imodeljs.node')
 
     # NB: shutil.copytree insists on creating dstaddondir and will throw an exception if it already exists. That is why we don't call os.makedirs(dest...) here.
     shutil.copytree(srcsupportdir, dstaddondir, False, filterOutUnwantedFiles)

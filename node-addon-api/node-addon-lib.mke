@@ -9,7 +9,7 @@
 %include mdl.mki
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
-ContextDeliveryDir      = $(BuildContext)StubDelivery/
+ContextDeliveryDir      = $(BuildContext)Delivery/
 appName                 = napi
 CCompPDBName            = $(appName)
 DLM_NAME                = $(appName)
@@ -44,9 +44,11 @@ DLM_NOENTRY             = 1
 
 %if ($(TARGET_PLATFORM) == "Windows")
 
+LIB_NO_CONTEXT_LINK = 1
+DLM_NO_IMPLIB = 1
+
 cDefs = $(cDefsSave)
 cdefs  + -DBUILD_FOR_NODE=1
-ContextDeliveryDir = $(BuildContext)NodeDelivery/
 o = $(OutputRootDir)build/NapiLib/Node/
 
 $(o)napi_stub$(oext)  : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
@@ -54,14 +56,19 @@ $(o)napi_stub$(oext)  : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
 objs = $(o)napi_stub$(oext) 
 %include $(sharedMki)linkLibrary.mki
 
+always: 
+    ~linkfile $(ContextDeliveryDir)napi.dll-node=$(o)napi.dll
+
 cDefs = $(cDefsSave)
 cDefs  + -DBUILD_FOR_ELECTRON=1
-ContextDeliveryDir  = $(BuildContext)ElectronDelivery/
 o = $(OutputRootDir)build/NapiLib/Electron/
 
 $(o)napi_stub$(oext) : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
 
 objs = $(o)napi_stub$(oext) 
 %include $(sharedMki)linkLibrary.mki
+
+always: 
+    ~linkfile $(ContextDeliveryDir)napi.dll-electron=$(o)napi.dll
 
 %endif
