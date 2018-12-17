@@ -1,0 +1,8 @@
+# Tests that should not be run
+
+#----------------------------------------------------------------------------------------
+# *** Broken in 06; need to be re-visited ***
+# Currently the ignore list is empty but the following commented out entries serve as example
+#----------------------------------------------------------------------------------------
+
+GCSUnaryTester.WKTTest
