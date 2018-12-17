@@ -1,0 +1,34 @@
+apply plugin: 'com.android.library'
+apply plugin: 'maven'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "21.1.2"
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 19
+        versionCode 1
+        versionName "1.0"
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    //NOTE: Higher version play-services require at least 21+ android, while currently we are targeting 19th.
+    compile 'com.google.android.gms:play-services:5.0.89'
+    compile 'com.android.support:support-v4:19.1.0'
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+        repository(url: "file://$project.buildDir.absolutePath/MavenArchive/")
+        pom.project {
+            groupId 'com.bentley.android'
+            artifactId 'BeSecurity'
+            version "1.0.0"
+        }
+    }
+}
