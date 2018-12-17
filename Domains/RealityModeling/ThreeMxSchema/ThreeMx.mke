@@ -1,0 +1,108 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ThreeMxSchema/ThreeMx.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+#-----------------------------------------------------------
+# Root directory
+#-----------------------------------------------------------
+SrcThreeMx = $(_MakeFilePath)
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+ThreeMxPublicApiSrc = $(SrcThreeMx)../PublicAPI/ThreeMx/
+
+#-----------------------------------------------------------
+# Source directories
+#-----------------------------------------------------------
+SrcOpenCtm = $(SrcThreeMx)openCtm/
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki = $(SrcThreeMx)ThreeMx.mki
+%include $(CompileOptionsMki)
+
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+threeMxDepends  = $(_MakeFileSpec) $(ThreeMxPublicApiSrc)ThreeMxApi.h
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)ThreeMxReader$(oext)  : $(SrcThreeMx)ThreeMxReader.cpp ${threeMxDepends} ${MultiCompileDepends}
+
+$(o)ThreeMxNode$(oext)    : $(SrcThreeMx)ThreeMxNode.cpp ${threeMxDepends} ${MultiCompileDepends}
+
+$(o)ThreeMxModel$(oext)   : $(SrcThreeMx)ThreeMxModel.cpp ${threeMxDepends} ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+CCPchOpts =
+CPchOpts =
+
+#----------------------------------------------------------------------
+#   Third-party code
+#----------------------------------------------------------------------
+
+# Third-party section of this library.
+%include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)openCtm$(oext)     : $(SrcOpenCtm)openCtm.c $(SrcOpenCtm)openCtm.h ${threeMxDepends} ${MultiCompileDepends}
+
+$(o)stream$(oext)      : $(SrcOpenCtm)stream.c $(SrcOpenCtm)openCtm.h ${threeMxDepends} ${MultiCompileDepends}
+
+$(o)compressMG1$(oext) : $(SrcOpenCtm)compressMG1.c ${threeMxDepends} ${MultiCompileDepends}
+
+$(o)compressMG2$(oext) : $(SrcOpenCtm)compressMG2.c ${threeMxDepends} ${MultiCompileDepends}
+
+$(o)compressRAW$(oext) : $(SrcOpenCtm)compressRAW.c ${threeMxDepends} ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+%include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
+
+nonportObjs=%$(MultiCompileObjectList)
+
+CCPchOpts =
+CPchOpts =
+
+objs + $(nonportObjs)
+
+#--------------------------------------------------------------------------------------
+#   Build the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)  \
+                   $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                   $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
+                   $(ContextSubpartsLibs)$(stlibprefix)BeHttp$(libext) \
+                   $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext) \
+                   $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+
+%include $(sharedMki)LinkLibrary.mki
