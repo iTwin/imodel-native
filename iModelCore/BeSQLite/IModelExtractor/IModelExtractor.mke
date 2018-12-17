@@ -1,0 +1,38 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: IModelExtractor/IModelExtractor.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+srcDir              = $(_MakeFilePath)
+o                   = $(PartBuildDir)
+appName             = imodel
+
+always:
+    ~mkdir $(o)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)IModelExtractor$(oext) : $(srcDir)IModelExtractor.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+EXE_DEST            = $(o)
+EXE_NAME            = $(appName)
+EXE_OBJS            = $(MultiCompileObjectList)
+EXE_LOPT1           = -entry:wmainCRTStartup
+
+LINKER_LIBRARIES    = $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite.lib
+LINKER_LIBRARIES    + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
+LINKER_LIBRARIES    + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
+LINKER_LIBRARIES    + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
+LINKER_LIBRARIES    + $(ContextSubPartsStaticLibs)$(stlibprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeIcu4c.lib
+LINKER_LIBRARIES    + $(CLibs)
+
+%include $(SharedMki)linktool.mki
