@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "id": "ExpectedNavNodes.jsd",
+  "type": "object",
+  "description": "They layout of a tree of nodes in JSON format",
+  "properties": {
+    "$schema": { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "description": "The nodes within the presentation tree",
+      "items": { "$ref": "#/definitions/nodes" }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["nodes"],
+
+  "definitions": {
+
+    "nodes": {
+      "type": "object",
+      "properties": {
+        "Type": {
+          "type": "string",
+          "description": "Is the type of the node"
+        },
+        "Label": {
+          "type": "string",
+          "description": "Is the node's display label"
+        },
+        "ImageId": {
+          "type": "string",
+          "description": "Is the image id for that type of node"
+        },
+        "Description": {
+          "type": "string",
+          "description": "Is a brief description of that node"
+        },
+        "ChildNodes": {
+          "type": "array",
+          "description": "Is an array of the node's children",
+          "items": { "$ref": "#/definitions/nodes" }
+        }
+      },
+      "additionalProperties": false,
+      "required": [ "Type", "Label" ]
+    }
+  }
+
+}
