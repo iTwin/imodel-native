@@ -61,8 +61,6 @@ def compute_compatible_api_version_range(packageVersion):
 
 # Tell copytree to ignore binary files that should not be in the addon
 def filterOutUnwantedFiles(dirname, files):
-    if dirname.endswith('Assets'):
-        return ['DgnGeoCoord'];
     return ['v8B02.dll', 'v8_libbaseB02.dll', 'v8_libplatformB02.dll']
 
 # Copy a version-specific addon into place

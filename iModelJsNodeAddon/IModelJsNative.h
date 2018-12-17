@@ -17,6 +17,7 @@
 #include <Bentley/BeThread.h>
 #include <Bentley/CancellationToken.h>
 #include <node-addon-api/napi.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -108,6 +109,9 @@ public:
     static BeSQLite::DbResult GetPendingChangeSets(JsonValueR changeSets, DgnDbR db);
     static BeSQLite::DbResult AddPendingChangeSet(DgnDbR db, Utf8StringCR changeSetId);
     static BeSQLite::DbResult RemovePendingChangeSet(DgnDbR db, Utf8StringCR changeSetId);
+
+    static ReprojectStatus GetGeoCoordsFromIModelCoords (JsonValueR, DgnDbR, JsonValueCR);
+    static ReprojectStatus GetIModelCoordsFromGeoCoords (JsonValueR, DgnDbR, JsonValueCR);
 
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);
     

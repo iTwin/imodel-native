@@ -701,6 +701,17 @@ struct NativeBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NativeBriefcase
 
 };
 
+static void initializeGcs() 
+    {
+    bool s_initialized = false;
+    if (s_initialized)
+        return;
+    s_initialized = true;
+    BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    BeFileName dgnGeoCoordDir = assetsDir.AppendToPath(L"DgnGeoCoord");
+    BentleyApi::GeoCoordinates::BaseGCS::Initialize(dgnGeoCoordDir.c_str());
+    }
+
 //=======================================================================================
 // Projects the DgnDb class into JS
 //! @bsiclass
@@ -1141,6 +1152,34 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_ARGUMENT_STRING(0, changeSetId, Env().Undefined());
         DbResult result = JsInterop::RemovePendingChangeSet(*m_dgndb, changeSetId);
         return Napi::Number::New(Env(), (int) result);
+        }
+
+    Napi::Value GetIModelCoordsFromGeoCoords(Napi::CallbackInfo const& info)
+        {
+        // make sure GCS library is initialized.
+        initializeGcs();
+
+        // Use the macro to get the argument (which is JSON string containing an array of points) from the info argument.
+        REQUIRE_ARGUMENT_STRING(0, geoCoordStr, Env().Undefined());
+        // get a Json::Value from the string.
+        Json::Value geoCoordProps = Json::Value::From(geoCoordStr);
+        Json::Value results;
+        auto status = JsInterop::GetIModelCoordsFromGeoCoords (results, GetDgnDb(), geoCoordProps);
+        return toJsString(Env(), results.ToString());
+        }
+
+    Napi::Value GetGeoCoordsFromIModelCoords(Napi::CallbackInfo const& info)
+        {
+        // make sure GCS library is initialized.
+        initializeGcs();
+        
+        // Use the macro to get the argument (which is JSON string containing an array of points) from the info argument.
+        REQUIRE_ARGUMENT_STRING(0, iModelCoordStr, Env().Undefined());
+        // get a Json::Value from the string.
+        Json::Value iModelCoordProps = Json::Value::From(iModelCoordStr);
+        Json::Value results;
+        auto status = JsInterop::GetGeoCoordsFromIModelCoords(results, GetDgnDb(), iModelCoordProps);
+        return toJsString(Env(), results.ToString());
         }
 
     Napi::Value GetIModelProps(Napi::CallbackInfo const& info)
@@ -1860,6 +1899,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
             InstanceMethod("getElementPropertiesForDisplay", &NativeDgnDb::GetElementPropertiesForDisplay),
+            InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),
+            InstanceMethod("getIModelCoordinatesFromGeoCoordinates", &NativeDgnDb::GetIModelCoordsFromGeoCoords),
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
             InstanceMethod("getModel", &NativeDgnDb::GetModel),
             InstanceMethod("getMultiTxnOperationDepth", &NativeDgnDb::GetMultiTxnOperationDepth),

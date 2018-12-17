@@ -37,6 +37,10 @@ BE_JSON_NAME(properties)
 BE_JSON_NAME(readOnly)
 BE_JSON_NAME(relationshipClass)
 BE_JSON_NAME(structName)
+BE_JSON_NAME(geoCoords)
+BE_JSON_NAME(iModelCoords)
+BE_JSON_NAME(status)
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
@@ -866,3 +870,70 @@ void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb)
     if (ecefLocation.m_isValid)
         val[json_ecefLocation()] = ecefLocation.ToJson();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Barry.Bentley                 12/18
+//---------------------------------------------------------------------------------------
+ReprojectStatus JsInterop::GetGeoCoordsFromIModelCoords (JsonValueR results, DgnDbR dgnDb, JsonValueCR props)
+    {
+    // get the vector of points.
+    bvector<DPoint3d> iModelPoints;
+    JsonUtils::DPoint3dVectorFromJson (iModelPoints, props[json_iModelCoords()]);
+
+    // create return vector.
+    bvector<DPoint3d> geoPoints(iModelPoints.size());
+
+    // get the GCS
+    DgnGCSCPtr gcs = dgnDb.GeoLocation().GetDgnGCS();
+    ReprojectStatus status = ReprojectStatus::REPROJECT_BadArgument;
+    if (gcs.IsValid())
+        {
+        status = ReprojectStatus::REPROJECT_Success;
+        for (auto input = iModelPoints.begin(), output = geoPoints.begin(); input != iModelPoints.end(); input++, output++ )
+            {
+            ReprojectStatus thisStatus = gcs->LatLongFromUors((GeoPointR)*output, *input);
+            if ( (status == ReprojectStatus::REPROJECT_Success) && (thisStatus != ReprojectStatus::REPROJECT_Success) )
+                status = thisStatus;
+            }
+        }
+        
+    // Put the results (status and geoPoints) into a Json object.
+    results[json_status()] = status;
+    JsonUtils::DPoint3dVectorToJson (results[json_iModelCoords()], geoPoints);
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Barry.Bentley                 12/18
+//---------------------------------------------------------------------------------------
+ReprojectStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDbR dgnDb, JsonValueCR props)
+    {
+    // get the vector of points.
+    bvector<DPoint3d> geoPoints;
+    JsonUtils::DPoint3dVectorFromJson (geoPoints, props[json_geoCoords()]);
+
+    // create return vector.
+    bvector<DPoint3d> iModelPoints(geoPoints.size());
+
+    // get the GCS
+    DgnGCSCPtr gcs = dgnDb.GeoLocation().GetDgnGCS();
+    ReprojectStatus status = ReprojectStatus::REPROJECT_BadArgument;
+    if (gcs.IsValid())
+        {
+        status = ReprojectStatus::REPROJECT_Success;
+        for (auto input = geoPoints.begin(), output = iModelPoints.begin(); input != geoPoints.end(); input++, output++ )
+            {
+            ReprojectStatus thisStatus = gcs->UorsFromLatLong(*output, (GeoPointCR)*input);
+            if ( (status == ReprojectStatus::REPROJECT_Success) && (thisStatus != ReprojectStatus::REPROJECT_Success) )
+                status = thisStatus;
+            }
+        }
+        
+    // Put the results (status and geoPoints) into a Json object.
+    results[json_status()] = status;
+    JsonUtils::DPoint3dVectorToJson (results[json_iModelCoords()], iModelPoints);
+
+    return status;
+    }
+
