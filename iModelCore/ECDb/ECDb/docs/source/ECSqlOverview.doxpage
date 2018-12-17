@@ -1,0 +1,311 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ECDb/docs/source/ECSqlOverview.doxpage $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+    /**
+    @page ECSQLOverview ECSQL
+
+    @tableofcontents
+
+    @b ECSQL is a text-based command language for CRUD (create, read, update, delete) operations against ECInstances in an EC repository.
+    ECSQL is based on the SQL-99 standard which supports concepts also used by @ref ECObjectsGroup. Amongst other things, this
+    includes boolean and date time data types, user-defined data types, collection types, and polymorphism.
+
+    @image html ecsql_vs_sql.png
+
+    The key difference between ECSQL and SQL is that <b>ECSQL targets the logical schema</b> (i.e. the BentleyApi::ECN::ECSchema) of a repository
+    and not the underlying database's persistence schema.
+    ECSQL abstracts away the details of mapping an ECClass to a database table and
+    @ref BentleyApi::ECN::ECProperty "ECProperties" to database columns. Clients specify ECSQL against an ECClass
+    and the @ref ECDbOverview "ECDb API" figures out how the ECSQL statement translates to a
+    SQL statement in the underlying @ref ECDbFile "ECDb file".
+
+    @section ECSqlDocAndSamples ECSQL Documentation and Examples
+    A comprehensive explanation of ECSQL as implemented by @ref ECDbOverview "ECDb" can be found here:
+    <a href="files/ecdb/ecsql_overview.pdf" target="_blank">ECSQL Overview (PDF)</a>
+
+    @ref ECSQLSamples provides ECSQL @b example statements to illustrate the various features of ECSQL.
+
+    @section ECSqlAndClassKinds ECSQL and ECClass kinds
+
+    |ECClass kind    | SELECT (polym.) | SELECT (non-polym.) | INSERT | UPDATE (polym.) | UPDATE (non-polym.) | DELETE (polym.) | DELETE (non-polym.)|
+    |----------------|-----------------|---------------------|--------|-----------------|---------------------|-----------------|--------------------|
+    | Entity         | yes             | yes                 | yes    | yes*            | yes                 | yes*            | yes                |
+    | Abstract entity| yes             | yes                 | no     | yes*            | no                  | yes*            | no                 |
+    | Mixin          | yes             | yes                 | no     | no              | no                  | no              | no                 |
+    | ForeignKey Relationship | yes    | yes                 | no**   | no**            | no**                | no**            | no**               |
+    | LinkTable Relationship | yes     | yes                 | yes    | yes             | yes                 | yes             | yes                |
+    | Struct         | no              | no                  | no     | no              | no                  | no              | no                 |
+    | Custom attribute | no            | no                  | no     | no              | no                  | no              | no                 |
+
+    @b * Polymorphic UPDATE/DELETE is only supported if the class is mapped with strategy 'TablePerHierarchy' (see @ref ClassMapCustomAttributeDescription).
+    @b ** Use navigation property in order to insert, update or delete a foreign key relationship.
+
+    @section ECSqlSystemProperties ECSQL System Properties
+    ECSQL defines a set of built-in system properties. They don't have to be defined in the ECSchemas.
+    They are described in the next sections.
+
+
+    @subsection ECSqlSystemPropertyECInstanceId ECInstanceId
+    The ECInstanceId is the unique identifier for an ECInstance. In @ref ECSQLOverview you use the
+    reserved token @c %ECInstanceId to refer to the ECInstanceId of an instance,
+
+    @note The ECInstanceId property is read-only, i.e. it cannot be updated with an ECSQL UPDATE statement.
+
+    Example: <c>SELECT Name FROM myschema.Foo WHERE <b>ECInstanceId</b> = 123</c>.
+
+    @subsection ECSqlSystemPropertyECClassId ECClassId
+    The reserved token @b ECClassId refers to the BentleyApi::ECN::ECClassId of an ECClass in an ECSQL statement. 
+    The ECClassId is a numeric id that uniquely identifies an ECClass in the @ref ECDbFile. The ECClassId is read-only.
+
+    @note The ECInstanceId property is read-only, i.e. it cannot be updated with an ECSQL UPDATE statement.
+
+    Example: <c>SELECT ECInstanceId, <b>ECClassId</b> FROM myschema.Foo</c>
+
+
+    @subsection ECSQLSystemPropertyPoint Point Coordinates
+    Accessing the coordinates of Point2d/Point3d properties can be done via the reserved tokens @b X, @b Y, @b Z.
+
+    Example: <c>SELECT Origin.<b>X</b>, Origin.<b>Y</b> FROM myschema.Foo</c>
+
+    @subsection ECSQLSystemPropertyNavigation Navigation Property Members
+    Accessing the members of Navigation properties can be done via the reserved tokens @b Id and @b RelECClassId.
+
+    Example: <c>SELECT Parent.<b>Id</b>, Parent.<b>RelECClassId</b> FROM myschema.Element</c>
+
+    see @ref ECDbNavigationProperties
+
+    @subsection ECSQLSystemPropertyRelConstraints ECRelationship's Source and Target Constraints
+    When referring to an ECRelationshipClass in an ECSQL statement, @c %SourceECInstanceId and @c %SourceECClassId refer
+    to the %ECInstanceId and %ECClassId of the source ECInstance of the relationship. Likewise @c %TargetECInstanceId
+    and @c %TargetECClassId refer to the %ECInstanceId and %ECClassId of the target ECInstance of the relationship.
+
+    Example: <c>SELECT <b>SourceECInstanceId, SourceECClassId</b> FROM myschema.FooHasGoo<br>
+    WHERE <b>TargetECInstanceId</b> = 4432 AND <b>TargetECClassId</b>=3120</c>
+
+    %SourceECInstanceId and %TargetECInstanceId are of the same type as @ref ECSqlSystemPropertyECInstanceId. %SourceECClassId and %TargetECClassId
+    are of the same type as the @ref ECSqlSystemPropertyECClassId "ECClassId".
+
+    @section ECSQLBindingParameterTokens Binding parameters ? and :name
+    In an ECSQL statement @c ? or <c>:name</c> are used as placeholder for parameters that are bound to the statement via the statements binding API (see ECSqlStatement).
+    @c ? refers to an unnamed parameter and <c>:name</c> refers to a named parameter.
+    Examples:
+    - <c>SELECT ECInstanceId FROM myschema.Foo WHERE Name = <b>?</b></c>
+    - <c>SELECT ECInstanceId FROM myschema.Foo WHERE Name = <b>:fooname</b></c>
+
+    @section ECSQLOptions ECSQLOPTIONS Clause
+    ECSQL comes with the @c ECSQLOPTIONS keyword that can be appended to an ECSQL statement and can be followed by one or more options.
+    The options influence how ECDb should prepare the ECSQL statement. See <a href="files/ecdb/ecsql_overview.pdf" target="_blank">ECSQL Overview (PDF)</a>
+    for syntax details.
+    
+    @note The options modify the default behavior of how ECDb prepares the ECSQL statement. The default behavior is however what you should use
+    in most of the cases. So use the options with great care and be aware of their impact.
+    
+    ECSQL Option | Description
+    ------------ | -----------
+    ReadonlyPropertiesAreUpdatable | By default, preparing an ECSQL UPDATE will fail if it includes @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "read-only ECProperties". If this option is set, you can update read-only properties with an ECSQL UPDATE.
+    NoECClassIdFilter | If multiple ECClasses are mapped to the same table ECDb appends a class id filter to the generated SQLite SQL statement to make sure it only affects the desired rows in the table. In <b>very rare cases</b> you might not need this filter because you made sure yourself that the ECSQL where clause only affects the correct rows. In this case, you can set this option and might gain some performance.
+       
+
+    @see @ref WorkingWithECDb
+
+    */
+
+
+    /**
+    @page ECSQLSamples ECSQL Examples
+
+    @tableofcontents
+
+    This section provides examples of @ref ECSQLOverview to illustrate its most important features. For details
+    and explanations of ECSQL see @ref ECSQLOverview "ECSQL Overview".
+
+    All examples refer to a sample ECSchema which can be found here:
+    <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">StartupCompany.01.00.00.ecschema.xml</a>
+
+    @section ECSQLSamplesBasics Basics
+
+        SELECT ECInstanceId FROM stco.Hardware WHERE WarrantyExpiryDate DATE '2014-01-01'
+
+        SELECT count(*) FROM stco.Hardware WHERE WarrantyExpiryDate < DATE '2014-01-01'
+
+        SELECT FirstName, LastName FROM stco.Employee WHERE LastModified > TIMESTAMP '2014-01-01T12:00:00Z'
+        
+        SELECT ECInstanceId, Length * Breadth AS Area FROM stco.Desk WHERE Type = ?
+        
+        SELECT ECInstanceId FROM stco.Hardware WHERE HasWarranty = True
+
+        SELECT ECInstanceId FROM stco.Hardware WHERE HasWarranty = False
+        
+    Any boolean expression can be simplified like this: 
+
+        SELECT ECInstanceId FROM stco.Hardware WHERE HasWarranty
+
+        SELECT ECInstanceId FROM stco.Hardware WHERE NOT HasWarranty
+    
+    @section ECSQLSamplesStructs ECStructs
+
+        SELECT FirstName, LastName, Address FROM stco.Employee
+
+        SELECT FirstName, LastName, Address.Street, Address.City, Address.Zip FROM stco.Employee
+
+    @section ECSQLSamplesArrays ECArrays
+
+        SELECT EmployeeId, Certifications FROM stco.Employee
+
+
+    @section ECSQLSamplesECInstanceIdECClassId ECInstanceId and ECClassId
+    See section @ref ECSqlSystemPropertyECInstanceId and @ref ECSqlSystemPropertyECClassId for the
+    background on ECInstanceId and ECClassId.
+
+        SELECT ECInstanceId FROM stco.Employee
+
+        SELECT FirstName, LastName FROM stco.Employee
+        WHERE ECInstanceId IN (123, 124, 125)
+
+        SELECT ECInstanceId, ECClassId FROM stco.Employee
+
+        SELECT e.ECInstanceId, e.ECClassId, c.ECInstanceId, c.ECClassId
+        FROM stco.Employee e
+        JOIN stco.Company c USING stco.CompanyHasEmployees
+        WHERE c.Name = ?
+
+    @section ECSQLSamplesJoins Joins
+    @subsection ECSQLSamplesJoinsConvenienceSyntax Convenience syntax JOIN USING
+    - Allows for more concise ECSQL
+    - Is a deviation from standard SQL
+    - Cannot be used in some special scenarios (e.g. multiple join clauses with same ECClass). In that
+    case you can use the standard syntax (see below)
+
+
+    ECSQL|Description
+    -----|-----------
+    <c>SELECT h.ECInstanceId FROM stco.Hardware h<br>JOIN stco.Employee e USING stco.HardwareUsedByEmployee<br>WHERE e.FirstName = 'John' AND e.Lastname = 'Smith'</c>|Determines all hardware items that employee John Smith uses
+    <c>SELECT manager.FirstName FROM stco.Employee manager<br>JOIN stco.Employee report USING stco.ManagerReports <b>FORWARD</b><br>WHERE report.FirstName = ? AND report.LastName = ?</c>|Determines the manager for a given employee
+    <c>SELECT report.FirstName FROM stco.Employee report<br>JOIN stco.Employee manager USING stco.ManagerReports <b>BACKWARD</b><br>WHERE manager.FirstName = ? AND manager.LastName = ?</c>|Determines all direct reports for a given manager
+    <c>DELETE FROM myschema.Document WHERE ECInstanceId IN (SELECT ECInstanceId FROM myschema.Document JOIN myschema.Folder USING myschema.FolderHasDocuments WHERE folder.ECInstanceId = 42)</c>|Delete all documents in the folder with ECInstanceId 42
+
+    @note The examples show how to use the ECSQL keywords @c @b FORWARD and @c @b BACKWARD for cases where it is ambiguous
+    whether the FROM or JOIN class is the source or target end of an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass". 
+    In that example the manager is the source and the report the target constraint of the relationship @c ManagerReports
+    (see <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">StartupCompany.01.00.00.ecschema.xml</a>).
+
+
+    @subsection ECSQLSamplesJoinsStandardSyntax Standard syntax
+    @b @c SourceECInstanceId, @b @c SourceECClassId, @b @c TargetECInstanceId, and @b @c TargetECClassId are
+    special tokens in ECSQL available for every @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass".
+    See also @ref ECSQLSystemPropertyRelConstraints.
+
+    #####JOIN ON Style
+
+         SELECT h.ECInstanceId FROM stco.Hardware h
+         INNER JOIN stco.HardwareUsedByEmployee r ON h.ECInstanceId = r.TargetECInstanceId AND
+         h.ECClassId = r.TargetECClassId
+         INNER JOIN stco.Employee e ON r.SourceECInstanceId = e.ECInstanceId AND
+         r.SourceECClassId = e.ECClassId
+         WHERE e.FirstName = 'John' AND e.Lastname = 'Smith'
+
+
+    #####Theta Style
+
+         SELECT h.ECInstanceId FROM stco.Hardware h, stco.HardwareUsedByEmployee r, stco.Employee e
+         WHERE h.ECInstanceId = r.TargetECInstanceId AND
+         h.ECClassId = r.TargetECClassId
+         r.SourceECInstanceId = e.ECInstanceId AND
+         r.SourceECClassId = e.ECClassId AND
+         e.FirstName = 'John' AND e.Lastname = 'Smith'
+
+
+    @note Both examples <b>as well as the first from ECSQLSamplesJoinsConvenienceSyntax</b> are semantically equivalent.
+
+    @subsection ECSQLSamplesInsertRelationships Insert ECRelationship instances
+    
+    If an NavigationECProperty is defined for an ECRelationshipClass, inserting, updating, deleting must be done via the navigation property:
+
+        INSERT INTO stco.Employee(FirstName, LastName, Company) VALUES(?,?,?)  -- Company is a navigation property for the ECRelationshipClass CompanyHasEmployees
+
+    If no NavigationECProperty is defined for an ECRelationshipClass, then you can treat the ECRelationshipClass like an ECClass
+    with the special tokens @b SourceECInstanceId and @b TargetECInstanceId:
+        
+        INSERT INTO stco.HardwareUsedByEmployee(SourceECInstanceId, TargetECInstanceId) VALUES(1, 2)
+
+        INSERT INTO stco.HardwareUsedByEmployee(SourceECInstanceId, TargetECInstanceId) VALUES(?,?)
+
+
+    @section ECSQLSamplesPolymorphism Polymorphism
+    - In ECSQL classes are treated polymorphically <b>by default</b>.
+    - Use the keyword <c><b>ONLY</b></c> to ignore subclasses of an @ref BentleyApi::ECN::ECClass "ECClass".
+
+    @image html ecsqlsampleschema_classhierarchy.png
+
+    To emphasize the point of the examples, the diagram above visualizes the class hierarchy of the classes from the
+    <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">ECSQL Example ECSchema</a> used in the examples.
+
+    ECSQL|Description
+    -----|-----------
+    <c>SELECT ECInstanceId FROM stco.Asset</c>|Polymorphic query: Selects all assets including all subclasses of Asset
+    <c>SELECT ECInstanceId FROM stco.Computer</c>|Polymorphic query: Selects all computers including its subclasses, i.e. selects computers and laptops
+    <c>SELECT ECInstanceId FROM <b>ONLY</b> stco.Computer</c>|Non-polymorphic query: Selects all computers excluding its subclasses, i.e. selects computers, but no laptops
+    <c>SELECT ECInstanceId FROM stco.Desk</c>|Selects all desks and would include its subclasses, but it has none.
+    <c>SELECT ECInstanceId FROM <b>ONLY</b> stco.Desk</c>|@c ONLY does not have any effect here as @c Desk does not have any subclasses.
+
+    @section ECSqlSetOperations Using ECSQL Set operations
+
+    ECSQL supports the set operations UNION, INTERSECT and EXCEPT.
+
+    ECSQL|Description
+    -----|-----------
+    <c>SELECT ECInstanceId FROM stco.Computer <b>UNION</b> SELECT ECInstanceId FROM stco.Desk</c>|Selects all Computers (and subclasses) and all Desks
+    <c>SELECT ECInstanceId FROM ONLY stco.Computer <b>UNION</b> SELECT ECInstanceId FROM stco.Desk</c>|Selects all Computers (and none of its subclasses) and all Desks
+    <c>SELECT ECInstanceId FROM stco.Hardware <b>EXCEPT</b> SELECT ECInstanceId FROM stco.Computer</c>|Selects all Hardware and all its subclasses except for Computers and all its subclasses
+    <c>SELECT ECInstanceId FROM stco.Hardware <b>EXCEPT</b> SELECT ECInstanceId FROM ONLY stco.Computer</c>|Selects all Hardware and all its subclasses except for Computers (and not its subclasses)
+
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">ECSQL Example ECSchema</a> on which the above examples are based.
+
+    @section ECSQLSamplesSQLiteFunctions Using SQLite SQL Functions
+    Any built-in or custom SQLite SQL function can be used in ECSQL to operate on the primitive types
+    supported by SQLite (numeric, blob, text). See also
+    <a href="https://www.sqlite.org/lang_corefunc.html" target="_blank">SQLite's built-in SQL functions</a>.
+
+    Generates a list of all employee's last names separated by comma:
+
+        SELECT group_concat(LastName, ',') from stco.Employee ORDER BY LastName
+
+    Returns only the first five letters of all employee's last names:
+
+        SELECT substr(LastName,1,5) FROM stco.Employee
+
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statements.
+
+    For an example of writing a custom SQLite SQL function and how to use it in ECSQL see: 
+    @ref ECDbCodeSampleECSQLAndCustomSQLiteFunctions 
+
+    @section ECSQLSamplesCasts ECSQL Casts
+
+    ECSQL supports the CAST expression for primitive types except for Point2d and Point3d.
+    For structs and arrays CAST is generally not supported except for CAST (NULL AS ...) expressions (see below). 
+    
+    Casting NULL is possible for all data types, including structs and arrays. This kind of cast is necessary in UNION
+    statements so that the data types of the corresponding select clause items match.
+
+    Example:
+
+    A query should return employees and other persons with their first and last name and a list of
+    certifications they have. The ECClass Person doesn't have a certifications property, so the query
+    should return NULL for the certifications for Person rows.
+
+        SELECT FirstName, LastName, CAST(NULL AS stco.Certification[]) FROM foo.Person
+        UNION
+        SELECT FirstName, LastName, Certifications FROM stco.Employee
+    
+
+    @see @ref WorkingWithECDb
+
+    */

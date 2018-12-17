@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="SimpleCompany" alias="sico" version="01.00.00" description="A Simple Company" displayLabel="A Simple Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECCustomAttributes>
+        <SchemaMap xmlns="ECDbMap.02.00.00">
+            <TablePrefix>sic</TablePrefix>
+        </SchemaMap>
+    </ECCustomAttributes>
+    <ECStructClass typeName="EducationStruct" modifier="None">
+        <ECProperty propertyName="Degree" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Year" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="GPA" typeName="double" readOnly="false"/>
+    </ECStructClass>
+    <ECEntityClass typeName="Employee" modifier="None">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
+        <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
+        <ECProperty propertyName="EmployeeId" typeName="int" displayLabel="Employee Id" readOnly="false"/>
+        <ECProperty propertyName="DateJoined" typeName="dateTime" displayLabel="Date Joined" readOnly="false"/>
+        <ECStructProperty propertyName="LatestEducation" typeName="EducationStruct" readOnly="false"/>
+        <ECStructArrayProperty propertyName="EducationHistory" typeName="EducationStruct" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="FullName" typeName="string" displayLabel="FullName" readOnly="true"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Manager" modifier="None">
+        <BaseClass>Employee</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SubContractor" modifier="None">
+        <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
+        <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
+        <ECProperty propertyName="CompanyName" typeName="string" displayLabel="Company Name" readOnly="false"/>
+        <ECProperty propertyName="SubContractorId" typeName="int" displayLabel="Sub Contractor Id" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ManagerRelationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is reported to by">
+            <Class class="Manager"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="reports to">
+            <Class class="Employee"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SubContractorRelationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="has">
+            <Class class="SubContractor"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="has">
+            <Class class="Employee"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>
