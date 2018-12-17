@@ -21,8 +21,23 @@ struct CircleProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_CircleProfile, ParametricProfile);
     friend struct CircleProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(CircleProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double radius);
+
+    public:
+        //! Required properties
+        double radius = 0.0;
+        };
+
 protected:
-    explicit CircleProfile (CreateParams const& params) : T_Super (params) {}
+    explicit CircleProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CircleProfile)
