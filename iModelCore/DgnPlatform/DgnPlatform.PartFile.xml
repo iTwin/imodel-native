@@ -23,10 +23,14 @@
 
     <!-- We need this shim part to avoid pulling all psolid repos just to see their platform dependency. -->
     <Part Name="PsolidShim">
+        <SubPart PartName="PsolidShim_AndroidARM64"/>
         <SubPart PartName="PsolidShim_iOSArm64"/>
         <SubPart PartName="PsolidShim_LinuxX64"/>
         <SubPart PartName="PsolidShim_MacOSx64"/>
         <SubPart PartName="PsolidShim_x64"/>
+    </Part>
+    <Part Name="PsolidShim_AndroidARM64" OnlyPlatforms="AndroidARM64" WipPartEnable="ParasolidAndroid">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_311_pre2_AndroidARM64"/>
     </Part>
     <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
