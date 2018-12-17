@@ -25,7 +25,7 @@ public:
 	LICENSING_EXPORT ClientFreeImpl
 		(
 		Utf8String accessToken,
-		ClientInfoPtr clientInfo,
+		BeVersion clientVersion,
 		BeFileNameCR db_path,
 		bool offlineMode,
 		Utf8String projectId,

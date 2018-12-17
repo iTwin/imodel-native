@@ -20,7 +20,7 @@ typedef std::shared_ptr<struct ClientWithKeyImpl> ClientWithKeyImplPtr;
 struct ClientWithKeyImpl : ClientImpl
 {
 protected:
-
+	Utf8String m_accessKey;
 public:
 	LICENSING_EXPORT ClientWithKeyImpl
 		(

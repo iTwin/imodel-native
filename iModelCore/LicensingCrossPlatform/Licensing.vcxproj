@@ -28,13 +28,14 @@
     <ClInclude Include="Licensing\ClientImpl.h" />
     <ClInclude Include="Licensing\ClientInterface.h" />
     <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
-    <ClInclude Include="Licensing\DateHelper.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\DateHelper.h" />
     <ClInclude Include="Licensing\FreeApplicationPolicyHelper.h" />
     <ClInclude Include="Licensing\Logging.h" />
     <ClInclude Include="Licensing\Policy.h" />
     <ClInclude Include="Licensing\PolicyHelper.h" />
     <ClInclude Include="Licensing\PolicyToken.h" />
     <ClInclude Include="Licensing\UsageDb.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\UsageJsonHelper.h" />
     <ClInclude Include="PublicAPI\Licensing\Client.h" />
     <ClInclude Include="PublicAPI\Licensing\LicenseStatus.h" />
     <ClInclude Include="PublicAPI\Licensing\Licensing.h" />

@@ -117,20 +117,17 @@ ClientFreeImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, 
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+	auto version = BeVersion(1, 0);
 
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-
-	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
-
 	BeFileName dbPath = GetUsageDbPath();
 	
-	Utf8String tokenstring = "7b9869c580a35aa6c4d2a4e4a290d26e7d327b6f77b448787d298793506d30b7";
+	Utf8String tokenstring = "5e1518a2d48671ce2c75d76b35b6324329ad61b0c6570dfa8781a016177e7ec4";
 
 	return std::make_shared<ClientFreeImpl>(
 		tokenstring,
-		clientInfo,
+		version,
 		dbPath,
 		true,
 		"",
@@ -197,20 +194,17 @@ ClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterva
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+	auto version = BeVersion(1, 0);
 
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-
-	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
-
 	BeFileName dbPath = GetUsageDbPath();
 
-	Utf8String tokenstring = "36aa7ff687353dce8b035b5ab6644f90e9980b860d22afd90642f2f879cb5993";
+	Utf8String tokenstring = "5e1518a2d48671ce2c75d76b35b6324329ad61b0c6570dfa8781a016177e7ec4";
 
 	return Client::CreateFree(
 		tokenstring,
-		clientInfo,
+		version,
 		dbPath,
 		true,
 		"",

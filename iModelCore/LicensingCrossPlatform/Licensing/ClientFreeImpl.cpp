@@ -12,8 +12,8 @@
 #include "FreeApplicationPolicyHelper.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
-#include <fstream>
 
+#include <Bentley/BeSystemInfo.h>
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 
 ClientFreeImpl::ClientFreeImpl(
 	Utf8String accessToken,
-	ClientInfoPtr clientInfo,
+	BeVersion clientVersion,
 	BeFileNameCR db_path,
 	bool offlineMode,
 	Utf8String projectId,
@@ -31,10 +31,12 @@ ClientFreeImpl::ClientFreeImpl(
 )
 	{
 	m_userInfo = ConnectSignInManager::UserInfo();
-	//m_userInfo.username = username;
+	m_accessToken = accessToken;
 
-	m_accessTokenString = accessToken;
-	m_clientInfo = clientInfo;
+	Utf8String deviceInfo = BeSystemInfo::GetDeviceId();
+	if (deviceInfo.Equals("")) deviceInfo = "DefaultDevice";
+	m_clientInfo = std::make_shared<ClientInfo>("FreeApplication",clientVersion,"FreeGUID",deviceInfo,"FreeDescriptor");
+	
 	m_dbPath = db_path;
 	m_offlineMode = offlineMode;
 	m_projectId = projectId;

@@ -64,7 +64,7 @@ protected:
     Utf8String m_projectId;
     Utf8String m_correlationId;
     bool m_offlineMode;
-    Utf8String m_accessTokenString;
+    Utf8String m_accessToken;
     bool m_stopApplicationCalled;
 
     // Policy

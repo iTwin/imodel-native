@@ -12,6 +12,7 @@
 #include "FreeApplicationPolicyHelper.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
+#include <Licensing/Utils/UsageJsonHelper.h>
 #include <fstream>
 
 #include <BeHttp/HttpError.h>
@@ -32,7 +33,7 @@ ClientWithKeyImpl::ClientWithKeyImpl(
 	{
 	m_userInfo = ConnectSignInManager::UserInfo();
 
-	m_accessTokenString = accessKey;
+	m_accessKey = accessKey;
 	m_clientInfo = clientInfo;
 	m_dbPath = db_path;
 	m_offlineMode = offlineMode;
@@ -70,6 +71,7 @@ LicenseStatus ClientWithKeyImpl::StartApplication()
 	//int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
 	//UsageHeartbeat(currentTimeUnixMs);
 	//LogPostingHeartbeat(currentTimeUnixMs);
+	//SendUsageRealtimeWithKey().wait();
 
 	// This is only a logging example
 	LOG.trace("StartApplication");
@@ -94,4 +96,50 @@ BentleyStatus ClientWithKeyImpl::StopApplication()
 	m_usageDb->Close();
 
 	return SUCCESS;
+	}
+
+folly::Future<folly::Unit> ClientWithKeyImpl::SendUsageRealtimeWithKey()
+	{
+	LOG.trace("ClientWithKeyImpl::SendUsageRealtimeWithKey");
+
+	auto url = UrlProvider::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
+
+	url += "/" + m_accessKey;
+
+	std::ofstream logfile("D:/performSendUsageRealtimeWithKey.txt");
+	logfile << url << std::endl;
+	logfile.close();
+
+	HttpClient client(nullptr, m_httpHandler);
+	auto uploadRequest = client.CreateRequest(url, "POST");
+	//uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + m_accessTokenString);
+	uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
+
+	// create Json body
+	auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids(
+		m_clientInfo->GetDeviceId(),
+		m_featureString,
+		m_clientInfo->GetApplicationVersion(),
+		m_projectId
+	);
+
+	uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody.ToString()));
+
+	return uploadRequest.Perform().then(
+		[=](Response response)
+		{
+		if (!response.IsSuccess())
+			{
+			std::ofstream logfile("D:/performSendUsageRealtimeWithKeyResponse.txt");
+			logfile << response.GetBody().AsString() << std::endl;
+			logfile << (int)response.GetHttpStatus() << std::endl;
+			logfile.close();
+			throw HttpError(response);
+			}
+		std::ofstream logfile("D:/performSendUsageRealtimeWithKeyResponse.txt");
+		logfile << response.GetBody().AsString() << std::endl;
+		logfile << (int)response.GetHttpStatus() << std::endl;
+		logfile.close();
+		return folly::makeFuture();
+		});
 	}

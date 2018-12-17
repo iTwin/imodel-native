@@ -11,7 +11,6 @@
 #include <Licensing/Utils/UsageJsonHelper.h>
 #include "Logging.h"
 #include "UsageDb.h"
-
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
@@ -748,23 +747,12 @@ folly::Future<folly::Unit> ClientImpl::SendUsageLogs(BeFileNameCR usageCSV, Utf8
 folly::Future<folly::Unit> ClientImpl::SendUsageRealtime()
 	{
 	LOG.trace("SendUsageRealtime");
-	
-	//std::ofstream logfile("D:/performSendUsageRealtime.txt");
-	
-	// set environment to dev for the time being
-	//auto previousEnvironment = UrlProvider::GetEnvironment();
-	//UrlProvider::SetEnvironment(UrlProvider::Environment::Dev);
 
 	auto url = UrlProvider::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
 
-	//logfile << url << std::endl;
-
-	// set environment back to original
-	//UrlProvider::SetEnvironment(previousEnvironment);
-
 	HttpClient client(nullptr, m_httpHandler);
 	auto uploadRequest = client.CreateRequest(url, "POST");
-	uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + m_accessTokenString);
+	uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + m_accessToken);
 	uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
 
 	// create Json body
@@ -774,11 +762,6 @@ folly::Future<folly::Unit> ClientImpl::SendUsageRealtime()
 		m_clientInfo->GetApplicationVersion(),
 		m_projectId
 	);
-	
-	//auto writer = Json::StyledWriter();
-	//logfile << writer.write(jsonBody) << std::endl;
-	//logfile << jsonBody.ToString() << std::endl;
-	//logfile.close();
 
 	uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody.ToString()));
 
@@ -786,16 +769,8 @@ folly::Future<folly::Unit> ClientImpl::SendUsageRealtime()
 		[=](Response response)
 		{
 		if (!response.IsSuccess()) {
-			/*std::ofstream logfile("D:/performSendUsageRealtimeResponse.txt");
-			logfile << response.GetBody().AsString() << std::endl;
-			logfile << (int)response.GetHttpStatus() << std::endl;
-			logfile.close();*/
 			throw HttpError(response);
 		}
-		/*std::ofstream logfile("D:/performSendUsageRealtimeResponse.txt");
-		logfile << response.GetBody().AsString() << std::endl;
-		logfile << (int)response.GetHttpStatus() << std::endl;
-		logfile.close();*/
 		return folly::makeFuture();
 		});
 	

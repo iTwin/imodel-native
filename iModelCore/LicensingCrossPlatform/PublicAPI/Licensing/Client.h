@@ -58,7 +58,7 @@ public:
 	LICENSING_EXPORT static ClientPtr CreateFree
 	(
 		Utf8String accessToken, /** AccessToken from OIDC */
-		ClientInfoPtr clientInfo, /** A ClientInfoPtr */
+		BeVersion clientVersion, /** A ClientInfoPtr */
 		BeFileNameCR dbPath, /** Path for LicenseClient database */
 		bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
 		Utf8String projectId = "", /** ProjectID string, defaults to an empty string */

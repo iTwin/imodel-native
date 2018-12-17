@@ -47,7 +47,7 @@ IHttpHandlerPtr httpHandler
 ClientPtr Client::CreateFree
 (
 	Utf8String accessToken,
-	ClientInfoPtr clientInfo,
+	BeVersion clientVersion,
 	BeFileNameCR dbPath,
 	bool offlineMode,
 	Utf8String projectId,
@@ -55,7 +55,7 @@ ClientPtr Client::CreateFree
 	IHttpHandlerPtr httpHandler
 )
 	{
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientFreeImpl>(accessToken, clientInfo, dbPath, offlineMode, projectId, featureString, httpHandler)));
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientFreeImpl>(accessToken, clientVersion, dbPath, offlineMode, projectId, featureString, httpHandler)));
 	}
 
 /*--------------------------------------------------------------------------------------+
