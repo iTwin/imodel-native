@@ -39,6 +39,11 @@ public:
 protected:
     explicit CircleProfile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const override;
+
+private:
+    bool ValidateRadius() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CircleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CircleProfile)

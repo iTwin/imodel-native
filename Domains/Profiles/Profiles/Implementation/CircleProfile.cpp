@@ -41,6 +41,32 @@ CircleProfile::CircleProfile (CreateParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CircleProfile::_Validate() const
+    {
+    BentleyStatus status = T_Super::_Validate();
+    if (status != BSISUCCESS)
+        return status;
+
+    if (ValidateRadius())
+        return BSISUCCESS;
+
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CircleProfile::ValidateRadius() const
+    {
+    double const radius = GetRadius();
+    bool const isPositive = std::isfinite (radius) && radius > 0.0;
+
+    return isPositive;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double CircleProfile::GetRadius() const
