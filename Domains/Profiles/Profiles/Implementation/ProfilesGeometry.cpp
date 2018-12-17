@@ -544,4 +544,18 @@ IGeometryPtr ProfilesGeomApi::CreateHollowCircle (HollowCircleProfileCPtr profil
     return IGeometry::Create (curveVector);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateEllipse (EllipseProfileCPtr profile)
+    {
+    DEllipse3d ellipse = DEllipse3d::FromPoints (DPoint3d::From (0.0, 0.0), DPoint3d::From (profile->GetXRadius(), 0.0),
+        DPoint3d::From (0.0, profile->GetYRadius()), 0.0, PI * 2.0);
+
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Inner);
+    curveVector->Add (ICurvePrimitive::CreateArc (ellipse));
+
+    return IGeometry::Create (curveVector);
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE

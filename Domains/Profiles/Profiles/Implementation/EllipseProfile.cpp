@@ -6,7 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
-#include <Profiles/EllipseProfile.h>
+#include <Profiles\EllipseProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -57,6 +58,14 @@ BentleyStatus EllipseProfile::_Validate() const
         return BSISUCCESS;
 
     return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr EllipseProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateEllipse (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

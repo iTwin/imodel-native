@@ -41,6 +41,7 @@ protected:
     explicit EllipseProfile (CreateParams const& params);
 
     virtual BentleyStatus _Validate() const override;
+    virtual IGeometryPtr _CreateGeometry() const override;
 
 private:
     bool ValidateXRadius() const;
