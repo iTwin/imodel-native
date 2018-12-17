@@ -1,0 +1,77 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: DgnV8/BuildDoc.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+# Config
+BENTLEY_DOXYGEN_CONFIG      = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.cfg
+BENTLEY_DOXYGEN_ALIASES     = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen-html-aliases.cfg
+
+DOXYGEN_CONFIG_FILES        = $(BENTLEY_DOXYGEN_CONFIG)
+DOXYGEN_CONFIG_FILES        + $(BENTLEY_DOXYGEN_ALIASES)
+DOXYGEN_CONFIG_FILES        + $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.css
+
+#----------------------------------------------------------------------------------------
+#   Output directory macros
+#----------------------------------------------------------------------------------------
+OutBuildDgnDbSync       = $(OutputRootDir)build/DgnDbSync/
+OutBuildDgnDbSyncDox= $(OutBuildDgnDbSync)dox/
+DOXYGEN_ARTIFACTS= $(OutputRootDir)build/DgnDbSync/DoxygenArtifacts/
+
+PublishApiStamp         = $(SubParts)Delivery/PublishApi.stamp
+DOXYGEN_INPUT           = $(SubParts)Delivery/PublishedApi/
+DOXYGEN_OUTPUT          = $(OutBuildDgnDbSyncDox)
+DOXYGEN_WARN_LOGFILE    = $(DOXYGEN_ARTIFACTS)doxygen-warnings.txt
+
+#----------------------------------------------------------------------------------------
+#   Handle "clean" of all output files
+#----------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) ${DOXYGEN_ARTIFACTS}
+        -$(rmdirRecursiveCmd) ${OutBuildDgnDbSyncDox}
+
+    %return
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Run Doxygen
+#----------------------------------------------------------------------------------------
+$(DOXYGEN_ARTIFACTS)doxygen.cfg : $(PublishApiStamp) $(DOXYGEN_CONFIG_FILES) $(_MakeFileSpec)
+    $(msg)
+    > $(DOXYGEN_ARTIFACTS)doxygen.cfg
+    @INCLUDE = $(BENTLEY_DOXYGEN_CONFIG)
+    @INCLUDE = $(BENTLEY_DOXYGEN_ALIASES)
+    PROJECT_NAME        = "DgnV8Converter C++ API Documentation"
+    WARN_LOGFILE        = $(DOXYGEN_WARN_LOGFILE)
+    QUIET               = $(DOXYGEN_QUIET)
+    INPUT               = $(DOXYGEN_INPUT)
+    OUTPUT_DIRECTORY    = $(DOXYGEN_OUTPUT)
+    HTML_OUTPUT         = $(DOXYGEN_OUTPUT)html/
+    INCLUDE_PATH        = $(DOXYGEN_INPUT)
+    IMAGE_PATH          = $(DOXYGEN_INPUT)images/
+    DOT_PATH            = $(DOXYGEN_DOT_PATH)
+    GENERATE_HTML       = YES
+    GENERATE_XML        = NO
+    GENERATE_HTMLHELP   = NO
+    HHC_LOCATION        =
+    ENABLED_SECTIONS    = BENTLEY_SDK_DgnClient BENTLEY_SDK_PlatformCpp BENTLEY_SDK_All
+    FILE_PATTERNS       = *.doxpage *.h *.r.h
+    <
+    !$(doxygenCmd) $(DOXYGEN_ARTIFACTS)doxygen.cfg
+    ~time
+
+%if $[@readfile $(DOXYGEN_WARN_LOGFILE)] != " "
+    %warn ********************
+    %warn * DOXYGEN Warnings *
+    %warn ********************
+    always:
+        @$(_MakeFilePath)DisplayDoxygenWarnings.py "$(DOXYGEN_WARN_LOGFILE)"
+
+    %warn ********************
+    %error DOXYGEN warnings treated as build error
+%endif

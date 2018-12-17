@@ -1,0 +1,14 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: Dwg/prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+baseDir         = $(SrcRoot)DgnDbSync/
+DwgPubApiSrc    = $(baseDir)PublicAPI/Dwg
+
+always:
+    ~linkdir "$(BuildContext)PublicAPI/Dwg=$(DwgPubApiSrc)"
