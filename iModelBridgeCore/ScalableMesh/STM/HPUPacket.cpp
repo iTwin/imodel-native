@@ -8,7 +8,7 @@
 #include "ScalableMeshPCH.h"
 #include <ImagePP/h/ImageppAPI.h>
 #ifndef VANCOUVER_API
-#include "HPUPacket.h"
+#include "HPUPacket.hpp"
    
 namespace HPU {       
 
@@ -100,41 +100,6 @@ Packet::~Packet ()
 
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @description  Returns an iterator (pointer) to the beginning of the packet data.
-* @bsimethod                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline Packet::iterator Packet::BufferBegin () const
-    {
-    return m_pDataPacket->GetBufferAddress();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Returns an iterator (pointer) to the end of the packet data.
-* @bsimethod                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline Packet::iterator Packet::BufferEnd () const
-    {
-    return m_pDataPacket->GetBufferAddress() + m_pDataPacket->GetDataSize();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Returns a const iterator (pointer) to the beginning of the packet data.
-* @bsimethod                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline Packet::const_iterator Packet::Begin () const
-    {
-    return BufferBegin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Returns a const iterator (pointer) to the end of the packet data.
-* @bsimethod                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline Packet::const_iterator Packet::End () const
-    {
-    return BufferEnd();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @description  Returns a const pointer to the packet data.
