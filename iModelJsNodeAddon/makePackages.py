@@ -93,10 +93,10 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
     # D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows\Support
 
     srcsupportdir = os.path.join(inputProductdir, "Support");
-    srcnodefile = os.path.join(os.path.join(os.path.join(inputProductdir, "Addon"), versionsubdir), "imodeljs.node")
+    srcnNapiFile = os.path.join(os.path.join(os.path.join(inputProductdir, "Addon"), versionsubdir), "napi.dll")
     srcpackagefile = os.path.join(sourceDir, "package.json.template")
 
-    if not os.path.exists(srcnodefile) or not os.path.exists(srcsupportdir) or not os.path.exists(srcpackagefile):
+    if not os.path.exists(srcsupportdir) or not os.path.exists(srcpackagefile):
         print '***'
         print('*** ' + inputProductdir + ' -- invalid or incomplete iModelJsNodeAddon Product.')
         if not os.path.exists(srcnodefile):
@@ -113,7 +113,8 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
     # NB: shutil.copytree insists on creating dstaddondir and will throw an exception if it already exists. That is why we don't call os.makedirs(dest...) here.
     shutil.copytree(srcsupportdir, dstaddondir, False, filterOutUnwantedFiles)
 
-    shutil.copyfile(srcnodefile, dstnodefile)
+    if os.path.exists(srcnNapiFile):
+        shutil.copy(srcnNapiFile, dstaddondir)
 
     shutil.copyfile(srcpackagefile, dstpackagefile)
 

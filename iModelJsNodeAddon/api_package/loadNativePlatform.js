@@ -6,7 +6,7 @@ var formatPackageName = require('./formatPackageName.js').formatPackageName;
 
 // Compute the part of the addon name that corresponds to the platform that we are running on right now
 function getCurrentPlatformPrefix() {
-    if (process.os == "win32") {
+    if (process.platform == "win32") {
         const electronVersion = process.versions.electron;
         if (typeof electronVersion !== "undefined") {
             const electronVersionParts = electronVersion.split(".");

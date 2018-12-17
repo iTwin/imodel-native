@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="VendorAPI" BentleyBuildMakeFile="prewire.mke" >
+        <Bindings>
+            <VendorAPI Domain="Napi"/>
+        </Bindings>
+    </Part>
+
+    <!-- on Windows, builds napi.lib and all three napi.dll (stub, node, and electron), on other platforms builds stub .a and (for non-static builds) .so  -->
+    <Part Name="napi-stub-build" BentleyBuildMakeFile="node-addon-lib.mke">
+        <SubPart PartName="VendorAPI"/>
+    </Part>
+
+    <!-- only on Windows, binds the .lib file which is needed for linking -->
+    <Part Name="napi-lib-win" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="napi-stub-build" />
+        <Bindings>
+            <Libs>StubDelivery/$(stlibprefix)napi$(stlibext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!-- only on non-Windows, binds the stub .a file  -->
+    <Part Name="napi-stub-nonwin" ExcludePlatforms="x64,winrt*">
+        <SubPart PartName="napi-stub-build" />
+        <Bindings>
+            <Libs>StubDelivery/$(stlibprefix)napi$(stlibext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!-- bind the node version of napi.dll on Windows only -->
+    <Part Name="napi-dll-node-win" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="napi-stub-build" />
+        <Bindings>
+            <Files SubPartDirectory="Node" ProductDirectoryName="Addon" ProductSubDirectory="n_10">NodeDelivery/napi.dll</Files>
+        </Bindings>
+    </Part>
+
+    <!-- bind the electron version of napi.dll on Windows only -->
+    <Part Name="napi-dll-electron-win" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="napi-stub-build" />
+        <Bindings>
+          <Files SubPartDirectory="Electron" ProductDirectoryName="Addon" ProductSubDirectory="e_3">ElectronDelivery/napi.dll</Files>
+        </Bindings>
+    </Part>
+
+    <!-- bind the stub .a files  -->
+    <Part Name="napi-stub">
+        <SubPart PartName="napi-lib-win"/>
+        <SubPart PartName="napi-stub-nonwin"/>
+        <Bindings>
+            <Assemblies>StubDelivery/$(shlibprefix)napi$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+</BuildContext>

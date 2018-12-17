@@ -1,0 +1,67 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: napi/node-addon-lib.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+ContextDeliveryDir      = $(BuildContext)StubDelivery/
+appName                 = napi
+CCompPDBName            = $(appName)
+DLM_NAME                = $(appName)
+baseDir                 = $(_MakeFilePath)
+
+o = $(OutputRootDir)build/NapiLib/
+
+cDefsSave =% $[cDefs]
+
+always:
+    !~@mkdir $(o)
+    !~@mkdir $(o)/Node
+    !~@mkdir $(o)/Electron
+
+cDefs + -DEXTERNAL_NAPI=1
+
+NOSTRICT=1
+
+$(o)napi_stub$(oext) : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
+
+objs = $(o)napi_stub$(oext) 
+
+DLM_DEST                = $(o)
+DLM_OBJECT_DEST         = $(o)
+DLM_OBJECT_FILES        = $(objs)
+DLM_EXPORT_OBJS         = $(objs)
+DLM_EXPORT_DEST         = $(o)
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+
+%include $(sharedMki)linkLibrary.mki
+
+%if ($(TARGET_PLATFORM) == "Windows")
+
+cDefs = $(cDefsSave)
+cdefs  + -DBUILD_FOR_NODE=1
+ContextDeliveryDir = $(BuildContext)NodeDelivery/
+o = $(OutputRootDir)build/NapiLib/Node/
+
+$(o)napi_stub$(oext)  : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
+
+objs = $(o)napi_stub$(oext) 
+%include $(sharedMki)linkLibrary.mki
+
+cDefs = $(cDefsSave)
+cDefs  + -DBUILD_FOR_ELECTRON=1
+ContextDeliveryDir  = $(BuildContext)ElectronDelivery/
+o = $(OutputRootDir)build/NapiLib/Electron/
+
+$(o)napi_stub$(oext) : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
+
+objs = $(o)napi_stub$(oext) 
+%include $(sharedMki)linkLibrary.mki
+
+%endif
