@@ -43,6 +43,47 @@ HollowCircleProfile::HollowCircleProfile (CreateParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HollowCircleProfile::_Validate() const
+    {
+    BentleyStatus status = T_Super::_Validate();
+    if (status != BSISUCCESS)
+        return status;
+
+    bool const isRadiusValid = ValidateRadius();
+    bool const isWallThicknessValid = ValidateWallThickness();
+
+    if (isRadiusValid && isWallThicknessValid)
+        return BSISUCCESS;
+
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HollowCircleProfile::ValidateRadius() const
+    {
+    double const radius = GetRadius();
+    bool const isPositive = std::isfinite (radius) && radius > 0.0;
+
+    return isPositive;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HollowCircleProfile::ValidateWallThickness() const
+    {
+    double const wallThickness = GetWallThickness();
+    bool const isPositive = std::isfinite (wallThickness) && wallThickness > 0.0;
+    bool const isLessThanRadius = wallThickness < GetRadius();
+
+    return isPositive && isLessThanRadius;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double HollowCircleProfile::GetRadius() const

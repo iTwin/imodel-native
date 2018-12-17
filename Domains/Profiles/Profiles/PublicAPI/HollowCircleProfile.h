@@ -41,6 +41,12 @@ public:
 protected:
     explicit HollowCircleProfile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const override;
+
+private:
+    bool ValidateRadius() const;
+    bool ValidateWallThickness() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (HollowCircleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (HollowCircleProfile)
