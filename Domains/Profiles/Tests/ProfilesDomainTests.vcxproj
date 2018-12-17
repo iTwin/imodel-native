@@ -58,6 +58,7 @@
     <ClCompile Include="src\CircleProfileTests.cpp" />
     <ClCompile Include="src\CShapeProfileTests.cpp" />
     <ClCompile Include="src\GeometryTests.cpp" />
+    <ClCompile Include="src\HollowCircleProfileTests.cpp" />
     <ClCompile Include="src\IShapeProfileTests.cpp" />
     <ClCompile Include="src\LShapeProfileTests.cpp" />
     <ClCompile Include="src\ProfilesTestCase.cpp" />
