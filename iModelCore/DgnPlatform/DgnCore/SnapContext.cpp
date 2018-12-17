@@ -396,9 +396,14 @@ bool EvaluateInterior(SnapMode snapMode) const
 
         case GeometricPrimitive::GeometryType::Polyface:
             {
-            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*m_hitGeom->GetAsPolyfaceHeader());
-            bool found = false;
-            double tolerance = 1e37 /*fc_hugeVal*/;
+            PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(*m_hitGeom->GetAsPolyfaceHeader());
+            bool                found = false;
+            double              tolerance = 1e37 /*fc_hugeVal*/;
+            DPoint3d            testPointLocal = localPoint;
+            DVec3d              testDir = DVec3d::FromStartEnd(localPoint, m_hitClosePtLocal);
+
+            if (0.0 != testDir.Normalize())
+                testPointLocal.SumOf(localPoint, testDir, 1.0e-3); // Bias test point to side of identified facet for better snap normal...locatation won't be used for a hot snap...
 
             visitor->SetNumWrap(1);
 
@@ -406,7 +411,7 @@ bool EvaluateInterior(SnapMode snapMode) const
                 {
                 DPoint3d thisPoint;
 
-                if (!visitor->TryFindCloseFacetPoint(localPoint, tolerance, thisPoint))
+                if (!visitor->TryFindCloseFacetPoint(testPointLocal, tolerance, thisPoint))
                     continue;
 
                 FacetLocationDetail thisDetail;
@@ -418,11 +423,15 @@ bool EvaluateInterior(SnapMode snapMode) const
                     m_snapCurveDetail.point = thisPoint;
 
                 DVec3d thisNormal;
+                DPoint3d thisCentroid;
+                double thisArea;
 
                 if (thisDetail.TryGetNormal(thisNormal))
                     m_snapNormalLocal.Normalize(thisNormal);
+                else if (visitor->TryGetFacetCentroidNormalAndArea(thisCentroid, thisNormal, thisArea))
+                    m_snapNormalLocal.Normalize(thisNormal);
 
-                tolerance = thisPoint.Distance(localPoint); // Refine tolerance...
+                tolerance = thisPoint.Distance(testPointLocal); // Refine tolerance...
                 found = true;
                 }
 
@@ -1520,9 +1529,10 @@ bool ProcessSingleFacePolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
 bool ProcessPolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
     {
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
+    size_t              readIndex = 0;
     double              tolerance = 1e37 /*fc_hugeVal*/;
-    bool                found = false;
     bool                updateClosePoint = m_closePtLocalCorrected.IsDisconnect();
+    bool                found = false;
 
     visitor->SetNumWrap(1);
 
@@ -1533,31 +1543,32 @@ bool ProcessPolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
         if (!visitor->TryFindCloseFacetPoint(localPoint, tolerance, thisFacePoint))
             continue;
 
-        // Get a "face" containing this facet, a single facet when there are hidden edges isn't what someone would consider a face...
-        bvector<ptrdiff_t> seedReadIndices;
-        bvector<ptrdiff_t> allFaceBlocks;
-        bvector<ptrdiff_t> activeReadIndexBlocks;
+        // Save point on facet to correct "close point" from readPixels...
+        if (updateClosePoint)
+            m_closePtLocalCorrected = thisFacePoint;
 
-        meshData.PartitionByConnectivity(2, allFaceBlocks);
-        seedReadIndices.push_back(visitor->GetReadIndex());
-        PolyfaceHeader::SelectBlockedIndices(allFaceBlocks, seedReadIndices, true, activeReadIndexBlocks);
-
-        bvector<PolyfaceHeaderPtr> perFacePolyfaces;
-
-        meshData.CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
-
-        if (0 != perFacePolyfaces.size() && ProcessSingleFacePolyface(*perFacePolyfaces.front(), localPoint))
-            {
-            // Save point on surface to correct "close point" from readPixels...
-            if (updateClosePoint)
-                m_closePtLocalCorrected = thisFacePoint;
-            found = true;
-            }
-
+        readIndex = visitor->GetReadIndex();
         tolerance = thisFacePoint.Distance(localPoint); // Refine tolerance...
+        found = true;
         }
 
-    return found;
+    if (!found)
+        return false;
+
+    // Get a "face" containing this facet, a single facet when there are hidden edges isn't what someone would consider a face...
+    bvector<ptrdiff_t> seedReadIndices;
+    bvector<ptrdiff_t> allFaceBlocks;
+    bvector<ptrdiff_t> activeReadIndexBlocks;
+
+    meshData.PartitionByConnectivity(2, allFaceBlocks);
+    seedReadIndices.push_back(readIndex);
+    PolyfaceHeader::SelectBlockedIndices(allFaceBlocks, seedReadIndices, true, activeReadIndexBlocks);
+
+    bvector<PolyfaceHeaderPtr> perFacePolyfaces;
+
+    meshData.CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
+
+    return (0 != perFacePolyfaces.size() && ProcessSingleFacePolyface(*perFacePolyfaces.front(), localPoint));
     }
 
 #if defined (BENTLEYCONFIG_PARASOLID)
