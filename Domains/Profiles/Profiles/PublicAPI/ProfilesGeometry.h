@@ -28,6 +28,7 @@ public:
     static IGeometryPtr CreateTShape (TShapeProfileCPtr profile);
     static IGeometryPtr CreateZShape (ZShapeProfileCPtr profile);
     static IGeometryPtr CreateCircle (CircleProfileCPtr profile);
+    static IGeometryPtr CreateHollowCircle (HollowCircleProfileCPtr profile);
 
     };
 

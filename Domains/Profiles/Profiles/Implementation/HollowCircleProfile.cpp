@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\HollowCircleProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -58,6 +59,14 @@ BentleyStatus HollowCircleProfile::_Validate() const
         return BSISUCCESS;
 
     return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr HollowCircleProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateHollowCircle (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

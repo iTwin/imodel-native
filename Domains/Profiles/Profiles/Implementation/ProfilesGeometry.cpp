@@ -516,10 +516,30 @@ IGeometryPtr ProfilesGeomApi::CreateZShape (ZShapeProfileCPtr profile)
 IGeometryPtr ProfilesGeomApi::CreateCircle (CircleProfileCPtr profile)
     {
     DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius());
-    ICurvePrimitivePtr circleCurve = ICurvePrimitive::CreateArc (ellipse);
 
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Inner);
-    curveVector->Add (circleCurve);
+    curveVector->Add (ICurvePrimitive::CreateArc (ellipse));
+
+    return IGeometry::Create (curveVector);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateHollowCircle (HollowCircleProfileCPtr profile)
+    {
+    DEllipse3d outerEllipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius());
+    DEllipse3d innerEllipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius() - profile->GetWallThickness());
+
+    CurveVectorPtr outerCurveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    outerCurveVector->Add (ICurvePrimitive::CreateArc (outerEllipse));
+
+    CurveVectorPtr innerCurveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Inner);
+    innerCurveVector->Add (ICurvePrimitive::CreateArc (innerEllipse));
+
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+    curveVector->Add (outerCurveVector);
+    curveVector->Add (innerCurveVector);
 
     return IGeometry::Create (curveVector);
     }
