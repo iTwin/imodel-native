@@ -22,8 +22,24 @@ struct HollowCircleProfile : ParametricProfile, ICenterLineProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_HollowCircleProfile, ParametricProfile);
     friend struct HollowCircleProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(HollowCircleProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double radius, double wallThickness);
+
+    public:
+        //! Required properties
+        double radius = 0.0;
+        double wallThickness = 0.0;
+        };
+
 protected:
-    explicit HollowCircleProfile (CreateParams const& params) : T_Super (params) {}
+    explicit HollowCircleProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (HollowCircleProfile)
