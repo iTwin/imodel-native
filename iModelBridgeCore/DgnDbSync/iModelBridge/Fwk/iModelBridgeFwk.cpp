@@ -2249,13 +2249,3 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
 
     return *m_registry;
     }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::SetTokenProvider(WebServices::IConnectTokenProviderPtr provider)
-    {
-    if (m_useIModelHub && NULL != m_iModelHubArgs)
-        m_iModelHubArgs->m_tokenProvider = provider;
-    }

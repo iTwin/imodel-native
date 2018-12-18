@@ -155,6 +155,12 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>&
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--server-oidcCallBackUrl="))
+            {
+            m_callBackurl = getArgValue(argv[iArg]);
+            continue;
+            }
+
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized server argument\n", argv[iArg]);
         return BSIERROR;
@@ -185,9 +191,9 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::Validate(int argc, WCharCP argv[])
         return BSIERROR;
         }
 
-    if (m_credentials.GetUsername().empty() || m_credentials.GetPassword().empty())
+    if ((m_credentials.GetUsername().empty() || m_credentials.GetPassword().empty()) && m_callBackurl.empty())
         {
-        GetLogger().fatal("missing server username or password");
+        GetLogger().fatal("missing server username or password or OIDC callback url.");
         return BSIERROR;
         }
 
