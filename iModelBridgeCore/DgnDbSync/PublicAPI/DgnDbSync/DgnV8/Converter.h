@@ -614,6 +614,7 @@ struct Converter
         Utf8String m_pwDataSource;
         //!private
         bool m_keepHostAlive {};
+        bool m_wantDebugCodes {};
     public:
         Params() : m_v8sdkRelativeDir(L"DgnV8") // it's relative to the library's directory
             {
@@ -674,6 +675,8 @@ struct Converter
         bool GetWantProvenanceInBim() const {return m_wantProvenanceInBim;}
         bool GetProcessAffected() const { return m_processAffected; }
         bool GetConvertViewsOfAllDrawings() const {return m_convertViewsOfAllDrawings;}
+        bool GetWantDebugCodes() const { return  m_wantDebugCodes; }
+        void SetWantDebugCodes(bool value) { m_wantDebugCodes = value; }
     };
 
 
