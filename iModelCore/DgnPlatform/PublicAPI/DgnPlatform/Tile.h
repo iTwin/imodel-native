@@ -232,8 +232,8 @@ public:
 
     virtual PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const { return &pf; }
     virtual bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const { return false; }
-    virtual bool CompressMeshQuantization() const { return false; }       // If true a separate primitive will be created for each element ID.  ...Classifiers.
-    virtual bool SeparatePrimitivesById() const { return false; }        // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
+    virtual bool CompressMeshQuantization() const { return false; }                             // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
+    virtual uint64_t GetNodeId(DgnElementId id) const { return 0; }                             // Geometry with same ID may be batched. ..Animation, classifcation).
 
 
     struct PtrComparator
@@ -247,6 +247,7 @@ public:
     };
 };
 
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
 //=======================================================================================
@@ -256,6 +257,7 @@ struct Tree : RefCountedBase, NonCopyableClass
     {
         Model,
         Classifier,
+        Animation,
     };
 
     enum class RootTile : uint8_t
@@ -270,13 +272,16 @@ struct Tree : RefCountedBase, NonCopyableClass
         DgnModelId m_modelId;
         Tree::Type m_type;
         double m_classifierExpansion;
+        DgnElementId m_animationSourceId;
 
         Id() : m_type(Type::Model), m_classifierExpansion(0.0) { }
-        Id(DgnModelId modelId, Tree::Type type, double expansion = 0.0) : m_modelId(modelId), m_type(type), m_classifierExpansion(expansion) { }
+        Id(DgnModelId modelId, Tree::Type type, double expansion = 0.0, DgnElementId animationSourceId = DgnElementId()) : m_modelId(modelId), m_type(type), m_classifierExpansion(expansion), m_animationSourceId(animationSourceId) { }
 
         bool IsValid() const { return m_modelId.IsValid(); }
         bool IsClassifier() const { return Tree::Type::Classifier == m_type; }
+        bool IsAnimation() const { return Tree::Type::Animation == m_type; }
         double GetClassifierExpansion() const { BeAssert(IsClassifier()); return m_classifierExpansion; }
+        DgnElementId GetAnimationSourceId() const { BeAssert(IsAnimation()); return m_animationSourceId; }
         Tree::Type GetType() const { return m_type; }
 
         DGNPLATFORM_EXPORT Utf8String ToString() const;

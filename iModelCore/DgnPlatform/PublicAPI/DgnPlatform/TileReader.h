@@ -172,7 +172,7 @@ struct GltfReader
 
     BentleyStatus ReadFeatures(Render::Primitives::MeshR mesh, Json::Value const& primitiveValue);
 
-    Render::Primitives::MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, Render::FeatureTableP featureTable);
+    Render::Primitives::MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, Render::FeatureTableP featureTable, size_t nodeIndex);
 
     // Initializes the members m_binaryData, m_materialValues, m_accessors, and m_bufferViews; and returns the JSON representation of the meshes.
     ReadStatus InitGltf(Json::Value& meshValues);
