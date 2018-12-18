@@ -41,6 +41,13 @@ public:
 protected:
     explicit RoundedRectangleProfile (CreateParams const& params);
 
+    virtual bool _Validate() const override;
+
+private:
+    bool ValidateWidth() const;
+    bool ValidateDepth() const;
+    bool validateRoundingRadius() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (RoundedRectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (RoundedRectangleProfile)

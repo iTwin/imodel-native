@@ -45,6 +45,51 @@ RoundedRectangleProfile::RoundedRectangleProfile (CreateParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RoundedRectangleProfile::_Validate() const
+    {
+    if (!T_Super::_Validate())
+        return false;
+
+    bool const isWidthValid = ValidateWidth();
+    bool const isDepthValid = ValidateDepth();
+    bool const isRoundingRadiusValid = validateRoundingRadius();
+
+    return isWidthValid && isDepthValid && isRoundingRadiusValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RoundedRectangleProfile::ValidateWidth() const
+    {
+    double const width = GetWidth();
+
+    return std::isfinite (width) && width > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RoundedRectangleProfile::ValidateDepth() const
+    {
+    double const depth = GetDepth();
+
+    return std::isfinite (depth) && depth > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RoundedRectangleProfile::validateRoundingRadius() const
+    {
+    double const roundingRadius = GetRoundingRadius();
+
+    return std::isfinite (roundingRadius) && roundingRadius > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RoundedRectangleProfile::GetWidth() const
