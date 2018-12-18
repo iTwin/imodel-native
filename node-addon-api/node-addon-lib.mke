@@ -44,7 +44,7 @@ DLM_NOENTRY             = 1
 
 %if ($(TARGET_PLATFORM) == "Windows")
 
-LIB_NO_CONTEXT_LINK = 1
+ContextDeliveryDir = $(BuildContext)Delivery/Node/
 DLM_NO_IMPLIB = 1
 
 cDefs = $(cDefsSave)
@@ -56,9 +56,7 @@ $(o)napi_stub$(oext)  : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
 objs = $(o)napi_stub$(oext) 
 %include $(sharedMki)linkLibrary.mki
 
-always: 
-    ~linkfile $(ContextDeliveryDir)napi.dll-node=$(o)napi.dll
-
+ContextDeliveryDir = $(BuildContext)Delivery/Electron/
 cDefs = $(cDefsSave)
 cDefs  + -DBUILD_FOR_ELECTRON=1
 o = $(OutputRootDir)build/NapiLib/Electron/
@@ -67,8 +65,5 @@ $(o)napi_stub$(oext) : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
 
 objs = $(o)napi_stub$(oext) 
 %include $(sharedMki)linkLibrary.mki
-
-always: 
-    ~linkfile $(ContextDeliveryDir)napi.dll-electron=$(o)napi.dll
 
 %endif

@@ -30,18 +30,11 @@
     </Part>
 
     <!-- bind the Node version of napi.dll on Windows only -->
-    <Part Name="napi-dll-node-win" OnlyPlatforms="x64,winrt*">
+    <Part Name="napi-dll-win" OnlyPlatforms="x64,winrt*">
         <SubPart PartName="napi-stub-build" />
         <Bindings>
-            <Files ProductDirectoryName="Addon">Delivery/napi.dll-node</Files>
-        </Bindings>
-    </Part>
-
-    <!-- bind the Electron version of napi.dll on Windows only -->
-    <Part Name="napi-dll-electron-win" OnlyPlatforms="x64,winrt*">
-        <SubPart PartName="napi-stub-build" />
-        <Bindings>
-            <Files ProductDirectoryName="Addon">Delivery/napi.dll-electron</Files>
+            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="Node" SubPartDirectory="Node">Delivery/Node/napi.dll</Files>
+            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="Electron" SubPartDirectory="Electron">Delivery/Electron/napi.dll</Files>
         </Bindings>
     </Part>
 
