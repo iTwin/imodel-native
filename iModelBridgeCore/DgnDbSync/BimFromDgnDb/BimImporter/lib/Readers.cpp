@@ -893,7 +893,7 @@ BentleyStatus GeometryReader::_OnInstanceCreated(ECN::IECInstanceR ecInstance)
     if (geomValue.IsNull())
         return SUCCESS;
     ByteCP geomBlob = geomValue.GetBinary(size);
-    m_geomStream.Append((uint8_t*) geomBlob, (uint32_t) size);
+    m_geomStream.Append((uint8_t const*) geomBlob, (uint32_t) size);
 
     ECValue empty;
     empty.SetIsNull(true);

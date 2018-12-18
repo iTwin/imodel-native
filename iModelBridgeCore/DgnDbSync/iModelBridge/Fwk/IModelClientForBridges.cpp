@@ -98,9 +98,9 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
     m_args(args)
     {
     Tasks::AsyncError serror;
-    if (nullptr != args.m_tokenProvider)
+    if (!args.m_callBackurl.empty())
         {
-        m_oidcMgr = OidcSignInManagerPtr(new OidcSignInManager(args.m_tokenProvider));
+        m_oidcMgr = OidcSignInManagerPtr(new OidcSignInManager(args.m_callBackurl));
         m_client = ClientHelper::GetInstance()->SignInWithManager(m_oidcMgr);
         }
     else

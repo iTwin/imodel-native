@@ -312,6 +312,20 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
         ResourceUpdateCaller rCaller(*docAccessor);
         DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(rCaller);
         }
+    for (; argc > 0; argc--, argv++)
+        {
+        WCharCP  thisArg = *argv;
+        if ((*thisArg != '-') || (*(thisArg + 1) != '-'))
+            continue;
+        thisArg = thisArg + 2;
+
+        WString tmpString(thisArg);
+        tmpString.ToUpper();
+        if (0 == wcsncmp(tmpString.c_str(), L"SET-DEBUGCODES", 17))
+            {
+            _GetConverterParams().SetWantDebugCodes(true);
+            }
+        }
     return SUCCESS;
     }
 
@@ -415,6 +429,12 @@ iModelBridge::CmdLineArgStatus RootModelConverterApp::_ParseCommandLineArg(int i
         return CmdLineArgStatus::Success;
         }
 
+    if (0 == wcscmp(argv[iArg], L"--set-DebugCodes"))
+        {
+        m_params.SetWantDebugCodes(true);
+        return CmdLineArgStatus::Success;
+        }
+
     return T_Super::_ParseCommandLineArg(iArg, argc, argv);
     }
 
@@ -491,6 +511,7 @@ BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
     m_converter.reset(new RootModelConverter(m_params));
     m_converter->SetSkipEContent(skipECData);
     m_converter->SetDgnDb(db);
+    m_converter->SetWantDebugCodes(m_params.GetWantDebugCodes());
     CreateSyncInfoIfNecessary();
     return m_converter->AttachSyncInfo();
     }

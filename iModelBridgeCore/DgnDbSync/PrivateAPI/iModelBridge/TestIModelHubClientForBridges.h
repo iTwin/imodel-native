@@ -216,7 +216,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
 
         // *** TBD: test for expected changes
         printf("CaptureChangeset contains_schema_changes? %d user:[%s] desc:[%s]\n", changeSet->ContainsSchemaChanges(*db), changeSet->GetUserName().c_str(), changeSet->GetSummary().c_str());
-        changeSet->Dump(*db);
+        //changeSet->Dump(*db);
         return changeSet;
         }
 

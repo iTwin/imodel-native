@@ -11,7 +11,7 @@
 #include "OidcSignInManager.h"
 
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
-
+#include "OidcTokenProvider.h"
 USING_NAMESPACE_BENTLEY_DGN
 
 /*--------------------------------------------------------------------------------------+
@@ -94,8 +94,7 @@ WebServices::AuthenticationHandlerPtr OidcSignInManager::_GetAuthenticationHandl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-OidcSignInManager::OidcSignInManager(WebServices::IConnectTokenProviderPtr m_tokenProvider)
-    :m_tokenProvider(m_tokenProvider)
+OidcSignInManager::OidcSignInManager(Utf8StringCR callBackUrl)
     {
-
+    m_tokenProvider = std::make_shared< OidcTokenProvider>(OidcTokenProvider(callBackUrl));
     }
