@@ -53,6 +53,7 @@ constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a s
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 // unused - constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 static const Utf8String s_classifierIdPrefix("C:");
+static const Utf8String s_animationIdPrefix("A:");
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -82,11 +83,28 @@ private:
     DRange3d m_range;
 
     bool CompressMeshQuantization() const final { return true; }
-    bool SeparatePrimitivesById() const final { return true; }
     PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const final;
     bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const final;
+    virtual uint64_t GetNodeId(DgnElementId elementId) const final { return elementId.GetValue(); }                           
+
 public:
     ClassificationLoader(Tree& tree, ContentIdCR contentId);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     12/18
+//=======================================================================================
+struct AnimationLoader : Loader
+{
+    DEFINE_T_SUPER(Loader);
+private:
+    bmap<uint64_t, uint64_t>    m_nodeMap;
+
+    uint64_t GetNodeId(DgnElementId elementId) const final { auto found = m_nodeMap.find(elementId.GetValue()); return found == m_nodeMap.end() ? 0 : found->second; }
+
+
+public:
+    AnimationLoader(Tree& tree, ContentIdCR contentId);
 };
 
 //=======================================================================================
@@ -136,14 +154,14 @@ struct ElementCollector : RangeIndex::Traverser
 {
     typedef bmultimap<double, DgnElementId, std::greater<double>> Entries;
 private:
-    Entries         m_entries;
-    FBox3d          m_range;
-    double          m_minRangeDiagonalSquared;
-    uint32_t        m_maxElements;
-    LoaderCR        m_loader;
-    size_t          m_numSkipped = 0;
-    bool            m_aborted = false;
-    bool            m_is2d;
+    Entries             m_entries;
+    FBox3d              m_range;
+    double              m_minRangeDiagonalSquared;
+    uint32_t            m_maxElements;
+    LoaderCR            m_loader;
+    size_t              m_numSkipped = 0;
+    bool                m_aborted = false;
+    bool                m_is2d;
 
     bool CheckStop() { return m_aborted || (m_aborted = m_loader.IsCanceled()); }
 
@@ -1289,10 +1307,17 @@ void Tree::CancelAllTileLoads()
 +---------------+---------------+---------------+---------------+---------------+------*/
 LoaderPtr Tree::CreateLoader(ContentIdCR contentId)
     {
-    if (IsClassifier())
-        return new ClassificationLoader(*this, contentId);
-    else
-        return new Loader(*this, contentId);
+    switch (GetType())
+        {
+        case Type::Classifier:
+            return new ClassificationLoader(*this, contentId);
+
+        case Type::Animation:
+            return new AnimationLoader(*this, contentId);
+
+        default:
+            return new Loader(*this, contentId);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1326,10 +1351,15 @@ ContentCPtr Tree::RequestContent(ContentIdCR contentId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tree::Id::GetPrefixString() const
     {
-    if (!IsClassifier())
-        return Utf8String();
+    Utf8String      prefix;
 
-    return s_classifierIdPrefix + Utf8PrintfString("%f_", m_classifierExpansion);
+    if (IsAnimation())
+        prefix = s_animationIdPrefix + m_animationSourceId.ToHexStr() + "_";
+
+    if (IsClassifier())
+        prefix += s_classifierIdPrefix + Utf8PrintfString("%f_", m_classifierExpansion);
+
+    return prefix;
     }
     
 
@@ -1346,21 +1376,34 @@ Utf8String Tree::Id::ToString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tree::Id Tree::Id::FromString(Utf8StringCR str)
     {
-    auto type = str.StartsWith(s_classifierIdPrefix.c_str()) ? Tree::Type::Classifier : Tree::Type::Model;
     Utf8String idStr = str;
-    double      classifierExpansion = 0.0;
-    if (Tree::Type::Classifier== type)
+    double classifierExpansion = 0.0;
+    DgnElementId animationSourceId;
+    auto type = idStr.StartsWith(s_classifierIdPrefix.c_str()) ? Tree::Type::Classifier : (idStr.StartsWith(s_animationIdPrefix.c_str()) ? Tree::Type::Animation : Tree::Type::Model);
+
+    if (Tree::Type::Classifier == type)
         {
         double      value;
         size_t      endPrefix = str.find("_");
-        if (1 == sscanf(str.c_str()+ s_classifierIdPrefix.size(), "%lf", &value))
+        if (1 == sscanf(str.c_str() + s_classifierIdPrefix.size(), "%lf", &value))
             classifierExpansion = value;
 
         idStr.erase(0, endPrefix+1);
         }
 
+    if (Tree::Type::Animation == type)
+        {
+        size_t      endPrefix = str.find("_");
+        uint64_t    sourceId;
+
+        if (1 == sscanf(str.c_str() + s_animationIdPrefix.size(), "%" SCNu64, &sourceId))
+            animationSourceId = DgnElementId(sourceId);
+
+        idStr.erase(0, endPrefix+1);
+        }
+
     DgnModelId modelId(BeInt64Id::FromString(idStr.c_str()).GetValue());
-    return Id(modelId, type, classifierExpansion);
+    return Id(modelId, type, classifierExpansion, animationSourceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1406,6 +1449,7 @@ Loader::~Loader()
     {
     //
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
@@ -1700,6 +1744,43 @@ PolyfaceHeaderPtr ClassificationLoader::Preprocess(PolyfaceHeaderR pf) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+AnimationLoader::AnimationLoader(TreeR tree, ContentIdCR contentId) :  T_Super(tree, contentId) 
+    {
+    tree.GetDbMutex().lock();
+    auto displayStyle = tree.GetDgnDb().Elements().Get<DisplayStyle>(tree.GetId().GetAnimationSourceId());
+    tree.GetDbMutex().unlock();
+
+    if (!displayStyle.IsValid())
+        return;
+
+    auto schedule = displayStyle->GetStyle("scheduleScript");
+    if (schedule.isNull())
+        return;
+
+    for (auto& modelTimeline : schedule)
+        {
+        if (modelTimeline["modelId"].asUInt64() == tree.GetModelId().GetValue())
+            {
+            uint64_t nodeIndex = 0;
+            auto& elementTimelines = modelTimeline["elementTimelines"];
+            for (auto& elementTimeline : elementTimelines)
+                {
+                nodeIndex++;
+                if (elementTimeline.isMember("elementIds") &&                                                                                                                                            
+                    (elementTimeline.isMember("transformTimeline") || elementTimeline.isMember("cuttingPlaneTimeline")))
+                    {
+                    auto& elementIds = elementTimeline["elementIds"];
+                    for (auto& elementId : elementIds)
+                       m_nodeMap.Insert(elementId.asUInt64(), nodeIndex);
+                    }
+                }
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**                                             
 * @bsimethod                                                    Ray.Bentley     08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void addPolyfaceQuad(PolyfaceHeaderR polyface, PolyfaceCoordinateMapR coordinateMap, int32_t* normalIndices, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR p2, DPoint3dCR p3)
@@ -1713,7 +1794,7 @@ static void addPolyfaceQuad(PolyfaceHeaderR polyface, PolyfaceCoordinateMapR coo
 
     polyface.AddIndexedFacet(3, indices0, normalIndices);
     polyface.AddIndexedFacet(3, indices1, normalIndices);
-    }
+    }                                                                                                                                                                                                                                                
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/18
@@ -2344,7 +2425,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     bool                anyContributed = false;
     uint32_t            fillColor = displayParams.GetFillColor();
     DgnDbR              db = m_loader.GetDgnDb();
-    uint64_t            keyElementId = m_loader.GetLoader().SeparatePrimitivesById() ? elemId.GetValue() : 0; // Create separate primitives per element if classifying.
+    uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId); // Create separate primitives per element if classifying.
     MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
     MeshBuilderR        builder = GetMeshBuilder(key);
 
