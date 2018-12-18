@@ -166,12 +166,6 @@ $(o)ScalableMeshV8Utilities$(oext):  $(baseDir)ScalableMeshV8Utilities.cpp $(Dgn
 nonPortableObjects =% $(MultiCompileObjectList)
 cppObjects + $(nonPortableObjects)
 
-# A workaround for transitioning from RealDWG2017 to 2018, to allow both work for PRG and developers.
-RDVSuffix = 21
-%if exists($(DgnPlatformV8LibDir)acdb22.lib)
-RDVSuffix = 22
-%endif
-
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------

@@ -2041,6 +2041,8 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
         for (DgnV8Api::DgnECInstance* v8Instance : DgnV8Api::DgnECManager::GetManager().FindInstances(*scope, GetSelectAllV8ECQuery()))
             {
             ECClassName v8ClassName(v8Instance->GetClass());
+            if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3))
+                v8ClassName = ECClassName("EWR", v8ClassName.GetClassName());
 
             BisConversionRule conversionRule;
             bool hasSecondary;
@@ -2318,6 +2320,9 @@ DgnClassId Converter::_ComputeElementClass(DgnV8EhCR v8eh, V8ElementECContent co
         elementClassName = ECClassName(ecContent.m_primaryV8Instance->GetClass());                          
     else
         elementClassName = BisConversionRuleHelper::GetElementBisBaseClassName(ecContent.m_elementConversionRule);
+
+    if (0 == BeStringUtilities::Strnicmp(elementClassName.GetSchemaName(), "EWR", 3))
+        elementClassName = ECClassName("EWR", elementClassName.GetClassName());
 
     ECN::ECClassId classId = m_dgndb->Schemas().GetClassId(elementClassName.GetSchemaName(), elementClassName.GetClassName());
     return DgnClassId(classId);
