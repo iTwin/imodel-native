@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\RectangleProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -54,6 +55,14 @@ bool RectangleProfile::_Validate() const
     bool const isDepthValid = ValidateDepth();
 
     return isWidthValid && isDepthValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr RectangleProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateRectangle (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

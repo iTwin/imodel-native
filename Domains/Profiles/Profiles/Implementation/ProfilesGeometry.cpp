@@ -558,4 +558,26 @@ IGeometryPtr ProfilesGeomApi::CreateEllipse (EllipseProfileCPtr profile)
     return IGeometry::Create (curveVector);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateRectangle (RectangleProfileCPtr profile)
+    {
+    double const halfWidth = profile->GetWidth() / 2.0;
+    double const halfDepth = profile->GetDepth() / 2.0;
+
+    DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
+    DPoint3d const topRight = { halfWidth, halfDepth, 0.0 };
+    DPoint3d const bottomRight = { halfWidth, -halfDepth, 0.0 };
+    DPoint3d const bottomLeft = { -halfWidth, -halfDepth, 0.0 };
+
+    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (topLeft, topRight);
+    ICurvePrimitivePtr rightLine = ICurvePrimitive::CreateLine (topRight, bottomRight);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (bottomLeft, topLeft);
+
+    bvector<ICurvePrimitivePtr> orderedCurves = { topLine, rightLine, bottomLine, leftLine };
+    return createGeometryFromPrimitiveArray (orderedCurves);
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE
