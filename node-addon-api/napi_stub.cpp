@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "napi/node_api.h"
+#include "Napi/node_api.h"
 #include <signal.h>
 #include <stdlib.h>
 
