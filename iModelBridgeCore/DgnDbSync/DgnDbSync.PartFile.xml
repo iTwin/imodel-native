@@ -420,6 +420,7 @@
         <SubPart PartName="Planning"        PartFile="Planning"         Repository="DgnDomains-Planning"/>
         <SubPart PartName="Raster"              PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="BimFromDgnDbPublicApi"/>
         <Bindings>

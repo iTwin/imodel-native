@@ -15,6 +15,7 @@
 #include <Raster/RasterApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <ThreeMx/ThreeMxApi.h>
+#include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 
 #include <BimFromDgnDb/BimFromJson.h>
 #include "BimFromJsonImpl.h"
@@ -26,6 +27,7 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_PLANNING
 USING_NAMESPACE_BENTLEY_RASTER
 USING_NAMESPACE_BENTLEY_POINTCLOUD
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
 BEGIN_BIM_FROM_DGNDB_NAMESPACE
 struct PCQueue
@@ -71,6 +73,7 @@ BimFromJson::BimFromJson(const wchar_t* bimPath) : m_outputPath(bimPath), m_impo
     DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
 
     }
 
