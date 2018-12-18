@@ -633,6 +633,7 @@ static double s_firstNodeSearchingDelay = (double)1 / 60 * CLOCKS_PER_SEC;
     static bool s_clearGeometry = true;
 #endif
 
+
 Dgn::TileTree::Tile::SelectParent SMNode::SelectViewTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args, bool& parentSelected, clock_t& startTime, IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const
     {
     DgnDb::VerifyClientThread();
@@ -660,6 +661,14 @@ Dgn::TileTree::Tile::SelectParent SMNode::SelectViewTiles(bvector<Dgn::TileTree:
         return SelectParent::No;
         }
 
+    if (viewStatus == SMNodeViewStatus::NotLoaded && m_3smModel->m_smPtr->IsCesium3DTiles())
+        {
+        assert(m_parent != nullptr);
+        args.InsertMissing(*this);
+        parentSelected = true;
+        return SelectParent::Yes;
+        }
+    
     if ((clock() - startTime) > s_firstNodeSearchingDelay && (m_parent != nullptr) && m_parent->IsReady() && m_parent->_HasGraphics())
         {
         args.InsertMissing(*this);
@@ -743,7 +752,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::SelectViewTiles(bvector<Dgn::TileTree:
         }
 
     assert(viewStatus == SMNodeViewStatus::TooCoarse);
-    //if (viewStatus == SMNodeViewStatus::TooCoarse)        
+      
     bool drawParent = false;
 
     auto children = _GetChildren(true);
