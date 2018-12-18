@@ -107,7 +107,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         auto projectIDStartPos = url.find(L"S3MXECPlugin--") + 14;
         auto projectIDEndPos = url.find_first_of(L"/", projectIDStartPos);
         auto projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
-        BeAssert(projectID.Equals(this->m_projectID.c_str()));
+        //BeAssert(projectID.Equals(this->m_projectID.c_str()));
         }
     else if (url.ContainsI(L"blob.core.windows.net"))
         { // Direct link to Azure
