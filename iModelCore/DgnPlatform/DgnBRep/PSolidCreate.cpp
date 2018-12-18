@@ -1684,7 +1684,7 @@ BentleyStatus   PSolidGeom::BodyFromCone (PK_BODY_t& bodyTag, RotMatrixCR rMatri
         {
         MSBsplineSurface  surface;
 
-        if (SUCCESS != bspconv_coneToSurface (&surface, topRadius, bottomRadius, &rMatrix, (DPoint3dP) &topCenter, (DPoint3dP) &bottomCenter))
+        if (SUCCESS != bspconv_coneToSurface (&surface, topRadius, bottomRadius, &rMatrix, const_cast<DPoint3dP>(&topCenter), const_cast<DPoint3dP>(&bottomCenter)))
             return ERROR;
 
         StatusInt   status;

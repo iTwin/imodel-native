@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidTopoId.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -319,7 +319,7 @@ int PSolidTopoId::EntityAttribCompare (PK_ENTITY_t entityTag1, PK_ENTITY_t entit
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int entityAttribCompare (const void* entity1P, const void* entity2P)
     {
-    return PSolidTopoId::EntityAttribCompare (*((PK_ENTITY_t*) entity1P), *((PK_ENTITY_t*) entity2P));
+    return PSolidTopoId::EntityAttribCompare (*((PK_ENTITY_t const*) entity1P), *((PK_ENTITY_t const*) entity2P));
     }
 
 /*---------------------------------------------------------------------------------**//**

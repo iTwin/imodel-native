@@ -566,7 +566,7 @@ IBRepEntityCR   entity
         SUCCESS != pki_combine_memory_blocks(block))
         return ERROR;
 
-    *ppBuffer  = (uint8_t*) block->bytes;
+    *ppBuffer  = const_cast<uint8_t*>((uint8_t const*)block->bytes);
     bufferSize = block->n_bytes;
 
     return SUCCESS;
