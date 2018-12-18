@@ -55,9 +55,6 @@
     <Filter Include="Src\SinglePerimeterProfiles\LetterShapes">
       <UniqueIdentifier>{54eb5943-5be5-40f3-ab8e-603f47ac4ac7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Src\Utils">
-      <UniqueIdentifier>{82425aeb-39e9-40ca-9105-113217e4695f}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Profiles.mke">
@@ -187,6 +184,9 @@
     <ClCompile Include="Implementation\CustomCardinalPointsAspect.cpp">
       <Filter>Src\Aspects</Filter>
     </ClCompile>
+    <ClCompile Include="Implementation\ProfilesGeometry.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Implementation\ProfilesInternal.h">
@@ -302,6 +302,9 @@
     </ClInclude>
     <ClInclude Include="PublicAPI\CustomCardinalPointsAspect.h">
       <Filter>PublicAPI\Aspects</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ProfilesGeometry.h">
+      <Filter>PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
