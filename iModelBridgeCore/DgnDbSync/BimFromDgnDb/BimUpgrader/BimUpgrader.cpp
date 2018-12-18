@@ -220,7 +220,7 @@ BentleyStatus BimUpgrader::_ParseCommandLine(WStringR errmsg, int argc, WCharCP 
             continue;
             }
 
-        if (argv[iArg] == wcsstr(argv[iArg], L"--compress="))
+        if (argv[iArg] == wcsstr(argv[iArg], L"--compress"))
             {
             m_compress = true;
             continue;

@@ -30,16 +30,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="BaseCorridorElement__LinElemToLinElemStartEndDistanceRule_Partial" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Target>
-            <ECCustomAttributes>
-                <DropConstraints xmlns="ECv3ConversionAttributes.01.00">
-                    <Drop>LinElemToLinElemStartEndDistanceRuleElementAspect</Drop>
-                </DropConstraints>
-            </ECCustomAttributes>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="BaseCorridorRule__LinearEntity_Reference" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <Source>
             <ECCustomAttributes>

@@ -89,9 +89,12 @@ BECN::IECInstancePtr ElementConverter::Transform(ECObjectsV8::IECInstance const&
 //---------------------------------------------------------------------------------------
 BECN::ECClassCP ElementConverter::GetDgnDbClass(ECObjectsV8::IECInstance const& v8Instance, Utf8CP aspectClassSuffix) const
     {
-    ECObjectsV8::ECClassCR aspectClass = v8Instance.GetClass();
-    Utf8String schemaName(aspectClass.GetSchema().GetName().c_str());
-    Utf8String className(aspectClass.GetName().c_str());
+    ECObjectsV8::ECClassCR elementClass = v8Instance.GetClass();
+    Utf8String schemaName(elementClass.GetSchema().GetName().c_str());
+    if (schemaName.StartsWith("EWR"))
+        schemaName.AssignOrClear("EWR");
+
+    Utf8String className(elementClass.GetName().c_str());
     if (aspectClassSuffix != nullptr)
         className.append(aspectClassSuffix);
 
