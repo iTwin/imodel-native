@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaCopyTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -131,21 +131,31 @@ TEST_F(SchemaCopyTest, Schema_Success)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Kyle.Abramowitz    02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaCopyTest, CopiedSchemaShouldAlwaysHaveOriginalXmlVersionSetToLatest)
+TEST_F(SchemaCopyTest, CopiedSchemaDoesNotPersistOriginalSchemaXMLVersion)
     {
-    uint32_t latestMajor;
-    uint32_t latestMinor;
-
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::Latest));
+    EXPECT_EQ(3, m_sourceSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_sourceSchema->GetOriginalECXmlVersionMinor());
+
     CopySchema();
-    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::V3_1);
-    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
-    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+    EXPECT_EQ(3, m_targetSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_targetSchema->GetOriginalECXmlVersionMinor());
 
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::V2_0));
+    EXPECT_EQ(3, m_sourceSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_sourceSchema->GetOriginalECXmlVersionMinor());
+
     CopySchema();
-    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
-    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+    EXPECT_EQ(3, m_targetSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_targetSchema->GetOriginalECXmlVersionMinor());
+
+    m_sourceSchema->SetOriginalECXmlVersion(2, 0);
+    EXPECT_EQ(2, m_sourceSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(0, m_sourceSchema->GetOriginalECXmlVersionMinor());
+
+    CopySchema();
+    EXPECT_EQ(3, m_targetSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_targetSchema->GetOriginalECXmlVersionMinor());
     }
 
 /*---------------------------------------------------------------------------------**//**

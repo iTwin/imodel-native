@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1863,6 +1863,9 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     status = CreateSchema(schemaOut,  GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
     if (ECObjectsStatus::Success != status)
         return status;
+
+    // We intentionally do not copy original ECXML version because ... (maybe write something here or just don't, not sure)
+    // schemaOut->SetOriginalECXmlVersion(GetOriginalECXmlVersionMajor(), GetOriginalECXmlVersionMinor());
 
     schemaOut->SetDescription(GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
