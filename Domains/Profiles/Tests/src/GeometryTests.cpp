@@ -79,6 +79,8 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "HollowCircle", 3.0, 0.5));
     InsertProfileGeometry<EllipseProfile> (EllipseProfile::CreateParams (GetModel(), "Ellipse_BiggerXRadius", 3.0, 2.0));
     InsertProfileGeometry<EllipseProfile> (EllipseProfile::CreateParams (GetModel(), "Ellipse_BiggerYRadius", 2.0, 3.0));
+
+    InsertProfileGeometry<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "Rectangle", 6.0, 4.0), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
