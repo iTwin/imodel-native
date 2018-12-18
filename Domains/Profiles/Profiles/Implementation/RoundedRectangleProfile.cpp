@@ -85,8 +85,11 @@ bool RoundedRectangleProfile::ValidateDepth() const
 bool RoundedRectangleProfile::validateRoundingRadius() const
     {
     double const roundingRadius = GetRoundingRadius();
+    bool const isPositive = std::isfinite (roundingRadius) && roundingRadius > 0.0;
+    bool const isLessOrEqualToHalfWidth = roundingRadius <= GetWidth() / 2.0;
+    bool const isLessOrEqualToHalfDepth = roundingRadius <= GetDepth() / 2.0;
 
-    return std::isfinite (roundingRadius) && roundingRadius > 0.0;
+    return isPositive && isLessOrEqualToHalfWidth && isLessOrEqualToHalfDepth;
     }
 
 /*---------------------------------------------------------------------------------**//**
