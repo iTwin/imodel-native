@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------
 DEBUG_POLICY = 1
-PolicyFile = $(SrcRoot)licensingcrossplatform/mki/AssertLicensingCorePolicy.mki
+PolicyFile = $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/mki/AssertLicensingCorePolicy.mki
 %include mdl.mki
 
 
