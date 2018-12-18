@@ -46,19 +46,35 @@ void HollowRectangleProfile::SetDepth (double val)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double HollowRectangleProfile::GetFilletRadius() const
+double HollowRectangleProfile::GetInnerFilletRadius() const
     {
-    return GetPropertyValueDouble (PRF_PROP_HollowRectangleProfile_FilletRadius);
+    return GetPropertyValueDouble (PRF_PROP_HollowRectangleProfile_InnerFilletRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HollowRectangleProfile::SetFilletRadius (double val)
+void HollowRectangleProfile::SetInnerFilletRadius (double val)
     {
-    SetPropertyValue (PRF_PROP_HollowRectangleProfile_FilletRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_HollowRectangleProfile_InnerFilletRadius, ECN::ECValue (val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double HollowRectangleProfile::GetOuterFilletRadius() const
+    {
+    return GetPropertyValueDouble (PRF_PROP_HollowRectangleProfile_OuterFilletRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HollowRectangleProfile::SetOuterFilletRadius (double val)
+    {
+    SetPropertyValue (PRF_PROP_HollowRectangleProfile_OuterFilletRadius, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

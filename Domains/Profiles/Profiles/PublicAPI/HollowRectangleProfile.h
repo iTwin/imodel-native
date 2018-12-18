@@ -38,8 +38,11 @@ public:
     PROFILES_EXPORT double GetDepth() const;
     PROFILES_EXPORT void SetDepth (double val);
 
-    PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius (double val);
+    PROFILES_EXPORT double GetInnerFilletRadius() const;
+    PROFILES_EXPORT void SetInnerFilletRadius (double val);
+
+    PROFILES_EXPORT double GetOuterFilletRadius() const;
+    PROFILES_EXPORT void SetOuterFilletRadius (double val);
 
     }; // HollowRectangleProfile
 
