@@ -21,8 +21,25 @@ struct RoundedRectangleProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_RoundedRectangleProfile, ParametricProfile);
     friend struct RoundedRectangleProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(RoundedRectangleProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double roundingRadius);
+
+    public:
+        //! Required properties
+        double width = 0.0;
+        double depth = 0.0;
+        double roundingRadius = 0.0;
+        };
+
 protected:
-    explicit RoundedRectangleProfile (CreateParams const& params) : T_Super (params) {}
+    explicit RoundedRectangleProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (RoundedRectangleProfile)

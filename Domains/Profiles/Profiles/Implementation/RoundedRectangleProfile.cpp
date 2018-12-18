@@ -14,6 +14,37 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (RoundedRectangleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RoundedRectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RoundedRectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double roundingRadius)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , width (width)
+    , depth (depth)
+    , roundingRadius (roundingRadius)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RoundedRectangleProfile::RoundedRectangleProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetWidth (params.width);
+    SetDepth (params.depth);
+    SetRoundingRadius (params.roundingRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RoundedRectangleProfile::GetWidth() const
