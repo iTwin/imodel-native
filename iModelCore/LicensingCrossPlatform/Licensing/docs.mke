@@ -1,0 +1,46 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Licensing/docs.mke $
+#
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+# including this to make sure the development environment is setup
+%include $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/mki/LicensingCore.mki
+
+SrcLC = $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/
+docMain = $(SrcLC)docs/
+
+outputDir = $(OutputRootDir)build\Licensing\NativeClientDocs\
+
+ENABLE_DOXYGEN = 1
+#-----------------------------------------------------------------------
+#       Generate Documentation
+#-----------------------------------------------------------------------
+doxygenFiles            = $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/PublicApi/Licensing/Client.h
+doxygenFiles           += $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/PublicApi/Licensing/LicenseStatus.h
+doxygenProject          = NativeClient
+doxygenOutDir           = $(outputDir)
+doxygenIgnoredKeywords  = UNICODE NATIVECODE LICENSECLIENT_API
+doxygenDocInternal      = NO
+
+
+doxygenChmOuput         = YES
+
+doxygenQuiet            = NO
+doxygenShowWarnings     = YES
+doxygenLogFile          = $(outputDir)\doxygen.log
+
+doxygenStyleSheet       = $(docMain)bentley-doxygen.css
+doxygenCssHeader        = $(docMain)bentley-doxygen.header
+doxygenCssFooter        = $(docMain)bentley-doxygen.footer
+
+doxygenDocPrivate = NO
+
+%include $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/mki/lcdoxygen.mki
+
+#chmFile = $(outputDir)\$(doxygenProject)\chm\$(doxygenProject).chm
+
+#always:
+#    @CreateSymLinks.py "$(ContextDeliveryDir)$(doxygenProject).chm=$(chmFile)"
