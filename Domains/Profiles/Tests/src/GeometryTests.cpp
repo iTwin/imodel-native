@@ -81,6 +81,9 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<EllipseProfile> (EllipseProfile::CreateParams (GetModel(), "Ellipse_BiggerYRadius", 2.0, 3.0));
 
     InsertProfileGeometry<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "Rectangle", 6.0, 4.0), true);
+    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle", 4.0, 6.0, 0.5));
+    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 6.0, 4.0, 2.0));
+    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 4.0, 6.0, 2.0));
     }
 
 /*---------------------------------------------------------------------------------**//**
