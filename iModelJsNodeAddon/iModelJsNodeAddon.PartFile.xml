@@ -4,10 +4,10 @@
 
   <Part Name="iModelJsNodeAddon.Dev" PrgOutputDir="iModelJsNodeAddon">
     <SubPart PartName="iModelCorePRG" PartFile="iModelCore/DgnPlatform/iModelCore" Repository="imodel02"/>
-    <SubPart PartName="MakePackages"/>
+    <SubPart PartName="iModelJsMakePackages"/>
   </Part>
   
-  <Part Name="MakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64" PrgOutputDir="iModelJsNodeAddon">
+  <Part Name="iModelJsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64" PrgOutputDir="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon"/>
   </Part>
 
