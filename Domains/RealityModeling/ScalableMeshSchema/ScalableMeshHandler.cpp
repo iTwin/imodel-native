@@ -26,8 +26,6 @@
 	#undef min
 #endif
 
-
-
 #define SCALABLEMESH_MODEL_PROP_Clips           "SmModelClips"
 #define SCALABLEMESH_MODEL_PROP_GroundCoverages "SmGroundCoverages"
 #define SCALABLEMESH_MODEL_PROP_ClipVectors "SmModelClipVectors"
@@ -298,7 +296,7 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 
 static double s_minScreenPixelsPerPoint = 800;
 
-#if defined(ANDROID) || defined(__APPLE__)
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
     static double s_maxPixelError = 10;
     static double s_maxPixelErrorStreamingTexture = 10;
 #else
@@ -470,14 +468,14 @@ void SMNode::_UnloadChildren(BeTimePoint olderThan) const
             {
             for (auto const& child : m_children)
                 {
-#if defined(ANDROID) || defined(__APPLE__)
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
                 child->_UnloadChildren(BeTimePoint::Now());
 #else
                 child->_UnloadChildren(olderThan);
 #endif
                 }
             }
-#if defined(ANDROID) || defined(__APPLE__)
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
         else
             {
             if (true /*IsReady() || IsNotLoaded()*/)
@@ -495,7 +493,7 @@ void SMNode::_UnloadChildren(BeTimePoint olderThan) const
         }
     }
 
-#if defined(ANDROID) || defined(__APPLE__)
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
 void SMNode::CleanupUnusedChildren(bvector<Dgn::TileTree::TileCPtr>& selected) const
     {
     if (s_unloadChildren)
@@ -631,7 +629,7 @@ static double s_firstNodeSearchingDelay = (double)1 / 15 * CLOCKS_PER_SEC;
 static double s_firstNodeSearchingDelay = (double)1 / 60 * CLOCKS_PER_SEC;
 #endif
 
-#if defined(ANDROID) || defined(__APPLE__)
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
     static bool s_clearGeometry = true;
 #endif
 
@@ -643,7 +641,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::SelectViewTiles(bvector<Dgn::TileTree:
 
     if (viewStatus == SMNodeViewStatus::NotVisible)
         {     
-#if defined(ANDROID) || defined(__APPLE__)
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
         if (s_clearGeometry)
             {
             if (this->GetParent() != nullptr && static_cast<const SMNode*>(this->GetParent())->m_canUnloadChildren && (m_meshes.begin() != m_meshes.end()))
@@ -784,7 +782,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::SelectViewTiles(bvector<Dgn::TileTree:
         return SelectParent::No;
         }
 
-#if defined(ANDROID) || defined(__APPLE__)
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
     if (s_clearGeometry)
         {        
         if (this->GetParent() != nullptr && static_cast<const SMNode*>(this->GetParent())->m_canUnloadChildren && (m_meshes.begin() != m_meshes.end()))
@@ -873,7 +871,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
             parentSelected = true;
             }        
 
-#if defined(ANDROID) || defined(__APPLE__)
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
         CleanupUnusedChildren(selected);
 #endif
          

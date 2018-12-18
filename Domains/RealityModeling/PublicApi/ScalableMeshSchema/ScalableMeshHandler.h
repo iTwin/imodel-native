@@ -26,6 +26,8 @@
 #include <DgnPlatform/ModelSpatialClassifier.h>
 
 
+//#define ACTIVATE_MOBILE_CODE_ON_DESKTOP 1
+
 SCALABLEMESH_SCHEMA_TYPEDEFS(ScalableMeshModel)
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -102,7 +104,7 @@ private:
     bool _WantDebugRangeGraphics() const override;
     void _GetCustomMetadata(Utf8StringR name, Json::Value& data) const override;
 
-#if defined(ANDROID) || defined(__APPLE__)
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
     void CleanupUnusedChildren(bvector<Dgn::TileTree::TileCPtr>& selected) const;
 #endif
 
