@@ -46,9 +46,6 @@ public:
     PROFILES_EXPORT double GetLegSlope() const;
     PROFILES_EXPORT void SetLegSlope (double val);
 
-    PROFILES_EXPORT double GetAngle() const;
-    PROFILES_EXPORT void SetAngle (double val);
-
     }; // SchifflerizedLShapeProfile
 
 //=======================================================================================

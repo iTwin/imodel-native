@@ -164,7 +164,6 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_SchifflerizedLShapeProfile_FilletRadius                         "FilletRadius"
 #define PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius                           "EdgeRadius"
 #define PRF_PROP_SchifflerizedLShapeProfile_LegSlope                             "LegSlope"
-#define PRF_PROP_SchifflerizedLShapeProfile_Angle                                "Angle"
 #define PRF_PROP_StandardProfileAspect_Manufacturer                              "Manufacturer"
 #define PRF_PROP_StandardProfileAspect_Revision                                  "Revision"
 #define PRF_PROP_StandardProfileAspect_StandardsOrganization                     "StandardsOrganization"
