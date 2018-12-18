@@ -164,7 +164,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
         return ERROR;
         }
 
-    Utf8P infoStr = (Utf8P) in.GetCurrent();
+    Utf8CP infoStr = (Utf8CP) in.GetCurrent();
     Json::Value pt;
     Json::Reader reader;
     if (!reader.parse(infoStr, infoStr+infoSize, pt))
