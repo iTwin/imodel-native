@@ -31,6 +31,7 @@ public:
     static IGeometryPtr CreateHollowCircle (HollowCircleProfileCPtr profile);
     static IGeometryPtr CreateEllipse (EllipseProfileCPtr profile);
     static IGeometryPtr CreateRectangle (RectangleProfileCPtr profile);
+    static IGeometryPtr CreateRoundedRectangle (RoundedRectangleProfileCPtr profile);
 
     };
 

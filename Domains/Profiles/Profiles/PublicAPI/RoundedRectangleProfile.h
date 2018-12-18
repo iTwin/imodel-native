@@ -42,6 +42,7 @@ protected:
     explicit RoundedRectangleProfile (CreateParams const& params);
 
     virtual bool _Validate() const override;
+    virtual IGeometryPtr _CreateGeometry() const override;
 
 private:
     bool ValidateWidth() const;

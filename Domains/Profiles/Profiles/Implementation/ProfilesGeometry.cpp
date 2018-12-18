@@ -433,9 +433,7 @@ IGeometryPtr ProfilesGeomApi::CreateTShape (TShapeProfileCPtr profile)
         bottomRightWebEdgeArc = createArcBetweenLines (innerRightWebLine, bottomLine, webEdgeRadius);
         bottomLeftWebEdgeArc = createArcBetweenLines (bottomLine, innerLeftWebLine, webEdgeRadius);
 
-        DPoint3d bottomLineStartPoint, bottomLineEndPoint;
-        BeAssert (bottomLine->GetStartEnd (bottomLineStartPoint, bottomLineEndPoint));
-        if (bottomLineStartPoint.AlmostEqual (bottomLineEndPoint))
+        if (bottomLine->GetLineCP()->Length() == 0.0)
             bottomLine = nullptr;
         }
 
@@ -577,6 +575,43 @@ IGeometryPtr ProfilesGeomApi::CreateRectangle (RectangleProfileCPtr profile)
     ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (bottomLeft, topLeft);
 
     bvector<ICurvePrimitivePtr> orderedCurves = { topLine, rightLine, bottomLine, leftLine };
+    return createGeometryFromPrimitiveArray (orderedCurves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateRoundedRectangle (RoundedRectangleProfileCPtr profile)
+    {
+    double const halfWidth = profile->GetWidth() / 2.0;
+    double const halfDepth = profile->GetDepth() / 2.0;
+    double const roundingRadius = profile->GetRoundingRadius();
+
+    DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
+    DPoint3d const topRight = { halfWidth, halfDepth, 0.0 };
+    DPoint3d const bottomRight = { halfWidth, -halfDepth, 0.0 };
+    DPoint3d const bottomLeft = { -halfWidth, -halfDepth, 0.0 };
+
+    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (topLeft, topRight);
+    ICurvePrimitivePtr rightLine = ICurvePrimitive::CreateLine (topRight, bottomRight);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (bottomLeft, topLeft);
+
+    ICurvePrimitivePtr topRightArc = createArcBetweenLines (topLine, rightLine, roundingRadius);
+    ICurvePrimitivePtr bottomRightArc = createArcBetweenLines (rightLine, bottomLine, roundingRadius);
+    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines (bottomLine, leftLine, roundingRadius);
+    ICurvePrimitivePtr topLeftArc = createArcBetweenLines (leftLine, topLine, roundingRadius);
+
+    if (topLine->GetLineCP()->Length() <= DBL_EPSILON)
+        topLine = nullptr;
+    if (rightLine->GetLineCP()->Length() <= DBL_EPSILON)
+        rightLine = nullptr;
+    if (bottomLine->GetLineCP()->Length() <= DBL_EPSILON)
+        bottomLine = nullptr;
+    if (leftLine->GetLineCP()->Length() <= DBL_EPSILON)
+        leftLine = nullptr;
+
+    bvector<ICurvePrimitivePtr> orderedCurves = { topLine, topRightArc, rightLine, bottomRightArc, bottomLine, bottomLeftArc, leftLine, topLeftArc };
     return createGeometryFromPrimitiveArray (orderedCurves);
     }
 

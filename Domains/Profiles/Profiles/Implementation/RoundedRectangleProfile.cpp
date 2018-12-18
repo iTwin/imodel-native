@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\RoundedRectangleProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -57,6 +58,14 @@ bool RoundedRectangleProfile::_Validate() const
     bool const isRoundingRadiusValid = validateRoundingRadius();
 
     return isWidthValid && isDepthValid && isRoundingRadiusValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr RoundedRectangleProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateRoundedRectangle (this);
     }
 
 /*---------------------------------------------------------------------------------**//**
