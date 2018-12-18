@@ -22,8 +22,30 @@ struct HollowRectangleProfile : ParametricProfile, ICenterLineProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_HollowRectangleProfile, ParametricProfile);
     friend struct HollowRectangleProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(HollowRectangleProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double wallThickness,
+                                               double innerFilletRadius = 0.0, double outerFilletRadisu = 0.0);
+
+    public:
+        //! Required properties
+        double width = 0.0;
+        double depth = 0.0;
+        double wallThickness = 0.0;
+
+        //! Optional properties
+        double innerFilletRadius = 0.0;
+        double outerFilletRadius = 0.0;
+        };
+
 protected:
-    explicit HollowRectangleProfile (CreateParams const& params) : T_Super (params) {}
+    explicit HollowRectangleProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (HollowRectangleProfile)

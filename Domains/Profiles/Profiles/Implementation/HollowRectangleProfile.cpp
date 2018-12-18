@@ -14,6 +14,42 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (HollowRectangleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+HollowRectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+HollowRectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double wallThickness,
+                                                    double innerFilletRadius, double outerFilletRadius)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , width (width)
+    , depth (depth)
+    , wallThickness (wallThickness)
+    , innerFilletRadius (innerFilletRadius)
+    , outerFilletRadius (outerFilletRadius)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+HollowRectangleProfile::HollowRectangleProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetWidth (params.width);
+    SetDepth (params.depth);
+    SetWallThickness (params.wallThickness);
+    SetInnerFilletRadius (params.innerFilletRadius);
+    SetOuterFilletRadius (params.outerFilletRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double HollowRectangleProfile::GetWidth() const
