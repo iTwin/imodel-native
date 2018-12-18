@@ -45,8 +45,7 @@
 
     <!-- Only Tests and parts that DON'T want to run JavaScript should use this part. It binds the stub .dll/.a file -->
     <Part Name="napi-stub">
-        <SubPart PartName="napi-lib-win"/>
-        <SubPart PartName="napi-lib-nonwin"/>
+        <SubPart PartName="napi-lib"/>
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)napi$(shlibext)</Assemblies>
         </Bindings>
