@@ -3998,7 +3998,9 @@ public:
     //! Given a source kind of quantity, will copy that kind of quantity into this schema if it does not already exist
     //! @param[out] targetKOQ If successful, will contain a new KindOfQuantity object that is a copy of the sourceKOQ
     //! @param[in]  sourceKOQ The kind of quantity to copy
-    ECOBJECTS_EXPORT ECObjectsStatus CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ);
+    //! @param[in]  copyReferences If true the method will copy types from the source schema into the target schema, if they do not already exist.
+    //!             If false, there will be a schema reference created to the source schema if necessary.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ, bool copyReferences = false);
 
     //! Given a source PropertyCategory, will copy that PropertyCategory into this schema if it does not already exist
     //! @param[out] targetPropCategory If successful, will contain a new PropertyCategory object that is a copy of the sourcePropCategory

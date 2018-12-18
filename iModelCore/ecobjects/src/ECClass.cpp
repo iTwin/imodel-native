@@ -852,7 +852,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
                 {
                 if (copyReferences)
                     {
-                    auto status = this->GetSchemaR().CopyKindOfQuantity(destKoq, *sourceKoq);
+                    auto status = this->GetSchemaR().CopyKindOfQuantity(destKoq, *sourceKoq, copyReferences);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
                         return status;
                     destProperty->SetKindOfQuantity(destKoq);

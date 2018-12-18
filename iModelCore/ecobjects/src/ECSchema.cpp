@@ -1602,7 +1602,7 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ)
+ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ, bool copyReferences)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1623,17 +1623,31 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
     ECUnitCP persistUnit = sourceKOQ.GetPersistenceUnit();
     if (nullptr != persistUnit)
         {
-        ECSchemaCR persistUnitSchema = persistUnit->GetSchema();
-        if (!this->GetSchemaKey().Matches(persistUnitSchema.GetSchemaKey(), SchemaMatchType::Exact))
+        ECUnitCP const targetPersistUnit = GetUnitCP(persistUnit->GetName().c_str());
+        if (nullptr == targetPersistUnit)
             {
-            // TODO: I don't like how this attempts to add the schema as a reference again. There are two scenarios; this method is called from CopySchema, which takes care of
-            // copying the references, or it is called from the public API, and in that case it should fail to Copy if the appropriate schemas aren't referenced? Make it an option, possibly only in public API?
-            ECSchemaP foundSchema = copyFromSchema.FindSchemaP(persistUnitSchema.GetSchemaKey(), SchemaMatchType::Exact);
-            if (nullptr != foundSchema)
-                AddReferencedSchema(*foundSchema);
+            if (sourceKOQ.GetSchema().GetSchemaKey().Matches(persistUnit->GetSchema().GetSchemaKey(), SchemaMatchType::Exact))
+                {
+                if (copyReferences)
+                    {
+                    ECUnitP ecUnit;
+                    if (ECObjectsStatus::Success != (status = CopyUnit(ecUnit, *persistUnit)))
+                        return status;
+                    persistUnit = ecUnit;
+                    }
+                else
+                    {
+                    // TODO: I don't like how this attempts to add the schema as a reference again. There are two scenarios; this method is called from CopySchema, which takes care of
+                    // copying the references, or it is called from the public API, and in that case it should fail to Copy if the appropriate schemas aren't referenced? Make it an option, possibly only in public API?
+                    if (!IsSchemaReferenced(*this, sourceKOQ.GetSchema()))
+                        AddReferencedSchema(const_cast<ECSchemaR>(persistUnit->GetSchema()));
+                    }
+                }
+            else if (!IsSchemaReferenced(*this, persistUnit->GetSchema()))
+                AddReferencedSchema(const_cast<ECSchemaR>(persistUnit->GetSchema())); // TODO: Same concerns as above
             }
         else
-            persistUnit = GetUnitCP(persistUnit->GetName().c_str());
+            persistUnit = targetPersistUnit;
 
         targetKOQ->SetPersistenceUnit(*persistUnit);
         }
@@ -1934,7 +1948,7 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     for (auto koq : m_kindOfQuantityContainer)
         {
         KindOfQuantityP copyKOQ;
-        status = schemaOut->CopyKindOfQuantity(copyKOQ, *koq);
+        status = schemaOut->CopyKindOfQuantity(copyKOQ, *koq, false);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
