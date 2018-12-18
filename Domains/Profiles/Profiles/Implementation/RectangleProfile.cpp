@@ -14,6 +14,35 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (RectangleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , width (width)
+    , depth (depth)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RectangleProfile::RectangleProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetWidth (params.width);
+    SetDepth (params.depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RectangleProfile::GetWidth() const

@@ -21,8 +21,24 @@ struct RectangleProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_RectangleProfile, ParametricProfile);
     friend struct RectangleProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(RectangleProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth);
+
+    public:
+        //! Required properties
+        double width = 0.0;
+        double depth = 0.0;
+        };
+
 protected:
-    explicit RectangleProfile (CreateParams const& params) : T_Super (params) {}
+    explicit RectangleProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (RectangleProfile)
