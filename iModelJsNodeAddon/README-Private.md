@@ -36,8 +36,8 @@ BentleyBuild parts in iModelJsNodeAddon read the version number from this file a
 FYI The native platform package version number is also burned into the native code. This allows imodeljs-backend to do a version-compatibility check at runtime. It is not necessary to to burn in a new version number as part of your testing. If for some reason you want to do this, you must re-build like this after changing package_version.txt:
 
 ``` cmd
-bb -s "iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages -c
-bb -s "iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages
+bb -s "iModelJsNodeAddon;BuildAll" re iModelJs*  -c
+bb -s "iModelJsNodeAddon;BuildAll" re iModelJ*
 ```
 
 ## 3. Publish
