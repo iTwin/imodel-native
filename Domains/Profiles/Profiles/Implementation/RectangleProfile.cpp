@@ -43,6 +43,44 @@ RectangleProfile::RectangleProfile (CreateParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RectangleProfile::_Validate() const
+    {
+    BentleyStatus status = T_Super::_Validate();
+    if (status != BSISUCCESS)
+        return status;
+
+    bool const isWidthValid = ValidateWidth();
+    bool const isDepthValid = ValidateDepth();
+
+    if (isWidthValid && isDepthValid)
+        return BSISUCCESS;
+
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RectangleProfile::ValidateWidth() const
+    {
+    double const width = GetWidth();
+
+    return std::isfinite (width) && width > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RectangleProfile::ValidateDepth() const
+    {
+    double const depth = GetDepth();
+
+    return std::isfinite (depth) && depth > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RectangleProfile::GetWidth() const

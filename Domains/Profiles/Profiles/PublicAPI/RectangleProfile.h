@@ -40,6 +40,12 @@ public:
 protected:
     explicit RectangleProfile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const override;
+
+private:
+    bool ValidateWidth() const;
+    bool ValidateDepth() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (RectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (RectangleProfile)

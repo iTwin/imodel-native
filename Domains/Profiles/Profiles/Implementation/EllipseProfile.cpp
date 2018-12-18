@@ -51,10 +51,10 @@ BentleyStatus EllipseProfile::_Validate() const
     if (status != BSISUCCESS)
         return status;
 
-    bool const isValidXRadius = ValidateXRadius();
-    bool const isValidYRadius = ValidateYRadius();
+    bool const isXRadiusValid = ValidateXRadius();
+    bool const isYRadiusValid = ValidateYRadius();
 
-    if (isValidXRadius && isValidYRadius)
+    if (isXRadiusValid && isYRadiusValid)
         return BSISUCCESS;
 
     return BSIERROR;
