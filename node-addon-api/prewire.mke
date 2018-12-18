@@ -7,5 +7,5 @@
 
 baseDir     = $(_MakeFilePath)
 
-$(BuildContext)VendorAPI/napi : $(baseDir)/napi
+$(BuildContext)VendorAPI/Napi : $(baseDir)/napi
     $(LinkFirstDepToFirstTargetAsDirectory)
