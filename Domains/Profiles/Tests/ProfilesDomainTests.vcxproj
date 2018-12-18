@@ -66,6 +66,7 @@
     <ClCompile Include="src\DomainTests.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\RectangleProfileTests.cpp" />
+    <ClCompile Include="src\RoundedRectangleProfileTests.cpp" />
     <ClCompile Include="src\TestHost.cpp" />
     <ClCompile Include="src\TShapeProfileTests.cpp" />
     <ClCompile Include="src\ZShapeProfileTests.cpp" />
