@@ -45,19 +45,15 @@ RectangleProfile::RectangleProfile (CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RectangleProfile::_Validate() const
+bool RectangleProfile::_Validate() const
     {
-    BentleyStatus status = T_Super::_Validate();
-    if (status != BSISUCCESS)
-        return status;
+    if (!T_Super::_Validate())
+        return false;
 
     bool const isWidthValid = ValidateWidth();
     bool const isDepthValid = ValidateDepth();
 
-    if (isWidthValid && isDepthValid)
-        return BSISUCCESS;
-
-    return BSIERROR;
+    return isWidthValid && isDepthValid;
     }
 
 /*---------------------------------------------------------------------------------**//**

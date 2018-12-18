@@ -40,7 +40,7 @@ public:
 protected:
     explicit RectangleProfile (CreateParams const& params);
 
-    virtual BentleyStatus _Validate() const override;
+    virtual bool _Validate() const override;
 
 private:
     bool ValidateWidth() const;

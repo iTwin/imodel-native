@@ -41,7 +41,7 @@ public:
 protected:
     explicit HollowCircleProfile (CreateParams const& params);
 
-    virtual BentleyStatus _Validate() const override;
+    virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateGeometry() const override;
 
 private:

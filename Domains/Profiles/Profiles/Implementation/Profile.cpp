@@ -37,13 +37,13 @@ Profile::Profile (CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Profile::_Validate() const
+bool Profile::_Validate() const
     {
     Utf8String name = GetName();
     if (Utf8String::IsNullOrEmpty (name.c_str()))
-        return BSIERROR;
+        return false;
 
-    return BSISUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -83,7 +83,7 @@ DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::ValidateAndCreateGeometry()
     {
-    if (_Validate() != BSISUCCESS)
+    if (!_Validate())
         return DgnDbStatus::ValidationFailed;
 
     IGeometryPtr geometryPtr = _CreateGeometry();

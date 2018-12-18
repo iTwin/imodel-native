@@ -46,19 +46,15 @@ HollowCircleProfile::HollowCircleProfile (CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus HollowCircleProfile::_Validate() const
+bool HollowCircleProfile::_Validate() const
     {
-    BentleyStatus status = T_Super::_Validate();
-    if (status != BSISUCCESS)
-        return status;
+    if (!T_Super::_Validate())
+        return false;
 
     bool const isRadiusValid = ValidateRadius();
     bool const isWallThicknessValid = ValidateWallThickness();
 
-    if (isRadiusValid && isWallThicknessValid)
-        return BSISUCCESS;
-
-    return BSIERROR;
+    return isRadiusValid && isWallThicknessValid;
     }
 
 /*---------------------------------------------------------------------------------**//**

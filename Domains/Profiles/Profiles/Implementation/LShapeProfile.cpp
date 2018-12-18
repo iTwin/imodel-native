@@ -55,11 +55,10 @@ LShapeProfile::LShapeProfile (CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LShapeProfile::_Validate() const
+bool LShapeProfile::_Validate() const
     {
-    BentleyStatus status = T_Super::_Validate();
-    if (status != BSISUCCESS)
-        return status;
+    if (!T_Super::_Validate())
+        return false;
 
     bool const isWidthValid = ValidateWidth();
     bool const isDepthValid = ValidateDepth();
@@ -68,10 +67,7 @@ BentleyStatus LShapeProfile::_Validate() const
     bool const isEdgeRadiusValid = ValidateEdgeRadius();
     bool const isLegSlopeValid  = ValidateLegSlope();
 
-    if (isWidthValid && isDepthValid && isThicknessValid && isFilletRadiusValid && isEdgeRadiusValid && isLegSlopeValid)
-        return BSISUCCESS;
-
-    return BSIERROR;
+    return isWidthValid && isDepthValid && isThicknessValid && isFilletRadiusValid && isEdgeRadiusValid && isLegSlopeValid;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -62,55 +62,54 @@ TShapeProfile::TShapeProfile (CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TShapeProfile::_Validate() const
+bool TShapeProfile::_Validate() const
     {
-    BentleyStatus status = T_Super::_Validate();
-    if (status != BSISUCCESS)
-        return status;
+    if (!T_Super::_Validate())
+        return false;
 
     bool const isValidFlangeWidth = std::isfinite (GetFlangeWidth()) && GetFlangeWidth() > 0.0;
     if (!isValidFlangeWidth)
-        return BSIERROR;
+        return false;
 
     bool const isValidDepth = std::isfinite (GetDepth()) && GetDepth() > 0.0;
     if (!isValidDepth)
-        return BSIERROR;
+        return false;
 
     bool const isValidFlangeThickness = std::isfinite (GetFlangeThickness()) && GetFlangeThickness() > 0.0 && GetFlangeThickness() < GetDepth();
     if (!isValidFlangeThickness)
-        return BSIERROR;
+        return false;
 
     bool const isValidWebThickness = std::isfinite (GetWebThickness()) && GetWebThickness() > 0.0 && GetWebThickness() < GetFlangeWidth();
     if (!isValidWebThickness)
-        return BSIERROR;
+        return false;
 
     bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0
                                      && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight()
                                      && GetFilletRadius() <= GetInnerFlangeFaceLength() / 2.0 - GetWebSlopeHeight();
     if (!isValidFilletRadius)
-        return BSIERROR;
+        return false;
 
     bool const isValidFlangeEdgeRadius = std::isfinite (GetFlangeEdgeRadius()) && GetFlangeEdgeRadius() >= 0.0
                                          && GetFlangeEdgeRadius() <= std::min (GetInnerFlangeFaceLength() / 2.0, GetFlangeThickness() / 2.0);
     if (!isValidFlangeEdgeRadius)
-        return BSIERROR;
+        return false;
 
     bool const isFlangeSlopeValid = std::isfinite (GetFlangeSlope()) && GetFlangeSlope() >= 0.0 && GetFlangeSlope() < PI / 2.0
                                     && GetInnerWebFaceLength() / 2.0 >= GetFlangeSlopeHeight();
     if (!isFlangeSlopeValid)
-        return BSIERROR;
+        return false;
 
     bool const isValidWebEdgeRadius = std::isfinite (GetWebEdgeRadius()) && GetWebEdgeRadius() >= 0.0
                                       && GetWebEdgeRadius() <= std::min (GetInnerWebFaceLength() / 2.0, GetWebThickness() / 2.0);
     if (!isValidWebEdgeRadius)
-        return BSIERROR;
+        return false;
 
     bool const isWebSlopeValid = std::isfinite (GetWebSlope()) && GetWebSlope() >= 0.0 && GetWebSlope() < PI / 2.0
                                  && GetInnerFlangeFaceLength() / 2.0 >= GetWebSlopeHeight();
     if (!isWebSlopeValid)
-        return BSIERROR;
+        return false;
 
-    return BSISUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

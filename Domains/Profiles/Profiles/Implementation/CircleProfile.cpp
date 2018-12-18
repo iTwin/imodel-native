@@ -44,16 +44,12 @@ CircleProfile::CircleProfile (CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CircleProfile::_Validate() const
+bool CircleProfile::_Validate() const
     {
-    BentleyStatus status = T_Super::_Validate();
-    if (status != BSISUCCESS)
-        return status;
+    if (!T_Super::_Validate())
+        return false;
 
-    if (ValidateRadius())
-        return BSISUCCESS;
-
-    return BSIERROR;
+    return ValidateRadius();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -37,7 +37,7 @@ public:
 protected:
     explicit Profile (CreateParams const& params);
 
-    virtual BentleyStatus _Validate() const;
+    virtual bool _Validate() const;
     virtual IGeometryPtr _CreateGeometry() const;
 
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;

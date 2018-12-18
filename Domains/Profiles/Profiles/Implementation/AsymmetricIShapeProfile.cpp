@@ -69,11 +69,10 @@ AsymmetricIShapeProfile::AsymmetricIShapeProfile (CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AsymmetricIShapeProfile::_Validate() const
+bool AsymmetricIShapeProfile::_Validate() const
     {
-    BentleyStatus status = T_Super::_Validate();
-    if (status != BSISUCCESS)
-        return status;
+    if (!T_Super::_Validate())
+        return false;
 
     bool const isTopFlangeWidthValid = ValidateTopFlangeWidth();
     bool const isBottomFlangeWidthValid = ValidateBottomFlangeWidth();
@@ -88,12 +87,9 @@ BentleyStatus AsymmetricIShapeProfile::_Validate() const
     bool const isBottomFlangeEdgeRadiusValid = ValidateBottomFlangeEdgeRadius();
     bool const isBottomFlangeSlopeValid = ValidateBottomFlangeSlope();
 
-    if (isTopFlangeWidthValid && isBottomFlangeWidthValid && isDepthValid && isTopFlangeThicknessValid && isBottomFlangeThicknessValid
-       && isWebThicknessValid && isTopFlangeFilletRadiusValid && isTopFlangeEdgeRadiusValid && isTopFlangeSlopeValid
-       && isBottomFlangeFilletRadiusValid && isBottomFlangeEdgeRadiusValid && isBottomFlangeSlopeValid)
-       return BSISUCCESS;
-
-    return BSIERROR;
+    return isTopFlangeWidthValid && isBottomFlangeWidthValid && isDepthValid && isTopFlangeThicknessValid && isBottomFlangeThicknessValid
+           && isWebThicknessValid && isTopFlangeFilletRadiusValid && isTopFlangeEdgeRadiusValid && isTopFlangeSlopeValid
+           && isBottomFlangeFilletRadiusValid && isBottomFlangeEdgeRadiusValid && isBottomFlangeSlopeValid;
     }
 
 /*---------------------------------------------------------------------------------**//**

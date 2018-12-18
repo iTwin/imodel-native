@@ -45,19 +45,15 @@ EllipseProfile::EllipseProfile (CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus EllipseProfile::_Validate() const
+bool EllipseProfile::_Validate() const
     {
-    BentleyStatus status = T_Super::_Validate();
-    if (status != BSISUCCESS)
-        return status;
+    if (!T_Super::_Validate())
+        return false;
 
     bool const isXRadiusValid = ValidateXRadius();
     bool const isYRadiusValid = ValidateYRadius();
 
-    if (isXRadiusValid && isYRadiusValid)
-        return BSISUCCESS;
-
-    return BSIERROR;
+    return isXRadiusValid && isYRadiusValid;
     }
 
 /*---------------------------------------------------------------------------------**//**
