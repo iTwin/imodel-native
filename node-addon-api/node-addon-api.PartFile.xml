@@ -22,11 +22,16 @@
     </Part>
 
     <!-- only on non-Windows, binds the stub .a file  -->
-    <Part Name="napi-stub-nonwin" ExcludePlatforms="x64,winrt*">
+    <Part Name="napi-lib-nonwin" ExcludePlatforms="x64,winrt*">
         <SubPart PartName="napi-stub-build" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)napi$(stlibext)</Libs>
         </Bindings>
+    </Part>
+
+    <Part Name="napi-lib">
+        <SubPart PartName="napi-lib-win" />
+        <SubPart PartName="napi-lib-nonwin" />
     </Part>
 
     <!-- bind the Node version of napi.dll on Windows only -->
