@@ -19,11 +19,11 @@ There are 3 ways that `napi_stub.cpp` resolves the `napi_xxx` symbols:
 
 1. from `Node.exe` when we run under Node.
 2. from `Node.dll` when we run under Electron (don't ask me why Node doesn't just have a node.dll)
-3. from stubs when we run tests where we don't want a dependence on Node.
+3. from stubs when we run tests, or other places where we don't want a dependence on Node.
 
-To complicate things further, the first 2 cases above are only relevant for Windows, because we static link on Unix. But, we still have the 3rd case under Unix.
+To complicate things further, the first 2 cases above are only relevant for Windows, because the Unix loader does not specify the source for an import. But, we still have the 3rd case under Unix.
 
-In `node-addon-api.mke`, we compile `napi_stub.cpp` 3 times, first with no macros defined, then with `BUILD_FOR_NODE` defined, and finally with `BUILD_FOR_ELECTRON` defined. The first build generates the .lib file that we use to link our .dlls under Windows, and the .a file we link with under Unix. When we compile for Node we *forward*" all the exported symbols to `node.exe` and for Electron to `node.dll` (that's what the "pragma comment" lines do.) For the "stub" build we simply implement each function to do nothing. That generates 3 different `napi.dll` files in our BuildContext.
+In `node-addon-api.mke`, we compile `napi_stub.cpp` 3 times, first with no macros defined, then with `BUILD_FOR_NODE` defined, and finally with `BUILD_FOR_ELECTRON` defined. The first build generates the .lib file that we use to link our .dlls under Windows, and the .a file we link with under Unix. When we compile for Node we *forward* all the exported symbols to `node.exe` and for Electron to `node.dll` (that's what the "pragma comment" lines do.) For the "stub" build we simply implement each function to do nothing. That generates 3 different `napi.dll` files in our BuildContext.
 
 [N.B. when the loader loads `napi.dll` and sees the "forwarding" references, it resolves the symbol directly from the *target* .dll so there is no performance penalty for this approach.]
 
