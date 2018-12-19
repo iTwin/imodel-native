@@ -2,6 +2,7 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
+    <!-- The delivers the "Napi/napi.h" source files. -->
     <Part Name="VendorAPI" BentleyBuildMakeFile="prewire.mke" >
         <Bindings>
             <VendorAPI Domain="Napi"/>

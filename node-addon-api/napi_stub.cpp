@@ -9,6 +9,11 @@
 #include <signal.h>
 #include <stdlib.h>
 
+/** This file exists to resolve the references to the Node "napi" layer from our .dlls 
+ * (e.g. DgnPlatform and iModelJs.node).
+ * See README.md for explanation.
+ */
+
 #if defined(_WIN32)
 #pragma warning(disable : 4100)
 #elif defined(__clang__)
