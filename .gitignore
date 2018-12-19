@@ -1,1 +1,3 @@
 *.vcxproj.user
+*.orig
+*.bak
