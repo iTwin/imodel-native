@@ -84,6 +84,13 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle", 4.0, 6.0, 0.5));
     InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 6.0, 4.0, 2.0));
     InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 4.0, 6.0, 2.0));
+
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle", 4.0, 6.0, 0.5), true);
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_OuterRadius", 4.0, 6.0, 0.5, 0.0, 0.5));
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_InnerRadius", 4.0, 6.0, 0.5, 0.5, 0.0));
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_bothRadiuses", 4.0, 6.0, 0.5, 0.5, 0.5));
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_MaxOuterRadiusAgainstInnerRadius",
+                                                   6.0, 6.0, 0.25, 0.5, 0.25 * (2.0 + std::sqrt (2.0)) + 0.49));
     }
 
 /*---------------------------------------------------------------------------------**//**
