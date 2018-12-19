@@ -55,7 +55,7 @@ bool RoundedRectangleProfile::_Validate() const
 
     bool const isWidthValid = ValidateWidth();
     bool const isDepthValid = ValidateDepth();
-    bool const isRoundingRadiusValid = validateRoundingRadius();
+    bool const isRoundingRadiusValid = ValidateRoundingRadius();
 
     return isWidthValid && isDepthValid && isRoundingRadiusValid;
     }
@@ -91,7 +91,7 @@ bool RoundedRectangleProfile::ValidateDepth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RoundedRectangleProfile::validateRoundingRadius() const
+bool RoundedRectangleProfile::ValidateRoundingRadius() const
     {
     double const roundingRadius = GetRoundingRadius();
     bool const isPositive = std::isfinite (roundingRadius) && roundingRadius > 0.0;

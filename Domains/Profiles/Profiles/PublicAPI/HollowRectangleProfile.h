@@ -47,6 +47,15 @@ public:
 protected:
     explicit HollowRectangleProfile (CreateParams const& params);
 
+    virtual bool _Validate() const override;
+
+private:
+    bool ValidateWidth() const;
+    bool ValidateDepth() const;
+    bool ValidateWallThickness() const;
+    bool ValidateInnerFilletRadius() const;
+    bool ValidateOuterFilletRadius() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (HollowRectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (HollowRectangleProfile)

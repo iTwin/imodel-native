@@ -47,7 +47,7 @@ protected:
 private:
     bool ValidateWidth() const;
     bool ValidateDepth() const;
-    bool validateRoundingRadius() const;
+    bool ValidateRoundingRadius() const;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (RoundedRectangleProfile)
