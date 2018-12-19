@@ -21,74 +21,41 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 ClientFreeImpl::ClientFreeImpl(
-	Utf8StringCR accessToken,
-	BeVersionCR clientVersion,
-	BeFileNameCR db_path,
-	bool offlineMode,
-	Utf8StringCR projectId,
 	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
 )
 	{
 	m_userInfo = ConnectSignInManager::UserInfo();
-	m_accessToken = accessToken;
 
 	Utf8String deviceInfo = BeSystemInfo::GetDeviceId();
 	if (deviceInfo.Equals("")) deviceInfo = "DefaultDevice";
-	m_clientInfo = std::make_shared<ClientInfo>("FreeApplication",clientVersion,"FreeGUID",deviceInfo,"FreeDescriptor");
+	m_clientInfo = std::make_shared<ClientInfo>("FreeApplication",BeVersion(1,0),"FreeGUID",deviceInfo,"FreeDescriptor");
 	
-	m_dbPath = db_path;
-	m_offlineMode = offlineMode;
-	m_projectId = projectId;
 	m_featureString = featureString;
 	m_httpHandler = httpHandler;
 	
-	m_usageDb = std::make_unique<UsageDb>();
 	m_correlationId = BeGuid(true).ToString();
 	m_timeRetriever = TimeRetriever::Get();
 	m_delayedExecutor = DelayedExecutor::Get();
-
-	if (projectId.empty())
-		m_projectId = "00000000-0000-0000-0000-000000000000";
-
-	if (m_offlineMode)
-		{
-		// Fake use m_offlineMode in order to avoid unused variable warning 
-		// that is treated as error on clang compilers for iOS.
-		}
 	}
 
 LicenseStatus ClientFreeImpl::StartApplication()
 	{
-	LOG.trace("ClientFreeImpl::StartApplication");
-
-	if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
-		{
-		LOG.error("ClientFreeImpl::StartApplication ERROR - Database creation failed.");
-		return LicenseStatus::Error;
-		}
-
-	// Create dummy policy for free application usage
-	m_policy = FreeApplicationPolicyHelper::CreatePolicy();
-
-	// Begin heartbeats
-	int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-	
-	UsageHeartbeatRealTime(currentTimeUnixMs);
-
+	LOG.trace("ClientFreeImpl::StartApplication (This is unnecessary to call for ClientFreeImpl)");
 	return LicenseStatus::Ok;
 	}
 
 BentleyStatus ClientFreeImpl::StopApplication()
 	{
-	LOG.trace("ClientFreeImpl::StopApplication");
-
-	StopUsageHeartbeat();
-
-	m_usageDb->Close();
-
+	LOG.trace("ClientFreeImpl::StopApplication (This is unnecessary to call for ClientFreeImpl)");
 	return SUCCESS;
 	}
+
+folly::Future<BentleyStatus> ClientFreeImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
+	{
+	return SendUsageRealtime(accessToken, version, projectId);
+	}
+
 /*
 folly::Future<Utf8String> ClientFreeImpl::PerformGetUserInfo()
 	{

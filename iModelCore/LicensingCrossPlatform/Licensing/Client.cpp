@@ -46,16 +46,11 @@ IHttpHandlerPtr httpHandler
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::CreateFree
 (
-	Utf8StringCR accessToken,
-	BeVersionCR clientVersion,
-	BeFileNameCR dbPath,
-	bool offlineMode,
-	Utf8StringCR projectId,
 	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
 )
 	{
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientFreeImpl>(accessToken, clientVersion, dbPath, offlineMode, projectId, featureString, httpHandler)));
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientFreeImpl>(featureString, httpHandler)));
 	}
 
 /*--------------------------------------------------------------------------------------+
@@ -98,3 +93,11 @@ BentleyStatus Client::StopApplication()
      {
      return m_impl->MarkFeature(featureId, featureUserData);
      }
+
+ /*--------------------------------------------------------------------------------------+
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ folly::Future<BentleyStatus> Client::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
+	 {
+	 return m_impl->TrackUsage(accessToken, version, projectId);
+	 }
