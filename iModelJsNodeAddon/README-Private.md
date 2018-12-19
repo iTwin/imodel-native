@@ -50,7 +50,7 @@ You test the native platform by calling it from TypeScript.
 
 Install your local build of the native platform. There is a `installNativePlatform` script in this directory for each supported platform.
 
-Update imodeljs-core/core/backend/imodeljs-native-platform-api.ts to reflect the changes made to the API implemented by native code.
+Update imodeljs/core/backend/imodeljs-native-platform-api.ts to reflect the changes made to the API implemented by native code.
 
 Update .ts files in imodeljs-core/core/backend as necessary to react to changes in the native platform API.
 
@@ -60,7 +60,7 @@ Run TypeScript tests and sample apps.
 
 After the native platform packages have been built by PRG and published, you can update imodeljs-backend to depend on the new version.
 
-The native platform version number appears in only once place in all of imodeljs, in `imodeljs-core/core/backend/package.json`. So, to move imodeljs-backend to a new version of the native platform, edit this file and specify the new version number.
+The native platform version number appears in only once place in all of imodeljs, in `imodeljs/core/backend/package.json`. So, to move imodeljs-backend to a new version of the native platform, edit this file and specify the new version number.
 
 Then, rush update and rush build.
 
