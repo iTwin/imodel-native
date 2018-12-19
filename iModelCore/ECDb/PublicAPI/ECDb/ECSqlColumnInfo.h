@@ -265,6 +265,10 @@ struct ECSqlColumnInfo final
         //! @return ECProperty backing the column represented by this info object.
         ECN::ECPropertyCP GetProperty() const { return m_property; }
 
+        //! Gets the enum type if the column's data type is an ECEnumeration.
+        //! @return Enumeration type for ECEnumeration columns and nullptr otherwise
+        ECDB_EXPORT ECN::ECEnumerationCP GetEnumType() const;
+
         //! Indicates whether the property returned from ECSqlColumnInfo::GetProperty is an ECSQL system property.
         //! @return true if ECSqlColumnInfo::GetProperty is an ECSQL system property. false otherwise.
         //! @see @ref ECSqlSystemProperties
