@@ -118,8 +118,8 @@ bool HollowRectangleProfile::ValidateInnerFilletRadius() const
         return true;
 
     bool const isPositive = std::isfinite (innerRadius) && innerRadius >= 0.0;
-    bool const fitsInWidth = innerRadius < GetWidth() / 2.0 - GetWallThickness();
-    bool const fitsInDepth = innerRadius < GetDepth() / 2.0 - GetWallThickness();
+    bool const fitsInWidth = innerRadius <= GetWidth() / 2.0 - GetWallThickness();
+    bool const fitsInDepth = innerRadius <= GetDepth() / 2.0 - GetWallThickness();
 
     return isPositive && fitsInWidth && fitsInDepth;
     }
@@ -134,8 +134,8 @@ bool HollowRectangleProfile::ValidateOuterFilletRadius() const
         return true;
 
     bool const isPositive = std::isfinite (outerRadius) && outerRadius >= 0.0;
-    bool const fitsInWidth = outerRadius < GetWidth() / 2.0;
-    bool const fitsInDepth = outerRadius < GetDepth() / 2.0;
+    bool const fitsInWidth = outerRadius <= GetWidth() / 2.0;
+    bool const fitsInDepth = outerRadius <= GetDepth() / 2.0;
     bool const doesNotIntersectWithInnerCorners = outerRadius - GetInnerFilletRadius() < (2.0 + std::sqrt (2.0)) * GetWallThickness();
 
     return isPositive && fitsInWidth && fitsInDepth && doesNotIntersectWithInnerCorners;
