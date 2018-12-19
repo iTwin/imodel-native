@@ -885,6 +885,34 @@ bool ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR exp
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                05/2016
 +===============+===============+===============+===============+===============+======*/
+struct SelectColumnsInfo
+    {
+    Utf8String ClassIdColumnName;
+    Utf8String InstanceIdColumnName;
+    };
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2016
++===============+===============+===============+===============+===============+======*/
+struct SelectClassNames
+    {
+    Utf8String SchemaName;
+    Utf8String ClassName;
+    };
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2016
++===============+===============+===============+===============+===============+======*/
+struct RelatedClassInfo
+    {
+    Utf8String Direction;
+    SelectColumnsInfo ThisColumn;
+    SelectColumnsInfo RelatedColumn;
+    SelectClassNames RelationshipNames;
+    SelectClassNames RelatedClassNames;
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2016
++===============+===============+===============+===============+===============+======*/
 struct ECExpressionToECSqlConverter : NodeVisitor
 {
 #define ARGUMENTS_PRECONDITION() if (m_inArguments && m_ignoreArguments) return true;
@@ -1087,6 +1115,45 @@ private:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
+    BentleyStatus ParseRelatedClassInfo(ArgumentTreeNodeCR args, RelatedClassInfo& info)
+        {
+        info.Direction = args.GetArgument(1)->ToString().Trim("\"");
+        if (info.Direction.EqualsI("Forward"))
+            {
+            info.ThisColumn.InstanceIdColumnName = "SourceECInstanceId";
+            info.ThisColumn.ClassIdColumnName = "SourceECClassId";
+            info.RelatedColumn.InstanceIdColumnName = "TargetECInstanceId";
+            info.RelatedColumn.ClassIdColumnName = "TargetECClassId";
+            }
+        else if (info.Direction.EqualsI("Backward"))
+            {
+            info.ThisColumn.InstanceIdColumnName = "TargetECInstanceId";
+            info.ThisColumn.ClassIdColumnName = "TargetECClassId";
+            info.RelatedColumn.InstanceIdColumnName = "SourceECInstanceId";
+            info.RelatedColumn.ClassIdColumnName = "SourceECClassId";
+            }
+        else
+            {
+            return ERROR;
+            }
+
+        Utf8String relationshipSchemaAndClassName = args.GetArgument(0)->ToString().Trim("\"");
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelationshipNames.SchemaName, info.RelationshipNames.ClassName, relationshipSchemaAndClassName))
+            return ERROR;
+                
+        Utf8String relatedSchemaAndClassName = args.GetArgument(2)->ToString().Trim("\"");
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelatedClassNames.SchemaName, info.RelatedClassNames.ClassName, relatedSchemaAndClassName))
+            return ERROR;
+
+        
+        m_usedClasses.push_back(relationshipSchemaAndClassName);
+        m_usedClasses.push_back(relatedSchemaAndClassName);
+        return SUCCESS;
+        }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            05/2016
+    +---------------+---------------+---------------+---------------+---------------+--*/
     bool HandleHasRelatedInstanceSpecialCase(CallNodeCR node)
         {
         ArgumentTreeNodeCP args = node.GetArguments();
@@ -1096,42 +1163,12 @@ private:
             return false;
             }
 
-        Utf8String direction = args->GetArgument(1)->ToString().Trim("\"");
-        Utf8CP thisInstanceIdColumnName,
-            relatedInstanceIdColumnName, relatedClassIdColumnName;
-        if (direction.EqualsI("Forward"))
-            {
-            thisInstanceIdColumnName = "SourceECInstanceId";
-            relatedInstanceIdColumnName = "TargetECInstanceId";
-            relatedClassIdColumnName = "TargetECClassId";
-            }
-        else if (direction.EqualsI("Backward"))
-            {
-            thisInstanceIdColumnName = "TargetECInstanceId";
-            relatedInstanceIdColumnName = "SourceECInstanceId";
-            relatedClassIdColumnName = "SourceECClassId";
-            }
-        else
+        RelatedClassInfo info;
+        if (SUCCESS != ParseRelatedClassInfo(*args, info))
             {
             BeAssert(false);
             return false;
             }
-
-        Utf8String relationshipSchemaName, relationshipClassName;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, args->GetArgument(0)->ToString().Trim("\"")))
-            {
-            BeAssert(false);
-            return false;
-            }
-        
-        Utf8String relatedSchemaAndClassName = args->GetArgument(2)->ToString().Trim("\"");
-        Utf8String relatedClassSchemaName, relatedClassName;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, relatedSchemaAndClassName))
-            {
-            BeAssert(false);
-            return false;
-            }
-        m_usedClasses.push_back(relatedSchemaAndClassName);
 
         static Utf8CP s_fmt = "%s.[ECInstanceId] IN ("
             "SELECT [relationship].[%s] "
@@ -1140,10 +1177,10 @@ private:
             ")";
         Utf8String prefix = GetCallNodePrefix(node);
         Utf8PrintfString ecsql(s_fmt, 
-            prefix.c_str(), thisInstanceIdColumnName,
-            relationshipSchemaName.c_str(), relationshipClassName.c_str(),
-            relatedClassSchemaName.c_str(), relatedClassName.c_str(),
-            relatedClassIdColumnName, relatedInstanceIdColumnName);
+            prefix.c_str(), info.ThisColumn.InstanceIdColumnName.c_str(),
+            info.RelationshipNames.SchemaName.c_str(), info.RelationshipNames.ClassName.c_str(),
+            info.RelatedClassNames.SchemaName.c_str(), info.RelatedClassNames.ClassName.c_str(),
+            info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str());
         m_ecsql.append(ecsql);
         m_ignoreArguments = true;
         return true;
@@ -1161,46 +1198,12 @@ private:
             return false;
             }
 
-        Utf8String direction = args->GetArgument(1)->ToString().Trim("\"");
-        Utf8CP thisInstanceIdColumnName, thisClassIdColumnName,
-            relatedInstanceIdColumnName, relatedClassIdColumnName;
-        if (direction.EqualsI("Forward"))
-            {
-            thisInstanceIdColumnName = "SourceECInstanceId";
-            thisClassIdColumnName = "SourceECClassId";
-            relatedInstanceIdColumnName = "TargetECInstanceId";
-            relatedClassIdColumnName = "TargetECClassId";
-            }
-        else if (direction.EqualsI("Backward"))
-            {
-            thisInstanceIdColumnName = "TargetECInstanceId";
-            thisClassIdColumnName = "TargetECClassId"; 
-            relatedInstanceIdColumnName = "SourceECInstanceId";
-            relatedClassIdColumnName = "SourceECClassId";
-            }
-        else
+        RelatedClassInfo info;
+        if (SUCCESS != ParseRelatedClassInfo(*args, info))
             {
             BeAssert(false);
             return false;
             }
-
-        Utf8String relationshipSchemaAndClassName = args->GetArgument(0)->ToString().Trim("\"");
-        Utf8String relationshipSchemaName, relationshipClassName;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, relationshipSchemaAndClassName))
-            {
-            BeAssert(false);
-            return false;
-            }
-        m_usedClasses.push_back(relationshipSchemaAndClassName);
-        
-        Utf8String relatedSchemaAndClassName = args->GetArgument(2)->ToString().Trim("\"");
-        Utf8String relatedClassSchemaName, relatedClassName;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, relatedSchemaAndClassName))
-            {
-            BeAssert(false);
-            return false;
-            }
-        m_usedClasses.push_back(relatedSchemaAndClassName);
 
         Utf8String propertyName = args->GetArgument(3)->ToString().Trim("\"");
         propertyName.ReplaceAll(".", "].["); // Needed to handle struct properties
@@ -1215,10 +1218,47 @@ private:
         Utf8String prefix = GetCallNodePrefix(node);
         Utf8PrintfString ecsql(s_fmt, 
             propertyName.c_str(),
-            relationshipSchemaName.c_str(), relationshipClassName.c_str(),
-            relatedClassSchemaName.c_str(), relatedClassName.c_str(),
-            thisClassIdColumnName, prefix.c_str(), thisInstanceIdColumnName, prefix.c_str(),
-            relatedClassIdColumnName, relatedInstanceIdColumnName);
+            info.RelationshipNames.SchemaName.c_str(), info.RelationshipNames.ClassName.c_str(),
+            info.RelatedClassNames.SchemaName.c_str(), info.RelatedClassNames.ClassName.c_str(),
+            info.ThisColumn.ClassIdColumnName.c_str(), prefix.c_str(), info.ThisColumn.InstanceIdColumnName.c_str(), prefix.c_str(),
+            info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str());
+        m_ecsql.append(ecsql);
+        m_ignoreArguments = true;
+        return true;
+        }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            12/2018
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    bool HandleGetRelatedInstancesCountSpecialCase(CallNodeCR node)
+        {
+        ArgumentTreeNodeCP args = node.GetArguments();
+        if (nullptr == args || 3 != args->GetArgumentCount())
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        RelatedClassInfo info;
+        if (SUCCESS != ParseRelatedClassInfo(*args, info))
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        static Utf8CP s_fmt = "("
+            "SELECT COUNT(1) "
+            "FROM [%s].[%s] relationship "
+            "JOIN [%s].[%s] related "
+            "ON [related].[ECClassId] = [relationship].[%s] AND [related].[ECInstanceId] = [relationship].[%s] "
+            "WHERE [relationship].[%s] = %s.[ECClassId] AND [relationship].[%s] = %s.[ECInstanceId]"
+            ")";
+        Utf8String prefix = GetCallNodePrefix(node);
+        Utf8PrintfString ecsql(s_fmt, 
+            info.RelationshipNames.SchemaName.c_str(), info.RelationshipNames.ClassName.c_str(),
+            info.RelatedClassNames.SchemaName.c_str(), info.RelatedClassNames.ClassName.c_str(),
+            info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str(),
+            info.ThisColumn.ClassIdColumnName.c_str(), prefix.c_str(), info.ThisColumn.InstanceIdColumnName.c_str(), prefix.c_str());
         m_ecsql.append(ecsql);
         m_ignoreArguments = true;
         return true;
@@ -1313,6 +1353,8 @@ private:
         if (0 == strcmp("GetECClassId", nodeCopy->GetMethodName()) && HandleGetECClassIdSpecialCase(*nodeCopy))
             return;
         if (0 == strcmp("HasRelatedInstance", nodeCopy->GetMethodName()) && HandleHasRelatedInstanceSpecialCase(*nodeCopy))
+            return;
+        if (0 == strcmp("GetRelatedInstancesCount", nodeCopy->GetMethodName()) && HandleGetRelatedInstancesCountSpecialCase(*nodeCopy))
             return;
         if (0 == strcmp("GetRelatedValue", nodeCopy->GetMethodName()) && HandleGetRelatedValueSpecialCase(*nodeCopy))
             return;
