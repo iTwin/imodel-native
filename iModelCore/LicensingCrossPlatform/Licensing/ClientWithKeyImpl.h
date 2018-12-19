@@ -24,12 +24,12 @@ protected:
 public:
 	LICENSING_EXPORT ClientWithKeyImpl
 		(
-		Utf8String accessKey,
+		Utf8StringCR accessKey,
 		ClientInfoPtr clientInfo,
 		BeFileNameCR db_path,
 		bool offlineMode,
-		Utf8String projectId,
-		Utf8String featureString,
+		Utf8StringCR projectId,
+		Utf8StringCR featureString,
 		IHttpHandlerPtr httpHandler
 		);
 	LICENSING_EXPORT LicenseStatus StartApplication();

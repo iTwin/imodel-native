@@ -21,12 +21,12 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 ClientFreeImpl::ClientFreeImpl(
-	Utf8String accessToken,
-	BeVersion clientVersion,
+	Utf8StringCR accessToken,
+	BeVersionCR clientVersion,
 	BeFileNameCR db_path,
 	bool offlineMode,
-	Utf8String projectId,
-	Utf8String featureString,
+	Utf8StringCR projectId,
+	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
 )
 	{

@@ -22,12 +22,12 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 ClientWithKeyImpl::ClientWithKeyImpl(
-	Utf8String accessKey,
+	Utf8StringCR accessKey,
 	ClientInfoPtr clientInfo,
 	BeFileNameCR db_path,
 	bool offlineMode,
-	Utf8String projectId,
-	Utf8String featureString,
+	Utf8StringCR projectId,
+	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
 )
 	{

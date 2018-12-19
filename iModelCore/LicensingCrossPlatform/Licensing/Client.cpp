@@ -33,8 +33,8 @@ ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 bool offlineMode,
-Utf8String projectId,
-Utf8String featureString,
+Utf8StringCR projectId,
+Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
 )
     {
@@ -46,12 +46,12 @@ IHttpHandlerPtr httpHandler
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::CreateFree
 (
-	Utf8String accessToken,
-	BeVersion clientVersion,
+	Utf8StringCR accessToken,
+	BeVersionCR clientVersion,
 	BeFileNameCR dbPath,
 	bool offlineMode,
-	Utf8String projectId,
-	Utf8String featureString,
+	Utf8StringCR projectId,
+	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
 )
 	{
@@ -63,12 +63,12 @@ ClientPtr Client::CreateFree
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::CreateWithKey
 (
-	Utf8String accessKey,
+	Utf8StringCR accessKey,
 	ClientInfoPtr clientInfo,
 	BeFileNameCR dbPath,
 	bool offlineMode,
-	Utf8String projectId,
-	Utf8String featureString,
+	Utf8StringCR projectId,
+	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
 )
 {
@@ -94,7 +94,7 @@ BentleyStatus Client::StopApplication()
  /*--------------------------------------------------------------------------------------+
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
- BentleyStatus Client::MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData)
+ BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData)
      {
      return m_impl->MarkFeature(featureId, featureUserData);
      }

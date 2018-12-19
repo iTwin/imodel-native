@@ -123,8 +123,8 @@ public:
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR db_path,
         bool offlineMode,
-        Utf8String projectId,
-        Utf8String featureString,
+        Utf8StringCR projectId,
+        Utf8StringCR featureString,
         IHttpHandlerPtr httpHandler
         );
 
@@ -135,7 +135,7 @@ public:
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
     //Features
-    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData);
+    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
     LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
 
     // Policy

@@ -31,8 +31,8 @@ ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 bool offlineMode,
-Utf8String projectId,
-Utf8String featureString,
+Utf8StringCR projectId,
+Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
 ) :
 m_userInfo(userInfo),
@@ -405,7 +405,7 @@ void ClientImpl::StopLogPostingHeartbeat()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClientImpl::MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData)
+BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData)
     {
     LOG.debug("ClientImpl::MarkFeature");
 

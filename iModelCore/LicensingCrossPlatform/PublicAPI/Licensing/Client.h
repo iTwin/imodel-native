@@ -50,30 +50,30 @@ public:
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider, /** For  */
         BeFileNameCR dbPath, /** Path for LicenseClient database */
         bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
-        Utf8String projectId = "", /** ProjectID string, defaults to an empty string */
-        Utf8String featureString = "", /** FeatureString, defaults to an empty string */
+        Utf8StringCR projectId = "", /** ProjectID string, defaults to an empty string */
+        Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
         IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
         );
 
 	LICENSING_EXPORT static ClientPtr CreateFree
 	(
-		Utf8String accessToken, /** AccessToken from OIDC */
-		BeVersion clientVersion, /** A ClientInfoPtr */
+		Utf8StringCR accessToken, /** AccessToken from OIDC */
+		BeVersionCR clientVersion, /** A ClientInfoPtr */
 		BeFileNameCR dbPath, /** Path for LicenseClient database */
 		bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
-		Utf8String projectId = "", /** ProjectID string, defaults to an empty string */
-		Utf8String featureString = "", /** FeatureString, defaults to an empty string */
+		Utf8StringCR projectId = "", /** ProjectID string, defaults to an empty string */
+		Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
 		IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
 	);
 
 	LICENSING_EXPORT static ClientPtr CreateWithKey
 	(
-		Utf8String accessKey, /** AccessKey */
+		Utf8StringCR accessKey, /** AccessKey */
 		ClientInfoPtr clientInfo, /** A ClientInfoPtr */
 		BeFileNameCR dbPath, /** Path for LicenseClient database */
 		bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
-		Utf8String projectId = "", /** ProjectID string, defaults to an empty string */
-		Utf8String featureString = "", /** FeatureString, defaults to an empty string */
+		Utf8StringCR projectId = "", /** ProjectID string, defaults to an empty string */
+		Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
 		IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
 	);
 
@@ -98,7 +98,7 @@ public:
 	/*!
 	* Mark Feature Comment
 	*/
-     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData);
+     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

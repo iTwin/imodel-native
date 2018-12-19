@@ -18,7 +18,7 @@ struct ClientInterface
 public:
 	virtual LicenseStatus StartApplication() = 0;
 	virtual BentleyStatus StopApplication() = 0;
-	virtual BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData) = 0;
+	virtual BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData) = 0;
     virtual ~ClientInterface() {};
 };
 
