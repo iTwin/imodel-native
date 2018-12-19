@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\HollowRectangleProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -64,6 +65,14 @@ bool HollowRectangleProfile::_Validate() const
     bool const isOuterFilletRadiusValid = ValidateOuterFilletRadius();
 
     return isWidthValid && isDepthValid && isWallThicknessValid && isInnerFilletRadiusValid && isOuterFilletRadiusValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr HollowRectangleProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateHollowRectangle (this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,7 +136,7 @@ bool HollowRectangleProfile::ValidateOuterFilletRadius() const
     bool const isPositive = std::isfinite (outerRadius) && outerRadius >= 0.0;
     bool const fitsInWidth = outerRadius < GetWidth() / 2.0;
     bool const fitsInDepth = outerRadius < GetDepth() / 2.0;
-    bool const doesNotIntersectWithInnerCorners = outerRadius - GetInnerFilletRadius() < (2 + std::sqrt (2.0)) * GetWallThickness();
+    bool const doesNotIntersectWithInnerCorners = outerRadius - GetInnerFilletRadius() < (2.0 + std::sqrt (2.0)) * GetWallThickness();
 
     return isPositive && fitsInWidth && fitsInDepth && doesNotIntersectWithInnerCorners;
     }

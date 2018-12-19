@@ -557,12 +557,17 @@ IGeometryPtr ProfilesGeomApi::CreateEllipse (EllipseProfileCPtr profile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Appends an array of ICurvePrimitives forming a rectangle shape to the given
+* CurveVector. If roundingRadius is greater than zero - rectangle shape with rounded
+* corners is produced.
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateRectangle (RectangleProfileCPtr profile)
+static void appendRectangleToCurveVector (CurveVectorPtr& curveVector, double width, double depth, double roundingRadius)
     {
-    double const halfWidth = profile->GetWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
+    BeAssert (curveVector->size() == 0);
+
+    double const halfWidth = width / 2.0;
+    double const halfDepth = depth / 2.0;
 
     DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
     DPoint3d const topRight = { halfWidth, halfDepth, 0.0 };
@@ -574,8 +579,41 @@ IGeometryPtr ProfilesGeomApi::CreateRectangle (RectangleProfileCPtr profile)
     ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
     ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (bottomLeft, topLeft);
 
-    bvector<ICurvePrimitivePtr> orderedCurves = { topLine, rightLine, bottomLine, leftLine };
-    return createGeometryFromPrimitiveArray (orderedCurves);
+    ICurvePrimitivePtr topRightArc, bottomRightArc, bottomLeftArc, topLeftArc;
+    if (roundingRadius > DBL_EPSILON)
+        {
+        topRightArc = createArcBetweenLines (topLine, rightLine, roundingRadius);
+        bottomRightArc = createArcBetweenLines (rightLine, bottomLine, roundingRadius);
+        bottomLeftArc = createArcBetweenLines (bottomLine, leftLine, roundingRadius);
+        topLeftArc = createArcBetweenLines (leftLine, topLine, roundingRadius);
+
+        if (topLine->GetLineCP()->Length() <= DBL_EPSILON)
+            topLine = nullptr;
+        if (rightLine->GetLineCP()->Length() <= DBL_EPSILON)
+            rightLine = nullptr;
+        if (bottomLine->GetLineCP()->Length() <= DBL_EPSILON)
+            bottomLine = nullptr;
+        if (leftLine->GetLineCP()->Length() <= DBL_EPSILON)
+            leftLine = nullptr;
+        }
+
+    ICurvePrimitivePtr orderedCurves[] = { topLine, topRightArc, rightLine, bottomRightArc, bottomLine, bottomLeftArc, leftLine, topLeftArc };
+    for (auto const& curvePtr : orderedCurves)
+        {
+        if (curvePtr.IsValid())
+            curveVector->Add (curvePtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateRectangle (RectangleProfileCPtr profile)
+    {
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    appendRectangleToCurveVector (curveVector, profile->GetWidth(), profile->GetDepth(), 0.0);
+
+    return IGeometry::Create (curveVector);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -583,36 +621,34 @@ IGeometryPtr ProfilesGeomApi::CreateRectangle (RectangleProfileCPtr profile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeomApi::CreateRoundedRectangle (RoundedRectangleProfileCPtr profile)
     {
-    double const halfWidth = profile->GetWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const roundingRadius = profile->GetRoundingRadius();
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    appendRectangleToCurveVector (curveVector, profile->GetWidth(), profile->GetDepth(), profile->GetRoundingRadius());
 
-    DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
-    DPoint3d const topRight = { halfWidth, halfDepth, 0.0 };
-    DPoint3d const bottomRight = { halfWidth, -halfDepth, 0.0 };
-    DPoint3d const bottomLeft = { -halfWidth, -halfDepth, 0.0 };
+    return IGeometry::Create (curveVector);
+    }
 
-    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (topLeft, topRight);
-    ICurvePrimitivePtr rightLine = ICurvePrimitive::CreateLine (topRight, bottomRight);
-    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
-    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (bottomLeft, topLeft);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateHollowRectangle (HollowRectangleProfileCPtr profile)
+    {
+    double const width = profile->GetWidth();
+    double const depth = profile->GetDepth();
+    double const doubleThickness = profile->GetWallThickness() * 2.0;
+    double const outerRadius = profile->GetOuterFilletRadius();
+    double const innerRadius = profile->GetInnerFilletRadius();
 
-    ICurvePrimitivePtr topRightArc = createArcBetweenLines (topLine, rightLine, roundingRadius);
-    ICurvePrimitivePtr bottomRightArc = createArcBetweenLines (rightLine, bottomLine, roundingRadius);
-    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines (bottomLine, leftLine, roundingRadius);
-    ICurvePrimitivePtr topLeftArc = createArcBetweenLines (leftLine, topLine, roundingRadius);
+    CurveVectorPtr outerCurveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    appendRectangleToCurveVector (outerCurveVector, width, depth, outerRadius);
 
-    if (topLine->GetLineCP()->Length() <= DBL_EPSILON)
-        topLine = nullptr;
-    if (rightLine->GetLineCP()->Length() <= DBL_EPSILON)
-        rightLine = nullptr;
-    if (bottomLine->GetLineCP()->Length() <= DBL_EPSILON)
-        bottomLine = nullptr;
-    if (leftLine->GetLineCP()->Length() <= DBL_EPSILON)
-        leftLine = nullptr;
+    CurveVectorPtr innerCurveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Inner);
+    appendRectangleToCurveVector (innerCurveVector, width - doubleThickness, depth - doubleThickness, innerRadius);
 
-    bvector<ICurvePrimitivePtr> orderedCurves = { topLine, topRightArc, rightLine, bottomRightArc, bottomLine, bottomLeftArc, leftLine, topLeftArc };
-    return createGeometryFromPrimitiveArray (orderedCurves);
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+    curveVector->Add (outerCurveVector);
+    curveVector->Add (innerCurveVector);
+
+    return IGeometry::Create (curveVector);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
