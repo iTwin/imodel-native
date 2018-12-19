@@ -64,6 +64,8 @@ $(o)RectangleProfileTests.obj           : $(BEGTEST_INPUT)RectangleProfileTests.
 
 $(o)RoundedRectangleProfileTests.obj    : $(BEGTEST_INPUT)RoundedRectangleProfileTests.cpp ${MultiCompileDepends}
 
+$(o)HollowRectangleProfileTests.obj     : $(BEGTEST_INPUT)HollowRectangleProfileTests.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts

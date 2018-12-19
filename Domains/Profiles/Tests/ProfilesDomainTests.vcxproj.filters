@@ -71,6 +71,9 @@
     <ClCompile Include="src\RoundedRectangleProfileTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
+    <ClCompile Include="src\HollowRectangleProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\TestHost.h">
