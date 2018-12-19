@@ -270,7 +270,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             
         virtual size_t StoreNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;
             
-        virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;            
+        virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;
+
+        virtual SMNodeHeaderLocation GetNodeHeaderLocation(HPMBlockID blockID) override;
 
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
 

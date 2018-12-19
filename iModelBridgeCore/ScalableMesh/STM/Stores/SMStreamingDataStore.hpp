@@ -1286,6 +1286,22 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     return 1;
     }
 
+template <class EXTENT> SMNodeHeaderLocation SMStreamingStore<EXTENT>::GetNodeHeaderLocation(HPMBlockID blockID) 
+    {    
+    auto group = m_CesiumGroup->GetCache()->GetGroupForNodeIDFromCache(blockID.m_integerID);
+
+    if (group == nullptr) 
+        SMNodeHeaderLocation::Network;
+
+    if (!group->IsLoaded())
+        {
+        return SMNodeHeaderLocation::Network;
+        }
+
+    return SMNodeHeaderLocation::NetworkLocallyCached;    
+    }
+
+
 template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);

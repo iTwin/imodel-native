@@ -3306,10 +3306,18 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 
 template <class POINT> SMNodeViewStatus ScalableMeshNode<POINT>::_IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const
-    {    
-
-    if (!this->m_node->IsLoaded() && this->m_node->m_SMIndex->IsFromCesium())
-    	return SMNodeViewStatus::NotLoaded;
+    {        
+    if (this->m_node->m_SMIndex->IsFromCesium())
+        {        
+        if (!this->m_node->IsLoaded())
+            {            
+            assert(this->m_node->m_SMIndex->GetDataStore() != nullptr);
+            if (this->m_node->m_SMIndex->GetDataStore()->GetNodeHeaderLocation(this->m_node->GetBlockID().m_integerID) == SMNodeHeaderLocation::Network)
+                {
+                return SMNodeViewStatus::NotLoaded;
+                }           
+            }
+        }
 
     ISMPointIndexQuery<POINT, Extent3dType>* queryObjectP;
 

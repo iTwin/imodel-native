@@ -229,6 +229,11 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
     return sizeof(*header);
     }    
 
+template <class EXTENT> SMNodeHeaderLocation SMSQLiteStore<EXTENT>::GetNodeHeaderLocation(HPMBlockID blockID) 
+    {        
+    return SMNodeHeaderLocation::Local;    
+    }
+
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
