@@ -138,9 +138,8 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             if (typeInfo.IsEnum())
                 {
                 BeAssert(typeInfo.GetEnumerationType() != nullptr);
-                ECSqlStatus stat = AddReferenceToPropertyTypeSchema(typeInfo.GetEnumerationType()->GetSchema());
-                if (!stat.IsSuccess())
-                    return stat;
+                if (SUCCESS != AddSchemaReference(typeInfo.GetEnumerationType()->GetSchema()))
+                    return ECSqlStatus::Error;
 
                 if (ECObjectsStatus::Success != GetClass().CreateEnumerationProperty(primProp, encodedPropName, *typeInfo.GetEnumerationType()))
                     return ECSqlStatus::Error;
@@ -171,9 +170,8 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             case ECSqlTypeInfo::Kind::Struct:
             {
             ECStructClassCR structType = typeInfo.GetStructType();
-            ECSqlStatus stat = AddReferenceToPropertyTypeSchema(structType.GetSchema());
-            if (!stat.IsSuccess())
-                return stat;
+            if (SUCCESS != AddSchemaReference(structType.GetSchema()))
+                return ECSqlStatus::Error;
 
             ECStructClassCP asStruct = structType.GetStructClassCP();
             if (nullptr == asStruct)
@@ -192,9 +190,8 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             PrimitiveArrayECPropertyP arrayProp = nullptr;
             if (typeInfo.GetEnumerationType() != nullptr)
                 {
-                ECSqlStatus stat = AddReferenceToPropertyTypeSchema(typeInfo.GetEnumerationType()->GetSchema());
-                if (!stat.IsSuccess())
-                    return stat;
+                if (SUCCESS != AddSchemaReference(typeInfo.GetEnumerationType()->GetSchema()))
+                    return ECSqlStatus::Error;
 
                 if (ECObjectsStatus::Success != GetClass().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, *typeInfo.GetEnumerationType()))
                     return ECSqlStatus::Error;
@@ -221,9 +218,8 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             case ECSqlTypeInfo::Kind::StructArray:
             {
             ECStructClassCR structType = typeInfo.GetStructType();
-            ECSqlStatus stat = AddReferenceToPropertyTypeSchema(structType.GetSchema());
-            if (!stat.IsSuccess())
-                return stat;
+            if (SUCCESS != AddSchemaReference(structType.GetSchema()))
+                return ECSqlStatus::Error;
 
             ECStructClassCP asStruct = structType.GetStructClassCP();
             if (nullptr == asStruct)
@@ -258,9 +254,8 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
                 return ECSqlStatus::Error;
 
             ECRelationshipClassCR relClass = *navProp->GetRelationshipClass();
-            ECSqlStatus stat = AddReferenceToPropertyTypeSchema(relClass.GetSchema());
-            if (!stat.IsSuccess())
-                return stat;
+            if (SUCCESS != AddSchemaReference(relClass.GetSchema()))
+                return ECSqlStatus::Error;
 
             NavigationECPropertyP newNavProp = nullptr;
             if (ECObjectsStatus::Success != GetClass().CreateNavigationProperty(newNavProp, encodedPropName, relClass, navProp->GetDirection(), false))
@@ -277,22 +272,106 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
     generatedPropertyP->SetDisplayLabel(propName);
     generatedPropertyP->SetIsReadOnly(true);
 
+    if (SUCCESS != AssignCustomAttributes(ctx, *generatedPropertyP, typeInfo))
+        return ECSqlStatus::Error;
+
     generatedProperty = generatedPropertyP;
     return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    12/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DynamicSelectClauseECClass::AssignCustomAttributes(ECSqlPrepareContext& ctx, ECN::ECProperty& dtProp, ECSqlTypeInfo const& typeInfo) const
+    {
+    // currently we only add the DateTimeInfo CA for date time properties as they control how clients should deal with returned date times.
+    if ((!typeInfo.IsPrimitive() && typeInfo.GetKind() != ECSqlTypeInfo::Kind::PrimitiveArray) || typeInfo.GetPrimitiveType() != PRIMITIVETYPE_DateTime || !typeInfo.GetDateTimeInfo().IsValid())
+        return SUCCESS;
+
+    ECClassCP dtInfoCl = ctx.GetECDb().Schemas().GetClass("CoreCustomAttributes", "DateTimeInfo");
+    if (dtInfoCl == nullptr)
+        {
+        ctx.Issues().Report("Could not locate DateTimeInfo ECClass from CoreCustomAttributes ECSchema.");
+        return ERROR;
+        }
+
+    IECInstancePtr dtInfoCA = dtInfoCl->GetDefaultStandaloneEnabler()->CreateInstance();
+    
+    DateTime::Info const& info = typeInfo.GetDateTimeInfo();
+    ECValue compV;
+    switch (info.GetComponent())
+        {
+        case DateTime::Component::Date:
+            compV.SetUtf8CP("Date");
+            break;
+        case DateTime::Component::DateAndTime:
+            compV.SetUtf8CP("DateTime");
+            break;
+        case DateTime::Component::TimeOfDay:
+            compV.SetUtf8CP("TimeOfDay");
+            break;
+        default:
+            BeAssert(false && "Unhandled DateTime::Component value found. This code needs to be adjusted.");
+            break;
+        }
+
+    if (ECObjectsStatus::Success != dtInfoCA->SetValue("DateTimeComponent", compV))
+        {
+        ctx.Issues().ReportV("Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
+        return ERROR;
+        }
+
+    if (info.GetComponent() == DateTime::Component::DateAndTime)
+        {
+        ECValue kindV;
+        switch (info.GetKind())
+            {
+            case DateTime::Kind::Unspecified:
+                kindV.SetUtf8CP("Unspecified");
+                break;
+            case DateTime::Kind::Utc:
+                kindV.SetUtf8CP("Utc");
+                break;
+            case DateTime::Kind::Local:
+                kindV.SetUtf8CP("Local");
+                break;
+            default:
+                BeAssert(false && "Unhandled DateTime::Component value found. This code needs to be adjusted.");
+                break;
+            }
+
+        if (ECObjectsStatus::Success != dtInfoCA->SetValue("DateTimeKind", kindV))
+            {
+            ctx.Issues().ReportV("Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
+            return ERROR;
+            }
+        }
+
+    if (SUCCESS != AddSchemaReference(dtInfoCl->GetSchema()))
+        return ERROR;
+
+    if (ECObjectsStatus::Success != dtProp.SetCustomAttribute(*dtInfoCA))
+        {
+        ctx.Issues().ReportV("Could not assign DateTimeInfo custom attribute to generated property of ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::AddReferenceToPropertyTypeSchema(ECSchemaCR propertyTypeSchema) const
+BentleyStatus DynamicSelectClauseECClass::AddSchemaReference(ECSchemaCR schemaToReference) const
     {
-    if (ECSchema::IsSchemaReferenced(GetSchema(), propertyTypeSchema))
-        return ECSqlStatus::Success;
+    if (ECSchema::IsSchemaReferenced(GetSchema(), schemaToReference))
+        return SUCCESS;
 
-    if (ECObjectsStatus::Success != GetSchema().AddReferencedSchema(const_cast<ECSchemaR> (propertyTypeSchema)))
-        return ECSqlStatus::Error;
+    if (ECObjectsStatus::Success != GetSchema().AddReferencedSchema(const_cast<ECSchemaR> (schemaToReference)))
+        return ERROR;
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
