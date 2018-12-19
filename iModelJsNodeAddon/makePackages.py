@@ -20,18 +20,18 @@ import subprocess
 def publishPackage(packagedir, doPublish, tag):
 
     if not doPublish:
-        print packagedir;
-        return;
+        print packagedir
+        return
 
     pubcmd = 'npm publish '
     pubcmd += '--@bentley:registry=https://bentley.jfrog.io/bentley/api/npm/staging/ '
     pubcmd += packagedir
 
     if tag != None:
-        pubcmd = pubcmd + ' --tag ' + tag;
+        pubcmd = pubcmd + ' --tag ' + tag
 
     if 0 != os.system(pubcmd):
-        exit(1);
+        exit(1)
 
 # Replace ${macros} with values in specified file
 def writePackageJson(packagefile, NODE_OS = None, NODE_CPU = None, PACKAGE_VERSION = None, COMPATIBLE_API_PACKAGE_VERSIONS = None, NODE_ENGINES = None):
@@ -55,7 +55,7 @@ def writePackageJson(packagefile, NODE_OS = None, NODE_CPU = None, PACKAGE_VERSI
 # Compute the range of versions of addon apis that are compatible with this addon.
 # They are apis with the same or lower minor and/or patch version, within the same major version.
 def compute_compatible_api_version_range(packageVersion):
-    return "<=" + packageVersion + "  >=" + packageVersion.split('.')[0] + ".0.0";
+    return "<=" + packageVersion + "  >=" + packageVersion.split('.')[0] + ".0.0"
 
 # Copy a version-specific addon into place
 # @param outdirParent The path to the output package's parent directory
@@ -102,9 +102,9 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
 
     outputpackagedir = os.path.join(outdirParent, 'imodeljs-native-platform-api')
 
-    apiSourceDir = os.path.join(parentSourceDir, 'api_package');
+    apiSourceDir = os.path.join(parentSourceDir, 'api_package')
 
-    os.makedirs(outputpackagedir);
+    os.makedirs(outputpackagedir)
 
     packageTemplateFileName = 'package.json.template'
 
@@ -116,11 +116,11 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
 
     # Generate the package.json file
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
-    shutil.copyfile(os.path.join(apiSourceDir, packageTemplateFileName), dstpackagefile);
+    shutil.copyfile(os.path.join(apiSourceDir, packageTemplateFileName), dstpackagefile)
 
     writePackageJson(dstpackagefile, PACKAGE_VERSION = packageVersion)
 
-    return outputpackagedir;
+    return outputpackagedir
 
 #
 #   main
@@ -132,14 +132,14 @@ if __name__ == '__main__':
 
     productdir = sys.argv[1]
     outdirParent = sys.argv[2]
-    nodeOS = sys.argv[3].lower();
-    nodeCPU = sys.argv[4].lower();
+    nodeOS = sys.argv[3].lower()
+    nodeCPU = sys.argv[4].lower()
     packageVersionFileName = sys.argv[5]
     sourceDir = sys.argv[6]
-    doPublish = (sys.argv[7].lower() == 'publish');
+    doPublish = (sys.argv[7].lower() == 'publish')
 
     # TBD: Pass a tag in or read it from a special file? How to prevent stale tags values?
-    tag = None;
+    tag = None
 
     if outdirParent.endswith ('/') or outdirParent.endswith ('\\'):
         outdirParent = outdirParent[0:len(outdirParent)-1]
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         productdir = productdir[0:len(productdir)-1]
 
     # The package semantic version number (n.m.p) is stored in a file. Inject this version number into all of the package files that we generate.
-    packageVersion = "";
+    packageVersion = ""
     with open(packageVersionFileName, 'r') as pvf:
         packageVersion = pvf.read()
     packageVersion = packageVersion.strip()
@@ -156,17 +156,17 @@ if __name__ == '__main__':
     addonDir = os.path.join(productdir, 'Addon')
 
     if os.path.exists(outdirParent):
-        print '*** ' + outdirParent + ' already exists. Remove output directory before calling this script';
+        print '*** ' + outdirParent + ' already exists. Remove output directory before calling this script'
         exit(1)
 
     os.makedirs(outdirParent)
 
-    publishPackage(generate_package_for_platform(outdirParent, productdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag);
+    publishPackage(generate_package_for_platform(outdirParent, productdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag)
 
     # Generate the api package - PUBLISH ONLY ON WINDOWS - Builds for all other platforms only publish their platform-specific addon packages.
     if nodeOS != 'win32':
-        doPublish = False;
+        doPublish = False
 
-    publishPackage(generate_imodeljs_native_platform_api(outdirParent, sourceDir, packageVersion), doPublish, tag);
+    publishPackage(generate_imodeljs_native_platform_api(outdirParent, sourceDir, packageVersion), doPublish, tag)
 
     exit(0)
