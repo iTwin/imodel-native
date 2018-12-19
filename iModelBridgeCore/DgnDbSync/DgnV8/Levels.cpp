@@ -443,8 +443,11 @@ void Converter::ConvertAttachmentLevelMask(ViewDefinitionR theView, DgnV8ViewInf
         {
         for (auto nestedAttachment : *v8Attachment.GetDgnAttachmentsP())
             {
-            if (nullptr == nestedAttachment->GetDgnModelP() || (v8Attachment.GetDgnModelP()->Is3D() != nestedAttachment->GetDgnModelP()->Is3D()))
+            if (nullptr == nestedAttachment->GetDgnModelP())
                 continue; // missing reference or blocked reference conversion.
+
+            if (ShouldConvertToPhysicalModel(*v8Attachment.GetDgnModelP()) != ShouldConvertToPhysicalModel(*nestedAttachment->GetDgnModelP()))
+                continue; // 3D->2D attachments not supported
 
             ConvertAttachmentLevelMask(theView, viewInfo, *nestedAttachment, ltype);
             }
