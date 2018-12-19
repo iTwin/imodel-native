@@ -775,7 +775,7 @@ int iModelBridgeRegistryBase::AssignCmdLineArgs::ParseCommandLine(int argc, WCha
     {
     std::vector<Utf8String> args;
 
-    char** argPtrs = (char**)malloc(argc * sizeof(char*));
+    auto argPtrs = new char*[argc];
 
     for (int index = 0; index < argc; ++index)
         {
@@ -808,9 +808,10 @@ int iModelBridgeRegistryBase::AssignCmdLineArgs::ParseCommandLine(int argc, WCha
 
                 args.push_back(opt);
             }
-            free(argPtrs);
-            argPtrs = (char**)malloc(args.size() * sizeof(char*));
-            argc = (int)args.size();
+            delete[]argPtrs;
+            argc = (int) args.size();
+            argPtrs = new char*[argc];
+            
             for (int index = 0; index < argc; ++index)
                 argPtrs[index] = &args[index][0];
             auto finalResult = options.parse(argc, argPtrs);
@@ -828,7 +829,7 @@ int iModelBridgeRegistryBase::AssignCmdLineArgs::ParseCommandLine(int argc, WCha
         exit(0);
         }
 
-    free(argPtrs);
+    delete []argPtrs;
     return BSISUCCESS;
     }
 
