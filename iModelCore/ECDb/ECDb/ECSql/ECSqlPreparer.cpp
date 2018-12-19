@@ -1282,7 +1282,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     const bool isAnyOrSomeFunction = functionName.EqualsIAscii("any") || functionName.EqualsIAscii("some");
     const bool isEveryFunction = !isAnyOrSomeFunction && functionName.EqualsIAscii("every");
     const bool isAnyEveryOrSomeFunction = isAnyOrSomeFunction || isEveryFunction;
-    const bool isCurrentDateTimeFunction = functionName.EqualsIAscii(FunctionCallExp::CURRENT_DATE()) || functionName.EqualsIAscii(FunctionCallExp::CURRENT_TIMESTAMP());
+    const bool isCurrentDateTimeFunction = functionName.EqualsIAscii(FunctionCallExp::CURRENT_DATE()) || functionName.EqualsIAscii(FunctionCallExp::CURRENT_TIMESTAMP()) || functionName.EqualsIAscii(FunctionCallExp::CURRENT_TIME());
     if (isAnyEveryOrSomeFunction)
         {
         BeAssert(exp.GetChildrenCount() == 1 && "ANY, SOME, EVERY functions expect a single arg");
@@ -1294,7 +1294,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
         }
     else if (isCurrentDateTimeFunction)
         {
-        BeAssert(exp.IsGetter() && "CURRENT_DATE or CURRENT_TIMESTAMP are expected to not have args and parentheses");
+        BeAssert(exp.IsGetter() && "CURRENT_DATE, CURRENT_TIMESTAMP and CURRENT_TIME are expected to not have args and parentheses");
         //Note: CURRENT_TIMESTAMP in SQLite returns a UTC timestamp. ECSQL specifies CURRENT_TIMESTAMP as UTC, too,
         //so no conversion needed.
         nativeSql.Append("JULIANDAY(").Append(functionName).AppendParenRight();

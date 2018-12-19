@@ -737,7 +737,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
     ~NativeDgnDb() {CloseDgnDb(true);}
 
-    void CloseDgnDb(bool stopUsageTracking)
+    void CloseDgnDb(bool stopStracking)
         {
         if (!m_dgndb.IsValid())
             return;
@@ -752,14 +752,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb->m_jsIModelDb.Reset(); // disconnect the iModelDb object
         JsInterop::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
-
-        if (stopUsageTracking)
-            {
-            if (m_ulasClient != nullptr)
-                m_ulasClient->StopApplication();
-
+        if (stopStracking)
             m_ulasClient = nullptr;
-            }
         }
 
     void OnDgnDbOpened(DgnDbR dgndb)
@@ -839,9 +833,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     Napi::Value OpenDgnDb(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, accessToken, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, projectId, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(2, dbname, Env().Undefined());
-        REQUIRE_ARGUMENT_INTEGER(3, mode, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, appVersion, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(2, projectId, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(3, dbname, Env().Undefined());
+        REQUIRE_ARGUMENT_INTEGER(4, mode, Env().Undefined());
 
         DgnDbPtr db;
         DbResult status = JsInterop::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
@@ -849,9 +844,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             {
             OnDgnDbOpened(*db);
             BeAssert(m_ulasClient == nullptr);
-            m_ulasClient = std::make_unique<UlasClient>(accessToken, projectId);
+            m_ulasClient = std::make_unique<UlasClient>(accessToken, appVersion, projectId);
             if (SUCCESS != m_ulasClient->Initialize())
                 return Napi::Number::New(Env(), -100);
+
+            m_ulasClient->StartTracking();
             }
 
         return Napi::Number::New(Env(), (int)status);
@@ -873,9 +870,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     Napi::Value CreateIModel(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, accessToken, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, projectId, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(2, fileName, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(3, args, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, appVersion, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(2, projectId, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(3, fileName, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(4, args, Env().Undefined());
 
         DbResult status;
         DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args), Env());
@@ -883,9 +881,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             {
             OnDgnDbOpened(*db);
             BeAssert(m_ulasClient == nullptr);
-            m_ulasClient = std::make_unique<UlasClient>(accessToken, projectId);
+            m_ulasClient = std::make_unique<UlasClient>(accessToken, appVersion, projectId);
             if (SUCCESS != m_ulasClient->Initialize())
                 return Napi::Number::New(Env(), -100);
+
+            m_ulasClient->StartTracking();
             }
 
         return Napi::Number::New(Env(), (int)status);
@@ -1380,7 +1380,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         }
 
     void CloseDgnDb(Napi::CallbackInfo const& info) {  CloseDgnDb(true); }
-    void CloseDgnDbFile(Napi::CallbackInfo const& info) { CloseDgnDb(false); }
 
     Napi::Value CreateChangeCache(Napi::CallbackInfo const& info)
         {
@@ -1834,7 +1833,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
             InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
             InstanceMethod("closeIModel", &NativeDgnDb::CloseDgnDb),
-            InstanceMethod("closeIModelFile", &NativeDgnDb::CloseDgnDbFile),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("createStandaloneIModel", &NativeDgnDb::CreateStandaloneIModel),
@@ -2318,6 +2316,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
             InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
             InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
             InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
+            InstanceMethod("isEnum", &NativeECSqlColumnInfo::IsEnum),
             InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
             InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
             InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias)});
@@ -2461,6 +2460,14 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
             return toJsString(Env(), m_colInfo->GetPropertyPath().ToString());
             }
 
+        Napi::Value IsEnum(Napi::CallbackInfo const& info)
+            {
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
+            return Napi::Boolean::New(Env(), m_colInfo->GetEnumType() != nullptr);
+            }
+
         Napi::Value IsSystemProperty(Napi::CallbackInfo const& info)
             {
             if (m_colInfo == nullptr)
@@ -2560,6 +2567,7 @@ public:
             InstanceMethod("getPoint2d", &NativeECSqlValue::GetPoint2d),
             InstanceMethod("getPoint3d", &NativeECSqlValue::GetPoint3d),
             InstanceMethod("getString", &NativeECSqlValue::GetString),
+            InstanceMethod("getEnum", &NativeECSqlValue::GetEnum),
             InstanceMethod("getStructIterator", &NativeECSqlValue::GetStructIterator),
             InstanceMethod("isNull", &NativeECSqlValue::IsNull),
         });
@@ -2736,6 +2744,26 @@ public:
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
 
         return toJsString(Env(), m_ecsqlValue->GetText());
+        }
+
+    Napi::Value GetEnum(Napi::CallbackInfo const& info)
+        {
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        if (m_ecsqlValue->GetColumnInfo().GetEnumType() == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not an ECEnumeration.", Env().Undefined());
+
+        ECEnumeratorCP enumValue = m_ecsqlValue->GetEnum();
+        if (enumValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("No ECEnumeration value found for ECSqlValue.", Env().Undefined());
+
+        Napi::Object jsEnum = Napi::Object::New(Env());
+        jsEnum.Set("schema", Napi::String::New(Env(), enumValue->GetEnumeration().GetSchema().GetName().c_str()));
+        jsEnum.Set("name", Napi::String::New(Env(), enumValue->GetEnumeration().GetName().c_str()));
+        jsEnum.Set("key", Napi::String::New(Env(), enumValue->GetName().c_str()));
+        jsEnum.Set("value", enumValue->IsInteger() ? Napi::Number::New(Env(), enumValue->GetInteger()) : Napi::String::New(Env(), enumValue->GetString().c_str()));
+        return jsEnum;
         }
 
     Napi::Value GetNavigation(Napi::CallbackInfo const& info)

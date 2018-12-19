@@ -25,6 +25,39 @@ ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, DateTime::Inf
     : m_dataType(dataType), m_dateTimeInfo(dateTimeInfo), m_structType(structType), m_property(ecProperty), m_isSystemProperty(isSystemProperty), m_isGeneratedProperty(isGeneratedProperty), m_propertyPath(propertyPath), m_rootClass(rootClass)
     {}
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 12/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+ECEnumerationCP ECSqlColumnInfo::GetEnumType() const
+    {
+    ECN::ECPropertyCP prop = nullptr;
+    ECSqlPropertyPath::Entry const& leafEntry = m_propertyPath.GetLeafEntry();
+    if (leafEntry.GetKind() == ECSqlPropertyPath::Entry::Kind::Property)
+        prop = leafEntry.GetProperty();
+    else
+        {
+        ECSqlPropertyPath::Entry const& arrayPropEntry = m_propertyPath.At(m_propertyPath.Size() - 2);
+        BeAssert(arrayPropEntry.GetKind() == ECSqlPropertyPath::Entry::Kind::Property);
+        prop = arrayPropEntry.GetProperty();
+        }
+
+    if (prop == nullptr)
+        {
+        BeAssert(prop != nullptr);
+        return nullptr;
+        }
+
+    PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
+    if (primProp != nullptr)
+        return primProp->GetEnumeration();
+
+    PrimitiveArrayECPropertyCP primArrayProp = prop->GetAsPrimitiveArrayProperty();
+    if (primArrayProp != nullptr)
+        return primArrayProp->GetEnumeration();
+
+    return nullptr;
+    }
+
 //********************** ECSqlColumnInfo::RootClass **************************************
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 01/2018

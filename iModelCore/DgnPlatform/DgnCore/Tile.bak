@@ -91,6 +91,21 @@ public:
     ClassificationLoader(Tree& tree, ContentIdCR contentId);
 };
 
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     12/18
+//=======================================================================================
+struct AnimationLoader : Loader
+{
+    DEFINE_T_SUPER(Loader);
+private:
+    bmap<uint64_t, uint64_t>    m_nodeMap;
+
+    uint64_t GetNodeId(DgnElementId elementId) const final { auto found = m_nodeMap.find(elementId.GetValue()); return found == m_nodeMap.end() ? 0 : found->second; }
+
+
+public:
+    AnimationLoader(Tree& tree, ContentIdCR contentId);
+};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
@@ -1338,6 +1353,9 @@ LoaderPtr Tree::CreateLoader(ContentIdCR contentId)
         {
         case Type::Classifier:
             return new ClassificationLoader(*this, contentId);
+
+        case Type::Animation:
+            return new AnimationLoader(*this, contentId);
 
         default:
             return new Loader(*this, contentId);

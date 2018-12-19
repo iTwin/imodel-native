@@ -117,11 +117,10 @@ struct ECSqlTypeInfo final
 
         ECN::PrimitiveType GetPrimitiveType() const 
             {
-            if (m_primitiveType == nullptr)
-                BeAssert(IsPrimitive() || m_kind == Kind::PrimitiveArray);
-                
+            BeAssert(m_primitiveType.IsValid() && (IsPrimitive() || m_kind == Kind::PrimitiveArray));
             return m_primitiveType.Value(); 
             }
+
         DateTime::Info const& GetDateTimeInfo() const { BeAssert(GetPrimitiveType() == ECN::PRIMITIVETYPE_DateTime); return m_dateTimeInfo.Value(); }
         ECN::ECEnumerationCP GetEnumerationType() const { BeAssert(IsPrimitive() || m_kind == Kind::PrimitiveArray); return m_enumType; }
         bool HasExtendedType() const { return !m_extendedTypeName.empty(); }

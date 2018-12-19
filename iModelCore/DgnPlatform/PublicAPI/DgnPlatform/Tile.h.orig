@@ -235,7 +235,11 @@ public:
     virtual PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const { return &pf; }
     virtual bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const { return false; }
     virtual bool CompressMeshQuantization() const { return false; }                             // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
+<<<<<<< HEAD
     virtual uint64_t GetNodeId(DgnElementId id) const;
+=======
+    virtual uint64_t GetNodeId(DgnElementId id) const { return 0; }                             // Geometry with same ID may be batched. ..Animation, classifcation).
+>>>>>>> 51f65daf47aa453e6e674a4bfcd33fc27b4da07d
 
 
     struct PtrComparator
@@ -250,11 +254,14 @@ public:
 };
 
 
+<<<<<<< HEAD
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/18
 //=======================================================================================
 struct NodeMap : RefCountedBase, bmap<uint64_t, uint64_t>  {};
 
+=======
+>>>>>>> 51f65daf47aa453e6e674a4bfcd33fc27b4da07d
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
 //=======================================================================================

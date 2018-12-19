@@ -21,11 +21,30 @@ namespace IModelJsNative
 BeFileName* UlasClient::s_cacheDbPath = nullptr;
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle             12/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+UlasClient::~UlasClient()
+    {
+    if (m_client != nullptr)
+        {
+        m_client->StopApplication();
+        m_client = nullptr;
+        }
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle             11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus UlasClient::Initialize()
     {
     BeAssert(m_client == nullptr && "May not initialize UlasClient more than once.");
+
+    if (m_appVersion.IsEmpty())
+        {
+        JsInterop::GetLogger().error("Application' version has not been specified.");
+        return ERROR;
+        }
+
     if (s_cacheDbPath == nullptr)
         {
         s_cacheDbPath = new BeFileName();
@@ -38,7 +57,7 @@ BentleyStatus UlasClient::Initialize()
         s_cacheDbPath->AppendToPath(L"imodeljs.usagetracking.db");
         }
 
-    m_client = Licensing::Client::CreateFree(m_accessToken, m_projectId, *s_cacheDbPath);
+    m_client = Licensing::Client::CreateFree(m_accessToken, m_appVersion, m_projectId, *s_cacheDbPath);
     if (m_client == nullptr)
         {
         JsInterop::GetLogger().error("Failed to set-up usage tracking. User is not authorized.");
@@ -51,7 +70,16 @@ BentleyStatus UlasClient::Initialize()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle             11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-void UlasClient::StopApplication()
+void UlasClient::StartTracking()
+    {
+    BeAssert(m_client != nullptr);
+    if (m_client != nullptr)
+        m_client->StartApplication();
+    }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle             11/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void UlasClient::StopTracking()
     {
     BeAssert(m_client != nullptr);
     if (m_client != nullptr)

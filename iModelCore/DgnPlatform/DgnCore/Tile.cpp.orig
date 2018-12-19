@@ -91,6 +91,21 @@ public:
     ClassificationLoader(Tree& tree, ContentIdCR contentId);
 };
 
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     12/18
+//=======================================================================================
+struct AnimationLoader : Loader
+{
+    DEFINE_T_SUPER(Loader);
+private:
+    bmap<uint64_t, uint64_t>    m_nodeMap;
+
+    uint64_t GetNodeId(DgnElementId elementId) const final { auto found = m_nodeMap.find(elementId.GetValue()); return found == m_nodeMap.end() ? 0 : found->second; }
+
+
+public:
+    AnimationLoader(Tree& tree, ContentIdCR contentId);
+};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
@@ -1339,6 +1354,12 @@ LoaderPtr Tree::CreateLoader(ContentIdCR contentId)
         case Type::Classifier:
             return new ClassificationLoader(*this, contentId);
 
+<<<<<<< HEAD
+=======
+        case Type::Animation:
+            return new AnimationLoader(*this, contentId);
+
+>>>>>>> 51f65daf47aa453e6e674a4bfcd33fc27b4da07d
         default:
             return new Loader(*this, contentId);
         }
@@ -1376,6 +1397,7 @@ ContentCPtr Tree::RequestContent(ContentIdCR contentId)
 Utf8String Tree::Id::GetPrefixString() const
     {
     Utf8String      prefix;
+<<<<<<< HEAD
 
     if (IsAnimation())
         prefix = s_animationIdPrefix + m_animationSourceId.ToHexStr() + "_";
@@ -1383,6 +1405,15 @@ Utf8String Tree::Id::GetPrefixString() const
     if (IsClassifier())
         prefix += s_classifierIdPrefix + Utf8PrintfString("%f_", m_classifierExpansion);
 
+=======
+
+    if (IsAnimation())
+        prefix = s_animationIdPrefix + m_animationSourceId.ToHexStr() + "_";
+
+    if (IsClassifier())
+        prefix += s_classifierIdPrefix + Utf8PrintfString("%f_", m_classifierExpansion);
+
+>>>>>>> 51f65daf47aa453e6e674a4bfcd33fc27b4da07d
     return prefix;
     }
     
@@ -1420,7 +1451,11 @@ Tree::Id Tree::Id::FromString(Utf8StringCR str)
         size_t      endPrefix = str.find("_");
         uint64_t    sourceId;
 
+<<<<<<< HEAD
+        if (1 == sscanf(str.c_str() + s_animationIdPrefix.size(), "%I64x", &sourceId))
+=======
         if (1 == sscanf(str.c_str() + s_animationIdPrefix.size(), "%" SCNu64, &sourceId))
+>>>>>>> 51f65daf47aa453e6e674a4bfcd33fc27b4da07d
             animationSourceId = DgnElementId(sourceId);
 
         idStr.erase(0, endPrefix+1);
@@ -1474,6 +1509,7 @@ Loader::~Loader()
     //
     }
 
+<<<<<<< HEAD
 uint64_t Loader::GetNodeId(DgnElementId id) const { return m_tree.GetElementNodeId(id); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1489,6 +1525,8 @@ uint64_t Tree::GetElementNodeId(DgnElementId elementId) const
     else 
         return 0;
     }
+=======
+>>>>>>> 51f65daf47aa453e6e674a4bfcd33fc27b4da07d
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
@@ -1782,6 +1820,46 @@ PolyfaceHeaderPtr ClassificationLoader::Preprocess(PolyfaceHeaderR pf) const
     return &pf;
     }
 
+<<<<<<< HEAD
+=======
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+AnimationLoader::AnimationLoader(TreeR tree, ContentIdCR contentId) :  T_Super(tree, contentId) 
+    {
+    tree.GetDbMutex().lock();
+    auto displayStyle = tree.GetDgnDb().Elements().Get<DisplayStyle>(tree.GetId().GetAnimationSourceId());
+    tree.GetDbMutex().unlock();
+
+    if (!displayStyle.IsValid())
+        return;
+
+    auto schedule = displayStyle->GetStyle("scheduleScript");
+    if (schedule.isNull())
+        return;
+
+    for (auto& modelTimeline : schedule)
+        {
+        if (modelTimeline["modelId"].asUInt64() == tree.GetModelId().GetValue())
+            {
+            uint64_t nodeIndex = 0;
+            auto& elementTimelines = modelTimeline["elementTimelines"];
+            for (auto& elementTimeline : elementTimelines)
+                {
+                nodeIndex++;
+                if (elementTimeline.isMember("elementIds") &&                                                                                                                                            
+                    (elementTimeline.isMember("transformTimeline") || elementTimeline.isMember("cuttingPlaneTimeline")))
+                    {
+                    auto& elementIds = elementTimeline["elementIds"];
+                    for (auto& elementId : elementIds)
+                       m_nodeMap.Insert(elementId.asUInt64(), nodeIndex);
+                    }
+                }
+            }
+        }
+    }
+
+>>>>>>> 51f65daf47aa453e6e674a4bfcd33fc27b4da07d
 /*---------------------------------------------------------------------------------**//**                                             
 * @bsimethod                                                    Ray.Bentley     08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
