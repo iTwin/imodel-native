@@ -19,5 +19,4 @@ else
 fi
 
 cp $OutRoot/MacOSX64/packages/imodeljs-native-platform-api/*          $tempDir/common/temp/node_modules/@bentley/imodeljs-native-platform-api
-cp -r $OutRoot/MacOSX64/packages/imodeljs-n_8-darwin-x64               $tempDir/common/temp/node_modules/@bentley
-cp -r $OutRoot/MacOSX64/packages/imodeljs-e_2-darwin-x64               $tempDir/common/temp/node_modules/@bentley
+cp -r $OutRoot/MacOSX64/packages/imodeljs-n_10-darwin-x64               $tempDir/common/temp/node_modules/@bentley

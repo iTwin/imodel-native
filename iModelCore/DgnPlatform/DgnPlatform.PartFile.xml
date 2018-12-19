@@ -61,7 +61,7 @@
         <SubPart PartName="PsolidShim"/>
         <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="node-addon-lib" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
+        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
 
       <!--
             Barry: For full geocoordinate capabilities, the datum conversion files are required to allow you to convert from whatever datum the GCS uses to WGS84. If our publishing code (which will have access to the datum shift files) was always able to convert from a non-WGS84-based GCS to a WGS84-based GCS as it publishes DgnDb’s, we would not need those files. I do not know whether that is always possible, perhaps Alain Robert could comment.
@@ -538,7 +538,7 @@
         <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <SubPart PartName="DgnPlatformSqlang" />
-        <SubPart PartName="node-addon-stub"  Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
+        <SubPart PartName="napi-stub"  Repository="imodel02" PartFile="node-addon-api/node-addon-api"/>
         <!-- DgnPlatform unit tests use some files that are stored in DgnClientSdkUnitTestData. They do NOT use bims that are published from those files. -->
         <SubPart PartName="RawDgnClientSdkUnitTestData"/>
       <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>

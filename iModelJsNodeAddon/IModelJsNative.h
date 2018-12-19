@@ -16,7 +16,7 @@
 #include <DgnPlatform/DgnFontData.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/CancellationToken.h>
-#include <node-addon-api/napi.h>
+#include <Napi/napi.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
