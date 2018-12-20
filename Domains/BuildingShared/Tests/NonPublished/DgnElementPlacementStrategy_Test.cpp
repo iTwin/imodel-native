@@ -51,7 +51,7 @@ struct TestElementManipulationStrategy : DgnElementManipulationStrategy
 
         virtual GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const override { return *m_geomManipStrategy; }
         virtual GeometryManipulationStrategyR _GetGeometryManipulationStrategyForEdit() override { return *m_geomManipStrategy; }
-        virtual GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const override { return m_geomPlaceStrategy; }
+        virtual GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const override { return m_geomPlaceStrategy.get(); }
         virtual GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() override { return m_geomPlaceStrategy; }
         virtual bvector<DPoint3d> _GetKeyPoints() const override { return bvector<DPoint3d>(); }
 
