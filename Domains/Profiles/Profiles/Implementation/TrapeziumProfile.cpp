@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\TrapeziumProfile.h>
+#include <Profiles\ProfilesGeometry.h>
 #include <Profiles\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -61,6 +62,14 @@ bool TrapeziumProfile::_Validate() const
     bool const isTopOffsetValid = BeNumerical::BeFinite (GetTopOffset());
 
     return isTopWidthValid && isBottomWidthValid && isDepthValid && isTopOffsetValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr TrapeziumProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateTrapezium (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

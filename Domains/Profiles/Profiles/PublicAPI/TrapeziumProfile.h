@@ -44,6 +44,7 @@ protected:
     explicit TrapeziumProfile (CreateParams const& params);
 
     virtual bool _Validate() const override;
+    virtual IGeometryPtr _CreateGeometry() const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (TrapeziumProfile)

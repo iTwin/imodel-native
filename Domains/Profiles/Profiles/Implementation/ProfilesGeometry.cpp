@@ -699,4 +699,28 @@ IGeometryPtr ProfilesGeomApi::CreateHollowRectangle (HollowRectangleProfileCPtr 
     return IGeometry::Create (curveVector);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateTrapezium (TrapeziumProfileCPtr profile)
+    {
+    double const topWidth = profile->GetTopWidth() / 2.0;
+    double const halfBottomWidth = profile->GetBottomWidth() / 2.0;
+    double const halfDepth = profile->GetDepth() / 2.0;
+    double const topOffset = profile->GetTopOffset();
+
+    DPoint3d const topLeft = { -halfBottomWidth + topOffset, halfDepth, 0.0 };
+    DPoint3d const topRight = { -halfBottomWidth + topOffset + topWidth, halfDepth, 0.0 };
+    DPoint3d const bottomRight = { halfBottomWidth, -halfDepth, 0.0 };
+    DPoint3d const bottomLeft = { -halfBottomWidth, -halfDepth, 0.0 };
+
+    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (topLeft, topRight);
+    ICurvePrimitivePtr rightLine = ICurvePrimitive::CreateLine (topRight, bottomRight);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (bottomLeft, topLeft);
+
+    bvector<ICurvePrimitivePtr> orderedCurves = { topLine, rightLine, bottomLine, leftLine };
+    return createGeometryFromPrimitiveArray (orderedCurves);
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE
