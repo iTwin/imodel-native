@@ -8,6 +8,7 @@
 ======================================================================================= -->
 <ECSchema schemaName="SpatialComposition" alias="spcomp" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+    <ECSchemaReference name="AecUnits" version="01.00.01" alias="AECU" />
 
     <ECRelationshipClass typeName="CompositeComposesSubComposites" strength="embedding" modifier="None" description="relates the Composer with its' composees">
       <!-- Relationship that indicates a decomposition of child CompositeElement -->
@@ -22,6 +23,7 @@
     <ECEntityClass typeName="CompositeElement" modifier="Abstract" description="a spatial element that may be Composite of other CompositeElements" >
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <ECNavigationProperty propertyName="ComposingElement" relationshipName="CompositeComposesSubComposites" direction="Backward" description="The Composite Element" />
+        <ECProperty propertyName="Area" displayLabel="Area" typeName="double" readOnly="true" kindOfQuantity="AECU:AREA"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="CompositeBoundary" modifier="Abstract" description="a CompositeElement that is delimited by a curve">

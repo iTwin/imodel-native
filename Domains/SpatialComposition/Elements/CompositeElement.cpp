@@ -16,6 +16,20 @@ Dgn::ElementIterator CompositeElement::MakeIterator() const
     return iterator;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Joana.Smitaite                  11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator CompositeElement::MakeIterator(Utf8CP className) const
+    {
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(className, "WHERE ComposingElement=?");
+    ECN::ECClassId relClassId = GetDgnDb().Schemas().GetClassId(SPATIALCOMPOSITION_SCHEMA_NAME, SPATIALCOMPOSITION_REL_CompositeComposesSubComposites);
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
+        {
+        pStmnt->BindNavigationValue (1, GetElementId(), relClassId);
+        }
+    return iterator;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Joana.Smitaite                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
