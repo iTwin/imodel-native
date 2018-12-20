@@ -1,0 +1,15 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: serialization/testPrototype/TestData.prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+# Wire in seed data
+always:
+    @CreateSymLinks.py -m"$(BuildContext)Delivery\TestData=$(SrcRoot)GeomLibsTestData/xmlSamples/*.xml"
+
+   
+

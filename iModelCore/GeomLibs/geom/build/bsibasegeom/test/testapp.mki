@@ -1,0 +1,107 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: geom/build/bsibasegeom/test/testapp.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include    $(srcGeomLibs)common/inc/geomlibsdev.mki
+%include    mdl.mki
+
+%ifndef TESTAPP_NAME
+%error testapp.mki -- parameter TESTAPP_NAME must be defined by includer.
+%endif
+
+MYOBJ      = $(PartBuildDir)$(TESTAPP_NAME)/
+MYSRC      = $(_MakeFilePath)
+o = $(MYOBJ)
+
+#%include DefinePublicApiIncludes.mki
+
+dirToSearch = $(commonTest)
+%include cincapnd.mki
+
+dirToSearch = $(geomSrcPublicAPI)
+%include cincapnd.mki
+
+dirToSearch = $(geomSrcPubGeom)
+%include cincapnd.mki
+
+dirToSearch = $(MYSRC)
+%include cincapnd.mki
+
+
+%ifndef TESTAPP_EXTENSION
+TESTAPP_EXTENSION=.cpp
+%endif
+
+#----------------------------------------------------------------------
+#
+#       Make output directories
+#
+#----------------------------------------------------------------------
+$(MYOBJ)$(tstdir)           :       $(MYOBJ)$(tstdir)
+
+#----------------------------------------------------------------------
+#
+#       Build C files
+#
+#----------------------------------------------------------------------
+dependencies + $(commonTest)printfuncs.h
+
+ultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+
+$(MYOBJ)printfuncs$(oext)   :  $(commonTest)printfuncs.cpp $(dependencies) ${MultiCompileDepends}
+
+$(MYOBJ)$(TESTAPP_NAME)$(oext)        :  $(MYSRC)$(TESTAPP_NAME)$(TESTAPP_EXTENSION) $(dependencies) ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST     = $(MYOBJ)
+EXE_NAME     = bsigeom$(TESTAPP_NAME)
+EXE_OBJS     =% $(MultiCompileObjectList)
+EXE_LIBS     = $(basegeom_lib)bsibasegeom$(libext)
+EXE_TMP_DIR  = $(temp)/
+EXE_USES_CXX = 1
+EXE_STD_MANIFEST = 1
+
+%include $(SrcRoot)bsicommon/sharedmki/linktool.mki
+
+#----------------------------------------------------------------------
+#   run the program
+#----------------------------------------------------------------------
+%if defined (RUN_TEST)
+
+%if defined (PRG)
+always:
+    $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext) > $(MYOBJ)$(TESTAPP_NAME).out
+%else
+always:
+    $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext)
+%endif
+
+%endif
+
+always:
+    | $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext)
+
+%if defined (UPDATE_OUT)
+
+always:
+    attrib -r $(TESTAPP_NAME).out
+    $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext) > $(TESTAPP_NAME).out
+
+%endif
+
+%if defined (devenv)
+always:
+    start devenv $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext)
+
+%endif
+

@@ -1,0 +1,8 @@
+message Block
+{
+required IPlacement placement = 1;
+required DPoint3d cornerA = 2;
+required DPoint3d cornerB = 3;
+required bool bSolidFlag = 4;
+}
+

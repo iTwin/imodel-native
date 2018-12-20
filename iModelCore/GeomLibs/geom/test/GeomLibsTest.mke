@@ -1,0 +1,60 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: geom/test/GeomLibsTest.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+srcGeomLibs = $(SrcRoot)GeomLibs/
+%include $(srcGeomLibs)common/inc/geomlibsdev.mki
+
+%include $(_MakefilePath)geomlibsTest.mki
+
+# We don't want to run the test from the build location because the dependencies are not there.
+GUNITTEST_NOEXEC = 1
+
+#----------------------------------------------------------------------
+#       Compile the unit tests
+#----------------------------------------------------------------------
+BEGTEST_NAME=GeomLibsTest
+BEGTEST_OUTPUT=$(OutputRootDir)build/geomlibs/
+%include compileUnitTests.mki
+
+#----------------------------------------------------------------------
+#       Compile the main and testfixture 
+#----------------------------------------------------------------------
+# Let all stand-alone tests share the same gtestmain and TestFixture objects.
+o = $(PartBuildDir)
+
+always:
+    !~@mkdir $(o)
+
+$(o)gtestmain.obj : $(SrcRoot)GeomLibs/geom/test/gtestmain.cpp
+
+#----------------------------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------------------------
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(appName)
+GUNITTEST_DEST      = $(o)
+#GUNITTEST_NTLIBS    = advapi32.lib
+GUNITTEST_LIBS      = $(libsUsed)
+GUNITTEST_PATH      = $(o)
+GUNITTEST_SYMB      = $(o)
+GTEST_MAIN_IS_SUPPLIED = 1
+
+%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+
+LOCAL_GUNITTEST_OBJS + $(o)gtestmain.obj 
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/*.obj]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+
+%include $(SharedMki)gunittest.mki
+
+always:
+    @CreateSymLinks.py "$(BuildContext)Delivery\$(appName).exe=$(o)$(appName).exe"

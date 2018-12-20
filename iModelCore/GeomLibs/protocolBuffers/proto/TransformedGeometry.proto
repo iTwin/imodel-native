@@ -1,0 +1,6 @@
+message TransformedGeometry
+{
+required DTransform3d Transform = 1;
+required IGeometry Geometry = 2;
+}
+
