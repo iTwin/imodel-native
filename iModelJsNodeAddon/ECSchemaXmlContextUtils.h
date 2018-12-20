@@ -9,7 +9,7 @@
 #pragma once
 #include <ECObjects/ECObjectsAPI.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <Napi/napi.h>
+#include <node-addon-api/napi.h>
 
 USING_NAMESPACE_BENTLEY
 

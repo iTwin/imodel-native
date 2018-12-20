@@ -50,6 +50,6 @@ baseDir = $(_MakeFilePath)
 %endif
 
 always:
-    |-- Making package imodeljs-$(NodeOS)-$(NodeCPU) --
+    |-- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
     -@$(rmdirRecursiveCmd) $(o)
     python $(_MakeFilePath)makePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(ACTION)

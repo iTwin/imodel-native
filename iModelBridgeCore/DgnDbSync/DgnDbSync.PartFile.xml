@@ -28,19 +28,19 @@
 
     <Part Name="DgnV8ConverterDLL" BentleyBuildMakeFile="DgnV8/Converter.mke" ApiNumber="M02"  OnlyPlatforms="x64" ExcludeLibType="Static">
         <RequiredRepository>V8IModelExtraFiles</RequiredRepository>
-        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="VersionedV8_InternalSDK" />
         <SubPart PartName="RapidXml2Json" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley"/>
-        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     />
+        <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     Repository="imodel02" />
         <!-- The following subparts produce libraries that define optional domains. If you intend to use these domains and if you do not depend on the DgnClientSDK, then you must depend on these subcategories directly. -->
-        <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="PointCloud"          PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="ThreeMx"             PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="ScalableMeshSchema"  PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="RealityPlatformTools"             PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework" />
-        <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"  />
+        <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"  Repository="imodel02" />
+        <SubPart PartName="PointCloud"          PartFile="Domains/RealityModeling/RealityModeling"  Repository="imodel02" />
+        <SubPart PartName="ThreeMx"             PartFile="Domains/RealityModeling/RealityModeling"  Repository="imodel02" />
+        <SubPart PartName="ScalableMeshSchema"  PartFile="Domains/RealityModeling/RealityModeling"  Repository="imodel02" />
+        <SubPart PartName="RealityPlatformTools"             PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework"  Repository="imodel02"/>
+        <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"   Repository="imodel02"/>
         <Bindings>
             <Libs ProductDirectoryName="DgnV8ConverterLibs" Required="false">Delivery/$(libprefix)DgnV8Converter$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)DgnV8Converter$(ApiNumber)$(shlibext)</Assemblies>
@@ -77,14 +77,14 @@
 
     <Part Name="ConceptStationDgnV8ConverterDLL" BentleyBuildMakeFile="DgnV8/Converter.mke" ApiNumber="M02"  OnlyPlatforms="x64" ExcludeLibType="Static">
         <RequiredRepository>V8IModelExtraFiles</RequiredRepository>
-        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="ScalableMeshV8SDK" />
         <SubPart PartName="RapidXml2Json" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="ImagePP"               PartFile="iModelBridgeCore/Imagepp/ImagePP"          />
-        <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley"/>
-        <SubPart PartName="Raster"                PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="PointCloud"            PartFile="Domains/RealityModeling/RealityModeling"  />
+        <SubPart PartName="ImagePP"               PartFile="iModelBridgeCore/Imagepp/ImagePP"          Repository="imodel02" />
+        <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
+        <SubPart PartName="Raster"                PartFile="Domains/RealityModeling/RealityModeling"  Repository="imodel02" />
+        <SubPart PartName="PointCloud"            PartFile="Domains/RealityModeling/RealityModeling"  Repository="imodel02" />
         <Bindings>
             <Libs ProductDirectoryName="DgnV8ConverterLibs" Required="false">Delivery/$(libprefix)DgnV8Converter$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)DgnV8Converter$(ApiNumber)$(shlibext)</Assemblies>
@@ -102,7 +102,7 @@
 
     <Part Name="DgnV8Converter-PublishedApiAndDoc" DeferType="BuildDocs" BentleyBuildMakeFile="DgnV8/BuildDoc.mke" OnlyPlatforms="x64">
         <RequiredRepository>Bsitools-Doxygen</RequiredRepository>
-        <SubPart PartName="BentleyDocConfig" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="BentleyDocConfig" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="DgnV8Converter_PublishedApi"/>
     </Part>
 
@@ -115,10 +115,10 @@
 
     <Part Name="SyncManager" BentleyBuildMakeFile="SyncManager/SyncManager.mke" ApiNumber="M02"  OnlyPlatforms="x64,x86">
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
-        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
-        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"/>
-        <SubPart PartName="LoggingNative" PartFile="iModelCore/LoggingSDK/LoggingSDK" />
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley"  Repository="imodel02"/>
+        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
+        <SubPart PartName="LoggingNative" PartFile="iModelCore/LoggingSDK/LoggingSDK" Repository="imodel02" />
         <Bindings>
             <Libs ProductDirectoryName="DgnV8ConverterLibs" Required="false">Delivery/$(libprefix)SyncManager$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)SyncManager$(ApiNumber)$(shlibext)</Assemblies>
@@ -147,7 +147,7 @@
     <Product Name="DgnV8Bridge" SaveProduct="true">
         <SubPart PartName="DgnV8ConverterExe" />
         <SubPart PartName="DgnV8ConverterDLL" />
-        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="DgnV8BridgeDirList" />
     </Product>
@@ -177,7 +177,7 @@
 
     <Product Name="DgnV8Converter">
         <SubPart PartName="TiledDgnV8ConverterExe" />
-        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="node-addon-stub"  Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="DgnV8ConverterDirList" />
     </Product>
@@ -228,8 +228,8 @@
         <SubPart PartName="DgnV8ConverterDLL"/>
         <SubPart PartName="SyncManager"/>
         <SubPart PartName="Bimv8SyncVendorAPI" />
-        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
-        <SubPart PartName="napi-stub"  PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="node-addon-stub"  Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
         <SubPart PartName="DgnV8ConverterExe"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="DgnV8ConverterDirList" />
@@ -259,13 +259,13 @@
     </Part>
 
     <Part Name="DgnV8ConverterExe" BentleyBuildMakeFile="DgnV8/Converters/DgnV8Converter.mke" ApiNumber="M02" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartName="LoggingNative" PartFile="iModelCore/LoggingSDK/LoggingSDK" />
+        <SubPart PartName="LoggingNative" PartFile="iModelCore/LoggingSDK/LoggingSDK" Repository="imodel02" />
         <SubPart PartName="DgnV8ConverterDLL" />
-        <SubPart PartName="GeoCoordData" PartFile="iModelCore/libsrc/csmap/csmap"/>
-        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     />
-        <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     />
+        <SubPart PartName="GeoCoordData" PartFile="iModelCore/libsrc/csmap/csmap" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     Repository="imodel02" />
+        <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     Repository="imodel02" />
         <SubPart PartName="DgnV8ConverterSqlang" />
-        <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     />
+        <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     Repository="imodel02" />
         
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\DgnV8Converter.exe</Files>
@@ -291,9 +291,9 @@
     </Part>
 
     <Part Name="ConceptStationDgnV8ConverterExe" BentleyBuildMakeFile="DgnV8/Converters/DgnV8Converter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartName="LoggingNative" PartFile="iModelCore/LoggingSDK/LoggingSDK" />
+        <SubPart PartName="LoggingNative" PartFile="iModelCore/LoggingSDK/LoggingSDK" Repository="imodel02" />
         <SubPart PartName="ConceptStationDgnV8ConverterDLL" />
-        <SubPart PartName="GeoCoordData" PartFile="iModelCore/libsrc/csmap/csmap"/>
+        <SubPart PartName="GeoCoordData" PartFile="iModelCore/libsrc/csmap/csmap" Repository="imodel02"/>
         <SubPart PartName="ConceptStationDgnV8ConverterSqlang" />
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\DgnV8Converter.exe</Files>
@@ -306,8 +306,8 @@
     <!-- DgnV8ConverterTests -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Part Name="GTestDependencies" DeferType="BuildUnitTests">
-        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
-        <SubPart PartName="google_gtest_lib"     PartFile="iModelCore/util/gtest/gtest"                   />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+        <SubPart PartName="google_gtest_lib"     PartFile="iModelCore/util/gtest/gtest"                   Repository="imodel02" />
     </Part>
 
     <Part Name="DgnDbUnitTestsData" DeferType="BuildUnitTests" OnlyPlatforms="x64,x86">
@@ -317,10 +317,10 @@
     <Part Name="DgnV8ConverterTestsExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="DgnV8/Tests/Tests.mke" OnlyPlatforms="x64">
         <SubPart PartName="GTestDependencies"/>
         <SubPart PartName="DgnV8ConverterDLL"/>
-        <SubPart PartName="DgnDbTestUtils" PartFile="iModelCore/DgnPlatform/DgnPlatform" />
-        <SubPart PartName="DgnPlatformUnitTestHelpers" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="DgnDbTestUtils" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
+        <SubPart PartName="DgnPlatformUnitTestHelpers" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="DgnDbUnitTestsData"/>
-        <SubPart PartName="DgnPlatformSqlang"            PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="DgnPlatformSqlang"            Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <Bindings>
             <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/DgnV8ConverterTests.exe</Files>
             <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/DgnV8ConverterTests.logging.config.xml</Files>
@@ -348,11 +348,11 @@
 
     <Product Name="DgnV8ConverterTests" OnlyPlatforms="x64">
         <SubPart PartName="DgnV8ConverterExe"/>
-        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="node-addon-stub" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
         <SubPart PartName="DgnV8ConverterTestsExe"/>
         <SubPart PartName="StaticAppData"  PartFile="MstnAppData"      Repository="miscdev-mstnappdata"    />
         <!--
-        <Directories PartFile="iModelCore/BeGTest/BeGTest" DirectoryListName="BeGTestDirList"/>
+        <Directories PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02" DirectoryListName="BeGTestDirList"/>
         -->
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="DgnV8ConverterDirList" />
@@ -378,7 +378,7 @@
 
     <Part Name="FontConverterAppExe" BentleyBuildMakeFile="DgnV8/Converters/FontConverterApp.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="DgnV8ConverterDLL"/>
-        <SubPart PartName="LoggingNative" PartFile="iModelCore/LoggingSDK/LoggingSDK"/>
+        <SubPart PartName="LoggingNative" PartFile="iModelCore/LoggingSDK/LoggingSDK" Repository="imodel02"/>
         <SubPart PartName="RmgrToolsDll" PartFile="RmgrTools" Repository="RmgrTools"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\FontConverter.exe</Files>
@@ -413,12 +413,12 @@
     </Part>
     
     <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64" ApiNumber="M02">
-        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"     />
-        <SubPart PartName="ECPresentation"  PartFile="iModelCore/ECPresentation/ECPresentation"  />
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"      Repository="imodel02"/>
+        <SubPart PartName="ECPresentation"  PartFile="iModelCore/ECPresentation/ECPresentation"   Repository="imodel02"/>
         <SubPart PartName="Planning"        PartFile="Planning"         Repository="DgnDomains-Planning"/>
-        <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="PointCloud"          PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="ThreeMx"             PartFile="Domains/RealityModeling/RealityModeling"  />
+        <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"  Repository="imodel02" />
+        <SubPart PartName="PointCloud"          PartFile="Domains/RealityModeling/RealityModeling"  Repository="imodel02" />
+        <SubPart PartName="ThreeMx"             PartFile="Domains/RealityModeling/RealityModeling"  Repository="imodel02" />
         <SubPart PartName="BimFromDgnDbPublicApi"/>
         <Bindings>
             <Libs ProductDirectoryName="BimFromDgnDbLibs" Required="false">Delivery/$(libprefix)BimFromJson$(libext)</Libs>
@@ -434,7 +434,7 @@
     </Part>
     
     <Part Name="BimImporterExe" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/exe/BimImporter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="BimFromJson"/>
         <SubPart PartName="BimFromJsonSqlang"/>
         <Bindings>
@@ -473,21 +473,21 @@
 
     <Product Name="BimImporter">
         <SubPart PartName="BimImporterExe"/>
-        <SubPart PartName="napi-stub"  PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="node-addon-stub"  Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="BimUpgraderDirList" />
     </Product>
 
     <Product Name="BimExporter0601">
         <SubPart PartFile="iModelBridgeCore/DgnDbSync/BimUpgrader" PartName="BimExporter0601Exe"/>
-        <SubPart PartName="napi-stub"  PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="node-addon-stub"  Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="BimUpgraderDirList" />
     </Product>
 
     <Product Name="BimUpgrader">
         <SubPart PartName="BimUpgraderExe"/>
-        <SubPart PartName="napi-stub"  PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="node-addon-stub"  Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="BimUpgraderDirList" />
     </Product>

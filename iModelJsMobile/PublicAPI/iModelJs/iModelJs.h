@@ -28,7 +28,7 @@
 #define IMODELJS_REF_COUNTED_PTR(_sname_) \
     BEGIN_BENTLEY_IMODELJS_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_IMODELJS_NAMESPACE
 
-#include <Napi/napi.h>
+#include <node-addon-api/napi.h>
 
 #include <iModelJs/iModelJsUtilities.h>
 
