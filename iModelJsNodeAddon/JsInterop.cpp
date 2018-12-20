@@ -314,6 +314,14 @@ RevisionStatus JsInterop::ReadChangeSet(DgnRevisionPtr& revision, Utf8StringCR d
     BeFileName changeSetPathname(changeSetToken["pathname"].asCString(), true);
     PRECONDITION(changeSetPathname.DoesPathExist(), RevisionStatus::FileNotFound);
 
+    if (!changeSetToken["pushDate"].isNull())
+        {
+        Utf8String pushDate = changeSetToken["pushDate"].asString();
+        DateTime date;
+        DateTime::FromString(date, pushDate.c_str());
+        revision->SetDateTime(date);
+        }
+
     revision->SetRevisionChangesFile(changeSetPathname);
     return RevisionStatus::Success;
     }

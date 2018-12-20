@@ -157,6 +157,8 @@ $(coreObjs)LocksManager$(oext):                     $(DgnCoreDir)LocksManager.cp
 
 $(coreObjs)RepositoryManager$(oext):                $(DgnCoreDir)RepositoryManager.cpp $(DgnPlatformAPISrc)RepositoryManager.h $(DgnPlatformAPISrc)DgnCodesManager.h ${MultiCompileDepends}
 
+$(coreObjs)ChangedElementsManager$(oext) :          $(DgnCoreDir)ChangedElementsManager.cpp $(DgnPlatformAPISrc)ChangedElementsManager.h $(DgnPlatformAPISrc)VersionCompareChangeSummary.h ${MultiCompileDepends}
+
 $(CoreObjs)LsName$(oext) :                          $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
 $(CoreObjs)LsLocation$(oext) :                      $(lineStyleDir)LsLocation.cpp $(LsLocalDepends) ${MultiCompileDepends}
@@ -440,6 +442,7 @@ DgnECDepends = \
     $(DgnPlatformAPISrc)DgnECTypes.h \
     $(DgnHandlersDir)DgnECTypeAdapters.h \
     $(DgnHandlersDir)DgnECInteropStringFormatter.h \
+    $(DgnPlatformAPISrc)VersionCompareChangeSummary.h \
 
 
 $(CoreObjs)DgnChangeSummary$(oext) : $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnECDepends) ${MultiCompileDepends}
@@ -451,6 +454,8 @@ $(CoreObjs)DgnECTypes$(oext) : $(DgnHandlersDir)DgnECTypes.cpp $(DgnECDepends) $
 $(CoreObjs)DgnECTypeAdapters$(oext) : $(DgnHandlersDir)DgnECTypeAdapters.cpp $(DgnECDepends) ${MultiCompileDepends}
 
 $(CoreObjs)DgnECInteropStringFormatter$(oext) : $(DgnHandlersDir)DgnECInteropStringFormatter.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)VersionCompareChangeSummary$(oext) : $(DgnHandlersDir)VersionCompareChangeSummary.cpp $(DgnECDepends) ${MultiCompileDepends}
 
 
 #----------------------------------------------------------------------
@@ -598,6 +603,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext) \
+                            $(ContextSubPartsLibs)$(libprefix)ECPresentation$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)napi$(libext)
 
 %if defined (BENTLEYCONFIG_PARASOLID)

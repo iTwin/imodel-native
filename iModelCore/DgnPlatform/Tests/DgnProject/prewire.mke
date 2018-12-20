@@ -14,7 +14,7 @@ baseDir                     = $(_makeFilePath)
 
 $(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
     $(LinkFirstDepToFirstTargetAsDirectory)
-	
+
 $(BuildContext)Delivery/UnitTests/PerformanceTestData : $(baseDir)PerformanceTestData
     $(LinkFirstDepToFirstTargetAsDirectory)
 
@@ -35,6 +35,9 @@ $(BuildContext)Delivery/UnitTests/PerfTestDomain.h : $(DgnPlatformAPISrc)UnitTes
 
 $(BuildContext)Delivery/UnitTests/RepositoryManagerUtil.h : $(DgnPlatformAPISrc)UnitTests/RepositoryManagerUtil.h
     $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/PresentationRules : $(baseDir)PresentationRules
+    $(LinkFirstDepToFirstTargetAsDirectory)
 
 #------------------------------------------------------------------------------------------
 #   Deliver CompatibilityTestFiles for use by unit tests

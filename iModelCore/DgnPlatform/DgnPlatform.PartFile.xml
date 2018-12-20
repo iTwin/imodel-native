@@ -18,6 +18,9 @@
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
+                ECSchemas/Dgn/*.ecschema.xml
+            </Files>
         </Bindings>
     </Part>
 
@@ -61,6 +64,7 @@
         <SubPart PartName="PsolidShim"/>
         <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
 
       <!--
@@ -150,6 +154,10 @@
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas"> Delivery/UnitTests/ECSchemas/*.xml</Files>
 			<Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="PerformanceTestData"> Delivery/UnitTests/PerformanceTestData/*.json</Files>
+            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="PresentationRules">
+                Delivery/UnitTests/PresentationRules/Items.PresentationRuleSet.xml
+                Delivery/UnitTests/PresentationRules/RulesEngineLocalizedStrings.sqlang.db3
+            </Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="CompatibilityTestFiles" SourceName="Delivery/UnitTests/CompatibilityTestFiles" />
         </Bindings>
     </Part>

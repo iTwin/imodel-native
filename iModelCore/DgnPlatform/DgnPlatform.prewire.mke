@@ -59,3 +59,6 @@ $(BuildContext)Dox/Pages/DgnPlatform/ViewOverview.doxpage : $(_MakeFilePath)docs
 
 $(BuildContext)Dox/Pages/DgnPlatform/DgnSqlFuncs.doxpage : $(_MakeFilePath)DgnCore/DgnSqlFuncs.cpp
     $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Dgn/ChangedElements.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ChangedElements.01.00.00.ecschema.xml
+   $(LinkFirstDepToFirstTarget)
