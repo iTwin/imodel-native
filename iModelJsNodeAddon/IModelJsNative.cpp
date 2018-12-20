@@ -12,7 +12,7 @@
 #include <memory>
 #include "suppress_warnings.h"
 #include <imodeljs-nodeaddonapi.package.version.h>
-#include <Napi/napi.h>
+#include <node-addon-api/napi.h>
 #include <json/value.h>
 #include "IModelJsNative.h"
 #include <ECDb/ECDb.h>
@@ -4522,7 +4522,7 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
     exports.DefineProperties(
         {
         Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
-        Napi::PropertyDescriptor::Accessor(env, exports, "logger", &IModelJsNative::GetLogger, &IModelJsNative::SetLogger),
+        Napi::PropertyDescriptor::Accessor("logger", &IModelJsNative::GetLogger, &IModelJsNative::SetLogger),
         });
 
     return exports;

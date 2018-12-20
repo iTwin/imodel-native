@@ -16,7 +16,7 @@
 #include <Bentley/BeFileName.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 #include <unordered_map>
-#include <Napi/napi.h>
+#include <node-addon-api/napi.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
