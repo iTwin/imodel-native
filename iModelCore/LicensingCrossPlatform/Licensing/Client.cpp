@@ -33,8 +33,8 @@ ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 bool offlineMode,
-Utf8String projectId,
-Utf8String featureString,
+Utf8StringCR projectId,
+Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
 )
     {
@@ -46,16 +46,11 @@ IHttpHandlerPtr httpHandler
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::CreateFree
 (
-	Utf8String accessToken,
-	BeVersion clientVersion,
-	BeFileNameCR dbPath,
-	bool offlineMode,
-	Utf8String projectId,
-	Utf8String featureString,
+	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
 )
 	{
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientFreeImpl>(accessToken, clientVersion, dbPath, offlineMode, projectId, featureString, httpHandler)));
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientFreeImpl>(featureString, httpHandler)));
 	}
 
 /*--------------------------------------------------------------------------------------+
@@ -63,12 +58,12 @@ ClientPtr Client::CreateFree
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::CreateWithKey
 (
-	Utf8String accessKey,
+	Utf8StringCR accessKey,
 	ClientInfoPtr clientInfo,
 	BeFileNameCR dbPath,
 	bool offlineMode,
-	Utf8String projectId,
-	Utf8String featureString,
+	Utf8StringCR projectId,
+	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
 )
 {
@@ -94,7 +89,15 @@ BentleyStatus Client::StopApplication()
  /*--------------------------------------------------------------------------------------+
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
- BentleyStatus Client::MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData)
+ BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData)
      {
      return m_impl->MarkFeature(featureId, featureUserData);
      }
+
+ /*--------------------------------------------------------------------------------------+
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ folly::Future<BentleyStatus> Client::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
+	 {
+	 return m_impl->TrackUsage(accessToken, version, projectId);
+	 }

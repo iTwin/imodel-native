@@ -64,7 +64,6 @@ protected:
     Utf8String m_projectId;
     Utf8String m_correlationId;
     bool m_offlineMode;
-    Utf8String m_accessToken;
     bool m_stopApplicationCalled;
 
     // Policy
@@ -86,7 +85,6 @@ protected:
     bool m_usageHeartbeatStopped = false;
 
     void UsageHeartbeat(int64_t currentTime);
-    void UsageHeartbeatRealTime(int64_t currentTime);
     void StopUsageHeartbeat();
     BentleyStatus RecordUsage();
 
@@ -123,19 +121,19 @@ public:
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR db_path,
         bool offlineMode,
-        Utf8String projectId,
-        Utf8String featureString,
+        Utf8StringCR projectId,
+        Utf8StringCR featureString,
         IHttpHandlerPtr httpHandler
         );
 
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
-    LICENSING_EXPORT folly::Future<folly::Unit> SendUsageRealtime();
+    LICENSING_EXPORT folly::Future<BentleyStatus> SendUsageRealtime(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
     //Features
-    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData);
+    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
     LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
 
     // Policy

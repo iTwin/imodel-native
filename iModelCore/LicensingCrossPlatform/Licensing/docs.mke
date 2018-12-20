@@ -12,7 +12,7 @@
 SrcLC = $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/
 docMain = $(SrcLC)docs/
 
-outputDir = $(OutputRootDir)build\Licensing\NativeClientDocs\
+outputDir = $(OutputRootDir)build/Licensing/NativeClientDocs/
 
 ENABLE_DOXYGEN = 1
 #-----------------------------------------------------------------------
@@ -30,7 +30,7 @@ doxygenChmOuput         = YES
 
 doxygenQuiet            = NO
 doxygenShowWarnings     = YES
-doxygenLogFile          = $(outputDir)\doxygen.log
+doxygenLogFile          = $(outputDir)/doxygen.log
 
 doxygenStyleSheet       = $(docMain)bentley-doxygen.css
 doxygenCssHeader        = $(docMain)bentley-doxygen.header
@@ -40,7 +40,7 @@ doxygenDocPrivate = NO
 
 %include $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/mki/lcdoxygen.mki
 
-#chmFile = $(outputDir)\$(doxygenProject)\chm\$(doxygenProject).chm
+#chmFile = $(outputDir)/$(doxygenProject)/chm/$(doxygenProject).chm
 
 #always:
 #    @CreateSymLinks.py "$(ContextDeliveryDir)$(doxygenProject).chm=$(chmFile)"

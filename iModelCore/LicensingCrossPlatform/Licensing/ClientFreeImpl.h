@@ -24,16 +24,12 @@ protected:
 public:
 	LICENSING_EXPORT ClientFreeImpl
 		(
-		Utf8String accessToken,
-		BeVersion clientVersion,
-		BeFileNameCR db_path,
-		bool offlineMode,
-		Utf8String projectId,
-		Utf8String featureString,
+		Utf8StringCR featureString,
 		IHttpHandlerPtr httpHandler
 		);
 	LICENSING_EXPORT LicenseStatus StartApplication();
 	LICENSING_EXPORT BentleyStatus StopApplication();
+	LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

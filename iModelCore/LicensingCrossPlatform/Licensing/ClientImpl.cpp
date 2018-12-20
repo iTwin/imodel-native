@@ -31,8 +31,8 @@ ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 bool offlineMode,
-Utf8String projectId,
-Utf8String featureString,
+Utf8StringCR projectId,
+Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
 ) :
 m_userInfo(userInfo),
@@ -196,44 +196,6 @@ void ClientImpl::UsageHeartbeat(int64_t currentTime)
             }
         }); 
     }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::UsageHeartbeatRealTime(int64_t currentTime)
-{
-	LOG.debug("ClientImpl::UsageHeartbeatRealTime");
-
-	if (m_startUsageHeartbeat)
-	{
-		SendUsageRealtime();
-		m_startUsageHeartbeat = false;
-		m_lastRunningUsageheartbeatStartTime = currentTime;
-	}
-
-	m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
-	{
-		int64_t heartbeatInterval = m_policy->GetHeartbeatInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
-
-		int64_t time_elapsed = currentTime - m_lastRunningUsageheartbeatStartTime;
-
-		if (time_elapsed >= heartbeatInterval)
-		{
-			RecordUsage();
-			m_lastRunningUsageheartbeatStartTime = currentTime;
-		}
-
-		if (!m_stopUsageHeartbeat)
-		{
-			int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-			UsageHeartbeat(currentTimeUnixMs);
-		}
-		else
-		{
-			m_usageHeartbeatStopped = true;
-		}
-	});
-}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -405,7 +367,7 @@ void ClientImpl::StopLogPostingHeartbeat()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClientImpl::MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData)
+BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData)
     {
     LOG.debug("ClientImpl::MarkFeature");
 
@@ -744,7 +706,7 @@ folly::Future<folly::Unit> ClientImpl::SendUsageLogs(BeFileNameCR usageCSV, Utf8
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> ClientImpl::SendUsageRealtime()
+folly::Future<BentleyStatus> ClientImpl::SendUsageRealtime(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
 	{
 	LOG.trace("SendUsageRealtime");
 
@@ -752,15 +714,15 @@ folly::Future<folly::Unit> ClientImpl::SendUsageRealtime()
 
 	HttpClient client(nullptr, m_httpHandler);
 	auto uploadRequest = client.CreateRequest(url, "POST");
-	uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + m_accessToken);
+	uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
 	uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
 
 	// create Json body
 	auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids(
 		m_clientInfo->GetDeviceId(),
 		m_featureString,
-		m_clientInfo->GetApplicationVersion(),
-		m_projectId
+		version,
+		projectId
 	);
 
 	uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody.ToString()));
@@ -769,9 +731,10 @@ folly::Future<folly::Unit> ClientImpl::SendUsageRealtime()
 		[=](Response response)
 		{
 		if (!response.IsSuccess()) {
-			throw HttpError(response);
+			LOG.errorv("ClientImpl::SendUsageRealtime ERROR: Unable to post %s - %s", jsonBody.ToString(), response.GetBody().AsString());
+			return BentleyStatus::ERROR;
 		}
-		return folly::makeFuture();
+		return BentleyStatus::SUCCESS;
 		});
 	
 	}

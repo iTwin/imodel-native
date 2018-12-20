@@ -10,6 +10,8 @@
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
 #include <Licensing/Utils/FeatureUserDataMap.h>
+#include <Bentley/BeVersion.h>
+#include <folly/BeFolly.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
@@ -18,7 +20,8 @@ struct ClientInterface
 public:
 	virtual LicenseStatus StartApplication() = 0;
 	virtual BentleyStatus StopApplication() = 0;
-	virtual BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData) = 0;
+	virtual BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData) = 0;
+	virtual folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId) { return BentleyStatus::SUCCESS; };
     virtual ~ClientInterface() {};
 };
 

@@ -20,7 +20,7 @@
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <BeSQLite/BeSQLite.h>
-
+#include <fstream>
 #include <Licensing/Utils/InMemoryJsonLocalState.h>
 
 #include <WebServices/Configuration/UrlProvider.h>
@@ -116,21 +116,9 @@ ClientFreeImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, 
 {
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
-
-	auto version = BeVersion(1, 0);
-
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-	BeFileName dbPath = GetUsageDbPath();
-	
-	Utf8String tokenstring = "5e1518a2d48671ce2c75d76b35b6324329ad61b0c6570dfa8781a016177e7ec4";
-
 	return std::make_shared<ClientFreeImpl>(
-		tokenstring,
-		version,
-		dbPath,
-		true,
-		"",
 		"",
 		proxy);
 }
@@ -194,20 +182,9 @@ ClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterva
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-	auto version = BeVersion(1, 0);
-
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-	BeFileName dbPath = GetUsageDbPath();
-
-	Utf8String tokenstring = "5e1518a2d48671ce2c75d76b35b6324329ad61b0c6570dfa8781a016177e7ec4";
-
 	return Client::CreateFree(
-		tokenstring,
-		version,
-		dbPath,
-		true,
-		"",
 		"",
 		proxy);
 }
@@ -314,12 +291,13 @@ TEST_F(ClientTests, StartApplication_StopApplication_Repeat_Success)
 	EXPECT_SUCCESS(client->StopApplication());
 	}
 
-TEST_F(ClientTests, DISABLED_StartFreeApplication_StopApplication_Success)
+TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplication_Success)
 	{
 	auto client = CreateFreeTestClient(true);
-	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-	//client->SendUsageRealtime().wait();
-    EXPECT_SUCCESS(client->StopApplication());
+	Utf8String tokenstring = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
+	auto version = BeVersion(1, 0);
+	Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+	EXPECT_SUCCESS(client->TrackUsage(tokenstring,version,projectId).get());
     }
 
 TEST_F(ClientTests, StartWithKeyApplication_StopApplication_Success)
@@ -336,11 +314,13 @@ TEST_F(ClientTests, StartApplicationFromFactory_Success)
 	client->StopApplication();
 }
 
-TEST_F(ClientTests, DISABLED_StartFreeApplicationFromFactory_Success)
+TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplicationFromFactory_Success)
 {
 	auto client = CreateFreeTestClientFromFactory(true);
-	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-	client->StopApplication();
+	Utf8String tokenstring = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
+	auto version = BeVersion(1, 0);
+	Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+	EXPECT_SUCCESS(client->TrackUsage(tokenstring, version, projectId).get());
 }
 
 TEST_F(ClientTests, StartWithKeyApplicationFromFactory_Success)
