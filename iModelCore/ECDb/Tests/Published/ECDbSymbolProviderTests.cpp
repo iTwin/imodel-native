@@ -285,9 +285,7 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMu
 
     stmt.Reset();
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
-    stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
-    stmt.BindId(4, classB->GetId());
+    stmt.BindText(2, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -297,6 +295,67 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMu
     ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"TestSchema:Rel\", \"Forward\", \"TestSchema:ClassB\")", *exprContext));
     ASSERT_TRUE(value.IsBoolean());
     ASSERT_TRUE(value.GetBoolean());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                       Grigas.Petraitis              12/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstancesCount_Returns0WhenThereAreNoRelatedInstances)
+    {
+    ECClassCP classA = m_ecdb.Schemas().GetClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(m_ecdb, *classA, nullptr).Insert(*instanceA);
+
+    ECClassCP classB = m_ecdb.Schemas().GetClass("TestSchema", "ClassB");
+    IECInstancePtr instanceB1 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB1);
+    IECInstancePtr instanceB2 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB2);
+    
+
+    ECDbExpressionSymbolContext ecdbContext(m_ecdb);
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
+
+    ECValue value;
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedInstancesCount(\"TestSchema:Rel\", \"Forward\", \"TestSchema:ClassB\")", *exprContext));
+    ASSERT_TRUE(value.IsLong());
+    ASSERT_EQ(0, value.GetLong());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                       Grigas.Petraitis              12/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstancesCount_Returns2WhenThereAre2RelatedInstances)
+    {
+    ECClassCP classA = m_ecdb.Schemas().GetClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(m_ecdb, *classA, nullptr).Insert(*instanceA);
+
+    ECClassCP classB = m_ecdb.Schemas().GetClass("TestSchema", "ClassB");
+    IECInstancePtr instanceB1 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB1);
+    IECInstancePtr instanceB2 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB2);
+    
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
+
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB1->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Reset();
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    ECDbExpressionSymbolContext ecdbContext(m_ecdb);
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
+
+    ECValue value;
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedInstancesCount(\"TestSchema:Rel\", \"Forward\", \"TestSchema:ClassB\")", *exprContext));
+    ASSERT_TRUE(value.IsLong());
+    ASSERT_EQ(2, value.GetLong());
     }
 
 //---------------------------------------------------------------------------------------

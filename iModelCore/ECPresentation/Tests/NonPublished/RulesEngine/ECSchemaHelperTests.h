@@ -222,3 +222,13 @@ struct ECSchemaHelperTests : ECPresentationTest
 struct SupportedClassNamesParserTests : ECSchemaHelperTests
     {
     };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2018
++===============+===============+===============+===============+===============+======*/
+struct ECInstancesHelperTests : ECPresentationTest
+    {
+    ECDbTestProject m_project;
+    IConnectionPtr m_connection;
+    void SetUp() override;
+    };

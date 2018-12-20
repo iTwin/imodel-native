@@ -84,15 +84,16 @@
         </Bindings>
     </Part>
 
-    <Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke" OnlyPlatforms="x64">
+    <!--<Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-doxygen</RequiredRepository>
         <Bindings>
-            <!-- <Files ProductDirectoryName="LicenseClientCrossPlatform" IfNotPresent="Warn" Required="false">
+             The Files portion below should be commented out if part in use
+             <Files ProductDirectoryName="LicenseClientCrossPlatform" IfNotPresent="Warn" Required="false">
                 Delivery/NativeClient.chm
-            </Files> -->
+            </Files>
         </Bindings>
-    </Part>
-
+    </Part>-->
+    
     <Product Name="Licensing-Gtest" >
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>

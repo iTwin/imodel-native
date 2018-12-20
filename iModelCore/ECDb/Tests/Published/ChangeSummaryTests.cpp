@@ -1161,6 +1161,10 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     ASSERT_STREQ("ec1efd72621d42a0642bf135bdca409e94a454ed", cset.m_value[0]["ChangeSetHubId"].asCString());
     ASSERT_STREQ(pushDate.ToString().c_str(), cset.m_value[0]["PushDate"].asCString());
     ASSERT_STREQ("john.smith@acme.com", cset.m_value[0]["CreatedBy"].asCString());
+
+    ASSERT_EQ(JsonValue("[{\"cnt\": 1}]"), GetHelper().ExecuteSelectECSql("SELECT count(*) cnt FROM change.InstanceChange WHERE OpCode=change.OpCode.[Insert]"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 0}]"), GetHelper().ExecuteSelectECSql("SELECT count(*) cnt FROM change.InstanceChange WHERE OpCode=change.OpCode.[Update]"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 0}]"), GetHelper().ExecuteSelectECSql("SELECT count(*) cnt FROM change.InstanceChange WHERE OpCode=change.OpCode.[Delete]"));
     }
 
 //---------------------------------------------------------------------------------------

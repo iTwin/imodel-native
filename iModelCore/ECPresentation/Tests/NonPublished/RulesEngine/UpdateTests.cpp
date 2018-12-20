@@ -3324,6 +3324,386 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardH
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwardGetRelatedInstancesCountECExpressionIsUsedInInstanceFilter)
+    {
+    ECRelationshipClassCP relationshipClass = m_schema->GetClassCP("WidgetsHaveGadgets")->GetRelationshipClassCP();
+
+    // insert a widget and a gadget
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));}, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+        "this.GetRelatedInstancesCount(\"RulesEngineTest:WidgetsHaveGadgets\", \"Backward\", \"RulesEngineTest:Widget\") > 0", "RulesEngineTest:Gadget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(0, rootNodes.GetSize());
+    
+    // relate the instances
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
+    bvector<IECInstanceCP> instances;
+    instances.push_back(widget.get());
+    instances.push_back(gadget.get());
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+
+    // expect 1 root node now
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForwardGetRelatedInstancesCountECExpressionIsUsedInInstanceFilter)
+    {
+    ECRelationshipClassCP relationshipClass = m_schema->GetClassCP("WidgetsHaveGadgets")->GetRelationshipClassCP();
+
+    // insert a widget and a gadget
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));}, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+        "this.GetRelatedInstancesCount(\"RulesEngineTest:WidgetsHaveGadgets\", \"Forward\", \"RulesEngineTest:Gadget\") > 0", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(0, rootNodes.GetSize());
+    
+    // relate the instances
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
+    bvector<IECInstanceCP> instances;
+    instances.push_back(widget.get());
+    instances.push_back(gadget.get());
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+
+    // expect 1 root node now
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwardGetRelatedInstancesCountECExpressionIsUsedInInstanceFilter)
+    {
+    ECRelationshipClassCP relationshipClass = m_schema->GetClassCP("WidgetsHaveGadgets")->GetRelationshipClassCP();
+
+    // insert a widget and a gadget
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    ECInstanceKey relationshipKey = RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+        "this.GetRelatedInstancesCount(\"RulesEngineTest:WidgetsHaveGadgets\", \"Backward\", \"RulesEngineTest:Widget\") > 0", "RulesEngineTest:Gadget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    
+    // unrelate the instances
+    RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
+    bvector<IECInstanceCP> instances;
+    instances.push_back(widget.get());
+    instances.push_back(gadget.get());
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+
+    // expect 0 root nodes now
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(0, rootNodes.GetSize());
+    
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForwardGetRelatedInstancesCountInstanceECExpressionIsUsedInInstanceFilter)
+    {
+    ECRelationshipClassCP relationshipClass = m_schema->GetClassCP("WidgetsHaveGadgets")->GetRelationshipClassCP();
+
+    // insert a widget and a gadget
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass);
+    ECInstanceKey relationshipKey = RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+        "this.GetRelatedInstancesCount(\"RulesEngineTest:WidgetsHaveGadgets\", \"Forward\", \"RulesEngineTest:Gadget\") > 0", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    
+    // relate the instances
+    RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
+    bvector<IECInstanceCP> instances;
+    instances.push_back(widget.get());
+    instances.push_back(gadget.get());
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+
+    // expect 0 root nodes now
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(0, rootNodes.GetSize());
+    
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackwardGetRelatedInstancesCountECExpressionIsUsedInInstanceFilter)
+    {
+    ECRelationshipClassCP relationshipClass = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
+
+    // insert a widget and a gadget
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));}, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+        "this.GetRelatedInstancesCount(\"RulesEngineTest:WidgetHasGadgets\", \"Backward\", \"RulesEngineTest:Widget\") > 0", "RulesEngineTest:Gadget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(0, rootNodes.GetSize());
+    
+    // relate the instances
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+
+    // expect 1 root node now
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardGetRelatedInstancesCountECExpressionIsUsedInInstanceFilter)
+    {
+    ECRelationshipClassCP relationshipClass = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
+
+    // insert a widget and a gadget
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, nullptr, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+        "this.GetRelatedInstancesCount(\"RulesEngineTest:WidgetHasGadgets\", \"Forward\", \"RulesEngineTest:Gadget\") > 0", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(0, rootNodes.GetSize());
+    
+    // relate the instances
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+
+    // expect 1 root node now
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackwardGetRelatedInstancesCountECExpressionIsUsedInInstanceFilter)
+    {
+    ECRelationshipClassCP relationshipClass = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
+
+    // insert a widget and a gadget
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    ECInstanceKey relationshipKey = RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+        "this.GetRelatedInstancesCount(\"RulesEngineTest:WidgetHasGadgets\", \"Backward\", \"RulesEngineTest:Widget\") > 0", "RulesEngineTest:Gadget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    
+    // unrelate the instances
+    RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+
+    // expect 0 root nodes now
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(0, rootNodes.GetSize());
+    
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardGetRelatedInstancesCountECExpressionIsUsedInInstanceFilter)
+    {
+    ECRelationshipClassCP relationshipClass = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
+
+    // insert a widget and a gadget
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass);
+    ECInstanceKey relationshipKey = RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+        "this.GetRelatedInstancesCount(\"RulesEngineTest:WidgetHasGadgets\", \"Forward\", \"RulesEngineTest:Gadget\") > 0", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    
+    // relate the instances
+    RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+
+    // expect 0 root nodes now
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(0, rootNodes.GetSize());
+    
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipRelatedInstanceUpdateWhenGetRelatedValueECExpressionIsUsedInInstanceFilter)

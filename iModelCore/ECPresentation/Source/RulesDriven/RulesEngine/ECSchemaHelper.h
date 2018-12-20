@@ -226,7 +226,7 @@ struct ECInstancesHelper : NonCopyableClass
 private:
     ECInstancesHelper() {}
 public:
-    static DbResult LoadInstance(IECInstancePtr&, IConnectionCR, ECInstanceKeyCR);
+    ECPRESENTATION_EXPORT static DbResult LoadInstance(IECInstancePtr&, IConnectionCR, ECInstanceKeyCR);
     static ECValue GetValue(IConnectionCR, ECInstanceKeyCR, Utf8CP propertyName);
     static ECValue GetValue(IConnectionCR, ECClassCR, ECInstanceId, ECPropertyCR);
     static void SetValue(IConnectionCR, ECInstanceKeyCR, Utf8CP propertyName, ECValueCR);

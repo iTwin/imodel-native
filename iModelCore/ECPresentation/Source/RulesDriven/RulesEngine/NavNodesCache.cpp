@@ -276,7 +276,7 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
 
         if (BE_SQLITE_BUSY == result)
             {
-            path.SetName(tempDirectory);
+            path.SetName(tempDirectory).AppendSeparator();
             Utf8PrintfString fileName("HierarchyCache.%s.db", BeGuid(true).ToString().c_str());
             path.AppendUtf8(fileName.c_str());
 
