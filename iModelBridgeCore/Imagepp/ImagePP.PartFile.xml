@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. Also deliver my license notice. -->
+    <Part Name="PublicApi" BentleyBuildMakeFile="ImagePP.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="ImagePP" />
+        </Bindings>
+    </Part>
+
+    <!-- ////////////////////////////// IPP external libs  ////////////////////////////////////// -->   
+    <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke" OnlyPlatforms="x86,x64">
+        <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <Bindings>
+            <VendorAPI Domain="ImagePP-GdalLib" />
+            <Libs ProductDirectoryName="IppGdalLib" Required="false">Delivery/$(stlibprefix)IppGdalLib$(stlibext)</Libs>
+            <Libs ProductDirectoryName="IppGdalLib" Required="false">Delivery/$(stlibprefix)IppGdalLib$(stlibdebugext)</Libs>
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/gdal-notice.txt</Files>
+        </Bindings>
+
+    </Part>
+    <!-- The following parts allow to share gdal with Vortex using older compilers -->
+    <Part Name="GdalLibVC11"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2012=1" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ZLib" />
+        <SubPart PartName="JpegLib" />
+        <SubPart PartName="PngLib" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <Bindings>
+            <VendorAPI Domain="ImagePP-GdalLib" />
+            <Libs>Delivery/$(stlibprefix)IppGdalLibVC11$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)IppGdalLibVC11$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+    <Part Name="GdalLibVC8"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2005=1" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ZLib" />
+        <SubPart PartName="JpegLib" />
+        <SubPart PartName="PngLib" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <Bindings>
+            <VendorAPI Domain="ImagePP-GdalLib" />
+            <Libs>Delivery/$(stlibprefix)IppGdalLibVC8$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)IppGdalLibVC8$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="GdalData" BentleyBuildMakeFile="ext/gdal/GdalData.mke" OnlyPlatforms="x86,x64">
+        <Bindings>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="Gdal" SourceName="Delivery\GdalData" Feature="GdalData" FeatureDefault="No"/>
+        </Bindings>
+    </Part>
+    <!-- Why so many jpeg libs?
+        - JpegLib is the standard 8 bits library. We will use this one if we cannot use JpegLib-turbo.
+        - jpeglib12BitsLib is built with the same source than JpegLib but with different function name decoration. Because 8 bits and 12 bits structures are different
+          we cannot mix 8 bits and 12 bits jpeg structures in the same cpp files.
+        - JpegLib-turbo is an optimized (x86/x64) version of JpegLib(8 bits only) and is designed to be compatible with Jpeglib. That mean we could build with jpeglib
+          headers but substitute jpeglib.lib with jpeglibTurbo.lib at link time. The only requirements is that both version use the same internal jpeg version. 
+          Basically we cannot update jpeglib if we do not have a jpeglibTurbo of the same version.
+    -->
+    <!--Part Name="JpegLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke">
+        <Bindings>
+            <VendorAPI Domain="ImagePP-jpeglib" />
+            <Libs>Delivery/$(stlibprefix)IppJpegLib$(stlibext)</Libs>
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/jpeg-notice.txt</Files>
+        </Bindings>
+    </Part-->
+
+    <Part Name="Jpeg12BitsLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke" BMakeOptions="+dJPEGLIB_SUPPORT_12BITS"> 
+        <Bindings>
+            <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)IppJpeg12Bits$(stlibext)</Libs>
+            <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)IppJpeg12Bits$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+    
+    <Part Name="MatrixFromTiePtsLib" BentleyBuildMakeFile="ext/MatrixFromTiePts/MatrixFromTiePts.mke"> 
+        <SubPart PartName="PublicApi" />
+        <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
+        <Bindings>
+            <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)MatrixFromTiePts$(stlibext)</Libs>
+            <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)MatrixFromTiePts$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+    
+         
+    <Part Name="ImagePPThirdPartsDll" OnlyPlatforms="x86,x64">
+        <SubPart PartName="MrSid"                   PartFile="${SrcRoot}bsicommon/CvsPartfiles/mrsid"        Repository="Bin-MrSid" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <!--SubPart PartName="OracleSDK12.1"           PartFile="${SrcRoot}bsicommon/CvsPartfiles/oracle"       Repository="bin-oracle" />
+        <SubPart PartName="PdfLibInitializer"       PartFile="PdfLibInitializer"                        Repository="PdfLibInterface"/>
+        <SubPart PartName="Adobe11.0"               PartFile="${SrcRoot}bsicommon/CvsPartfiles/adobe"        Repository="bin-adobe11.0"/-->
+    </Part>
+    
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="ImagePPDll" BentleyBuildMakeFile="all/imagepp.mke" ApiNumber="M02">
+        <SubPart PartName="PublicApi" />
+        <SubPart PartName="ImagePPThirdPartsDll" />
+        <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="GeoCoordData"                    PartFile="csmap"                Repository="libsrc-csmap" />
+        <SubPart PartName="GeoCoord"                        PartFile="GeoCoord"             Repository="GeoCoord" />
+        <SubPart PartName="BeSQLite"                        PartFile="BeSQLite"             Repository="BeSQLite" />
+        <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="Jpeg12BitsLib" />
+        <SubPart PartName="GdalLib" />
+        <SubPart PartName="GdalData" />
+        <SubPart PartName="MatrixFromTiePtsLib" />
+        <Bindings>
+            <Libs>Delivery/$(shlibprefix)Imagepp$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)Imagepp$(ApiNumber)$(shlibext)
+                <!--TransKit SourceDirectory="Delivery/ImagePP/Transkit" /-->
+            </Assemblies>
+            <Files ProductDirectoryName="xliffs" Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/ImagePPMessages_en.xliff
+                Delivery/xliffs/ImagePPExceptionMessages_en.xliff
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ImagePP">
+        <SubPart PartName="ImagePP-NonAndroid" />
+        <SubPart PartName="ImagePP-Android" />
+    </Part>
+
+    <Part Name="ImagePP-NonAndroid" ExcludePlatforms="Android*">
+        <SubPart PartName="ImagePPDll"/>
+    </Part>
+
+    <Part Name="ImagePP-Android" OnlyPlatforms="Android*">
+        <SubPart PartName="ImagePPDll" LibType="Static"/>
+    </Part>    
+            
+    <Part Name="ImagePP-Dev">
+        <!--NEEDSWORK: 'ImagePP-Tested' must build before 'ImagePP' create imagepp.lib and add it to the buildContext 
+            since it will be inconditionnaly added to the link cmd by buildGtest.mke -->
+        <SubPart PartName= "ImagePP-Tested" />
+        <SubPart PartName= "ImagePP" />        
+        <SubProduct ProductName="ImageppApps" PartFile="ImageppApps" Repository="ImageppApps" />
+    </Part>
+
+    <Part Name="ImagePP-Tested">
+        <SubPart PartName="RunGtest" />
+        <SubProduct ProductName="AndroidJUnit-ImagePP-TestCollection"/>
+        <SubProduct ProductName="iOSXCTest-ImagePP-TestCollection"/>
+        <SubProduct ProductName="WinRTCppUnitTest-ImagePP-TestCollection"/>
+    </Part>
+
+    <!-- Use this part to validate that everything that use(and we maintain) IPP build
+       PULL>  bb -r imagepp -f imagepp -p AllImagePPDependant pull 
+       BUILD> bb -r imagepp -f imagepp -p AllImagePPDependant build /-->
+    <Part Name="AllImagePPDependant">
+        <SubPart    PartName="ImagePP-Tested" />
+        <SubProduct ProductName="ImageppApps"           PartFile="ImageppApps"          Repository="ImageppApps" />
+        <!--SubProduct ProductName="HugeDataTest"          PartFile="HugeDataTest"         Repository="HugeDataTest" /-->
+        <!--SubProduct ProductName="HugeDataWinShellExt"   PartFile="HugeDataWinShellExt"  Repository="HugeDataWinShellExt" /-->
+        <!--SubProduct ProductName="PlatformProducts"      PartFile="PlatformProducts"     Repository="MstnPlatform" /-->
+    </Part>
+    
+    <!-- ******************************** Unit Tests ************************************** -->
+
+    <Part Name="ImagePPSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/ImagePP/ImagePP_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="ImagePPDll" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/ImagePP_en.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
+        <SubPart PartName="ImagePPSqlang"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ImagePP" SubPartDirectory="UnitTests/ImagePP">Delivery/UnitTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-Assets">Delivery/UnitTests/ImagePPTest.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Common" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Common">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ImagePP/Common" SourceName="Delivery/UnitTests/Objects/Common"/>
+        </Bindings>
+    </Part>
+    
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests"/>
+        <SubPart PartName="UnitTests-Common"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ImagePP/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-FileFormat" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=FileFormat">
+        <SubPart PartName="PrewireForUnitTests"/>
+        <SubPart PartName="UnitTests-Common"/>
+        <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ImagePP/FileFormat" SourceName="Delivery/UnitTests/Objects/FileFormat"/>
+        </Bindings>
+    </Part>
+    
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+        <SubPart PartName="UnitTests-FileFormat"/>
+    </Part>
+   
+    <Product Name="ImagePP-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base"/>
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>    
+    
+    <!--&&MM need one per test(UnitTests-NonPublished and UnitTests-FileFormat) Define a gtest program to run the tests -->
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+         <SubProduct ProductName="ImagePP-Tests"/>
+         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ImagePPTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ImagePPTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ImagePP-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>    
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ImagePP-GTest -dGTEST_NAME=ImagePPTests -dGTEST_EXTRA_ARGS=--timeout=-1" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ImagePP-GTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ImagePPTests.log</Files>
+        </Bindings>
+    </Part>
+
+    <!--&&MM need to deliver file formats binaries.-->
+    <ProductDirectoryList ListName="ImagePPGTestsDir" >
+        <ProductDirectory Name="MrSidAssemblies"                Deliver="false" />
+        <ProductDirectory Name="GDalData"                       Deliver="false"/>
+        <ProductDirectory Name="GDalData"                       Deliver="false" LibType="static"/>
+    </ProductDirectoryList>
+
+
+    <!-- ******************************************************************************************* -->
+    <!-- *******************              Test Collection                      ********************* -->
+    <!-- ******************************************************************************************* -->
+    
+    <!-- (There must be a static and a dynamic version to support how we build for the various platforms.) -->
+    <Part Name="TestCollection-Dynamic" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="Tests"/>
+    </Part>
+
+    <Part Name="TestCollection-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="Tests" LibType="Static"/>
+    </Part>
+
+    <Product Name="ImagePP-TestCollection" >
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="TestCollection-Static"/>
+        <SubPart PartName="TestCollection-Dynamic"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>
+
+    <!--                ********************** -->
+    <!--                **** AndroidJUnit **** -->
+    <!--                ********************** -->
+    <Part Name="AndroidJUnit-TestCollection" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ImagePP-TestCollection"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+
+    <Product Name="AndroidJUnit-ImagePP-TestCollection" >
+        <SubPart PartName="AndroidJUnit-TestCollection" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=AndroidJUnit-ImagePP-TestCollection"   OnlyPlatforms="Android*">
+        <SubProduct ProductName="AndroidJUnit-ImagePP-TestCollection"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/AndroidJUnit-ImagePP-TestCollection.log</Files>
+        </Bindings>
+    </Part>
+    
+    <!--                ********************** -->
+    <!--                **** iOSXCTest ******* -->
+    <!--                ********************** -->
+    <Part Name="iOSXCTest-TestCollection" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ImagePP-TestCollection"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ImagePPTests/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iOSXCTest-ImagePP-TestCollection" >
+        <SubPart PartName="iOSXCTest-TestCollection" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>
+
+    <!--                ************************** -->
+    <!--                **** WinRTCppUnitTest **** -->
+    <!--                ************************** -->
+    <Part Name="WinRTCppUnitTest-TestCollection" BentleyBuildMakeFile="${SrcRoot}BeGTest/WinRT/MakeCppUnitProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="WinRT*">
+        <SubProduct ProductName="ImagePP-TestCollection"/>
+        <SubPart PartName="WinRTCppUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="WinRTCppUnitTestProject" SourceName="Delivery/WnRTCpU/ImagePPTests/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="WinRTCppUnitTest-ImagePP-TestCollection" >
+        <SubPart PartName="WinRTCppUnitTest-TestCollection" LibType="Static"/>
+        <Directories DirectoryListName="WinRTCppUnitTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>
+    
+</BuildContext>
