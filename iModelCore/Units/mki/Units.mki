@@ -1,0 +1,44 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/Units.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if defined (__Units_mki__)
+    %return
+%endif
+
+__Units_mki__ = 1
+
+OutUnits = $(OutBuildDir)Units/
+buildDir = $(OutUnits)
+
+%if !defined (programName)
+    programName = $(ASSEMBLY_NAME)
+%endif
+
+o                           = $(PartBuildDir)
+
+always:
+    !~@mkdir $(o)
+
+# Including DefaultToolSet.mki is a noop if a toolset is already selected but, if not, it provides a default.
+%include DefaultToolSet.mki
+
+#-----------------------------------------------------------------------
+#       Source directories
+#-----------------------------------------------------------------------
+unitsSrc                = $(SrcRoot)Units/
+unitsPublicAPISrc       = $(unitsSrc)PublicAPI/Units/
+
+#-----------------------------------------------------------------------
+# Configure Google Test macros
+#-----------------------------------------------------------------------
+#The gtest mk* files (which we harvest as a subpart for our gtest builds) rely on this macro being defined
+GUnitTestDir            = $(BuildContext)SubParts/google_gtest/
+
+#-----------------------------------------------------------------------
+# Configure includes
+#-----------------------------------------------------------------------
+PublicApiIncludes       + -I$(unitsPublicAPISrc)
