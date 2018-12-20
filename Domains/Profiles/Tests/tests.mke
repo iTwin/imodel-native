@@ -12,6 +12,11 @@ BEGTEST_INPUT=$(baseDir)src\\
 
 %include mdl.mki
 
+// WORKAROUND: Something changed in the platform and broke builds (remove when this is no longer relevant).
+%if !defined (_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
+     CCCompOpts + -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING=1
+%endif
+
 # We don't want to run the test from the build location because the dependencies are not there.
 GUNITTEST_NOEXEC = 1
 
