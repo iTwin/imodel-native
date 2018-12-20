@@ -1,0 +1,10 @@
+#-----------------------------------------------------------------------+
+#     $Source: Installer/MstnBridgeInstaller.prewire.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------*/
+
+always:
+    !~@mkdir $(BuildContext)MstnBridgeInstallFiles
+    ~linkfile "$(BuildContext)MstnBridgeInstallFiles/MstnBridgeInstallerBeforeCompile.mki=$(_MakeFilePath)MstnBridgeInstallerBeforeCompile.mki"
+    ~linkfile "$(BuildContext)MstnBridgeInstallFiles/MstnBridgeInstaller.wxs=$(_MakeFilePath)MstnBridgeInstaller.wxs"
+
