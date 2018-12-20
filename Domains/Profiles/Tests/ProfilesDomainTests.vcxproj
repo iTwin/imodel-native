@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\AsymmetricIShapeProfileTests.cpp" />
+    <ClCompile Include="src\CenterLineCShapeProfileTests.cpp" />
     <ClCompile Include="src\CircleProfileTests.cpp" />
     <ClCompile Include="src\CShapeProfileTests.cpp" />
     <ClCompile Include="src\EllipseProfileTests.cpp" />

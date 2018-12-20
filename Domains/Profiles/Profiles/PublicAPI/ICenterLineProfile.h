@@ -22,7 +22,6 @@ protected:
 
 public:
     PROFILES_EXPORT IGeometryPtr GetCenterLine() const;
-    PROFILES_EXPORT void SetCenterLine (IGeometryPtr val);
 
     PROFILES_EXPORT double GetWallThickness() const;
     PROFILES_EXPORT void SetWallThickness (double val);

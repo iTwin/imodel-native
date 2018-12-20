@@ -25,7 +25,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     RefCountedPtr<T> CreateProfile (Profiles::Profile::CreateParams const& createParams)
         {
-        T::CreateParams const* pParams = dynamic_cast<T::CreateParams const*> (&createParams);
+        typename T::CreateParams const* pParams = dynamic_cast<typename T::CreateParams const*> (&createParams);
         if (pParams == nullptr)
             BeAssert (false && "CreateParams must be of the class that is being created");
 
@@ -40,9 +40,9 @@ public:
         Profiles::ProfilePtr profilePtr = CreateProfile (createParams);
         BeAssert (profilePtr.IsValid());
 
-        DgnDbStatus status;
+        Dgn::DgnDbStatus status;
         profilePtr->Insert (&status);
-        if (status != DgnDbStatus::Success)
+        if (status != Dgn::DgnDbStatus::Success)
             return status;
 
         // Perform an Update just to double check same validation is happenning on update.

@@ -23,16 +23,6 @@ IGeometryPtr ICenterLineProfile::GetCenterLine() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ICenterLineProfile::SetCenterLine (IGeometryPtr val)
-    {
-    ECN::ECValue ecValue;
-    ecValue.SetIGeometry (*val);
-    (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue (PRF_PROP_ICenterLineProfile_CenterLine, ecValue);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double ICenterLineProfile::GetWallThickness() const
     {
     return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble (PRF_PROP_ICenterLineProfile_WallThickness);

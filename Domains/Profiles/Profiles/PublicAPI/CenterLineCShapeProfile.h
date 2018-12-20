@@ -10,6 +10,7 @@
 #include "ProfilesDefinitions.h"
 #include "ParametricProfile.h"
 #include "ICenterLineProfile.h"
+#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -22,8 +23,33 @@ struct CenterLineCShapeProfile : ParametricProfile, ICenterLineProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_CenterLineCShapeProfile, ParametricProfile);
     friend struct CenterLineCShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(CenterLineCShapeProfile::T_Super::CreateParams);
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double girth, double wallThickness, double filletRadius = 0.0);
+
+    public:
+        //! Required properties
+        double flangeWidth = 0.0;
+        double depth = 0.0;
+        double girth = 0.0;
+        double wallThickness = 0.0;
+
+        //! Optional properties
+        double filletRadius = 0.0;
+        };
+
+
 protected:
-    explicit CenterLineCShapeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit CenterLineCShapeProfile(CreateParams const& params);
+
+    virtual bool _Validate() const override;
+    virtual IGeometryPtr _CreateGeometry() const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineCShapeProfile)
@@ -43,7 +69,6 @@ public:
 
     PROFILES_EXPORT double GetGirth() const;
     PROFILES_EXPORT void SetGirth (double val);
-
     }; // CenterLineCShapeProfile
 
 //=======================================================================================

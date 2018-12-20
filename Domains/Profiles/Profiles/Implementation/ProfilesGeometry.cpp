@@ -511,6 +511,54 @@ IGeometryPtr ProfilesGeomApi::CreateZShape (ZShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr profile)
+    {
+    double const halfWidth = profile->GetFlangeWidth() / 2.0;
+    double const halfDepth = profile->GetDepth() / 2.0;
+    double const wallThickness = profile->GetWallThickness();
+    double const innerFilletRadius = profile->GetFilletRadius();
+    double const outerFilletRadius = innerFilletRadius + wallThickness;
+    double const girth = profile->GetGirth();
+
+    DPoint3d const outerTopLeft     = { -halfWidth,  halfDepth,  0.0 };
+    DPoint3d const outerBottomLeft  = { -halfWidth,  -halfDepth, 0.0 };
+    DPoint3d const outerBottomRight = { halfWidth,   -halfDepth, 0.0 };
+    DPoint3d const outerTopRight =    { halfWidth,   halfDepth,  0.0 };
+
+    DPoint3d const outerTopGirth    = { halfWidth,   halfDepth - girth,     0.0 };
+    DPoint3d const outerBottomGirth = { halfWidth,   -(halfDepth - girth),  0.0 };
+
+    DPoint3d const innerTopGirth    = { halfWidth - wallThickness,   halfDepth - girth,     0.0 };
+    DPoint3d const innerBottomGirth = { halfWidth - wallThickness,   -(halfDepth - girth),  0.0 };
+
+    DPoint3d const innerTopLeft     = { -(halfWidth - wallThickness),  halfDepth - wallThickness, 0.0 };
+    DPoint3d const innerBottomLeft  = { -(halfWidth - wallThickness), -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const innerBottomRight = { halfWidth - wallThickness, -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const innerTopRight    = { halfWidth - wallThickness, halfDepth - wallThickness, 0.0 };
+
+    ICurvePrimitivePtr line1 = ICurvePrimitive::CreateLine (outerTopLeft, outerTopRight);
+    ICurvePrimitivePtr line2 = ICurvePrimitive::CreateLine (outerTopRight, outerTopGirth);
+    ICurvePrimitivePtr line3 = ICurvePrimitive::CreateLine (outerTopGirth, innerTopGirth);
+    ICurvePrimitivePtr line4 = ICurvePrimitive::CreateLine (innerTopGirth, innerTopRight);
+    ICurvePrimitivePtr line5 = ICurvePrimitive::CreateLine (innerTopRight, innerTopLeft);
+    ICurvePrimitivePtr line6 = ICurvePrimitive::CreateLine (innerTopLeft, innerBottomLeft);
+    ICurvePrimitivePtr line7 = ICurvePrimitive::CreateLine (innerBottomLeft, innerBottomRight);
+    ICurvePrimitivePtr line8 = ICurvePrimitive::CreateLine (innerBottomRight, innerBottomGirth);
+    ICurvePrimitivePtr line9 = ICurvePrimitive::CreateLine (innerBottomGirth, outerBottomGirth);
+
+    bvector<ICurvePrimitivePtr> curves =
+        {
+        line1, line2, line3,
+        line4, line5, line6,
+        line7, line8, line9,
+        };
+
+    return createGeometryFromPrimitiveArray(curves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeomApi::CreateCircle (CircleProfileCPtr profile)
     {
     DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius());
