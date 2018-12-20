@@ -21,8 +21,27 @@ struct TrapeziumProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_TrapeziumProfile, ParametricProfile);
     friend struct TrapeziumProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(TrapeziumProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double topWidth, double bottomWidth,
+                                               double depth, double topOffset);
+
+    public:
+        //! Required properties
+        double topWidth = 0.0;
+        double bottomWidth = 0.0;
+        double depth = 0.0;
+        double topOffset = 0.0;
+        };
+
 protected:
-    explicit TrapeziumProfile (CreateParams const& params) : T_Super (params) {}
+    explicit TrapeziumProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (TrapeziumProfile)

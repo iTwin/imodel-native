@@ -14,6 +14,39 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (TrapeziumProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TrapeziumProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TrapeziumProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double topWidth, double bottomWidth, double depth, double topOffset)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , topWidth (topWidth)
+    , bottomWidth (bottomWidth)
+    , depth (depth)
+    , topOffset (topOffset)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TrapeziumProfile::TrapeziumProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetTopWidth (params.topWidth);
+    SetBottomWidth (params.bottomWidth);
+    SetDepth (params.depth);
+    SetTopOffset (params.topOffset);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TrapeziumProfile::GetTopWidth() const
