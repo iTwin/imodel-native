@@ -1,0 +1,76 @@
+{
+  "$schema": "ExpectedNavNodes.jsd",
+
+  "nodes": [
+    {
+      "Type": "NODE_TYPE_RootTestNode",
+      "Label": "RootNode",
+      "Description": "Test for Root Node",
+      "ImageId": "Image://RootCustomNode",
+      "ChildNodes": [
+        {
+          "Type": "NODE_TYPE_ChildTestNode",
+          "Label": "ChildNode",
+          "Description": "Test for Child Node",
+          "ImageId": "Image://ChildCustomNode",
+          "ChildNodes": [
+            {
+              "Type": "NODE_TYPE_BottomTestNode",
+              "Label": "BottomNode",
+              "Description": "Test for Bottom Node",
+              "ImageId": "Image://BottomCustomNode"
+            }
+          ]
+        },
+        {
+          "Type": "NODE_TYPE_ElementTestNode",
+          "Label": "ElementNode",
+          "Description": "Test for Element Node",
+          "ImageId": "Image://ElementCustomNode",
+          "ChildNodes": [
+            {
+              "Type": "NODE_TYPE_BottomTestNode",
+              "Label": "BottomNode",
+              "Description": "Test for Bottom Node",
+              "ImageId": "Image://BottomCustomNode"
+            }
+          ]
+        },
+        {
+          "Type": "NODE_TYPE_BottomTestNode",
+          "Label": "BottomNode",
+          "Description": "Test for Bottom Node",
+          "ImageId": "Image://BottomCustomNode"
+        }
+      ]
+    },
+    {
+      "Type": "NODE_TYPE_ClassTestNode",
+      "Label": "ClassNode",
+      "Description": "Test for Class Node",
+      "ImageId": "Image://ClassCustomNode",
+      "ChildNodes": [
+        {
+          "Type": "NODE_TYPE_ElementTestNode",
+          "Label": "ElementNode",
+          "Description": "Test for Element Node",
+          "ImageId": "Image://ElementCustomNode",
+          "ChildNodes": [
+            {
+              "Type": "NODE_TYPE_BottomTestNode",
+              "Label": "BottomNode",
+              "Description": "Test for Bottom Node",
+              "ImageId": "Image://BottomCustomNode"
+            }
+          ]
+        },
+        {
+          "Type": "NODE_TYPE_BottomTestNode",
+          "Label": "BottomNode",
+          "Description": "Test for Bottom Node",
+          "ImageId": "Image://BottomCustomNode"
+        }
+      ]
+    }
+  ]
+}
