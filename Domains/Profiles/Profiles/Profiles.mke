@@ -45,6 +45,8 @@ CPchOpts = $(UsePrecompiledHeaderOptions)
 
 $(o)ProfilesGeometry$(oext) : $(appSrc)ProfilesGeometry.cpp ${MultiCompileDepends} $(appPublicApi)ProfilesGeometry.h
 
+$(o)ProfilesProperty$(oext) : $(appSrc)ProfilesProperty.cpp ${MultiCompileDepends} $(appPublicApi)ProfilesProperty.h
+
 $(o)AsymmetricIShapeProfile$(oext) : $(appSrc)AsymmetricIShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)AsymmetricIShapeProfile.h
 
 $(o)BentPlateProfile$(oext) : $(appSrc)BentPlateProfile.cpp ${MultiCompileDepends} $(appPublicApi)BentPlateProfile.h

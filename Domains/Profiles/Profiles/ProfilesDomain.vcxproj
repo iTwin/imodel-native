@@ -59,6 +59,7 @@
     <ClCompile Include="Implementation\ProfilesDomain.cpp" />
     <ClCompile Include="Implementation\ProfilesGeometry.cpp" />
     <ClCompile Include="Implementation\ProfilesInternal.cpp" />
+    <ClCompile Include="Implementation\ProfilesProperty.cpp" />
     <ClCompile Include="Implementation\RectangleProfile.cpp" />
     <ClCompile Include="Implementation\RegularPolygonProfile.cpp" />
     <ClCompile Include="Implementation\RoundedRectangleProfile.cpp" />
@@ -100,6 +101,7 @@
     <ClInclude Include="PublicAPI\ProfilesDefinitions.h" />
     <ClInclude Include="PublicAPI\ProfilesDomain.h" />
     <ClInclude Include="PublicAPI\ProfilesGeometry.h" />
+    <ClInclude Include="PublicAPI\ProfilesProperty.h" />
     <ClInclude Include="PublicAPI\RectangleProfile.h" />
     <ClInclude Include="PublicAPI\RegularPolygonProfile.h" />
     <ClInclude Include="PublicAPI\RoundedRectangleProfile.h" />

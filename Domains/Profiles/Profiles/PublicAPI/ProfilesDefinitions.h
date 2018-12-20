@@ -7,10 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <Bentley/Bentley.h>
-#include <Bentley/WString.h>
-#include <ECDb/ECDbApi.h>
-#include <DgnPlatform/DgnPlatformApi.h>
+#include <Bentley\Bentley.h>
+#include <Bentley\WString.h>
+#include <Bentley\BeNumerical.h>
+#include <ECDb\ECDbApi.h>
+#include <DgnPlatform\DgnPlatformApi.h>
 #include <Geom\Angle.h>
 
 #ifdef __PROFILES_BUILD__
