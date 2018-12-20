@@ -231,16 +231,18 @@ rapidjson::Document ValueHelpers::GetPoint3dJson(DPoint3dCR pt, rapidjson::Memor
     return doc;
     }
 
+#define NULL_VALUE_PRECONDITION(sqlValue) \
+    if (sqlValue.IsNull()) \
+        return rapidjson::Document();
+
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primitiveType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
     {
+    NULL_VALUE_PRECONDITION(value);
+
     rapidjson::Document doc(allocator);
-
-    if (value.IsNull())
-        return doc;
-
     switch (primitiveType)
         {
         case PRIMITIVETYPE_Boolean:
@@ -278,6 +280,8 @@ rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primit
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ValueHelpers::GetJsonFromStructValue(ECStructClassCR structClass, IECSqlValue const& sqlValue, rapidjson::MemoryPoolAllocator<>* allocator)
     {
+    NULL_VALUE_PRECONDITION(sqlValue);
+
     BeAssert(sqlValue.GetColumnInfo().GetStructType() == &structClass);
     rapidjson::Document doc(allocator);
     doc.SetObject();
@@ -306,6 +310,8 @@ rapidjson::Document ValueHelpers::GetJsonFromStructValue(ECStructClassCR structC
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlValue, rapidjson::MemoryPoolAllocator<>* allocator)
     {
+    NULL_VALUE_PRECONDITION(sqlValue);
+
     rapidjson::Document doc(allocator);
     doc.SetArray();
     for (IECSqlValue const& v : sqlValue.GetArrayIterable())

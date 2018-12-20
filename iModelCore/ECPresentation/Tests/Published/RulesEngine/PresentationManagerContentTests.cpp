@@ -7773,6 +7773,71 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsStructWithNullArrayAndStructPropertyValues, R"*(
+    <ECStructClass typeName="MyStructA">
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECStructClass typeName="MyStructB">
+        <ECArrayProperty propertyName="IntProperties" typeName="int" />
+        <ECStructProperty propertyName="StructProperty" typeName="MyStructA" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStructB" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithNullArrayAndStructPropertyValues)
+    {
+    // set up data set
+    // unused - ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.StringProperty", ECValue("test"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "MyClass_StructProperty": {
+           "StringProperty": "test",
+           "StructProperty": null,
+           "IntProperties": null
+           }
+        })");
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(FormatsPrimitiveArrayPropertyValues, R"*(
@@ -7830,7 +7895,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayProper
     rapidjson::Document expectedDisplayValues;
     expectedDisplayValues.Parse(R"(
         {
-        "MyClass_ArrayProperty": ["_2_", "_1_", ""]
+        "MyClass_ArrayProperty": ["_2_", "_1_", null]
         })");
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
@@ -7899,7 +7964,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
     rapidjson::Document expectedDisplayValues;
     expectedDisplayValues.Parse(R"({
         "MyClass_StructProperty": {
-           "DoubleProperty": "",
+           "DoubleProperty": null,
            "IntProperty": "_123_",
            "StringProperty": "_abc_"
            }
@@ -7999,7 +8064,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsNestedStructProperty
                 },
             "DisplayValues": {
                 "ElementUniqueAspect_StructProperty": {
-                    "DoubleProperty": "",
+                    "DoubleProperty": null,
                     "IntProperty": "_123_",
                     "StringProperty": "_abc_"
                     }

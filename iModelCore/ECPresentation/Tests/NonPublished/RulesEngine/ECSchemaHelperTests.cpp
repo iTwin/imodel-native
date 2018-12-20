@@ -861,3 +861,36 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     ASSERT_EQ(1, result[0].size());
     EXPECT_EQ(class1, result[0][0].GetTargetClass());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Grigas.Petraitis                12/2018
+//---------------------------------------------------------------------------------------
+void ECInstancesHelperTests::SetUp()
+    {
+    ECPresentationTest::SetUp();
+    m_project.Create("ECInstancesHelperTests", "RulesEngineTest.01.00.ecschema.xml");
+    m_connection = new TestConnection(m_project.GetECDb());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECInstancesHelperTests, LoadInstance_LoadsInstanceAfterSchemaImport)
+    {
+    ECInstanceKey key(m_project.GetECDb().Schemas().GetClassId("ECDbMeta", "ECClassDef"), ECInstanceId((uint64_t)1));
+    IECInstancePtr instance;
+    DbResult result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
+    EXPECT_EQ(BE_SQLITE_ROW, result);
+    EXPECT_TRUE(instance.IsValid());
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(m_project.GetECDb().GetSchemaLocater());
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_1, *schemaReadContext));
+    BentleyStatus status = m_project.GetECDb().Schemas().ImportSchemas(schemaReadContext->GetCache().GetSchemas());
+    ASSERT_EQ(SUCCESS, status);
+
+    result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
+    EXPECT_EQ(BE_SQLITE_ROW, result);
+    EXPECT_TRUE(instance.IsValid());
+    }
