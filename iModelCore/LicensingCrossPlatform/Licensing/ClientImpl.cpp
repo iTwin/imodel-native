@@ -731,7 +731,7 @@ folly::Future<BentleyStatus> ClientImpl::SendUsageRealtime(Utf8StringCR accessTo
 		[=](Response response)
 		{
 		if (!response.IsSuccess()) {
-			LOG.errorv("ClientImpl::SendUsageRealtime ERROR: Unable to post %s - %s", jsonBody.ToString(), response.GetBody().AsString());
+			LOG.errorv("ClientImpl::SendUsageRealtime ERROR: Unable to post %s - %s", jsonBody.ToString().c_str(), response.GetBody().AsString().c_str());
 			return BentleyStatus::ERROR;
 		}
 		return BentleyStatus::SUCCESS;
