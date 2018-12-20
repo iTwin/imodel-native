@@ -1,6 +1,6 @@
 #include <ScalableMeshPCH.h>
 #include "SMSQLiteDiffsetFile.h"
-#include "Stores\SMStoreUtils.h"
+#include "Stores/SMStoreUtils.h"
 
 
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)

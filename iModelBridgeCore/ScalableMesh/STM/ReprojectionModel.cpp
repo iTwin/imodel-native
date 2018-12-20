@@ -18,7 +18,7 @@
 #include <ImagePP/all/h/HVE2DShape.h>
 #include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
 
-#include <GeoCoord\BaseGeoCoord.h>
+#include <GeoCoord/BaseGeoCoord.h>
 
 USING_NAMESPACE_IMAGEPP
 

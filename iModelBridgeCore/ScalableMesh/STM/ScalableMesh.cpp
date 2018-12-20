@@ -63,7 +63,7 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/IScalableMeshPublisher.h>
 
 #ifndef VANCOUVER_API
-#include <DgnPlatform\DgnGeoCoord.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 #endif
 
 

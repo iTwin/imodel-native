@@ -4,10 +4,10 @@
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <Vu/VuApi.h>
-#include <TerrainModel\TerrainModel.h>
+#include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/DTMIterators.h>
 #include <array>
-#include "..\ScalableMeshQuery.h"
+#include "../ScalableMeshQuery.h"
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
