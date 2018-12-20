@@ -13,7 +13,6 @@
 #include "LocalizationHelper.h"
 #include "NavNodeProviders.h"
 #include "LoggingHelper.h"
-#include <regex>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
@@ -117,11 +116,12 @@ template ComplexGenericQueryPtr QueryBuilderHelpers::CreateNestedQuery<GenericQu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas              12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CheckQueryForAliases(Utf8String queryString, bvector<Utf8CP> const& aliases)
+bool CheckQueryForAliases(Utf8CP queryString, bvector<Utf8CP> const& aliases)
     {
     // Check for keyword 'AS'
     int afterAsIndex = -1;
-    for (size_t i = 0; i < queryString.size(); ++i)
+    size_t querySize = std::strlen(queryString);
+    for (size_t i = 0; i < querySize; ++i)
         {
         if (std::isspace(queryString[i]) &&
             ('A' == queryString[i + 1] || 'a' == queryString[i + 1]) &&
@@ -133,22 +133,23 @@ bool CheckQueryForAliases(Utf8String queryString, bvector<Utf8CP> const& aliases
             }
         }
 
-    if (-1 == afterAsIndex || afterAsIndex >= queryString.size())
+    if (-1 == afterAsIndex || afterAsIndex >= querySize)
         return false; // Keyword 'AS' not found
 
     // Get alias string
-    Utf8String afterAs = queryString.substr(afterAsIndex);
-    Utf8String alias;
+    Utf8CP afterAs = queryString + afterAsIndex;
+    Utf8String alias = afterAs;
     size_t aliasEnd = -1;
-    for (size_t i = 0; i < afterAs.size(); ++i)
+    size_t afterAsSize = std::strlen(afterAs);
+    for (size_t i = 0; i < afterAsSize; ++i)
         {
         if ('[' == afterAs[i])
             {
-            for (size_t j = i+1; j < afterAs.size(); ++j)
+            for (size_t j = i+1; j < afterAsSize; ++j)
                 {
-                if (']' == afterAs[j] && i + 1 < afterAs.size() && j - 1 >= 0)
+                if (']' == afterAs[j] && i + 1 < afterAsSize)
                     {
-                    alias = afterAs.substr(i + 1, j - 1);
+                    alias = Utf8String(afterAs, i + 1, j - (i + 1));
                     aliasEnd = j + 1;
                     break;
                     }
@@ -156,22 +157,22 @@ bool CheckQueryForAliases(Utf8String queryString, bvector<Utf8CP> const& aliases
             if (-1 != aliasEnd)
                 break;
             }
+        else if ('_' != afterAs[i] && !isalnum(afterAs[i]))
+            {
+            alias = Utf8String(afterAs, i);
+            aliasEnd = i + 1;
+            break;
+            }
         }
 
+    // Trim whitespaces
     alias = alias.Trim();
     if (0 == alias.size())
-        return false; // Empty alias
+        return false;
 
     // In case aliases aren't specified, check if alias is alphanumeric or _
     if (aliases.empty())
-        {
-        for (char c : alias)
-            {
-            if ('_' != c && !isalnum(c))
-                return false;
-            }
         return true;
-        }
     
     // Else check if alias matches any given alias
     for (Utf8CP aliasCase : aliases)
@@ -180,9 +181,8 @@ bool CheckQueryForAliases(Utf8String queryString, bvector<Utf8CP> const& aliases
             return true;
         }
 
-    
-    if (aliasEnd < afterAs.size())
-        return CheckQueryForAliases(afterAs.substr(aliasEnd), aliases);
+    if (aliasEnd < std::strlen(afterAs))
+        return CheckQueryForAliases(afterAs + aliasEnd, aliases);
 
     return false;
     }
@@ -213,7 +213,7 @@ bool QueryBuilderHelpers::NeedsNestingToUseAlias(T const& query, bvector<Utf8CP>
             return true;
         }
     
-    if (nullptr != query.AsComplexQuery() && CheckQueryForAliases(query.AsComplexQuery()->GetClause(CLAUSE_Select), aliases))
+    if (nullptr != query.AsComplexQuery() && CheckQueryForAliases(query.AsComplexQuery()->GetClause(CLAUSE_Select).c_str(), aliases))
         return true;
 
     return false;

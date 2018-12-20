@@ -10,7 +10,6 @@
 #include <ECPresentation/DefaultECPresentationSerializer.h>
 #include "../Localization/Xliffs/ECPresentation.xliff.h"
 #include "ValueHelpers.h"
-#include <regex>
 
 IECPresentationManager* IECPresentationManager::s_instance = nullptr;
 IECPresentationSerializer const* IECPresentationManager::s_serializer = nullptr;
