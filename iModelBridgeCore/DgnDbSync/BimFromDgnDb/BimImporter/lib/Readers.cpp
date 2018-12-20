@@ -2947,6 +2947,7 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
     {
     // need to call this to set the globalOrigin and initialProjectCenter.  If values were provided by the export, these default values will be overwritten
     GetDgnDb()->GeoLocation().InitializeProjectExtents();
+
     if (propData.isMember("DefaultView"))
         {
         DgnElementId viewId = ECJsonUtilities::JsonToId<DgnElementId>(propData["DefaultView"]["id"]);
