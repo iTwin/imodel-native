@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\EllipseProfile.h>
 #include <Profiles\ProfilesGeometry.h>
+#include <Profiles\ProfilesProperty.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -50,8 +51,8 @@ bool EllipseProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isXRadiusValid = ValidateXRadius();
-    bool const isYRadiusValid = ValidateYRadius();
+    bool const isXRadiusValid = ProfilesProperty::IsGreaterThanZero (GetXRadius());
+    bool const isYRadiusValid = ProfilesProperty::IsGreaterThanZero (GetYRadius());
 
     return isXRadiusValid && isYRadiusValid;
     }
@@ -62,28 +63,6 @@ bool EllipseProfile::_Validate() const
 IGeometryPtr EllipseProfile::_CreateGeometry() const
     {
     return ProfilesGeomApi::CreateEllipse (this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool EllipseProfile::ValidateXRadius() const
-    {
-    double const xRadius = GetXRadius();
-    bool const isPositive = std::isfinite (xRadius) && xRadius > 0.0;
-
-    return isPositive;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool EllipseProfile::ValidateYRadius() const
-    {
-    double const yRadius = GetYRadius();
-    bool const isPositive = std::isfinite (yRadius) && yRadius > 0.0;
-
-    return isPositive;
     }
 
 /*---------------------------------------------------------------------------------**//**

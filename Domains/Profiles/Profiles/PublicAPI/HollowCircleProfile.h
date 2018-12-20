@@ -45,7 +45,6 @@ protected:
     virtual IGeometryPtr _CreateGeometry() const override;
 
 private:
-    bool ValidateRadius() const;
     bool ValidateWallThickness() const;
 
 public:

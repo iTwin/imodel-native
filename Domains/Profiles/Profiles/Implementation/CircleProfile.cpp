@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\CircleProfile.h>
 #include <Profiles\ProfilesGeometry.h>
+#include <Profiles\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -49,7 +50,7 @@ bool CircleProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    return ValidateRadius();
+    return ProfilesProperty::IsGreaterThanZero (GetRadius());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -58,17 +59,6 @@ bool CircleProfile::_Validate() const
 IGeometryPtr CircleProfile::_CreateGeometry() const
     {
     return ProfilesGeomApi::CreateCircle (this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CircleProfile::ValidateRadius() const
-    {
-    double const radius = GetRadius();
-    bool const isPositive = std::isfinite (radius) && radius > 0.0;
-
-    return isPositive;
     }
 
 /*---------------------------------------------------------------------------------**//**

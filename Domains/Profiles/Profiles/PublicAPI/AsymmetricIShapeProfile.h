@@ -59,9 +59,6 @@ protected:
     virtual IGeometryPtr _CreateGeometry() const override;
 
 private:
-    bool ValidateTopFlangeWidth() const;
-    bool ValidateBottomFlangeWidth() const;
-    bool ValidateDepth() const;
     bool ValidateTopFlangeThickness() const;
     bool ValidateBottomFlangeThickness() const;
     bool ValidateWebThickness() const;

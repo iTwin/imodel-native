@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\HollowCircleProfile.h>
 #include <Profiles\ProfilesGeometry.h>
+#include <Profiles\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -51,7 +52,7 @@ bool HollowCircleProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isRadiusValid = ValidateRadius();
+    bool const isRadiusValid = ProfilesProperty::IsGreaterThanZero (GetRadius());
     bool const isWallThicknessValid = ValidateWallThickness();
 
     return isRadiusValid && isWallThicknessValid;
@@ -68,21 +69,10 @@ IGeometryPtr HollowCircleProfile::_CreateGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HollowCircleProfile::ValidateRadius() const
-    {
-    double const radius = GetRadius();
-    bool const isPositive = std::isfinite (radius) && radius > 0.0;
-
-    return isPositive;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool HollowCircleProfile::ValidateWallThickness() const
     {
     double const wallThickness = GetWallThickness();
-    bool const isPositive = std::isfinite (wallThickness) && wallThickness > 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (wallThickness);
     bool const isLessThanRadius = wallThickness < GetRadius();
 
     return isPositive && isLessThanRadius;

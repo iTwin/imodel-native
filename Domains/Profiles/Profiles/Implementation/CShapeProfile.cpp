@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\CShapeProfile.h>
 #include <Profiles\ProfilesGeometry.h>
+#include <Profiles\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -62,33 +63,33 @@ bool CShapeProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isValidFlangeWidth = std::isfinite (GetFlangeWidth()) && GetFlangeWidth() > 0.0;
+    bool const isValidFlangeWidth = ProfilesProperty::IsGreaterThanZero (GetFlangeWidth());
     if (!isValidFlangeWidth)
         return false;
 
-    bool const isValidDepth = std::isfinite (GetDepth()) && GetDepth() > 0.0;
+    bool const isValidDepth = ProfilesProperty::IsGreaterThanZero (GetDepth());
     if (!isValidDepth)
         return false;
 
-    bool const isValidFlangeThickness = std::isfinite (GetFlangeThickness()) && GetFlangeThickness() > 0.0 && GetFlangeThickness() < GetDepth() / 2.0;
+    bool const isValidFlangeThickness = ProfilesProperty::IsGreaterThanZero (GetFlangeThickness()) && GetFlangeThickness() < GetDepth() / 2.0;
     if (!isValidFlangeThickness)
         return false;
 
-    bool const isValidWebThickness = std::isfinite (GetWebThickness()) && GetWebThickness() > 0.0 && GetWebThickness() < GetFlangeWidth();
+    bool const isValidWebThickness = ProfilesProperty::IsGreaterThanZero (GetWebThickness()) && GetWebThickness() < GetFlangeWidth();
     if (!isValidWebThickness)
         return false;
 
-    bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0 && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight()
+    bool const isValidFilletRadius = ProfilesProperty::IsGreaterOrEqualToZero (GetFilletRadius()) && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight()
                                      && GetFilletRadius() <= GetInnerFlangeFaceLength() / 2.0;
     if (!isValidFilletRadius)
         return false;
 
-    bool const isValidFlangeEdgeRadius = std::isfinite (GetFlangeEdgeRadius()) && GetFlangeEdgeRadius() >= 0.0
+    bool const isValidFlangeEdgeRadius = ProfilesProperty::IsGreaterOrEqualToZero (GetFlangeEdgeRadius())
                                          && GetFlangeEdgeRadius() <= std::min (GetInnerFlangeFaceLength() / 2.0, GetFlangeThickness() / 2.0);
     if (!isValidFlangeEdgeRadius)
         return false;
 
-    bool const isFlangeSlopeValid = std::isfinite (GetFlangeSlope()) && GetFlangeSlope() >= 0.0 && GetFlangeSlope() < PI / 2.0
+    bool const isFlangeSlopeValid = ProfilesProperty::IsGreaterOrEqualToZero (GetFlangeSlope()) && GetFlangeSlope() < PI / 2.0
                                     && GetInnerWebFaceLength() / 2.0 >= GetFlangeSlopeHeight();
     if (!isFlangeSlopeValid)
         return false;

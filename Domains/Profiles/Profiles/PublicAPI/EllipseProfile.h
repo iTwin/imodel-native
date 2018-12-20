@@ -43,10 +43,6 @@ protected:
     virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateGeometry() const override;
 
-private:
-    bool ValidateXRadius() const;
-    bool ValidateYRadius() const;
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (EllipseProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (EllipseProfile)

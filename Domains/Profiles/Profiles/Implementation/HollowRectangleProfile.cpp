@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\HollowRectangleProfile.h>
 #include <Profiles\ProfilesGeometry.h>
+#include <Profiles\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -58,8 +59,8 @@ bool HollowRectangleProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isWidthValid = ValidateWidth();
-    bool const isDepthValid = ValidateDepth();
+    bool const isWidthValid = ProfilesProperty::IsGreaterThanZero (GetWidth());
+    bool const isDepthValid = ProfilesProperty::IsGreaterThanZero (GetDepth());
     bool const isWallThicknessValid = ValidateWallThickness();
     bool const isInnerFilletRadiusValid = ValidateInnerFilletRadius();
     bool const isOuterFilletRadiusValid = ValidateOuterFilletRadius();
@@ -78,30 +79,10 @@ IGeometryPtr HollowRectangleProfile::_CreateGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HollowRectangleProfile::ValidateWidth() const
-    {
-    double const width = GetWidth();
-
-    return std::isfinite (width) && width > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool HollowRectangleProfile::ValidateDepth() const
-    {
-    double const depth = GetDepth();
-
-    return std::isfinite (depth) && depth > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool HollowRectangleProfile::ValidateWallThickness() const
     {
     double const wallThickness = GetWallThickness();
-    bool const isPositive = std::isfinite (wallThickness) && wallThickness > 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (wallThickness);
     bool const isLessThanHalfWidth = wallThickness < GetWidth() / 2.0;
     bool const isLessThanHalfDepth = wallThickness < GetDepth() / 2.0;
 
@@ -114,10 +95,10 @@ bool HollowRectangleProfile::ValidateWallThickness() const
 bool HollowRectangleProfile::ValidateInnerFilletRadius() const
     {
     double const innerRadius = GetInnerFilletRadius();
-    if (std::isfinite (innerRadius) && innerRadius == 0.0)
+    if (ProfilesProperty::IsEqualToZero (innerRadius))
         return true;
 
-    bool const isPositive = std::isfinite (innerRadius) && innerRadius >= 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (innerRadius);
     bool const fitsInWidth = innerRadius <= GetWidth() / 2.0 - GetWallThickness();
     bool const fitsInDepth = innerRadius <= GetDepth() / 2.0 - GetWallThickness();
 
@@ -130,10 +111,10 @@ bool HollowRectangleProfile::ValidateInnerFilletRadius() const
 bool HollowRectangleProfile::ValidateOuterFilletRadius() const
     {
     double const outerRadius = GetOuterFilletRadius();
-    if (std::isfinite (outerRadius) && outerRadius == 0.0)
+    if (ProfilesProperty::IsEqualToZero (outerRadius))
         return true;
 
-    bool const isPositive = std::isfinite (outerRadius) && outerRadius >= 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (outerRadius);
     bool const fitsInWidth = outerRadius <= GetWidth() / 2.0;
     bool const fitsInDepth = outerRadius <= GetDepth() / 2.0;
     bool const doesNotIntersectWithInnerCorners = outerRadius - GetInnerFilletRadius() < (2.0 + std::sqrt (2.0)) * GetWallThickness();

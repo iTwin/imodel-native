@@ -51,8 +51,6 @@ protected:
     virtual IGeometryPtr _CreateGeometry() const override;
 
 private:
-    bool ValidateWidth() const;
-    bool ValidateDepth() const;
     bool ValidateThickness() const;
     bool ValidateFilletRadius() const;
     bool ValidateEdgeRadius() const;

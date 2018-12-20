@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\AsymmetricIShapeProfile.h>
 #include <Profiles\ProfilesGeometry.h>
+#include <Profiles\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -74,9 +75,9 @@ bool AsymmetricIShapeProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isTopFlangeWidthValid = ValidateTopFlangeWidth();
-    bool const isBottomFlangeWidthValid = ValidateBottomFlangeWidth();
-    bool const isDepthValid = ValidateDepth();
+    bool const isTopFlangeWidthValid = ProfilesProperty::IsGreaterThanZero (GetTopFlangeWidth());
+    bool const isBottomFlangeWidthValid = ProfilesProperty::IsGreaterThanZero (GetBottomFlangeWidth());
+    bool const isDepthValid = ProfilesProperty::IsGreaterThanZero (GetDepth());
     bool const isTopFlangeThicknessValid = ValidateTopFlangeThickness();
     bool const isBottomFlangeThicknessValid = ValidateBottomFlangeThickness();
     bool const isWebThicknessValid = ValidateWebThickness();
@@ -103,40 +104,10 @@ IGeometryPtr AsymmetricIShapeProfile::_CreateGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AsymmetricIShapeProfile::ValidateTopFlangeWidth() const
-    {
-    double const topFlangeWidth = GetTopFlangeWidth();
-
-    return std::isfinite (topFlangeWidth) && topFlangeWidth > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AsymmetricIShapeProfile::ValidateBottomFlangeWidth() const
-    {
-    double const bottomFlangeWidth = GetBottomFlangeWidth();
-
-    return std::isfinite (bottomFlangeWidth) && bottomFlangeWidth > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AsymmetricIShapeProfile::ValidateDepth() const
-    {
-    double const depth = GetDepth();
-
-    return std::isfinite (depth) && depth > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool AsymmetricIShapeProfile::ValidateTopFlangeThickness() const
     {
     double const topFlangeThickness = GetTopFlangeThickness();
-    bool const isPositive = std::isfinite (topFlangeThickness) && topFlangeThickness > 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (topFlangeThickness);
     bool const isLessThanDepth = GetDepth() > topFlangeThickness + GetBottomFlangeThickness();
 
     return isPositive && isLessThanDepth;
@@ -148,7 +119,7 @@ bool AsymmetricIShapeProfile::ValidateTopFlangeThickness() const
 bool AsymmetricIShapeProfile::ValidateBottomFlangeThickness() const
     {
     double const bottomFlangeThickness = GetBottomFlangeThickness();
-    bool const isPositive = std::isfinite (bottomFlangeThickness) && bottomFlangeThickness > 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (bottomFlangeThickness);
     bool const isLessThanDepth = GetDepth() > bottomFlangeThickness + GetTopFlangeThickness();
 
     return isPositive && isLessThanDepth;
@@ -160,7 +131,7 @@ bool AsymmetricIShapeProfile::ValidateBottomFlangeThickness() const
 bool AsymmetricIShapeProfile::ValidateWebThickness() const
     {
     double const webThickness = GetWebThickness();
-    bool const isPositive = std::isfinite (webThickness) && webThickness > 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (webThickness);
     bool const isLessThanTopFlangeWidth = webThickness < GetTopFlangeWidth();
     bool const isLessThanBottomFlangeWidth = webThickness < GetBottomFlangeWidth();
 
@@ -172,13 +143,13 @@ bool AsymmetricIShapeProfile::ValidateWebThickness() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool validateFlangeFilletRadius (double filletRadius, double innerFlangeFaceLength, double flangeSlopeHeight, double innerWebFaceLength)
     {
-    if (std::isfinite (filletRadius) && filletRadius == 0.0)
+    if (ProfilesProperty::IsEqualToZero (filletRadius))
         return true;
 
     double const availableWebLength = innerWebFaceLength / 2.0 - flangeSlopeHeight;
     double const availableFlangeLength = innerFlangeFaceLength / 2.0;
 
-    bool const isPositive = std::isfinite (filletRadius) && filletRadius >= 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
     bool const isLessThanAvailableWebLength = filletRadius <= availableWebLength;
     bool const isLessThanAvailableFlangeLength = filletRadius <= availableFlangeLength;
 
@@ -190,10 +161,10 @@ static bool validateFlangeFilletRadius (double filletRadius, double innerFlangeF
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool validateFlangeEdgeRadius (double edgeRadius, double innerFlangeFaceLength, double flangeThickness)
     {
-    if (std::isfinite (edgeRadius) && edgeRadius == 0.0)
+    if (ProfilesProperty::IsEqualToZero (edgeRadius))
         return true;
 
-    bool const isPositive = std::isfinite (edgeRadius) && edgeRadius >= 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (edgeRadius);
     bool const isLessThanHalfFlangeThickness = edgeRadius <= flangeThickness / 2.0;
     bool const isLessThanAvailableFlangeLength = edgeRadius <= innerFlangeFaceLength / 2.0;
 
@@ -206,10 +177,10 @@ static bool validateFlangeEdgeRadius (double edgeRadius, double innerFlangeFaceL
 static bool validateFlangeSlope (Angle const& flangeSlope, double flangeSlopeHeight, double innerWebFaceLength)
     {
     double const angle = flangeSlope.Radians();
-    if (std::isfinite (angle) && angle == 0.0)
+    if (ProfilesProperty::IsEqualToZero (angle))
         return true;
 
-    bool const isPositive = std::isfinite (angle) && angle >= 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (angle);
     bool const isLessThan90Degrees = angle < PI / 2.0;
     bool const slopeHeightIsLessThanAvailableWebLength = flangeSlopeHeight <= innerWebFaceLength / 2.0;
 

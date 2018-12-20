@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\LShapeProfile.h>
 #include <Profiles\ProfilesGeometry.h>
+#include <Profiles\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -60,8 +61,8 @@ bool LShapeProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isWidthValid = ValidateWidth();
-    bool const isDepthValid = ValidateDepth();
+    bool const isWidthValid = ProfilesProperty::IsGreaterThanZero (GetWidth());
+    bool const isDepthValid = ProfilesProperty::IsGreaterThanZero (GetDepth());
     bool const isThicknessValid = ValidateThickness();
     bool const isFilletRadiusValid = ValidateFilletRadius();
     bool const isEdgeRadiusValid = ValidateEdgeRadius();
@@ -81,30 +82,10 @@ IGeometryPtr LShapeProfile::_CreateGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LShapeProfile::ValidateWidth() const
-    {
-    double const width = GetWidth();
-
-    return std::isfinite (width) && width > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool LShapeProfile::ValidateDepth() const
-    {
-    double const depth = GetDepth();
-
-    return std::isfinite (depth) && depth > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool LShapeProfile::ValidateThickness() const
     {
     double const thickness = GetThickness();
-    bool const isPositive = std::isfinite (thickness) && thickness > 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (thickness);
     bool const isLessThanWidth = thickness < GetWidth();
     bool const isLessThanDepth = thickness < GetDepth();
 
@@ -117,13 +98,13 @@ bool LShapeProfile::ValidateThickness() const
 bool LShapeProfile::ValidateFilletRadius() const
     {
     double const filletRadius = GetFilletRadius();
-    if (std::isfinite (filletRadius) && filletRadius == 0.0)
+    if (ProfilesProperty::IsEqualToZero (filletRadius))
         return true;
 
     double const availableWebLength = GetInnerWebFaceLength() / 2.0 - GetHorizontalLegSlopeHeight();
     double const availableFlangeLength = GetInnerFlangeFaceLength() / 2.0 - GetVerticalLegSlopeHeight();
 
-    bool const isPositive = std::isfinite (filletRadius) && filletRadius >= 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
     bool const isLessThanAvailableWebLength = filletRadius <= availableWebLength;
     bool const isLessThanAvailableFlangeLength = filletRadius <= availableFlangeLength;
 
@@ -136,10 +117,10 @@ bool LShapeProfile::ValidateFilletRadius() const
 bool LShapeProfile::ValidateEdgeRadius() const
     {
     double const edgeRadius = GetEdgeRadius();
-    if (std::isfinite (edgeRadius) && edgeRadius == 0.0)
+    if (ProfilesProperty::IsEqualToZero (edgeRadius))
         return true;
 
-    bool const isPositive = std::isfinite (edgeRadius) && edgeRadius >= 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (edgeRadius);
     bool const isLessThanHalfThickness = edgeRadius <= GetThickness() / 2.0;
     bool const isLessThanAvailableFlangeLength = edgeRadius <= GetInnerFlangeFaceLength() / 2.0;
 
@@ -152,10 +133,10 @@ bool LShapeProfile::ValidateEdgeRadius() const
 bool LShapeProfile::ValidateLegSlope() const
     {
     double const legSlope = GetLegSlope();
-    if (std::isfinite (legSlope) && legSlope == 0.0)
+    if (ProfilesProperty::IsEqualToZero (legSlope))
         return true;
 
-    bool const isPositive = std::isfinite (legSlope) && legSlope >= 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (legSlope);
     bool const isLessThan90Degrees = legSlope < PI / 2.0;
     bool const slopeHeightIsLessThanAvailableFlangeLength = GetVerticalLegSlopeHeight() <= GetInnerFlangeFaceLength() / 2.0;
     bool const slopeHeightIsLessThanAvailableWebLength = GetHorizontalLegSlopeHeight() <= GetInnerWebFaceLength() / 2.0;

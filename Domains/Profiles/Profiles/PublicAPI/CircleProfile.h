@@ -42,9 +42,6 @@ protected:
     virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateGeometry() const override;
 
-private:
-    bool ValidateRadius() const;
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CircleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CircleProfile)

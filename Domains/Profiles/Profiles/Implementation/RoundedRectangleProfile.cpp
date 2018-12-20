@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\RoundedRectangleProfile.h>
 #include <Profiles\ProfilesGeometry.h>
+#include <Profiles\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -53,8 +54,8 @@ bool RoundedRectangleProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isWidthValid = ValidateWidth();
-    bool const isDepthValid = ValidateDepth();
+    bool const isWidthValid = ProfilesProperty::IsGreaterThanZero (GetWidth());
+    bool const isDepthValid = ProfilesProperty::IsGreaterThanZero (GetDepth());
     bool const isRoundingRadiusValid = ValidateRoundingRadius();
 
     return isWidthValid && isDepthValid && isRoundingRadiusValid;
@@ -71,30 +72,10 @@ IGeometryPtr RoundedRectangleProfile::_CreateGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RoundedRectangleProfile::ValidateWidth() const
-    {
-    double const width = GetWidth();
-
-    return std::isfinite (width) && width > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RoundedRectangleProfile::ValidateDepth() const
-    {
-    double const depth = GetDepth();
-
-    return std::isfinite (depth) && depth > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool RoundedRectangleProfile::ValidateRoundingRadius() const
     {
     double const roundingRadius = GetRoundingRadius();
-    bool const isPositive = std::isfinite (roundingRadius) && roundingRadius > 0.0;
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (roundingRadius);
     bool const isLessOrEqualToHalfWidth = roundingRadius <= GetWidth() / 2.0;
     bool const isLessOrEqualToHalfDepth = roundingRadius <= GetDepth() / 2.0;
 

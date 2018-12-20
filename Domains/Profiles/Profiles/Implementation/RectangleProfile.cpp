@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\RectangleProfile.h>
 #include <Profiles\ProfilesGeometry.h>
+#include <Profiles\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -51,8 +52,8 @@ bool RectangleProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isWidthValid = ValidateWidth();
-    bool const isDepthValid = ValidateDepth();
+    bool const isWidthValid = ProfilesProperty::IsGreaterThanZero (GetWidth());
+    bool const isDepthValid = ProfilesProperty::IsGreaterThanZero (GetDepth());
 
     return isWidthValid && isDepthValid;
     }
@@ -63,26 +64,6 @@ bool RectangleProfile::_Validate() const
 IGeometryPtr RectangleProfile::_CreateGeometry() const
     {
     return ProfilesGeomApi::CreateRectangle (this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RectangleProfile::ValidateWidth() const
-    {
-    double const width = GetWidth();
-
-    return std::isfinite (width) && width > 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RectangleProfile::ValidateDepth() const
-    {
-    double const depth = GetDepth();
-
-    return std::isfinite (depth) && depth > 0.0;
     }
 
 /*---------------------------------------------------------------------------------**//**
