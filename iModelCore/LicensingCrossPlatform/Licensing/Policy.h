@@ -197,10 +197,10 @@ private:
 	std::shared_ptr<UserData> m_UserData;
 	std::list<std::shared_ptr<Qualifier>> m_DefaultQualifiers;
 	// helper functions
-	bool IsTimeExpired(const Utf8String& expirationTime);
-	std::shared_ptr<Policy::Qualifier> GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8String qualifierName);
-	std::shared_ptr<Policy::ACL> GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8String securableId);
-	std::shared_ptr<Policy::SecurableData> GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8String productId, Utf8String featureString);
+	bool IsTimeExpired(Utf8StringCR expirationTime);
+	std::shared_ptr<Policy::Qualifier> GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8StringCR qualifierName);
+	std::shared_ptr<Policy::ACL> GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8StringCR securableId);
+	std::shared_ptr<Policy::SecurableData> GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8StringCR productId, Utf8StringCR featureString);
 	std::list<Utf8String> CreateAppliesToSecurableIds(const Json::Value& json);
 	std::list<std::shared_ptr<ACL>> CreateACLs(const Json::Value& json);
 	std::list<std::shared_ptr<SecurableData>> CreateSecurableData(const Json::Value& json);
@@ -230,16 +230,16 @@ public:
 	// helper functions
 	LICENSING_EXPORT bool IsValid();
 	LICENSING_EXPORT bool IsExpired() { return IsTimeExpired(GetPolicyExpiresOn()); };
-	LICENSING_EXPORT std::shared_ptr<Policy::Qualifier> GetQualifier(Utf8String qualifierName, Utf8String productId, Utf8String featureString);
-	LICENSING_EXPORT bool IsTrial(Utf8String productId, Utf8String featureString);
-	LICENSING_EXPORT bool IsAllowedOfflineUsage(Utf8String productId, Utf8String featureString);
-	LICENSING_EXPORT int GetOfflineDuration(Utf8String productId, Utf8String featureString);
+	LICENSING_EXPORT std::shared_ptr<Policy::Qualifier> GetQualifier(Utf8StringCR qualifierName, Utf8StringCR productId, Utf8StringCR featureString);
+	LICENSING_EXPORT bool IsTrial(Utf8StringCR productId, Utf8StringCR featureString);
+	LICENSING_EXPORT bool IsAllowedOfflineUsage(Utf8StringCR productId, Utf8StringCR featureString);
+	LICENSING_EXPORT int GetOfflineDuration(Utf8StringCR productId, Utf8StringCR featureString);
 	LICENSING_EXPORT Utf8String GetUsageType();
-	LICENSING_EXPORT Policy::ProductStatus GetProductStatus(Utf8String productId, Utf8String featureString);
+	LICENSING_EXPORT Policy::ProductStatus GetProductStatus(Utf8StringCR productId, Utf8StringCR featureString);
 	LICENSING_EXPORT Policy::PolicyStatus GetPolicyStatus();
-    LICENSING_EXPORT int GetHeartbeatInterval(Utf8String productId, Utf8String featureString);
-    LICENSING_EXPORT int GetPolicyInterval(Utf8String productId, Utf8String featureString);
-    LICENSING_EXPORT int GetTimeToKeepUnSentLogs(Utf8String productId, Utf8String featureString);
+    LICENSING_EXPORT int GetHeartbeatInterval(Utf8StringCR productId, Utf8StringCR featureString);
+    LICENSING_EXPORT int GetPolicyInterval(Utf8StringCR productId, Utf8StringCR featureString);
+    LICENSING_EXPORT int GetTimeToKeepUnSentLogs(Utf8StringCR productId, Utf8StringCR featureString);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

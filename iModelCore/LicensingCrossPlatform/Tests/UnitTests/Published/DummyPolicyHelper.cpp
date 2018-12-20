@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyStart()
+Utf8String DummyPolicyHelper::PolicyStart()
     { 
     return "{"; 
     };
@@ -20,7 +20,7 @@ std::string DummyPolicyHelper::PolicyStart()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyEnd()
+Utf8String DummyPolicyHelper::PolicyEnd()
     { 
     return "}"; 
     };
@@ -28,7 +28,7 @@ std::string DummyPolicyHelper::PolicyEnd()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyNext() 
+Utf8String DummyPolicyHelper::PolicyNext()
     { 
     return ","; 
     };
@@ -36,7 +36,7 @@ std::string DummyPolicyHelper::PolicyNext()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PN()
+Utf8String DummyPolicyHelper::PN()
     { 
     return PolicyNext(); 
     };
@@ -44,19 +44,19 @@ std::string DummyPolicyHelper::PN()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyId(Utf8StringCR id)
+Utf8String DummyPolicyHelper::PolicyId(Utf8StringCR id)
         {
-        std::ostringstream stream;
-        stream << "\"PolicyId\":\"";
-        stream << id.c_str();
-        stream << "\"";
-        return stream.str();
+		Utf8String string;
+		string += "\"PolicyId\":\"";
+		string += id;
+		string += "\"";
+        return string;
         };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyVersion()
+Utf8String DummyPolicyHelper::PolicyVersion()
     { 
     return "\"PolicyVersion\":1.0"; 
     };
@@ -64,47 +64,49 @@ std::string DummyPolicyHelper::PolicyVersion()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyCreatedOn(Utf8StringCR date)
+Utf8String DummyPolicyHelper::PolicyCreatedOn(Utf8StringCR date)
     {
-    std::ostringstream stream;
-    stream << "\"PolicyCreatedOn\":\"";
-    stream << date.c_str();
-    stream << "\"";
-    return stream.str();
+	Utf8String string;
+	string += "\"PolicyCreatedOn\":\"";
+	string += date;
+	string += "\"";
+    return string;
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyExpiresOn(Utf8StringCR date)
+Utf8String DummyPolicyHelper::PolicyExpiresOn(Utf8StringCR date)
     {
-    std::ostringstream stream;
-    stream << "\"PolicyExpiresOn\":\"";
-    stream << date.c_str();
-    stream << "\"";
-    return stream.str();
+	Utf8String string;
+	string += "\"PolicyExpiresOn\":\"";
+	string += date;
+	string += "\"";
+    return string;
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::RequestData(int productId, Utf8StringCR featureString, Utf8StringCR userId)
+Utf8String DummyPolicyHelper::RequestData(int productId, Utf8StringCR featureString, Utf8StringCR userId)
     {
-    std::ostringstream stream;
-    stream << "\"RequestData\":{\"AccessKey\":null,\"AppliesTo\":\"https://entitlement-search.bentley.com/\",\"CheckedOutDate\":null,\"ClientDateTime\":\"2018-07-25T21:13:42.048Z\",\"Locale\":\"en\",\"MachineName\":\"TestDeviceId\",\"MachineSID\":null,\"RequestedSecurables\":[{\"FeatureString\":\"";
-    stream << featureString.c_str();
-    stream << "\",\"ProductId\":";
-    stream << productId;
-    stream << ",\"Vesrion\":null}],\"UserId\":\"";
-    stream << userId.c_str();
-    stream << "\"}";
-    return stream.str();
+	Utf8String string;
+	string += "\"RequestData\":{\"AccessKey\":null,\"AppliesTo\":\"https://entitlement-search.bentley.com/\",\"CheckedOutDate\":null,\"ClientDateTime\":\"2018-07-25T21:13:42.048Z\",\"Locale\":\"en\",\"MachineName\":\"TestDeviceId\",\"MachineSID\":null,\"RequestedSecurables\":[{\"FeatureString\":\"";
+	string += featureString;
+	string += "\",\"ProductId\":";
+	Utf8String productIdString;
+	productIdString.Sprintf("%d", productId);
+	string += productIdString;
+	string += ",\"Vesrion\":null}],\"UserId\":\"";
+	string += userId;
+	string += "\"}";
+    return string;
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::MachineSignature()
+Utf8String DummyPolicyHelper::MachineSignature()
     { 
     return "\"MachineSignature\":\"u4o/9wtBEjZ6lfjlo8Aj+R4aaHk=\""; 
     };
@@ -112,19 +114,19 @@ std::string DummyPolicyHelper::MachineSignature()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::AppliesToUserId(Utf8StringCR userId)
+Utf8String DummyPolicyHelper::AppliesToUserId(Utf8StringCR userId)
     {
-    std::ostringstream stream;
-    stream << "\"AppliesToUserId\":\"";
-    stream << userId.c_str();
-    stream << "\"";
-    return stream.str();
+	Utf8String string;
+	string += "\"AppliesToUserId\":\"";
+	string += userId;
+	string += "\"";
+    return string;
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::AppliesToSecurableIds()
+Utf8String DummyPolicyHelper::AppliesToSecurableIds()
     { 
     return "\"AppliesToSecurableIds\":[\"844c10c2-375d-4153-a08f-896d2e64a13f\"]"; 
     };
@@ -132,179 +134,155 @@ std::string DummyPolicyHelper::AppliesToSecurableIds()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::ACLs(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed)
+Utf8String DummyPolicyHelper::ACLs(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed)
     {
-    std::ostringstream stream;
-    stream << "\"ACLs\":[{\"AccessKind\":";
-    stream << accessKind;
-    stream << ",\"ExpiresOn\":\"";
-    stream << expiration.c_str();
-    stream << "\",\"PrincipalId\":\"";
-    stream << userId.c_str();
-    stream << "\",\"SecurableId\":\"844c10c2-375d-4153-a08f-896d2e64a13f\"";
-    stream << ",\"QualifierOverrides\":[{\"Name\":\"UseAlertingService\",\"Prompt\":\"You have reached a license threshold defined by your organization's administrator. Continuing may result in additional application usage charges.\\r\\nTo proceed, you must \\\"Acknowledge\\\".\",\"Type\":\"enum\",\"Value\":\"ALERT\"},{\"Name\":\"AllowOfflineUsage\",\"Prompt\":\"You must Sign In to use this application.\",\"Type\":\"bool\",\"Value\":\"";
+	Utf8String string;
+	string += "\"ACLs\":[{\"AccessKind\":";
+	Utf8String accessKindString;
+	accessKindString.Sprintf("%d", accessKind);
+	string += accessKindString;
+	string += ",\"ExpiresOn\":\"";
+	string += expiration;
+	string += "\",\"PrincipalId\":\"";
+	string += userId;
+	string += "\",\"SecurableId\":\"844c10c2-375d-4153-a08f-896d2e64a13f\"";
+	string += ",\"QualifierOverrides\":[{\"Name\":\"UseAlertingService\",\"Prompt\":\"You have reached a license threshold defined by your organization's administrator. Continuing may result in additional application usage charges.\\r\\nTo proceed, you must \\\"Acknowledge\\\".\",\"Type\":\"enum\",\"Value\":\"ALERT\"},{\"Name\":\"AllowOfflineUsage\",\"Prompt\":\"You must Sign In to use this application.\",\"Type\":\"bool\",\"Value\":\"";
     if (isOfflineUsageAllowed)
         {
-        stream << "TRUE";
+		string += "TRUE";
         }
     else
         {
-        stream << "FALSE";
+		string += "FALSE";
         }
-    stream << "\"}";
+	string += "\"}";
     if (isTrial) // Add UsageType qualifier with value Trial
         {
-        stream << ",{\"Name\":\"UsageType\",\"Prompt\":null,\"Type\":\"string\",\"Value\":\"Trial\"}";
+		string += ",{\"Name\":\"UsageType\",\"Prompt\":null,\"Type\":\"string\",\"Value\":\"Trial\"}";
         }
-    stream << "]}]"; // close qualifier list, close acl, close acl list
-    return stream.str();
+	string += "]}]"; // close qualifier list, close acl, close acl list
+    return string;
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::ACLsWithQualifierOverrides(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed, bvector<QualifierOverride>& qualifierOverrides)
+Utf8String DummyPolicyHelper::ACLsWithQualifierOverrides(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed, bvector<QualifierOverride>& qualifierOverrides)
     {
-    std::ostringstream stream;
-    stream << "\"ACLs\":[{\"AccessKind\":";
-    stream << accessKind;
-    stream << ",\"ExpiresOn\":\"";
-    stream << expiration.c_str();
-    stream << "\",\"PrincipalId\":\"";
-    stream << userId.c_str();
-    stream << "\",\"SecurableId\":\"844c10c2-375d-4153-a08f-896d2e64a13f\"";
-    stream << ",\"QualifierOverrides\":[{\"Name\":\"UseAlertingService\",\"Prompt\":\"You have reached a license threshold defined by your organization's administrator. Continuing may result in additional application usage charges.\\r\\nTo proceed, you must \\\"Acknowledge\\\".\",\"Type\":\"enum\",\"Value\":\"ALERT\"},{\"Name\":\"AllowOfflineUsage\",\"Prompt\":\"You must Sign In to use this application.\",\"Type\":\"bool\",\"Value\":\"";
+	Utf8String string;
+    string += "\"ACLs\":[{\"AccessKind\":";
+	Utf8String accessKindString;
+	accessKindString.Sprintf("%d", accessKind);
+	string += accessKindString;
+    string += ",\"ExpiresOn\":\"";
+    string += expiration;
+    string += "\",\"PrincipalId\":\"";
+    string += userId;
+    string += "\",\"SecurableId\":\"844c10c2-375d-4153-a08f-896d2e64a13f\"";
+    string += ",\"QualifierOverrides\":[{\"Name\":\"UseAlertingService\",\"Prompt\":\"You have reached a license threshold defined by your organization's administrator. Continuing may result in additional application usage charges.\\r\\nTo proceed, you must \\\"Acknowledge\\\".\",\"Type\":\"enum\",\"Value\":\"ALERT\"},{\"Name\":\"AllowOfflineUsage\",\"Prompt\":\"You must Sign In to use this application.\",\"Type\":\"bool\",\"Value\":\"";
     if (isOfflineUsageAllowed)
         {
-        stream << "TRUE";
+        string += "TRUE";
         }
     else
         {
-        stream << "FALSE";
+        string += "FALSE";
         }
-    stream << "\"}";
+    string += "\"}";
 
     if (isTrial) // Add UsageType qualifier with value Trial
         {
-        stream << ",{\"Name\":\"UsageType\",\"Prompt\":null,\"Type\":\"string\",\"Value\":\"Trial\"}";
+        string += ",{\"Name\":\"UsageType\",\"Prompt\":null,\"Type\":\"string\",\"Value\":\"Trial\"}";
         }
 
     for (QualifierOverride qualifierOverride : qualifierOverrides)
         {
-        stream << ",{\"Name\":\"";
-        stream << qualifierOverride.qualifierName;
-        stream << "\",\"Prompt\":\"";
-        stream << qualifierOverride.qualifierPrompt;
-        stream << "\",\"Type\":\"";
-        stream << qualifierOverride.qualifierType;
-        stream << "\",\"Value\":\"";
-        stream << qualifierOverride.qualifierValue;
-        stream << "\"}";
+        string += ",{\"Name\":\"";
+        string += qualifierOverride.qualifierName;
+        string += "\",\"Prompt\":\"";
+        string += qualifierOverride.qualifierPrompt;
+        string += "\",\"Type\":\"";
+        string += qualifierOverride.qualifierType;
+        string += "\",\"Value\":\"";
+        string += qualifierOverride.qualifierValue;
+        string += "\"}";
         }
 
-    stream << "]}]"; // close qualifier list, close acl, close acl list
-    return stream.str();
+    string += "]}]"; // close qualifier list, close acl, close acl list
+    return string;
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::SecurableData(int productId, Utf8StringCR featureString)
+Utf8String DummyPolicyHelper::SecurableData(int productId, Utf8StringCR featureString)
     {
-    std::ostringstream stream;
-    stream << "\"SecurableData\":[{\"FeatureString\":\"";
-    stream << featureString.c_str();
-    stream << "\",\"ProductId\":";
-    stream << productId;
-    stream << ",\"ProductName\":\"Bentley Navigator\",\"QualifierOverrides\":null,\"SecurableId\":\"844c10c2-375d-4153-a08f-896d2e64a13f\",\"Version\":null}]";
-    return stream.str();
+    Utf8String string;
+    string += "\"SecurableData\":[{\"FeatureString\":\"";
+    string += featureString;
+    string += "\",\"ProductId\":";
+	Utf8String productIdString;
+	productIdString.Sprintf("%d", productId);
+	string += productIdString;
+    string += ",\"ProductName\":\"Bentley Navigator\",\"QualifierOverrides\":null,\"SecurableId\":\"844c10c2-375d-4153-a08f-896d2e64a13f\",\"Version\":null}]";
+    return string;
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::SecurableDataWithQualifierOverrides(int productId, Utf8StringCR featureString, bvector<QualifierOverride>& qualifierOverrides)
+Utf8String DummyPolicyHelper::SecurableDataWithQualifierOverrides(int productId, Utf8StringCR featureString, bvector<QualifierOverride>& qualifierOverrides)
     {
-    std::ostringstream stream;
-    stream << "\"SecurableData\":[{\"FeatureString\":\"";
-    stream << featureString.c_str();
-    stream << "\",\"ProductId\":";
-    stream << productId;
-    stream << ",\"ProductName\":\"Bentley Navigator\"";
+    Utf8String string;
+    string += "\"SecurableData\":[{\"FeatureString\":\"";
+    string += featureString;
+    string += "\",\"ProductId\":";
+	Utf8String productIdString;
+	productIdString.Sprintf("%d", productId);
+	string += productIdString;
+    string += ",\"ProductName\":\"Bentley Navigator\"";
 
     int qualifierCount = 1;
-    stream << ", \"QualifierOverrides\":[";
+    string += ", \"QualifierOverrides\":[";
     for (QualifierOverride qualifierOverride : qualifierOverrides)
         {
-        stream << "{\"Name\":\"";
-        stream << qualifierOverride.qualifierName;
-        stream << "\",\"Prompt\":\"";
-        stream << qualifierOverride.qualifierPrompt;
-        stream << "\",\"Type\":\"";
-        stream << qualifierOverride.qualifierType;
-        stream << "\",\"Value\":\"";
-        stream << qualifierOverride.qualifierValue;
+        string += "{\"Name\":\"";
+        string += qualifierOverride.qualifierName;
+        string += "\",\"Prompt\":\"";
+        string += qualifierOverride.qualifierPrompt;
+        string += "\",\"Type\":\"";
+        string += qualifierOverride.qualifierType;
+        string += "\",\"Value\":\"";
+        string += qualifierOverride.qualifierValue;
         if (qualifierCount == qualifierOverrides.size())
-            stream << "\"}";
+            string += "\"}";
         else
-            stream << "\"},";
+            string += "\"},";
         }
-    stream << "]";
+    string += "]";
 
-    stream << ",\"SecurableId\":\"844c10c2-375d-4153-a08f-896d2e64a13f\",\"Version\":null}]";
-    return stream.str();
+    string += ",\"SecurableId\":\"844c10c2-375d-4153-a08f-896d2e64a13f\",\"Version\":null}]";
+    return string;
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::UserData(Utf8StringCR userId)
+Utf8String DummyPolicyHelper::UserData(Utf8StringCR userId)
     {
-    std::ostringstream stream;
-    stream << "\"UserData\":{\"EntitlementGroupId\":\"00000000-0000-0000-0000-000000000000\",\"OrganizationId\":\"a0dc5a35-7a81-47a5-9380-5f54bf040c43\",\"UltimateCountryId\":\"a427cdbc-56f8-421a-829a-20dccc806660\",\"UltimateId\":\"79c5c2fd-5a32-425f-af1a-c43703ca66be\",\"UltimateSAPId\":\"1004175881\",\"UsageCountryISO\":\"US\",\"UserId\":\"";
-    stream << userId.c_str();
-    stream << "\"}";
-    return stream.str();
+    Utf8String string;
+    string += "\"UserData\":{\"EntitlementGroupId\":\"00000000-0000-0000-0000-000000000000\",\"OrganizationId\":\"a0dc5a35-7a81-47a5-9380-5f54bf040c43\",\"UltimateCountryId\":\"a427cdbc-56f8-421a-829a-20dccc806660\",\"UltimateId\":\"79c5c2fd-5a32-425f-af1a-c43703ca66be\",\"UltimateSAPId\":\"1004175881\",\"UsageCountryISO\":\"US\",\"UserId\":\"";
+    string += userId;
+    string += "\"}";
+    return string;
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::DefaultQualifiers()
+Utf8String DummyPolicyHelper::DefaultQualifiers()
     {
     return "\"DefaultQualifiers\":[{\"Name\":\"FrequencyToSend\",\"Prompt\":null,\"Type\":\"int\",\"Value\":\"24\"},{\"Name\":\"UseAlertingService\",\"Prompt\":\"You have reached a license threshold defined by your organization's administrator. Continuing may result in additional application usage charges.\\r\\nTo proceed, you must \\\"Acknowledge\\\".\",\"Type\":\"enum\",\"Value\":\"Disabled\"},{\"Name\":\"IsCheckedOut\",\"Prompt\":null,\"Type\":\"bool\",\"Value\":\"false\"},{\"Name\":\"AllowOfflineUsage\",\"Prompt\":\"You must Sign In to use this application.\",\"Type\":\"bool\",\"Value\":\"TRUE\"},{\"Name\":\"HotpathRetryAttempts\",\"Prompt\":null,\"Type\":\"int\",\"Value\":\"4\"},{\"Name\":\"MaxLogFileDurationInMinutes\",\"Prompt\":null,\"Type\":\"int\",\"Value\":\"360\"},{\"Name\":\"OfflineDuration\",\"Prompt\":null,\"Type\":\"int\",\"Value\":\"7\"},{\"Name\":\"TimeToKeepUnSentLogs\",\"Prompt\":null,\"Type\":\"int\",\"Value\":\"60\"},{\"Name\":\"UsageType\",\"Prompt\":null,\"Type\":\"string\",\"Value\":\"Production\"},{\"Name\":\"LogRecordsToSendFT2\",\"Prompt\":null,\"Type\":\"int\",\"Value\":\"75000\"},{\"Name\":\"PolicyInterval\",\"Prompt\":null,\"Type\":\"int\",\"Value\":\"60\"},{\"Name\":\"LoginGracePeriod\",\"Prompt\":null,\"Type\":\"int\",\"Value\":\"7\"},{\"Name\":\"HeartbeatInterval\",\"Prompt\":null,\"Type\":\"int\",\"Value\":\"1\"}]";
-    };
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DummyPolicyHelper::GetRandomPolicyId()
-    {
-    // set up random number generator
-    const std::string alphanum("abcdefghijklmnopqrstuvwxyz0123456789");
-    std::random_device r;
-    std::default_random_engine e(r());
-    std::uniform_int_distribution<int> u(0, int(alphanum.size() - 1));
-    // generate string in format "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-    std::string idstring("");
-    for (int i = 0; i < 8; i++) // create "xxxxxxxx-" portion
-        {
-        idstring += alphanum[u(e)];
-        }
-    idstring += "-";
-    for (int j = 0; j < 3; j++) // create 3 "xxxx-" portions
-        {
-        for (int i = 0; i < 4; i++)
-            {
-            idstring += alphanum[u(e)];
-            }
-        idstring += "-";
-        }
-    for (int i = 0; i < 12; i++) // create "xxxxxxxxxxxx" portion
-        {
-        idstring += alphanum[u(e)];
-        }
-    return Utf8String(idstring.c_str());
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -314,23 +292,23 @@ Json::Value DummyPolicyHelper::CreatePolicySpecific(PolicyType type, Utf8StringC
     {
     bool isOnlineUsageAllowed = type != PolicyType::OfflineNotAllowed;
     // Create string
-    std::ostringstream stream;
-    stream << PolicyStart();
-    stream << PolicyId(GetRandomPolicyId()) << PN();
-    stream << PolicyVersion() << PN();
-    stream << PolicyCreatedOn(createdOn) << PN();
-    stream << PolicyExpiresOn(expiresOn) << PN();
-    if (type != PolicyType::NoRequestData) stream << RequestData(productId, featureString, userId) << PN();
-    stream << MachineSignature() << PN();
-    stream << AppliesToUserId(userId) << PN();
-    stream << AppliesToSecurableIds() << PN();
-    if (type != PolicyType::NoACLs) stream << ACLs(aclExpiresOn, accessKind, userId, isTrial, isOnlineUsageAllowed) << PN();
-    if (type != PolicyType::NoSecurables) stream << SecurableData(productId, featureString) << PN();
-    if (type != PolicyType::NoUserData) stream << UserData(userId) << PN();
-    stream << DefaultQualifiers(); // no PN needed here; last subitem
-    stream << PolicyEnd();
+    Utf8String string;
+    string += PolicyStart();
+    string += PolicyId(BeSQLite::BeGuid(true).ToString()) += PN();
+    string += PolicyVersion() += PN();
+    string += PolicyCreatedOn(createdOn) += PN();
+    string += PolicyExpiresOn(expiresOn) += PN();
+    if (type != PolicyType::NoRequestData) string += RequestData(productId, featureString, userId) += PN();
+    string += MachineSignature() += PN();
+    string += AppliesToUserId(userId) += PN();
+    string += AppliesToSecurableIds() += PN();
+    if (type != PolicyType::NoACLs) string += ACLs(aclExpiresOn, accessKind, userId, isTrial, isOnlineUsageAllowed) += PN();
+    if (type != PolicyType::NoSecurables) string += SecurableData(productId, featureString) += PN();
+    if (type != PolicyType::NoUserData) string += UserData(userId) += PN();
+    string += DefaultQualifiers(); // no PN needed here; last subitem
+    string += PolicyEnd();
     // Return json created from string
-    auto json = Json::Reader::DoParse(Utf8String(stream.str().c_str()));
+    auto json = Json::Reader::DoParse(string);
     return json;
     }
 
@@ -387,11 +365,11 @@ Json::Value DummyPolicyHelper::CreatePolicyOfflineNotAllowed(Utf8StringCR create
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value DummyPolicyHelper::CreatePolicyMissingFields()
     {
-    std::ostringstream stream;
-    stream << PolicyStart();
-    stream << PolicyId(GetRandomPolicyId());
-    stream << PolicyEnd();
-    auto json = Json::Reader::DoParse(Utf8String(stream.str().c_str()));
+    Utf8String string;
+    string += PolicyStart();
+    string += PolicyId(BeSQLite::BeGuid(true).ToString());
+    string += PolicyEnd();
+    auto json = Json::Reader::DoParse(string);
     return json;
     };
 
@@ -403,40 +381,40 @@ Json::Value DummyPolicyHelper::CreatePolicyQualifierOverrides(Utf8StringCR creat
     {
     // Create string
     bool isOnlineUsageAllowed = true;
-    std::ostringstream stream;
-    stream << PolicyStart();
-    stream << PolicyId(GetRandomPolicyId()) << PN();
-    stream << PolicyVersion() << PN();
-    stream << PolicyCreatedOn(createdOn) << PN();
-    stream << PolicyExpiresOn(expiresOn) << PN();
-    stream << RequestData(productId, featureString, userId) << PN();
-    stream << MachineSignature() << PN();
-    stream << AppliesToUserId(userId) << PN();
-    stream << AppliesToSecurableIds() << PN();
+    Utf8String string;
+    string += PolicyStart();
+    string += PolicyId(BeSQLite::BeGuid(true).ToString()) += PN();
+    string += PolicyVersion() += PN();
+    string += PolicyCreatedOn(createdOn) += PN();
+    string += PolicyExpiresOn(expiresOn) += PN();
+    string += RequestData(productId, featureString, userId) += PN();
+    string += MachineSignature() += PN();
+    string += AppliesToUserId(userId) += PN();
+    string += AppliesToSecurableIds() += PN();
 
     if (aclsQualifierOverrides.size() == 0)
         {
-        stream << ACLs(aclExpiresOn, accessKind, userId, isTrial, isOnlineUsageAllowed) << PN();
+        string += ACLs(aclExpiresOn, accessKind, userId, isTrial, isOnlineUsageAllowed) += PN();
         }
     else
         {
-        stream << ACLsWithQualifierOverrides(aclExpiresOn, accessKind, userId, isTrial, isOnlineUsageAllowed, aclsQualifierOverrides) << PN();
+        string += ACLsWithQualifierOverrides(aclExpiresOn, accessKind, userId, isTrial, isOnlineUsageAllowed, aclsQualifierOverrides) += PN();
         }
 
     if (securableDataQualifierOverrides.size() == 0)
         {
-        stream << SecurableData(productId, featureString) << PN();
+        string += SecurableData(productId, featureString) += PN();
         }
     else
         {
-        stream << SecurableDataWithQualifierOverrides(productId, featureString, securableDataQualifierOverrides) << PN();
+        string += SecurableDataWithQualifierOverrides(productId, featureString, securableDataQualifierOverrides) += PN();
         }
 
-    stream << UserData(userId) << PN();
-    stream << DefaultQualifiers(); // no PN needed here; last subitem
-    stream << PolicyEnd();
+    string += UserData(userId) += PN();
+    string += DefaultQualifiers(); // no PN needed here; last subitem
+    string += PolicyEnd();
 
     // Return json created from string
-    auto json = Json::Reader::DoParse(Utf8String(stream.str().c_str()));
+    auto json = Json::Reader::DoParse(string);
     return json;
     }

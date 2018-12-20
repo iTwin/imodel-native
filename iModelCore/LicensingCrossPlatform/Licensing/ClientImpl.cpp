@@ -725,13 +725,13 @@ folly::Future<BentleyStatus> ClientImpl::SendUsageRealtime(Utf8StringCR accessTo
 		projectId
 	);
 
-	uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody.ToString()));
+	uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
 
 	return uploadRequest.Perform().then(
 		[=](Response response)
 		{
 		if (!response.IsSuccess()) {
-			LOG.errorv("ClientImpl::SendUsageRealtime ERROR: Unable to post %s - %s", jsonBody.ToString().c_str(), response.GetBody().AsString().c_str());
+			LOG.errorv("ClientImpl::SendUsageRealtime ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
 			return BentleyStatus::ERROR;
 		}
 		return BentleyStatus::SUCCESS;

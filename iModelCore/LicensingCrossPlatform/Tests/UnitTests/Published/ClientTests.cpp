@@ -294,7 +294,7 @@ TEST_F(ClientTests, StartApplication_StopApplication_Repeat_Success)
 TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplication_Success)
 	{
 	auto client = CreateFreeTestClient(true);
-	Utf8String tokenstring = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
+	Utf8String tokenstring = "b683fe041bfd1ef554599e69253271f5f6775eb7106514fa56e512040d635d4a";
 	auto version = BeVersion(1, 0);
 	Utf8String projectId = "00000000-0000-0000-0000-000000000000";
 	EXPECT_SUCCESS(client->TrackUsage(tokenstring,version,projectId).get());

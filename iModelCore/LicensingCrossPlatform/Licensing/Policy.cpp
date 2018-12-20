@@ -327,7 +327,7 @@ bool Policy::IsTimeExpired(Utf8StringCR expirationTime)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy::Qualifier> Policy::GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8String qualifierName)
+std::shared_ptr<Policy::Qualifier> Policy::GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8StringCR qualifierName)
 	{
 	std::shared_ptr<Policy::Qualifier> matchingQualifier = nullptr;
 	for (auto qualifier : qualifierList)
@@ -344,7 +344,7 @@ std::shared_ptr<Policy::Qualifier> Policy::GetFirstMatchingQualifier(std::list<s
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy::ACL> Policy::GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8String securableId)
+std::shared_ptr<Policy::ACL> Policy::GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8StringCR securableId)
 	{
 	std::shared_ptr<Policy::ACL> matchingACL = nullptr;
 	for (auto acl : aclList)
@@ -361,7 +361,7 @@ std::shared_ptr<Policy::ACL> Policy::GetFirstMatchingACL(std::list<std::shared_p
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy::SecurableData> Policy::GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8String productId, Utf8String featureString)
+std::shared_ptr<Policy::SecurableData> Policy::GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8StringCR productId, Utf8StringCR featureString)
 	{
 	std::shared_ptr<Policy::SecurableData> matchingSecurable = nullptr;
 	for (auto securable : securableList)
@@ -413,7 +413,7 @@ bool Policy::IsValid()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy::Qualifier> Policy::GetQualifier(Utf8String qualifierName, Utf8String productId, Utf8String featureString)
+std::shared_ptr<Policy::Qualifier> Policy::GetQualifier(Utf8StringCR qualifierName, Utf8StringCR productId, Utf8StringCR featureString)
 	{
 	std::shared_ptr<Policy::Qualifier> matchingQualifier = nullptr;
 	// check if policy is not empty
@@ -452,7 +452,7 @@ std::shared_ptr<Policy::Qualifier> Policy::GetQualifier(Utf8String qualifierName
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Policy::IsTrial(Utf8String productId, Utf8String featureString)
+bool Policy::IsTrial(Utf8StringCR productId, Utf8StringCR featureString)
 	{
 	bool result = false;
 	auto qualifier = GetQualifier("UsageType", productId, featureString);
@@ -467,7 +467,7 @@ bool Policy::IsTrial(Utf8String productId, Utf8String featureString)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Policy::IsAllowedOfflineUsage(Utf8String productId, Utf8String featureString)
+bool Policy::IsAllowedOfflineUsage(Utf8StringCR productId, Utf8StringCR featureString)
 	{
 	bool result = false;
 	auto qualifier = GetQualifier("AllowOfflineUsage", productId, featureString);
@@ -482,7 +482,7 @@ bool Policy::IsAllowedOfflineUsage(Utf8String productId, Utf8String featureStrin
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Policy::GetOfflineDuration(Utf8String productId, Utf8String featureString)
+int Policy::GetOfflineDuration(Utf8StringCR productId, Utf8StringCR featureString)
 	{
 	int result = 0;
 	auto qualifier = GetQualifier("OfflineDuration", productId, featureString);
@@ -497,7 +497,7 @@ int Policy::GetOfflineDuration(Utf8String productId, Utf8String featureString)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Policy::GetHeartbeatInterval(Utf8String productId, Utf8String featureString)
+int Policy::GetHeartbeatInterval(Utf8StringCR productId, Utf8StringCR featureString)
     {
     int result_in_ms = 0;
     auto heartbeatInterval = GetQualifier("HeartbeatInterval", productId, featureString);
@@ -513,7 +513,7 @@ int Policy::GetHeartbeatInterval(Utf8String productId, Utf8String featureString)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Policy::GetPolicyInterval(Utf8String productId, Utf8String featureString)
+int Policy::GetPolicyInterval(Utf8StringCR productId, Utf8StringCR featureString)
     {
     int result_in_ms = 0;
     auto policyInterval = GetQualifier("PolicyInterval", productId, featureString);
@@ -529,7 +529,7 @@ int Policy::GetPolicyInterval(Utf8String productId, Utf8String featureString)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Policy::GetTimeToKeepUnSentLogs(Utf8String productId, Utf8String featureString)
+int Policy::GetTimeToKeepUnSentLogs(Utf8StringCR productId, Utf8StringCR featureString)
     {
     int result_in_ms = 0;
     auto sendLogsInterval = GetQualifier("TimeToKeepUnSentLogs", productId, featureString);
@@ -559,7 +559,7 @@ Utf8String Policy::GetUsageType()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Policy::ProductStatus Policy::GetProductStatus(Utf8String productId, Utf8String featureString)
+Policy::ProductStatus Policy::GetProductStatus(Utf8StringCR productId, Utf8StringCR featureString)
 	{
 	if (GetJson().isNull())
 		{

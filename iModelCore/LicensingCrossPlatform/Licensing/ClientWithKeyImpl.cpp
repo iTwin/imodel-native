@@ -123,7 +123,7 @@ folly::Future<folly::Unit> ClientWithKeyImpl::SendUsageRealtimeWithKey()
 		m_projectId
 	);
 
-	uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody.ToString()));
+	uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
 
 	return uploadRequest.Perform().then(
 		[=](Response response)

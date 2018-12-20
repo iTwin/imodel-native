@@ -30,10 +30,8 @@ ClientFreeImpl::ClientFreeImpl(
 	Utf8String deviceInfo = BeSystemInfo::GetDeviceId();
 	if (deviceInfo.Equals("")) deviceInfo = "DefaultDevice";
 	m_clientInfo = std::make_shared<ClientInfo>("FreeApplication",BeVersion(1,0),"FreeGUID",deviceInfo,"FreeDescriptor");
-	
 	m_featureString = featureString;
 	m_httpHandler = httpHandler;
-	
 	m_correlationId = BeGuid(true).ToString();
 	m_timeRetriever = TimeRetriever::Get();
 	m_delayedExecutor = DelayedExecutor::Get();
