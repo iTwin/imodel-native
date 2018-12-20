@@ -108,6 +108,7 @@ BEGIN_BENTLEY_NAMESPACE
 void PrintTo(BentleyStatus, std::ostream*);
 void PrintTo(BeInt64Id, std::ostream*);
 void PrintTo(DateTime const&, std::ostream*);
+void PrintTo(DateTime::Info const&, std::ostream*);
 void PrintTo(std::vector<Utf8CP> const&, std::ostream*);
 void PrintTo(std::vector<Utf8String> const&, std::ostream*);
 
