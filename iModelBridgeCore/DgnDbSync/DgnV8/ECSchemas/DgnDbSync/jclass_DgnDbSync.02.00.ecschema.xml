@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="jclass_DgnDbSync" nameSpacePrefix="jclass2v3" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="DgnDbSyncV8" version="01.00" prefix="syncv8" />
+    <ECClass typeName="PHYSICAL_GROUP" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PHYSICAL_COLLECTION" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GROUP" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PDS_GROUP" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+
