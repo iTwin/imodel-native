@@ -234,13 +234,13 @@ int RunBridge(Env env, const char* jsonString)
         }
 
         // Establish a bridge token provider 
-        if(json.isMember("encodedToken")) { 
-            // Pull the initial token value from the json object
-            Utf8String encodedToken = json.get("encodedToken", "").asString();
+        // if(json.isMember("encodedToken")) { 
+        //     // Pull the initial token value from the json object
+        //     Utf8String encodedToken = json.get("encodedToken", "").asString();
 
-            std::shared_ptr<OidcTokenProvider> provider = std::make_shared<OidcTokenProvider>(encodedToken);
-            app.SetTokenProvider(provider);
-        }
+        //     std::shared_ptr<OidcTokenProvider> provider = std::make_shared<OidcTokenProvider>(encodedToken);
+        //     app.SetTokenProvider(provider);
+        // }
 
         // Executed the bridge process
         status = app.Run(argc, argv);
