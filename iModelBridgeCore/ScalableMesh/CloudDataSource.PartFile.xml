@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
+
+    <!--<Part Name="AzureSDKB02" BentleyBuildMakeFile="nuget.prewire.mke">
+        <NuGetPackage targetFramework="native">wastorage.v140</NuGetPackage>
+        <Bindings>
+          <VendorAPI Domain="wastorage" />
+          <VendorAPI Domain="cpprestsdk" /> 
+          <Assemblies>nuget/native/WAStorage.v140/lib/native/v140/x64/Release/wastorage.dll</Assemblies>
+          <Libs>nuget/native/WAStorage.v140/lib/native/v140/x64/Release/wastorage.lib</Libs>
+          <Assemblies>nuget/native/cpprestsdk.v140.windesktop.msvcstl.dyn.rt-dyn/lib/native/v140/windesktop/msvcstl/dyn/rt-dyn/x64/Release/*.dll</Assemblies>
+          <Libs>nuget/native/cpprestsdk.v140.windesktop.msvcstl.dyn.rt-dyn/lib/native/v140/windesktop/msvcstl/dyn/rt-dyn/x64/Release/*.lib</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="AzureSDK">
+        <SubPart PartName="cpprestsdk"      PartFile="${SrcRoot}bsicommon/CvsPartfiles/cpprestsdk"   Repository="Bin-cpprestsdk" />
+        <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
+         <Bindings>
+            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
+        </Bindings>
+    </Part>-->
+
+    <!--<Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1" ApiNumber="G">-->
+      <Part Name="CloudDataSource" BentleyBuildMakeFile="CloudDataSource.mke" ApiNumber="M02">
+        <!--<SubPart PartName="AzureSDKB02" />-->
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BeJsonCpp"  PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley"/>
+        <Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>
+            <Assemblies>delivery/$(shlibprefix)CloudDataSource$(ApiNumber)$(shlibext)</Assemblies>            
+            <VendorAPI Domain="CloudDataSource" />
+        </Bindings>
+    </Part>
+
+    <Part Name="CloudDataSource_Vancouver" BMakeFile="CloudDataSource_Vancouver.mke">
+        <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
+        <!--<SubPart PartName="AzureSDK" />-->
+        <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
+        <Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
+            <VendorAPI Domain="CloudDataSource" />
+        </Bindings>
+    </Part>
+	
+  </BuildContext>
+

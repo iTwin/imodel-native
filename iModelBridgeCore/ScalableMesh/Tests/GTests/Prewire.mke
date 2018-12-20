@@ -1,0 +1,11 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/GTests/Prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
