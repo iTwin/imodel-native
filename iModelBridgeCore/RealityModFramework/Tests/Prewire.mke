@@ -1,0 +1,26 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/Prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+# un-comment this if you want to deliver ignore_list.txt
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+# NEEDS WORK: Need a cleaner way to depend on RealityPackage.1.0.xsd. Probably, there should be a RealityPackageXsd with RealityPackage.1.0.xsd listed in its Bindings
+$(BuildContext)Delivery/UnitTests/RealityPackage.1.0.xsd : $(_MakeFilePath)../RealityPlatform/RealityPackage.1.0.xsd
+    $(LinkFirstDepToFirstTarget)
+
+    $(BuildContext)Delivery/UnitTests/RealityPackage.2.0.xsd : $(_MakeFilePath)../RealityPlatform/RealityPackage.2.0.xsd
+    $(LinkFirstDepToFirstTarget)
+
+	$(BuildContext)Delivery/UnitTests/RealityPackage.2.1.xsd : $(_MakeFilePath)../RealityPlatform/RealityPackage.2.1.xsd
+    $(LinkFirstDepToFirstTarget)
+
+# Wire in test data
+always:
+    @CreateSymLinks.py -d"$(ContextDeliveryDir)\TestData=$(_MakeFilePath)TestData"
