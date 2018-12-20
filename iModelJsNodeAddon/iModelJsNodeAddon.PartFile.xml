@@ -38,6 +38,7 @@
   <ProductDirectoryList ListName="iModelJsNodeAddonDeliveryList">
     <ProductDirectory Name="AddonRoot" Path="" />
     <ProductDirectory Name="Assemblies" Path="" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="StaticAssemblies" LibType="Static" Path="" RelativeTo="AddonRoot"/>
     <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
     <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot"/>
     <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot" LibType="Static"/>
@@ -85,10 +86,10 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
-        <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>
+        <Files ProductDirectoryName="StaticAssemblies">Delivery/imodeljs.node</Files>
+        <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+          Delivery/PresentationRules/*.xml
+        </Files>
     </Bindings>
   </Part>
 
