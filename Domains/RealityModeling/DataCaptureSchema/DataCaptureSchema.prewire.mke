@@ -1,0 +1,12 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: DataCaptureSchema/DataCaptureSchema.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+
+$(BuildContext)PublicAPI/DataCaptureSchema : $(_MakeFilePath)../PublicAPI/DataCaptureSchema
+    $(LinkFirstDepToFirstTargetAsDirectory)
