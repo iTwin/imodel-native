@@ -43,6 +43,8 @@ public:
 protected:
     explicit TrapeziumProfile (CreateParams const& params);
 
+    virtual bool _Validate() const override;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (TrapeziumProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (TrapeziumProfile)
