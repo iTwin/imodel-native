@@ -2140,10 +2140,10 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
 +---------------+---------------+---------------+---------------+---------------+------*/
  BentleyStatus  Converter::WriteProvenanceAspect(DgnElementR el, SyncInfo::ElementProvenanceAspectData const& elprov)
     {
-    SyncInfo::V8ElementProvenanceAspect aspect = GetSyncInfo().GetV8ElementAspect(el);
+    SyncInfo::V8ElementProvenanceAspect aspect = SyncInfo::V8ElementProvenanceAspect::Get(el); // GetSyncInfo().GetV8ElementAspect(el);
     if (aspect.IsValid())
         {
-        BeAssert(aspect.GetSourceId().Equals(Utf8PrintfString("%lld", elprov.m_v8Id)));
+        BeAssert(0==strcmp(aspect.GetSourceId(), Utf8PrintfString("%lld", elprov.m_v8Id).c_str()));
 
         aspect.Update(elprov.m_prov);
 
@@ -2153,7 +2153,9 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
         return BSISUCCESS;
         }
 
-    aspect = GetSyncInfo().MakeAspect(elprov);
+    // aspect = GetSyncInfo().MakeAspect(elprov);
+
+    aspect = SyncInfo::V8ElementProvenanceAspect::Make(elprov, GetDgnDb());
 
 #ifdef TEST_ELEMENT_PROVENANCE_ASPECT
     aspect.AssertMatch(el, elprov.m_prov);

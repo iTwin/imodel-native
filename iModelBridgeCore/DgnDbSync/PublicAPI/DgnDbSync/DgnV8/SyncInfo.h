@@ -21,6 +21,7 @@
 #include <Bentley/md5.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnDbSync/DgnDbSync.h>
+#include <iModelBridge/iModelBridgeSyncInfoFile.h>
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
@@ -494,8 +495,12 @@ struct SyncInfo
     };
 
     //! The V8 provenance of an element in an iModel. May refer to an element, model, or other object in the v8 source files.
-    struct ProvenanceAspect
+    struct ProvenanceAspect : iModelProvenanceAspect
         {
+      protected:
+        friend struct SyncInfo;
+        ProvenanceAspect(ECN::IECInstance* i) : iModelProvenanceAspect(i) {}
+      public:
         enum Kind
             {
             Element, Model, DrawingGraphic, Level
@@ -524,45 +529,27 @@ struct SyncInfo
             return Kind::Element;
             }
 
-        protected:
-        SyncInfo* m_si;
-        RefCountedPtr<ECN::IECInstance> m_instance;
-        friend struct SyncInfo;
-
-        DGNDBSYNC_EXPORT static ECN::IECInstancePtr MakeInstance(DgnElementId scope, Kind kind, BentleyApi::Utf8StringCR sourceId, double lmt, ElementHash const& hash, SyncInfo& si);
-        DGNDBSYNC_EXPORT static void Update(ECN::IECInstance&, double lmt, ElementHash const&, SyncInfo&);
-
-        ProvenanceAspect(SyncInfo& si) : m_si(&si) {}
-        ProvenanceAspect(ECN::IECInstance& i, SyncInfo& si) : m_instance(&i), m_si(&si) {}
-        ProvenanceAspect(ECN::IECInstance const& i, SyncInfo& si) : m_instance(&const_cast<ECN::IECInstance&>(i)), m_si(&si) {}
-
-        public:
-        bool IsValid() const {return m_instance.IsValid();}
-
-        DGNDBSYNC_EXPORT Kind GetKind() const;
-        DGNDBSYNC_EXPORT DgnElementId GetScope() const;
-        DGNDBSYNC_EXPORT Utf8String GetSourceId() const;
-        DGNDBSYNC_EXPORT ProvenanceAspect::Kind GetAspectKind() const;
-        DGNDBSYNC_EXPORT double GetLastModifiedTime() const;
-        DGNDBSYNC_EXPORT BentleyStatus GetHash(ElementHash& hash) const;
-        DGNDBSYNC_EXPORT rapidjson::Document GetProperties() const;
-        DGNDBSYNC_EXPORT void SetProperties(rapidjson::Document const&);
-    
-        //! Add this aspect to the specified element. (Caller must then call element's Insert or Update method.)
-        DGNDBSYNC_EXPORT DgnDbStatus AddTo(DgnElementR);
+        DGNDBSYNC_EXPORT ProvenanceAspect::Kind GetKind() const;
         };
-    friend struct ProvenanceAspect;
 
     //! The provenance of an element in an iModel that was created from an element in a V8 model.
     struct V8ElementProvenanceAspect : ProvenanceAspect
         {
-        private:
-        V8ElementProvenanceAspect(ECN::IECInstance& i, SyncInfo& si) : ProvenanceAspect(i, si) {}
-        public:
-        DGNDBSYNC_EXPORT V8ElementProvenanceAspect(ProvenanceAspect const&);
-        DGNDBSYNC_EXPORT static V8ElementProvenanceAspect Make(ElementProvenanceAspectData const&, SyncInfo&);
-        //! Update the instance to match the specified ElementProvenance.
-        DGNDBSYNC_EXPORT void Update(ElementProvenance const&);
+      protected:
+        friend struct SyncInfo;
+        V8ElementProvenanceAspect(iModelProvenanceAspect const&);
+        V8ElementProvenanceAspect(ECN::IECInstance* i) : ProvenanceAspect(i) {}
+
+      public:
+        //! Create a new aspect in memory. Caller must call AddTo.
+        DGNDBSYNC_EXPORT static V8ElementProvenanceAspect Make(ElementProvenanceAspectData const&, DgnDbR);
+        
+        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
+        static V8ElementProvenanceAspect Get(DgnElementR el) {return V8ElementProvenanceAspect(V8ElementProvenanceAspect::GetAspect(el));}
+        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
+        static V8ElementProvenanceAspect Get(DgnElementCR el) {return V8ElementProvenanceAspect(V8ElementProvenanceAspect::GetAspect(el));}
+
+        DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov) {ProvenanceAspect::SetHash(prov.m_hash, prov.m_lastModified);}
 
         #ifdef TEST_ELEMENT_PROVENANCE_ASPECT
         void AssertMatch(DgnElementCR, ElementProvenance const&);
@@ -856,17 +843,6 @@ public:
     //! @param[in] modelsiid Identifies the V8 attachment through which we found this V8 element
     //! @return true if the element was found in the discard table
     DGNDBSYNC_EXPORT bool WasElementDiscarded (uint64_t v8id, V8ModelSyncInfoId modelsiid);
-
-    //! Get an existing syncinfo aspect from the specified element
-    DGNDBSYNC_EXPORT ProvenanceAspect GetAspect(DgnElementCR el);
-    //! Get an existing syncinfo aspect from the specified element
-    DGNDBSYNC_EXPORT ProvenanceAspect GetAspect(DgnElementR el);
-    //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
-    DGNDBSYNC_EXPORT V8ElementProvenanceAspect GetV8ElementAspect(DgnElementR el);
-    DGNDBSYNC_EXPORT V8ElementProvenanceAspect GetV8ElementAspect(DgnElementCR el);
-
-    //! Create an instance of the element syncinfo aspect
-    DGNDBSYNC_EXPORT V8ElementProvenanceAspect MakeAspect(ElementProvenanceAspectData const& provdata) {return V8ElementProvenanceAspect::Make(provdata, *this);}
 
 #ifdef TEST_ELEMENT_PROVENANCE_ASPECT
     void AssertAspectMatchesSyncInfo(V8ElementMapping const&);
