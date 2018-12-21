@@ -845,6 +845,7 @@ struct Converter
         L10N_STRING(FailedToConvertDrawingElement)  // =="Failed to convert drawing element"==
         L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
         L10N_STRING(ProjectExtentsAdjusted)      // =="Project Extents have been adjusted to exclude outlying elements"==
+        L10N_STRING(FailedToCreatePresentationRules)    // =="Failed to create presentation rules"==
             
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -2028,6 +2029,7 @@ public:
     DGNDBSYNC_EXPORT void ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle const& inEl);
     DGNDBSYNC_EXPORT void ReportFailedThumbnails();
     DGNDBSYNC_EXPORT void ReportAdjustedProjectExtents(size_t nOutliers, DRange3dCR unadjustedRange, DRange3dCR adjustedRange);
+    DGNDBSYNC_EXPORT void ReportFailedPresentationRules();
 
 
     //! Signal a fatal error
@@ -2670,6 +2672,7 @@ protected:
     void UpdateCalculatedProperties();
     //! @private
     void CreatePresentationRules();
+    void CreatePresentationRulesWithExceptionHandling();
 
     void FindSpatialV8Models(DgnV8ModelRefR rootModelRef);
     void FindV8DrawingsAndSheets();
