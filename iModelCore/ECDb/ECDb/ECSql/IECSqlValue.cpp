@@ -201,10 +201,18 @@ BentleyStatus IECSqlValue::TryGetContainedEnumerators(bvector<ECN::ECEnumeratorC
     if (enumType->GetType() == ECN::PRIMITIVETYPE_Integer)
         {
         const int val = GetInt();
-        int32_t remainder = (int32_t) val;
+        int remainder = val;
         for (ECN::ECEnumeratorCP enumerator : enumType->GetEnumerators())
             {
-            const int32_t r = remainder & enumerator->GetInteger();
+            const int enumeratorVal = (int) enumerator->GetInteger();
+            if (enumeratorVal == val)
+                {
+                enumerators.clear();
+                enumerators.push_back(enumerator);
+                return SUCCESS;
+                }
+
+            const int r = remainder & enumeratorVal;
             if (r == 0)
                 continue;
 
