@@ -704,7 +704,7 @@ IGeometryPtr ProfilesGeomApi::CreateHollowRectangle (HollowRectangleProfileCPtr 
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeomApi::CreateTrapezium (TrapeziumProfileCPtr profile)
     {
-    double const topWidth = profile->GetTopWidth() / 2.0;
+    double const topWidth = profile->GetTopWidth();
     double const halfBottomWidth = profile->GetBottomWidth() / 2.0;
     double const halfDepth = profile->GetDepth() / 2.0;
     double const topOffset = profile->GetTopOffset();
