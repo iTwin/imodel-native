@@ -93,6 +93,11 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_bothRadiuses", 4.0, 6.0, 0.5, 0.5, 0.5));
     InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_MaxOuterRadiusAgainstInnerRadius",
                                                    6.0, 6.0, 0.25, 0.5, 0.25 * (2.0 + std::sqrt (2.0)) + 0.49));
+
+    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium", 4.0, 6.0, 4.0, 1.0), true);
+    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium wider top", 6.0, 4.0, 4.0, 0.0));
+    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium wider top centered", 6.0, 4.0, 4.0, -1.0));
+    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium bigger top offset", 2.0, 4.0, 4.0, 6.0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -176,10 +181,10 @@ static DPoint3d offsetProfilePlacement (IGeometryPtr& geometryPtr, bool placeInN
 
     DRange3d range;
     BeAssert (geometryPtr->TryGetRange (range));
-    double width = range.high.x - range.low.x;
-    double height = range.high.y - range.low.y;
+    double const width = range.high.x - range.low.x;
+    double const height = range.high.y - range.low.y;
 
-    Transform translation = Transform::From (DPoint3d::From (width / 2.0, height / 2.0));
+    Transform translation = Transform::From (DPoint3d::From (range.low.x * -1.0, range.low.y * -1.0));
     BeAssert (geometryPtr->TryTransformInPlace (translation));
 
     xPlacement += width + 1.0;
