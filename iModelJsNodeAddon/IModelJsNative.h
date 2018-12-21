@@ -110,8 +110,8 @@ public:
     static BeSQLite::DbResult AddPendingChangeSet(DgnDbR db, Utf8StringCR changeSetId);
     static BeSQLite::DbResult RemovePendingChangeSet(DgnDbR db, Utf8StringCR changeSetId);
 
-    static ReprojectStatus GetGeoCoordsFromIModelCoords (JsonValueR, DgnDbR, JsonValueCR);
-    static ReprojectStatus GetIModelCoordsFromGeoCoords (JsonValueR, DgnDbR, JsonValueCR);
+    static BentleyStatus GetGeoCoordsFromIModelCoords (JsonValueR, DgnDbR, JsonValueCR);
+    static BentleyStatus GetIModelCoordsFromGeoCoords (JsonValueR, DgnDbR, JsonValueCR);
 
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);
     
