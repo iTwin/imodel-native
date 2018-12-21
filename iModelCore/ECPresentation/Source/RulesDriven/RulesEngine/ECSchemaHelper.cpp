@@ -1511,38 +1511,53 @@ void SupportedClassNamesParser::Parse()
     }
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2018
++===============+===============+===============+===============+===============+======*/
+struct ECInstanceLoadStatementCacheInvalidator : BeSQLite::Db::AppData
+{
+private:
+    std::function<void()> m_callback;
+private:
+    ECInstanceLoadStatementCacheInvalidator(std::function<void()> callback): m_callback(callback) {}
+public:
+    static RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> Create(std::function<void()> callback) {return new ECInstanceLoadStatementCacheInvalidator(callback);}
+    ~ECInstanceLoadStatementCacheInvalidator()
+        { 
+        if (m_callback)
+            m_callback();
+        }
+    void OnCacheDestroyed() {m_callback = nullptr;}
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                12/2015
 +===============+===============+===============+===============+===============+======*/
 struct ECInstanceLoadStatementCache : BeSQLite::Db::AppData
 {
 private:
     ECSqlStatementCache m_cache;
+    ECInstanceLoadStatementCacheInvalidator* m_invalidator;
 public:
     static Key s_key;
+    Key m_invalidatorKey;
 private:
-    ECInstanceLoadStatementCache() : m_cache(50, "ECInstanceLoadStatementCache") {}
+    ECInstanceLoadStatementCache() : m_cache(50, "ECInstanceLoadStatementCache"), m_invalidator(nullptr) {}
 public:
     static RefCountedPtr<ECInstanceLoadStatementCache> Create() {return new ECInstanceLoadStatementCache();}
-    void Invalidate() { m_cache.Empty(); }
+    ~ECInstanceLoadStatementCache()
+        {
+        if (nullptr != m_invalidator)
+            m_invalidator->OnCacheDestroyed();
+        }
+    void SetInvalidator(ECInstanceLoadStatementCacheInvalidator* invalidator) {m_invalidator = invalidator;}
+    void OnInvalidatorDestroyed()
+        {
+        m_cache.Empty();
+        m_invalidator = nullptr;
+        }
     CachedECSqlStatementPtr GetStatement(IConnectionCR connection, Utf8CP query) {return m_cache.GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), query);}
 };
 ECInstanceLoadStatementCache::Key ECInstanceLoadStatementCache::s_key;
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                12/2018
-+===============+===============+===============+===============+===============+======*/
-struct ECInstanceLoadStatementCacheInvalidator : BeSQLite::Db::AppData
-{
-private:
-    RefCountedPtr<ECInstanceLoadStatementCache> m_cache;
-public:
-    Key m_key;
-private:
-    ECInstanceLoadStatementCacheInvalidator(ECInstanceLoadStatementCache& cache): m_cache(&cache) {}
-public:
-    static RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> Create(ECInstanceLoadStatementCache& cache) {return new ECInstanceLoadStatementCacheInvalidator(cache);}
-    ~ECInstanceLoadStatementCacheInvalidator() { m_cache->Invalidate(); }
-};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
@@ -1554,10 +1569,21 @@ static CachedECSqlStatementPtr GetPreparedStatement(IConnectionCR connection, Ut
     if (cache.IsNull())
         {
         cache = ECInstanceLoadStatementCache::Create();
-        connection.GetDb().AddAppData(ECInstanceLoadStatementCache::s_key, cache.get());        
-        RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = ECInstanceLoadStatementCacheInvalidator::Create(*cache);
-        connection.GetECDb().AddAppData(invalidator->m_key, invalidator.get(), true);        
+        connection.GetDb().AddAppData(ECInstanceLoadStatementCache::s_key, cache.get());
         }
+
+    RefCountedPtr<BeSQLite::Db::AppData> invalidatorAppData = connection.GetDb().FindAppData(cache->m_invalidatorKey);
+    RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = static_cast<ECInstanceLoadStatementCacheInvalidator*>(invalidatorAppData.get());
+    if (invalidator.IsNull())
+        {
+        RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = ECInstanceLoadStatementCacheInvalidator::Create([cache = cache.get()]()
+            {
+            cache->OnInvalidatorDestroyed();
+            });
+        connection.GetECDb().AddAppData(cache->m_invalidatorKey, invalidator.get(), true);
+        cache->SetInvalidator(invalidator.get());
+        }
+
     return cache->GetStatement(connection, ecsql);
     }
 

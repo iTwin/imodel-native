@@ -13,7 +13,6 @@
 #include "LocalizationHelper.h"
 #include "NavNodeProviders.h"
 #include "LoggingHelper.h"
-#include <regex>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
@@ -115,6 +114,80 @@ template ComplexNavigationQueryPtr QueryBuilderHelpers::CreateNestedQuery<Naviga
 template ComplexGenericQueryPtr QueryBuilderHelpers::CreateNestedQuery<GenericQuery>(GenericQuery&);
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CheckQueryForAliases(Utf8CP queryString, bvector<Utf8CP> const& aliases)
+    {
+    // Check for keyword 'AS'
+    int afterAsIndex = -1;
+    size_t querySize = std::strlen(queryString);
+    for (size_t i = 0; i < querySize; ++i)
+        {
+        if (std::isspace(queryString[i]) &&
+            ('A' == queryString[i + 1] || 'a' == queryString[i + 1]) &&
+            ('S' == queryString[i + 2] || 's' == queryString[i + 2]) &&
+            std::isspace(queryString[i + 3]))
+            {
+            afterAsIndex = i + 4;
+            break;
+            }
+        }
+
+    if (-1 == afterAsIndex || afterAsIndex >= querySize)
+        return false; // Keyword 'AS' not found
+
+    // Get alias string
+    Utf8CP afterAs = queryString + afterAsIndex;
+    Utf8String alias = afterAs;
+    size_t aliasEnd = -1;
+    size_t afterAsSize = std::strlen(afterAs);
+    for (size_t i = 0; i < afterAsSize; ++i)
+        {
+        if ('[' == afterAs[i])
+            {
+            for (size_t j = i+1; j < afterAsSize; ++j)
+                {
+                if (']' == afterAs[j] && i + 1 < afterAsSize)
+                    {
+                    alias = Utf8String(afterAs, i + 1, j - (i + 1));
+                    aliasEnd = j + 1;
+                    break;
+                    }
+                }
+            if (-1 != aliasEnd)
+                break;
+            }
+        else if ('_' != afterAs[i] && !isalnum(afterAs[i]))
+            {
+            alias = Utf8String(afterAs, i);
+            aliasEnd = i + 1;
+            break;
+            }
+        }
+
+    // Trim whitespaces
+    alias = alias.Trim();
+    if (0 == alias.size())
+        return false;
+
+    // In case aliases aren't specified, check if alias is alphanumeric or _
+    if (aliases.empty())
+        return true;
+    
+    // Else check if alias matches any given alias
+    for (Utf8CP aliasCase : aliases)
+        {
+        if (0 == std::strcmp(aliasCase, alias.c_str()))
+            return true;
+        }
+
+    if (aliasEnd < std::strlen(afterAs))
+        return CheckQueryForAliases(afterAs + aliasEnd, aliases);
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
@@ -139,11 +212,8 @@ bool QueryBuilderHelpers::NeedsNestingToUseAlias(T const& query, bvector<Utf8CP>
         if (NeedsNestingToUseAlias(*exceptQuery.GetBase(), aliases) || NeedsNestingToUseAlias(*exceptQuery.GetExcept(), aliases))
             return true;
         }
-
-    Utf8String regexStr = ".*?\\s+AS\\s+\\[?(";
-    regexStr.append(aliases.empty() ? "\\w+" : BeStringUtilities::Join(aliases, "|").c_str()).append(")\\]?.*");
-    std::regex regex(regexStr.c_str(), std::regex_constants::icase);
-    if (nullptr != query.AsComplexQuery() && std::regex_match(query.AsComplexQuery()->GetClause(CLAUSE_Select).c_str(), regex))
+    
+    if (nullptr != query.AsComplexQuery() && CheckQueryForAliases(query.AsComplexQuery()->GetClause(CLAUSE_Select).c_str(), aliases))
         return true;
 
     return false;

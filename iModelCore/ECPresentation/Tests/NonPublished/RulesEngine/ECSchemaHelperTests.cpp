@@ -883,11 +883,21 @@ TEST_F(ECInstancesHelperTests, LoadInstance_LoadsInstanceAfterSchemaImport)
     EXPECT_EQ(BE_SQLITE_ROW, result);
     EXPECT_TRUE(instance.IsValid());
 
+    // import a schema and attempt to load the instance again
     ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(m_project.GetECDb().GetSchemaLocater());
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_1, *schemaReadContext));
-    BentleyStatus status = m_project.GetECDb().Schemas().ImportSchemas(schemaReadContext->GetCache().GetSchemas());
+    BentleyStatus status = m_project.GetECDb().Schemas().ImportSchemas({ schema.get() });
+    ASSERT_EQ(SUCCESS, status);
+
+    result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
+    EXPECT_EQ(BE_SQLITE_ROW, result);
+    EXPECT_TRUE(instance.IsValid());
+
+    // repeat 2nd time
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_2, *schemaReadContext));
+    status = m_project.GetECDb().Schemas().ImportSchemas({ schema.get() });
     ASSERT_EQ(SUCCESS, status);
 
     result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
