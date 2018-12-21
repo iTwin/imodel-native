@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include <BeRapidJson/BeRapidJson.h>
 #include "DgnV8/DynamicSchemaGenerator/ECConversion.h"
 
 #undef LOG
@@ -22,6 +23,8 @@
 #define MUSTBEDONERC(stmt) MUSTBEDBRESULTRC(stmt,BE_SQLITE_DONE)
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
+
+static ECN::ECClassCP getAspectClass(DgnDbR db) {return db.Schemas().GetClass(SOURCEINFO_ECSCHEMA_NAME, SOURCEINFO_CLASS_SoureElementInfo);}
 
 static ProfileVersion s_currentVersion(0, 1, 0, 0);
 /*---------------------------------------------------------------------------------**//**
@@ -1623,11 +1626,272 @@ BentleyStatus SyncInfo::AttachToProject(DgnDb& targetProject, BeFileNameCR dbNam
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus   importElementAspectSchema(DgnDbR db)
+    {
+    if (db.Schemas().ContainsSchema(SOURCEINFO_ECSCHEMA_NAME))
+        return BSISUCCESS;
+
+    BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemaPathname.AppendToPath(L"ECSchemas/Application/SourceInfo.ecschema.xml");
+
+    if (!schemaPathname.DoesPathExist())
+        {
+        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
+        return BSIERROR;
+        }
+
+    ECN::ECSchemaPtr schema;
+    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(db.GetSchemaLocater());
+    ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schema, schemaPathname.GetName(), *schemaContext);
+
+    // CreateSearchPathSchemaFileLocater
+    if (ECN::SchemaReadStatus::Success != status)
+        {
+        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
+        return BSIERROR;
+        }
+
+    bvector<ECN::ECSchemaCP> schemas;
+    schemas.push_back(schema.get());
+    if (SchemaStatus::Success != db.ImportV8LegacySchemas(schemas))
+        return BSIERROR;
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef TEST_ELEMENT_PROVENANCE_ASPECT
+void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
+    {
+    auto el = m_converter.GetDgnDb().Elements().GetElement(mapping.GetElementId());
+    if (!el.IsValid())
+        return;
+
+    auto props = GetV8ElementAspect(*el);
+    if (!props.IsValid())
+        {
+        // BeAssert(!m_converter._GetParams().GetWantProvenanceInBim());    Can't assert this until I convert all of the places that create syncinfo records to also create aspects
+        return;
+        }
+
+    props.AssertMatch(*el, mapping.m_provenance);
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef TEST_ELEMENT_PROVENANCE_ASPECT
+void SyncInfo::V8ElementProvenanceAspect::AssertMatch(DgnElementCR el, ElementProvenance const& elprov)
+    {
+    BeAssert(GetScope().GetValue() == el.GetModelId().GetValue());
+    BeAssert(GetKind() == ProvenanceAspect::Kind::Element);
+    BeAssert(GetLastModifiedTime() == elprov.m_lastModified);
+    SyncInfo::ElementHash hash;
+    GetHash(hash);
+    BeAssert(hash.IsSame(elprov.m_hash));
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::ProvenanceAspect SyncInfo::GetAspect(DgnElementCR el)
+    {
+    auto aspectClass = getAspectClass(*m_dgndb);
+    if (nullptr == aspectClass)
+        return ProvenanceAspect(*this);
+    auto instance = DgnElement::GenericMultiAspect::GetAspect (el, *aspectClass, BeSQLite::EC::ECInstanceId());
+    if (nullptr == instance)
+        return ProvenanceAspect(*this);
+    return ProvenanceAspect(*instance, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::ProvenanceAspect SyncInfo::GetAspect(DgnElementR el)
+    {
+    auto aspectClass = getAspectClass(*m_dgndb);
+    if (nullptr == aspectClass)
+        return ProvenanceAspect(*this);
+    auto instance = DgnElement::GenericMultiAspect::GetAspectP(el, *aspectClass, BeSQLite::EC::ECInstanceId());    // NB: Call GetAspectP! That sets the aspect's dirty flag, which tells its _OnUpdate method to write.
+    if (nullptr == instance)
+        return ProvenanceAspect(*this);
+    return ProvenanceAspect(*instance, *this);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementProvenanceAspect::V8ElementProvenanceAspect(ProvenanceAspect const& aspect) : ProvenanceAspect(aspect)
+    {
+    BeAssert(!aspect.IsValid() || aspect.GetKind() == Kind::Element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementProvenanceAspect SyncInfo::GetV8ElementAspect(DgnElementR el)
+    {
+    return V8ElementProvenanceAspect(GetAspect(el));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementProvenanceAspect SyncInfo::GetV8ElementAspect(DgnElementCR el)
+    {
+    return V8ElementProvenanceAspect(GetAspect(el));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::ProvenanceAspect::Update(ECN::IECInstance& instance, double lmt, ElementHash const& hash, SyncInfo& si)
+    {
+    instance.SetValue(SOURCEINFO_LastModifiedTime, ECN::ECValue(lmt));
+    instance.SetValue(SOURCEINFO_Hash, ECN::ECValue(hash.m_buffer, sizeof(hash.m_buffer)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::V8ElementProvenanceAspect::Update(ElementProvenance const& prov)
+    {
+    ProvenanceAspect::Update(*m_instance, prov.m_lastModified, prov.m_hash, *m_si);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SyncInfo::ProvenanceAspect::AddTo(DgnElementR el)
+    {
+    return DgnElement::GenericMultiAspect::AddAspect(el, *m_instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstancePtr SyncInfo::ProvenanceAspect::MakeInstance(DgnElementId scope, Kind kind, Utf8StringCR sourceId, double lmt, ElementHash const& hash, SyncInfo& si) 
+    {
+    auto aspectClass = getAspectClass(*si.m_dgndb);
+    if (nullptr == aspectClass)
+        return nullptr;
+    auto instance = aspectClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    instance->SetValue(SOURCEINFO_Scope, ECN::ECValue(scope));
+    instance->SetValue(SOURCEINFO_SourceId, ECN::ECValue(sourceId.c_str()));
+    instance->SetValue(SOURCEINFO_Kind, ECN::ECValue(KindToString(kind)));
+    Update(*instance, lmt, hash, si);
+    return instance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementProvenanceAspect SyncInfo::V8ElementProvenanceAspect::Make(ElementProvenanceAspectData const& provdata, SyncInfo& si) 
+    {
+    return V8ElementProvenanceAspect(*MakeInstance(DgnElementId(provdata.m_scope.GetValue()), Kind::Element, Utf8PrintfString("%lld", provdata.m_v8Id), provdata.m_prov.m_lastModified, provdata.m_prov.m_hash, si), si);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document SyncInfo::ProvenanceAspect::GetProperties() const
+    {
+    ECN::ECValue props;
+    if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, SOURCEINFO_Properties) || !props.IsString())
+        return rapidjson::Document();
+    rapidjson::Document json;
+    auto rawJSON = props.GetUtf8CP();   // this is a pointer into the data of m_instance. It is valid as long as m_instance is valid.
+    json.Parse(rawJSON);
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::ProvenanceAspect::SetProperties(rapidjson::Document const& json)
+    {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    json.Accept(writer);
+
+    ECN::ECValue props(buffer.GetString());
+    m_instance->SetValue(SOURCEINFO_Properties, props);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId SyncInfo::ProvenanceAspect::GetScope() const
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, SOURCEINFO_Scope);
+    return v.GetNavigationInfo().GetId<DgnElementId>();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SyncInfo::ProvenanceAspect::GetSourceId() const
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, SOURCEINFO_SourceId);
+    return v.GetUtf8CP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::ProvenanceAspect::Kind SyncInfo::ProvenanceAspect::GetKind() const 
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, SOURCEINFO_Kind);
+    return ParseKind(v.GetUtf8CP());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+double SyncInfo::ProvenanceAspect::GetLastModifiedTime() const
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, SOURCEINFO_LastModifiedTime);
+    return v.GetDouble();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::ProvenanceAspect::GetHash(ElementHash& hash) const
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, SOURCEINFO_Hash);
+    size_t sz;
+    auto b = v.GetBinary(sz);
+    if (sz != sizeof(hash.m_buffer))
+        {
+        BeDataAssert(false);
+        return BSIERROR;
+        }
+    memcpy(hash.m_buffer, b, sizeof(hash.m_buffer));
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SyncInfo::OnAttach(DgnDb& project)
     {
     m_dgndb = &project;
+
+    importElementAspectSchema(*m_dgndb);
 
     if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_File)))
         {

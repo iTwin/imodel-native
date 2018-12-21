@@ -13,6 +13,10 @@
 //  have to disallow "using namespace BentleyB0200".
 #define NO_USING_NAMESPACE_BENTLEY 1
 
+#ifndef NDEBUG
+// #define TEST_ELEMENT_PROVENANCE_ASPECT
+#endif
+
 #include <DgnDbSync/DgnV8/DgnV8.h> // NB: Must include this first!
 
 #include <VersionedDgnV8Api/DgnPlatform/DgnPlatform.h>

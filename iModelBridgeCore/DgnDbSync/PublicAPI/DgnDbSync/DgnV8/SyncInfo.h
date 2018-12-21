@@ -371,6 +371,16 @@ struct SyncInfo
         bool IsSame(ElementProvenance const& other){return (m_idPolicy==StableIdPolicy::ByHash || m_lastModified==other.m_lastModified) && m_hash.IsSame(other.m_hash);}
     };
 
+    //! Data that uniquely identifies a V8 *element*. This data is used as part of the input when constructing a ProvenanceAspect.
+    //! This corresponds to V8ElementSource, which it will someday replace.
+    struct ElementProvenanceAspectData
+        {
+        DgnModelId m_scope;         // The model that was created (earlier) in the iModel from the V8 model that contains this V8 element.
+        DgnV8Api::ElementId m_v8Id; // The V8 element's ID
+        ElementProvenance m_prov;   // The V8 element's state
+        ElementProvenanceAspectData(DgnModelId scope, DgnV8Api::ElementId v8Id, ElementProvenance const& prov) : m_scope(scope), m_v8Id(v8Id), m_prov(prov) {}
+        };
+    
     //! Uniquely identifies a V8 element
     struct V8ElementSource
         {
@@ -482,6 +492,82 @@ struct SyncInfo
         void Bind(V8ModelSyncInfoId modelId, SyncInfo::ElementHash hash) {m_stmt->Reset(); m_stmt->BindInt64(1, modelId.GetValue()); m_stmt->BindBlob(2, hash.m_buffer, sizeof(hash), BeSQLite::Statement::MakeCopy::No);}
 
     };
+
+    //! The V8 provenance of an element in an iModel. May refer to an element, model, or other object in the v8 source files.
+    struct ProvenanceAspect
+        {
+        enum Kind
+            {
+            Element, Model, DrawingGraphic, Level
+            };
+
+        static Utf8CP KindToString(Kind kind)
+            {
+            switch (kind)
+                {
+                case Kind::Element: return "Element";
+                case Kind::Model: return "Model";
+                case Kind::DrawingGraphic: return "DrawingGraphic";
+                case Kind::Level: return "Level";
+                }
+            BeAssert(false);
+            return "Element";
+            }
+
+        static Kind ParseKind(Utf8CP str)
+            {
+            if (0==strcmp(str,"Element")) return Kind::Element;
+            if (0==strcmp(str,"Model")) return Kind::Model;
+            if (0==strcmp(str,"DrawingGraphic")) return Kind::DrawingGraphic;
+            if (0==strcmp(str,"Level")) return Kind::Level;
+            BeAssert(false);
+            return Kind::Element;
+            }
+
+        protected:
+        SyncInfo* m_si;
+        RefCountedPtr<ECN::IECInstance> m_instance;
+        friend struct SyncInfo;
+
+        DGNDBSYNC_EXPORT static ECN::IECInstancePtr MakeInstance(DgnElementId scope, Kind kind, BentleyApi::Utf8StringCR sourceId, double lmt, ElementHash const& hash, SyncInfo& si);
+        DGNDBSYNC_EXPORT static void Update(ECN::IECInstance&, double lmt, ElementHash const&, SyncInfo&);
+
+        ProvenanceAspect(SyncInfo& si) : m_si(&si) {}
+        ProvenanceAspect(ECN::IECInstance& i, SyncInfo& si) : m_instance(&i), m_si(&si) {}
+        ProvenanceAspect(ECN::IECInstance const& i, SyncInfo& si) : m_instance(&const_cast<ECN::IECInstance&>(i)), m_si(&si) {}
+
+        public:
+        bool IsValid() const {return m_instance.IsValid();}
+
+        DGNDBSYNC_EXPORT Kind GetKind() const;
+        DGNDBSYNC_EXPORT DgnElementId GetScope() const;
+        DGNDBSYNC_EXPORT Utf8String GetSourceId() const;
+        DGNDBSYNC_EXPORT ProvenanceAspect::Kind GetAspectKind() const;
+        DGNDBSYNC_EXPORT double GetLastModifiedTime() const;
+        DGNDBSYNC_EXPORT BentleyStatus GetHash(ElementHash& hash) const;
+        DGNDBSYNC_EXPORT rapidjson::Document GetProperties() const;
+        DGNDBSYNC_EXPORT void SetProperties(rapidjson::Document const&);
+    
+        //! Add this aspect to the specified element. (Caller must then call element's Insert or Update method.)
+        DGNDBSYNC_EXPORT DgnDbStatus AddTo(DgnElementR);
+        };
+    friend struct ProvenanceAspect;
+
+    //! The provenance of an element in an iModel that was created from an element in a V8 model.
+    struct V8ElementProvenanceAspect : ProvenanceAspect
+        {
+        private:
+        V8ElementProvenanceAspect(ECN::IECInstance& i, SyncInfo& si) : ProvenanceAspect(i, si) {}
+        public:
+        DGNDBSYNC_EXPORT V8ElementProvenanceAspect(ProvenanceAspect const&);
+        DGNDBSYNC_EXPORT static V8ElementProvenanceAspect Make(ElementProvenanceAspectData const&, SyncInfo&);
+        //! Update the instance to match the specified ElementProvenance.
+        DGNDBSYNC_EXPORT void Update(ElementProvenance const&);
+
+        #ifdef TEST_ELEMENT_PROVENANCE_ASPECT
+        void AssertMatch(DgnElementCR, ElementProvenance const&);
+        #endif
+        };
 
     //! Provenance info for an element that was \em not converted but was discarded instead.
     struct DiscardedElement
@@ -770,6 +856,22 @@ public:
     //! @param[in] modelsiid Identifies the V8 attachment through which we found this V8 element
     //! @return true if the element was found in the discard table
     DGNDBSYNC_EXPORT bool WasElementDiscarded (uint64_t v8id, V8ModelSyncInfoId modelsiid);
+
+    //! Get an existing syncinfo aspect from the specified element
+    DGNDBSYNC_EXPORT ProvenanceAspect GetAspect(DgnElementCR el);
+    //! Get an existing syncinfo aspect from the specified element
+    DGNDBSYNC_EXPORT ProvenanceAspect GetAspect(DgnElementR el);
+    //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
+    DGNDBSYNC_EXPORT V8ElementProvenanceAspect GetV8ElementAspect(DgnElementR el);
+    DGNDBSYNC_EXPORT V8ElementProvenanceAspect GetV8ElementAspect(DgnElementCR el);
+
+    //! Create an instance of the element syncinfo aspect
+    DGNDBSYNC_EXPORT V8ElementProvenanceAspect MakeAspect(ElementProvenanceAspectData const& provdata) {return V8ElementProvenanceAspect::Make(provdata, *this);}
+
+#ifdef TEST_ELEMENT_PROVENANCE_ASPECT
+    void AssertAspectMatchesSyncInfo(V8ElementMapping const&);
+#endif
+
     //! @}
 
     //! @name Levels, Fonts, Styles, Materials
