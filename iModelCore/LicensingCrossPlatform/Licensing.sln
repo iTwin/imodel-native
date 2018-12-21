@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Licensing", "Licensing.vcxp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LicensingUnitTests", "Tests\UnitTests\UnitTests.vcxproj", "{CF6DF431-C978-46EC-8E32-A409994F676D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WSClient", "..\WSClient\WSClient.vcxproj", "{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,12 +29,6 @@ Global
 		{CF6DF431-C978-46EC-8E32-A409994F676D}.Release|x64.Build.0 = Debug|x64
 		{CF6DF431-C978-46EC-8E32-A409994F676D}.Release|x86.ActiveCfg = Debug|x64
 		{CF6DF431-C978-46EC-8E32-A409994F676D}.Release|x86.Build.0 = Debug|x64
-		{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}.Debug|x64.ActiveCfg = Debug|x64
-		{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}.Debug|x64.Build.0 = Debug|x64
-		{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}.Debug|x86.ActiveCfg = Debug|x64
-		{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}.Release|x64.ActiveCfg = Release|x64
-		{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}.Release|x64.Build.0 = Release|x64
-		{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
