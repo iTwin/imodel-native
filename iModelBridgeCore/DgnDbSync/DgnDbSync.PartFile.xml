@@ -401,7 +401,7 @@
         <SubPart PartName="DwgConverter" PartFile="DwgConverter"/>
     </Part>
 
-    <Part Name="BimFromDgnDbPublicApi" BentleyBuildMakeFile="BimFromDgnDb/BimFromDgnDb.prewire.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64">
+    <Part Name="BimFromDgnDbPublicApi" BentleyBuildMakeFile="BimFromDgnDb/BimFromDgnDb.prewire.mke" OnlyPlatforms="x64,iOSARM64,AndroidARM64">
         <Bindings>
             <PublicAPI Domain="BimFromDgnDb" />
         </Bindings>
@@ -413,7 +413,7 @@
         <SubPart PartName="BimFromDgnDb-Xliffs"/>
     </Part>
     
-    <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64" ApiNumber="B02">
+    <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,iOSARM64,AndroidARM64" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"      Repository="DgnPlatform"/>
         <SubPart PartName="ECPresentation"  PartFile="ECPresentation"   Repository="ECPresentation"/>
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"       Repository="DgnDisplay" />
@@ -421,6 +421,7 @@
         <SubPart PartName="Raster"              PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ScalableMeshSchemaMobile"  PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="BimFromDgnDbPublicApi"/>
         <Bindings>
@@ -446,7 +447,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BimUpgraderExe" BentleyBuildMakeFile="BimFromDgnDb/BimUpgrader/BimUpgrader.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
+    <Part Name="BimUpgraderExe" BentleyBuildMakeFile="BimFromDgnDb/BimUpgrader/BimUpgrader.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="BimFromJson"/>
         <SubPart PartName="DgnDb0601ToJson" PartFile="BimUpgrader" />
         <SubPart PartName="BimFromDgnDb" />
@@ -457,7 +458,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BimFromDgnDb" BentleyBuildMakeFile="BimFromDgnDb/src/BimFromDgnDb.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
+    <Part Name="BimFromDgnDb" BentleyBuildMakeFile="BimFromDgnDb/src/BimFromDgnDb.mke" OnlyPlatforms="x64,iOSARM64" ApiNumber="B02">
         <SubPart PartName="BimFromJson"/>
         <SubPart PartName="DgnDb0601ToJson" PartFile="BimUpgrader" />
         <Bindings>

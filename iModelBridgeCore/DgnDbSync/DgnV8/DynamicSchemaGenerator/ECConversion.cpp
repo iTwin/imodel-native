@@ -29,6 +29,7 @@ static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
     "DgnContentRelationshipSchema",
     "DgnCustomAttributes",
     "DgnElementSchema",
+    "RfaElementSchema",
     "DgnFileSchema",
     "DgnindexQueryschema",
     "DgnLevelSchema",

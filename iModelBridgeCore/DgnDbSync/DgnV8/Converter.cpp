@@ -3883,6 +3883,11 @@ bool Converter::ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Mo
         if (!v->_ShouldImportSchema(fullSchemaName, v8Model))
             return false;
         }
+
+    // This is a hack - there are schemas that reference the ECXD provided RfaElementSchema.  That schema cannot be located which means any schema that references it will fail to
+    // de-serialize.  So we screen for known schemas that reference it.
+    if (fullSchemaName.EqualsI("TargetRfaElement__Family___x5706____x684C__.01.00"))
+        return false;
     return true;
     }
 
