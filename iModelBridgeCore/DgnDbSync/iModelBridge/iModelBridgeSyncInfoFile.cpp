@@ -784,7 +784,7 @@ bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus iModelProvenanceAspect::AddTo(DgnElementR el)
+DgnDbStatus iModelSyncInfoAspect::AddTo(DgnElementR el)
     {
     return DgnElement::GenericMultiAspect::AddAspect(el, *m_instance);
     }
@@ -792,7 +792,7 @@ DgnDbStatus iModelProvenanceAspect::AddTo(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstancePtr iModelProvenanceAspect::MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, double lmt, MD5::HashVal const& hashVal, ECN::ECClassCR aspectClass) 
+ECN::IECInstancePtr iModelSyncInfoAspect::MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, double lmt, MD5::HashVal const& hashVal, ECN::ECClassCR aspectClass) 
     {
     auto instance = aspectClass.GetDefaultStandaloneEnabler()->CreateInstance();
     instance->SetValue(SOURCEINFO_Scope, ECN::ECValue(scope));
@@ -805,7 +805,7 @@ ECN::IECInstancePtr iModelProvenanceAspect::MakeInstance(DgnElementId scope, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::ECClassCP iModelProvenanceAspect::GetAspectClass(DgnDbR db)
+ECN::ECClassCP iModelSyncInfoAspect::GetAspectClass(DgnDbR db)
     {
     return db.Schemas().GetClass(SOURCEINFO_ECSCHEMA_NAME, SOURCEINFO_CLASS_SoureElementInfo);
     }
@@ -813,38 +813,38 @@ ECN::ECClassCP iModelProvenanceAspect::GetAspectClass(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelProvenanceAspect iModelProvenanceAspect::GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass)
+iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass)
     {
     if (!aspectClass)
         aspectClass = GetAspectClass(el.GetDgnDb());
     if (nullptr == aspectClass)
-        return iModelProvenanceAspect();
+        return iModelSyncInfoAspect();
     auto instance = DgnElement::GenericMultiAspect::GetAspect (el, *aspectClass, BeSQLite::EC::ECInstanceId()); // Get read-only copy of the aspect.
     if (nullptr == instance)
-        return iModelProvenanceAspect();
-    return iModelProvenanceAspect(instance);
+        return iModelSyncInfoAspect();
+    return iModelSyncInfoAspect(instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelProvenanceAspect iModelProvenanceAspect::GetAspect(DgnElementR el, ECN::ECClassCP aspectClass)
+iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementR el, ECN::ECClassCP aspectClass)
     {
     if (!aspectClass)
         aspectClass = GetAspectClass(el.GetDgnDb());
     if (nullptr == aspectClass)
-        return iModelProvenanceAspect();
+        return iModelSyncInfoAspect();
     auto instance = DgnElement::GenericMultiAspect::GetAspectP(el, *aspectClass, BeSQLite::EC::ECInstanceId());    // NB: Call GetAspectP, not GetAspect! GetAspectP sets the aspect's dirty flag, which tells its _OnUpdate method to write out changes.
     if (nullptr == instance)
-        return iModelProvenanceAspect();
-    return iModelProvenanceAspect(instance);
+        return iModelSyncInfoAspect();
+    return iModelSyncInfoAspect(instance);
     }
     
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId iModelProvenanceAspect::GetScope() const
+DgnElementId iModelSyncInfoAspect::GetScope() const
     {
     ECN::ECValue v;
     m_instance->GetValue(v, SOURCEINFO_Scope);
@@ -854,7 +854,7 @@ DgnElementId iModelProvenanceAspect::GetScope() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP iModelProvenanceAspect::GetSourceId() const
+Utf8CP iModelSyncInfoAspect::GetSourceId() const
     {
     ECN::ECValue v;
     m_instance->GetValue(v, SOURCEINFO_SourceId);
@@ -864,7 +864,7 @@ Utf8CP iModelProvenanceAspect::GetSourceId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP iModelProvenanceAspect::GetKind() const 
+Utf8CP iModelSyncInfoAspect::GetKind() const 
     {
     ECN::ECValue v;
     m_instance->GetValue(v, SOURCEINFO_Kind);
@@ -874,7 +874,7 @@ Utf8CP iModelProvenanceAspect::GetKind() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-double iModelProvenanceAspect::GetLastModifiedTime() const
+double iModelSyncInfoAspect::GetLastModifiedTime() const
     {
     ECN::ECValue v;
     m_instance->GetValue(v, SOURCEINFO_LastModifiedTime);
@@ -884,7 +884,7 @@ double iModelProvenanceAspect::GetLastModifiedTime() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelProvenanceAspect::GetHash(MD5::HashVal& hash) const
+BentleyStatus iModelSyncInfoAspect::GetHash(MD5::HashVal& hash) const
     {
     ECN::ECValue v;
     m_instance->GetValue(v, SOURCEINFO_Hash);
@@ -902,7 +902,7 @@ BentleyStatus iModelProvenanceAspect::GetHash(MD5::HashVal& hash) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelProvenanceAspect::SetProperties(rapidjson::Document const& json)
+void iModelSyncInfoAspect::SetProperties(rapidjson::Document const& json)
     {
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -915,7 +915,7 @@ void iModelProvenanceAspect::SetProperties(rapidjson::Document const& json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelProvenanceAspect::SetHash(ECN::IECInstanceR instance, MD5::HashVal const& hashVal, double lmt)
+void iModelSyncInfoAspect::SetHash(ECN::IECInstanceR instance, MD5::HashVal const& hashVal, double lmt)
     {
     instance.SetValue(SOURCEINFO_Hash, ECN::ECValue(hashVal.m_buffer, sizeof(hashVal.m_buffer)));
     instance.SetValue(SOURCEINFO_LastModifiedTime, ECN::ECValue(lmt));

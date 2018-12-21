@@ -2138,9 +2138,9 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
- BentleyStatus  Converter::WriteProvenanceAspect(DgnElementR el, SyncInfo::ElementProvenanceAspectData const& elprov)
+ BentleyStatus  Converter::WriteProvenanceAspect(DgnElementR el, SyncInfo::V8ElementSyncInfoAspectData const& elprov)
     {
-    SyncInfo::V8ElementProvenanceAspect aspect = SyncInfo::V8ElementProvenanceAspect::Get(el); // GetSyncInfo().GetV8ElementAspect(el);
+    SyncInfo::V8ElementSyncInfoAspect aspect = SyncInfo::V8ElementSyncInfoAspect::Get(el); // GetSyncInfo().GetV8ElementAspect(el);
     if (aspect.IsValid())
         {
         BeAssert(0==strcmp(aspect.GetSourceId(), Utf8PrintfString("%lld", elprov.m_v8Id).c_str()));
@@ -2155,7 +2155,7 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
 
     // aspect = GetSyncInfo().MakeAspect(elprov);
 
-    aspect = SyncInfo::V8ElementProvenanceAspect::Make(elprov, GetDgnDb());
+    aspect = SyncInfo::V8ElementSyncInfoAspect::Make(elprov, GetDgnDb());
 
 #ifdef TEST_ELEMENT_PROVENANCE_ASPECT
     aspect.AssertMatch(el, elprov.m_prov);
@@ -2580,7 +2580,7 @@ void Converter::RecordConversionResultsInSyncInfo(ElementConversionResults& resu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Converter::InsertResults(ElementConversionResults& results, SyncInfo::ElementProvenanceAspectData const& elprov)
+DgnDbStatus Converter::InsertResults(ElementConversionResults& results, SyncInfo::V8ElementSyncInfoAspectData const& elprov)
     {
     if (!results.m_element.IsValid())
         return DgnDbStatus::Success;
@@ -2657,7 +2657,7 @@ DgnElementPtr Converter::MakeCopyForUpdate(DgnElementCR newEl, DgnElementCR orig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conversionResults, DgnElementId existingElementId, SyncInfo::ElementProvenanceAspectData const& elprov)
+DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conversionResults, DgnElementId existingElementId, SyncInfo::V8ElementSyncInfoAspectData const& elprov)
     {
     if (!conversionResults.m_element.IsValid() || !existingElementId.IsValid())
         {
@@ -2698,7 +2698,7 @@ DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Converter::UpdateResultsForChildren(ElementConversionResults& parentConversionResults, SyncInfo::ElementProvenanceAspectData const& parentelprov)
+DgnDbStatus Converter::UpdateResultsForChildren(ElementConversionResults& parentConversionResults, SyncInfo::V8ElementSyncInfoAspectData const& parentelprov)
     {
     if (parentConversionResults.m_childElements.empty())
         return DgnDbStatus::Success;
@@ -2768,7 +2768,7 @@ DgnDbStatus Converter::UpdateResultsForChildren(ElementConversionResults& parent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Converter::UpdateResults(ElementConversionResults& conversionResults, DgnElementId existingElementId, SyncInfo::ElementProvenanceAspectData const& elprov)
+DgnDbStatus Converter::UpdateResults(ElementConversionResults& conversionResults, DgnElementId existingElementId, SyncInfo::V8ElementSyncInfoAspectData const& elprov)
     {
     auto status = UpdateResultsForOneElement(conversionResults, existingElementId, elprov);
     if (DgnDbStatus::Success != status)
@@ -2794,7 +2794,7 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
 
     // NB! The "scope" for this conversion must be an object in the BIM that coresponds to the *source* model that contains
     //     the v8 element. We may decide to write the element itself to a different model.
-    SyncInfo::ElementProvenanceAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), csearch.m_currentElementProvenance);
+    SyncInfo::V8ElementSyncInfoAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), csearch.m_currentElementProvenance);
 
     if (IChangeDetector::ChangeType::Update == csearch.m_changeType)
         {

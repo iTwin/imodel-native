@@ -1670,7 +1670,7 @@ void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
     if (!el.IsValid())
         return;
 
-    auto props = V8ElementProvenanceAspect::Get(*el);
+    auto props = V8ElementSyncInfoAspect::Get(*el);
     if (!props.IsValid())
         {
         // BeAssert(!m_converter._GetParams().GetWantProvenanceInBim());    Can't assert this until I convert all of the places that create syncinfo records to also create aspects
@@ -1685,10 +1685,10 @@ void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef TEST_ELEMENT_PROVENANCE_ASPECT
-void SyncInfo::V8ElementProvenanceAspect::AssertMatch(DgnElementCR el, ElementProvenance const& elprov)
+void SyncInfo::V8ElementSyncInfoAspect::AssertMatch(DgnElementCR el, ElementProvenance const& elprov)
     {
     // BeAssert(GetScope().GetValue() == el.GetModelId().GetValue()); -- No. the V8 element might have come from V8 model A and been added to BIM model B. The scope of the element is V8 model A.
-    BeAssert(GetKind() == ProvenanceAspect::Kind::Element);
+    BeAssert(GetKind() == SyncInfoAspect::Kind::Element);
     BeAssert(GetLastModifiedTime() == elprov.m_lastModified);
     SyncInfo::ElementHash hash;
     GetHash(hash);
@@ -1699,7 +1699,7 @@ void SyncInfo::V8ElementProvenanceAspect::AssertMatch(DgnElementCR el, ElementPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementProvenanceAspect::V8ElementProvenanceAspect(iModelProvenanceAspect const& aspect) : ProvenanceAspect(aspect.m_instance.get())
+SyncInfo::V8ElementSyncInfoAspect::V8ElementSyncInfoAspect(iModelSyncInfoAspect const& aspect) : SyncInfoAspect(aspect.m_instance.get())
     {
     if (!IsValid())
         return;
@@ -1713,21 +1713,21 @@ SyncInfo::V8ElementProvenanceAspect::V8ElementProvenanceAspect(iModelProvenanceA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementProvenanceAspect SyncInfo::V8ElementProvenanceAspect::Make(ElementProvenanceAspectData const& provdata, DgnDbR db) 
+SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Make(V8ElementSyncInfoAspectData const& provdata, DgnDbR db) 
     {
     auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
-        return V8ElementProvenanceAspect(nullptr);
+        return V8ElementSyncInfoAspect(nullptr);
     auto instance = MakeInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), Utf8PrintfString("%lld", provdata.m_v8Id), provdata.m_prov.m_lastModified, provdata.m_prov.m_hash, *aspectClass);
-    return V8ElementProvenanceAspect(instance.get());
+    return V8ElementSyncInfoAspect(instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ProvenanceAspect::Kind SyncInfo::ProvenanceAspect::GetKind() const 
+SyncInfo::SyncInfoAspect::Kind SyncInfo::SyncInfoAspect::GetKind() const 
     {
-    return ParseKind(iModelProvenanceAspect::GetKind());
+    return ParseKind(iModelSyncInfoAspect::GetKind());
     }
 
 /*---------------------------------------------------------------------------------**//**

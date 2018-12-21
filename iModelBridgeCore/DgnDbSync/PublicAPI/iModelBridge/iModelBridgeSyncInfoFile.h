@@ -256,7 +256,7 @@ method and not in its _ConvertToBim method.
 //! The "properties" property is for the private use of the bridge, so that additional qualifying data can be stored on a mapping. This can be used, for example to capture a transform in the 
 //! case where a single item in the source is intstanced multiple times in the iModel, each instance being transformed in some way. It is recommended that the bridge store auxilliary properties
 //! in JSON format, but that is up to the bridge.
-struct iModelProvenanceAspect
+struct iModelSyncInfoAspect
     {
     RefCountedPtr<ECN::IECInstance> m_instance;
 
@@ -267,8 +267,8 @@ struct iModelProvenanceAspect
 
     IMODEL_BRIDGE_EXPORT static void SetHash(ECN::IECInstanceR, MD5::HashVal const&, double lmt);
 
-    iModelProvenanceAspect(ECN::IECInstance* i = nullptr) : m_instance(i) {}
-    iModelProvenanceAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
+    iModelSyncInfoAspect(ECN::IECInstance* i = nullptr) : m_instance(i) {}
+    iModelSyncInfoAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
 
   public:
     bool IsValid() const {return m_instance.IsValid();}
@@ -291,9 +291,9 @@ struct iModelProvenanceAspect
     IMODEL_BRIDGE_EXPORT static ECN::ECClassCP GetAspectClass(DgnDbR);
 
     //! Get an existing syncinfo aspect from the specified element
-    IMODEL_BRIDGE_EXPORT static iModelProvenanceAspect GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass = nullptr);
+    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass = nullptr);
     //! Get an existing syncinfo aspect from the specified element
-    IMODEL_BRIDGE_EXPORT static iModelProvenanceAspect GetAspect(DgnElementR el, ECN::ECClassCP aspectClass = nullptr);
+    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementR el, ECN::ECClassCP aspectClass = nullptr);
 
     };
 

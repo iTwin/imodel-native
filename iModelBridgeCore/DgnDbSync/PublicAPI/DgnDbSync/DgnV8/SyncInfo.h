@@ -372,14 +372,14 @@ struct SyncInfo
         bool IsSame(ElementProvenance const& other){return (m_idPolicy==StableIdPolicy::ByHash || m_lastModified==other.m_lastModified) && m_hash.IsSame(other.m_hash);}
     };
 
-    //! Data that uniquely identifies a V8 *element*. This data is used as part of the input when constructing a ProvenanceAspect.
+    //! Data that uniquely identifies a V8 *element*. This data is used as part of the input when constructing a SyncInfoAspect.
     //! This corresponds to V8ElementSource, which it will someday replace.
-    struct ElementProvenanceAspectData
+    struct V8ElementSyncInfoAspectData
         {
         DgnModelId m_scope;         // The model that was created (earlier) in the iModel from the V8 model that contains this V8 element.
         DgnV8Api::ElementId m_v8Id; // The V8 element's ID
         ElementProvenance m_prov;   // The V8 element's state
-        ElementProvenanceAspectData(DgnModelId scope, DgnV8Api::ElementId v8Id, ElementProvenance const& prov) : m_scope(scope), m_v8Id(v8Id), m_prov(prov) {}
+        V8ElementSyncInfoAspectData(DgnModelId scope, DgnV8Api::ElementId v8Id, ElementProvenance const& prov) : m_scope(scope), m_v8Id(v8Id), m_prov(prov) {}
         };
     
     //! Uniquely identifies a V8 element
@@ -495,11 +495,11 @@ struct SyncInfo
     };
 
     //! The V8 provenance of an element in an iModel. May refer to an element, model, or other object in the v8 source files.
-    struct ProvenanceAspect : iModelProvenanceAspect
+    struct SyncInfoAspect : iModelSyncInfoAspect
         {
       protected:
         friend struct SyncInfo;
-        ProvenanceAspect(ECN::IECInstance* i) : iModelProvenanceAspect(i) {}
+        SyncInfoAspect(ECN::IECInstance* i) : iModelSyncInfoAspect(i) {}
       public:
         enum Kind
             {
@@ -529,27 +529,27 @@ struct SyncInfo
             return Kind::Element;
             }
 
-        DGNDBSYNC_EXPORT ProvenanceAspect::Kind GetKind() const;
+        DGNDBSYNC_EXPORT SyncInfoAspect::Kind GetKind() const;
         };
 
     //! The provenance of an element in an iModel that was created from an element in a V8 model.
-    struct V8ElementProvenanceAspect : ProvenanceAspect
+    struct V8ElementSyncInfoAspect : SyncInfoAspect
         {
       protected:
         friend struct SyncInfo;
-        V8ElementProvenanceAspect(iModelProvenanceAspect const&);
-        V8ElementProvenanceAspect(ECN::IECInstance* i) : ProvenanceAspect(i) {}
+        V8ElementSyncInfoAspect(iModelSyncInfoAspect const&);
+        V8ElementSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
 
       public:
         //! Create a new aspect in memory. Caller must call AddTo.
-        DGNDBSYNC_EXPORT static V8ElementProvenanceAspect Make(ElementProvenanceAspectData const&, DgnDbR);
+        DGNDBSYNC_EXPORT static V8ElementSyncInfoAspect Make(V8ElementSyncInfoAspectData const&, DgnDbR);
         
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
-        static V8ElementProvenanceAspect Get(DgnElementR el) {return V8ElementProvenanceAspect(V8ElementProvenanceAspect::GetAspect(el));}
+        static V8ElementSyncInfoAspect Get(DgnElementR el) {return V8ElementSyncInfoAspect(V8ElementSyncInfoAspect::GetAspect(el));}
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
-        static V8ElementProvenanceAspect Get(DgnElementCR el) {return V8ElementProvenanceAspect(V8ElementProvenanceAspect::GetAspect(el));}
+        static V8ElementSyncInfoAspect Get(DgnElementCR el) {return V8ElementSyncInfoAspect(V8ElementSyncInfoAspect::GetAspect(el));}
 
-        DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov) {ProvenanceAspect::SetHash(prov.m_hash, prov.m_lastModified);}
+        DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov) {SyncInfoAspect::SetHash(prov.m_hash, prov.m_lastModified);}
 
         #ifdef TEST_ELEMENT_PROVENANCE_ASPECT
         void AssertMatch(DgnElementCR, ElementProvenance const&);
