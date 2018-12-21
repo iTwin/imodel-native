@@ -1711,12 +1711,13 @@ void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
 void SyncInfo::V8ElementSyncInfoAspect::AssertMatch(DgnElementCR el, DgnV8Api::ElementId v8Id, ElementProvenance const& elprov)
     {
     BeAssert(GetV8ElementId() == v8Id);
-    // BeAssert(GetScope().GetValue() == el.GetModelId().GetValue()); -- No. the V8 element might have come from V8 model A and been added to BIM model B. The scope of the element is V8 model A.
+    // TODO: Get and check the aspect corresponding to the original v8 model
+    // BeAssert(GetScope().GetValue() == el.GetModelId().GetValue()); -- No. scope identifies the model in the bim that represents the v8 element's model. The v8 element itself might not have been added to that bim model. For example, when we encounter a NamedGroup definiton element in a model, we typically write it to the bim dictionary model.
     BeAssert(GetKind() == SyncInfoAspect::Kind::Element);
-    BeAssert(GetLastModifiedTime() == elprov.m_lastModified);
-    SyncInfo::ElementHash hash;
-    GetHash(hash);
-    BeAssert(hash.IsSame(elprov.m_hash));
+    iModelSyncInfoAspect::SourceState ss;
+    BeAssert(GetSourceState(ss) == BSISUCCESS);
+    BeAssert(0==memcmp(ss.m_hash.m_buffer, elprov.m_hash.m_buffer, sizeof(elprov.m_hash.m_buffer)));
+    BeAssert(ss.m_lastModifiedTime == elprov.m_lastModified);
     }
 #endif
 
@@ -1742,7 +1743,10 @@ SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Make(V8Elem
     auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
         return V8ElementSyncInfoAspect(nullptr);
-    auto instance = MakeInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), Utf8PrintfString("%lld", provdata.m_v8Id), provdata.m_prov.m_lastModified, provdata.m_prov.m_hash, *aspectClass);
+    iModelSyncInfoAspect::SourceState ss;
+    ss.m_hash = provdata.m_prov.m_hash;
+    ss.m_lastModifiedTime = provdata.m_prov.m_lastModified;
+    auto instance = MakeInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), Utf8PrintfString("%lld", provdata.m_v8Id), &ss, *aspectClass);
     return V8ElementSyncInfoAspect(instance.get());
     }
 
@@ -1780,9 +1784,7 @@ SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Make(DgnV8Model
         return V8ModelSyncInfoAspect(nullptr);
     
     DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
-    double lmt = 0;
-    MD5::HashVal hash{};
-    auto instance = MakeInstance(repositoryLinkId, KindToString(Kind::Model), Utf8PrintfString("%d", v8Model.GetModelId()), lmt, hash, *aspectClass);
+    auto instance = MakeInstance(repositoryLinkId, KindToString(Kind::Model), Utf8PrintfString("%d", v8Model.GetModelId()), nullptr, *aspectClass);
     
     V8ModelSyncInfoAspect aspect(instance.get());
     

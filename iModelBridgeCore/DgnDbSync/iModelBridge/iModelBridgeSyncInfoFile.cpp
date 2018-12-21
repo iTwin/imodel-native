@@ -792,13 +792,14 @@ DgnDbStatus iModelSyncInfoAspect::AddTo(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstancePtr iModelSyncInfoAspect::MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, double lmt, MD5::HashVal const& hashVal, ECN::ECClassCR aspectClass) 
+ECN::IECInstancePtr iModelSyncInfoAspect::MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const* ss, ECN::ECClassCR aspectClass) 
     {
     auto instance = aspectClass.GetDefaultStandaloneEnabler()->CreateInstance();
     instance->SetValue(SOURCEINFO_Scope, ECN::ECValue(scope));
     instance->SetValue(SOURCEINFO_SourceId, ECN::ECValue(sourceId.c_str()));
     instance->SetValue(SOURCEINFO_Kind, ECN::ECValue(kind));
-    SetHash(*instance, hashVal, lmt);
+    if (ss)
+        SetSourceState(*instance, *ss);
     return instance;
     }
 
@@ -874,28 +875,24 @@ Utf8CP iModelSyncInfoAspect::GetKind() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-double iModelSyncInfoAspect::GetLastModifiedTime() const
-    {
-    ECN::ECValue v;
-    m_instance->GetValue(v, SOURCEINFO_LastModifiedTime);
-    return v.GetDouble();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelSyncInfoAspect::GetHash(MD5::HashVal& hash) const
+BentleyStatus iModelSyncInfoAspect::GetSourceState(SourceState& ss) const
     {
     ECN::ECValue v;
     m_instance->GetValue(v, SOURCEINFO_Hash);
+    if (v.IsNull())
+        return BSIERROR;
     size_t sz;
     auto b = v.GetBinary(sz);
-    if (sz != sizeof(hash.m_buffer))
+    if (sz != sizeof(ss.m_hash.m_buffer))
         {
         BeDataAssert(false);
         return BSIERROR;
         }
-    memcpy(hash.m_buffer, b, sizeof(hash.m_buffer));
+    memcpy(ss.m_hash.m_buffer, b, sizeof(ss.m_hash.m_buffer));
+
+    m_instance->GetValue(v, SOURCEINFO_LastModifiedTime);
+    ss.m_lastModifiedTime = v.GetDouble();
+
     return BSISUCCESS;
     }
 
@@ -928,9 +925,9 @@ rapidjson::Document iModelSyncInfoAspect::GetProperties() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelSyncInfoAspect::SetHash(ECN::IECInstanceR instance, MD5::HashVal const& hashVal, double lmt)
+void iModelSyncInfoAspect::SetSourceState(ECN::IECInstanceR instance, SourceState const& ss)
     {
-    instance.SetValue(SOURCEINFO_Hash, ECN::ECValue(hashVal.m_buffer, sizeof(hashVal.m_buffer)));
-    instance.SetValue(SOURCEINFO_LastModifiedTime, ECN::ECValue(lmt));
+    instance.SetValue(SOURCEINFO_Hash, ECN::ECValue(ss.m_hash.m_buffer, sizeof(ss.m_hash.m_buffer)));
+    instance.SetValue(SOURCEINFO_LastModifiedTime, ECN::ECValue(ss.m_lastModifiedTime));
     }
 

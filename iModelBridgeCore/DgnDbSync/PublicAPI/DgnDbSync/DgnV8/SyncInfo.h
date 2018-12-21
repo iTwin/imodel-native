@@ -549,7 +549,7 @@ struct SyncInfo
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
         static V8ElementSyncInfoAspect Get(DgnElementCR el) {return V8ElementSyncInfoAspect(V8ElementSyncInfoAspect::GetAspect(el));}
 
-        DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov) {SyncInfoAspect::SetHash(prov.m_hash, prov.m_lastModified);}
+        DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov) {SourceState ss; ss.m_hash = prov.m_hash; ss.m_lastModifiedTime = prov.m_lastModified; SetSourceState(ss);}
 
         DGNDBSYNC_EXPORT DgnV8Api::ElementId GetV8ElementId() const;
 
