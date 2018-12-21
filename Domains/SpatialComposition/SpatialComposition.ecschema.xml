@@ -23,7 +23,7 @@
     <ECEntityClass typeName="CompositeElement" modifier="Abstract" description="a spatial element that may be Composite of other CompositeElements" >
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <ECNavigationProperty propertyName="ComposingElement" relationshipName="CompositeComposesSubComposites" direction="Backward" description="The Composite Element" />
-        <ECProperty propertyName="Area" displayLabel="Area" typeName="double" readOnly="true" kindOfQuantity="AECU:AREA"/>
+        <ECProperty propertyName="FootprintArea" displayLabel="FootprintArea" typeName="double" readOnly="true" kindOfQuantity="AECU:AREA"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="CompositeBoundary" modifier="Abstract" description="a CompositeElement that is delimited by a curve">

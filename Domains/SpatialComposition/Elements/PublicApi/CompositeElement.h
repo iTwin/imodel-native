@@ -10,7 +10,10 @@ struct CompositeElement : Dgn::SpatialLocationElement
     protected:
         explicit CompositeElement(CreateParams const& params) : Dgn::SpatialLocationElement(params) {}
         BE_PROP_NAME(ComposingElement);
+        BE_PROP_NAME(FootprintArea);
         Dgn::DgnElementId m_composedElementId;  //cached value from relationship
+
+        void SetFootprintArea(const double area) { dynamic_cast<Dgn::DgnElementP>(this)->SetPropertyValue(prop_FootprintArea(), area); }
 
     public:
         //---------------------------------------------------------------------------------------
@@ -53,6 +56,8 @@ struct CompositeElement : Dgn::SpatialLocationElement
         //! Remove an overlaped element
         //! @return status
         SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus RemoveOverlapedElement (Dgn::DgnElementId overlapedElementId);
+
+        SPATIALCOMPOSITION_EXPORT double GetFootprintArea() const { return dynamic_cast<Dgn::DgnElementCP>(this)->GetPropertyValueDouble(prop_FootprintArea()); }
     };
 
 END_SPATIALCOMPOSITION_NAMESPACE
