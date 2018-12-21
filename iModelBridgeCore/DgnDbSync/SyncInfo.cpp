@@ -1836,7 +1836,7 @@ void SyncInfo::V8ModelSyncInfoAspect::AssertMatch(V8ModelMapping const& mapping)
     // BeAssert(GetScope().GetValue() == ... TODO: must be a repository link element
     BeAssert(GetV8ModelId() == mapping.GetV8ModelId().GetValue());
     BeAssert(GetKind() == SyncInfoAspect::Kind::Model);
-    BeAssert(GetTransform().IsEqual(mapping.GetTransform()));
+    BeAssert(GetTransform().IsEqual(mapping.GetTransform(), Angle::SmallAngle(), 1.0e-5));
     BeAssert(GetV8ModelName().Equals(mapping.GetV8Name()));
     }
 #endif
