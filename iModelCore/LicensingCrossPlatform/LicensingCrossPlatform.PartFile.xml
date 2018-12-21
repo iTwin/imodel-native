@@ -9,7 +9,7 @@
     </Part>
 
     <Part Name="LicensingNativeLib" BentleyBuildMakeFile="Licensing.mke" >
-        <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
+        <!--<SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />-->
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" /> 
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>

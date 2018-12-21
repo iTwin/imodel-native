@@ -1,8 +1,8 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: LicensingCrossPlatform/LicensingCompileOptions.mki $
+#     $Source: LicensingCompileOptions.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -16,5 +16,5 @@ ENABLE_CPP_CX_EXTENSIONS = 1
 #--------------------------------------------------------------------------------------
 #   Building the Licensing library
 #--------------------------------------------------------------------------------------
-nameToDefine = __BELICENSING_BUILD__
+nameToDefine = __LICENSING_DLL_BUILD__
 %include cdefapnd.mki
