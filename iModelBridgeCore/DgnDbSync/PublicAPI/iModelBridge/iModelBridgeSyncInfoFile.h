@@ -10,6 +10,7 @@
 //__PUBLISH_SECTION_START__
 #include <iModelBridge/iModelBridge.h>
 #include <Bentley/md5.h>
+#include <BeRapidJson/BeRapidJson.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

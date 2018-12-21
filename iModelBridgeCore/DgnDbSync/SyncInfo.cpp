@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
-#include <BeRapidJson/BeRapidJson.h>
 #include "DgnV8/DynamicSchemaGenerator/ECConversion.h"
+#include <GeomJsonWireFormat/JsonUtils.h>
 
 #undef LOG
 #define LOG (*LoggingManager::GetLogger(L"DgnV8Converter.SyncInfo"))
@@ -23,6 +23,29 @@
 #define MUSTBEDONERC(stmt) MUSTBEDBRESULTRC(stmt,BE_SQLITE_DONE)
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
+
+static rapidjson::Value fixedArrayToJson(double const* darray, size_t count, rapidjson::MemoryPoolAllocator<>& allocator)
+    {
+    rapidjson::Value jdbls;
+    jdbls.SetArray();
+    jdbls.Reserve(count, allocator);
+    for (size_t i=0; i<count; ++i)
+        jdbls.PushBack(darray[i], allocator);
+    return jdbls;
+    }
+
+static void fixedArrayFromJson(double* darray, size_t count, rapidjson::Value const& jdbls)
+    {
+    if (jdbls.Size() != count)
+        {
+        BeAssert(false);
+        return;
+        }
+    for (int i=0; i<count; ++i)
+        {
+        darray[i] = jdbls[i].GetDouble();
+        }
+    }
 
 static ProfileVersion s_currentVersion(0, 1, 0, 0);
 /*---------------------------------------------------------------------------------**//**
@@ -1663,7 +1686,7 @@ static BentleyStatus   importElementAspectSchema(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_ELEMENT_PROVENANCE_ASPECT
+#ifdef TEST_SYNC_INFO_ASPECT
 void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
     {
     auto el = m_converter.GetDgnDb().Elements().GetElement(mapping.GetElementId());
@@ -1677,16 +1700,17 @@ void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
         return;
         }
 
-    props.AssertMatch(*el, mapping.m_provenance);
+    props.AssertMatch(*el, mapping.m_v8ElementId, mapping.m_provenance);
     }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_ELEMENT_PROVENANCE_ASPECT
-void SyncInfo::V8ElementSyncInfoAspect::AssertMatch(DgnElementCR el, ElementProvenance const& elprov)
+#ifdef TEST_SYNC_INFO_ASPECT
+void SyncInfo::V8ElementSyncInfoAspect::AssertMatch(DgnElementCR el, DgnV8Api::ElementId v8Id, ElementProvenance const& elprov)
     {
+    BeAssert(GetV8ElementId() == v8Id);
     // BeAssert(GetScope().GetValue() == el.GetModelId().GetValue()); -- No. the V8 element might have come from V8 model A and been added to BIM model B. The scope of the element is V8 model A.
     BeAssert(GetKind() == SyncInfoAspect::Kind::Element);
     BeAssert(GetLastModifiedTime() == elprov.m_lastModified);
@@ -1721,6 +1745,99 @@ SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Make(V8Elem
     auto instance = MakeInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), Utf8PrintfString("%lld", provdata.m_v8Id), provdata.m_prov.m_lastModified, provdata.m_prov.m_hash, *aspectClass);
     return V8ElementSyncInfoAspect(instance.get());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8Api::ElementId SyncInfo::V8ElementSyncInfoAspect::GetV8ElementId() const
+    {
+    int64_t id = 0;
+    sscanf(GetSourceId(), "%lld", &id);
+    return id;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ModelSyncInfoAspect::V8ModelSyncInfoAspect(iModelSyncInfoAspect const& aspect) : SyncInfoAspect(aspect.m_instance.get())
+    {
+    if (!IsValid())
+        return;
+    if (GetKind() != Kind::Model)
+        {
+        BeAssert(false);
+        m_instance = nullptr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Make(DgnV8ModelCR v8Model, TransformCR transform, Converter& converter) 
+    {
+    auto aspectClass = GetAspectClass(converter.GetDgnDb());
+    if (nullptr == aspectClass)
+        return V8ModelSyncInfoAspect(nullptr);
+    
+    DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
+    double lmt = 0;
+    MD5::HashVal hash{};
+    auto instance = MakeInstance(repositoryLinkId, KindToString(Kind::Model), Utf8PrintfString("%d", v8Model.GetModelId()), lmt, hash, *aspectClass);
+    
+    V8ModelSyncInfoAspect aspect(instance.get());
+    
+    Utf8String v8ModelName(v8Model.GetModelName());
+
+    rapidjson::Document json(rapidjson::kObjectType);
+    auto& allocator = json.GetAllocator();
+    json.AddMember("transform", fixedArrayToJson((double*)&transform, 12, allocator), allocator);
+    json.AddMember("v8ModelName", rapidjson::Value(v8ModelName.c_str(), allocator), allocator);
+    aspect.SetProperties(json);
+
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform SyncInfo::V8ModelSyncInfoAspect::GetTransform() const
+    {
+    auto json = GetProperties();
+    Transform transform;
+    fixedArrayFromJson((double*)&transform, 12, json["transform"].GetArray());
+    return transform;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SyncInfo::V8ModelSyncInfoAspect::GetV8ModelName() const
+    {
+    auto json = GetProperties();
+    return json["v8ModelName"].GetString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8Api::ModelId SyncInfo::V8ModelSyncInfoAspect::GetV8ModelId() const
+    {
+    return atoi(GetSourceId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef TEST_SYNC_INFO_ASPECT
+void SyncInfo::V8ModelSyncInfoAspect::AssertMatch(V8ModelMapping const& mapping)
+    {
+    // BeAssert(GetScope().GetValue() == ... TODO: must be a repository link element
+    BeAssert(GetV8ModelId() == mapping.GetV8ModelId().GetValue());
+    BeAssert(GetKind() == SyncInfoAspect::Kind::Model);
+    BeAssert(GetTransform().IsEqual(mapping.GetTransform()));
+    BeAssert(GetV8ModelName().Equals(mapping.GetV8Name()));
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18

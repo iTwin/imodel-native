@@ -2143,24 +2143,12 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
     SyncInfo::V8ElementSyncInfoAspect aspect = SyncInfo::V8ElementSyncInfoAspect::Get(el); // GetSyncInfo().GetV8ElementAspect(el);
     if (aspect.IsValid())
         {
-        BeAssert(0==strcmp(aspect.GetSourceId(), Utf8PrintfString("%lld", elprov.m_v8Id).c_str()));
-
+        BeAssert(aspect.GetV8ElementId() == elprov.m_v8Id);
         aspect.Update(elprov.m_prov);
-
-#ifdef TEST_ELEMENT_PROVENANCE_ASPECT
-        aspect.AssertMatch(el, elprov.m_prov);
-#endif
         return BSISUCCESS;
         }
 
-    // aspect = GetSyncInfo().MakeAspect(elprov);
-
     aspect = SyncInfo::V8ElementSyncInfoAspect::Make(elprov, GetDgnDb());
-
-#ifdef TEST_ELEMENT_PROVENANCE_ASPECT
-    aspect.AssertMatch(el, elprov.m_prov);
-#endif
-
     return aspect.AddTo(el) == DgnDbStatus::Success ? BSISUCCESS : BSIERROR;
     }
 
@@ -2542,7 +2530,7 @@ void Converter::RecordConversionResultsInSyncInfo(ElementConversionResults& resu
         m_syncInfo.UpdateElement(results.m_mapping);
         }
 
-#ifdef TEST_ELEMENT_PROVENANCE_ASPECT
+#ifdef TEST_SYNC_INFO_ASPECT
     GetSyncInfo().AssertAspectMatchesSyncInfo(results.m_mapping);
 #endif
 
@@ -3355,6 +3343,18 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         return ResolvedModelMapping();
         }
     BeAssert(model->GetRefCount() > 0); // DgnModels holds references to all models that it loads
+
+    if (_WantModelProvenanceInBim())
+        {
+        auto modeledElement = m_dgndb->Elements().GetElement(model->GetModeledElementId())->CopyForEdit();
+        auto modelAspect = SyncInfo::V8ModelSyncInfoAspect::Make(v8Model, trans, *this);
+        modelAspect.AddTo(*modeledElement);
+        modeledElement->Update();
+#ifdef TEST_SYNC_INFO_ASPECT
+        auto storedAspect = SyncInfo::V8ModelSyncInfoAspect::Get(*modeledElement);
+        storedAspect.AssertMatch(mapping);
+#endif
+        }
 
     ResolvedModelMapping v8mm(*model, v8Model, mapping, v8ModelRef.AsDgnAttachmentCP());
 

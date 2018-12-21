@@ -532,11 +532,11 @@ struct SyncInfo
         DGNDBSYNC_EXPORT SyncInfoAspect::Kind GetKind() const;
         };
 
-    //! The provenance of an element in an iModel that was created from an element in a V8 model.
+    //! Identifies the source of an element in an iModel that was created from an element in a V8 model.
+    //! Replacement for V8ElementMapping
     struct V8ElementSyncInfoAspect : SyncInfoAspect
         {
-      protected:
-        friend struct SyncInfo;
+      private:
         V8ElementSyncInfoAspect(iModelSyncInfoAspect const&);
         V8ElementSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
 
@@ -551,8 +551,38 @@ struct SyncInfo
 
         DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov) {SyncInfoAspect::SetHash(prov.m_hash, prov.m_lastModified);}
 
-        #ifdef TEST_ELEMENT_PROVENANCE_ASPECT
-        void AssertMatch(DgnElementCR, ElementProvenance const&);
+        DGNDBSYNC_EXPORT DgnV8Api::ElementId GetV8ElementId() const;
+
+        #ifdef TEST_SYNC_INFO_ASPECT
+        void AssertMatch(DgnElementCR, DgnV8Api::ElementId, ElementProvenance const&);
+        #endif
+        };
+
+    //! Replacement for V8ModelMapping
+    struct V8ModelSyncInfoAspect : SyncInfoAspect
+        {
+      private:
+        V8ModelSyncInfoAspect(iModelSyncInfoAspect const&);
+        V8ModelSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
+
+      public:
+        //! Create a new aspect in memory. Caller must call AddTo.
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Make(DgnV8ModelCR, TransformCR, Converter&);
+        
+        //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
+        static V8ModelSyncInfoAspect Get(DgnElementR el) {return V8ModelSyncInfoAspect(V8ModelSyncInfoAspect::GetAspect(el));}
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnModelR);
+        //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
+        static V8ModelSyncInfoAspect Get(DgnElementCR el) {return V8ModelSyncInfoAspect(V8ModelSyncInfoAspect::GetAspect(el));}
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnModelCR);
+
+        DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8ModelId() const;
+        DGNDBSYNC_EXPORT Transform GetTransform() const;
+        DGNDBSYNC_EXPORT Utf8String GetV8ModelName() const;
+
+
+        #ifdef TEST_SYNC_INFO_ASPECT
+        void AssertMatch(V8ModelMapping const&);
         #endif
         };
 
@@ -844,7 +874,7 @@ public:
     //! @return true if the element was found in the discard table
     DGNDBSYNC_EXPORT bool WasElementDiscarded (uint64_t v8id, V8ModelSyncInfoId modelsiid);
 
-#ifdef TEST_ELEMENT_PROVENANCE_ASPECT
+#ifdef TEST_SYNC_INFO_ASPECT
     void AssertAspectMatchesSyncInfo(V8ElementMapping const&);
 #endif
 

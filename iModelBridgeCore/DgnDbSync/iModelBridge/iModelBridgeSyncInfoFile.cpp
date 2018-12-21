@@ -915,6 +915,19 @@ void iModelSyncInfoAspect::SetProperties(rapidjson::Document const& json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document iModelSyncInfoAspect::GetProperties() const
+    {
+    rapidjson::Document json;
+    ECN::ECValue props;
+    if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, SOURCEINFO_Properties) || !props.IsString())
+        return json;
+    json.Parse(props.GetUtf8CP());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
 void iModelSyncInfoAspect::SetHash(ECN::IECInstanceR instance, MD5::HashVal const& hashVal, double lmt)
     {
     instance.SetValue(SOURCEINFO_Hash, ECN::ECValue(hashVal.m_buffer, sizeof(hashVal.m_buffer)));
