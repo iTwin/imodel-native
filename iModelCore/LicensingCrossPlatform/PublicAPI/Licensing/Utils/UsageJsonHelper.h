@@ -33,8 +33,10 @@ public:
 		jsonString += "\"secID\": \"" + BeSQLite::BeGuid(true).ToString() + "\","; // FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // securable ID [STRING]
 		//stream << "\"prdid\": " << 1234 << ","; // product ID (4 digits) [NUMBER]
 		jsonString += "\"fstr\": \"" + featureString + "\","; // feature string [STRING]
+
+        const uint64_t versionNumber = UINT64_C(1000000000000) * version.GetMajor()  + UINT64_C(100000000) * version.GetMinor()  + UINT64_C(10000) * version.GetSub1() + ((uint64_t) version.GetSub2());
 		Utf8String ver;
-		ver.Sprintf("\"ver\": %" PRIu64 ",", uint64_t(version.GetMajor() * 1000000000000 + version.GetMinor() * 100000000 + version.GetSub1() * 10000 + version.GetSub2()));
+		ver.Sprintf("\"ver\": %" PRIu64 ",", versionNumber);
 		jsonString += ver; // application version [NUMBER]
 		jsonString += "\"projID\": \"" + projectID + "\","; // project ID [GUID or UNDEFINED]
 		jsonString += "\"corID\": \"" + BeSQLite::BeGuid(true).ToString() + "\","; // FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // correlation GUID [GUID]
