@@ -15,9 +15,9 @@
 
 #include <Bentley/BeSystemInfo.h>
 #include <BeHttp/HttpError.h>
-#include <WebServices/Configuration/UrlProvider.h>
+//#include <WebServices/Configuration/UrlProvider.h>
 
-USING_NAMESPACE_BENTLEY_WEBSERVICES
+//USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 ClientFreeImpl::ClientFreeImpl(

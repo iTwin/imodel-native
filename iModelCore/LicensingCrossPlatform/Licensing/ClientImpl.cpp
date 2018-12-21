@@ -7,18 +7,21 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientImpl.h"
 #include "GenerateSID.h"
-#include <Licensing/Utils/LogFileHelper.h>
-#include <Licensing/Utils/UsageJsonHelper.h>
 #include "Logging.h"
 #include "UsageDb.h"
+
+#include <Licensing/Utils/LogFileHelper.h>
+#include <Licensing/Utils/UsageJsonHelper.h>
+#include <Licensing/Utils/UrlProvider.h>
+
 #include <BeHttp/HttpError.h>
-#include <WebServices/Configuration/UrlProvider.h>
+//#include <WebServices/Configuration/UrlProvider.h>
 
-#if defined (BENTLEY_WIN32)
-#include <filesystem>
-#endif
+//#if defined (BENTLEY_WIN32)
+//#include <filesystem>
+//#endif
 
-USING_NAMESPACE_BENTLEY_WEBSERVICES
+//USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 /*--------------------------------------------------------------------------------------+
@@ -27,7 +30,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 ClientImpl::ClientImpl
 (
 const ConnectSignInManager::UserInfo& userInfo,
-ClientInfoPtr clientInfo,
+ApplicationInfoPtr applicationInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 bool offlineMode,
@@ -36,7 +39,7 @@ Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
 ) :
 m_userInfo(userInfo),
-m_clientInfo(clientInfo),
+m_applicationInfo(applicationInfo),
 m_authProvider(authenticationProvider),
 m_dbPath(dbPath),
 m_featureString(featureString),
@@ -66,7 +69,7 @@ LicenseStatus ClientImpl::StartApplication()
         return LicenseStatus::Error;
         }
 
-    if (m_clientInfo == nullptr)
+    if (m_applicationInfo == nullptr)
         {
         LOG.error("ClientImpl::StartApplication ERROR - Client Information object is null.");
         return LicenseStatus::Error;
@@ -175,7 +178,7 @@ void ClientImpl::UsageHeartbeat(int64_t currentTime)
 
     m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
         {
-        int64_t heartbeatInterval = m_policy->GetHeartbeatInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
+        int64_t heartbeatInterval = m_policy->GetHeartbeatInterval(m_applicationInfo->GetApplicationProductId(), m_featureString);
 
         int64_t time_elapsed = currentTime - m_lastRunningUsageheartbeatStartTime;
 
@@ -236,7 +239,7 @@ void ClientImpl::PolicyHeartbeat(int64_t currentTime)
 
     m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
         {
-        int64_t policyInterval = m_policy->GetPolicyInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
+        int64_t policyInterval = m_policy->GetPolicyInterval(m_applicationInfo->GetApplicationProductId(), m_featureString);
 
         int64_t time_elapsed = currentTime - m_lastRunningPolicyheartbeatStartTime;
 
@@ -311,7 +314,7 @@ void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
 
     m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
         {
-        int64_t logsPostingInterval = m_policy->GetTimeToKeepUnSentLogs(m_clientInfo->GetApplicationProductId(), m_featureString);
+        int64_t logsPostingInterval = m_policy->GetTimeToKeepUnSentLogs(m_applicationInfo->GetApplicationProductId(), m_featureString);
 
         int64_t time_elapsed = currentTime - m_lastRunningLogPostingheartbeatStartTime;
 
@@ -396,7 +399,7 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
         (LicenseStatus::Trial != licStatus))
         {
         LOG.errorv("ClientImpl::MarkFeature ERROR - Licenses status of product %s is %d. Feature %s cannot be tracked",
-                   m_clientInfo->GetApplicationProductId().c_str(),
+                   m_applicationInfo->GetApplicationProductId().c_str(),
                    licStatus,
                    featureId.c_str());
         return ERROR;
@@ -428,8 +431,8 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
             }
         }
 
-    versionString.Sprintf("%d%.4d%.4d%.4d", m_clientInfo->GetApplicationVersion().GetMajor(), m_clientInfo->GetApplicationVersion().GetMinor(),
-                          m_clientInfo->GetApplicationVersion().GetSub1(), m_clientInfo->GetApplicationVersion().GetSub2());
+    versionString.Sprintf("%d%.4d%.4d%.4d", m_applicationInfo->GetApplicationVersion().GetMajor(), m_applicationInfo->GetApplicationVersion().GetMinor(),
+                          m_applicationInfo->GetApplicationVersion().GetSub1(), m_applicationInfo->GetApplicationVersion().GetSub2());
 
     LOG.debugv("ClientImpl::MarkFeature - UsageLogEntry: ultimateId:%ld, principalId:%s, userId:%s, machineName:%s, machineSID:%s, userName:%s, userSID:%s, policyId:%s, securableId:%s, "
                "productId:%ld, featureString:%s, version:%ld, projectId:%s, correlationId:%s, eventTimeZ:%s, schemaVer:%f, source:%s, country:%s, usageType:%s, featureId:%s, startTime:%s, "
@@ -437,13 +440,13 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
                m_policy->GetUltimateSAPId(),
                m_policy->GetPrincipalId().c_str(),
                m_policy->GetAppliesToUserId().c_str(),
-               m_clientInfo->GetDeviceId().c_str(),
-               gsid.GetMachineSID(m_clientInfo->GetDeviceId()).c_str(),
+               m_applicationInfo->GetDeviceId().c_str(),
+               gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str(),
                m_userInfo.username.c_str(),
-               gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()).c_str(),
+               gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()).c_str(),
                m_policy->GetPolicyId().c_str(),
                m_policy->GetSecurableId().c_str(),
-               atoi(m_clientInfo->GetApplicationProductId().c_str()),
+               atoi(m_applicationInfo->GetApplicationProductId().c_str()),
                m_featureString.c_str(),
                atoll(versionString.c_str()),
                m_projectId.c_str(),
@@ -461,13 +464,13 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
     if (SUCCESS != m_usageDb->RecordFeature(m_policy->GetUltimateSAPId(),
                                             m_policy->GetPrincipalId(),
                                             m_policy->GetAppliesToUserId(),
-                                            m_clientInfo->GetDeviceId(),
-                                            gsid.GetMachineSID(m_clientInfo->GetDeviceId()),
+                                            m_applicationInfo->GetDeviceId(),
+                                            gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
                                             m_userInfo.username,
-                                            gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()),
+                                            gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
                                             m_policy->GetPolicyId(),
                                             m_policy->GetSecurableId(),
-                                            atoi(m_clientInfo->GetApplicationProductId().c_str()),
+                                            atoi(m_applicationInfo->GetApplicationProductId().c_str()),
                                             m_featureString,
                                             atoll(versionString.c_str()),
                                             m_projectId,
@@ -508,21 +511,21 @@ BentleyStatus ClientImpl::RecordUsage()
     // Create usage record
     Utf8String eventTimeZ = DateTime::GetCurrentTimeUtc().ToString();
 
-    versionString.Sprintf("%d%.4d%.4d%.4d", m_clientInfo->GetApplicationVersion().GetMajor(), m_clientInfo->GetApplicationVersion().GetMinor(),
-                          m_clientInfo->GetApplicationVersion().GetSub1(), m_clientInfo->GetApplicationVersion().GetSub2());
+    versionString.Sprintf("%d%.4d%.4d%.4d", m_applicationInfo->GetApplicationVersion().GetMajor(), m_applicationInfo->GetApplicationVersion().GetMinor(),
+                          m_applicationInfo->GetApplicationVersion().GetSub1(), m_applicationInfo->GetApplicationVersion().GetSub2());
 
     LOG.debugv("ClientImpl::RecordUsage - UsageLogEntry: ultimateId:%ld, principalId:%s, userId:%s, machineName:%s, machineSID:%s, userName:%s, userSID:%s, policyId:%s, securableId:%s, "
                "productId:%ld, featureString:%s, version:%ld, projectId:%s, correlationId:%s, eventTimeZ:%s, schemaVer:%f, source:%s, country:%s, usageType:%s",
                m_policy->GetUltimateSAPId(),
                m_policy->GetPrincipalId().c_str(),
                m_policy->GetAppliesToUserId().c_str(),
-               m_clientInfo->GetDeviceId().c_str(),
-               gsid.GetMachineSID(m_clientInfo->GetDeviceId()).c_str(),
+               m_applicationInfo->GetDeviceId().c_str(),
+               gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str(),
                m_userInfo.username.c_str(),
-               gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()).c_str(),
+               gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()).c_str(),
                m_policy->GetPolicyId().c_str(),
                m_policy->GetSecurableId().c_str(),
-               atoi(m_clientInfo->GetApplicationProductId().c_str()),
+               atoi(m_applicationInfo->GetApplicationProductId().c_str()),
                m_featureString.c_str(),
                atoll(versionString.c_str()),
                m_projectId.c_str(),
@@ -537,13 +540,13 @@ BentleyStatus ClientImpl::RecordUsage()
     if (SUCCESS != m_usageDb->RecordUsage(m_policy->GetUltimateSAPId(),
                                           m_policy->GetPrincipalId(),
                                           m_policy->GetAppliesToUserId(),
-                                          m_clientInfo->GetDeviceId(),
-                                          gsid.GetMachineSID(m_clientInfo->GetDeviceId()),
+                                          m_applicationInfo->GetDeviceId(),
+                                          gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
                                           m_userInfo.username,
-                                          gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()),
+                                          gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
                                           m_policy->GetPolicyId(),
                                           m_policy->GetSecurableId(),
-                                          atoi(m_clientInfo->GetApplicationProductId().c_str()),
+                                          atoi(m_applicationInfo->GetApplicationProductId().c_str()),
                                           m_featureString,
                                           atoll(versionString.c_str()),
                                           m_projectId,
@@ -666,8 +669,8 @@ folly::Future<folly::Unit> ClientImpl::SendUsageLogs(BeFileNameCR usageCSV, Utf8
     LOG.debug("ClientImpl::SendUsageLogs");
 
     auto url = UrlProvider::Urls::UsageLoggingServicesLocation.Get();
-    url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(),
-                            m_clientInfo->GetLanguage().c_str());
+    url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_applicationInfo->GetApplicationProductId().c_str(),
+                            m_applicationInfo->GetLanguage().c_str());
 
     LOG.debugv("ClientImpl::SendUsageLogs - UsageLoggingServiceLocation: %s", url.c_str());
 
@@ -747,8 +750,8 @@ folly::Future<folly::Unit> ClientImpl::SendFeatureLogs(BeFileNameCR featureCSV, 
     LOG.debug("ClientImpl::SendFeatureLogs");
 
     auto url = UrlProvider::Urls::UsageLoggingServicesLocation.Get();
-    url += Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(),
-                            m_clientInfo->GetLanguage().c_str());
+    url += Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_applicationInfo->GetApplicationProductId().c_str(),
+                            m_applicationInfo->GetLanguage().c_str());
 
     LOG.debugv("ClientImpl::SendFeatureLogs - UsageLoggingServiceLocation: %s", url.c_str());
 
@@ -801,15 +804,15 @@ folly::Future<Utf8String> ClientImpl::PerformGetPolicyRequest()
 
     auto request = client.CreatePostRequest(url);
     Json::Value requestJson(Json::objectValue);
-    requestJson["MachineName"] = m_clientInfo->GetDeviceId();
+    requestJson["MachineName"] = m_applicationInfo->GetDeviceId();
     requestJson["ClientDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
-    requestJson["Locale"] = m_clientInfo->GetLanguage();
+    requestJson["Locale"] = m_applicationInfo->GetLanguage();
     requestJson["AppliesTo"] = GETPOLICY_RequestData_AppliesTo_Url;
 
     Json::Value requestedSecurable(Json::objectValue);
-    requestedSecurable["ProductId"] = m_clientInfo->GetApplicationProductId();
+    requestedSecurable["ProductId"] = m_applicationInfo->GetApplicationProductId();
     requestedSecurable["FeatureString"] = "";
-    requestedSecurable["Version"] = m_clientInfo->GetApplicationVersion().ToString();
+    requestedSecurable["Version"] = m_applicationInfo->GetApplicationVersion().ToString();
 
     Json::Value requestedSecurables(Json::arrayValue);
     requestedSecurables[0] = requestedSecurable;
@@ -896,7 +899,7 @@ Utf8String ClientImpl::GetLoggingPostSource() const
     LOG.debug("ClientImpl::GetLoggingPostSource");
 
     // Check for checked out license
-    auto qualifier = m_policy->GetQualifier("IsCheckedOut", m_clientInfo->GetApplicationProductId().c_str(), m_featureString);
+    auto qualifier = m_policy->GetQualifier("IsCheckedOut", m_applicationInfo->GetApplicationProductId().c_str(), m_featureString);
 
     if (qualifier->GetValue().Equals("true"))
         return "Checkout";
@@ -989,7 +992,7 @@ std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductI
 	// find policy that contains appropriate productId and featureString
 	Utf8String productId;
 	if (requestedProductId.Equals(""))
-		productId = m_clientInfo->GetApplicationProductId();
+		productId = m_applicationInfo->GetApplicationProductId();
 	else
 		productId = requestedProductId;
 
@@ -1078,7 +1081,7 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 	// productId to look for; allow custom product to be searched for (for testing purposes)
 	Utf8String productId;
 	if (requestedProductId < 0)
-		productId = m_clientInfo->GetApplicationProductId();
+		productId = m_applicationInfo->GetApplicationProductId();
 	else
 		productId = Utf8String(std::to_string(requestedProductId).c_str());
 	// get valid policy for user

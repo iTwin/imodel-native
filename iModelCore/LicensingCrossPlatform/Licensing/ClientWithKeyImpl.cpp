@@ -10,15 +10,16 @@
 #include "Logging.h"
 #include "UsageDb.h"
 #include "FreeApplicationPolicyHelper.h"
+#include "ApplicationInfo.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
 #include <Licensing/Utils/UsageJsonHelper.h>
 #include <fstream>
 
 #include <BeHttp/HttpError.h>
-#include <WebServices/Configuration/UrlProvider.h>
+//#include <WebServices/Configuration/UrlProvider.h>
 
-USING_NAMESPACE_BENTLEY_WEBSERVICES
+//USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 ClientWithKeyImpl::ClientWithKeyImpl(
@@ -34,7 +35,7 @@ ClientWithKeyImpl::ClientWithKeyImpl(
 	m_userInfo = ConnectSignInManager::UserInfo();
 
 	m_accessKey = accessKey;
-	m_clientInfo = clientInfo;
+	m_applicationInfo = applicationInfo;
 	m_dbPath = db_path;
 	m_offlineMode = offlineMode;
 	m_projectId = projectId;
@@ -117,9 +118,9 @@ folly::Future<folly::Unit> ClientWithKeyImpl::SendUsageRealtimeWithKey()
 
 	// create Json body
 	auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids(
-		m_clientInfo->GetDeviceId(),
+		m_applicationInfo->GetDeviceId(),
 		m_featureString,
-		m_clientInfo->GetApplicationVersion(),
+		m_applicationInfo->GetApplicationVersion(),
 		m_projectId
 	);
 

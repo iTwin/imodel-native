@@ -25,7 +25,7 @@ public:
 	LICENSING_EXPORT ClientWithKeyImpl
 		(
 		Utf8StringCR accessKey,
-		ClientInfoPtr clientInfo,
+		ApplicationInfoPtr clientInfo,
 		BeFileNameCR db_path,
 		bool offlineMode,
 		Utf8StringCR projectId,

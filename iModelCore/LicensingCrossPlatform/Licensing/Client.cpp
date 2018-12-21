@@ -29,7 +29,7 @@ Client::Client
 ClientPtr Client::Create
 (
 const ConnectSignInManager::UserInfo& userInfo,
-ClientInfoPtr clientInfo,
+ApplicationInfoPtr applicationInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 bool offlineMode,
@@ -38,7 +38,7 @@ Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
 )
     {
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler)));
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, applicationInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler)));
 	}
 
 /*--------------------------------------------------------------------------------------+
@@ -59,7 +59,7 @@ ClientPtr Client::CreateFree
 ClientPtr Client::CreateWithKey
 (
 	Utf8StringCR accessKey,
-	ClientInfoPtr clientInfo,
+	ApplicationInfoPtr applicationInfo,
 	BeFileNameCR dbPath,
 	bool offlineMode,
 	Utf8StringCR projectId,
@@ -67,7 +67,7 @@ ClientPtr Client::CreateWithKey
 	IHttpHandlerPtr httpHandler
 )
 {
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, projectId, featureString, httpHandler)));
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, applicationInfo, dbPath, offlineMode, projectId, featureString, httpHandler)));
 }
 
 /*--------------------------------------------------------------------------------------+

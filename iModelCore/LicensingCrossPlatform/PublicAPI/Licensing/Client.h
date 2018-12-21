@@ -11,15 +11,11 @@
 #include <Licensing/Licensing.h>
 
 #include "LicenseStatus.h"
+#include "ApplicationInfo.h"
 
-#include <WebServices/Connect/IConnectAuthenticationProvider.h>
-#include <WebServices/Client/ClientInfo.h>
-#include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
-
- #include <Licensing/Utils/FeatureUserDataMap.h>
+#include <Licensing/Utils/FeatureUserDataMap.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                   
@@ -46,7 +42,7 @@ public:
 	LICENSING_EXPORT static ClientPtr Create
         (
 		const ConnectSignInManager::UserInfo& userInfo, /** For determining UserID */
-        ClientInfoPtr clientInfo, /** A ClientInfoPtr */
+        ApplicationInfoPtr applicationInfo, /** A ApplicationInfoPtr */
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider, /** For  */
         BeFileNameCR dbPath, /** Path for LicenseClient database */
         bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
@@ -64,7 +60,7 @@ public:
 	LICENSING_EXPORT static ClientPtr CreateWithKey
 	(
 		Utf8StringCR accessKey, /** AccessKey */
-		ClientInfoPtr clientInfo, /** A ClientInfoPtr */
+		ApplicationInfoPtr applicationInfo, /** A ClientInfoPtr */
 		BeFileNameCR dbPath, /** Path for LicenseClient database */
 		bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
 		Utf8StringCR projectId = "", /** ProjectID string, defaults to an empty string */

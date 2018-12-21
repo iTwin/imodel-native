@@ -14,6 +14,7 @@
 #include "ClientInterface.h"
 #include "UsageDb.h"
 #include "Policy.h"
+#include "ApplicationInfo.h"
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
@@ -21,10 +22,11 @@
 
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
+#include <BeHttp/HttpClient.h>
 
-#include <WebServices/Connect/IConnectAuthenticationProvider.h>
-#include <WebServices/Client/ClientInfo.h>
-#include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
+//#include <WebServices/Connect/IConnectAuthenticationProvider.h>
+//#include <WebServices/Client/ClientInfo.h>
+//#include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
 // Log Posting Sources
 #define LOGPOSTINGSOURCE_REALTIME           "RealTime"
@@ -36,7 +38,7 @@
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_HTTP
-USING_NAMESPACE_BENTLEY_WEBSERVICES
+//USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                   
@@ -52,7 +54,7 @@ protected:
         Utf8String featureUserData;
         };
 
-    ClientInfoPtr m_clientInfo;
+    ApplicationInfoPtr m_applicationInfo;
 	ConnectSignInManager::UserInfo m_userInfo;
     BeFileName m_dbPath;
     std::shared_ptr<IConnectAuthenticationProvider> m_authProvider;
@@ -117,7 +119,7 @@ public:
     LICENSING_EXPORT ClientImpl
         (
 		const ConnectSignInManager::UserInfo& userInfo,
-        ClientInfoPtr clientInfo,
+        ApplicationInfoPtr applicationInfo,
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR db_path,
         bool offlineMode,

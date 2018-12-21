@@ -16,6 +16,7 @@
 #include "../../../Licensing/ClientWithKeyImpl.h"
 #include "../../../Licensing/UsageDb.h"
 #include "../../../PublicAPI/Licensing/Utils/SCVWritter.h"
+#include "../../../PublicAPI/Licensing/Utils/UrlProvider.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -23,15 +24,12 @@
 #include <fstream>
 #include <Licensing/Utils/InMemoryJsonLocalState.h>
 
-#include <WebServices/Configuration/UrlProvider.h>
-#include <WebServices/Connect/ConnectSignInManager.h>
 
 #define TEST_PRODUCT_ID     "2545"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 USING_NAMESPACE_BENTLEY_HTTP
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 
 struct TestTimeRetriever : ITimeRetriever
@@ -89,10 +87,10 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+    auto applicationInfo = std::make_shared<ApplicationInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+    auto manager = ConnectSignInManager::Create(applicationInfo, proxy, localState);
     if (signIn)
         {
         Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
@@ -103,7 +101,7 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
     
     return std::make_shared<ClientImpl>(
         manager->GetUserInfo(),
-        clientInfo,
+        applicationInfo,
         manager,
         dbPath,
         true,
@@ -128,12 +126,12 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInte
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+	auto applicationInfo = std::make_shared<ApplicationInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
 
-	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+	auto manager = ConnectSignInManager::Create(applicationInfo, proxy, localState);
 
 	BeFileName dbPath = GetUsageDbPath();
 
@@ -141,7 +139,7 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInte
 
 	return std::make_shared<ClientWithKeyImpl>(
 		accesskey,
-		clientInfo,
+		applicationInfo,
 		dbPath,
 		true,
 		"",
@@ -154,10 +152,10 @@ ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, I
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+	auto applicationInfo = std::make_shared<ApplicationInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+	auto manager = ConnectSignInManager::Create(applicationInfo, proxy, localState);
 	if (signIn)
 	{
 		Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
@@ -168,7 +166,7 @@ ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, I
 
 	return Client::Create(
 		manager->GetUserInfo(),
-		clientInfo,
+		applicationInfo,
 		manager,
 		dbPath,
 		true,
@@ -194,12 +192,12 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInte
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+	auto applicationInfo = std::make_shared<ApplicationInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
 
-	auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+	auto manager = ConnectSignInManager::Create(ApplicationInfo, proxy, localState);
 
 	BeFileName dbPath = GetUsageDbPath();
 
@@ -207,7 +205,7 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInte
 
 	return Client::CreateWithKey(
 		accesskey,
-		clientInfo,
+		applicationInfo,
 		dbPath,
 		true,
 		"",
