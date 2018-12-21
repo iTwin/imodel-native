@@ -708,6 +708,9 @@ struct NativeBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NativeBriefcase
 //=======================================================================================
 struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     {
+    public:
+        static constexpr int ERROR_UsageTrackingFailed = -100;
+
     // Cancellation token associated with the currently-open DgnDb.
     // The 'cancelled' flag i set on the main thread when the DgnDb is being closed.
     // The token can be passed into functions which create async workers and stored on those
@@ -734,11 +737,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     std::shared_ptr<CancellationToken> m_cancellationToken;
-    std::unique_ptr<UlasClient> m_ulasClient;
     NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
-    ~NativeDgnDb() {CloseDgnDb(true);}
+    ~NativeDgnDb() {CloseDgnDb();}
 
-    void CloseDgnDb(bool stopStracking)
+    void CloseDgnDb()
         {
         if (!m_dgndb.IsValid())
             return;
@@ -753,8 +755,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb->m_jsIModelDb.Reset(); // disconnect the iModelDb object
         JsInterop::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
-        if (stopStracking)
-            m_ulasClient = nullptr;
         }
 
     void OnDgnDbOpened(DgnDbR dgndb)
@@ -844,12 +844,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (BE_SQLITE_OK == status)
             {
             OnDgnDbOpened(*db);
-            BeAssert(m_ulasClient == nullptr);
-            m_ulasClient = std::make_unique<UlasClient>(accessToken, appVersion, projectId);
-            if (SUCCESS != m_ulasClient->Initialize())
-                return Napi::Number::New(Env(), -100);
-
-            m_ulasClient->StartTracking();
+            if (SUCCESS != UlasClient::Get().TrackUsage(accessToken, appVersion, projectId))
+                return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
             }
 
         return Napi::Number::New(Env(), (int)status);
@@ -881,12 +877,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (db.IsValid())
             {
             OnDgnDbOpened(*db);
-            BeAssert(m_ulasClient == nullptr);
-            m_ulasClient = std::make_unique<UlasClient>(accessToken, appVersion, projectId);
-            if (SUCCESS != m_ulasClient->Initialize())
-                return Napi::Number::New(Env(), -100);
-
-            m_ulasClient->StartTracking();
+            if (SUCCESS != UlasClient::Get().TrackUsage(accessToken, appVersion, projectId))
+                return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
             }
 
         return Napi::Number::New(Env(), (int)status);
@@ -1001,7 +993,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         BeFileName dbFileName(m_dgndb->GetDbFileName(), true);
         bool isReadonly = m_dgndb->IsReadonly();
 
-        CloseDgnDb(false);
+        CloseDgnDb();
 
         status = JsInterop::ApplySchemaChangeSets(dbFileName, revisions, (RevisionProcessOption)applyOption);
         if (RevisionStatus::Success != status)
@@ -1380,7 +1372,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)result);
         }
 
-    void CloseDgnDb(Napi::CallbackInfo const& info) {  CloseDgnDb(true); }
+    void CloseDgnDb(Napi::CallbackInfo const& info) {  CloseDgnDb(); }
 
     Napi::Value CreateChangeCache(Napi::CallbackInfo const& info)
         {
@@ -2911,19 +2903,29 @@ public:
         if (m_ecsqlValue == nullptr)
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
 
-        if (m_ecsqlValue->GetColumnInfo().GetEnumType() == nullptr)
+        ECEnumerationCP enumType = m_ecsqlValue->GetColumnInfo().GetEnumType();
+        if (enumType == nullptr)
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not an ECEnumeration.", Env().Undefined());
 
-        ECEnumeratorCP enumValue = m_ecsqlValue->GetEnum();
-        if (enumValue == nullptr)
-            THROW_TYPE_EXCEPTION_AND_RETURN("No ECEnumeration value found for ECSqlValue.", Env().Undefined());
+        bvector<ECEnumeratorCP> enumerators;
+        if (SUCCESS != m_ecsqlValue->TryGetContainedEnumerators(enumerators) || enumerators.empty())
+            return Env().Undefined();
 
-        Napi::Object jsEnum = Napi::Object::New(Env());
-        jsEnum.Set("schema", Napi::String::New(Env(), enumValue->GetEnumeration().GetSchema().GetName().c_str()));
-        jsEnum.Set("name", Napi::String::New(Env(), enumValue->GetEnumeration().GetName().c_str()));
-        jsEnum.Set("key", Napi::String::New(Env(), enumValue->GetName().c_str()));
-        jsEnum.Set("value", enumValue->IsInteger() ? Napi::Number::New(Env(), enumValue->GetInteger()) : Napi::String::New(Env(), enumValue->GetString().c_str()));
-        return jsEnum;
+        Napi::Array jsEnumList = Napi::Array::New(Env(), enumerators.size());
+
+        uint32_t arrayIndex = 0;
+        for (ECEnumeratorCP enumerator : enumerators)
+            {
+            Napi::Object jsEnum = Napi::Object::New(Env());
+            jsEnum.Set("schema", Napi::String::New(Env(), enumType->GetSchema().GetName().c_str()));
+            jsEnum.Set("name", Napi::String::New(Env(), enumType->GetName().c_str()));
+            jsEnum.Set("key", Napi::String::New(Env(), enumerator->GetName().c_str()));
+            jsEnum.Set("value", enumerator->IsInteger() ? Napi::Number::New(Env(), enumerator->GetInteger()) : Napi::String::New(Env(), enumerator->GetString().c_str()));
+            jsEnumList.Set(arrayIndex, jsEnum);
+            arrayIndex++;
+            }
+
+        return jsEnumList;
         }
 
     Napi::Value GetNavigation(Napi::CallbackInfo const& info)
@@ -4337,6 +4339,21 @@ struct DisableNativeAssertions : Napi::ObjectWrap<DisableNativeAssertions>
             }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                    12/18
+//+---------------+---------------+---------------+---------------+---------------+------
+static void InitializeRegion(Napi::CallbackInfo const& info)
+    {
+    Region region = Region::Prod;
+    if (info.Length() != 1 || !info[0].IsNumber())
+        JsInterop::GetLogger().error("Invalid region was passed from the imodel.js backend to the addon. Using PROD as fallback.");
+    else
+        region = (Region) (int) info[0].As<Napi::Number>().Int32Value();
+
+    UlasClient::Get().Initialize(region);
+    }
+
+
 static Napi::ObjectReference s_logger;
 struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
 static bvector<LogMessage>* s_deferredLogging;
@@ -4523,6 +4540,7 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
         {
         Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
         Napi::PropertyDescriptor::Accessor("logger", &IModelJsNative::GetLogger, &IModelJsNative::SetLogger),
+        Napi::PropertyDescriptor::Function("initializeRegion", &IModelJsNative::InitializeRegion)
         });
 
     return exports;

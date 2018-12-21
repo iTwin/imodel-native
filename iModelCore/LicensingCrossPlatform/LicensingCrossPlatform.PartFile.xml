@@ -74,8 +74,9 @@
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/LicensingTest/Assets" />
         </Bindings>
     </Part>
-	
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-Gtest -dGTEST_NAME=LicensingTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+
+    <!-- WIP_LICENSING_FOR_LINUX_AND_MACOS Readd Linux*,MacOS* to the OnlyPlatforms attribute once licensing is available on Linux and MacOs -->
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-Gtest -dGTEST_NAME=LicensingTest" OnlyPlatforms="x86,x64">
         <SubProduct ProductName="Licensing-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         

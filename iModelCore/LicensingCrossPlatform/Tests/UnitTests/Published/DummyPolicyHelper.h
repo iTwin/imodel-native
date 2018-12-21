@@ -9,9 +9,8 @@
 
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/DateHelper.h>
+#include <BeSQLite/BeSQLite.h>
 #include <json/json.h>
-#include <sstream>
-#include <random>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
@@ -28,34 +27,32 @@ struct DummyPolicyHelper
     private:
         enum class PolicyType { Full, NoSecurables, NoACLs, NoUserData, NoRequestData, OfflineNotAllowed };
 
-        static std::string PolicyStart();
-        static std::string PolicyEnd();
-        static std::string PolicyNext();
-        static std::string PN();
-        static std::string PolicyId(Utf8StringCR id);
+        static Utf8String PolicyStart();
+        static Utf8String PolicyEnd();
+        static Utf8String PolicyNext();
+        static Utf8String PN();
+        static Utf8String PolicyId(Utf8StringCR id);
 
-        static std::string PolicyVersion();
-        static std::string PolicyCreatedOn(Utf8StringCR date);
+        static Utf8String PolicyVersion();
+        static Utf8String PolicyCreatedOn(Utf8StringCR date);
 
-        static std::string PolicyExpiresOn(Utf8StringCR date);
+        static Utf8String PolicyExpiresOn(Utf8StringCR date);
 
-        static std::string RequestData(int productId, Utf8StringCR featureString, Utf8StringCR userId);
+        static Utf8String RequestData(int productId, Utf8StringCR featureString, Utf8StringCR userId);
 
-        static std::string MachineSignature();
-        static std::string AppliesToUserId(Utf8StringCR userId);
+        static Utf8String MachineSignature();
+        static Utf8String AppliesToUserId(Utf8StringCR userId);
 
-        static std::string AppliesToSecurableIds();
-        static std::string ACLs(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed);
-        static std::string ACLsWithQualifierOverrides(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed, bvector<QualifierOverride>& qualifierOverrides);
+        static Utf8String AppliesToSecurableIds();
+        static Utf8String ACLs(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed);
+        static Utf8String ACLsWithQualifierOverrides(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed, bvector<QualifierOverride>& qualifierOverrides);
 
-        static std::string SecurableData(int productId, Utf8StringCR featureString);
-        static std::string SecurableDataWithQualifierOverrides(int productId, Utf8StringCR featureString, bvector<QualifierOverride>& qualifierOverrides);
+        static Utf8String SecurableData(int productId, Utf8StringCR featureString);
+        static Utf8String SecurableDataWithQualifierOverrides(int productId, Utf8StringCR featureString, bvector<QualifierOverride>& qualifierOverrides);
 
-        static std::string UserData(Utf8StringCR userId);
+        static Utf8String UserData(Utf8StringCR userId);
 
-        static std::string DefaultQualifiers();
-
-        static Utf8String GetRandomPolicyId();
+        static Utf8String DefaultQualifiers();
 
         static Json::Value CreatePolicySpecific(PolicyType type, Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial);
             

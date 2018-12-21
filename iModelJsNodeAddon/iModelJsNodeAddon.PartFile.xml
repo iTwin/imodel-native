@@ -188,6 +188,5 @@
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
     <SubPart PartName="Licensing" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" Repository="imodel02" />
     <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
-    <SubPart PartName="BeSecurity" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
   </Part>
 </BuildContext>

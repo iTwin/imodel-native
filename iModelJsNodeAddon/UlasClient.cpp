@@ -7,18 +7,44 @@
 +--------------------------------------------------------------------------------------*/
 #include "UlasClient.h"
 #include "IModelJsNative.h"
-#include <Bentley/BeFileName.h>
-#include <Bentley/BeVersion.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <WebServices/Configuration/UrlProvider.h>
+
+// WIP_LICENSING_FOR_LINUX_AND_MACOS
+#if defined(BENTLEYCONFIG_OS_APPLE_MACOS) || defined(BENTLEYCONFIG_OS_LINUX)
+#include <folly/BeFolly.h>
+#include <folly/futures/Future.h>
+
+namespace Licensing
+{
+typedef std::shared_ptr<struct Client> ClientPtr;
+
+struct Client
+    {
+    Client() {}
+    static ClientPtr CreateFree() { return std::make_shared<Client>(); }
+    folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR appVersion, Utf8StringCR projectId)
+        {
+        IModelJsNative::JsInterop::GetLogger().warning("Usage tracking not supported yet on Linux and MacOS.");
+        return folly::makeFuture(ERROR);
+        }
+    };
+};
+#endif
 
 namespace IModelJsNative
     {
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle             11/2018
+// @bsimethod                                    Krischan.Eberle             12/2018
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BeFileName* UlasClient::s_cacheDbPath = nullptr;
+UlasClient* UlasClient::s_singleton = nullptr;
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle             12/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+UlasClient::UlasClient() {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle             12/2018
@@ -26,73 +52,94 @@ BeFileName* UlasClient::s_cacheDbPath = nullptr;
 UlasClient::~UlasClient()
     {
     if (m_client != nullptr)
-        {
-        m_client->StopApplication();
         m_client = nullptr;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle             12/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void UlasClient::Initialize(Region region)
+    {
+    Uninitialize();
+
+    WebServices::UrlProvider::Environment env;
+    switch (region)
+        {
+        case Region::Dev:
+            env = WebServices::UrlProvider::Dev;
+            break;
+
+        case Region::Qa:
+            env = WebServices::UrlProvider::Qa;
+            break;
+
+        case Region::Perf:
+            env = WebServices::UrlProvider::Perf;
+            break;
+
+        default:
+        case Region::Prod:
+            env = WebServices::UrlProvider::Release;
+            break;
         }
+
+    // DefaultTimeout: cache is cleared every 24 hours
+    WebServices::UrlProvider::Initialize(env, WebServices::UrlProvider::DefaultTimeout, &m_localState);
+    JsInterop::GetLogger().infov("Initialized iModel.js addon to region '%s'.", WebServices::UrlProvider::ToEnvironmentString(env).c_str());
+
+    m_client = Licensing::Client::CreateFree();
+    BeAssert(m_client != nullptr);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle             12/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void UlasClient::Uninitialize()
+    {
+    WebServices::UrlProvider::Uninitialize();
+    m_localState = RuntimeJsonLocalState();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle             11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus UlasClient::Initialize()
+BentleyStatus UlasClient::TrackUsage(Utf8StringCR accessToken, Utf8StringCR appVersionStr, Utf8StringCR projectId) const
     {
-    BeAssert(m_client == nullptr && "May not initialize UlasClient more than once.");
-
-    if (m_appVersion.IsEmpty())
-        {
-        JsInterop::GetLogger().error("Application' version has not been specified.");
-        return ERROR;
-        }
-
-    if (s_cacheDbPath == nullptr)
-        {
-        s_cacheDbPath = new BeFileName();
-        if (SUCCESS != DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetLocalTempDirectory(*s_cacheDbPath, nullptr))
-            {
-            JsInterop::GetLogger().error("Could not access temp directory for the ULAS cache database.");
-            return ERROR;
-            }
-
-        s_cacheDbPath->AppendToPath(L"imodeljs.usagetracking.db");
-        }
-
-    m_client = Licensing::Client::CreateFree(m_accessToken, m_appVersion, m_projectId, *s_cacheDbPath);
     if (m_client == nullptr)
         {
-        JsInterop::GetLogger().error("Failed to set-up usage tracking. User is not authorized.");
+        BeAssert(false && "Must call UlasClient::Initialize first.");
         return ERROR;
         }
 
-    return SUCCESS;
+    if (projectId.empty())
+        {
+        JsInterop::GetLogger().error("Failed to set-up iModel.js usage tracking. ProjectId was not specified when opening the iModel.");
+        return ERROR;
+        }
+
+    BeVersion appVersion(appVersionStr.c_str());
+    if (appVersion.IsEmpty())
+        {
+        JsInterop::GetLogger().error("Failed to set-up iModel.js usage tracking. Application version was not specified when opening the iModel or an invalid version string was passed.");
+        return ERROR;
+        }
+
+    return m_client->TrackUsage(accessToken, appVersion, projectId).onError([] (void* e) { return ERROR; }).get();
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle             11/2018
+// @bsimethod                                    Krischan.Eberle             12/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-void UlasClient::StartTracking()
+//static
+UlasClient& UlasClient::Get()
     {
-    BeAssert(m_client != nullptr);
-    if (m_client != nullptr)
-        m_client->StartApplication();
-    }
-//-------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle             11/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-void UlasClient::StopTracking()
-    {
-    BeAssert(m_client != nullptr);
-    if (m_client != nullptr)
-        m_client->StopApplication();
-    }
+    static std::once_flag s_onceFlag;
+    std::call_once(s_onceFlag, [] ()
+        {
+        BeAssert(ECDb::IsInitialized() && "Licensing::Client requires BeSQLite to be initialized");
+        s_singleton = new UlasClient();
+        });
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle             11/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-/*WebServices::ClientInfoPtr IModelJsNative::UlasHelper::GetClientInfo()
-    {
-    static WebServices::ClientInfoPtr info = WebServices::ClientInfo::Create(s_appName, BeVersion(s_appVersionMajor, s_appVersionMinor, s_appVersionSub1, 0), s_appGuid, s_gprId);
-    return info;
+    return *s_singleton;
     }
-    */
 }

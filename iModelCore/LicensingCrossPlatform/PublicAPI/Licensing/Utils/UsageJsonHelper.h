@@ -9,10 +9,6 @@
 
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/DateHelper.h>
-
-#include <json/json.h>
-#include <sstream>
-
 #include <Bentley/BeVersion.h>
 #include <BeSQLite/BeSQLite.h>
 
@@ -23,31 +19,34 @@ struct UsageJsonHelper
 private:
 
 public:
-	static Json::Value CreateJsonRandomGuids(Utf8StringCR deviceID, Utf8StringCR featureString, BeVersion version, Utf8StringCR projectID)
-	{
-		std::ostringstream stream;
-		stream << "{";
+    static Utf8String CreateJsonRandomGuids(Utf8StringCR deviceID, Utf8StringCR featureString, BeVersionCR version, Utf8StringCR projectID)
+        {
+        Utf8String jsonString;
+
+		jsonString += "{";
 		//stream << "\"ultID\": " << 1234 << ","; // ultimate id [NUMBER]
 		//stream << "\"pid\": " << 1234 << ","; // principal id (same as IMS id?) [GUID]
 		//stream << "\"imsID\": " << 1234 << ","; // ims id [GUID]
-		stream << "\"hID\": \"" << deviceID << "\","; // client's machine name excluding domain info [STRING]
+		jsonString += "\"hID\": \"" + deviceID + "\","; // client's machine name excluding domain info [STRING]
 		//stream << "\"uID\": " << 1234 << ","; // client's login name excluding domain information (same is IMS id?) [STRING]
-		stream << "\"polID\": \"" << BeSQLite::BeGuid(true).ToString() << "\","; //  FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // policy file ID [GUID]
-		stream << "\"secID\": \"" << BeSQLite::BeGuid(true).ToString() << "\",";// FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // securable ID [STRING]
+		jsonString += "\"polID\": \"" + BeSQLite::BeGuid(true).ToString() + "\","; //  FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // policy file ID [GUID]
+		jsonString += "\"secID\": \"" + BeSQLite::BeGuid(true).ToString() + "\","; // FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // securable ID [STRING]
 		//stream << "\"prdid\": " << 1234 << ","; // product ID (4 digits) [NUMBER]
-		stream << "\"fstr\": \"" << featureString << "\","; // feature string [STRING]
-		stream << "\"ver\": " << version.GetMajor() * 1000000000000 + version.GetMinor() * 100000000 + version.GetSub1() * 10000 + version.GetSub2() << ","; // application version [NUMBER]
-		stream << "\"projID\": \"" << projectID << "\","; // project ID [GUID or UNDEFINED]
-		stream << "\"corID\": \"" << BeSQLite::BeGuid(true).ToString() << "\","; // FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // correlation GUID [GUID]
-		stream << "\"evTimeZ\": \"" << DateHelper::GetCurrentTime() << "\","; // event time (current UTC time) [STRING]
-		stream << "\"lVer\": " << 1 << ","; // version of scheme of this log [NUMBER]
-		stream << "\"lSrc\": " << "\"RealTime\"" << ","; // source of usage log entry: RealTime, Offline, Checkout [STRING]
-		stream << "\"uType\": " << "\"Production\"" << "}"; // usage type: Production, Trial, Beta, HomeUse, PreActivation [STRING]
+		jsonString += "\"fstr\": \"" + featureString + "\","; // feature string [STRING]
 
-		return Json::Reader::DoParse(Utf8String(stream.str().c_str()));
+        const uint64_t versionNumber = UINT64_C(1000000000000) * version.GetMajor()  + UINT64_C(100000000) * version.GetMinor()  + UINT64_C(10000) * version.GetSub1() + ((uint64_t) version.GetSub2());
+		Utf8String ver;
+		ver.Sprintf("\"ver\": %" PRIu64 ",", versionNumber);
+		jsonString += ver; // application version [NUMBER]
+		jsonString += "\"projID\": \"" + projectID + "\","; // project ID [GUID or UNDEFINED]
+		jsonString += "\"corID\": \"" + BeSQLite::BeGuid(true).ToString() + "\","; // FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // correlation GUID [GUID]
+		jsonString += "\"evTimeZ\": \"" + DateHelper::GetCurrentTime() + "\","; // event time (current UTC time) [STRING]
+		jsonString += "\"lVer\": 1,"; // version of scheme of this log [NUMBER]
+		jsonString += "\"lSrc\": \"RealTime\","; // source of usage log entry: RealTime, Offline, Checkout [STRING]
+		jsonString += "\"uType\": \"Production\"}"; // usage type: Production, Trial, Beta, HomeUse, PreActivation [STRING]
+		return jsonString;
 	};
 
 };
-
 
 END_BENTLEY_LICENSING_NAMESPACE
