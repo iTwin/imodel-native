@@ -63,38 +63,16 @@ bool ZShapeProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isValidFlangeWidth = ProfilesProperty::IsGreaterThanZero (GetFlangeWidth());
-    if (!isValidFlangeWidth)
-        return false;
+    bool const isFlangeWidthValid = ProfilesProperty::IsGreaterThanZero (GetFlangeWidth());
+    bool const isDepthValid = ProfilesProperty::IsGreaterThanZero (GetDepth());
+    bool const isFlangeThicknessValid = ValidateFlangeThickness();
+    bool const isWebThicknessValid = ValidateWebThickness();
+    bool const isFilletRadiusValid = ValidateFilletRadius();
+    bool const isFlangeEdgeRadiusValid = ValidateFlangeEdgeRadius();
+    bool const isFlangeSlopeValid = ValidateFlangeSlope();
 
-    bool const isValidDepth = ProfilesProperty::IsGreaterThanZero (GetDepth());
-    if (!isValidDepth)
-        return false;
-
-    bool const isValidFlangeThickness = ProfilesProperty::IsGreaterThanZero (GetFlangeThickness()) && GetFlangeThickness() < GetDepth() / 2.0;
-    if (!isValidFlangeThickness)
-        return false;
-
-    bool const isValidWebThickness = ProfilesProperty::IsGreaterThanZero (GetWebThickness()) && GetWebThickness() < GetFlangeWidth();
-    if (!isValidWebThickness)
-        return false;
-
-    bool const isValidFilletRadius = ProfilesProperty::IsGreaterOrEqualToZero (GetFilletRadius()) && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight()
-                                     && GetFilletRadius() <= GetInnerFlangeFaceLength() / 2.0;
-    if (!isValidFilletRadius)
-        return false;
-
-    bool const isValidFlangeEdgeRadius = ProfilesProperty::IsGreaterOrEqualToZero (GetFlangeEdgeRadius())
-                                         && GetFlangeEdgeRadius() <= std::min (GetInnerFlangeFaceLength() / 2.0, GetFlangeThickness() / 2.0);
-    if (!isValidFlangeEdgeRadius)
-        return false;
-
-    bool const isFlangeSlopeValid = ProfilesProperty::IsGreaterOrEqualToZero (GetFlangeSlope()) && GetFlangeSlope() < PI / 2.0
-                                    && GetInnerWebFaceLength() / 2.0 >= GetFlangeSlopeHeight();
-    if (!isFlangeSlopeValid)
-        return false;
-
-    return true;
+    return isFlangeWidthValid && isDepthValid && isFlangeThicknessValid && isWebThicknessValid
+           && isFilletRadiusValid && isFlangeEdgeRadiusValid && isFlangeSlopeValid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,6 +81,78 @@ bool ZShapeProfile::_Validate() const
 IGeometryPtr ZShapeProfile::_CreateGeometry() const
     {
     return ProfilesGeomApi::CreateZShape (this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ZShapeProfile::ValidateFlangeThickness() const
+    {
+    double const flangeThickness = GetFlangeThickness();
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (flangeThickness);
+    bool const isLessThanHalfDepth = flangeThickness < GetDepth() / 2.0;
+
+    return isPositive && isLessThanHalfDepth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ZShapeProfile::ValidateWebThickness() const
+    {
+    double const webThickness = GetWebThickness();
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (webThickness);
+    bool const isLessThanFlangeWidth = webThickness < GetFlangeWidth();
+
+    return isPositive && isLessThanFlangeWidth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ZShapeProfile::ValidateFilletRadius() const
+    {
+    double const filletRadius = GetFilletRadius();
+    if (ProfilesProperty::IsEqualToZero (filletRadius))
+        return true;
+
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
+    bool const fitsInFlange = filletRadius <= GetInnerFlangeFaceLength() / 2.0;
+    bool const fitsInWeb = filletRadius <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
+
+    return isPositive && fitsInFlange && fitsInWeb;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ZShapeProfile::ValidateFlangeEdgeRadius() const
+    {
+    double const flangeEdgeRadius = GetFlangeEdgeRadius();
+    if (ProfilesProperty::IsEqualToZero (flangeEdgeRadius))
+        return true;
+
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeEdgeRadius);
+    bool const fitsInFlangeWidth = flangeEdgeRadius <= GetInnerFlangeFaceLength() / 2.0;
+    bool const fitsInFlangeThickness = flangeEdgeRadius <= GetFlangeThickness() / 2.0;
+
+    return isPositive && fitsInFlangeWidth && fitsInFlangeThickness;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ZShapeProfile::ValidateFlangeSlope() const
+    {
+    double const flangeSlope = GetFlangeSlope();
+    if (ProfilesProperty::IsEqualToZero (flangeSlope))
+        return true;
+
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeSlope);
+    bool const isLessThanHalfPi = flangeSlope < PI / 2.0;
+    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetInnerWebFaceLength() / 2.0;
+
+    return isPositive && isLessThanHalfPi && slopeHeightFitsInWeb;
     }
 
 /*---------------------------------------------------------------------------------**//**
