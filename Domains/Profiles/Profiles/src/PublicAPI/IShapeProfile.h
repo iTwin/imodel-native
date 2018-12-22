@@ -51,6 +51,13 @@ protected:
     virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateGeometry() const override;
 
+private:
+    bool ValidateFlangeThickness() const;
+    bool ValidateWebThickness() const;
+    bool ValidateFilletRadius() const;
+    bool ValidateFlangeEdgeRadius() const;
+    bool ValidateFlangeSlope() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (IShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (IShapeProfile)

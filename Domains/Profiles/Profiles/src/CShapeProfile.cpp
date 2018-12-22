@@ -117,10 +117,10 @@ bool CShapeProfile::ValidateFilletRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
-    bool const fitsInDepth = filletRadius <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
     bool const fitsInFlange = filletRadius <= GetInnerFlangeFaceLength() / 2.0;
+    bool const fitsInWeb = filletRadius <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
 
-    return isPositive && fitsInDepth && fitsInFlange;
+    return isPositive && fitsInFlange && fitsInWeb;
     }
 
 /*---------------------------------------------------------------------------------**//**
