@@ -102,13 +102,14 @@ DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 DLM_NOENTRY         = 1
 DLM_NO_CONTEXT_LINK = 1
 
-%include $(baseDir)IModelJsNative_input_libs.mki
-
 %ifdef __unix
 
-    THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)lib$(NODE_ADDON_API).a
-
     THIN_ARCHIVE_NAME = libiModelJsNodeAddon.inputs.a
+
+    %if $(TARGET_PLATFORM)=="MacOS"
+        %include $(baseDir)IModelJsNative_input_libs.mki
+        THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)lib$(NODE_ADDON_API).a
+    %endif
 
     %include $(sharedMki)rollUpSubPartsLibsThin.mki
 
@@ -127,6 +128,7 @@ DLM_NO_CONTEXT_LINK = 1
     %include dlmlink.mki
 
 %else
+    %include $(baseDir)IModelJsNative_input_libs.mki
 
     LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)$(NODE_ADDON_API)$(libext)
 
