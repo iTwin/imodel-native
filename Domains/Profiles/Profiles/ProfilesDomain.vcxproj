@@ -135,11 +135,16 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <PropertyGroup Label="Build commands">
     <NMakeBuildCommandLine>bb re ProfilesDomainDLL -b</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb re ProfilesDomainDLL -b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb re ProfilesDomainDLL -b -c</NMakeCleanCommandLine>
-    <IncludePath>$(SRCROOT)DgnDomains\Profiles;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PrivateAPI;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PublicAPI;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\VendorAPI;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Label="Header include paths for IDE intelisense">
+    <Profiles_PublicAPI>$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PublicAPI</Profiles_PublicAPI>
+    <Profiles_PrivateAPI>$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PrivateAPI</Profiles_PrivateAPI>
+    <Profiles_VendorAPI>$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\VendorAPI</Profiles_VendorAPI>
+    <IncludePath>$(Profiles_PublicAPI);$(Profiles_PrivateAPI);$(Profiles_VendorAPI);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
