@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfileValidationTestCase.h"
-#include <DgnPlatform/GenericDomain.h>
+#include <DgnPlatform\GenericDomain.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_PROFILES

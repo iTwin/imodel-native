@@ -8,7 +8,7 @@
 #include "TestHost.h"
 #include <DgnPlatform\DesktopTools\KnownDesktopLocationsAdmin.h>
 #include <Bentley\BeTest.h>
-#include <Profiles/ProfilesApi.h>
+#include <Profiles\ProfilesApi.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE

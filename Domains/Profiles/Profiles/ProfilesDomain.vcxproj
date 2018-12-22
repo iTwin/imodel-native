@@ -72,7 +72,7 @@
     <ClCompile Include="src\ZShapeProfile.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\PrivateAPI\ProfilesInternal.h" />
+    <ClInclude Include="src\ProfilesInternal.h" />
     <ClInclude Include="src\PrivateAPI\ProfilesGeometry.h" />
     <ClInclude Include="src\PrivateAPI\ProfilesProperty.h" />
     <ClInclude Include="src\PublicAPI\AsymmetricIShapeProfile.h" />

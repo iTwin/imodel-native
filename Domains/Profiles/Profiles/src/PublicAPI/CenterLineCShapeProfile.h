@@ -10,7 +10,6 @@
 #include "ProfilesDefinitions.h"
 #include "ParametricProfile.h"
 #include "ICenterLineProfile.h"
-#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 

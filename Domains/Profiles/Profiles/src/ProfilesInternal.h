@@ -11,4 +11,5 @@
 #include <Bentley\BeNumerical.h>
 #include <ECDb\ECDbApi.h>
 #include <DgnPlatform\DgnPlatformApi.h>
+#include <Geom\GeomApi.h>
 #include <Geom\Angle.h>

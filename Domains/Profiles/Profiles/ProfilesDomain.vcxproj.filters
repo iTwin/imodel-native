@@ -55,6 +55,9 @@
     <Filter Include="Src\SinglePerimeterProfiles\LetterShapes">
       <UniqueIdentifier>{54eb5943-5be5-40f3-ab8e-603f47ac4ac7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="PrivateAPI">
+      <UniqueIdentifier>{993b6ab6-20b4-4636-a042-2711dd570a8c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Profiles.mke">
@@ -192,9 +195,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\PrivateAPI\ProfilesInternal.h">
-      <Filter>Pch</Filter>
-    </ClInclude>
     <ClInclude Include="src\PublicAPI\Profile.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
@@ -307,10 +307,13 @@
       <Filter>PublicAPI\Aspects</Filter>
     </ClInclude>
     <ClInclude Include="src\PrivateAPI\ProfilesGeometry.h">
-      <Filter>PublicAPI</Filter>
+      <Filter>PrivateAPI</Filter>
     </ClInclude>
     <ClInclude Include="src\PrivateAPI\ProfilesProperty.h">
-      <Filter>PublicAPI</Filter>
+      <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ProfilesInternal.h">
+      <Filter>Pch</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
