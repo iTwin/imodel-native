@@ -11,11 +11,14 @@
 #--------------------------------------------------------------------------------------
 #   Macros
 #--------------------------------------------------------------------------------------
-appSrc = $(_MakeFilePath)Implementation/
-appPublicApi = $(_MakeFilePath)PublicAPI/
-MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ProfilesInternal.h $(appPublicApi)ProfilesApi.h
+appSrc = $(_MakeFilePath)src\\
+appPublicApi = $(appSrc)PublicAPI\\
+appPrivateApi = $(appSrc)PrivateAPI\\
 
-always :
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ProfilesInternal.h $(appPublicApi)ProfilesApi.h
+PublicApiIncludes = -I${BuildContext}\PrivateAPI\ -I${BuildContext}\PublicAPI\ -I${BuildContext}\VendorAPI\\
+
+always:
 !~@mkdir $(o)
 
 #----------------------------------------------------------------------
@@ -31,8 +34,8 @@ PchExplicitDepends = $(MultiCompileDepends)
 GCC_NO_PRE_COMPILED_HEADER = 1
 % endif
 
-CompileOptionsMki = $(SrcRoot)DgnDomains/Profiles/Profiles/Profiles.mki
-%include $(CompileOptionsMki)
+# CompileOptionsMki will be included by PreCompileHeader.mki
+CompileOptionsMki = $(_MakeFilePath)Profiles.mki
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts = $(UsePrecompiledHeaderOptions)
@@ -43,9 +46,9 @@ CPchOpts = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
-$(o)ProfilesGeometry$(oext) : $(appSrc)ProfilesGeometry.cpp ${MultiCompileDepends} $(appPublicApi)ProfilesGeometry.h
+$(o)ProfilesGeometry$(oext) : $(appSrc)ProfilesGeometry.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesGeometry.h
 
-$(o)ProfilesProperty$(oext) : $(appSrc)ProfilesProperty.cpp ${MultiCompileDepends} $(appPublicApi)ProfilesProperty.h
+$(o)ProfilesProperty$(oext) : $(appSrc)ProfilesProperty.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesProperty.h
 
 $(o)AsymmetricIShapeProfile$(oext) : $(appSrc)AsymmetricIShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)AsymmetricIShapeProfile.h
 

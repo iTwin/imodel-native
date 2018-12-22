@@ -7,8 +7,20 @@
 #--------------------------------------------------------------------------------------+
 %include mdl.mki
 
-$(BuildContext)PublicAPI/Profiles : $(_MakeFilePath)PublicAPI
+#----------------------------------------------------------------------------------------
+#   Prewire Public API headers
+#----------------------------------------------------------------------------------------
+$(BuildContext)PublicAPI\Profiles : $(_MakeFilePath)src\PublicAPI
     $(LinkFirstDepToFirstTargetAsDirectory)
 
+#----------------------------------------------------------------------------------------
+#   Prewire Private API headers
+#----------------------------------------------------------------------------------------
+$(BuildContext)PrivateAPI\ProfilesInternal : $(_MakeFilePath)src\PrivateAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#----------------------------------------------------------------------------------------
+#   Prewire ECSchema
+#----------------------------------------------------------------------------------------
 $(BuildContext)ECSchemas/Domain/Profiles.ecschema.xml : $(_MakeFilePath)Profiles.ecschema.xml
     $(LinkFirstDepToFirstTarget)
