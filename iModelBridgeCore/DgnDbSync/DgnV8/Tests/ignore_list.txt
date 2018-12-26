@@ -21,3 +21,99 @@ TransformTests.Test1
     # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1239): error:       Expected: 0
     # To be equal to: m_count
     # Which is: 2
+
+ConverterTests.ElementCRUDInAttachment
+
+    # VSTS#54702
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/27/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <2D-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <2D-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+
+ECConversionTests.UpdatePropertyValueOnExistingInstance
+
+    # VSTS#54705
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/27/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <29-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+
+ECSchemaTests.RemapReservedPropertyNames
+
+    # VSTS#54703
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/27/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <29-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+
+LightTests.CreatePointLightWithECInstance
+
+    # VSTS#54704
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/27/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <29-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+
+ConverterTests.ElementCRUD
+
+    # VSTS#54702
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/27/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <28-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <28-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+
+ConverterTests.ElementCRUDInTile
+
+    # VSTS#54702
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/27/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <28-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <28-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+
+ConverterTests.ElementCRUDTiled
+
+    # VSTS#54702
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/27/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <28-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <28-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+
+ECSchemaTests.RemapSerializedInstance
+
+    # VSTS#54703
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/27/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <29-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <2A-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\SyncInfoReader.cpp(88): error:       Expected: eid
+    # Which is: 8-byte object <2C-00 00-00 00-00 00-00>
+    # To be equal to: estmt.GetValueId<DgnElementId>(0)
+    # Which is: 8-byte object <00-00 00-00 00-00 00-00>
