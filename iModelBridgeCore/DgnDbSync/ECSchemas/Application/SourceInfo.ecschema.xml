@@ -3,9 +3,31 @@
 
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
 
+    <ECRelationshipClass typeName="ScopeOfSourceElement" strength="referencing" modifier="Sealed">
+        <!-- @see ViewDefinition2d.BaseModel ECNavigationProperty -->
+        <Source multiplicity="(1..1)" roleLabel="is scope of" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is scoped within" polymorphic="true">
+            <Class class="SourceElementInfo"/>
+        </Target>
+    </ECRelationshipClass>
+    
     <ECEntityClass typeName="SourceElementInfo" >
         <BaseClass>bis:ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="SourceId" typeName="string" />
-        <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json"/>
+        <ECNavigationProperty propertyName="Scope" relationshipName="ScopeOfSourceElement" direction="Backward" displayLabel="Scope" description="identifies the element in the iModel (not the source) that corresponds to the scope or container in the source that owns, contains, or qualifies the identity of the source item.">
+            <!-- TODO: Must specify that this may not be null
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.2.0">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+            -->
+        </ECNavigationProperty>
+        <ECProperty propertyName="SourceId" typeName="string" description="bridge-specific identifier of the object in the source repository" />
+        <ECProperty propertyName="Kind" typeName="string" description="bridge-specific identifier of the `kind` of object this is in the source repository"/>
+        <ECProperty propertyName="LastModifiedTime" typeName="double" description="Julian day time of last change to source object's content" />
+        <ECProperty propertyName="Hash" typeName="binary" extendedTypeName="MD5" description="MD5 cryptographic hash of source object's content" />
+        <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json" description="A place where a bridge may store additional provenance properties"/>
     </ECEntityClass>
 </ECSchema>

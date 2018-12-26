@@ -42,6 +42,12 @@
 
 #define SOURCEINFO_ECSCHEMA_NAME            "SourceInfo"
 #define SOURCEINFO_CLASS_SoureElementInfo   "SourceElementInfo"
+#define SOURCEINFO_Scope                    "Scope"
+#define SOURCEINFO_SourceId                 "SourceId"
+#define SOURCEINFO_Kind                     "Kind"
+#define SOURCEINFO_LastModifiedTime         "LastModifiedTime"
+#define SOURCEINFO_Hash                     "Hash"
+#define SOURCEINFO_Properties               "Properties"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

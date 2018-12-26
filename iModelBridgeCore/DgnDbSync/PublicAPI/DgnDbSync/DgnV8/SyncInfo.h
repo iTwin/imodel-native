@@ -21,6 +21,7 @@
 #include <Bentley/md5.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnDbSync/DgnDbSync.h>
+#include <iModelBridge/iModelBridgeSyncInfoFile.h>
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
@@ -371,6 +372,16 @@ struct SyncInfo
         bool IsSame(ElementProvenance const& other){return (m_idPolicy==StableIdPolicy::ByHash || m_lastModified==other.m_lastModified) && m_hash.IsSame(other.m_hash);}
     };
 
+    //! Data that uniquely identifies a V8 *element*. This data is used as part of the input when constructing a SyncInfoAspect.
+    //! This corresponds to V8ElementSource, which it will someday replace.
+    struct V8ElementSyncInfoAspectData
+        {
+        DgnModelId m_scope;         // The model that was created (earlier) in the iModel from the V8 model that contains this V8 element.
+        DgnV8Api::ElementId m_v8Id; // The V8 element's ID
+        ElementProvenance m_prov;   // The V8 element's state
+        V8ElementSyncInfoAspectData(DgnModelId scope, DgnV8Api::ElementId v8Id, ElementProvenance const& prov) : m_scope(scope), m_v8Id(v8Id), m_prov(prov) {}
+        };
+    
     //! Uniquely identifies a V8 element
     struct V8ElementSource
         {
@@ -482,6 +493,98 @@ struct SyncInfo
         void Bind(V8ModelSyncInfoId modelId, SyncInfo::ElementHash hash) {m_stmt->Reset(); m_stmt->BindInt64(1, modelId.GetValue()); m_stmt->BindBlob(2, hash.m_buffer, sizeof(hash), BeSQLite::Statement::MakeCopy::No);}
 
     };
+
+    //! The V8 provenance of an element in an iModel. May refer to an element, model, or other object in the v8 source files.
+    struct SyncInfoAspect : iModelSyncInfoAspect
+        {
+      protected:
+        friend struct SyncInfo;
+        SyncInfoAspect(ECN::IECInstance* i) : iModelSyncInfoAspect(i) {}
+      public:
+        enum Kind
+            {
+            Element, Model, DrawingGraphic, Level
+            };
+
+        static Utf8CP KindToString(Kind kind)
+            {
+            switch (kind)
+                {
+                case Kind::Element: return "Element";
+                case Kind::Model: return "Model";
+                case Kind::DrawingGraphic: return "DrawingGraphic";
+                case Kind::Level: return "Level";
+                }
+            BeAssert(false);
+            return "Element";
+            }
+
+        static Kind ParseKind(Utf8CP str)
+            {
+            if (0==strcmp(str,"Element")) return Kind::Element;
+            if (0==strcmp(str,"Model")) return Kind::Model;
+            if (0==strcmp(str,"DrawingGraphic")) return Kind::DrawingGraphic;
+            if (0==strcmp(str,"Level")) return Kind::Level;
+            BeAssert(false);
+            return Kind::Element;
+            }
+
+        DGNDBSYNC_EXPORT SyncInfoAspect::Kind GetKind() const;
+        };
+
+    //! Identifies the source of an element in an iModel that was created from an element in a V8 model.
+    //! Replacement for V8ElementMapping
+    struct V8ElementSyncInfoAspect : SyncInfoAspect
+        {
+      private:
+        V8ElementSyncInfoAspect(iModelSyncInfoAspect const&);
+        V8ElementSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
+
+      public:
+        //! Create a new aspect in memory. Caller must call AddTo.
+        DGNDBSYNC_EXPORT static V8ElementSyncInfoAspect Make(V8ElementSyncInfoAspectData const&, DgnDbR);
+        
+        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
+        static V8ElementSyncInfoAspect Get(DgnElementR el) {return V8ElementSyncInfoAspect(V8ElementSyncInfoAspect::GetAspect(el));}
+        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
+        static V8ElementSyncInfoAspect Get(DgnElementCR el) {return V8ElementSyncInfoAspect(V8ElementSyncInfoAspect::GetAspect(el));}
+
+        DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov) {SourceState ss; ss.m_hash = prov.m_hash; ss.m_lastModifiedTime = prov.m_lastModified; SetSourceState(ss);}
+
+        DGNDBSYNC_EXPORT DgnV8Api::ElementId GetV8ElementId() const;
+
+        #ifdef TEST_SYNC_INFO_ASPECT
+        void AssertMatch(DgnElementCR, DgnV8Api::ElementId, ElementProvenance const&);
+        #endif
+        };
+
+    //! Replacement for V8ModelMapping
+    struct V8ModelSyncInfoAspect : SyncInfoAspect
+        {
+      private:
+        V8ModelSyncInfoAspect(iModelSyncInfoAspect const&);
+        V8ModelSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
+
+      public:
+        //! Create a new aspect in memory. Caller must call AddTo.
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Make(DgnV8ModelCR, TransformCR, Converter&);
+        
+        //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
+        static V8ModelSyncInfoAspect Get(DgnElementR el) {return V8ModelSyncInfoAspect(V8ModelSyncInfoAspect::GetAspect(el));}
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnModelR);
+        //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
+        static V8ModelSyncInfoAspect Get(DgnElementCR el) {return V8ModelSyncInfoAspect(V8ModelSyncInfoAspect::GetAspect(el));}
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnModelCR);
+
+        DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8ModelId() const;
+        DGNDBSYNC_EXPORT Transform GetTransform() const;
+        DGNDBSYNC_EXPORT Utf8String GetV8ModelName() const;
+
+
+        #ifdef TEST_SYNC_INFO_ASPECT
+        void AssertMatch(V8ModelMapping const&);
+        #endif
+        };
 
     //! Provenance info for an element that was \em not converted but was discarded instead.
     struct DiscardedElement
@@ -770,6 +873,11 @@ public:
     //! @param[in] modelsiid Identifies the V8 attachment through which we found this V8 element
     //! @return true if the element was found in the discard table
     DGNDBSYNC_EXPORT bool WasElementDiscarded (uint64_t v8id, V8ModelSyncInfoId modelsiid);
+
+#ifdef TEST_SYNC_INFO_ASPECT
+    void AssertAspectMatchesSyncInfo(V8ElementMapping const&);
+#endif
+
     //! @}
 
     //! @name Levels, Fonts, Styles, Materials

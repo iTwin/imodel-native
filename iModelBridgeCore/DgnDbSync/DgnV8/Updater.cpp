@@ -99,6 +99,15 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
         while ((found != iter->end()) && !(*filter)(found, converter))
             ++found;
         }
+
+#ifdef TEST_SYNC_INFO_ASPECT
+    {
+    // TODO - must filter on scope
+    // auto findAspect = converter.GetDgnDb().GetPreparedECSqlStatement("Select * from SourceInfo.SourceElementInfo where (SourceId=? and Kind='Element')");
+    // findAspect->BindInt64(1, v8eh.GetElementId());
+    }
+#endif
+
     if (found == iter->end())
         {
         // we never saw this element before, treat it as a new element. 
@@ -112,6 +121,9 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
         res.m_v8ElementMapping = found.GetV8ElementMapping();
         res.m_changeType = found.GetProvenance().IsSame(res.m_currentElementProvenance)? ChangeType::None: ChangeType::Update;
 
+#ifdef TEST_SYNC_INFO_ASPECT
+        converter.GetSyncInfo().AssertAspectMatchesSyncInfo(res.m_v8ElementMapping);
+#endif
         if (v8mm.GetDgnModel().IsSpatialModel() && converter.HasRootTransChanged())
             res.m_changeType = ChangeType::Update;
 
