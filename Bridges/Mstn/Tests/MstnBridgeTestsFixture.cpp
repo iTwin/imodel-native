@@ -149,11 +149,14 @@ void MstnBridgeTestsFixture::MakeCopyOfFile(BentleyApi::BeFileNameR outFile, Ben
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir, WCharCP bridgeRegSubkey, bool setCredentials)
+void MstnBridgeTestsFixture::SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir, WCharCP bridgeRegSubkey, bool setCredentials, WCharCP iModelName)
     {
     args.push_back(L"iModelBridgeTests.ConvertLinesUsingBridgeFwk");                                                 // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-environment=Qa");
-    args.push_back(L"--server-repository=iModelBridgeTests_Test1");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    if (NULL == iModelName)
+        args.push_back(L"--server-repository=iModelBridgeTests_Test1");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    else
+        args.push_back(BentleyApi::WPrintfString(L"--server-repository=%s", iModelName).c_str());
     args.push_back(L"--server-project-guid=iModelBridgeTests_Project");                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
     if (setCredentials)
@@ -308,7 +311,7 @@ void MstnBridgeTestsFixture::RunTheBridge(BentleyApi::bvector<BentleyApi::WStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,  BentleyApi::WCharCP dirName,
+void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir, BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
                                                 BentleyApi::BeFileNameCR inputFile, BentleyApi::BeSQLite::BeGuidCR inputGuid,
                                                 BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid)
     {
@@ -317,7 +320,8 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
     BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(L"iModelBridgeTests_Test1.fwk-registry.db");
+    assignDbName.AppendToPath(iModelName);
+    assignDbName.AppendExtension(L"fwk-registry.db");
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
 
