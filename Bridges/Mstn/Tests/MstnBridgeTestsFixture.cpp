@@ -194,7 +194,7 @@ void MstnBridgeTestsFixture::AddAttachment(BentleyApi::BeFileName& inputFile, Be
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile)
+int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile, int num)
     {
     int64_t elementId = 0;
     ScopedDgnv8Host testHost;
@@ -204,9 +204,13 @@ int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile)
     {
     V8FileEditor v8editor;
     v8editor.Open(inputFile);
-    DgnV8Api::ElementId eid1;
-    v8editor.AddLine(&eid1);
-    elementId = eid1;
+    for (int index = 0; index < num; ++index)
+        {
+        DgnV8Api::ElementId eid1;
+        v8editor.AddLine(&eid1,nullptr, Bentley::DPoint3d::FromXYZ((double) index * 1000, (double) index * 1000, 0));
+        if (index == 0)
+            elementId = eid1;
+        }
     v8editor.Save();
     }
     return elementId;

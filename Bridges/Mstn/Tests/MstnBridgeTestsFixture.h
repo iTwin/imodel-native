@@ -36,7 +36,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     void AddAttachment(BentleyApi::BeFileName& inputFile, BentleyApi::BeFileNameR refV8File, int32_t num, bool useOffsetForElement);
 
-    int64_t AddLine(BentleyApi::BeFileName& inputFile);
+    int64_t AddLine(BentleyApi::BeFileName& inputFile, int count = 1);
 
     struct DbFileInfo
         {

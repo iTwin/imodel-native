@@ -660,3 +660,52 @@ TEST_F(MstnBridgeTests, DISABLED_OidcTest)
     ASSERT_EQ(0, fwk.Run(argc, argv));
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, DISABLED_TestCodeRemovalPerformance)
+    {
+    auto testDir = getiModelBridgeTestsOutputDir(L"TestSourceElementIdAspect");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
+
+    args.push_back(L"--fwk-storeElementIdsInBIM");
+    args.push_back(L"--set-DebugCodes");
+    
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+    args.push_back(L"--fwk-skip-assignment-check");
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
+
+    testIModelHubClientForBridges.CreateRepository("iModelBridgeTests_Test1", GetSeedFile());
+
+    BentleyApi::BeFileName dbFile(testDir);
+    dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
+
+    int64_t srcId = AddLine(inputFile,200000);
+    if (true)
+        {
+        // and run an update
+        StopWatch watch(true);
+        RunTheBridge(args);
+        watch.Stop();
+        //Utf8PrintfString message("Importing RunTheBridge|%.0f millisecs", schemaTimer.GetElapsedSeconds() * 1000.0);
+        LOGTODB("MstnBridgeTests", "TestCodeRemovalPerformance,", watch.GetElapsedSeconds() * 1000.0);
+
+        }
+    DbFileInfo info(dbFile);
+    DgnElementId id;
+    ASSERT_EQ(SUCCESS, info.GetiModelElementByDgnElementId(id, srcId));
+
+    ASSERT_TRUE(id.IsValid());
+
+    }
