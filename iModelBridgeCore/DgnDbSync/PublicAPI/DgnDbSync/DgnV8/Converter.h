@@ -593,7 +593,6 @@ struct Converter
 
     private:
         bool m_skipUnchangedFiles;
-        bool m_wantProvenanceInBim;
         bool m_isPowerplatformBased;
         bool m_processAffected;
         bool m_convertViewsOfAllDrawings;
@@ -622,7 +621,6 @@ struct Converter
             m_time = DateTime::GetCurrentTimeUtc();
             m_skipUnchangedFiles = true;
             m_isPowerplatformBased = false;
-            m_wantProvenanceInBim = false;
             m_processAffected = false;
             m_convertViewsOfAllDrawings = true;
             }
@@ -641,7 +639,7 @@ struct Converter
             m_isPowerplatformBased = isPowerplatformBased;
             }
         void SetSkipUnchangedFiles(bool v) {m_skipUnchangedFiles = v;}
-        void SetWantProvenanceInBim(bool v) {m_wantProvenanceInBim = v;}
+        
         void SetCopyLevel(CopyLevel v) {m_copyLevel = v;}
         void SetProjectWiseExtensionDll(BeFileNameCR pwExtensionDll) {m_pwExtensionDll = pwExtensionDll;}
         void SetProjectWiseWorkDir(BeFileNameCR pwWorkDir) {m_pwWorkDir = pwWorkDir;}
@@ -672,7 +670,6 @@ struct Converter
         Utf8StringCR GetProjectWisePassword() const {return  m_pwPassword;}
         Utf8StringCR GetProjectWiseDataSource() const {return  m_pwDataSource;}
         bool GetIsPowerplatformBased() const {return m_isPowerplatformBased;}
-        bool GetWantProvenanceInBim() const {return m_wantProvenanceInBim;}
         bool GetProcessAffected() const { return m_processAffected; }
         bool GetConvertViewsOfAllDrawings() const {return m_convertViewsOfAllDrawings;}
         bool GetWantDebugCodes() const { return  m_wantDebugCodes; }

@@ -127,7 +127,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         {
         bool       m_skipAssignmentCheck = false;
         bool       m_createRepositoryIfNecessary = false;
-        bool       m_storeElementIdsInBIM {};
+        bool       m_wantProvenanceInBim {};
         bool       m_mergeDefinitions = true;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
