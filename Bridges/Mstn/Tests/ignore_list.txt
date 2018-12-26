@@ -23,3 +23,5 @@ MstnBridgeTests.ConvertAttachmentMultiBridgeSharedReference
     # [2] __scrt_common_main_seh (0x7ff68fe27138)
     # [1] BaseThreadInitThunk (0x7ff9eeac1fd0)
     # [0] RtlUserThreadStart (0x7ff9eee2cb10)
+
+MstnBridgeTests.TestSourceElementIdAspect # WIP port to new aspect class definition
