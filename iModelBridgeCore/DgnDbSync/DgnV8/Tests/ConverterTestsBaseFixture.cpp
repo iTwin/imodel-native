@@ -667,7 +667,22 @@ DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Ap
         return nullptr;
 
     DgnCode code(db.CodeSpecs().QueryCodeSpecId("DgnV8"), jobSubject->GetElementId(), BentleyApi::Utf8PrintfString("DgnV8-%d-%ld", dgnIndex, eV8Id));
-    return db.Elements().GetElement(db.Elements().QueryElementIdByCode(code));
+    DgnElementCPtr element = db.Elements().GetElement(db.Elements().QueryElementIdByCode(code));
+    if (element.IsNull())
+        return nullptr;
+
+    //Find the element id from aspect.
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
+                  BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
+                  SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
+                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
+    estmt.BindInt64(1, eV8Id);
+
+    BeAssert(BE_SQLITE_ROW == estmt.Step());
+    BeAssert(element->GetElementId() == estmt.GetValueId<DgnElementId>(0));
+
+    return element;
     }
 
 /*---------------------------------------------------------------------------------**//**
