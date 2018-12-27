@@ -95,12 +95,12 @@ TEST_F (SupportedClassNamesParserTests, Parse_IncludedclassInfosFromMultipleSche
     SupportedClassNamesParser parser(*m_helper, "Basic2:Class2;Basic3:Class3", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(2, classInfos.size());
-    
+
     SupportedClassInfo<ECClass> const* info1 = Find(classInfos, *m_helper->GetECClass("Basic2", "Class2")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info1);
     ASSERT_TRUE(info1->IsInclude());
     ASSERT_TRUE(info1->IsPolymorphic());
-    
+
     SupportedClassInfo<ECClass> const* info2 = Find(classInfos, *m_helper->GetECClass("Basic3", "Class3")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info2);
     ASSERT_TRUE(info2->IsInclude());
@@ -115,7 +115,7 @@ TEST_F (SupportedClassNamesParserTests, Parse_ExcludedclassInfosFromSingleSchema
     SupportedClassNamesParser parser(*m_helper, "E:Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(1, classInfos.size());
-    
+
     SupportedClassInfo<ECClass> const* info = Find(classInfos, *m_helper->GetECClass("Basic2", "Class2")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info);
     ASSERT_TRUE(info->IsExclude());
@@ -129,11 +129,11 @@ TEST_F (SupportedClassNamesParserTests, Parse_ExcludedclassInfosFromMultipleSche
     SupportedClassNamesParser parser(*m_helper, "E:Basic2:Class2;Basic3:Class3", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(2, classInfos.size());
-    
+
     SupportedClassInfo<ECClass> const* info1 = Find(classInfos, *m_helper->GetECClass("Basic2", "Class2")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info1);
     ASSERT_TRUE(info1->IsExclude());
-    
+
     SupportedClassInfo<ECClass> const* info2 = Find(classInfos, *m_helper->GetECClass("Basic3", "Class3")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info2);
     ASSERT_TRUE(info2->IsExclude());
@@ -147,7 +147,7 @@ TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedclassInfosF
     SupportedClassNamesParser parser(*m_helper, "PE:Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(1, classInfos.size());
-    
+
     SupportedClassInfo<ECClass> const* info = Find(classInfos, *m_helper->GetECClass("Basic2", "Class2")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info);
     ASSERT_TRUE(info->IsExclude());
@@ -162,12 +162,12 @@ TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedclassInfosF
     SupportedClassNamesParser parser(*m_helper, "PE:Basic2:Class2;Basic3:Class3", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(2, classInfos.size());
-    
+
     SupportedClassInfo<ECClass> const* info1 = Find(classInfos, *m_helper->GetECClass("Basic2", "Class2")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info1);
     ASSERT_TRUE(info1->IsExclude());
     ASSERT_TRUE(info1->IsPolymorphic());
-    
+
     SupportedClassInfo<ECClass> const* info2 = Find(classInfos, *m_helper->GetECClass("Basic3", "Class3")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info2);
     ASSERT_TRUE(info2->IsExclude());
@@ -182,16 +182,16 @@ TEST_F (SupportedClassNamesParserTests, Parse_IncludedAndExcluded)
     SupportedClassNamesParser parser(*m_helper, "Basic1:Class1;E:Basic1:Class1B;PE:Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(3, classInfos.size());
-    
+
     SupportedClassInfo<ECClass> const* info1 = Find(classInfos, *m_helper->GetECClass("Basic1", "Class1")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info1);
     ASSERT_TRUE(info1->IsInclude());
     ASSERT_TRUE(info1->IsPolymorphic());
-    
+
     SupportedClassInfo<ECClass> const* info2 = Find(classInfos, *m_helper->GetECClass("Basic1", "Class1B")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info2);
     ASSERT_TRUE(info2->IsExclude());
-    
+
     SupportedClassInfo<ECClass> const* info3 = Find(classInfos, *m_helper->GetECClass("Basic2", "Class2")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info3);
     ASSERT_TRUE(info3->IsExclude());
@@ -206,7 +206,7 @@ TEST_F (SupportedClassNamesParserTests, GetECclassInfosFromClassList_IncludedAnd
     SupportedClassNamesParser parser(*m_helper, "Basic1:Class1;E:Basic1:Class1", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(1, classInfos.size());
-    
+
     SupportedClassInfo<ECClass> const* info = Find(classInfos, *m_helper->GetECClass("Basic1", "Class1")->GetEntityClassCP());
     ASSERT_TRUE(nullptr != info);
     ASSERT_TRUE(info->IsInclude());
@@ -278,7 +278,7 @@ TEST_F (ECSchemaHelperTests, GetOppositeRelationshipEnds_SingleEnd)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex");
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass2And3")->GetRelationshipClassCP();
-    
+
     ECRelationshipConstraintClassList oppositeRelationshipEnds = m_helper->GetRelationshipConstraintClasses(relationship, ECRelatedInstanceDirection::Backward, "");
     ASSERT_EQ(1, oppositeRelationshipEnds.size());
     ASSERT_STREQ("SchemaComplex:Class1", oppositeRelationshipEnds[0]->GetFullName());
@@ -331,17 +331,17 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedSchemas)
         ASSERT_EQ(1, paths[i].first.size());
         ASSERT_TRUE(paths[i].second);
         }
-    
+
     ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
     ASSERT_EQ(&class2, paths[0].first[0].GetTargetClass());
     ASSERT_EQ(&relationship1, paths[0].first[0].GetRelationship());
     ASSERT_FALSE(paths[0].first[0].IsForwardRelationship());
-    
+
     ASSERT_EQ(&class1, paths[1].first[0].GetSourceClass());
     ASSERT_EQ(&class3, paths[1].first[0].GetTargetClass());
     ASSERT_EQ(&relationship1, paths[1].first[0].GetRelationship());
     ASSERT_FALSE(paths[1].first[0].IsForwardRelationship());
-    
+
     ASSERT_EQ(&class1, paths[2].first[0].GetSourceClass());
     ASSERT_EQ(&class3, paths[2].first[0].GetTargetClass());
     ASSERT_EQ(&relationship2, paths[2].first[0].GetRelationship());
@@ -358,7 +358,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromRelatedClassNames)
     ECRelationshipClassCR relationship2 = *schema->GetClassCP("Class1HasClass3")->GetRelationshipClassCP();
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECClassCR class3 = *schema->GetClassCP("Class3");
-    
+
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "", "SchemaComplex:Class3", relationshipUseCounts, nullptr);
     bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
@@ -368,12 +368,12 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromRelatedClassNames)
         ASSERT_EQ(1, paths[i].first.size());
         ASSERT_TRUE(paths[i].second);
         }
-    
+
     ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
     ASSERT_EQ(&class3, paths[0].first[0].GetTargetClass());
     ASSERT_EQ(&relationship1, paths[0].first[0].GetRelationship());
     ASSERT_FALSE(paths[0].first[0].IsForwardRelationship());
-    
+
     ASSERT_EQ(&class1, paths[1].first[0].GetSourceClass());
     ASSERT_EQ(&class3, paths[1].first[0].GetTargetClass());
     ASSERT_EQ(&relationship2, paths[1].first[0].GetRelationship());
@@ -389,14 +389,14 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FindsRelatedClassesPolymo
     ECRelationshipClassCR relationship = *schema->GetClassCP("DerivingRelationship")->GetRelationshipClassCP();
     ECEntityClassCR class4 = *schema->GetClassCP("Class4")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
-    
+
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class3, (int)ECRelatedInstanceDirection::Backward, 0, "", "SchemaComplex:DerivingRelationship", "SchemaComplex:Class4", relationshipUseCounts, nullptr);
     bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
     ASSERT_EQ(1, paths[0].first.size());
     ASSERT_TRUE(paths[0].second);
-    
+
     ASSERT_EQ(&class3, paths[0].first[0].GetSourceClass());
     ASSERT_EQ(&class4, paths[0].first[0].GetTargetClass());
     ASSERT_EQ(&relationship, paths[0].first[0].GetRelationship());
@@ -413,7 +413,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedRelationship
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECClassCR class2 = *schema->GetClassCP("Class2");
     ECClassCR class3 = *schema->GetClassCP("Class3");
-    
+
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass2And3", "", relationshipUseCounts, nullptr);
     bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
@@ -423,12 +423,12 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedRelationship
         ASSERT_EQ(1, paths[i].first.size());
         ASSERT_TRUE(paths[i].second);
         }
-    
+
     ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
     ASSERT_EQ(&class2, paths[0].first[0].GetTargetClass());
     ASSERT_EQ(&relationship, paths[0].first[0].GetRelationship());
     ASSERT_FALSE(paths[0].first[0].IsForwardRelationship());
-    
+
     ASSERT_EQ(&class1, paths[1].first[0].GetSourceClass());
     ASSERT_EQ(&class3, paths[1].first[0].GetTargetClass());
     ASSERT_EQ(&relationship, paths[1].first[0].GetRelationship());
@@ -443,12 +443,12 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RespectsPolymorphicRelati
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex");
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class4 = *schema->GetClassCP("Class4")->GetEntityClassCP();
-    
+
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options1(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass3", "", relationshipUseCounts, nullptr);
     bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options1);
     ASSERT_EQ(1, paths.size());
-    
+
     // Class4 derives from Class1, but the relationship is not followed because the source constraint is not polymorphic
     ECSchemaHelper::RelationshipClassPathOptions options2(class4, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass3", "", relationshipUseCounts, nullptr);
     paths = m_helper->GetRelationshipClassPaths(options2);
@@ -477,7 +477,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsD
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
     static int relationshipDirection = (int)ECRelatedInstanceDirection::Forward | (int)ECRelatedInstanceDirection::Backward;
-    
+
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class2, relationshipDirection, 0, "SchemaComplex2", "", "", relationshipUseCounts, nullptr);
     bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
@@ -487,12 +487,12 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsD
         ASSERT_EQ(1, paths[i].first.size());
         ASSERT_TRUE(paths[i].second);
         }
-    
+
     ASSERT_EQ(&class2, paths[0].first[0].GetSourceClass());
     ASSERT_EQ(&class1, paths[0].first[0].GetTargetClass());
     ASSERT_EQ(&relationship1, paths[0].first[0].GetRelationship());
     ASSERT_TRUE(paths[0].first[0].IsForwardRelationship());
-    
+
     ASSERT_EQ(&class2, paths[1].first[0].GetSourceClass());
     ASSERT_EQ(&class3, paths[1].first[0].GetTargetClass());
     ASSERT_EQ(&relationship2, paths[1].first[0].GetRelationship());
@@ -512,19 +512,19 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsD
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
     static int relationshipDirection = (int)ECRelatedInstanceDirection::Forward | (int)ECRelatedInstanceDirection::Backward;
-    
+
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, relationshipDirection, 1, "", "", "SchemaComplex2:Class3", relationshipUseCounts, nullptr);
     bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
     ASSERT_EQ(2, paths[0].first.size());
     ASSERT_TRUE(paths[0].second);
-    
+
     ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
     ASSERT_EQ(&class2, paths[0].first[0].GetTargetClass());
     ASSERT_EQ(&relationship1, paths[0].first[0].GetRelationship());
     ASSERT_FALSE(paths[0].first[0].IsForwardRelationship());
-    
+
     ASSERT_EQ(&class2, paths[0].first[1].GetSourceClass());
     ASSERT_EQ(&class3, paths[0].first[1].GetTargetClass());
     ASSERT_EQ(&relationship2, paths[0].first[1].GetRelationship());
@@ -540,13 +540,13 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_DoesntDuplicatePathsWithP
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass2And3")->GetRelationshipClassCP();
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
-        
+
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class2, (int)ECRelatedInstanceDirection::Backward,
         0, "SchemaComplex", "", "", relationshipUseCounts, nullptr);
     bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
-    
+
     ASSERT_EQ(&class2, paths[0].first[0].GetSourceClass());
     ASSERT_EQ(&class1, paths[0].first[0].GetTargetClass());
     ASSERT_EQ(&relationship, paths[0].first[0].GetRelationship());
@@ -562,13 +562,13 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_DoesntDuplicatePathsWithP
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass3")->GetRelationshipClassCP();
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
-        
+
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward,
         0, "", "SchemaComplex:Class1HasClass3,DerivingRelationship", "SchemaComplex:Class3", relationshipUseCounts, nullptr);
     bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
-    
+
     ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
     ASSERT_EQ(&class3, paths[0].first[0].GetTargetClass());
     ASSERT_EQ(&relationship, paths[0].first[0].GetRelationship());
@@ -586,9 +586,9 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RecursivelyUsingSuppliedR
     ECEntityClassCR sprocket = *schema->GetClassCP("Sprocket")->GetEntityClassCP();
     ECRelationshipClassCR wiggetHasGadgets = *schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
     ECRelationshipClassCR gadgetHasSprockets = *schema->GetClassCP("GadgetHasSprockets")->GetRelationshipClassCP();
-    
+
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
-    ECSchemaHelper::RelationshipClassPathOptions options(widget, (int)ECRelatedInstanceDirection::Forward, -1, "", 
+    ECSchemaHelper::RelationshipClassPathOptions options(widget, (int)ECRelatedInstanceDirection::Forward, -1, "",
         "RulesEngineTest:WidgetHasGadgets,GadgetHasSprockets", "RulesEngineTest:Gadget,Sprocket", relationshipUseCounts, nullptr);
     bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(2, paths.size());
@@ -600,7 +600,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RecursivelyUsingSuppliedR
     EXPECT_EQ(&gadget, path1[0].GetTargetClass());
     EXPECT_EQ(&wiggetHasGadgets, path1[0].GetRelationship());
     EXPECT_FALSE(path1[0].IsForwardRelationship());
-    
+
     RelatedClassPath const& path2 = paths[1].first;
     ASSERT_EQ(2, path2.size());
     EXPECT_EQ(&widget, path2[0].GetSourceClass());
@@ -748,7 +748,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
     ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
-    
+
     IECInstancePtr instance11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
     IECInstancePtr instance12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
@@ -777,7 +777,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
     ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
-    
+
     IECInstancePtr instance11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
     IECInstancePtr instance12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
@@ -805,7 +805,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class2")->GetEntityClassCP();
     ECRelationshipClassCP rel1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class1HasClass1")->GetRelationshipClassCP();
     ECRelationshipClassCP rel2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class1HasClass2")->GetRelationshipClassCP();
-    
+
     IECInstancePtr instance11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
     IECInstancePtr instance12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
@@ -820,9 +820,9 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, &recursiveInfo, "");
 
     bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        Utf8PrintfString("%s:%s,%s", rel1->GetSchema().GetName().c_str(), rel1->GetName().c_str(), rel2->GetName().c_str()), 
-        ECRelatedInstanceDirection::Forward, 
-        Utf8PrintfString("%s:%s,%s", class1->GetSchema().GetName().c_str(), class1->GetName().c_str(), class2->GetName().c_str()), 
+        Utf8PrintfString("%s:%s,%s", rel1->GetSchema().GetName().c_str(), rel1->GetName().c_str(), rel2->GetName().c_str()),
+        ECRelatedInstanceDirection::Forward,
+        Utf8PrintfString("%s:%s,%s", class1->GetSchema().GetName().c_str(), class1->GetName().c_str(), class2->GetName().c_str()),
         RelatedClassPath(),
         &filteringParams);
     ASSERT_EQ(2, result.size());
@@ -842,7 +842,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class3")->GetEntityClassCP();
     ECRelationshipClassCP rel1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class1HasClass2")->GetRelationshipClassCP();
     ECRelationshipClassCP rel2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class3HasClass2")->GetRelationshipClassCP();
-    
+
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
     IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
@@ -860,4 +860,47 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
     EXPECT_EQ(class1, result[0][0].GetTargetClass());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Grigas.Petraitis                12/2018
+//---------------------------------------------------------------------------------------
+void ECInstancesHelperTests::SetUp()
+    {
+    ECPresentationTest::SetUp();
+    m_project.Create("ECInstancesHelperTests", "RulesEngineTest.01.00.ecschema.xml");
+    m_connection = new TestConnection(m_project.GetECDb());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECInstancesHelperTests, LoadInstance_LoadsInstanceAfterSchemaImport)
+    {
+    ECInstanceKey key(m_project.GetECDb().Schemas().GetClassId("ECDbMeta", "ECClassDef"), ECInstanceId((uint64_t)1));
+    IECInstancePtr instance;
+    DbResult result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
+    EXPECT_EQ(BE_SQLITE_ROW, result);
+    EXPECT_TRUE(instance.IsValid());
+
+    // import a schema and attempt to load the instance again
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(m_project.GetECDb().GetSchemaLocater());
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_1, *schemaReadContext));
+    BentleyStatus status = m_project.GetECDb().Schemas().ImportSchemas({ schema.get() });
+    ASSERT_EQ(SUCCESS, status);
+
+    result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
+    EXPECT_EQ(BE_SQLITE_ROW, result);
+    EXPECT_TRUE(instance.IsValid());
+
+    // repeat 2nd time
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_2, *schemaReadContext));
+    status = m_project.GetECDb().Schemas().ImportSchemas({ schema.get() });
+    ASSERT_EQ(SUCCESS, status);
+
+    result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
+    EXPECT_EQ(BE_SQLITE_ROW, result);
+    EXPECT_TRUE(instance.IsValid());
     }

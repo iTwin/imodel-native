@@ -174,6 +174,38 @@ TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Backwar
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedInstancesCountSpecialCase_Forward)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedInstancesCount(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\")");
+    ASSERT_STREQ("("
+        "SELECT COUNT(1) "
+        "FROM [TestSchema1].[RelationshipName] relationship "
+        "JOIN [TestSchema2].[RelatedClassName] related "
+        "ON [related].[ECClassId] = [relationship].[TargetECClassId] AND [related].[ECInstanceId] = [relationship].[TargetECInstanceId] "
+        "WHERE [relationship].[SourceECClassId] = [this].[ECClassId] AND [relationship].[SourceECInstanceId] = [this].[ECInstanceId]"
+        ")", 
+        ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedInstancesCountSpecialCase_Backward)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedInstancesCount(\"TestSchema1:RelationshipName\", \"Backward\", \"TestSchema2:RelatedClassName\")");
+    ASSERT_STREQ("("
+        "SELECT COUNT(1) "
+        "FROM [TestSchema1].[RelationshipName] relationship "
+        "JOIN [TestSchema2].[RelatedClassName] related "
+        "ON [related].[ECClassId] = [relationship].[SourceECClassId] AND [related].[ECInstanceId] = [relationship].[SourceECInstanceId] "
+        "WHERE [relationship].[TargetECClassId] = [this].[ECClassId] AND [relationship].[TargetECInstanceId] = [this].[ECInstanceId]"
+        ")", 
+        ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_Forward)

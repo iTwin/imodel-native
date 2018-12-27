@@ -353,7 +353,6 @@ private:
     static rapidjson::Document GetFallbackPrimitiveValue(ECPropertyCR prop, PrimitiveType type, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
         {
         NULL_FORMATTED_VALUE_PRECONDITION(value);
-
         rapidjson::Document json(allocator);
         ECValue v = ValueHelpers::GetECValueFromSqlValue(type, value);
         Utf8String stringValue;
@@ -373,7 +372,6 @@ private:
         IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
         {
         NULL_FORMATTED_VALUE_PRECONDITION(value);
-
         rapidjson::Document json(allocator);
         Utf8String formattedValue;
         if (SUCCESS != formatter.GetFormattedPropertyValue(formattedValue, prop, ValueHelpers::GetECValueFromSqlValue(type, value)))
@@ -388,7 +386,6 @@ private:
     static rapidjson::Document GetFallbackStructValue(IECSqlValue const& structValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
         NULL_FORMATTED_VALUE_PRECONDITION(structValue);
-
         rapidjson::Document json(allocator);
         json.SetObject();
         for (IECSqlValue const& value : structValue.GetStructIterable())
@@ -406,7 +403,6 @@ private:
         IECSqlValue const& structValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
         NULL_FORMATTED_VALUE_PRECONDITION(structValue);
-
         rapidjson::Document json(allocator);
         json.SetObject();
         for (IECSqlValue const& value : structValue.GetStructIterable())
@@ -423,7 +419,6 @@ private:
     static rapidjson::Document GetFallbackArrayValue(ArrayECPropertyCR prop, IECSqlValue const& arrayValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
         NULL_FORMATTED_VALUE_PRECONDITION(arrayValue);
-
         rapidjson::Document json(allocator);
         json.SetArray();
         for (IECSqlValue const& value : arrayValue.GetArrayIterable())
@@ -452,7 +447,6 @@ private:
         IECSqlValue const& arrayValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
         NULL_FORMATTED_VALUE_PRECONDITION(arrayValue);
-
         rapidjson::Document json(allocator);
         json.SetArray();
         for (IECSqlValue const& value : arrayValue.GetArrayIterable())
