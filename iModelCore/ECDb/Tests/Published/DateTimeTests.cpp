@@ -434,4 +434,30 @@ TEST_F(DateTimeTestFixture, TimeOfDay)
     EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  12/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DateTimeTestFixture, CURRENT_XXX)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CurrentXXX.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CURRENT_DATE, CURRENT_TIMESTAMP, CURRENT_TIME FROM meta.ECSchemaDef LIMIT 1"));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    DateTime currentDate = stmt.GetValueDateTime(0);
+    ASSERT_TRUE(currentDate.IsValid());
+    EXPECT_EQ(DateTime::Info::CreateForDate(), currentDate.GetInfo());
+    EXPECT_GE(currentDate.GetYear(), 2018);
+
+    DateTime currentTimeStamp = stmt.GetValueDateTime(1);
+    ASSERT_TRUE(currentTimeStamp.IsValid());
+    EXPECT_EQ(DateTime::Info::CreateForDateTime(DateTime::Kind::Utc), currentTimeStamp.GetInfo());
+    EXPECT_GE(currentTimeStamp.GetYear(), 2018);
+
+    DateTime currentTime = stmt.GetValueDateTime(2);
+    ASSERT_TRUE(currentTime.IsValid());
+    ASSERT_TRUE(currentTime.IsTimeOfDay());
+    EXPECT_EQ(DateTime::Info::CreateForTimeOfDay(), currentTime.GetInfo());
+    }
 END_ECDBUNITTESTS_NAMESPACE

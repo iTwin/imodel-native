@@ -66,6 +66,7 @@ void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR cont
     {
     context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
     context.AddSymbol(*MethodSymbol::Create("GetECClassId", &GetClassId, nullptr, const_cast<ECDb*>(&m_db)));
+    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstancesCount", nullptr, &GetRelatedInstancesCount, const_cast<ECDb*>(&m_db)));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, const_cast<ECDb*>(&m_db)));
     context.AddSymbol(*MethodSymbol::Create("HasRelatedInstance", nullptr, &HasRelatedInstance, const_cast<ECDb*>(&m_db)));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedValue", nullptr, &GetRelatedValue, const_cast<ECDb*>(&m_db)));
@@ -362,6 +363,56 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
     return ExpressionStatus::Success;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstancesCount(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+    {
+    if (3 != args.size())
+        {
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstancesCount: WrongNumberOfArguments. Expected 3, actually %" PRIu64, (uint64_t)args.size()).c_str());
+        return ExpressionStatus::WrongNumberOfArguments;
+        }
+
+    ECDbCR db = *reinterpret_cast<ECDb const*>(context);
+
+    Utf8String queryFormat;
+    ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, db, instanceData, args);
+    if (ExpressionStatus::Success != stat)
+        return stat;
+
+    uint64_t count = 0;
+    for (IECInstancePtr const& instance : instanceData)
+        {
+        Utf8PrintfString nestedQuery(queryFormat.c_str(), ECDBSYS_PROP_ECInstanceId, instance->GetClass().GetECSqlName().c_str());
+        Utf8PrintfString query("SELECT COUNT(1) FROM (%s)", nestedQuery.c_str());
+        
+        ECSqlStatement stmt;
+        ECSqlStatus status = stmt.Prepare(db, query.c_str());
+        if (!status.IsSuccess())
+            {
+            BeAssert(false);
+            continue;
+            }
+        
+        ECInstanceId id;
+        ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
+        status = stmt.BindId(1, id);
+        if (!status.IsSuccess())
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        if (DbResult::BE_SQLITE_ROW == stmt.Step())
+            count += stmt.GetValueUInt64(0);
+        }
+    
+    evalResult.InitECValue().SetLong(count);
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstancesCount: Result: %s", evalResult.ToString().c_str()).c_str());
+    return ExpressionStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

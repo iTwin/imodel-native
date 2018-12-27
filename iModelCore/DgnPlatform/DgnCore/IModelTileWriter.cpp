@@ -1306,21 +1306,34 @@ void IModelTileWriter::AddVertexTable(Json::Value& primitiveJson, VertexTable co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IModelTileWriter::AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
     {
-    Json::Value     primitives = Json::arrayValue;
     size_t          primitiveIndex = 0;
+
+    Json::Value     meshes     = Json::objectValue;
+    Json::Value     nodes      = Json::objectValue;
 
     for (auto& geomMesh : geometry.Meshes())
         {
-        AddMesh(primitives, *geomMesh, primitiveIndex);
+        Utf8String  id = (0 == geomMesh->GetNodeIndex()) ? Utf8String("Root") : Utf8PrintfString("%d", geomMesh->GetNodeIndex());
+        Utf8String  meshId = "Mesh_" + id;
+
+        if (!meshes.isMember(meshId))
+            {
+            Utf8String     nodeId = "Node_" + id;
+            nodes[nodeId] = meshId;
+            meshes[meshId] = Json::objectValue;
+            meshes[meshId]["primitives"] = Json::arrayValue;
+            }
+
+        AddMesh(meshes[meshId]["primitives"], *geomMesh, primitiveIndex);
         if (IsCanceled())
             return;
         }
-
-    AddPrimitivesJson(primitives);
+    m_json["meshes"] = meshes;
+    m_json["nodes"]  = nodes;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/18
+* @bsimethod                                                    Paul.Connelly   09/18                       p
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IModelTileWriter::AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
     {

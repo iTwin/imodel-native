@@ -26,6 +26,7 @@
 #include <Bentley/BeAtomic.h>
 #include <Bentley/PerformanceLogger.h>
 #include <DgnPlatform/Tile.h>
+#include <DgnPlatform/ChangedElementsManager.h>
 #include "UlasClient.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -718,6 +719,9 @@ static void initializeGcs()
 //=======================================================================================
 struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     {
+    public:
+        static constexpr int ERROR_UsageTrackingFailed = -100;
+
     // Cancellation token associated with the currently-open DgnDb.
     // The 'cancelled' flag i set on the main thread when the DgnDb is being closed.
     // The token can be passed into functions which create async workers and stored on those
@@ -744,11 +748,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     std::shared_ptr<CancellationToken> m_cancellationToken;
-    std::unique_ptr<UlasClient> m_ulasClient;
     NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
-    ~NativeDgnDb() {CloseDgnDb(true);}
+    ~NativeDgnDb() {CloseDgnDb();}
 
-    void CloseDgnDb(bool stopUsageTracking)
+    void CloseDgnDb()
         {
         if (!m_dgndb.IsValid())
             return;
@@ -763,14 +766,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb->m_jsIModelDb.Reset(); // disconnect the iModelDb object
         JsInterop::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
-
-        if (stopUsageTracking)
-            {
-            if (m_ulasClient != nullptr)
-                m_ulasClient->StopApplication();
-
-            m_ulasClient = nullptr;
-            }
         }
 
     void OnDgnDbOpened(DgnDbR dgndb)
@@ -850,19 +845,18 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     Napi::Value OpenDgnDb(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, accessToken, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, projectId, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(2, dbname, Env().Undefined());
-        REQUIRE_ARGUMENT_INTEGER(3, mode, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, appVersion, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(2, projectId, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(3, dbname, Env().Undefined());
+        REQUIRE_ARGUMENT_INTEGER(4, mode, Env().Undefined());
 
         DgnDbPtr db;
         DbResult status = JsInterop::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
         if (BE_SQLITE_OK == status)
             {
             OnDgnDbOpened(*db);
-            BeAssert(m_ulasClient == nullptr);
-            m_ulasClient = std::make_unique<UlasClient>(accessToken, projectId);
-            if (SUCCESS != m_ulasClient->Initialize())
-                return Napi::Number::New(Env(), -100);
+            if (SUCCESS != UlasClient::Get().TrackUsage(accessToken, appVersion, projectId))
+                return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
             }
 
         return Napi::Number::New(Env(), (int)status);
@@ -884,19 +878,18 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     Napi::Value CreateIModel(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, accessToken, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, projectId, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(2, fileName, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(3, args, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, appVersion, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(2, projectId, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(3, fileName, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(4, args, Env().Undefined());
 
         DbResult status;
         DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args), Env());
         if (db.IsValid())
             {
             OnDgnDbOpened(*db);
-            BeAssert(m_ulasClient == nullptr);
-            m_ulasClient = std::make_unique<UlasClient>(accessToken, projectId);
-            if (SUCCESS != m_ulasClient->Initialize())
-                return Napi::Number::New(Env(), -100);
+            if (SUCCESS != UlasClient::Get().TrackUsage(accessToken, appVersion, projectId))
+                return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
             }
 
         return Napi::Number::New(Env(), (int)status);
@@ -1011,7 +1004,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         BeFileName dbFileName(m_dgndb->GetDbFileName(), true);
         bool isReadonly = m_dgndb->IsReadonly();
 
-        CloseDgnDb(false);
+        CloseDgnDb();
 
         status = JsInterop::ApplySchemaChangeSets(dbFileName, revisions, (RevisionProcessOption)applyOption);
         if (RevisionStatus::Success != status)
@@ -1418,8 +1411,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)result);
         }
 
-    void CloseDgnDb(Napi::CallbackInfo const& info) {  CloseDgnDb(true); }
-    void CloseDgnDbFile(Napi::CallbackInfo const& info) { CloseDgnDb(false); }
+    void CloseDgnDb(Napi::CallbackInfo const& info) {  CloseDgnDb(); }
 
     Napi::Value CreateChangeCache(Napi::CallbackInfo const& info)
         {
@@ -1873,7 +1865,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
             InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
             InstanceMethod("closeIModel", &NativeDgnDb::CloseDgnDb),
-            InstanceMethod("closeIModelFile", &NativeDgnDb::CloseDgnDbFile),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("createStandaloneIModel", &NativeDgnDb::CreateStandaloneIModel),
@@ -1971,6 +1962,165 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         s_constructor.SuppressDestruct();
         }
 };
+
+//=======================================================================================
+// Projects the Changed Elements ECDb class into JS
+//! @bsiclass
+//=======================================================================================
+struct NativeChangedElementsECDb : Napi::ObjectWrap<NativeChangedElementsECDb>
+    {
+    private:
+        static Napi::FunctionReference s_constructor;
+        std::unique_ptr<ECDb> m_ecdb;
+        std::unique_ptr<ChangedElementsManager> m_manager;
+
+        Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) { return NapiUtils::CreateBentleyReturnSuccessObject(goodVal, Env()); }
+
+        template <typename STATUSTYPE>
+        Napi::Object CreateBentleyReturnErrorObject(STATUSTYPE errCode, Utf8CP msg = nullptr) { return NapiUtils::CreateBentleyReturnErrorObject(errCode, msg, Env()); }
+
+        template <typename STATUSTYPE>
+        Napi::Object CreateBentleyReturnObject(STATUSTYPE errCode, Napi::Value goodValue)
+        {
+            if ((STATUSTYPE)0 != errCode)
+                return CreateBentleyReturnErrorObject(errCode);
+            return CreateBentleyReturnSuccessObject(goodValue);
+        }
+
+      public:
+        NativeChangedElementsECDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeChangedElementsECDb>(info) {}
+        ~NativeChangedElementsECDb() {}
+
+        // Check if val is really a NativeECDb peer object
+        static bool InstanceOf(Napi::Value val)
+            {
+            if (!val.IsObject())
+                return false;
+
+            Napi::HandleScope scope(val.Env());
+            return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
+            }
+        ECDbR GetECDb()
+            {
+            if (m_ecdb == nullptr)
+                m_ecdb = std::make_unique<ECDb>();
+
+            return *m_ecdb;
+            }
+
+        Napi::Value CreateDb(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, mainDb, Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(1, dbName, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            m_manager = std::make_unique<ChangedElementsManager>(&mainDb->GetDgnDb());
+            BeFileName file(dbName);
+            BeFileName path = file.GetDirectoryName();
+            if (!path.DoesPathExist())
+                return Napi::Number::New(Env(), (int) BE_SQLITE_NOTFOUND);
+
+            DbResult status = m_manager->CreateChangedElementsCache(GetECDb(), file);
+            return Napi::Number::New(Env(), (int) status);
+            }
+
+        Napi::Value ProcessChangesets(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, mainDb, Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(1, changeSetTokens, Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(2, rulesetId, Env().Undefined());
+            REQUIRE_ARGUMENT_BOOL(3, filterSpatial, Env().Undefined());
+
+            if (GetECDb().IsReadonly())
+                return Napi::Number::New(Env(), (int) BE_SQLITE_READONLY);
+            
+            if (!m_manager)
+                m_manager = std::make_unique<ChangedElementsManager>(&mainDb->GetDgnDb());
+
+            bvector<DgnRevisionPtr> revisionPtrs;
+            bool containsSchemaChanges;
+            Utf8String dbGuid = mainDb->GetDgnDb().GetDbGuid().ToString();
+            Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
+            RevisionStatus status = JsInterop::ReadChangeSets(revisionPtrs, containsSchemaChanges, dbGuid, jsonChangeSetTokens);
+            if (RevisionStatus::Success != status)
+                return Napi::Number::New(Env(), (int)status);
+            
+            m_manager->SetFilterSpatial(filterSpatial);
+            DbResult result = m_manager->ProcessChangesets(GetECDb(), Utf8String(rulesetId), revisionPtrs);
+            return Napi::Number::New(Env(), (int) result);
+            }
+
+        Napi::Value IsProcessed(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, changesetId, Env().Undefined());
+            Json::Value response;
+            bool isProcessed = m_manager->IsProcessed(GetECDb(), changesetId);
+            return Napi::Boolean::New(Env(), isProcessed);
+            }
+
+        Napi::Value GetChangedElements(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, startChangesetId, Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(1, endChangesetId, Env().Undefined());
+
+            ChangedElementsMap map;
+            DbResult status = m_manager->GetChangedElements(GetECDb(), map, startChangesetId, endChangesetId);
+
+            Json::Value data;
+            ChangedElementsManager::ChangedElementsToJSON(data, map);
+
+            Napi::Value jsValue = NapiUtils::Convert(Env(), data);
+            return CreateBentleyReturnObject(status, jsValue);
+            }
+
+        Napi::Value IsOpen(Napi::CallbackInfo const& info) { return Napi::Boolean::New(Env(), GetECDb().IsDbOpen()); }
+
+        Napi::Value OpenDb(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, dbName, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            REQUIRE_ARGUMENT_INTEGER(1, mode, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            Db::OpenParams params((Db::OpenMode) mode);
+            DbResult status = JsInterop::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), params);
+            return Napi::Number::New(Env(), (int) status);
+            }
+
+        Napi::Value CloseDb(Napi::CallbackInfo const& info)
+            {
+            if (m_ecdb != nullptr)
+                {
+                m_ecdb->CloseDb();
+                m_ecdb = nullptr;
+                }
+
+            return Napi::Number::New(Env(), (int) BE_SQLITE_OK);
+            }
+        //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
+        void AddRef() { this->Ref(); }
+
+        //  Remove a reference from this wrapper object and its peer JS object .
+        void Release() { this->Unref(); }
+
+        static void Init(Napi::Env env, Napi::Object exports)
+            {
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "NativeChangedElementsECDb", {
+            InstanceMethod("createDb", &NativeChangedElementsECDb::CreateDb),
+            InstanceMethod("processChangesets", &NativeChangedElementsECDb::ProcessChangesets),
+            InstanceMethod("getChangedElements", &NativeChangedElementsECDb::GetChangedElements),
+            InstanceMethod("openDb", &NativeChangedElementsECDb::OpenDb),
+            InstanceMethod("closeDb", &NativeChangedElementsECDb::CloseDb),
+            InstanceMethod("isOpen", &NativeChangedElementsECDb::IsOpen),
+            InstanceMethod("isProcessed", &NativeChangedElementsECDb::IsProcessed)
+            });
+
+            exports.Set("NativeChangedElementsECDb", t);
+
+            s_constructor = Napi::Persistent(t);
+            // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+            // from running at program shutdown time, which would attempt to reset the reference when
+            // the environment is no longer valid.
+            s_constructor.SuppressDestruct();
+            }
+    };
 
 //=======================================================================================
 // Projects the IECSqlBinder interface into JS.
@@ -2359,6 +2509,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
             InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
             InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
             InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
+            InstanceMethod("isEnum", &NativeECSqlColumnInfo::IsEnum),
             InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
             InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
             InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias)});
@@ -2502,6 +2653,14 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
             return toJsString(Env(), m_colInfo->GetPropertyPath().ToString());
             }
 
+        Napi::Value IsEnum(Napi::CallbackInfo const& info)
+            {
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
+            return Napi::Boolean::New(Env(), m_colInfo->GetEnumType() != nullptr);
+            }
+
         Napi::Value IsSystemProperty(Napi::CallbackInfo const& info)
             {
             if (m_colInfo == nullptr)
@@ -2601,6 +2760,7 @@ public:
             InstanceMethod("getPoint2d", &NativeECSqlValue::GetPoint2d),
             InstanceMethod("getPoint3d", &NativeECSqlValue::GetPoint3d),
             InstanceMethod("getString", &NativeECSqlValue::GetString),
+            InstanceMethod("getEnum", &NativeECSqlValue::GetEnum),
             InstanceMethod("getStructIterator", &NativeECSqlValue::GetStructIterator),
             InstanceMethod("isNull", &NativeECSqlValue::IsNull),
         });
@@ -2777,6 +2937,36 @@ public:
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
 
         return toJsString(Env(), m_ecsqlValue->GetText());
+        }
+
+    Napi::Value GetEnum(Napi::CallbackInfo const& info)
+        {
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        ECEnumerationCP enumType = m_ecsqlValue->GetColumnInfo().GetEnumType();
+        if (enumType == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not an ECEnumeration.", Env().Undefined());
+
+        bvector<ECEnumeratorCP> enumerators;
+        if (SUCCESS != m_ecsqlValue->TryGetContainedEnumerators(enumerators) || enumerators.empty())
+            return Env().Undefined();
+
+        Napi::Array jsEnumList = Napi::Array::New(Env(), enumerators.size());
+
+        uint32_t arrayIndex = 0;
+        for (ECEnumeratorCP enumerator : enumerators)
+            {
+            Napi::Object jsEnum = Napi::Object::New(Env());
+            jsEnum.Set("schema", Napi::String::New(Env(), enumType->GetSchema().GetName().c_str()));
+            jsEnum.Set("name", Napi::String::New(Env(), enumType->GetName().c_str()));
+            jsEnum.Set("key", Napi::String::New(Env(), enumerator->GetName().c_str()));
+            jsEnum.Set("value", enumerator->IsInteger() ? Napi::Number::New(Env(), enumerator->GetInteger()) : Napi::String::New(Env(), enumerator->GetString().c_str()));
+            jsEnumList.Set(arrayIndex, jsEnum);
+            arrayIndex++;
+            }
+
+        return jsEnumList;
         }
 
     Napi::Value GetNavigation(Napi::CallbackInfo const& info)
@@ -4190,6 +4380,21 @@ struct DisableNativeAssertions : Napi::ObjectWrap<DisableNativeAssertions>
             }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                    12/18
+//+---------------+---------------+---------------+---------------+---------------+------
+static void InitializeRegion(Napi::CallbackInfo const& info)
+    {
+    Region region = Region::Prod;
+    if (info.Length() != 1 || !info[0].IsNumber())
+        JsInterop::GetLogger().error("Invalid region was passed from the imodel.js backend to the addon. Using PROD as fallback.");
+    else
+        region = (Region) (int) info[0].As<Napi::Number>().Int32Value();
+
+    UlasClient::Get().Initialize(region);
+    }
+
+
 static Napi::ObjectReference s_logger;
 struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
 static bvector<LogMessage>* s_deferredLogging;
@@ -4359,6 +4564,7 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
     IModelJsNative::JsInterop::Initialize(addondir, env, tempdir);
     IModelJsNative::NativeDgnDb::Init(env, exports);
     IModelJsNative::NativeECDb::Init(env, exports);
+    IModelJsNative::NativeChangedElementsECDb::Init(env, exports);
     IModelJsNative::NativeECSqlStatement::Init(env, exports);
     IModelJsNative::NativeECSqlBinder::Init(env, exports);
     IModelJsNative::NativeECSqlValue::Init(env, exports);
@@ -4375,6 +4581,7 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
         {
         Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
         Napi::PropertyDescriptor::Accessor("logger", &IModelJsNative::GetLogger, &IModelJsNative::SetLogger),
+        Napi::PropertyDescriptor::Function("initializeRegion", &IModelJsNative::InitializeRegion)
         });
 
     return exports;
@@ -4390,6 +4597,7 @@ Napi::FunctionReference IModelJsNative::NativeSqliteStatement::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeDgnDb::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECPresentationManager::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECDb::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeChangedElementsECDb::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSchemaXmlContext::s_constructor;
 Napi::FunctionReference IModelJsNative::SnapRequest::s_constructor;
 Napi::FunctionReference IModelJsNative::DisableNativeAssertions::s_constructor;

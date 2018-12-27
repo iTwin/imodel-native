@@ -168,30 +168,7 @@ ECN::ECEnumeratorCP IECSqlValue::GetEnum() const
     if (IsNull())
         return nullptr;
 
-    ECN::ECPropertyCP prop = nullptr;
-    ECSqlPropertyPath const& propPath = GetColumnInfo().GetPropertyPath();
-    ECSqlPropertyPath::Entry const& leafEntry = propPath.GetLeafEntry();
-    if (leafEntry.GetKind() == ECSqlPropertyPath::Entry::Kind::Property)
-        prop = leafEntry.GetProperty();
-    else
-        {
-        ECSqlPropertyPath::Entry const& arrayPropEntry = propPath.At(propPath.Size() - 2);
-        BeAssert(arrayPropEntry.GetKind() == ECSqlPropertyPath::Entry::Kind::Property);
-        prop = arrayPropEntry.GetProperty();
-        }
-
-    if (prop == nullptr)
-        {
-        BeAssert(prop != nullptr);
-        return nullptr;
-        }
-
-    ECN::ECEnumerationCP ecEnum = nullptr;
-    if (prop->GetIsPrimitive())
-        ecEnum = prop->GetAsPrimitiveProperty()->GetEnumeration();
-    else if (prop->GetIsPrimitiveArray())
-        ecEnum = prop->GetAsPrimitiveArrayProperty()->GetEnumeration();
-
+    ECN::ECEnumerationCP ecEnum = GetColumnInfo().GetEnumType();
     if (ecEnum == nullptr)
         {
         LOG.error("ECSqlStatement::GetEnum> This method can only be called for a column backed by a property of an enumeration type.");
@@ -204,6 +181,84 @@ ECN::ECEnumeratorCP IECSqlValue::GetEnum() const
         return ecEnum->FindEnumerator(GetText());
 
     return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle       12/2018
+//---------------------------------------------------------------------------------------
+BentleyStatus IECSqlValue::TryGetContainedEnumerators(bvector<ECN::ECEnumeratorCP>& enumerators) const
+    {
+    if (IsNull())
+        return SUCCESS;
+
+    ECN::ECEnumerationCP enumType = GetColumnInfo().GetEnumType();
+    if (enumType == nullptr)
+        {
+        LOG.error("ECSqlStatement::TryGetContainedEnumerators> This method can only be called for a column backed by a property of an enumeration type.");
+        return ERROR;
+        }
+
+    if (enumType->GetType() == ECN::PRIMITIVETYPE_Integer)
+        {
+        const int val = GetInt();
+        int remainder = val;
+        for (ECN::ECEnumeratorCP enumerator : enumType->GetEnumerators())
+            {
+            const int enumeratorVal = (int) enumerator->GetInteger();
+            if (enumeratorVal == val)
+                {
+                enumerators.clear();
+                enumerators.push_back(enumerator);
+                return SUCCESS;
+                }
+
+            const int r = remainder & enumeratorVal;
+            if (r == 0)
+                continue;
+
+            enumerators.push_back(enumerator);
+            remainder -= r;
+            }
+
+        if (remainder > 0)
+            {
+            enumerators.clear();
+            LOG.errorv("ECSqlStatement::TryGetContainedEnumerators> The value %d cannot be broken down into a combination of ECEnumerators of the ECEnumeration '%s'.", val, enumType->GetFullName().c_str());
+            return ERROR;
+            }
+
+        return SUCCESS;
+        }
+
+    if (enumType->GetType() == ECN::PRIMITIVETYPE_String)
+        {
+        Utf8CP val = GetText();
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(val, ",;|", tokens);
+
+        bset<Utf8String> tokenSet(tokens.begin(), tokens.end());
+        for (ECN::ECEnumeratorCP enumerator : enumType->GetEnumerators())
+            {
+            auto it = tokenSet.find(enumerator->GetString());
+            if (it == tokenSet.end())
+                continue;
+
+            enumerators.push_back(enumerator);
+            tokenSet.erase(it);
+            }
+
+        if (!tokenSet.empty())
+            {
+            enumerators.clear();
+            LOG.errorv("ECSqlStatement::TryGetContainedEnumerators> The value '%s' cannot be broken down into a combination of ECEnumerators of the ECEnumeration '%s'.", val, enumType->GetFullName().c_str());
+            return ERROR;
+            }
+
+        return SUCCESS;
+        }
+
+    BeAssert(false && "Unsupported ECEnumeration backing type");
+    return ERROR;
     }
 
 //---------------------------------------------------------------------------------------

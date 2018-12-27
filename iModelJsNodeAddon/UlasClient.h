@@ -5,50 +5,58 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__BENTLEY_INTERNAL_ONLY__
 #pragma once
+//__BENTLEY_INTERNAL_ONLY__
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeFileName.h>
-
+#include <Bentley/BeVersion.h>
 #include <memory>
+#include <BeJsonCpp/BeJsonUtilities.h>
 
-// WIP until licensing client is a proper dependency
-// #include <Licensing/Client.h>
+#include <Bentley/BentleyConfig.h>
+// WIP_LICENSING_FOR_LINUX_AND_MACOS
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_LINUX)
+#include <Licensing/Client.h>
+#else
 namespace Licensing
-    {
-    struct Client
-        {
-        static std::shared_ptr<Client> CreateFree(Utf8StringCR accessToken, Utf8StringCR projectId, BeFileNameCR cacheDbPath) { return std::make_shared<Client>(); }
-        void StopApplication() {}
-        };
-
-    typedef std::shared_ptr<Client> ClientPtr;
-    }
+{
+typedef std::shared_ptr<struct Client> ClientPtr;
+};
+#endif
 
 USING_NAMESPACE_BENTLEY
 
 namespace IModelJsNative
     {
+    enum class Region
+        {
+        Dev = 103,
+        Qa = 102,
+        Prod = 0,
+        Perf = 294
+        };
+
+     //=======================================================================================
+    //! API to track usage of the application that uses iModel.js
+    // @bsiclass                                           Krischan.Eberle      12/2018
+    //+===============+===============+===============+===============+===============+======
     struct UlasClient final
         {
-        private:
-            static constexpr Utf8CP s_appName = "imodel.js";
-            static constexpr Utf8CP s_appGuid = "a7983f22-0d27-4db9-bfc5-170bdc493f7a";
-            // TODO: What version to pick?
-            static constexpr uint16_t s_appVersionMajor = 1;
-            static constexpr uint16_t s_appVersionMinor = 0;
-            static constexpr uint16_t s_appVersionSub1 = 0;
+    private:
+        RuntimeJsonLocalState m_localState;
+        Licensing::ClientPtr m_client;
+        // Bentley coding guideline: No need to free static non-POD objects.
+        static UlasClient* s_singleton;
 
-            static BeFileName* s_cacheDbPath;
+        UlasClient();
+        ~UlasClient();
 
-            Licensing::ClientPtr m_client;
-            Utf8String m_accessToken;
-            Utf8String m_projectId;
-            // static WebServices::ClientInfoPtr GetClientInfo();
-        public:
-            UlasClient(Utf8StringCR accessToken, Utf8StringCR projectId) : m_accessToken(accessToken), m_projectId(projectId) {}
-            BentleyStatus Initialize();
-            void StopApplication();
+    public:
+        static UlasClient& Get();
+
+        void Initialize(Region);
+        void Uninitialize();
+        BentleyStatus TrackUsage(Utf8StringCR accessToken, Utf8StringCR appVersion, Utf8StringCR projectId) const;
         };
     };

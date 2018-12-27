@@ -7797,7 +7797,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithNullArrayAnd
         {
         instance.SetValue("StructProperty.StringProperty", ECValue("test"));
         });
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -7814,7 +7813,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithNullArrayAnd
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-
     // request for content
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());

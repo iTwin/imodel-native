@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="DeliverPublicAPI.mke">
+        <Bindings>
+            <PublicAPI Domain="Licensing"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="LicensingNativeLib" BentleyBuildMakeFile="Licensing.mke" >
+        <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02" />
+        <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02" /> 
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="BeSecurity" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
+        <!--<SubPart PartName="NativeClient.Docs"/>-->
+        
+        <Bindings>
+            <Libs>Delivery/$(libprefix)Licensing$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)Licensing$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="Licensing" >
+        <SubPart PartName="Licensing-Winx64-Only" />
+        <SubPart PartName="Licensing-iOSARMActive-Only" />
+        <SubPart PartName="Licensing-iOSARM64-Only" />
+        <SubPart PartName="Licensing-AndroidARM64-Only" LibType="Static" />
+    </Part>
+
+    <Part Name="Licensing-Winx64-Only" OnlyPlatforms="x64">
+        <SubPart PartName="LicensingNativeLib" LibType="Dynamic" />
+    </Part>
+
+    <Part Name="Licensing-iOSARMActive-Only" OnlyPlatforms="iOSARMActive">
+        <SubPart PartName="LicensingNativeLib" LibType="Static" />
+    </Part>
+
+    <Part Name="Licensing-iOSARM64-Only" OnlyPlatforms="iOSARM64">
+        <SubPart PartName="LicensingNativeLib" LibType="Static" />
+    </Part>
+
+    <Part Name="Licensing-AndroidARM64-Only" OnlyPlatforms="AndroidARM64">
+        <SubPart PartName="LicensingNativeLib" LibType="Static" />
+    </Part>
+
+	<Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/Prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Licensing" SubPartDirectory="UnitTests/Licensing">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="Licensing" />
+        
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="Licensing-Tests">
+        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingTest -dTEST_COLLECTION_PRODUCT=Licensing-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
+        <SubProduct ProductName="Licensing-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/LicensingTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/LicensingTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <!-- WIP_LICENSING_FOR_LINUX_AND_MACOS Readd Linux*,MacOS* to the OnlyPlatforms attribute once licensing is available on Linux and MacOs -->
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-Gtest -dGTEST_NAME=LicensingTest" OnlyPlatforms="x86,x64">
+        <SubProduct ProductName="Licensing-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/LicensingTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!--<Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke" OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-doxygen</RequiredRepository>
+        <Bindings>
+             The Files portion below should be commented out if part in use
+             <Files ProductDirectoryName="LicenseClientCrossPlatform" IfNotPresent="Warn" Required="false">
+                Delivery/NativeClient.chm
+            </Files>
+        </Bindings>
+    </Part>-->
+    
+    <Product Name="Licensing-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Product Name="LicenseClientCrossPLatform" PrgOutputDir="LicenseClientCrossPlatform" SaveProduct="true" SaveTranskit="true">
+        <SubPart PartName="Licensing"/>
+        <Directories DirectoryListName="LicenseClientCrossPlatform"/>
+
+        <SubProduct ProductName="Licensing-Gtest"/>
+        <SubPart PartName="RunGtest"/>
+    </Product>
+
+    <ProductDirectoryList ListName="LicenseClientCrossPlatform">
+        <ProductDirectory Name="Assemblies" Deliver="true"/>
+        <ProductDirectory Name="Assemblies" Deliver="true" LibType="Static"/>
+        <ProductDirectory Name="Assets" Deliver="true"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="Static"/>
+    </ProductDirectoryList>
+
+</BuildContext>

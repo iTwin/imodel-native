@@ -8828,4 +8828,112 @@ TEST_F(ECSqlStatementTestFixture, ORedEnumerators)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Foo WHERE Status & ts.Status.[On] <> 0")) << "Bitwise AND not supported yet";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, TryGetContainedEnumerators)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("TryGetContainedEnumerators.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="Color" backingTypeName="int" isStrict="false">
+                    <ECEnumerator name="Red" value="1" />
+                    <ECEnumerator name="Yellow" value="2" />
+                    <ECEnumerator name="Blue" value="4" />
+                </ECEnumeration>
+                <ECEnumeration typeName="Domain" backingTypeName="string" isStrict="false">
+                    <ECEnumerator name="Org" value=".org" />
+                    <ECEnumerator name="Com" value=".com" />
+                    <ECEnumerator name="Gov" value=".gov" />
+                </ECEnumeration>
+                <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="AssetColor" typeName="Color" />
+                    <ECProperty propertyName="AssetDomain" typeName="Domain" />
+                </ECEntityClass>
+              </ECSchema>)xml")));
+    ECInstanceKey unoredKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(unoredKey, "INSERT INTO ts.Foo(AssetColor, AssetDomain) VALUES (ts.Color.Red, ts.Domain.Com)"));
+    ECInstanceKey oredKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(oredKey, "INSERT INTO ts.Foo(AssetColor, AssetDomain) VALUES (3, '.org;.gov')"));
+    ECInstanceKey unmatchingKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(unmatchingKey, "INSERT INTO ts.Foo(AssetColor, AssetDomain) VALUES (9, '.org;.de')"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT AssetColor,AssetDomain FROM ts.Foo WHERE ECInstanceId=?"));
+
+    {
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, unoredKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    IECSqlValue const& colorValue = stmt.GetValue(0);
+    ASSERT_TRUE(colorValue.GetColumnInfo().GetEnumType() != nullptr);
+    ECEnumeratorCP e = colorValue.GetEnum();
+    ASSERT_TRUE(e != nullptr);
+    ASSERT_STREQ("Red", e->GetName().c_str());
+
+    bvector<ECEnumeratorCP> flags;
+    ASSERT_EQ(SUCCESS, colorValue.TryGetContainedEnumerators(flags));
+    ASSERT_EQ(1, flags.size());
+    ASSERT_STREQ("Red", flags[0]->GetName().c_str());
+
+    IECSqlValue const& domainValue = stmt.GetValue(1);
+    ASSERT_TRUE(domainValue.GetColumnInfo().GetEnumType() != nullptr);
+    e = domainValue.GetEnum();
+    ASSERT_TRUE(e != nullptr);
+    ASSERT_STREQ("Com", e->GetName().c_str());
+
+    flags.clear();
+    ASSERT_EQ(SUCCESS, domainValue.TryGetContainedEnumerators(flags));
+    ASSERT_EQ(1, flags.size());
+    ASSERT_STREQ("Com", flags[0]->GetName().c_str());
+
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, oredKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    IECSqlValue const& colorValue = stmt.GetValue(0);
+    ASSERT_TRUE(colorValue.GetColumnInfo().GetEnumType() != nullptr);
+    ASSERT_TRUE(colorValue.GetEnum() == nullptr);
+
+    bvector<ECEnumeratorCP> flags;
+    ASSERT_EQ(SUCCESS, colorValue.TryGetContainedEnumerators(flags));
+    ASSERT_EQ(2, flags.size());
+    ASSERT_STREQ("Red", flags[0]->GetName().c_str());
+    ASSERT_STREQ("Yellow", flags[1]->GetName().c_str());
+
+    IECSqlValue const& domainValue = stmt.GetValue(1);
+    ASSERT_TRUE(domainValue.GetColumnInfo().GetEnumType() != nullptr);
+
+    flags.clear();
+    ASSERT_EQ(SUCCESS, domainValue.TryGetContainedEnumerators(flags));
+    ASSERT_EQ(2, flags.size());
+    ASSERT_STREQ("Org", flags[0]->GetName().c_str());
+    ASSERT_STREQ("Gov", flags[1]->GetName().c_str());
+
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, unmatchingKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    IECSqlValue const& colorValue = stmt.GetValue(0);
+    ASSERT_TRUE(colorValue.GetColumnInfo().GetEnumType() != nullptr);
+    ASSERT_TRUE(colorValue.GetEnum() == nullptr);
+
+    bvector<ECEnumeratorCP> flags;
+    ASSERT_EQ(ERROR, colorValue.TryGetContainedEnumerators(flags));
+
+    IECSqlValue const& domainValue = stmt.GetValue(1);
+    ASSERT_TRUE(domainValue.GetColumnInfo().GetEnumType() != nullptr);
+
+    flags.clear();
+    ASSERT_EQ(ERROR, domainValue.TryGetContainedEnumerators(flags));
+
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

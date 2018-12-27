@@ -25,11 +25,13 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tree);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Content);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(NodeMap);
 
 DEFINE_REF_COUNTED_PTR(Cache);
 DEFINE_REF_COUNTED_PTR(Tree);
 DEFINE_REF_COUNTED_PTR(Content);
 DEFINE_REF_COUNTED_PTR(Loader);
+DEFINE_REF_COUNTED_PTR(NodeMap);
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
@@ -232,8 +234,8 @@ public:
 
     virtual PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const { return &pf; }
     virtual bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const { return false; }
-    virtual bool CompressMeshQuantization() const { return false; }       // If true a separate primitive will be created for each element ID.  ...Classifiers.
-    virtual bool SeparatePrimitivesById() const { return false; }        // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
+    virtual bool CompressMeshQuantization() const { return false; }                             // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
+    virtual uint64_t GetNodeId(DgnElementId id) const;
 
 
     struct PtrComparator
@@ -247,6 +249,12 @@ public:
     };
 };
 
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     12/18
+//=======================================================================================
+struct NodeMap : RefCountedBase, bmap<uint64_t, uint64_t>  {};
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
 //=======================================================================================
@@ -256,6 +264,7 @@ struct Tree : RefCountedBase, NonCopyableClass
     {
         Model,
         Classifier,
+        Animation,
     };
 
     enum class RootTile : uint8_t
@@ -270,13 +279,16 @@ struct Tree : RefCountedBase, NonCopyableClass
         DgnModelId m_modelId;
         Tree::Type m_type;
         double m_classifierExpansion;
+        DgnElementId m_animationSourceId;
 
         Id() : m_type(Type::Model), m_classifierExpansion(0.0) { }
-        Id(DgnModelId modelId, Tree::Type type, double expansion = 0.0) : m_modelId(modelId), m_type(type), m_classifierExpansion(expansion) { }
+        Id(DgnModelId modelId, Tree::Type type, double expansion = 0.0, DgnElementId animationSourceId = DgnElementId()) : m_modelId(modelId), m_type(type), m_classifierExpansion(expansion), m_animationSourceId(animationSourceId) { }
 
         bool IsValid() const { return m_modelId.IsValid(); }
         bool IsClassifier() const { return Tree::Type::Classifier == m_type; }
+        bool IsAnimation() const { return Tree::Type::Animation == m_type; }
         double GetClassifierExpansion() const { BeAssert(IsClassifier()); return m_classifierExpansion; }
+        DgnElementId GetAnimationSourceId() const { BeAssert(IsAnimation()); return m_animationSourceId; }
         Tree::Type GetType() const { return m_type; }
 
         DGNPLATFORM_EXPORT Utf8String ToString() const;
@@ -305,10 +317,12 @@ private:
     Id m_id;
     bool m_is3d;
     RootTile m_rootTile;
+    NodeMapPtr m_nodeMap;
 protected:
     Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile);
 
     DGNPLATFORM_EXPORT LoaderPtr CreateLoader(ContentIdCR contentId);
+    void LoadNodeMapFromAnimation();                       
 public:
     DGNPLATFORM_EXPORT ~Tree();
 
@@ -321,6 +335,8 @@ public:
     Render::SystemR GetRenderSystem() const { return m_renderSystem; }
     TransformCR GetLocation() const { return m_location; }
     RealityData::CacheP GetCache() const { return m_cache.get(); }
+    uint64_t GetElementNodeId(DgnElementId elementId) const;
+
 
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }

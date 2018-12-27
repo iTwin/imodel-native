@@ -4,10 +4,10 @@
 
   <Part Name="iModelJsNodeAddon.Dev" PrgOutputDir="iModelJsNodeAddon">
     <SubPart PartName="iModelCorePRG" PartFile="iModelCore/DgnPlatform/iModelCore" Repository="imodel02"/>
-    <SubPart PartName="MakePackages"/>
+    <SubPart PartName="iModelJsMakePackages"/>
   </Part>
   
-  <Part Name="MakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64" PrgOutputDir="iModelJsNodeAddon">
+  <Part Name="iModelJsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64" PrgOutputDir="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon"/>
   </Part>
 
@@ -21,18 +21,21 @@
     <SubPart PartName="iModelJsNodeAddonLib-Windows" LibType="Dynamic" />
     <SubPart PartName="iModelJsNodeAddonLibElectron-Windows" LibType="Dynamic" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+    <FeatureExclude>GeoCoordAssets</FeatureExclude>
   </Product>
 
   <Product Name="iModelJsNodeAddon-Linux">
     <SubPart PartName="iModelJsNodeAddonLib-Linux" LibType="Static" />
     <SubPart PartName="iModelJsNodeAddonLibElectron-Linux" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+    <FeatureExclude>GeoCoordAssets</FeatureExclude>
   </Product>
 
   <Product Name="iModelJsNodeAddon-Darwin">
     <SubPart PartName="iModelJsNodeAddonLib-Darwin" LibType="Static" />
     <SubPart PartName="iModelJsNodeAddonLibElectron-Darwin" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+    <FeatureExclude>GeoCoordAssets</FeatureExclude>
   </Product>
 
   <ProductDirectoryList ListName="iModelJsNodeAddonDeliveryList">
@@ -183,10 +186,7 @@
     <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
     <SubPart PartName="ECObjectsNative"     PartFile="iModelCore/ecobjects/ECObjects"    Repository="imodel02" />
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
-    <!-- <SubPart PartName="Licensing" PartFile="LicensingCrossPlatform" Repository="LicensingCrossPlatform" /> 
-    Until we can integrate Licensing, add the dependency so that the dependencies are pulled in
-    -->
+    <SubPart PartName="Licensing" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" Repository="imodel02" />
     <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
-    <SubPart PartName="BeSecurity" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
   </Part>
 </BuildContext>

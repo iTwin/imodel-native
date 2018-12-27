@@ -30,8 +30,12 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libfreetype2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libUnits.a
-// THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libLicensing.a
-// THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libWebServicesClient.a
+%if $(TARGET_PLATFORM)!="MacOS" && $(TARGET_PLATFORM)!="Linux"
+    THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libLicensing.a
+%endif
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libWebServicesClient.a
+THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeHttp.a
+THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeOpenSSL.a
 
 %if defined (BENTLEYCONFIG_PARASOLID)
     THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libpskernel.a
@@ -53,6 +57,10 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
-// LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Licensing$(libext)
-// LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Licensing$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeHttp$(stlibext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeOpenSSL$(libext)
+
+
 %endif

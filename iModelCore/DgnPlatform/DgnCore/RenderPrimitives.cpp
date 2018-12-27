@@ -3509,7 +3509,7 @@ MeshBuilderR MeshBuilderMap::operator[](Key const& key)
     auto found = m_map.find(key);
     if (m_map.end() == found)
         {
-        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar);
+        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar, key.m_nodeIndex);
         found = m_map.Insert(key, builder).first;
         }
 

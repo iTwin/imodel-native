@@ -1,0 +1,26 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: LicensingCrossPlatform/PublicAPI/Licensing/Utils/UrlSafeBase64Utilities.h $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+#include <Licensing/Licensing.h>
+
+#include <Bentley/WString.h>
+
+BEGIN_BENTLEY_LICENSING_NAMESPACE
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct UrlSafeBase64Utilities
+{
+public:
+    LICENSING_EXPORT static Utf8String ToBase64(Utf8StringCR urlSafeBase64);
+};
+
+END_BENTLEY_LICENSING_NAMESPACE

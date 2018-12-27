@@ -1,0 +1,65 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Licensing.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+%include MultiCppCompileRule.mki
+
+Headers =
+Headers + $(SourceDir)ClientInterface.h
+Headers + $(SourceDir)ClientImpl.h
+Headers + $(SourceDir)ClientFreeImpl.h
+Headers + $(SourceDir)ClientWithKeyImpl.h
+Headers + $(SourceDir)GenerateSID.h
+Headers + $(SourceDir)Policy.h
+Headers + $(SourceDir)UsageDb.h
+Headers + $(SourceDir)FreeApplicationPolicyHelper.h
+Headers + $(PublicApiDir)Client.h
+Headers + $(PublicApiDir)LicenseStatus.h
+Headers + $(PublicApiDir)Licensing.h
+Headers + $(PublicApiDir)Utils/DelayedExecutor.h
+Headers + $(PublicApiDir)Utils/FeatureUserDataMap.h
+Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
+Headers + $(PublicApiDir)Utils/JWToken.h
+Headers + $(PublicApiDir)Utils/LogFileHelper.h
+Headers + $(PublicApiDir)Utils/SCVWritter.h
+Headers + $(PublicApiDir)Utils/TimeRetriever.h
+Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
+Headers + $(PublicApiDir)Utils/DateHelper.h
+
+
+#---------------------------------------------------------------------------------------+
+#   Files to compile 
+#---------------------------------------------------------------------------------------+
+$(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ClientFreeImpl$(oext)            : $(SourceDir)ClientFreeImpl.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ClientWithKeyImpl$(oext)         : $(SourceDir)ClientWithKeyImpl.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)Policy$(oext)                    : $(SourceDir)Policy.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)GenerateSID$(oext)               : $(SourceDir)GenerateSID.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)SCVWritter$(oext)                : $(SourceDir)Utils/SCVWritter.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)JWToken$(oext)                   : $(SourceDir)Utils/JWToken.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)InMemoryJsonLocalState$(oext)    : $(SourceDir)Utils/InMemoryJsonLocalState.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)UrlSafeBase64Utilities$(oext)    : $(SourceDir)Utils/UrlSafeBase64Utilities.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)DelayedExecutor$(oext)           : $(SourceDir)Utils/DelayedExecutor.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)FeatureUserDataMap$(oext)         : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki

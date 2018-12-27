@@ -121,11 +121,17 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue
         ECDB_EXPORT int GetInt() const;
 
         //! Gets the value as @ref BentleyApi::ECN::ECEnumerator "ECEnumerator"
-        //! @note as ECEnumerations cannot be OR'ed, so if the value does not match any of the ECEnumerators defined
-        //! in the underlying ECEnumeration, nullptr will be returned.
+        //! @note If the value does not match exactly any of the ECEnumerators defined
+        //! in the underlying ECEnumeration, nullptr will be returned. In case of enumeration flags,
+        //! use IECSqlValue::TryGetContainedEnumerators instead.
         //! @return ECEnumerator or nullptr, if the underlying value does not represent an exact ECEnumerator of an ECEnumeration. 
-        //! (OR'ed ECEnumerators are not supported)
         ECDB_EXPORT ECN::ECEnumeratorCP GetEnum() const;
+
+        //! Gets the list of ECEnumerators that make up this value, if the values is a list ECEnumerators OR'ed together (aka flags).
+        //! @param[out] enumerators List of ECEnumerator flags that make up this value.
+        //! @return SUCCESS if the value is an OR'ed combination of ECEnumerators. ERROR if the value
+        //! is not an OR'ed combination of ECEnumerators (but an arbitrary value).
+        ECDB_EXPORT BentleyStatus TryGetContainedEnumerators(bvector<ECN::ECEnumeratorCP>& enumerators) const;
 
         //! Gets the value as Int64
         //! @return Int64 value

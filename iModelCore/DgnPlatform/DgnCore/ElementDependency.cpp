@@ -176,6 +176,9 @@ static DgnElementCPtr getDriver(Graph const& graph, DgnElementId id) {return gra
  @bsimethod                                    Keith.Bentley                    12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void callJsDriverFunc(Graph const& graph, DgnElementId id, Utf8CP methodName) {
+    auto& jsTxns = graph.m_jsTxns;
+    if (jsTxns == nullptr)
+        return;
     auto& db = graph.GetDgnDb();
     DgnDb::CallJsFunction(graph.m_jsTxns, methodName, {db.GetJsClassName(id), db.ToJsString(id)});
 }

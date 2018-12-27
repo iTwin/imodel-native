@@ -173,6 +173,56 @@ void PrintTo(BeInt64Id id, std::ostream* os) {  *os << id.GetValueUnchecked();  
 void PrintTo(DateTime const& dt, std::ostream* os) { *os << dt.ToString().c_str(); }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  12/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(DateTime::Info const& dtInfo, std::ostream* os) 
+    {
+    if (!dtInfo.IsValid())
+        {
+        *os << "<invalid DateTime::Info>";
+        return;
+        }
+
+    switch (dtInfo.GetComponent())
+        {
+        case DateTime::Component::Date:
+            *os << "Date";
+            return;
+
+        case DateTime::Component::DateAndTime:
+        {
+        *os << "TimeStamp [";
+        switch (dtInfo.GetKind())
+            {
+            case DateTime::Kind::Local:
+                *os << "Local";
+                break;
+            case DateTime::Kind::Unspecified:
+                *os << "Unspecified";
+                break;
+            case DateTime::Kind::Utc:
+                *os << "Utc";
+                break;
+            default:
+                *os << "Unhandled DateTime::Kind. Adjust the PrintTo method";
+                break;
+
+            }
+        *os << "]";
+        return;
+        }
+
+        case DateTime::Component::TimeOfDay:
+            *os << "TimeOfDay";
+            return;
+
+        default:
+            *os << "Unhandled DateTime::Component. Adjust the PrintTo method";
+            break;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  07/17
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(std::vector<Utf8CP> const& vec, std::ostream* os)
