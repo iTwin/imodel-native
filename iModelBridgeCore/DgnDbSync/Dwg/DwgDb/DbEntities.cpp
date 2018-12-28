@@ -1787,7 +1787,7 @@ DwgDbStatus     DwgDbRasterImage::GetFileName (DwgStringR name, DwgStringP activ
             }
         
         if (DwgDbStatus::Success != status || DwgDbStatus::Success != (status = ToDwgDbStatus(def->load())))
-            BeDataAssert (false && "Unable to load raster image file!!");
+            DwgToolkitHost::GetHost().Warn (L"Unable to load raster image file!");
         }
 
     name = def->sourceFileName ();

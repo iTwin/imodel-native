@@ -29,7 +29,7 @@
             <MergeRef Id="acmodeldoc_glob.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: AcModelDoc_glob.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: AcModelDoc_loc.msm-->
-            <MergeRef Id="acmpolygonobj22.msm" />
+            <MergeRef Id="acmpolygonobj23.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: AcMPolygonObj20.msm-->
             <MergeRef Id="acsmcomponents.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: AcSmComponents.msm-->
@@ -72,22 +72,22 @@
             <!-- NO [ODBXHOSTAPPREGROOT]: MDTSHX.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: MentorGridFiles64.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: mpolygoncom20enu.msm-->
-            <MergeRef Id="mpolygoncom22_glob.msm" />
+            <MergeRef Id="mpolygoncom23_glob.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: mpolygoncom20_glob.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: MPolygonObj20enu.msm-->
             <MergeRef Id="objdbx.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: Objdbx.msm-->
-            <MergeRef Id="odbx22extra.msm" />
+            <MergeRef Id="odbx23extra.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: Odbx20Extra.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxAsm_full20glob.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxAsm_obj20glob.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: odbxauto20enu.msm-->
-            <MergeRef Id="odbxauto22glob.msm" />
+            <MergeRef Id="odbxauto23glob.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: odbxauto20glob.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: odbxbrep20.msm-->
-            <MergeRef Id="odbxcore22glob.msm" />
+            <MergeRef Id="odbxcore23glob.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20glob.msm-->
-            <MergeRef Id="odbxcore22glob_ps.msm" />
+            <MergeRef Id="odbxcore23glob_ps.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20glob_PS.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20loc.msm-->
             <MergeRef Id="pointcloudglob.msm" />

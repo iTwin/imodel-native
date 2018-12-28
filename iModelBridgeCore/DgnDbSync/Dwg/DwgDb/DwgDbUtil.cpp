@@ -9,21 +9,6 @@
 
 USING_NAMESPACE_DWGDB
 
-#ifdef DWGTOOLKIT_OpenDwg
-    #define     VendorDllSuffix     L"4.3_14"
-
-#elif DWGTOOLKIT_RealDwg
-    #if VendorVersion == 2017
-    #define     VendorDllSuffix     L"21"
-    #elif VendorVersion == 2018
-    #define     VendorDllSuffix     L"22"
-    #elif VendorVersion == 2019
-    #define     VendorDllSuffix     L"23"
-    #else
-    #error Must define RealDWG DLL suffix!!
-    #endif
-#endif  // DWGTOOLKIT_
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
@@ -31,7 +16,7 @@ USING_NAMESPACE_DWGDB
 ::HMODULE       Util::GetOrLoadToolkitDll (DwgStringCR dllPrefix)
     {
     // append the version suffix to dll name:
-    DwgString   dllName = dllPrefix + VendorDllSuffix + L".dll";
+    DwgString   dllName = dllPrefix + DWGDB_ToolkitDllSuffix + L".dll";
     // try finding or loading the dll
     ::HMODULE   dllHandle = ::GetModuleHandle (dllName);
     if (nullptr == dllHandle)
@@ -255,6 +240,7 @@ DEllipse3d  Util::DEllipse3dFrom (DWGGE_TypeCR(CircArc2d) geArc)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(SplineEnt3d) geSpline)
     {
+    curve.Zero ();
     curve.params.order = geSpline.degree() + 1;
     curve.rational = geSpline.isRational ();
     curve.params.closed = geSpline.isClosed ();
@@ -278,6 +264,9 @@ DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(Spl
             curve.weights[i] = geNurbCurve->weightAt (i);
         }
 
+    for (int i = 0; i < curve.params.numKnots; i++)
+        curve.knots[i] = geSpline.knotAt (i);
+
     return  DwgDbStatus::Success;
     }
 
@@ -286,6 +275,7 @@ DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(Spl
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(SplineEnt2d) geSpline)
     {
+    curve.Zero ();
     curve.params.order = geSpline.degree() + 1;
     curve.rational = geSpline.isRational ();
     curve.params.closed = geSpline.isClosed ();
@@ -308,6 +298,9 @@ DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(Spl
         if (curve.rational)
             curve.weights[i] = geNurbCurve->weightAt (i);
         }
+
+    for (int i = 0; i < curve.params.numKnots; i++)
+        curve.knots[i] = geSpline.knotAt (i);
 
     return  DwgDbStatus::Success;
     }

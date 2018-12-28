@@ -91,7 +91,7 @@ LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Be*.lib]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Dgn*.lib]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/iModel*.lib]
 LOCAL_GUNITTEST_OBJS + $(BuildContext)SubParts/Libs/Raster.lib
-LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/RealDwg2018/*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/*.lib]
 
 
 LINKER_LIBRARIES    + $(DwgImporterLib)

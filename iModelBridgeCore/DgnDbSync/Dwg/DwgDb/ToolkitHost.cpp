@@ -439,6 +439,15 @@ bool            DwgToolkitHost::FindCachedLocalFile (WStringR cached, WStringCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void            DwgToolkitHost::Warn (WStringCR message) const
+    {
+    if (nullptr != m_appHost && !message.empty())
+        m_appHost->_Alert (message.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DwgToolkitHost& DwgToolkitHost::GetHost ()
     {
 #ifdef DWGTOOLKIT_OpenDwg
@@ -507,7 +516,7 @@ void            IDwgDbHost::InitializeToolkit (IDwgDbHost& appHost)
 
         odInitialize (&s_dwgToolkitHostInstance);
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && (DWGDB_ToolkitMajorRelease < 19)
         ::odrxInitWinNTCrypt ();
 #endif
         // OpenDWG has no restrictions on OdDb classes to be sub-classed:
@@ -558,7 +567,7 @@ void            IDwgDbHost::TerminateToolkit ()
 
 #if DWGTOOLKIT_OpenDwg
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && (DWGDB_ToolkitMajorRelease < 19)
     ::odrxUninitWinNTCrypt ();
 #endif
 
