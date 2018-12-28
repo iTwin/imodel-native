@@ -85,7 +85,8 @@ void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, SyncInfo::V
                       " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
         estmt.BindInt64(1, v8ElementId);
         BeAssert(BE_SQLITE_ROW == estmt.Step());
-        ASSERT_EQ(eid , estmt.GetValueId<DgnElementId>(0));
+        DgnElementId aspectId = estmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ(eid , aspectId);
         }
     else 
         {
@@ -95,6 +96,7 @@ void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, SyncInfo::V
                       " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
         estmt.BindInt64(1, v8ElementId);
         BeAssert(BE_SQLITE_ROW == estmt.Step());
-        ASSERT_EQ(expectedCount, estmt.GetValueId<int>(0));
+        int aspectCount = estmt.GetValueId<int>(0);
+        ASSERT_EQ(expectedCount, aspectCount);
         }
     }

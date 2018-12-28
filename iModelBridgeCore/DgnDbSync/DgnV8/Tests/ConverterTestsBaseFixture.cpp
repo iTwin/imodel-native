@@ -383,6 +383,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
     RootModelConverter::RootModelSpatialParams params(m_params);
     params.SetKeepHostAlive(true);
     params.SetInputFileName(input);
+    params.SetWantProvenanceInBim(true);
     auto db = OpenExistingDgnDb(output);
     ASSERT_TRUE(db.IsValid());
     bool hadAnyChanges = false;
