@@ -2,7 +2,7 @@
 |
 |  $Source: iModelBridge/Tests/NonPublished/Tests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -520,10 +520,9 @@ static BeFileName getiModelBridgeTestsOutputDir(WCharCP subdir)
 BEGIN_BENTLEY_DGN_NAMESPACE
 struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
     {
-    std::vector < bool> m_expect;
-    int m_expectIndex;
+    std::deque < bool> m_expect;
     TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) 
-        : TestIModelHubClientForBridges(testWorkDir), m_expectIndex(0)
+        : TestIModelHubClientForBridges(testWorkDir)
         {  }
 
         virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment) override;
@@ -673,8 +672,9 @@ DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db, Utf
     BeAssert(db != nullptr);
 
     BeAssert(db->IsBriefcase());
-    bool expectedResult = m_expect[m_expectIndex];
-    ++m_expectIndex;
+    bool expectedResult = m_expect.front();
+    m_expect.pop_front();
+
     BeAssert(expectedResult == anyTxnsInFile(*db));
 
     if (!anyTxnsInFile(*db))
@@ -834,6 +834,7 @@ TEST_F(iModelBridgeTests, Test1)
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     if (true)
@@ -853,6 +854,7 @@ TEST_F(iModelBridgeTests, Test1)
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     if (true)
@@ -937,6 +939,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     if (true)
@@ -953,6 +956,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     if (true)
@@ -969,6 +973,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     if (true)
@@ -1003,6 +1008,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     }
@@ -1085,13 +1091,14 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        testIModelHubClientForBridges.m_expect.clear();
         }
     
     if (true)
         {
         // Run an update with no changes
         testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
-
+        testIModelHubClientForBridges.m_expect.push_back(true);
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
@@ -1105,6 +1112,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
         EXPECT_EQ(0, testBridge.m_changeCount);
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     if (true)
@@ -1128,6 +1136,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
 
         // *** TBD: Check that the elements moved
         EXPECT_EQ(2, testBridge.m_changeCount);
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     if (true)
@@ -1176,6 +1185,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
         EXPECT_EQ(0, testBridge.m_changeCount);
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     if (true)
@@ -1201,6 +1211,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
         EXPECT_EQ(2, testBridge.m_changeCount);
+        testIModelHubClientForBridges.m_expect.clear();
         }
 
     }
