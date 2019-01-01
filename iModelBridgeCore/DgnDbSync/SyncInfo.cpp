@@ -2659,4 +2659,15 @@ BeGuid Converter::GetDocumentGUIDforFile(DgnV8FileCR file)
     return BeGuid();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::V8ElementSyncInfoAspect::Update(ElementProvenance const& prov)
+    {
+    SourceState ss;
+    unsigned arraySize = sizeof(prov.m_hash.m_buffer) / sizeof(unsigned char);
+    ss.m_hash.insert(ss.m_hash.end(), prov.m_hash.m_buffer, &prov.m_hash.m_buffer[arraySize]);
+    ss.m_lastModifiedTime = prov.m_lastModified; 
+    SetSourceState(ss); 
+    }
 END_DGNDBSYNC_DGNV8_NAMESPACE
