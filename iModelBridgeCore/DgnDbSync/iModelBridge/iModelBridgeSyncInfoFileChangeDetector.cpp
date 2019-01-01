@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridgeSyncInfoFileChangeDetector.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
@@ -229,6 +229,22 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::UpdateResultsInBIM(Convers
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus     iModelBridgeSyncInfoFile::ChangeDetector::AddProvenanceAspect(iModelBridgeSyncInfoFile::Record const& syncInfoRecord, DgnElementR element)
+    {
+    ECN::ECClassCP aspectClass = iModelSyncInfoAspect::GetAspectClass(element.GetDgnDb());
+    if (NULL == aspectClass)
+        return DgnDbStatus::MissingDomain;
+
+    iModelSyncInfoAspect::SourceState state = syncInfoRecord.GetSourceState().GetAspectState();
+    ECN::IECInstancePtr instance = iModelSyncInfoAspect::MakeInstance(element.GetElementId(), syncInfoRecord.GetSourceIdentity().GetKind().c_str(),
+                                                                      syncInfoRecord.GetSourceIdentity().GetId().c_str(), &state, *aspectClass);
+    iModelSyncInfoAspect aspect = iModelSyncInfoAspect(instance.get());
+    return aspect.AddTo(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(ConversionResults& conversionResults, 
@@ -240,7 +256,7 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
         conversionResults.m_syncInfoRecord = changeDetectorResults.GetSyncInfoRecord();
         return BentleyStatus::SUCCESS;
         }
-
+    
     if (conversionResults.m_element.IsValid())
         {
         DgnDbStatus status;
@@ -261,9 +277,25 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
             }
 
         if (!eid.IsValid())
+            {
+            AddProvenanceAspect(changeDetectorResults.GetSyncInfoRecord(), *conversionResults.m_element);
+            
             status = InsertResultsIntoBIM(conversionResults);
+            }
         else
+            {
+            ECN::ECClassCP aspectClass = iModelSyncInfoAspect::GetAspectClass(conversionResults.m_element->GetDgnDb());
+
+            if (nullptr != aspectClass)
+                {
+                iModelSyncInfoAspect aspect = iModelSyncInfoAspect::GetAspect(*conversionResults.m_element, aspectClass);
+                if (aspect.IsValid())
+                    aspect.SetSourceState(changeDetectorResults.GetSyncInfoRecord().GetSourceState().GetAspectState());
+                else
+                    AddProvenanceAspect(changeDetectorResults.GetSyncInfoRecord(), *conversionResults.m_element);
+                }
             status = UpdateResultsInBIM(conversionResults, eid);
+            }
 
         if (DgnDbStatus::Success != status)
             return BentleyStatus::ERROR;

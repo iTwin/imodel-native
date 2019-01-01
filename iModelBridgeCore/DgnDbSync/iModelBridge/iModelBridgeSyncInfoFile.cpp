@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridgeSyncInfoFile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
@@ -883,13 +883,9 @@ BentleyStatus iModelSyncInfoAspect::GetSourceState(SourceState& ss) const
         return BSIERROR;
     size_t sz;
     auto b = v.GetBinary(sz);
-    if (sz != sizeof(ss.m_hash.m_buffer))
-        {
-        BeDataAssert(false);
-        return BSIERROR;
-        }
-    memcpy(ss.m_hash.m_buffer, b, sizeof(ss.m_hash.m_buffer));
-
+    unsigned arraySize = sz / sizeof(unsigned char);
+    ss.m_hash.insert(ss.m_hash.end(), b, &b[arraySize]);
+    
     m_instance->GetValue(v, SOURCEINFO_LastModifiedTime);
     ss.m_lastModifiedTime = v.GetDouble();
 
@@ -927,7 +923,42 @@ rapidjson::Document iModelSyncInfoAspect::GetProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelSyncInfoAspect::SetSourceState(ECN::IECInstanceR instance, SourceState const& ss)
     {
-    instance.SetValue(SOURCEINFO_Hash, ECN::ECValue(ss.m_hash.m_buffer, sizeof(ss.m_hash.m_buffer)));
+    instance.SetValue(SOURCEINFO_Hash, ECN::ECValue(&ss.m_hash[0], ss.m_hash.size()* sizeof(ss.m_hash[0])));
     instance.SetValue(SOURCEINFO_LastModifiedTime, ECN::ECValue(ss.m_lastModifiedTime));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int char2int(char input)
+    {
+    if (input == '\0')
+        return 0;
+
+    if (input >= '0' && input <= '9')
+        return input - '0';
+    if (input >= 'A' && input <= 'F')
+        return input - 'A' + 10;
+    if (input >= 'a' && input <= 'f')
+        return input - 'a' + 10;
+    
+    BeAssert(false);
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelSyncInfoAspect::SourceState iModelBridgeSyncInfoFile::SourceState::GetAspectState() const
+    {
+    iModelSyncInfoAspect::SourceState state;
+    state.m_lastModifiedTime = m_lmt;
+    
+    for (int index = 0; index < m_hash.size(); index = index + 2)
+        {
+        unsigned char value = char2int(m_hash[index]) * 16 + char2int(m_hash[index + 1]);
+        state.m_hash.push_back(value);
+        }
+
+    return state;
+    }

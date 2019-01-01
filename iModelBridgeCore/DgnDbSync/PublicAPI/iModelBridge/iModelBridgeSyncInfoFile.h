@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeSyncInfoFile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -268,23 +268,17 @@ struct iModelSyncInfoAspect
     {
     struct SourceState
         {
-        MD5::HashVal m_hash;
+        bvector<unsigned char> m_hash;
         double m_lastModifiedTime;
         };
 
     RefCountedPtr<ECN::IECInstance> m_instance;
 
-  protected:
-    //! Create a new ECInstance of the specified provenance aspect class
-    //! This is protected, as most bridges will probably want factory methods with signatures that are customized to the bridge.
-    IMODEL_BRIDGE_EXPORT static ECN::IECInstancePtr MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const*, ECN::ECClassCR aspectClass);
-
-    IMODEL_BRIDGE_EXPORT static void SetSourceState(ECN::IECInstanceR, SourceState const&);
+    public:
 
     iModelSyncInfoAspect(ECN::IECInstance* i = nullptr) : m_instance(i) {}
     iModelSyncInfoAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
-
-  public:
+ 
     bool IsValid() const {return m_instance.IsValid();}
 
     IMODEL_BRIDGE_EXPORT Utf8CP GetKind() const;
@@ -307,6 +301,12 @@ struct iModelSyncInfoAspect
     IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass = nullptr);
     //! Get an existing syncinfo aspect from the specified element
     IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementR el, ECN::ECClassCP aspectClass = nullptr);
+
+    //! Create a new ECInstance of the specified provenance aspect class
+    //! Bridges will probably want factory methods with signatures that are customized to the bridge.
+    IMODEL_BRIDGE_EXPORT static ECN::IECInstancePtr MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const*, ECN::ECClassCR aspectClass);
+
+    IMODEL_BRIDGE_EXPORT static void SetSourceState(ECN::IECInstanceR, SourceState const&);
 
     };
 
@@ -390,6 +390,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         double GetLastModifiedTime() const {return m_lmt;}
         //! The cryptographic hash of the contents of the source item. The definition and method of computing this value is known only to source repository.
         Utf8StringCR GetHash() const  {return m_hash;}
+
+        iModelSyncInfoAspect::SourceState GetAspectState() const;
         };
 
     //=======================================================================================
@@ -531,6 +533,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! Invoked just before an an element is deleted
         IMODEL_BRIDGE_EXPORT virtual void _OnItemDelete(Record const&);
 
+        DgnDbStatus AddProvenanceAspect(Record const& record, DgnElementR element);
       public:
         //! @private
         //! Construct a change detector object. This will invoke the iModelBridgeSyncInfoFile::_OnNewUpdate method on @a si

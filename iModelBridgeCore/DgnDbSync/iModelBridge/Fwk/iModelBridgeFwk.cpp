@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/iModelBridgeFwk.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -1676,6 +1676,7 @@ BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
     if (SchemaStatus::Success != m_briefcaseDgnDb->ImportV8LegacySchemas(schemas))
         return BSIERROR;
 
+    madeChanges = true;
     return BSISUCCESS;
     }
 

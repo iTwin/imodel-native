@@ -2,7 +2,7 @@
 |
 |     $Source: SyncInfo.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -1716,7 +1716,7 @@ void SyncInfo::V8ElementSyncInfoAspect::AssertMatch(DgnElementCR el, DgnV8Api::E
     BeAssert(GetKind() == SyncInfoAspect::Kind::Element);
     iModelSyncInfoAspect::SourceState ss;
     BeAssert(GetSourceState(ss) == BSISUCCESS);
-    BeAssert(0==memcmp(ss.m_hash.m_buffer, elprov.m_hash.m_buffer, sizeof(elprov.m_hash.m_buffer)));
+    BeAssert(0==memcmp(&ss.m_hash[0], elprov.m_hash.m_buffer, sizeof(elprov.m_hash.m_buffer)));
     BeAssert(ss.m_lastModifiedTime == elprov.m_lastModified);
     }
 #endif
@@ -1743,8 +1743,11 @@ SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Make(V8Elem
     auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
         return V8ElementSyncInfoAspect(nullptr);
+
     iModelSyncInfoAspect::SourceState ss;
-    ss.m_hash = provdata.m_prov.m_hash;
+    unsigned arraySize = sizeof(provdata.m_prov.m_hash.m_buffer) / sizeof(unsigned char);
+    ss.m_hash.insert(ss.m_hash.end(), provdata.m_prov.m_hash.m_buffer, &provdata.m_prov.m_hash.m_buffer[arraySize]);
+
     ss.m_lastModifiedTime = provdata.m_prov.m_lastModified;
     auto instance = MakeInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), Utf8PrintfString("%lld", provdata.m_v8Id), &ss, *aspectClass);
     return V8ElementSyncInfoAspect(instance.get());
