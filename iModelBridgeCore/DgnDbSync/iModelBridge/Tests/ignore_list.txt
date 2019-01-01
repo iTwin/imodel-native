@@ -1,0 +1,6 @@
+
+iModelBridgeTests.Test1
+
+    # VSTS#54915
+    # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/02/2019
+    # Crash
