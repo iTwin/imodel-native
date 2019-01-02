@@ -11,7 +11,7 @@
 
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <json/value.h>
-#include <node-addon-api/napi.h>
+#include <Napi/napi.h>
 
 using namespace Napi;
 #include "BridgeAddon.h"

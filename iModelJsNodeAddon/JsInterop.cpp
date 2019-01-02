@@ -72,7 +72,7 @@ private:
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return JsInterop::GetRepositoryAdmin();}
 
 public:
-    JsDgnHost() { BeAssertFunctions::SetBeAssertHandler(&NativeAssertionsHelper::HandleAssertion); }
+    JsDgnHost() { BeAssertFunctions::SetBeAssertHandler(&handleAssertion);}
 };
 
 //=======================================================================================
@@ -131,16 +131,13 @@ struct NativeLoggingShim : NativeLogging::Provider::ILogProvider
 
 using namespace IModelJsNative;
 
-intptr_t JsInterop::s_mainThreadId;
-Napi::Env JsInterop::s_env(nullptr);
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
 void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env env, BeFileNameCR tempDir)
     {
-    s_env = env;
-    s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
+    Env() = env;
+    MainThreadId() = BeThreadUtilities::GetCurrentThreadId();
     s_addonDllDir = addonDllDir;
     s_tempDir = tempDir;
 
@@ -726,56 +723,6 @@ ECInstanceId JsInterop::GetInstanceIdFromInstance(ECDbCR ecdb, JsonValueCR jsonI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::ThrowJsException(Utf8CP msg) { Napi::Error::New(Env(), msg).ThrowAsJavaScriptException(); }
 
-//***********************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                      07/18
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BeMutex* NativeAssertionsHelper::s_mutex = new BeMutex();
-bool NativeAssertionsHelper::s_assertionsEnabled = true;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                      02/18
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool NativeAssertionsHelper::AreAssertionsEnabled()
-    {
-    BeMutexHolder lock(*s_mutex);
-    return s_assertionsEnabled;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                      02/18
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool NativeAssertionsHelper::SetAssertionsEnabled(bool enable)
-    {
-    BeMutexHolder lock(*s_mutex);
-    if (enable != s_assertionsEnabled)
-        {
-        s_assertionsEnabled = enable;
-        return true;
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                      02/18
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-void NativeAssertionsHelper::HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
-    {
-    BeMutexHolder lock(*s_mutex);
-    if (!s_assertionsEnabled || !JsInterop::IsMainThread())
-        return;
-
-    Napi::Error::New(JsInterop::Env(), Utf8PrintfString("Native Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str()).ThrowAsJavaScriptException();
-    }
-
-//***********************************************************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      02/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -811,8 +758,6 @@ void HexStrSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, numValue.GetValueUInt64(), HexFormatOptions::IncludePrefix);
     ctx.SetResultText(stringBuffer, (int) strlen(stringBuffer), Context::CopyData::Yes);
     }
-
-//***********************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      02/18

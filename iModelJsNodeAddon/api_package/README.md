@@ -4,7 +4,7 @@ Copyright © Bentley Systems, Inc. 2018
 
 ## Description
 
-The `@bentley/imodeljs-native-platform-api` package is responsible for installing the appropriate platform-specific native module.
+The `@bentley/imodeljs-native` package is responsible for installing the appropriate platform-specific native module.
 
 ## License
 

@@ -17,7 +17,7 @@ def main():
     bump = args.bump
     if not bump or not '.' in bump:
         sys.stderr.write('Bad version bump specifier: "' + bump + '".\n')
-        return 1        
+        return 1
 
     if '@' == bump[0]:
         newVer = bump[1:]

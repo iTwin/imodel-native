@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__BENTLEY_INTERNAL_ONLY__
 #pragma once
+
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnPlatformLib.h>
@@ -16,7 +16,7 @@
 #include <DgnPlatform/DgnFontData.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/CancellationToken.h>
-#include <node-addon-api/napi.h>
+#include <Napi/napi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
 USING_NAMESPACE_BENTLEY
@@ -28,6 +28,8 @@ USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_EC
 
 namespace IModelJsNative {
+
+void handleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
 
 struct JsInterop
 {
@@ -52,8 +54,6 @@ struct JsInterop
     BE_JSON_NAME(value)
 
 private:
-    static Napi::Env s_env;
-    static intptr_t s_mainThreadId;
 
     static RevisionStatus ReadChangeSet(DgnRevisionPtr& revisionPtr, Utf8StringCR dbGuid, JsonValueCR changeSetToken);
     static void GetRowAsJson(Json::Value &json, BeSQLite::EC::ECSqlStatement &);
@@ -137,30 +137,12 @@ public:
     static void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
     static bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev);
 
-    static Napi::Env Env() { return s_env; }
-    static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == s_mainThreadId; }
+    static Napi::Env& Env() { static Napi::Env s_env(nullptr); return s_env; }
+    static intptr_t& MainThreadId() {static intptr_t s_mainThreadId; return s_mainThreadId;}
+    static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == MainThreadId(); }
 
     static Tile::TreePtr FindTileTree(GeometricModelR, Tile::Tree::Id const&);
 };
-
-//=======================================================================================
-// @bsiclass                                                   Krischan.Eberle       07/18
-//=======================================================================================
-struct NativeAssertionsHelper final
-    {
-private:
-    static BeMutex* s_mutex;
-    static bool s_assertionsEnabled;
-
-    NativeAssertionsHelper() = delete;
-    ~NativeAssertionsHelper() = delete;
-
-public:
-    //! @return true if enable state was modified, false if enable state wasn't modified.
-    static bool SetAssertionsEnabled(bool enable);
-    static bool AreAssertionsEnabled();
-    static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
-    };
 
 //=======================================================================================
 //! TEXT HexStr(number INT)

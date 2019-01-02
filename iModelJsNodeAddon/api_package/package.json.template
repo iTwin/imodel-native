@@ -1,5 +1,5 @@
 {
-  "name": "@bentley/imodeljs-native-platform-api",
+  "name": "@bentley/imodeljs-native",
   "license": "SEE LICENSE IN LICENSE.md",
   "version": "${PACKAGE_VERSION}",
   "keywords": [
@@ -12,6 +12,6 @@
     "url": "www.bentley.com"
   },
    "scripts": {
-    "postinstall": "node ./installImodelJsNative.js"
+    "postinstall": "node ./installNativePlatform.js"
    }
 }
