@@ -33,14 +33,14 @@ try { fs.mkdirSync(installDir); } catch (err) { }
 fs.copyFileSync(path.join(__dirname, "package.json"), path.join(installDir, "package.json"));
 
 // We will then copy the results of the install from teh temp directory into the targetDirectory
-// We know that this script is in:               <somewhere>/node_modules/@bentley/imodeljs-native-platform-api
+// We know that this script is in:               <somewhere>/node_modules/@bentley/imodeljs-bridge
 // We want to put the native addon packages in:  <somewhere>/node_modules
 let currdir = process.cwd();
 let targetDir = path.normalize(path.join(currdir, "..", "..", "..")); // See comment below
 
 // Install in tmp dir and copy into target dir
-function installNativePlatformPackage(version_prefix) {
-    let cmdLine = `npm install --no-save ${formatPackageName(version_prefix)}@${version}`;
+function installNativePlatformPackage() {
+    let cmdLine = `npm install --no-save ${formatPackageName()}@${version}`;
     console.log(cmdLine);
     exec(cmdLine, { cwd: installDir }, (error, stdout, stderr) => {
         if (error)
@@ -51,7 +51,4 @@ function installNativePlatformPackage(version_prefix) {
     });
 }
 
-// Install both flavors of the addon for the current platform
-// *** KEEP THIS CONSISTENT WITH bridge-addon/addon/MakePackages.py ***
-
-installNativePlatformPackage('n_8');
+installNativePlatformPackage();
