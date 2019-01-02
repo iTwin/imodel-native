@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/addon/BridgeAddon.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <cstdio>
@@ -181,9 +181,10 @@ int RunBridge(Env env, const char* jsonString)
     args.push_back(L"BridgeAddon");    
 
     // Required
-    SET_ARG("server_user", L"server-user")                  // [NEEDSWORK] Perhaps remove after test OIDC token processing?
-    SET_ARG("server_password", L"server-password")          // [NEEDSWORK] Perhaps remove after test OIDC token processing?
+    SET_ARG("server_user", L"server-user")                  // [NEEDSWORK] Deprecated but still supported.  Use server_oidcCallBackUrl instead.
+    SET_ARG("server_password", L"server-password")          // [NEEDSWORK] Deprecated but still supported.  Use server_oidcCallBackUrl instead.
     SET_ARG("server_project", L"server-project") 
+    SET_ARG("server_oidcCallBackUrl", L"server-oidcCallBackUrl") 
     SET_ARG("server_repository", L"server-repository") 
     SET_ARG("server_environment", L"server-environment") 
 
