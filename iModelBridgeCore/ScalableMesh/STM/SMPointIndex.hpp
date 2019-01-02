@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -6879,7 +6879,7 @@ template<class POINT, class EXTENT> uint32_t SMPointIndexNode<POINT, EXTENT>::Ge
         //std::cout << "node (" << m_nodeHeader.m_id.m_integerID << ") --> count (" << NbObjects << ")" << std::endl;
 
         //Compute the
-        if (((m_filter == NULL) ||(m_filter->IsProgressiveFilter() == true)) && (GetParentNodePtr() != 0))
+        if (((m_filter != NULL) && (m_filter->IsProgressiveFilter() == true)) && (GetParentNodePtr() != 0))
             {
             static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*GetParentNode())->AddNumberObjectsInAncestors(m_nodeHeader.m_nodeExtent, NbObjects);
             }

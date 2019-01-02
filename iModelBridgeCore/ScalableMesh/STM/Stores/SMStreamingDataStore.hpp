@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMStreamingDataStore.hpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -1290,8 +1290,8 @@ template <class EXTENT> SMNodeHeaderLocation SMStreamingStore<EXTENT>::GetNodeHe
     {    
     auto group = m_CesiumGroup->GetCache()->GetGroupForNodeIDFromCache(blockID.m_integerID);
 
-    if (group == nullptr) 
-        SMNodeHeaderLocation::Network;
+    if (!group.IsValid()) 
+        return SMNodeHeaderLocation::Network;
 
     if (!group->IsLoaded())
         {
