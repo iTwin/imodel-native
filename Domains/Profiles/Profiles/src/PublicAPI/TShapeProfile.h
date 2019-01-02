@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/TShapeProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,6 +53,15 @@ protected:
 
     virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateGeometry() const override;
+
+private:
+    bool ValidateFlangeThickness() const;
+    bool ValidateWebThickness() const;
+    bool ValidateFilletRadius() const;
+    bool ValidateFlangeEdgeRadius() const;
+    bool ValidateFlangeSlope() const;
+    bool ValidateWebEdgeRadius() const;
+    bool ValidateWebSlope() const;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (TShapeProfile)

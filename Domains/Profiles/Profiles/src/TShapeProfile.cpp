@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/TShapeProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -68,49 +68,18 @@ bool TShapeProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isValidFlangeWidth = ProfilesProperty::IsGreaterThanZero (GetFlangeWidth());
-    if (!isValidFlangeWidth)
-        return false;
+    bool const isFlangeWidthValid = ProfilesProperty::IsGreaterThanZero (GetFlangeWidth());
+    bool const isDepthValid = ProfilesProperty::IsGreaterThanZero (GetDepth());
+    bool const isFlangeThicknessValid = ValidateFlangeThickness();
+    bool const isWebThicknessValid = ValidateWebThickness();
+    bool const isFilletRadiusValid = ValidateFilletRadius();
+    bool const isFlangeEdgeRadiusValid = ValidateFlangeEdgeRadius();
+    bool const isFlangeSlopeValid = ValidateFlangeSlope();
+    bool const isWebEdgeRadiusValid = ValidateWebEdgeRadius();
+    bool const isWebSlopeValid = ValidateWebSlope();
 
-    bool const isValidDepth = ProfilesProperty::IsGreaterThanZero (GetDepth());
-    if (!isValidDepth)
-        return false;
-
-    bool const isValidFlangeThickness = ProfilesProperty::IsGreaterThanZero (GetFlangeThickness()) && GetFlangeThickness() < GetDepth();
-    if (!isValidFlangeThickness)
-        return false;
-
-    bool const isValidWebThickness = ProfilesProperty::IsGreaterThanZero (GetWebThickness()) && GetWebThickness() < GetFlangeWidth();
-    if (!isValidWebThickness)
-        return false;
-
-    bool const isValidFilletRadius = ProfilesProperty::IsGreaterOrEqualToZero (GetFilletRadius())
-                                     && GetFilletRadius() <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight()
-                                     && GetFilletRadius() <= GetInnerFlangeFaceLength() / 2.0 - GetWebSlopeHeight();
-    if (!isValidFilletRadius)
-        return false;
-
-    bool const isValidFlangeEdgeRadius = ProfilesProperty::IsGreaterOrEqualToZero (GetFlangeEdgeRadius())
-                                         && GetFlangeEdgeRadius() <= std::min (GetInnerFlangeFaceLength() / 2.0, GetFlangeThickness() / 2.0);
-    if (!isValidFlangeEdgeRadius)
-        return false;
-
-    bool const isFlangeSlopeValid = ProfilesProperty::IsGreaterOrEqualToZero (GetFlangeSlope()) && GetFlangeSlope() < PI / 2.0
-                                    && GetInnerWebFaceLength() / 2.0 >= GetFlangeSlopeHeight();
-    if (!isFlangeSlopeValid)
-        return false;
-
-    bool const isValidWebEdgeRadius = ProfilesProperty::IsGreaterOrEqualToZero (GetWebEdgeRadius())
-                                      && GetWebEdgeRadius() <= std::min (GetInnerWebFaceLength() / 2.0, GetWebThickness() / 2.0);
-    if (!isValidWebEdgeRadius)
-        return false;
-
-    bool const isWebSlopeValid = ProfilesProperty::IsGreaterOrEqualToZero (GetWebSlope()) && GetWebSlope() < PI / 2.0
-                                 && GetInnerFlangeFaceLength() / 2.0 >= GetWebSlopeHeight();
-    if (!isWebSlopeValid)
-        return false;
-
-    return true;
+    return isFlangeWidthValid && isDepthValid && isFlangeThicknessValid && isWebThicknessValid && isFilletRadiusValid
+           && isFlangeEdgeRadiusValid && isFlangeSlopeValid && isWebEdgeRadiusValid && isWebSlopeValid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -119,6 +88,110 @@ bool TShapeProfile::_Validate() const
 IGeometryPtr TShapeProfile::_CreateGeometry() const
     {
     return ProfilesGeomApi::CreateTShape (this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TShapeProfile::ValidateFlangeThickness() const
+    {
+    double const flangeThickness = GetFlangeThickness();
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (flangeThickness);
+    bool const isLessThanDepth = flangeThickness < GetDepth();
+
+    return isPositive && isLessThanDepth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TShapeProfile::ValidateWebThickness() const
+    {
+    double const webThickness = GetWebThickness();
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (webThickness);
+    bool const isLessThanFlangeWidth = webThickness < GetFlangeWidth();
+
+    return isPositive && isLessThanFlangeWidth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TShapeProfile::ValidateFilletRadius() const
+    {
+    double const filletRadius = GetFilletRadius();
+    if (ProfilesProperty::IsEqualToZero (filletRadius))
+        return true;
+
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
+    bool const fitsInFlange = filletRadius <= GetInnerFlangeFaceLength() / 2.0 - GetWebSlopeHeight();
+    bool const fitsInWeb = filletRadius <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
+
+    return isPositive && fitsInFlange && fitsInWeb;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TShapeProfile::ValidateFlangeEdgeRadius() const
+    {
+    double const flangeEdgeRadius = GetFlangeEdgeRadius();
+    if (ProfilesProperty::IsEqualToZero (flangeEdgeRadius))
+        return true;
+
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeEdgeRadius);
+    bool const fitsInFlangeLength = flangeEdgeRadius <= GetInnerFlangeFaceLength() / 2.0;
+    bool const fitsInFlangeThickness = flangeEdgeRadius <= GetFlangeThickness() / 2.0;
+
+    return isPositive && fitsInFlangeLength && fitsInFlangeThickness;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TShapeProfile::ValidateFlangeSlope() const
+    {
+    double const flangeSlope = GetFlangeSlope();
+    if (ProfilesProperty::IsEqualToZero (flangeSlope))
+        return true;
+
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeSlope);
+    bool const isLessThanHalfPi = flangeSlope < PI / 2.0;
+    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetInnerWebFaceLength() / 2.0;
+
+    return isPositive && isLessThanHalfPi && slopeHeightFitsInWeb;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TShapeProfile::ValidateWebEdgeRadius() const
+    {
+    double const webEdgeRadius = GetWebEdgeRadius();
+    if (ProfilesProperty::IsEqualToZero (webEdgeRadius))
+        return true;
+
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (webEdgeRadius);
+    bool const fitsInWebLength = webEdgeRadius <= GetInnerWebFaceLength() / 2.0;
+    bool const fitsInWebThickness = webEdgeRadius <= GetWebThickness() / 2.0;
+
+    return isPositive && fitsInWebLength && fitsInWebThickness;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TShapeProfile::ValidateWebSlope() const
+    {
+    double const webSlope = GetWebSlope();
+    if (ProfilesProperty::IsEqualToZero (webSlope))
+        return true;
+
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (webSlope);
+    bool const isLessThanHalfPi = webSlope < PI / 2.0;
+    bool const slopeHeightFitsInFlange = GetWebSlopeHeight() <= GetInnerFlangeFaceLength() / 2.0;
+
+    return isPositive && isLessThanHalfPi && slopeHeightFitsInFlange;
     }
 
 /*---------------------------------------------------------------------------------**//**
