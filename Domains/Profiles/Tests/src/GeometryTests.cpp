@@ -65,10 +65,14 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_MaxFillet", 6, 10, 1, 2.5, 0.1));
     InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_SlopeAndRoundings", 6, 10, 1, 0.5, 0.5, Angle::FromRadians (PI / 32)));
 
-    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_Plain", 6, 10, 1, 1, 0, 0, 0, 0, 0), true);
-    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0, 0.5, 0));
-    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_MaxFillet", 6, 10, 1, 1, 2.5 / 2.0, 0.1, 0, 0.1, 0));
-    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, PI / 12, 0.5, PI / 48));
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_Plain",
+                                          6, 10, 1, 1, 0, 0, Angle::FromRadians (0), 0, Angle::FromRadians (0)), true);
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_FilletAndRoundedEdge",
+                                          6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (0), 0.5, Angle::FromRadians (0)));
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_MaxFillet",
+                                          6, 10, 1, 1, 2.5 / 2.0, 0.1, Angle::FromRadians (0), 0.1, Angle::FromRadians (0)));
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_SlopeAndRoundings",
+                                          6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 12), 0.5, Angle::FromRadians (PI / 48)));
 
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_Plain", 3.5, 10, 1, 1, 0, 0), true);
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_FilletAndRoundedEdge", 3.5, 10, 1, 1, 0.5, 0.5));

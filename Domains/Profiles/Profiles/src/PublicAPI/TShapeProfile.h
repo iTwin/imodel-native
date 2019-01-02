@@ -29,9 +29,9 @@ public:
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
-                                               double webThickness, double filletRadius = 0.0, double flangeEdgeRadius = 0.0, double flangeSlope = 0.0,
-                                               double webEdgeRadius = 0.0, double webSlope = 0.0);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness, double webThickness,
+                                               double filletRadius = 0.0, double flangeEdgeRadius = 0.0, Angle const& flangeSlope = Angle::FromRadians (0.0),
+                                               double webEdgeRadius = 0.0, Angle const& webSlope = Angle::FromRadians (0.0));
 
     public:
         //! Required properties
@@ -43,9 +43,9 @@ public:
         //! Optional properties
         double filletRadius = 0.0;
         double flangeEdgeRadius = 0.0;
-        double flangeSlope = 0.0;
+        Angle flangeSlope = Angle::FromRadians (0.0);
         double webEdgeRadius = 0.0;
-        double webSlope = 0.0;
+        Angle webSlope = Angle::FromRadians (0.0);
         };
 
 protected:
@@ -88,14 +88,14 @@ public:
     PROFILES_EXPORT double GetFlangeEdgeRadius() const;
     PROFILES_EXPORT void SetFlangeEdgeRadius (double val);
 
-    PROFILES_EXPORT double GetFlangeSlope() const;
-    PROFILES_EXPORT void SetFlangeSlope (double val);
+    PROFILES_EXPORT Angle GetFlangeSlope() const;
+    PROFILES_EXPORT void SetFlangeSlope (Angle const& val);
 
     PROFILES_EXPORT double GetWebEdgeRadius() const;
     PROFILES_EXPORT void SetWebEdgeRadius (double val);
 
-    PROFILES_EXPORT double GetWebSlope() const;
-    PROFILES_EXPORT void SetWebSlope (double val);
+    PROFILES_EXPORT Angle GetWebSlope() const;
+    PROFILES_EXPORT void SetWebSlope (Angle const& val);
 
 public:
     PROFILES_EXPORT double GetInnerFlangeFaceLength() const;

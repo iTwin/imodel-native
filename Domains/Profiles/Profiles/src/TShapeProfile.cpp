@@ -26,8 +26,8 @@ TShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pN
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
-                                           double webThickness, double filletRadius, double flangeEdgeRadius, double flangeSlope,
-                                           double webEdgeRadius, double webSlope)
+                                           double webThickness, double filletRadius, double flangeEdgeRadius, Angle const& flangeSlope,
+                                           double webEdgeRadius, Angle const& webSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , flangeWidth (flangeWidth)
     , depth (depth)
@@ -151,7 +151,7 @@ bool TShapeProfile::ValidateFlangeEdgeRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TShapeProfile::ValidateFlangeSlope() const
     {
-    double const flangeSlope = GetFlangeSlope();
+    double const flangeSlope = GetFlangeSlope().Radians();
     if (ProfilesProperty::IsEqualToZero (flangeSlope))
         return true;
 
@@ -183,7 +183,7 @@ bool TShapeProfile::ValidateWebEdgeRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TShapeProfile::ValidateWebSlope() const
     {
-    double const webSlope = GetWebSlope();
+    double const webSlope = GetWebSlope().Radians();
     if (ProfilesProperty::IsEqualToZero (webSlope))
         return true;
 
@@ -293,17 +293,17 @@ void TShapeProfile::SetFlangeEdgeRadius (double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double TShapeProfile::GetFlangeSlope() const
+Angle TShapeProfile::GetFlangeSlope() const
     {
-    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_FlangeSlope);
+    return Angle::FromRadians (GetPropertyValueDouble (PRF_PROP_TShapeProfile_FlangeSlope));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetFlangeSlope (double val)
+void TShapeProfile::SetFlangeSlope (Angle const& val)
     {
-    SetPropertyValue (PRF_PROP_TShapeProfile_FlangeSlope, val);
+    SetPropertyValue (PRF_PROP_TShapeProfile_FlangeSlope, ECN::ECValue (val.Radians()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -325,17 +325,17 @@ void TShapeProfile::SetWebEdgeRadius (double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double TShapeProfile::GetWebSlope() const
+Angle TShapeProfile::GetWebSlope() const
     {
-    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_WebSlope);
+    return Angle::FromRadians (GetPropertyValueDouble (PRF_PROP_TShapeProfile_WebSlope));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetWebSlope (double val)
+void TShapeProfile::SetWebSlope (Angle const& val)
     {
-    SetPropertyValue (PRF_PROP_TShapeProfile_WebSlope, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_TShapeProfile_WebSlope, ECN::ECValue (val.Radians()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -359,11 +359,11 @@ double TShapeProfile::GetInnerWebFaceLength() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetFlangeSlopeHeight() const
     {
-    double const flangeSlopeCos = std::cos (GetFlangeSlope());
+    double const flangeSlopeCos = GetFlangeSlope().Cos();
     if (flangeSlopeCos <= DBL_EPSILON)
         return 0.0;
 
-    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * std::sin (GetFlangeSlope());
+    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetFlangeSlope().Sin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -371,11 +371,11 @@ double TShapeProfile::GetFlangeSlopeHeight() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetWebSlopeHeight() const
     {
-    double const webSlopeCos = std::cos (GetWebSlope());
+    double const webSlopeCos = GetWebSlope().Cos();
     if (webSlopeCos <= DBL_EPSILON)
         return 0.0;
 
-    return (GetInnerWebFaceLength() / webSlopeCos) * std::sin (GetWebSlope());
+    return (GetInnerWebFaceLength() / webSlopeCos) * GetWebSlope().Sin();
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
