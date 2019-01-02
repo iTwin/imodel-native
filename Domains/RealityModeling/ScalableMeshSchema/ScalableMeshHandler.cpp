@@ -2,7 +2,7 @@
 |
 |     $Source: ScalableMeshSchema/ScalableMeshHandler.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -572,9 +572,14 @@ void SMNode::CleanupUnusedChildren(bvector<Dgn::TileTree::TileCPtr>& selected) c
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SMNode::_GetTileCacheKey() const
-    {
+    {    
+    //For Cesium 3d Tiles stored on PWCS GetNodeId could lead to the loading of data from the server, which could make the view jerky. 
+    //So deactivate the cache key, which should not be used anyway because the ScalableMesh code has is own caching system.
+    if (m_3smModel->m_smPtr->IsCesium3DTiles())
+        return Utf8String("");
+    
     std::stringstream stream;
-    stream << m_scalableMeshNodePtr->GetNodeId();
+    stream << m_scalableMeshNodePtr->GetNodeId();    
     return Utf8String(stream.str().c_str());
     }
 
@@ -926,8 +931,8 @@ bool SMNode::ReadHeader(Transform& locationTransform)
 //----------------------------------------------------------------------------------------
 SMNode::SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) 
     : T_Super(root, parent), 
-      m_scalableMeshNodePtr(smNodePtr) 
-    {
+      m_scalableMeshNodePtr(smNodePtr)
+    {    
 #ifndef NDEBUG
     s_activeNodeCounter++; 
 #endif
@@ -1169,9 +1174,11 @@ void SMScene::LoadOverview(SMNode* node)
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
+static bool s_loadOverview = true;
+
 BentleyStatus SMScene::LoadScene()
     {    
-    if (!m_smPtr.IsValid())
+    if (!m_smPtr.IsValid())   
         return ERROR;    
 
     IScalableMeshNodePtr smNode(m_smPtr->GetRootNode());
@@ -1179,7 +1186,8 @@ BentleyStatus SMScene::LoadScene()
     m_rootTile = root;
     root->m_3smModel = m_3smModel;
 
-    LoadOverview(root);
+    if (s_loadOverview)
+        LoadOverview(root);
 
 #if !defined(NDEBUG) && defined(_WIN32)
     wchar_t text_buffer[1000] = { 0 }; //temporary buffer
