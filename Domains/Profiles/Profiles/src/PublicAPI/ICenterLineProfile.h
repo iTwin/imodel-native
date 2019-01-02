@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/ICenterLineProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ public:
     PROFILES_EXPORT IGeometryPtr GetCenterLine() const;
 
     PROFILES_EXPORT double GetWallThickness() const;
-    PROFILES_EXPORT void SetWallThickness (double val);
+    PROFILES_EXPORT void SetWallThickness (double value);
 
     }; // ICenterLineProfile
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/DerivedProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,16 +32,16 @@ public:
 
 public:
     PROFILES_EXPORT bool GetMirrorProfileAboutYAxis() const;
-    PROFILES_EXPORT void SetMirrorProfileAboutYAxis (bool val);
+    PROFILES_EXPORT void SetMirrorProfileAboutYAxis (bool value);
 
     PROFILES_EXPORT DPoint2d GetOffset() const;
-    PROFILES_EXPORT void SetOffset (DPoint2dCR val);
+    PROFILES_EXPORT void SetOffset (DPoint2dCR value);
 
     PROFILES_EXPORT DPoint2d GetRotation() const;
-    PROFILES_EXPORT void SetRotation (DPoint2dCR val);
+    PROFILES_EXPORT void SetRotation (DPoint2dCR value);
 
     PROFILES_EXPORT DPoint2d GetScale() const;
-    PROFILES_EXPORT void SetScale (DPoint2dCR val);
+    PROFILES_EXPORT void SetScale (DPoint2dCR value);
 
     }; // DerivedProfile
 

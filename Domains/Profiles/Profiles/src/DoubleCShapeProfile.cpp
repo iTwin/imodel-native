@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/DoubleCShapeProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -31,9 +31,9 @@ double DoubleCShapeProfile::GetSpacing() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleCShapeProfile::SetSpacing (double val)
+void DoubleCShapeProfile::SetSpacing (double value)
     {
-    SetPropertyValue (PRF_PROP_DoubleCShapeProfile_Spacing, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_DoubleCShapeProfile_Spacing, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -64,22 +64,22 @@ public:
 
 public:
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth (double val);
+    PROFILES_EXPORT void SetWidth (double value);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth (double val);
+    PROFILES_EXPORT void SetDepth (double value);
 
     PROFILES_EXPORT double GetThickness() const;
-    PROFILES_EXPORT void SetThickness (double val);
+    PROFILES_EXPORT void SetThickness (double value);
 
     PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius (double val);
+    PROFILES_EXPORT void SetFilletRadius (double value);
 
     PROFILES_EXPORT double GetEdgeRadius() const;
-    PROFILES_EXPORT void SetEdgeRadius (double val);
+    PROFILES_EXPORT void SetEdgeRadius (double value);
 
     PROFILES_EXPORT Angle GetLegSlope() const;
-    PROFILES_EXPORT void SetLegSlope (Angle const& val);
+    PROFILES_EXPORT void SetLegSlope (Angle const& value);
 
 public:
     PROFILES_EXPORT double GetInnerFlangeFaceLength() const;

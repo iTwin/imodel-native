@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/DoubleLShapeProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -31,9 +31,9 @@ double DoubleLShapeProfile::GetSpacing() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleLShapeProfile::SetSpacing (double val)
+void DoubleLShapeProfile::SetSpacing (double value)
     {
-    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_Spacing, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_Spacing, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,9 +47,9 @@ int DoubleLShapeProfile::GetType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleLShapeProfile::SetType (int val)
+void DoubleLShapeProfile::SetType (int value)
     {
-    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_Type, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_Type, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

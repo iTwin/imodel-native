@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/CenterLineCShapeProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,16 +58,16 @@ public:
 
 public:
     PROFILES_EXPORT double GetFlangeWidth() const;
-    PROFILES_EXPORT void SetFlangeWidth (double val);
+    PROFILES_EXPORT void SetFlangeWidth (double value);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth (double val);
+    PROFILES_EXPORT void SetDepth (double value);
 
     PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius (double val);
+    PROFILES_EXPORT void SetFilletRadius (double value);
 
     PROFILES_EXPORT double GetGirth() const;
-    PROFILES_EXPORT void SetGirth (double val);
+    PROFILES_EXPORT void SetGirth (double value);
     }; // CenterLineCShapeProfile
 
 //=======================================================================================

@@ -155,9 +155,9 @@ double LShapeProfile::GetWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetWidth (double val)
+void LShapeProfile::SetWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_LShapeProfile_Width, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_Width, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,9 +171,9 @@ double LShapeProfile::GetDepth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetDepth (double val)
+void LShapeProfile::SetDepth (double value)
     {
-    SetPropertyValue (PRF_PROP_LShapeProfile_Depth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_Depth, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,9 +187,9 @@ double LShapeProfile::GetThickness() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetThickness (double val)
+void LShapeProfile::SetThickness (double value)
     {
-    SetPropertyValue (PRF_PROP_LShapeProfile_Thickness, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_Thickness, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,9 +203,9 @@ double LShapeProfile::GetFilletRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetFilletRadius (double val)
+void LShapeProfile::SetFilletRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_LShapeProfile_FilletRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_FilletRadius, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -219,9 +219,9 @@ double LShapeProfile::GetEdgeRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetEdgeRadius (double val)
+void LShapeProfile::SetEdgeRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_LShapeProfile_EdgeRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_EdgeRadius, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,9 +235,9 @@ Angle LShapeProfile::GetLegSlope() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetLegSlope (Angle const& val)
+void LShapeProfile::SetLegSlope (Angle const& value)
     {
-    SetPropertyValue (PRF_PROP_LShapeProfile_LegSlope, ECN::ECValue (val.Radians()));
+    SetPropertyValue (PRF_PROP_LShapeProfile_LegSlope, ECN::ECValue (value.Radians()));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/BentPlateProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,16 +33,16 @@ public:
 
 public:
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth (double val);
+    PROFILES_EXPORT void SetWidth (double value);
 
     PROFILES_EXPORT double GetBendAngle() const;
-    PROFILES_EXPORT void SetBendAngle (double val);
+    PROFILES_EXPORT void SetBendAngle (double value);
 
     PROFILES_EXPORT double GetBendRadius() const;
-    PROFILES_EXPORT void SetBendRadius (double val);
+    PROFILES_EXPORT void SetBendRadius (double value);
 
     PROFILES_EXPORT double GetBendOffset() const;
-    PROFILES_EXPORT void SetBendOffset (double val);
+    PROFILES_EXPORT void SetBendOffset (double value);
 
     }; // BentPlateProfile
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/RoundedRectangleProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -93,9 +93,9 @@ double RoundedRectangleProfile::GetWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoundedRectangleProfile::SetWidth (double val)
+void RoundedRectangleProfile::SetWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_RoundedRectangleProfile_Width, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_RoundedRectangleProfile_Width, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -109,9 +109,9 @@ double RoundedRectangleProfile::GetDepth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoundedRectangleProfile::SetDepth (double val)
+void RoundedRectangleProfile::SetDepth (double value)
     {
-    SetPropertyValue (PRF_PROP_RoundedRectangleProfile_Depth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_RoundedRectangleProfile_Depth, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,9 +125,9 @@ double RoundedRectangleProfile::GetRoundingRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoundedRectangleProfile::SetRoundingRadius (double val)
+void RoundedRectangleProfile::SetRoundingRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_RoundedRectangleProfile_RoundingRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_RoundedRectangleProfile_RoundingRadius, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

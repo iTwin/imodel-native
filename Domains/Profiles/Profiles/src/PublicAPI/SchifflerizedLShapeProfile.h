@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/SchifflerizedLShapeProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,19 +32,19 @@ public:
 
 public:
     PROFILES_EXPORT double GetLegLength() const;
-    PROFILES_EXPORT void SetLegLength (double val);
+    PROFILES_EXPORT void SetLegLength (double value);
 
     PROFILES_EXPORT double GetThickness() const;
-    PROFILES_EXPORT void SetThickness (double val);
+    PROFILES_EXPORT void SetThickness (double value);
 
     PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius (double val);
+    PROFILES_EXPORT void SetFilletRadius (double value);
 
     PROFILES_EXPORT double GetEdgeRadius() const;
-    PROFILES_EXPORT void SetEdgeRadius (double val);
+    PROFILES_EXPORT void SetEdgeRadius (double value);
 
     PROFILES_EXPORT double GetLegSlope() const;
-    PROFILES_EXPORT void SetLegSlope (double val);
+    PROFILES_EXPORT void SetLegSlope (double value);
 
     }; // SchifflerizedLShapeProfile
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/DerivedProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -31,9 +31,9 @@ bool DerivedProfile::GetMirrorProfileAboutYAxis() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetMirrorProfileAboutYAxis (bool val)
+void DerivedProfile::SetMirrorProfileAboutYAxis (bool value)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_MirrorProfileAboutYAxis, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_DerivedProfile_MirrorProfileAboutYAxis, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,9 +47,9 @@ DPoint2d DerivedProfile::GetOffset() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetOffset (DPoint2dCR val)
+void DerivedProfile::SetOffset (DPoint2dCR value)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_Offset, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_DerivedProfile_Offset, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -63,9 +63,9 @@ DPoint2d DerivedProfile::GetRotation() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetRotation (DPoint2dCR val)
+void DerivedProfile::SetRotation (DPoint2dCR value)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_Rotation, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_DerivedProfile_Rotation, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -79,9 +79,9 @@ DPoint2d DerivedProfile::GetScale() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetScale (DPoint2dCR val)
+void DerivedProfile::SetScale (DPoint2dCR value)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_Scale, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_DerivedProfile_Scale, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

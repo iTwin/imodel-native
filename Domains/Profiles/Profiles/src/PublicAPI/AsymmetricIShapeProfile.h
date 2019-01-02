@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/AsymmetricIShapeProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -77,40 +77,40 @@ public:
 
 public:
     PROFILES_EXPORT double GetTopFlangeWidth() const;
-    PROFILES_EXPORT void SetTopFlangeWidth (double val);
+    PROFILES_EXPORT void SetTopFlangeWidth (double value);
 
     PROFILES_EXPORT double GetBottomFlangeWidth() const;
-    PROFILES_EXPORT void SetBottomFlangeWidth (double val);
+    PROFILES_EXPORT void SetBottomFlangeWidth (double value);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth (double val);
+    PROFILES_EXPORT void SetDepth (double value);
 
     PROFILES_EXPORT double GetTopFlangeThickness() const;
-    PROFILES_EXPORT void SetTopFlangeThickness (double val);
+    PROFILES_EXPORT void SetTopFlangeThickness (double value);
 
     PROFILES_EXPORT double GetBottomFlangeThickness() const;
-    PROFILES_EXPORT void SetBottomFlangeThickness (double val);
+    PROFILES_EXPORT void SetBottomFlangeThickness (double value);
 
     PROFILES_EXPORT double GetWebThickness() const;
-    PROFILES_EXPORT void SetWebThickness (double val);
+    PROFILES_EXPORT void SetWebThickness (double value);
 
     PROFILES_EXPORT double GetTopFlangeFilletRadius() const;
-    PROFILES_EXPORT void SetTopFlangeFilletRadius (double val);
+    PROFILES_EXPORT void SetTopFlangeFilletRadius (double value);
 
     PROFILES_EXPORT double GetTopFlangeEdgeRadius() const;
-    PROFILES_EXPORT void SetTopFlangeEdgeRadius (double val);
+    PROFILES_EXPORT void SetTopFlangeEdgeRadius (double value);
 
     PROFILES_EXPORT Angle GetTopFlangeSlope() const;
-    PROFILES_EXPORT void SetTopFlangeSlope (Angle const& val);
+    PROFILES_EXPORT void SetTopFlangeSlope (Angle const& value);
 
     PROFILES_EXPORT double GetBottomFlangeFilletRadius() const;
-    PROFILES_EXPORT void SetBottomFlangeFilletRadius (double val);
+    PROFILES_EXPORT void SetBottomFlangeFilletRadius (double value);
 
     PROFILES_EXPORT double GetBottomFlangeEdgeRadius() const;
-    PROFILES_EXPORT void SetBottomFlangeEdgeRadius (double val);
+    PROFILES_EXPORT void SetBottomFlangeEdgeRadius (double value);
 
     PROFILES_EXPORT Angle GetBottomFlangeSlope() const;
-    PROFILES_EXPORT void SetBottomFlangeSlope (Angle const& val);
+    PROFILES_EXPORT void SetBottomFlangeSlope (Angle const& value);
 
 public:
     PROFILES_EXPORT double GetInnerTopFlangeFaceLength() const;

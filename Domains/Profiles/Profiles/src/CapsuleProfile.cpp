@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/CapsuleProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -24,9 +24,9 @@ double CapsuleProfile::GetWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CapsuleProfile::SetWidth (double val)
+void CapsuleProfile::SetWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_CapsuleProfile_Width, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_CapsuleProfile_Width, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -40,9 +40,9 @@ double CapsuleProfile::GetDepth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CapsuleProfile::SetDepth (double val)
+void CapsuleProfile::SetDepth (double value)
     {
-    SetPropertyValue (PRF_PROP_CapsuleProfile_Depth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_CapsuleProfile_Depth, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

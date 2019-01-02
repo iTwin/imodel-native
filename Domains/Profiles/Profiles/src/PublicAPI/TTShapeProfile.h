@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/TTShapeProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,34 +32,34 @@ public:
 
 public:
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth (double val);
+    PROFILES_EXPORT void SetWidth (double value);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth (double val);
+    PROFILES_EXPORT void SetDepth (double value);
 
     PROFILES_EXPORT double GetSpan() const;
-    PROFILES_EXPORT void SetSpan (double val);
+    PROFILES_EXPORT void SetSpan (double value);
 
     PROFILES_EXPORT double GetFlangeThickness() const;
-    PROFILES_EXPORT void SetFlangeThickness (double val);
+    PROFILES_EXPORT void SetFlangeThickness (double value);
 
     PROFILES_EXPORT double GetWebThickness() const;
-    PROFILES_EXPORT void SetWebThickness (double val);
+    PROFILES_EXPORT void SetWebThickness (double value);
 
     PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius (double val);
+    PROFILES_EXPORT void SetFilletRadius (double value);
 
     PROFILES_EXPORT double GetFlangeEdgeRadius() const;
-    PROFILES_EXPORT void SetFlangeEdgeRadius (double val);
+    PROFILES_EXPORT void SetFlangeEdgeRadius (double value);
 
     PROFILES_EXPORT double GetFlangeSlope() const;
-    PROFILES_EXPORT void SetFlangeSlope (double val);
+    PROFILES_EXPORT void SetFlangeSlope (double value);
 
     PROFILES_EXPORT double GetWebEdgeRadius() const;
-    PROFILES_EXPORT void SetWebEdgeRadius (double val);
+    PROFILES_EXPORT void SetWebEdgeRadius (double value);
 
     PROFILES_EXPORT double GetWebSlope() const;
-    PROFILES_EXPORT void SetWebSlope (double val);
+    PROFILES_EXPORT void SetWebSlope (double value);
 
     }; // TTShapeProfile
 

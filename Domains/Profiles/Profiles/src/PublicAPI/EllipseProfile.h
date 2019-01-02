@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/EllipseProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,10 +51,10 @@ public:
 
 public:
     PROFILES_EXPORT double GetXRadius() const;
-    PROFILES_EXPORT void SetXRadius (double val);
+    PROFILES_EXPORT void SetXRadius (double value);
 
     PROFILES_EXPORT double GetYRadius() const;
-    PROFILES_EXPORT void SetYRadius (double val);
+    PROFILES_EXPORT void SetYRadius (double value);
 
     }; // EllipseProfile
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/RegularPolygonProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,10 +31,10 @@ public:
     PROFILES_EXPORT static RegularPolygonProfilePtr Create (CreateParams const& params) { return new RegularPolygonProfile (params); }
 
     PROFILES_EXPORT double GetSideCount() const;
-    PROFILES_EXPORT void SetSideCount (double val);
+    PROFILES_EXPORT void SetSideCount (double value);
 
     PROFILES_EXPORT double GetSideLength() const;
-    PROFILES_EXPORT void SetSideLength (double val);
+    PROFILES_EXPORT void SetSideLength (double value);
 
     }; // RegularPolygonProfile
 

@@ -275,7 +275,7 @@ TEST_F (TShapeProfileTestCase, Insert_InvalidFlangeThickness_FailedInsert)
     params.flangeThickness = params.depth;
     EXPECT_FAIL_Insert (params) << "Flange thickness should be less than the depth.";
 
-    params.flangeThickness = nextafter<double, double> (params.depth, 0.0);
+    params.flangeThickness = BeNumerical::BeNextafter (params.depth, 0.0);
     EXPECT_SUCCESS_Insert (params) << "Flange thickness should be less than half of the depth.";
     }
 
@@ -471,7 +471,7 @@ TEST_F (TShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetFlangeSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
 
-    params.flangeSlope = Angle::FromRadians (nextafter<double, double> (PI / 4.0, INFINITY));
+    params.flangeSlope = Angle::FromRadians (BeNumerical::BeNextafter (PI / 4.0, INFINITY));
     EXPECT_FAIL_Insert (params) << "Flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
     }
 
@@ -521,7 +521,7 @@ TEST_F (TShapeProfileTestCase, Insert_WebSlopeOf45Degrees_SuccessfulInsert)
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetWebSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Web slope should be such, that the slope height should be less or equal to half of inner flange face length.";
 
-    params.flangeSlope = Angle::FromRadians (nextafter<double, double> (PI / 4.0, INFINITY));
+    params.flangeSlope = Angle::FromRadians (BeNumerical::BeNextafter (PI / 4.0, INFINITY));
     EXPECT_FAIL_Insert (params) << "Web slope should be such, that the slope height should be less or equal to half of inner flange face length.";
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/RegularPolygonProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -23,9 +23,9 @@ double RegularPolygonProfile::GetSideCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RegularPolygonProfile::SetSideCount (double val)
+void RegularPolygonProfile::SetSideCount (double value)
     {
-    SetPropertyValue (PRF_PROP_RegularPolygonProfile_SideCount, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_RegularPolygonProfile_SideCount, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,9 +39,9 @@ double RegularPolygonProfile::GetSideLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RegularPolygonProfile::SetSideLength (double val)
+void RegularPolygonProfile::SetSideLength (double value)
     {
-    SetPropertyValue (PRF_PROP_RegularPolygonProfile_SideLength, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_RegularPolygonProfile_SideLength, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

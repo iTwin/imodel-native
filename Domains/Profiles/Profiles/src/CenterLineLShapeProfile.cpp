@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/CenterLineLShapeProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -24,9 +24,9 @@ double CenterLineLShapeProfile::GetWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CenterLineLShapeProfile::SetWidth (double val)
+void CenterLineLShapeProfile::SetWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Width, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Width, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -40,9 +40,9 @@ double CenterLineLShapeProfile::GetDepth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CenterLineLShapeProfile::SetDepth (double val)
+void CenterLineLShapeProfile::SetDepth (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Depth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Depth, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,9 +56,9 @@ double CenterLineLShapeProfile::GetFilletRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CenterLineLShapeProfile::SetFilletRadius (double val)
+void CenterLineLShapeProfile::SetFilletRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_FilletRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_FilletRadius, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,9 +72,9 @@ double CenterLineLShapeProfile::GetGirth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CenterLineLShapeProfile::SetGirth (double val)
+void CenterLineLShapeProfile::SetGirth (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Girth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Girth, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/BentPlateProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -24,9 +24,9 @@ double BentPlateProfile::GetWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BentPlateProfile::SetWidth (double val)
+void BentPlateProfile::SetWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_BentPlateProfile_Width, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_BentPlateProfile_Width, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -40,9 +40,9 @@ double BentPlateProfile::GetBendAngle() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BentPlateProfile::SetBendAngle (double val)
+void BentPlateProfile::SetBendAngle (double value)
     {
-    SetPropertyValue (PRF_PROP_BentPlateProfile_BendAngle, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_BentPlateProfile_BendAngle, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,9 +56,9 @@ double BentPlateProfile::GetBendRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BentPlateProfile::SetBendRadius (double val)
+void BentPlateProfile::SetBendRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_BentPlateProfile_BendRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_BentPlateProfile_BendRadius, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,9 +72,9 @@ double BentPlateProfile::GetBendOffset() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BentPlateProfile::SetBendOffset (double val)
+void BentPlateProfile::SetBendOffset (double value)
     {
-    SetPropertyValue (PRF_PROP_BentPlateProfile_BendOffset, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_BentPlateProfile_BendOffset, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

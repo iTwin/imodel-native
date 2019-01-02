@@ -378,8 +378,8 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopAndBottomFlangeThicknessGreat
     params.bottomFlangeThickness = halfDepth;
     EXPECT_FAIL_Insert (params) << "Top flange thickness added with bottom flange thickness should be less than depth.";
 
-    params.topFlangeThickness = nextafter<double, double> (halfDepth, 0.0);
-    params.bottomFlangeThickness = nextafter<double, double> (halfDepth, 0.0);
+    params.topFlangeThickness = BeNumerical::BeNextafter (halfDepth, 0.0);
+    params.bottomFlangeThickness = BeNumerical::BeNextafter (halfDepth, 0.0);
     EXPECT_SUCCESS_Insert (params) << "Top flange thickness added with bottom flange thickness should be less than depth.";
     }
 

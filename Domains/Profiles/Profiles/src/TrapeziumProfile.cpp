@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/TrapeziumProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -83,9 +83,9 @@ double TrapeziumProfile::GetTopWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TrapeziumProfile::SetTopWidth (double val)
+void TrapeziumProfile::SetTopWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_TrapeziumProfile_TopWidth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_TrapeziumProfile_TopWidth, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,9 +99,9 @@ double TrapeziumProfile::GetBottomWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TrapeziumProfile::SetBottomWidth (double val)
+void TrapeziumProfile::SetBottomWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_TrapeziumProfile_BottomWidth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_TrapeziumProfile_BottomWidth, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -115,9 +115,9 @@ double TrapeziumProfile::GetDepth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TrapeziumProfile::SetDepth (double val)
+void TrapeziumProfile::SetDepth (double value)
     {
-    SetPropertyValue (PRF_PROP_TrapeziumProfile_Depth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_TrapeziumProfile_Depth, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -131,9 +131,9 @@ double TrapeziumProfile::GetTopOffset() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TrapeziumProfile::SetTopOffset (double val)
+void TrapeziumProfile::SetTopOffset (double value)
     {
-    SetPropertyValue (PRF_PROP_TrapeziumProfile_TopOffset, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_TrapeziumProfile_TopOffset, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

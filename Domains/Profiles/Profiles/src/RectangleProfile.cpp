@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/RectangleProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -77,9 +77,9 @@ double RectangleProfile::GetWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RectangleProfile::SetWidth (double val)
+void RectangleProfile::SetWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_RectangleProfile_Width, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_RectangleProfile_Width, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,9 +93,9 @@ double RectangleProfile::GetDepth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RectangleProfile::SetDepth (double val)
+void RectangleProfile::SetDepth (double value)
     {
-    SetPropertyValue (PRF_PROP_RectangleProfile_Depth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_RectangleProfile_Depth, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

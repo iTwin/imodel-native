@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/CircleProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,7 +49,7 @@ public:
     PROFILES_EXPORT static CircleProfilePtr Create (CreateParams const& params) { return new CircleProfile (params); }
 
     PROFILES_EXPORT double GetRadius() const;
-    PROFILES_EXPORT void SetRadius (double val);
+    PROFILES_EXPORT void SetRadius (double value);
 
     }; // CircleProfile
 

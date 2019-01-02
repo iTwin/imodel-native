@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/TrapeziumProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,16 +54,16 @@ public:
 
 public:
     PROFILES_EXPORT double GetTopWidth() const;
-    PROFILES_EXPORT void SetTopWidth (double val);
+    PROFILES_EXPORT void SetTopWidth (double value);
 
     PROFILES_EXPORT double GetBottomWidth() const;
-    PROFILES_EXPORT void SetBottomWidth (double val);
+    PROFILES_EXPORT void SetBottomWidth (double value);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth (double val);
+    PROFILES_EXPORT void SetDepth (double value);
 
     PROFILES_EXPORT double GetTopOffset() const;
-    PROFILES_EXPORT void SetTopOffset (double val);
+    PROFILES_EXPORT void SetTopOffset (double value);
 
     }; // TrapeziumProfile
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/HollowRectangleProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,16 +63,16 @@ public:
 
 public:
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth (double val);
+    PROFILES_EXPORT void SetWidth (double value);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth (double val);
+    PROFILES_EXPORT void SetDepth (double value);
 
     PROFILES_EXPORT double GetInnerFilletRadius() const;
-    PROFILES_EXPORT void SetInnerFilletRadius (double val);
+    PROFILES_EXPORT void SetInnerFilletRadius (double value);
 
     PROFILES_EXPORT double GetOuterFilletRadius() const;
-    PROFILES_EXPORT void SetOuterFilletRadius (double val);
+    PROFILES_EXPORT void SetOuterFilletRadius (double value);
 
     }; // HollowRectangleProfile
 

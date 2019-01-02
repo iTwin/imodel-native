@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/EllipseProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -76,9 +76,9 @@ double EllipseProfile::GetXRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void EllipseProfile::SetXRadius (double val)
+void EllipseProfile::SetXRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_EllipseProfile_XRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_EllipseProfile_XRadius, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,9 +92,9 @@ double EllipseProfile::GetYRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void EllipseProfile::SetYRadius (double val)
+void EllipseProfile::SetYRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_EllipseProfile_YRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_EllipseProfile_YRadius, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

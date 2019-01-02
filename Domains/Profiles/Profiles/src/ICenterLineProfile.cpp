@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/ICenterLineProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -31,9 +31,9 @@ double ICenterLineProfile::GetWallThickness() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ICenterLineProfile::SetWallThickness (double val)
+void ICenterLineProfile::SetWallThickness (double value)
     {
-    (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue (PRF_PROP_ICenterLineProfile_WallThickness, ECN::ECValue (val));
+    (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue (PRF_PROP_ICenterLineProfile_WallThickness, ECN::ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

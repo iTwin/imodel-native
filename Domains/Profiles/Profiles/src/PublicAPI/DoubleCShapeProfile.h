@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/DoubleCShapeProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,7 @@ public:
 
 public:
     PROFILES_EXPORT double GetSpacing() const;
-    PROFILES_EXPORT void SetSpacing (double val);
+    PROFILES_EXPORT void SetSpacing (double value);
 
     }; // DoubleCShapeProfile
 

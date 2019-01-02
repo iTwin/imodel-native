@@ -166,9 +166,9 @@ double IShapeProfile::GetFlangeWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IShapeProfile::SetFlangeWidth (double val)
+void IShapeProfile::SetFlangeWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_IShapeProfile_FlangeWidth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_IShapeProfile_FlangeWidth, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,9 +182,9 @@ double IShapeProfile::GetDepth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IShapeProfile::SetDepth (double val)
+void IShapeProfile::SetDepth (double value)
     {
-    SetPropertyValue (PRF_PROP_IShapeProfile_Depth, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_IShapeProfile_Depth, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -198,9 +198,9 @@ double IShapeProfile::GetFlangeThickness() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IShapeProfile::SetFlangeThickness (double val)
+void IShapeProfile::SetFlangeThickness (double value)
     {
-    SetPropertyValue (PRF_PROP_IShapeProfile_FlangeThickness, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_IShapeProfile_FlangeThickness, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -214,9 +214,9 @@ double IShapeProfile::GetWebThickness() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IShapeProfile::SetWebThickness (double val)
+void IShapeProfile::SetWebThickness (double value)
     {
-    SetPropertyValue (PRF_PROP_IShapeProfile_WebThickness, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_IShapeProfile_WebThickness, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,9 +230,9 @@ double IShapeProfile::GetFilletRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IShapeProfile::SetFilletRadius (double val)
+void IShapeProfile::SetFilletRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_IShapeProfile_FilletRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_IShapeProfile_FilletRadius, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -246,9 +246,9 @@ double IShapeProfile::GetFlangeEdgeRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IShapeProfile::SetFlangeEdgeRadius (double val)
+void IShapeProfile::SetFlangeEdgeRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_IShapeProfile_FlangeEdgeRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_IShapeProfile_FlangeEdgeRadius, ECN::ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -262,9 +262,9 @@ Angle IShapeProfile::GetFlangeSlope() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IShapeProfile::SetFlangeSlope (Angle const& val)
+void IShapeProfile::SetFlangeSlope (Angle const& value)
     {
-    SetPropertyValue (PRF_PROP_IShapeProfile_FlangeSlope, ECN::ECValue (val.Radians()));
+    SetPropertyValue (PRF_PROP_IShapeProfile_FlangeSlope, ECN::ECValue (value.Radians()));
     }
 
 /*---------------------------------------------------------------------------------**//**
