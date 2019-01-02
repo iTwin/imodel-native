@@ -12,7 +12,7 @@
   
 #include <ScalableMeshPCH.h>
 
-#include <ScalableMesh\IScalableMeshTextureGenerator.h>
+#include <ScalableMesh/IScalableMeshTextureGenerator.h>
 
 
 

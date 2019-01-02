@@ -3,7 +3,7 @@
 #include <Geom/GeomApi.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include "DifferenceSet.h"
-#include <TerrainModel\TerrainModel.h>
+#include <TerrainModel/TerrainModel.h>
 #include <array>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

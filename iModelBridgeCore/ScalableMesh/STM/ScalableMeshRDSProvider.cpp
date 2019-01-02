@@ -12,12 +12,12 @@
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshRDSProvider.h"
 #ifndef LINUX_SCALABLEMESH_BUILD
-#include <CCApi\CCPublic.h>
+#include <CCApi/CCPublic.h>
 #endif
-#include <ScalableMesh\ScalableMeshAdmin.h>
-#include <ScalableMesh\ScalableMeshLib.h>
-#include <BeHttp\HttpClient.h>
-#include <BeXml\BeXml.h>
+#include <ScalableMesh/ScalableMeshAdmin.h>
+#include <ScalableMesh/ScalableMeshLib.h>
+#include <BeHttp/HttpClient.h>
+#include <BeXml/BeXml.h>
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

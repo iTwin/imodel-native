@@ -26,7 +26,7 @@
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
-#include "..\Import\InternalImporterConfig.h"
+#include "../Import/InternalImporterConfig.h"
 #include "ScalableMeshEditListener.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT

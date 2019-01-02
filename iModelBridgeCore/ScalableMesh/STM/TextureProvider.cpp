@@ -1,5 +1,5 @@
 #include "ScalableMeshPCH.h"
-#include <ScalableMesh\ITextureProvider.h>
+#include <ScalableMesh/ITextureProvider.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 

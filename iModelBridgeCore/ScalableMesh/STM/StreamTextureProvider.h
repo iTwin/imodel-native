@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ScalableMesh\ITextureProvider.h>
+#include <ScalableMesh/ITextureProvider.h>
 #include "ImagePPHeaders.h"
 #include "RasterUtilities.h"
 

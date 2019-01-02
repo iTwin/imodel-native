@@ -61,16 +61,16 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <STMInternal/GeoCoords/WKTUtils.h>
 
 #include "ScalableMeshMesher.h"
-#include "Edits\ClipRegistry.h"
-//#include <DgnPlatform\Tools\ConfigurationManager.h>
+#include "Edits/ClipRegistry.h"
+//#include <DgnPlatform/Tools/ConfigurationManager.h>
 #include "Edits/ClipUtilities.hpp"
 
-#include "Stores\SMStreamingDataStore.h"
-#include <ImagePP\all\h\HIMMosaic.h>
+#include "Stores/SMStreamingDataStore.h"
+#include <ImagePP/all/h/HIMMosaic.h>
 #ifndef VANCOUVER_API
-#include <DgnPlatform\DesktopTools\ConfigurationManager.h>
+#include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #else
-#include <DgnPlatform\Tools\ConfigurationManager.h>
+#include <DgnPlatform/Tools/ConfigurationManager.h>
 #endif
 
 #include "MosaicTextureProvider.h"

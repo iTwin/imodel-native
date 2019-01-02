@@ -10,7 +10,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include <ScalableMesh/IScalableMeshProgressiveQuery.h>
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include "ScalableMeshProgressiveQueryProcessor.h"
