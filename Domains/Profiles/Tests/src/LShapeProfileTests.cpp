@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/LShapeProfileTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfileValidationTestCase.h"
@@ -38,7 +38,7 @@ TEST_F (LShapeProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
     CreateParams requiredParams (GetModel(), "L", 10.0, 10.0, 1.0);
     EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
 
-    CreateParams fullParams (GetModel(), "L", 10.0, 10.0, 1.0, 0.5, 0.5, PI / 18.0);
+    CreateParams fullParams (GetModel(), "L", 10.0, 10.0, 1.0, 0.5, 0.5, Angle::FromRadians (PI / 18.0));
     EXPECT_SUCCESS_Insert (fullParams) << "Profile should succeed to insert with valid full create parameters.";
     }
 
@@ -56,7 +56,7 @@ TEST_F (LShapeProfileTestCase, Insert_EmptyCreateParams_FailedInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
     {
-    CreateParams params (GetModel(), "L", 1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+    CreateParams params (GetModel(), "L", 1.0, 2.0, 3.0, 4.0, 5.0, Angle::FromRadians (6.0));
 
     LShapeProfilePtr profilePtr = CreateProfile (params);
     ASSERT_TRUE (profilePtr.IsValid());
@@ -67,7 +67,7 @@ TEST_F (LShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
     EXPECT_DOUBLE_EQ (3.0, profilePtr->GetThickness());
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetFilletRadius());
     EXPECT_DOUBLE_EQ (5.0, profilePtr->GetEdgeRadius());
-    EXPECT_DOUBLE_EQ (6.0, profilePtr->GetLegSlope());
+    EXPECT_DOUBLE_EQ (6.0, profilePtr->GetLegSlope().Radians());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,26 +75,26 @@ TEST_F (LShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     {
-    CreateParams createParams (GetModel(), "", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    CreateParams createParams (GetModel(), "", 0.0, 0.0, 0.0, 0.0, 0.0, Angle::FromRadians (0.0));
 
     LShapeProfilePtr profilePtr = CreateProfile (createParams);
     ASSERT_TRUE (profilePtr.IsValid());
 
     profilePtr->SetName ("L");
     profilePtr->SetWidth (1.0);
-    profilePtr->SetDepth (1.0);
-    profilePtr->SetThickness (1.0);
-    profilePtr->SetFilletRadius (1.0);
-    profilePtr->SetEdgeRadius (1.0);
-    profilePtr->SetLegSlope (1.0);
+    profilePtr->SetDepth (2.0);
+    profilePtr->SetThickness (3.0);
+    profilePtr->SetFilletRadius (4.0);
+    profilePtr->SetEdgeRadius (5.0);
+    profilePtr->SetLegSlope (Angle::FromRadians (6.0));
 
     EXPECT_EQ ("L", profilePtr->GetName());
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWidth());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetDepth());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetThickness());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFilletRadius());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetEdgeRadius());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetLegSlope());
+    EXPECT_DOUBLE_EQ (2.0, profilePtr->GetDepth());
+    EXPECT_DOUBLE_EQ (3.0, profilePtr->GetThickness());
+    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetFilletRadius());
+    EXPECT_DOUBLE_EQ (5.0, profilePtr->GetEdgeRadius());
+    EXPECT_DOUBLE_EQ (6.0, profilePtr->GetLegSlope().Radians());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -102,7 +102,7 @@ TEST_F (LShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LShapeProfileTestCase, GetInnerFlangeFaceLength_WidthAndThickness_CorrectValue)
     {
-    CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, Angle::FromRadians (INFINITY));
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetWidth (0.0);
@@ -123,7 +123,7 @@ TEST_F (LShapeProfileTestCase, GetInnerFlangeFaceLength_WidthAndThickness_Correc
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LShapeProfileTestCase, GetInnerWebFaceLength_DepthAndThickness_CorrectValue)
     {
-    CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, Angle::FromRadians (INFINITY));
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetDepth (0.0);
@@ -144,22 +144,22 @@ TEST_F (LShapeProfileTestCase, GetInnerWebFaceLength_DepthAndThickness_CorrectVa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LShapeProfileTestCase, GetHorizontalLegSlopeHeight_WidthAndThickness_CorrectValue)
     {
-    CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, Angle::FromRadians (INFINITY));
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetWidth (2.0);
     profilePtr->SetThickness (1.0);
 
-    profilePtr->SetLegSlope (PI / 4.0);
+    profilePtr->SetLegSlope (Angle::FromRadians (PI / 4.0));
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetHorizontalLegSlopeHeight());
 
-    profilePtr->SetLegSlope (0.0);
+    profilePtr->SetLegSlope (Angle::FromRadians (0.0));
     EXPECT_DOUBLE_EQ (0.0, profilePtr->GetHorizontalLegSlopeHeight());
 
-    profilePtr->SetLegSlope (PI / 2.0);
+    profilePtr->SetLegSlope (Angle::FromRadians (PI / 2.0));
     EXPECT_DOUBLE_EQ (0.0, profilePtr->GetHorizontalLegSlopeHeight());
 
-    profilePtr->SetLegSlope (PI);
+    profilePtr->SetLegSlope (Angle::FromRadians (PI));
     EXPECT_DOUBLE_EQ (0.0, profilePtr->GetHorizontalLegSlopeHeight());
     }
 
@@ -168,22 +168,22 @@ TEST_F (LShapeProfileTestCase, GetHorizontalLegSlopeHeight_WidthAndThickness_Cor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LShapeProfileTestCase, GetVerticalLegSlopeHeight_DepthAndThickness_CorrectValue)
     {
-    CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "L", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, Angle::FromRadians (INFINITY));
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetDepth (2.0);
     profilePtr->SetThickness (1.0);
 
-    profilePtr->SetLegSlope (PI / 4.0);
+    profilePtr->SetLegSlope (Angle::FromRadians (PI / 4.0));
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetVerticalLegSlopeHeight());
 
-    profilePtr->SetLegSlope (0.0);
+    profilePtr->SetLegSlope (Angle::FromRadians (0.0));
     EXPECT_DOUBLE_EQ (0.0, profilePtr->GetVerticalLegSlopeHeight());
 
-    profilePtr->SetLegSlope (PI / 2.0);
+    profilePtr->SetLegSlope (Angle::FromRadians (PI / 2.0));
     EXPECT_DOUBLE_EQ (0.0, profilePtr->GetVerticalLegSlopeHeight());
 
-    profilePtr->SetLegSlope (PI);
+    profilePtr->SetLegSlope (Angle::FromRadians (PI));
     EXPECT_DOUBLE_EQ (0.0, profilePtr->GetVerticalLegSlopeHeight());
     }
 
@@ -309,7 +309,7 @@ TEST_F (LShapeProfileTestCase, Insert_ValidThickness_SuccessfulInsert)
 TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlange_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "L_ZeroFlangeSlope_ShortFlange", 3.0, 100.0, 1.0, INFINITY);
-    params.legSlope = 0.0;
+    params.legSlope = Angle::FromRadians (0.0);
 
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
@@ -327,7 +327,7 @@ TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlange_CorrectInsert
 TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "L_ZeroFlangeSlope_ShortWeb", 100.0, 3.0, 1.0, INFINITY);
-    params.legSlope = 0.0;
+    params.legSlope = Angle::FromRadians (0.0);
 
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
@@ -345,7 +345,7 @@ TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertRes
 TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlangeWithSlope_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "L_NonZeroFlangeSlope", 10.0, 20.0, 1.0, INFINITY);
-    params.legSlope = (PI / 180.0) * 10.0;
+    params.legSlope = Angle::FromRadians ((PI / 180.0) * 10.0);
 
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
@@ -368,7 +368,7 @@ TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlangeWithSlope_Corr
 TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "L_NonZeroFlangeSlope", 20.0, 10.0, 1.0, INFINITY);
-    params.legSlope = (PI / 180.0) * 10.0;
+    params.legSlope = Angle::FromRadians ((PI / 180.0) * 10.0);
 
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
@@ -435,7 +435,7 @@ TEST_F (LShapeProfileTestCase, Insert_EdgeRadiusAgainstInnerFlangeFace_CorrectIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LShapeProfileTestCase, Insert_InvalidLegSlope_FailedInsert)
     {
-    CreateParams params (GetModel(), "L", 10.0, 10.0, 1.0, 0.0, 0.0, INFINITY);
+    CreateParams params (GetModel(), "L", 10.0, 10.0, 1.0, 0.0, 0.0, Angle::FromRadians (INFINITY));
 
     TestParameterToBeFiniteAndPositive (params, params.legSlope, "LegSlope", true);
     }
@@ -445,10 +445,10 @@ TEST_F (LShapeProfileTestCase, Insert_InvalidLegSlope_FailedInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LShapeProfileTestCase, Insert_LegSlopeOf30Degrees_SuccessfulInsert)
     {
-    CreateParams params (GetModel(), "L", 3.0, 3.0, 1.0, 0.0, 0.0, INFINITY);
+    CreateParams params (GetModel(), "L", 3.0, 3.0, 1.0, 0.0, 0.0, Angle::FromRadians (INFINITY));
 
     double const angle = std::asin (1.0 / std::sqrt (5.0));
-    params.legSlope = angle;
+    params.legSlope = Angle::FromRadians (angle);
     LShapeProfilePtr profilePtr = CreateProfile (params);
 
     // Both leg face lengths is 2.0 so maximum alowed slope height should be half of that = 1.0
@@ -458,7 +458,7 @@ TEST_F (LShapeProfileTestCase, Insert_LegSlopeOf30Degrees_SuccessfulInsert)
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetVerticalLegSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Leg slope should be such, that the slope height should be less or equal to half of inner web and flange face lengths.";
 
-    params.legSlope = nextafter<double, double> (angle, INFINITY);
+    params.legSlope = Angle::FromRadians (nextafter<double, double> (angle, INFINITY));
     EXPECT_FAIL_Insert (params) << "Leg slope should be such, that the slope height should be less or equal to half of inner web and flange face lengths.";
     }
 
@@ -467,11 +467,11 @@ TEST_F (LShapeProfileTestCase, Insert_LegSlopeOf30Degrees_SuccessfulInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LShapeProfileTestCase, Insert_LegSlopeOf90Degrees_FailedInsert)
     {
-    CreateParams params (GetModel(), "L", DBL_MAX, DBL_MAX, 1.0, 0.0, 0.0, INFINITY);
+    CreateParams params (GetModel(), "L", DBL_MAX, DBL_MAX, 1.0, 0.0, 0.0, Angle::FromRadians (INFINITY));
 
-    params.legSlope = 0.0;
+    params.legSlope = Angle::FromRadians (0.0);
     EXPECT_SUCCESS_Insert (params) << "Profile should succeed to insert.";
 
-    params.legSlope = PI / 2.0;
+    params.legSlope = Angle::FromRadians (PI / 2.0);
     EXPECT_FAIL_Insert (params) << "Leg slope should be less than 90 degrees.";
     }

@@ -60,10 +60,10 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_SlopesAndRoundings",
                                                     4, 6, 10, 0.5, 1, 1, 0.5, 0.25, Angle::FromRadians (PI / 18), 0.5, 0.5, Angle::FromRadians (PI / 18)));
 
-    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_Plain", 6, 10, 1, 0, 0, 0), true);
-    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_FilletAndRoundedEdge", 6, 10, 1, 0.5, 0.5, 0));
-    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_MaxFillet", 6, 10, 1, 2.5, 0.1, 0));
-    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_SlopeAndRoundings", 6, 10, 1, 0.5, 0.5, PI / 32));
+    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_Plain", 6, 10, 1, 0, 0), true);
+    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_FilletAndRoundedEdge", 6, 10, 1, 0.5, 0.5));
+    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_MaxFillet", 6, 10, 1, 2.5, 0.1));
+    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_SlopeAndRoundings", 6, 10, 1, 0.5, 0.5, Angle::FromRadians (PI / 32)));
 
     InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_Plain", 6, 10, 1, 1, 0, 0, 0, 0, 0), true);
     InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0, 0.5, 0));

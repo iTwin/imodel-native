@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/LShapeProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -26,7 +26,7 @@ LShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pN
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 LShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double thickness,
-                                           double filletRadius, double edgeRadius, double legSlope)
+                                           double filletRadius, double edgeRadius, Angle const& legSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , width (width)
     , depth (depth)
@@ -132,7 +132,7 @@ bool LShapeProfile::ValidateEdgeRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LShapeProfile::ValidateLegSlope() const
     {
-    double const legSlope = GetLegSlope();
+    double const legSlope = GetLegSlope().Radians();
     if (ProfilesProperty::IsEqualToZero (legSlope))
         return true;
 
@@ -227,17 +227,17 @@ void LShapeProfile::SetEdgeRadius (double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double LShapeProfile::GetLegSlope() const
+Angle LShapeProfile::GetLegSlope() const
     {
-    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_LegSlope);
+    return Angle::FromRadians (GetPropertyValueDouble (PRF_PROP_LShapeProfile_LegSlope));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetLegSlope (double val)
+void LShapeProfile::SetLegSlope (Angle const& val)
     {
-    SetPropertyValue (PRF_PROP_LShapeProfile_LegSlope, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_LegSlope, ECN::ECValue (val.Radians()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -261,11 +261,11 @@ double LShapeProfile::GetInnerWebFaceLength() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetHorizontalLegSlopeHeight() const
     {
-    double const flangeSlopeCos = std::cos (GetLegSlope());
+    double const flangeSlopeCos = GetLegSlope().Cos();
     if (flangeSlopeCos <= DBL_EPSILON)
         return 0.0;
 
-    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * std::sin (GetLegSlope());
+    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetLegSlope().Sin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -273,11 +273,11 @@ double LShapeProfile::GetHorizontalLegSlopeHeight() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetVerticalLegSlopeHeight() const
     {
-    double const webSlopeCos = std::cos (GetLegSlope());
+    double const webSlopeCos = GetLegSlope().Cos();
     if (webSlopeCos <= DBL_EPSILON)
         return 0.0;
 
-    return (GetInnerWebFaceLength() / webSlopeCos) * std::sin (GetLegSlope());
+    return (GetInnerWebFaceLength() / webSlopeCos) * GetLegSlope().Sin();
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/LShapeProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,7 @@ public:
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double thickness,
-                                               double filletRadius = 0.0, double edgeRadius = 0.0, double legSlope = 0.0);
+                                               double filletRadius = 0.0, double edgeRadius = 0.0, Angle const& legSlope = Angle::FromRadians (0.0));
 
     public:
         //! Required properties
@@ -41,7 +41,7 @@ public:
         //! Optional properties
         double filletRadius = 0.0;
         double edgeRadius = 0.0;
-        double legSlope = 0.0;
+        Angle legSlope = Angle::FromRadians (0.0);
         };
 
 protected:
@@ -78,8 +78,8 @@ public:
     PROFILES_EXPORT double GetEdgeRadius() const;
     PROFILES_EXPORT void SetEdgeRadius (double val);
 
-    PROFILES_EXPORT double GetLegSlope() const;
-    PROFILES_EXPORT void SetLegSlope (double val);
+    PROFILES_EXPORT Angle GetLegSlope() const;
+    PROFILES_EXPORT void SetLegSlope (Angle const& val);
 
 public:
     PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
