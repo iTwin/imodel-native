@@ -9,12 +9,3 @@ PropertyTests.GetEnumeratorValueFromInstance
 #----------------------------------------------------------------------------------------
 # tests - Defect 743895:Custom attribute instances are not properly deserialized when they appear before the CA class definition
 SchemaDeserializationTest.CanLoadCaInstanceWhichAppearsBeforeCaDefinition
-
-LiteralExpressionTests.MiscSymbols
-
-    # VSTS#54901
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/01/2019
-    # c:\build\src\mds06t\ecobjects\test\Published\ECExpressionTests.cpp(423): error:       Expected: now.GetYear ()
-    # Which is: 2018
-    # To be equal to: result.GetECValue ()->GetDateTime ().GetYear ()
-    # Which is: 2019
