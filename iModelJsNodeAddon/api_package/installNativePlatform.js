@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
-const exec = require('child_process').exec;
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
+const exec = require("child_process").exec;
+const path = require("path");
+const fs = require("fs");
+const os = require("os");
 const version = require("./package.json").version;
-const formatPackageName = require("'./loadNativePlatform.js").formatPackageName;
+const formatPackageName = require("./loadNativePlatform.js").formatPackageName;
 
 function copyFolderRecursiveSync(source, target) {
     if (!fs.existsSync(target))

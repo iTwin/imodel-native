@@ -1,8 +1,8 @@
-﻿# @bentley/imodeljs-native-platform-api
+﻿# @bentley/imodeljs-native
 
 Rolling a new version of the native platform code is a two-step process:
 1. *Change the native platform* -- Change the native code and update package_version.txt in iModelNodeAddon.
-2. *Adopt the native platform* -- Change the imodeljs-native-platform-api.ts file in imodeljs-core/core/backend and change TypeScript code as necessary to react to API changes.
+2. *Adopt the native platform* -- Change the IModelNative.ts file in imodeljs-core/core/backend and change TypeScript code as necessary to react to API changes.
 
 These steps are described in more detail in the sections below.
 
@@ -50,7 +50,7 @@ You test the native platform by calling it from TypeScript.
 
 Install your local build of the native platform. There is a `installNativePlatform` script in this directory for each supported platform.
 
-Update imodeljs/core/backend/imodeljs-native-platform-api.ts to reflect the changes made to the API implemented by native code.
+Update imodeljs/core/backend/IModelNative.ts to reflect the changes made to the API implemented by native code.
 
 Update .ts files in imodeljs-core/core/backend as necessary to react to changes in the native platform API.
 
