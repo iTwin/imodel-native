@@ -2,13 +2,15 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeSyncInfoFile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 //__PUBLISH_SECTION_START__
 #include <iModelBridge/iModelBridge.h>
+#include <Bentley/md5.h>
+#include <BeRapidJson/BeRapidJson.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -242,6 +244,72 @@ method and not in its _ConvertToBim method.
 *  @ingroup GROUP_iModelBridgeSyncInfoFile
 * @bsiclass                                    BentleySystems 
 */
+
+//! iModelSyncInfoAspect holds information that identifies a piece of data in a source repository. It is part of a mapping of that data to an element in an iModel. It also
+//! contains enough information to enable a bridge to detect changes in the source data and to update the related element.
+//! The "kind" property is used by source-specific bridges to distinguish different kinds of data. The meaning of this property is known only to the bridge.
+//! The "sourceId" property is source-specific bridges to identify items uniquely in the source repository. The information required to form an identifier is bridge-specific.
+//! The "scope" property identifies the element in the iModel (not the source) that corresponds to the scope or container in the source that owns, contains, or qualifies the identity of the source item.
+//! Note that the scope property does not hold an identifier of any item in the source repository. Rather, it holds the ElementId of the element in the iModel that represents the source container.
+//!
+//! Optional properties:
+//!
+//! SourceState
+//! The "lastModifiedTime" property is optional. If non-zero, it must be an infallible indicator that an item's content has changed, so that change-detectors can conclude that an item is unchanged 
+//! if its lastModifiedTime is unchanged. Change-detectors compare lastModifiedTime as a short-cut to detect no-change, so as to avoid making the item's handler compute a hash (in case that is expensive).
+//! The "hash" property must capture the state of the source item's content. Its value must be guaranteed to be unique to the content. A cryptographic hash or message digest is ideal for this purpose.
+//! For very small items, the item's state itself would also work.
+//!
+//!
+//! The "properties" property is for the private use of the bridge to store additional qualifying data on a mapping. This can be used, for example to capture a transform in the 
+//! case where a single item in the source is intstanced multiple times in the iModel, each instance being transformed in some way. It is recommended that the bridge store auxilliary properties
+//! in JSON format, but that is up to the bridge.
+struct iModelSyncInfoAspect
+    {
+    struct SourceState
+        {
+        bvector<unsigned char> m_hash;
+        double m_lastModifiedTime;
+        };
+
+    RefCountedPtr<ECN::IECInstance> m_instance;
+
+    public:
+
+    iModelSyncInfoAspect(ECN::IECInstance* i = nullptr) : m_instance(i) {}
+    iModelSyncInfoAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
+ 
+    bool IsValid() const {return m_instance.IsValid();}
+
+    IMODEL_BRIDGE_EXPORT Utf8CP GetKind() const;
+    IMODEL_BRIDGE_EXPORT DgnElementId GetScope() const;
+    IMODEL_BRIDGE_EXPORT Utf8CP GetSourceId() const;
+    IMODEL_BRIDGE_EXPORT Utf8CP GetAspectKind() const;
+    IMODEL_BRIDGE_EXPORT BentleyStatus GetSourceState(SourceState&) const;
+    IMODEL_BRIDGE_EXPORT rapidjson::Document GetProperties() const;
+
+    IMODEL_BRIDGE_EXPORT void SetProperties(rapidjson::Document const&); //!< Update the custom properties
+    IMODEL_BRIDGE_EXPORT void SetSourceState(SourceState const& ss) {SetSourceState(*m_instance, ss);} //!< Update the state-tracking properties of the ECInstance
+    
+    //! Add this aspect to the specified element. (Caller must then call element's Insert or Update method.)
+    IMODEL_BRIDGE_EXPORT DgnDbStatus AddTo(DgnElementR);
+
+    //! Get the base provenance aspect ECClass
+    IMODEL_BRIDGE_EXPORT static ECN::ECClassCP GetAspectClass(DgnDbR);
+
+    //! Get an existing syncinfo aspect from the specified element
+    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass = nullptr);
+    //! Get an existing syncinfo aspect from the specified element
+    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementR el, ECN::ECClassCP aspectClass = nullptr);
+
+    //! Create a new ECInstance of the specified provenance aspect class
+    //! Bridges will probably want factory methods with signatures that are customized to the bridge.
+    IMODEL_BRIDGE_EXPORT static ECN::IECInstancePtr MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const*, ECN::ECClassCR aspectClass);
+
+    IMODEL_BRIDGE_EXPORT static void SetSourceState(ECN::IECInstanceR, SourceState const&);
+
+    };
+
 struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 {
     typedef uint64_t ROWID;
@@ -256,7 +324,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     {
         struct Spec : BeSQLite::PropertySpec
             {
-            Spec(BentleyApi::Utf8CP name) : PropertySpec(name, "SyncInfo", PropertySpec::Mode::Normal, PropertySpec::Compress::No) {}
+            Spec(Utf8CP name) : PropertySpec(name, "SyncInfo", PropertySpec::Mode::Normal, PropertySpec::Compress::No) {}
             };
 
         static Spec ProfileVersion()       {return Spec("SchemaVersion");}
@@ -322,6 +390,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         double GetLastModifiedTime() const {return m_lmt;}
         //! The cryptographic hash of the contents of the source item. The definition and method of computing this value is known only to source repository.
         Utf8StringCR GetHash() const  {return m_hash;}
+
+        iModelSyncInfoAspect::SourceState GetAspectState() const;
         };
 
     //=======================================================================================
@@ -463,6 +533,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! Invoked just before an an element is deleted
         IMODEL_BRIDGE_EXPORT virtual void _OnItemDelete(Record const&);
 
+        DgnDbStatus AddProvenanceAspect(Record const& record, DgnElementR element);
       public:
         //! @private
         //! Construct a change detector object. This will invoke the iModelBridgeSyncInfoFile::_OnNewUpdate method on @a si

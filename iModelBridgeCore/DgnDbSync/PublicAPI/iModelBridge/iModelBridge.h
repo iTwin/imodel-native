@@ -42,6 +42,12 @@
 
 #define SOURCEINFO_ECSCHEMA_NAME            "SourceInfo"
 #define SOURCEINFO_CLASS_SoureElementInfo   "SourceElementInfo"
+#define SOURCEINFO_Scope                    "Scope"
+#define SOURCEINFO_SourceId                 "SourceId"
+#define SOURCEINFO_Kind                     "Kind"
+#define SOURCEINFO_LastModifiedTime         "LastModifiedTime"
+#define SOURCEINFO_Hash                     "Hash"
+#define SOURCEINFO_Properties               "Properties"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -528,7 +534,7 @@ struct iModelBridge
         DgnElementId m_jobSubjectId;
         Utf8String   m_jobRunCorrelationId;
         IDmsSupport* m_dmsSupport;
-
+        bool m_wantProvenanceInBim {};
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
@@ -632,6 +638,10 @@ struct iModelBridge
         void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
         void SetDmsSupportLibrary (IDmsSupport* dmsAccessor) { m_dmsSupport  = dmsAccessor;}
         IDmsSupport* GetDmsSupportLibrary() { return m_dmsSupport; }
+
+        void SetWantProvenanceInBim(bool v) { m_wantProvenanceInBim = v; }
+        bool GetWantProvenanceInBim() const { return m_wantProvenanceInBim; }
+
 	    //! Check if a document is assigned to this job or not.
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
 	    IMODEL_BRIDGE_EXPORT bool IsDocumentAssignedToJob(Utf8StringCR docId) const;

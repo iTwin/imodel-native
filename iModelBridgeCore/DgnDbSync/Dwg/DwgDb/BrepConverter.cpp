@@ -760,22 +760,22 @@ PK_ERROR_code_t CreateEdgeBCurve (DWGGE_TypeP(SplineEnt3d) acSpline)
 
     bcurveParams.n_knots = distinctKnots.length ();
 
-    bcurveParams.vertex = (double*) malloc (bcurveParams.n_vertices * bcurveParams.vertex_dim * sizeof(double));
+    bcurveParams.vertex = new double[bcurveParams.n_vertices * bcurveParams.vertex_dim * sizeof(double)];
     if (nullptr == bcurveParams.vertex)
         return  PK_ERROR_memory_full;
 
-    bcurveParams.knot = (double*) malloc (bcurveParams.n_knots * sizeof(double));
+    bcurveParams.knot = new double[bcurveParams.n_knots * sizeof(double)];
     if (nullptr == bcurveParams.knot)
         {
-        free (bcurveParams.vertex);
+        delete [] bcurveParams.vertex;
         return  PK_ERROR_memory_full;
         }
     
-    bcurveParams.knot_mult = (int*) malloc (bcurveParams.n_knots * sizeof(int));
+    bcurveParams.knot_mult = new int[bcurveParams.n_knots * sizeof(int)];
     if (nullptr == bcurveParams.knot_mult)
         {
-        free (bcurveParams.vertex);
-        free (bcurveParams.knot);
+        delete [] bcurveParams.vertex;
+        delete [] bcurveParams.knot;
         return  PK_ERROR_memory_full;
         }
 
@@ -834,9 +834,9 @@ PK_ERROR_code_t CreateEdgeBCurve (DWGGE_TypeP(SplineEnt3d) acSpline)
         }
 #endif
 
-    free (bcurveParams.vertex);
-    free (bcurveParams.knot);
-    free (bcurveParams.knot_mult);
+    delete [] bcurveParams.vertex;
+    delete [] bcurveParams.knot;
+    delete [] bcurveParams.knot_mult;
     
     return  pkError;
     }
@@ -988,7 +988,7 @@ PK_ERROR_code_t CreateEdgePWCurve (DWGGE_TypeP(CompositeCurve3d) acCompositeCurv
         }
 
     // allocate data array for piecewise bcurve
-    piecewise.coeffs = (double*) malloc (piecewise.n_segments * (piecewise.degree + 1) * piecewise.dim * sizeof(double));
+    piecewise.coeffs = new double[piecewise.n_segments * (piecewise.degree + 1) * piecewise.dim * sizeof(double)];
     if (nullptr != piecewise.coeffs)
         {
 #ifdef DWGTOOLKIT_RealDwg
@@ -1063,6 +1063,8 @@ PK_ERROR_code_t CreateEdgePWCurve (DWGGE_TypeP(CompositeCurve3d) acCompositeCurv
                     piecewise.n_segments, piecewise.degree, piecewise.rep);
         }
 #endif
+
+    delete[] piecewise.coeffs;
 
     return  pkError;
     }
@@ -1540,7 +1542,7 @@ PK_ERROR_code_t CreateFaceSphere (DWGGE_TypeP(Sphere) acSphere, bool* isOriented
 +---------------+---------------+---------------+---------------+---------------+------*/
 PK_ERROR_code_t AllocateBSurfaceMemory (PK_BSURF_sf_t& bsurfaceParams, size_t numPoints)
     {
-    bsurfaceParams.vertex = (double*) malloc (numPoints * bsurfaceParams.vertex_dim * sizeof(double));
+    bsurfaceParams.vertex = new double[numPoints * bsurfaceParams.vertex_dim * sizeof(double)];
 
     bsurfaceParams.u_knot = nullptr;
     bsurfaceParams.v_knot = nullptr;
@@ -1549,13 +1551,13 @@ PK_ERROR_code_t AllocateBSurfaceMemory (PK_BSURF_sf_t& bsurfaceParams, size_t nu
     
     if (nullptr != bsurfaceParams.vertex)
         {
-        bsurfaceParams.u_knot = (double*) malloc (bsurfaceParams.n_u_knots * sizeof(double));
-        bsurfaceParams.u_knot_mult = (int*) malloc (bsurfaceParams.n_u_knots * sizeof(int));
+        bsurfaceParams.u_knot = new double[bsurfaceParams.n_u_knots * sizeof(double)];
+        bsurfaceParams.u_knot_mult = new int[bsurfaceParams.n_u_knots * sizeof(int)];
 
         if (nullptr != bsurfaceParams.u_knot && nullptr != bsurfaceParams.u_knot_mult)
             {
-            bsurfaceParams.v_knot = (double*) malloc (bsurfaceParams.n_v_knots * sizeof(double));
-            bsurfaceParams.v_knot_mult = (int*) malloc (bsurfaceParams.n_v_knots * sizeof(int));
+            bsurfaceParams.v_knot = new double[bsurfaceParams.n_v_knots * sizeof(double)];
+            bsurfaceParams.v_knot_mult = new int[bsurfaceParams.n_v_knots * sizeof(int)];
 
             if (nullptr != bsurfaceParams.v_knot && nullptr != bsurfaceParams.v_knot_mult)
                 return  PK_ERROR_no_errors;
@@ -1571,15 +1573,15 @@ PK_ERROR_code_t AllocateBSurfaceMemory (PK_BSURF_sf_t& bsurfaceParams, size_t nu
 PK_ERROR_code_t FreeBSurfaceMemory (PK_BSURF_sf_t& bsurfaceParams)
     {
     if (nullptr != bsurfaceParams.vertex)
-        free (bsurfaceParams.vertex);
+        delete[] bsurfaceParams.vertex;
     if (nullptr != bsurfaceParams.u_knot)
-        free (bsurfaceParams.u_knot);
+        delete[] bsurfaceParams.u_knot;
     if (nullptr != bsurfaceParams.u_knot_mult)
-        free (bsurfaceParams.u_knot_mult);
+        delete[] bsurfaceParams.u_knot_mult;
     if (nullptr != bsurfaceParams.v_knot)
-        free (bsurfaceParams.v_knot);
+        delete[] bsurfaceParams.v_knot;
     if (nullptr != bsurfaceParams.v_knot_mult)
-        free (bsurfaceParams.v_knot_mult);
+        delete[] bsurfaceParams.v_knot_mult;
     
     return  PK_ERROR_memory_full;
     }

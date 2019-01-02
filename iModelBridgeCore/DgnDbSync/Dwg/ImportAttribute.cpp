@@ -413,7 +413,10 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
         // get all attrdefs in the block and create a string property for each and everyone of them:
         for (entityIter->Start(); !entityIter->Done(); entityIter->Step())
             {
-            DwgDbAttributeDefinitionPtr attrdef(entityIter->GetEntityId(), DwgDbOpenMode::ForRead);
+            auto id = entityIter->GetEntityId ();
+            if (!id.IsObjectDerivedFrom(DwgDbAttributeDefinition::SuperDesc()))
+                continue;
+            DwgDbAttributeDefinitionPtr attrdef(id, DwgDbOpenMode::ForRead);
             if (attrdef.IsNull())
                 continue;
 

@@ -1346,6 +1346,19 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbRegionCR region, CurveVec
         auto entity = DwgDbEntity::Cast (entities[i]);
         if (nullptr != entity && shape.IsValid())
             {
+            // if it's a region, recursively drop it:
+            auto nestedRegion = DwgDbRegion::Cast (entity);
+            if (nullptr != nestedRegion)
+                {
+                auto nestedShape = DwgHelper::CreateCurveVectorFrom (*nestedRegion, type, transform);
+                if (nestedShape.IsValid())
+                    shape->Add (nestedShape);
+                else
+                    BeAssert (false && "Nested region failed!");
+                ::free (entities[i]);
+                continue;
+                }
+
             // expect primitive geometries only
             auto curve = DwgHelper::CreateCurvePrimitive (*entity, transform);
             if (curve.IsValid())

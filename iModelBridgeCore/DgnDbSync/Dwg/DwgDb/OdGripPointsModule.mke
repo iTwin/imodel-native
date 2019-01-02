@@ -12,7 +12,7 @@
     %error This module is only valid for OpenDWG!
 %endif
 
-%if $(VendorVersion) == "4.1.1"
+%if $(VendorVersion) < 40301
     Kernel = Core
     Drawing = Core
 %else
@@ -64,7 +64,13 @@ $(o)Db3dPolylineGripPoints$(oext)           : $(OdGripPointsDir)Db3dPolylineGrip
 
 $(o)DbArcGripPoints$(oext)                  : $(OdGripPointsDir)DbArcGripPoints.cpp ${MultiCompileDepends}
 
+%if exists ($(OdGripPointsDir)DbBlockReferenceGripPoints.cpp)
+$(o)DbBlockReferenceGripPoints$(oext)       : $(OdGripPointsDir)DbBlockReferenceGripPoints.cpp ${MultiCompileDepends}
+%endif
+
+%if exists ($(OdGripPointsDir)DbCameraGripPoints.cpp)
 $(o)DbCameraGripPoints$(oext)               : $(OdGripPointsDir)DbCameraGripPoints.cpp ${MultiCompileDepends}
+%endif
 
 $(o)DbCircleGripPoints$(oext)               : $(OdGripPointsDir)DbCircleGripPoints.cpp ${MultiCompileDepends}
 
@@ -92,15 +98,23 @@ $(o)DbPolygonMeshGripPoints$(oext)          : $(OdGripPointsDir)DbPolygonMeshGri
 
 $(o)DbPolylineGripPoints$(oext)             : $(OdGripPointsDir)DbPolylineGripPoints.cpp ${MultiCompileDepends}
 
+%if exists ($(OdGripPointsDir)DbRasterImageGripPoints.cpp)
 $(o)DbRasterImageGripPoints$(oext)          : $(OdGripPointsDir)DbRasterImageGripPoints.cpp ${MultiCompileDepends}
+%endif
 
 $(o)DbTextGripPoints$(oext)                 : $(OdGripPointsDir)DbTextGripPoints.cpp ${MultiCompileDepends}
 
 $(o)DbTraceGripPoints$(oext)                : $(OdGripPointsDir)DbTraceGripPoints.cpp ${MultiCompileDepends}
 
+%if exists ($(OdGripPointsDir)DbUnderlayGripPoints.cpp)
+$(o)DbUnderlayGripPoints$(oext)             : $(OdGripPointsDir)DbUnderlayGripPoints.cpp ${MultiCompileDepends}
+%endif
+
 $(o)DbViewportGripPoints$(oext)             : $(OdGripPointsDir)DbViewportGripPoints.cpp ${MultiCompileDepends}
 
+%if exists ($(OdGripPointsDir)DbWipeoutGripPoints.cpp)
 $(o)DbWipeoutGripPoints$(oext)              : $(OdGripPointsDir)DbWipeoutGripPoints.cpp ${MultiCompileDepends}
+%endif
 
 $(o)OdGripPointsModule$(oext)               : $(OdGripPointsDir)OdGripPointsModule.cpp ${MultiCompileDepends}
 
@@ -126,6 +140,15 @@ LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_DbRoot$(libext)
 LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_Alloc$(libext)
 LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_Key$(libext)
 LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_Ge$(libext)
+
+## v19 has split TD_Db into multiple modules
+%if exists($(OpenDwgLibsDir)TD_DbCore$(libext))
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_DbCore$(libext)
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_DbEntities$(libext)
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)ACCAMERA$(libext)
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)ISM$(libext)
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)Wipeout$(libext)
+%endif
 
 %include $(sharedMki)linkLibrary.mki
 

@@ -510,6 +510,22 @@ bool            IsWeightByBlock () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+Render::FillDisplay GetFillDisplay () const
+    {
+    /*-----------------------------------------------------------------------------------
+    Get fill display from m_fillType, which may be set by an object enabler.
+    A LWPolyline is never filled, but its OE may call _SetFill (unexpected though)!
+    -----------------------------------------------------------------------------------*/
+    auto lwpline = DwgDbPolyline::Cast (this->GetSourceEntity());
+    if (nullptr != lwpline)
+        return  Render::FillDisplay::Never;
+
+    return DwgGiFillType::Always == m_filltype ? Render::FillDisplay::Always : Render::FillDisplay::Never;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void    GetDisplayParams (Render::GeometryParams& params)
     {
     /*-----------------------------------------------------------------------------------
@@ -531,7 +547,7 @@ void    GetDisplayParams (Render::GeometryParams& params)
         }
 
     // set effective fill color
-    params.SetFillDisplay(DwgGiFillType::Always == m_filltype ? Render::FillDisplay::Always : Render::FillDisplay::Never);
+    params.SetFillDisplay (this->GetFillDisplay());
     if (params.GetFillDisplay() != Render::FillDisplay::Never)
         {
         GradientSymbPtr     dgnGradient = GradientSymb::Create ();
@@ -1770,12 +1786,15 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
         }
 
     // for a nested a block reference followed by attributes, draw attributes now:
-    DwgDbBlockReferenceCP   blockRef = DwgDbBlockReference::Cast (child.get());
-    if (nullptr != blockRef)
-        this->DrawBlockAttributes (*blockRef);
+    DwgDbEntityP    entity = child.get ();
+    if (nullptr != entity)
+        {
+        DwgDbBlockReferenceCP   blockRef = DwgDbBlockReference::Cast (entity);
+        if (nullptr != blockRef)
+            this->DrawBlockAttributes (*blockRef);
 
-    if (!child.IsNull())
         m_drawParams.CopyFrom (savedParams);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

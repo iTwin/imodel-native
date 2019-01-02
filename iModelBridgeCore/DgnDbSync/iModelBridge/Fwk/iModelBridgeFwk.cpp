@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/iModelBridgeFwk.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -434,7 +434,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-storeElementIdsInBIM"))
             {
-            m_storeElementIdsInBIM = true;
+            m_wantProvenanceInBim = true;
             continue;
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-mergeDefinitions"))
@@ -1090,6 +1090,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
+    params.SetWantProvenanceInBim(m_jobEnvArgs.m_wantProvenanceInBim);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1637,7 +1638,7 @@ BentleyStatus   iModelBridgeFwk::ImportDgnProvenance(bool& madeChanges)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
     {
-    if (!m_jobEnvArgs.m_storeElementIdsInBIM)
+    if (!m_jobEnvArgs.m_wantProvenanceInBim)
         return BSISUCCESS;
 
     if (m_briefcaseDgnDb->Schemas().ContainsSchema(SOURCEINFO_ECSCHEMA_NAME))
@@ -1675,6 +1676,7 @@ BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
     if (SchemaStatus::Success != m_briefcaseDgnDb->ImportV8LegacySchemas(schemas))
         return BSIERROR;
 
+    madeChanges = true;
     return BSISUCCESS;
     }
 

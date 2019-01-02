@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridgeSyncInfoFile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
@@ -778,4 +778,187 @@ bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR n
 
     oldTrans = newTrans;
     return false;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus iModelSyncInfoAspect::AddTo(DgnElementR el)
+    {
+    return DgnElement::GenericMultiAspect::AddAspect(el, *m_instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstancePtr iModelSyncInfoAspect::MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const* ss, ECN::ECClassCR aspectClass) 
+    {
+    auto instance = aspectClass.GetDefaultStandaloneEnabler()->CreateInstance();
+    instance->SetValue(SOURCEINFO_Scope, ECN::ECValue(scope));
+    instance->SetValue(SOURCEINFO_SourceId, ECN::ECValue(sourceId.c_str()));
+    instance->SetValue(SOURCEINFO_Kind, ECN::ECValue(kind));
+    if (ss)
+        SetSourceState(*instance, *ss);
+    return instance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::ECClassCP iModelSyncInfoAspect::GetAspectClass(DgnDbR db)
+    {
+    return db.Schemas().GetClass(SOURCEINFO_ECSCHEMA_NAME, SOURCEINFO_CLASS_SoureElementInfo);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass)
+    {
+    if (!aspectClass)
+        aspectClass = GetAspectClass(el.GetDgnDb());
+    if (nullptr == aspectClass)
+        return iModelSyncInfoAspect();
+    auto instance = DgnElement::GenericMultiAspect::GetAspect (el, *aspectClass, BeSQLite::EC::ECInstanceId()); // Get read-only copy of the aspect.
+    if (nullptr == instance)
+        return iModelSyncInfoAspect();
+    return iModelSyncInfoAspect(instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementR el, ECN::ECClassCP aspectClass)
+    {
+    if (!aspectClass)
+        aspectClass = GetAspectClass(el.GetDgnDb());
+    if (nullptr == aspectClass)
+        return iModelSyncInfoAspect();
+    auto instance = DgnElement::GenericMultiAspect::GetAspectP(el, *aspectClass, BeSQLite::EC::ECInstanceId());    // NB: Call GetAspectP, not GetAspect! GetAspectP sets the aspect's dirty flag, which tells its _OnUpdate method to write out changes.
+    if (nullptr == instance)
+        return iModelSyncInfoAspect();
+    return iModelSyncInfoAspect(instance);
+    }
+    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId iModelSyncInfoAspect::GetScope() const
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, SOURCEINFO_Scope);
+    return v.GetNavigationInfo().GetId<DgnElementId>();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP iModelSyncInfoAspect::GetSourceId() const
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, SOURCEINFO_SourceId);
+    return v.GetUtf8CP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP iModelSyncInfoAspect::GetKind() const 
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, SOURCEINFO_Kind);
+    return v.GetUtf8CP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelSyncInfoAspect::GetSourceState(SourceState& ss) const
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, SOURCEINFO_Hash);
+    if (v.IsNull())
+        return BSIERROR;
+    size_t sz;
+    auto b = v.GetBinary(sz);
+    unsigned arraySize = sz / sizeof(unsigned char);
+    ss.m_hash.insert(ss.m_hash.end(), b, &b[arraySize]);
+    
+    m_instance->GetValue(v, SOURCEINFO_LastModifiedTime);
+    ss.m_lastModifiedTime = v.GetDouble();
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelSyncInfoAspect::SetProperties(rapidjson::Document const& json)
+    {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    json.Accept(writer);
+
+    ECN::ECValue props(buffer.GetString());
+    m_instance->SetValue(SOURCEINFO_Properties, props);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document iModelSyncInfoAspect::GetProperties() const
+    {
+    rapidjson::Document json;
+    ECN::ECValue props;
+    if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, SOURCEINFO_Properties) || !props.IsString())
+        return json;
+    json.Parse(props.GetUtf8CP());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelSyncInfoAspect::SetSourceState(ECN::IECInstanceR instance, SourceState const& ss)
+    {
+    instance.SetValue(SOURCEINFO_Hash, ECN::ECValue(&ss.m_hash[0], ss.m_hash.size()* sizeof(ss.m_hash[0])));
+    instance.SetValue(SOURCEINFO_LastModifiedTime, ECN::ECValue(ss.m_lastModifiedTime));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int char2int(char input)
+    {
+    if (input == '\0')
+        return 0;
+
+    if (input >= '0' && input <= '9')
+        return input - '0';
+    if (input >= 'A' && input <= 'F')
+        return input - 'A' + 10;
+    if (input >= 'a' && input <= 'f')
+        return input - 'a' + 10;
+    
+    BeAssert(false);
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelSyncInfoAspect::SourceState iModelBridgeSyncInfoFile::SourceState::GetAspectState() const
+    {
+    iModelSyncInfoAspect::SourceState state;
+    state.m_lastModifiedTime = m_lmt;
+    
+    for (int index = 0; index < m_hash.size(); index = index + 2)
+        {
+        unsigned char value = char2int(m_hash[index]) * 16 + char2int(m_hash[index + 1]);
+        state.m_hash.push_back(value);
+        }
+
+    return state;
     }
