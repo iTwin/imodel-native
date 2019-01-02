@@ -2,26 +2,13 @@
 |
 |     $Source: DgnV8/RulesetEmbedder.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 #include "RulesetEmbedder.h"
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Haroldas.Vitunskas                12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRulesDomain::RegisterSchema(Dgn::DgnDbR db)
-    {
-    if (nullptr == db.Domains().FindDomain(PRESENTATION_RULES_DOMAIN))
-        {
-        DgnDomainP domain = new PresentationRulesDomain();
-        db.Domains().RegisterDomain(*domain);
-        domain->ImportSchema(db);
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas                12/18
@@ -41,6 +28,11 @@ Dgn::DefinitionModelCPtr RulesetEmbedder::GetOrCreateRulesetModel()
         return ruleSetModel;
 
     Dgn::SubjectCPtr ruleSetSubject = InsertSubject();
+    if (!ruleSetSubject.IsValid())
+        {
+        // LOG failed to create subject
+        return nullptr;
+        }
     Dgn::DefinitionPartitionCPtr definitionPartition = InsertDefinitionPartition(ruleSetSubject);
     return InsertDefinitionModel(definitionPartition);
     }
@@ -66,8 +58,8 @@ Dgn::DefinitionPartitionCPtr RulesetEmbedder::QueryDefinitionPartition() const
     if (subject.IsNull())
         return nullptr;
 
-    Dgn::DgnElementId defitinioPartitionId = m_db.Elements().QueryElementIdByCode(Dgn::InformationPartitionElement::CreateCode(*subject, RULESET_MODEL));
-    return m_db.Elements().Get<Dgn::DefinitionPartition>(defitinioPartitionId);
+    Dgn::DgnElementId definitionPartitionId = m_db.Elements().QueryElementIdByCode(Dgn::InformationPartitionElement::CreateCode(*subject, RULESET_MODEL));
+    return m_db.Elements().Get<Dgn::DefinitionPartition>(definitionPartitionId);
     }
 
 /*---------------------------------------------------------------------------------**//**

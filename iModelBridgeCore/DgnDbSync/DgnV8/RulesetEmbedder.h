@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/RulesetEmbedder.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,14 +24,11 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PresentationRulesDomain : Dgn::DgnDomain
     {
-    private: 
+    public:
         PresentationRulesDomain() : DgnDomain(PRESENTATION_RULES_DOMAIN, "", 1) {}
 
     protected:
         WCharCP _GetSchemaRelativePath() const override { return PRESENTATION_RULES_ECSCHEMA_PATH; }
-
-    public:
-        static void RegisterSchema(Dgn::DgnDbR db);
     };
 
 //=======================================================================================
@@ -81,7 +78,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesetEmbedder
     public:
         //! Create a new embedder.
         //! @param[in] db   DgnDb reference to embed rulesets to
-        DGNDBSYNC_EXPORT RulesetEmbedder(Dgn::DgnDbR dgnDb) : m_db(dgnDb) { PresentationRulesDomain::RegisterSchema(dgnDb); }
+        DGNDBSYNC_EXPORT RulesetEmbedder(Dgn::DgnDbR dgnDb) : m_db(dgnDb) { }
         
         //! Embeds a ruleset to Db
         //! @param[in] ruleset                      a presentation ruleset to embed

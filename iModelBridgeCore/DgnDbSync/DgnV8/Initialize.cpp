@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Initialize.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -24,6 +24,7 @@
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <RealityPlatformTools/RealityDataService.h>
 #include <Bentley/Desktop/FileSystem.h>
+#include "RulesetEmbedder.h"
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
@@ -660,6 +661,9 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
     DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
     DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+
+    DgnDomainP domain = new PresentationRulesDomain();
+    DgnDomains::RegisterDomain(*domain, DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
