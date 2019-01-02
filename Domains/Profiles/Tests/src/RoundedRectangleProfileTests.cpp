@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/RoundedRectangleProfileTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfileValidationTestCase.h"
@@ -174,7 +174,7 @@ TEST_F (RoundedRectangleProfileTestCase, Insert_RoundingRadiusEqualsHalfWidth_Su
     params.roundingRadius = halfWidth;
     EXPECT_SUCCESS_Insert (params) << "Rounding radius should be less or equal to half of width.";
 
-    params.roundingRadius = nextafter<double, double> (halfWidth, INFINITY);
+    params.roundingRadius = BeNumerical::BeNextafter (halfWidth, INFINITY);
     EXPECT_FAIL_Insert (params) << "Rounding radius should be less or equal to half of width.";
     }
 
@@ -190,6 +190,6 @@ TEST_F (RoundedRectangleProfileTestCase, Insert_RoundingRadiusEqualsHalfDepth_Su
     params.roundingRadius = halfDepth;
     EXPECT_SUCCESS_Insert (params) << "Rounding radius should be less or equal to half of depth.";
 
-    params.roundingRadius = nextafter<double, double> (halfDepth, INFINITY);
+    params.roundingRadius = BeNumerical::BeNextafter (halfDepth, INFINITY);
     EXPECT_FAIL_Insert (params) << "Rounding radius should be less or equal to half of depth.";
     }

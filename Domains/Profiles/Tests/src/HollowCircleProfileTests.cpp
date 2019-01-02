@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/HollowCircleProfileTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfileValidationTestCase.h"
@@ -148,7 +148,7 @@ TEST_F (HollowCircleProfileTestCase, Insert_WallThicknessEqualToRadius_FailedIns
     params.wallThickness = params.radius;
     EXPECT_FAIL_Insert (params) << "Wall thickness should be less than radius.";
 
-    params.wallThickness = nextafter<double, double> (params.radius, 0.0);
+    params.wallThickness = BeNumerical::BeNextafter (params.radius, 0.0);
     EXPECT_SUCCESS_Insert (params) << "Wall thickness should be less than radius.";
     }
 

@@ -312,7 +312,7 @@ TEST_F (ZShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlange_CorrectInsert
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetInnerFlangeFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
 
-    params.filletRadius = nextafter<double, double> (1.0, INFINITY);
+    params.filletRadius = BeNumerical::BeNextafter (1.0, INFINITY);
     EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
     }
 
@@ -330,7 +330,7 @@ TEST_F (ZShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertRes
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetInnerWebFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
 
-    params.filletRadius = nextafter<double, double> (1.0, INFINITY);
+    params.filletRadius = BeNumerical::BeNextafter (1.0, INFINITY);
     EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
     }
 
@@ -353,7 +353,7 @@ TEST_F (ZShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_Correct
     params.filletRadius = maximumFilletRadiusForWeb;
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web minus flange slope height.";
 
-    params.filletRadius = nextafter<double, double> (maximumFilletRadiusForWeb, INFINITY);
+    params.filletRadius = BeNumerical::BeNextafter (maximumFilletRadiusForWeb, INFINITY);
     EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web minus flange slope height.";
     }
 
@@ -377,7 +377,7 @@ TEST_F (ZShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheFlangeThickness_
     params.flangeEdgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
 
-    params.flangeEdgeRadius = nextafter<double, double> (0.5, INFINITY);
+    params.flangeEdgeRadius = BeNumerical::BeNextafter (0.5, INFINITY);
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
     }
 
@@ -398,7 +398,7 @@ TEST_F (ZShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheInnerFlangeFace_
     params.flangeEdgeRadius = 1.0;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of inner flange face length.";
 
-    params.flangeEdgeRadius = nextafter<double, double> (1.0, INFINITY);
+    params.flangeEdgeRadius = BeNumerical::BeNextafter (1.0, INFINITY);
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to inner flange face length.";
     }
 
