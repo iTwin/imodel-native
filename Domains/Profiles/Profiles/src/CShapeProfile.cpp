@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/CShapeProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -26,7 +26,7 @@ CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pN
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
-                                           double webThickness, double filletRadius, double flangeEdgeRadius, double flangeSlope)
+                                           double webThickness, double filletRadius, double flangeEdgeRadius, Angle const& flangeSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , flangeWidth (flangeWidth)
     , depth (depth)
@@ -144,7 +144,7 @@ bool CShapeProfile::ValidteFlangeEdgeRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CShapeProfile::ValidateFlangeSlope() const
     {
-    double const flangeSlope = GetFlangeSlope();
+    double const flangeSlope = GetFlangeSlope().Radians();
     if (ProfilesProperty::IsEqualToZero (flangeSlope))
         return true;
 
@@ -254,17 +254,17 @@ void CShapeProfile::SetFlangeEdgeRadius (double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CShapeProfile::GetFlangeSlope() const
+Angle CShapeProfile::GetFlangeSlope() const
     {
-    return GetPropertyValueDouble (PRF_PROP_CShapeProfile_FlangeSlope);
+    return Angle::FromRadians (GetPropertyValueDouble (PRF_PROP_CShapeProfile_FlangeSlope));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CShapeProfile::SetFlangeSlope (double val)
+void CShapeProfile::SetFlangeSlope (Angle const& val)
     {
-    SetPropertyValue (PRF_PROP_CShapeProfile_FlangeSlope, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_CShapeProfile_FlangeSlope, ECN::ECValue (val.Radians()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -288,11 +288,11 @@ double CShapeProfile::GetInnerWebFaceLength() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double CShapeProfile::GetFlangeSlopeHeight() const
     {
-    double const flangeSlopeCos = std::cos (GetFlangeSlope());
+    double const flangeSlopeCos = GetFlangeSlope().Cos();
     if (flangeSlopeCos <= DBL_EPSILON)
         return 0.0;
 
-    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * std::sin (GetFlangeSlope());
+    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetFlangeSlope().Sin();
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

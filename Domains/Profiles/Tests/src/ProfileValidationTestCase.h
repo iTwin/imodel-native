@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/ProfileValidationTestCase.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,5 +73,18 @@ public:
 
         parameterToCheck = std::numeric_limits<double>::infinity() * -1;
         EXPECT_FAIL_Insert (createParams) << pParameterName << " cannot be infinity.";
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     01/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void TestParameterToBeFiniteAndPositive (Profiles::Profile::CreateParams const& createParams, Angle& parameterToCheck,
+                                             Utf8CP pParameterName, bool allowEqualToZero)
+        {
+        if (sizeof (Angle) != sizeof (double) || Angle::FromRadians (123.456).Radians() != 123.456)
+            FAIL() << "Assuming that Angle is based on radians.";
+
+        double& angle = (double&)parameterToCheck;
+        TestParameterToBeFiniteAndPositive (createParams, angle, pParameterName, allowEqualToZero);
         }
     };

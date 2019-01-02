@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/CShapeProfileTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfileValidationTestCase.h"
@@ -39,7 +39,7 @@ TEST_F (CShapeProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
     CreateParams requiredParams (GetModel(), "C", 10, 10, 1, 1);
     EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
 
-    CreateParams fullParams (GetModel(), "C", 10, 10, 1, 1, 1, 0.5, PI / 18);
+    CreateParams fullParams (GetModel(), "C", 10, 10, 1, 1, 1, 0.5, Angle::FromRadians (PI / 18));
     EXPECT_SUCCESS_Insert (fullParams) << "Profile should succeed to insert with valid full create parameters.";
     }
 
@@ -57,7 +57,7 @@ TEST_F (CShapeProfileTestCase, Insert_EmptyCreateParams_FailedInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
     {
-    CreateParams params (GetModel(), "C", 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
+    CreateParams params (GetModel(), "C", 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, Angle::FromRadians (7.0));
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
     EXPECT_EQ ("C", profilePtr->GetName());
@@ -67,7 +67,7 @@ TEST_F (CShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetWebThickness());
     EXPECT_DOUBLE_EQ (5.0, profilePtr->GetFilletRadius());
     EXPECT_DOUBLE_EQ (6.0, profilePtr->GetFlangeEdgeRadius());
-    EXPECT_DOUBLE_EQ (7.0, profilePtr->GetFlangeSlope());
+    EXPECT_DOUBLE_EQ (7.0, profilePtr->GetFlangeSlope().Radians());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,7 +75,7 @@ TEST_F (CShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     {
-    CreateParams params (GetModel(), "", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    CreateParams params (GetModel(), "", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Angle::FromRadians (0.0));
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetName ("C");
@@ -85,7 +85,7 @@ TEST_F (CShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     profilePtr->SetWebThickness (1.0);
     profilePtr->SetFilletRadius (1.0);
     profilePtr->SetFlangeEdgeRadius (1.0);
-    profilePtr->SetFlangeSlope (1.0);
+    profilePtr->SetFlangeSlope (Angle::FromRadians (1.0));
 
     EXPECT_EQ ("C", profilePtr->GetName());
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeWidth());
@@ -94,7 +94,7 @@ TEST_F (CShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWebThickness());
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFilletRadius());
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeEdgeRadius());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeSlope());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeSlope().Radians());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -102,7 +102,7 @@ TEST_F (CShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, GetInnerFlangeFaceLength_FlangeWidthAndWebThickness_CorrectValue)
     {
-    CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, Angle::FromRadians (INFINITY));
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetFlangeWidth (0.0);
@@ -123,7 +123,7 @@ TEST_F (CShapeProfileTestCase, GetInnerFlangeFaceLength_FlangeWidthAndWebThickne
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, GetInnerWebFaceLength_DepthAndFlangeThickness_CorrectValue)
     {
-    CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, Angle::FromRadians (INFINITY));
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetDepth (0.0);
@@ -144,22 +144,22 @@ TEST_F (CShapeProfileTestCase, GetInnerWebFaceLength_DepthAndFlangeThickness_Cor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, GetFlangeSlopeHeight_ProfileWithProperties_CorrectValue)
     {
-    CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY);
+    CreateParams params (GetModel(), "C", INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, Angle::FromRadians (INFINITY));
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
     profilePtr->SetFlangeWidth (2.0);
     profilePtr->SetWebThickness (1.0);
 
-    profilePtr->SetFlangeSlope (PI / 4.0);
+    profilePtr->SetFlangeSlope (Angle::FromRadians (PI / 4.0));
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeSlopeHeight());
 
-    profilePtr->SetFlangeSlope (0.0);
+    profilePtr->SetFlangeSlope (Angle::FromRadians (0.0));
     EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
 
-    profilePtr->SetFlangeSlope (PI / 2.0);
+    profilePtr->SetFlangeSlope (Angle::FromRadians (PI / 2.0));
     EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
 
-    profilePtr->SetFlangeSlope (PI);
+    profilePtr->SetFlangeSlope (Angle::FromRadians (PI));
     EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeSlopeHeight());
     }
 
@@ -300,7 +300,7 @@ TEST_F (CShapeProfileTestCase, Insert_InvalidFilletRadius_FailedInsert)
 TEST_F (CShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlange_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "C_ZeroFlangeSlope_ShortFlange", 2.0, 100.0, 1.0, 1.0, INFINITY);
-    params.flangeSlope = 0.0;
+    params.flangeSlope = Angle::FromRadians (0.0);
 
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
@@ -318,7 +318,7 @@ TEST_F (CShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlange_CorrectInsert
 TEST_F (CShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "C_ZeroFlangeSlope_ShortWeb", 100.0, 3.0, 1.0, 1.0, INFINITY);
-    params.flangeSlope = 0.0;
+    params.flangeSlope = Angle::FromRadians (0.0);
 
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
@@ -336,7 +336,7 @@ TEST_F (CShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertRes
 TEST_F (CShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "C_NonZeroFlangeSlope", 10.0, 10.0, 1.0, 1.0, INFINITY);
-    params.flangeSlope = (PI / 180.0) * 10.0;
+    params.flangeSlope = Angle::FromRadians ((PI / 180.0) * 10.0);
 
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
@@ -403,7 +403,7 @@ TEST_F (CShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheInnerFlangeFace_
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, Insert_InvalidFlangeSlope_FailedInsert)
     {
-    CreateParams params (GetModel(), "C", 5.0, 10.0, 1.0, 1.0, 0.0, 0.0, INFINITY);
+    CreateParams params (GetModel(), "C", 5.0, 10.0, 1.0, 1.0, 0.0, 0.0, Angle::FromRadians (INFINITY));
 
     TestParameterToBeFiniteAndPositive (params, params.flangeSlope, "FlangeSlope", true);
     }
@@ -413,9 +413,9 @@ TEST_F (CShapeProfileTestCase, Insert_InvalidFlangeSlope_FailedInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     {
-    CreateParams params (GetModel(), "C", 5.0, 10.0, 1.0, 1.0, 0.0, 0.0, INFINITY);
+    CreateParams params (GetModel(), "C", 5.0, 10.0, 1.0, 1.0, 0.0, 0.0, Angle::FromRadians (INFINITY));
 
-    params.flangeSlope = PI / 4.0;
+    params.flangeSlope = Angle::FromRadians (PI / 4.0);
     CShapeProfilePtr profilePtr = CreateProfile (params);
 
     // 45 degree angle means a slope height of 4, when the inner flange face length is 4
@@ -425,7 +425,7 @@ TEST_F (CShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetFlangeSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
 
-    params.flangeSlope = nextafter<double, double> (PI / 4.0, INFINITY);
+    params.flangeSlope = Angle::FromRadians (nextafter<double, double> (PI / 4.0, INFINITY));
     EXPECT_FAIL_Insert (params) << "Flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
     }
 
@@ -436,14 +436,14 @@ TEST_F (CShapeProfileTestCase, Insert_FlangeSlopeOf90Degrees_FailedInsert)
     {
     // Can't use DBL_MAX as it will assert in geometry generation
     double const depth = DBL_MAX / 4.0;
-    CreateParams params (GetModel(), "C", 1.0, depth, 0.1, 0.1, 0.0, 0.0, INFINITY);
+    CreateParams params (GetModel(), "C", 1.0, depth, 0.1, 0.1, 0.0, 0.0, Angle::FromRadians (INFINITY));
 
-    params.flangeSlope = 0.0;
+    params.flangeSlope = Angle::FromRadians (0.0);
     EXPECT_SUCCESS_Insert (params) << "Profile should succeed to insert.";
 
-    params.flangeSlope = PI / 2.0;
+    params.flangeSlope = Angle::FromRadians (PI / 2.0);
     EXPECT_FAIL_Insert (params) << "Flange slope should be less than 90 degrees.";
 
-    params.flangeSlope = PI / 2.0 - PI / 10000;
+    params.flangeSlope = Angle::FromRadians (PI / 2.0 - PI / 10000);
     EXPECT_SUCCESS_Insert (params) << "Flange slope should be less than 90 degrees.";
     }

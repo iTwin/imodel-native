@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/AsymmetricIShapeProfileTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfileValidationTestCase.h"
@@ -659,11 +659,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_InvalidTopFlangeSlope_FailedInse
     {
     CreateParams params (GetModel(), "AsymmetricI", 10.0, 10.0, 10.0, 1.0, 1.0, 1.0, 0.0, 0.0, Angle::FromRadians (INFINITY));
 
-    if (sizeof (Angle) != sizeof (double) || Angle::FromRadians (123.456).Radians() != 123.456)
-        FAIL() << "Assuming that Angle is based on radians.";
-
-    double& angle = (double&)params.topFlangeSlope;
-    TestParameterToBeFiniteAndPositive (params, angle, "TopFlangeSlope", true);
+    TestParameterToBeFiniteAndPositive (params, params.topFlangeSlope, "TopFlangeSlope", true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -673,11 +669,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_InvalidBottomFlangeSlope_FailedI
     {
     CreateParams params (GetModel(), "AsymmetricI", 10.0, 10.0, 10.0, 1.0, 1.0, 1.0, 0.0, 0.0, Angle::FromRadians (0.0), 0.0, 0.0, Angle::FromRadians (INFINITY));
 
-    if (sizeof (Angle) != sizeof (double) || Angle::FromRadians (123.456).Radians() != 123.456)
-        FAIL() << "Assuming that Angle is based on radians.";
-
-    double& angle = (double&)params.bottomFlangeSlope;
-    TestParameterToBeFiniteAndPositive (params, angle, "BottomFlangeSlope", true);
+    TestParameterToBeFiniteAndPositive (params, params.bottomFlangeSlope, "BottomFlangeSlope", true);
     }
 
 /*---------------------------------------------------------------------------------**//**

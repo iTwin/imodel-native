@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/GeometryTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfileValidationTestCase.h"
@@ -37,10 +37,10 @@ private:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeometryTestCase, ProfilesGemetry)
     {
-    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_Plain", 6, 10, 1, 1, 0, 0, 0));
-    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0));
-    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_MaxFillet", 6, 10, 1, 1, 2.5, 0.1, 0));
-    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, PI / 18));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_Plain", 6, 10, 1, 1, 0, 0));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_MaxFillet", 6, 10, 1, 1, 2.5, 0.1));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
 
     InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_Plain", 6, 10, 1, 1, 0, 0, 0), true);
     InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5, 0));

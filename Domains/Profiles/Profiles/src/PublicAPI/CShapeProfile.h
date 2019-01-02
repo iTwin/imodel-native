@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/CShapeProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,8 +29,9 @@ public:
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
-                                               double webThickness, double filletRadius = 0.0, double flangeEdgeRadius = 0.0, double flangeSlope = 0.0);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth,
+                                               double flangeThickness, double webThickness, double filletRadius = 0.0,
+                                               double flangeEdgeRadius = 0.0, Angle const& flangeSlope = Angle::FromRadians (0.0));
 
     public:
         //! Required properties
@@ -42,7 +43,7 @@ public:
         //! Optional properties
         double filletRadius = 0.0;
         double flangeEdgeRadius = 0.0;
-        double flangeSlope = 0.0;
+        Angle flangeSlope = Angle::FromRadians (0.0);
         };
 
 protected:
@@ -83,8 +84,8 @@ public:
     PROFILES_EXPORT double GetFlangeEdgeRadius() const;
     PROFILES_EXPORT void SetFlangeEdgeRadius (double val);
 
-    PROFILES_EXPORT double GetFlangeSlope() const;
-    PROFILES_EXPORT void SetFlangeSlope (double val);
+    PROFILES_EXPORT Angle GetFlangeSlope() const;
+    PROFILES_EXPORT void SetFlangeSlope (Angle const& val);
 
 public:
     PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
