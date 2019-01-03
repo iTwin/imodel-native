@@ -160,9 +160,9 @@
         <ECProperty propertyName="LegLength" typeName="double" description="" />
         <ECProperty propertyName="Thickness" typeName="double" description="" />
         <!-- Optional properties -->
+        <ECProperty propertyName="LegBendOffset" typeName="double" description="" />
         <ECProperty propertyName="FilletRadius" typeName="double" description="Fillet radius between legs. 0 if sharp-edged, default 0 if not specified." />
         <ECProperty propertyName="EdgeRadius" typeName="double" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="LegSlope" typeName="double" description="Slope of the inner faces of the legs. Non-zero in case of tapered legs, 0 in case of perpendicular legs, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="TShapeProfile" modifier="Sealed" description="A T-shaped Profile similar to rolled steel T-shapes.">
