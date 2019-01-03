@@ -1362,6 +1362,9 @@ TEST_F(SchemaCopyTest, OriginalAndCopiedSchemasSerializedXMLValuesMatches)
     EXPECT_STREQ(originalSchemaXml.c_str(), copiedSchema2Xml.c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   11/2018
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaCopyTest, SuccessfullCopiesKindOfQuantityPropertyWithPersistenceUnit)
     {
     Utf8CP schemaString = R"(
@@ -1653,5 +1656,152 @@ TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchema)
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Gintaras.Volkvicius                   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyNavigationPropertyIncludingReferences)
+    {
+    Utf8CP schemaString = R"**(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="House" polymorphic="False">
+                    <Class class="House"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Room" polymorphic="False">
+                    <Class class="Room"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="House"/>
+            <ECEntityClass typeName="Room">
+                <ECNavigationProperty propertyName="NavigationPropertyToHouse" relationshipName="HouseHasRooms" direction="Backward"/>
+            </ECEntityClass>
+        </ECSchema>
+        )**";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), "Room", true));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("Room"), schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("HouseHasRooms"), schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("House"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("House"), schemaCopyTo->GetClassCP("House"));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty());
+    EXPECT_EQ(schemaCopyTo->GetClassCP("HouseHasRooms")->GetRelationshipClassCP(), schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty()->GetRelationshipClass());
+
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Gintaras.Volkvicius                   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyNavigationPropertyOnlyInlcudingRelationshipClass)
+    {
+    Utf8CP referenceSchemaString = R"(
+        <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="House"/>
+        </ECSchema>
+        )";
+
+    Utf8CP schemaString = R"**(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="referenceSchema" version="01.00.00" alias="rs"/>
+            <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="House" polymorphic="False">
+                    <Class class="rs:House"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Room" polymorphic="False">
+                    <Class class="Room"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="Room">
+                <ECNavigationProperty propertyName="NavigationPropertyToHouse" relationshipName="HouseHasRooms" direction="Backward"/>
+            </ECEntityClass>
+        </ECSchema>
+        )**";
+
+    ECSchemaPtr referenceSchema;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(referenceSchema, referenceSchemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, referenceSchema->GetClassCP("House"));
+
+    ECSchemaPtr schemaCopyFrom;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+    schemaCopyTo->AddReferencedSchema(*referenceSchema);
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), "Room", true));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("Room"), schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("HouseHasRooms"), schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("House"));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty());
+    EXPECT_EQ(schemaCopyTo->GetClassCP("HouseHasRooms")->GetRelationshipClassCP(), schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty()->GetRelationshipClass());
+    ASSERT_EQ(referenceSchema->GetClassCP("House"), schemaCopyTo->GetClassCP("HouseHasRooms")->GetRelationshipClassCP()->GetSource().GetConstraintClasses()[0]);
+
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Gintaras.Volkvicius                   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyNavigationPropertyWithReferencedSourceSchema)
+    {
+    Utf8CP schemaString = R"**(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="House" polymorphic="False">
+                    <Class class="House"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Room" polymorphic="False">
+                    <Class class="Room"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="House"/>
+            <ECEntityClass typeName="Room">
+                <ECNavigationProperty propertyName="NavigationPropertyToHouse" relationshipName="HouseHasRooms" direction="Backward"/>
+            </ECEntityClass>
+        </ECSchema>
+        )**";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), "Room", false));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("Room"), schemaCopyTo->GetClassCP("Room"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("House"));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty());
+    EXPECT_EQ(schemaCopyFrom->GetClassCP("HouseHasRooms")->GetRelationshipClassCP(), schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty()->GetRelationshipClass());
+
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

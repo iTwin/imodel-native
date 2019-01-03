@@ -777,31 +777,36 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         }
     else if (sourceProperty->GetIsNavigation())
         {
-        NavigationECPropertyP destNav;
+        NavigationECPropertyP destNav = new NavigationECProperty(*this);
         NavigationECPropertyCP sourceNav = sourceProperty->GetAsNavigationProperty();
-        destNav = new NavigationECProperty(*this);
 
-        ECRelationshipClassCP sourceRelClass = sourceNav->GetRelationshipClass();
-        if (sourceRelClass->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+        ECRelationshipClassCP relationshipClass = sourceNav->GetRelationshipClass();
+        ECClassCP const targetRelationshipClass = this->GetSchemaR().GetClassCP(relationshipClass->GetName().c_str());
+
+        if (nullptr == targetRelationshipClass)
             {
-            ECClassP destClass = this->GetSchemaR().GetClassP(sourceRelClass->GetName().c_str());
-            if (nullptr == destClass && copyReferences)
+            ECObjectsStatus status;
+            if (relationshipClass->GetSchema().GetSchemaKey().Matches(sourceProperty->GetClass().GetSchema().GetSchemaKey(), SchemaMatchType::Exact))
                 {
-                auto status = this->GetSchemaR().CopyClass(destClass, *sourceRelClass, sourceRelClass->GetName(), copyReferences);
-                if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                if (copyReferences)
+                    {
+                    ECClassP ecClass;
+                    if (ECObjectsStatus::Success != (status = this->GetSchemaR().CopyClass(ecClass, *relationshipClass, relationshipClass->GetName(), copyReferences)))
+                        return status;
+                    relationshipClass = ecClass->GetRelationshipClassCP();
+                    }
+                else if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), relationshipClass->GetSchema())
+                    && ECObjectsStatus::Success != (status = GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(relationshipClass->GetSchema()))))
+                        return status;
+                }
+            else if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), relationshipClass->GetSchema())
+                && ECObjectsStatus::Success != (status = GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(relationshipClass->GetSchema()))))
                     return status;
-                destNav->SetRelationshipClass(*destClass->GetRelationshipClassCP(), sourceNav->GetDirection());
-                }
-            else
-                {
-                if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), sourceNav->GetClass().GetSchema()))
-                    GetContainerSchema()->AddReferencedSchema(const_cast<ECRelationshipClassP>(sourceRelClass)->GetSchemaR());
-                destNav->SetRelationshipClass(*sourceRelClass, sourceNav->GetDirection());
-                }
             }
         else
-            destNav->SetRelationshipClass(*sourceRelClass, sourceNav->GetDirection());
+            relationshipClass = targetRelationshipClass->GetRelationshipClassCP();
 
+        destNav->SetRelationshipClass(*relationshipClass, sourceNav->GetDirection());
         destProperty = destNav;
         }
 
