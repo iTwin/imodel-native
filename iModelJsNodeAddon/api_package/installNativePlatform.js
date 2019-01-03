@@ -44,4 +44,4 @@ function installNativePlatformPackage(packages) {
     });
 }
 
-installNativePlatformPackage(`${formatPackageName()}@${version}`);
+installNativePlatformPackage(`@bentley/${formatPackageName()}@${version}`);
