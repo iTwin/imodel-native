@@ -40,8 +40,16 @@ def main():
             sys.stderr.write('Bump version (' + bump + ') too large for existing version (' + oldVer + ').\n')
             return 1
 
+        didBump = False
         for i in range(len(bumpSplit)):
-            verSplit[i] += bumpSplit[i]
+            # Reset more minor quads if a prior major one bumped if not otherwise specified
+            if didBump and (bumpSplit[i] == 0):
+                verSplit[i] = 0
+            else:
+                verSplit[i] += bumpSplit[i]
+            
+            if not didBump:
+                didBump = (0 != bumpSplit[i])
 
         verSplit = [str(i) for i in verSplit]
         newVer = '.'.join(verSplit)
