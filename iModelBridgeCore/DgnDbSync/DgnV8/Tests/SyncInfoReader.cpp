@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/SyncInfoReader.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Tests.h"
@@ -76,27 +76,28 @@ void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, SyncInfo::V
         }
     ASSERT_EQ(expectedCount, count);
 
-    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     if (1 == count)
         {
-        estmt.Prepare(*m_dgndb, "SELECT sourceInfo.Element.Id FROM "
+        auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT g.ECInstanceId FROM "
                       BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                      SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
-                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
-        estmt.BindInt64(1, v8ElementId);
-        BeAssert(BE_SQLITE_ROW == estmt.Step());
-        DgnElementId aspectId = estmt.GetValueId<DgnElementId>(0);
+                      SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo "
+                      "WHERE (sourceInfo.Element.Id = g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ? )"
+                        );
+                     
+        estmt->BindInt64 (1, v8ElementId);
+        ASSERT_EQ(BE_SQLITE_ROW, estmt->Step());
+        DgnElementId aspectId = estmt->GetValueId<DgnElementId>(0);
         ASSERT_EQ(eid , aspectId);
         }
     else 
         {
-        estmt.Prepare(*m_dgndb, "SELECT COUNT (*) FROM "
+        auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT COUNT (*) FROM "
                       BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
                       SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
-                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
-        estmt.BindInt64(1, v8ElementId);
-        BeAssert(BE_SQLITE_ROW == estmt.Step());
-        int aspectCount = estmt.GetValueId<int>(0);
+                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ?)");
+        estmt->BindInt64(1, v8ElementId);
+        ASSERT_EQ(BE_SQLITE_ROW, estmt->Step());
+        int aspectCount = estmt->GetValueId<int>(0);
         ASSERT_EQ(expectedCount, aspectCount);
         }
     }

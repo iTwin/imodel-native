@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ConverterTestsBaseFixture.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -677,10 +677,11 @@ DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Ap
     estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
                   SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
-                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
+                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.SourceId AS INT) = ?)");
     estmt.BindInt64(1, eV8Id);
 
-    BeAssert(BE_SQLITE_ROW == estmt.Step());
+    DbResult status = estmt.Step();
+    BeAssert(BE_SQLITE_ROW == status);
     BeAssert(element->GetElementId() == estmt.GetValueId<DgnElementId>(0));
 
     return element;
