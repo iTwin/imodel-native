@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/ProfilesDefinitions.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -164,9 +164,9 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_RoundedRectangleProfile_RoundingRadius                          "RoundingRadius"
 #define PRF_PROP_SchifflerizedLShapeProfile_LegLength                            "LegLength"
 #define PRF_PROP_SchifflerizedLShapeProfile_Thickness                            "Thickness"
+#define PRF_PROP_SchifflerizedLShapeProfile_LegBendOffset                        "LegBendOffset"
 #define PRF_PROP_SchifflerizedLShapeProfile_FilletRadius                         "FilletRadius"
 #define PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius                           "EdgeRadius"
-#define PRF_PROP_SchifflerizedLShapeProfile_LegSlope                             "LegSlope"
 #define PRF_PROP_StandardProfileAspect_Manufacturer                              "Manufacturer"
 #define PRF_PROP_StandardProfileAspect_Revision                                  "Revision"
 #define PRF_PROP_StandardProfileAspect_StandardsOrganization                     "StandardsOrganization"

@@ -37,14 +37,14 @@ public:
     PROFILES_EXPORT double GetThickness() const;
     PROFILES_EXPORT void SetThickness (double value);
 
+    PROFILES_EXPORT double GetLegBendOffset() const;
+    PROFILES_EXPORT void SetLegBendOffset (double value);
+
     PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius (double value);
 
     PROFILES_EXPORT double GetEdgeRadius() const;
     PROFILES_EXPORT void SetEdgeRadius (double value);
-
-    PROFILES_EXPORT double GetLegSlope() const;
-    PROFILES_EXPORT void SetLegSlope (double value);
 
     }; // SchifflerizedLShapeProfile
 
