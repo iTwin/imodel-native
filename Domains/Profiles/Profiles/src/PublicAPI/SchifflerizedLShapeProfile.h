@@ -21,8 +21,30 @@ struct SchifflerizedLShapeProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_SchifflerizedLShapeProfile, ParametricProfile);
     friend struct SchifflerizedLShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(SchifflerizedLShapeProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double legLength, double thickness,
+                                               double legBendOffset = 0.0, double filletRadius = 0.0, double edgeRadius = 0.0);
+
+    public:
+        //! Required properties
+        double legLength = 0.0;
+        double thickness = 0.0;
+
+        //! Optional properties
+        double legBendOffset = 0.0;
+        double filletRadius = 0.0;
+        double edgeRadius = 0.0;
+        };
+
 protected:
-    explicit SchifflerizedLShapeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit SchifflerizedLShapeProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (SchifflerizedLShapeProfile)

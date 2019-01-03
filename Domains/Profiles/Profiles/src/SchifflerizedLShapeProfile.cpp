@@ -13,6 +13,42 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (SchifflerizedLShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SchifflerizedLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SchifflerizedLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double legLength, double thickness,
+                                                        double legBendOffset, double filletRadius, double edgeRadius)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , legLength (legLength)
+    , thickness (thickness)
+    , legBendOffset (legBendOffset)
+    , filletRadius (filletRadius)
+    , edgeRadius (edgeRadius)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SchifflerizedLShapeProfile::SchifflerizedLShapeProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetLegLength (params.legLength);
+    SetThickness (params.thickness);
+    SetLegBendOffset (params.legBendOffset);
+    SetFilletRadius (params.filletRadius);
+    SetEdgeRadius (params.edgeRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double SchifflerizedLShapeProfile::GetLegLength() const
