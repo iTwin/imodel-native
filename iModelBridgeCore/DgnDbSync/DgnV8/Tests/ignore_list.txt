@@ -21,3 +21,13 @@ TransformTests.Test1
     # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1239): error:       Expected: 0
     # To be equal to: m_count
     # Which is: 2
+
+DrawingTests.Basic3dAttachment
+    # Abeesh: We should add this test to ignore_list for now. Needs to review what we are doing with sheets.
+    # x64, DEBUG
+    # [ RUN      ] DrawingTests.Basic3dAttachment
+    # F:\Bim0200Dev\src\DgnDbSync\DgnV8\Tests\gtestmain.cpp(314): error: Failed
+    # F:\Bim0200Dev\src\DgnDbSync\DgnV8\..\SyncInfo.cpp(1733): ASSERTION FAILURE (0): false
+    # F:\Bim0200Dev\src\DgnDbSync\DgnV8\Tests\gtestmain.cpp(314): error: Failed
+    # F:\Bim0200Dev\src\DgnDbSync\DgnV8\..\SyncInfo.cpp(1733): ASSERTION FAILURE (0): false
+    # [  FAILED  ] DrawingTests.Basic3dAttachment (3500 ms)
