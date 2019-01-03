@@ -846,6 +846,7 @@ TEST_F(iModelBridgeTests, Test1)
         // This time, we expect to find the repo and briefcase already there.
         testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
         testIModelHubClientForBridges.m_expect.push_back(true);// This will be set since we import the aspect schema.
+        testIModelHubClientForBridges.m_expect.push_back(false);//Make definition changes
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -963,6 +964,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
         {
         // Run an update with no changes
         testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.push_back(false);
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
@@ -1099,6 +1101,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         // Run an update with no changes
         testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
         testIModelHubClientForBridges.m_expect.push_back(true);
+        testIModelHubClientForBridges.m_expect.push_back(false);
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
