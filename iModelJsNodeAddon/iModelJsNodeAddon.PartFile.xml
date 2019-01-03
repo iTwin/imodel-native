@@ -12,25 +12,25 @@
   </Part>
 
   <Product Name="iModelJsNodeAddon">
-    <SubProduct ProductName="iModelJsNodeAddon-Windows" />
-    <SubProduct ProductName="iModelJsNodeAddon-Linux" />
-    <SubProduct ProductName="iModelJsNodeAddon-Darwin" />
+    <SubProduct ProductName="iModelJsNative-Windows" />
+    <SubProduct ProductName="iModelJsNative-Linux" />
+    <SubProduct ProductName="iModelJsNative-Darwin" />
   </Product>
 
-  <Product Name="iModelJsNodeAddon-Windows">
-    <SubPart PartName="iModelJsNodeAddonLib-Windows" LibType="Dynamic" />
+  <Product Name="iModelJsNative-Windows">
+    <SubPart PartName="iModelJsNative-Dynamic" LibType="Dynamic" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
     <FeatureExclude>GeoCoordAssets</FeatureExclude>
   </Product>
 
-  <Product Name="iModelJsNodeAddon-Linux">
-    <SubPart PartName="iModelJsNodeAddonLib-Linux" LibType="Static" />
+  <Product Name="iModelJsNative-Linux">
+    <SubPart PartName="iModelJsNative-Static" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
     <FeatureExclude>GeoCoordAssets</FeatureExclude>
   </Product>
 
-  <Product Name="iModelJsNodeAddon-Darwin">
-    <SubPart PartName="iModelJsNodeAddonLib-Darwin" LibType="Static" />
+  <Product Name="iModelJsNative-Darwin">
+    <SubPart PartName="iModelJsNative-Static" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
     <FeatureExclude>GeoCoordAssets</FeatureExclude>
   </Product>
@@ -48,11 +48,11 @@
     <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices" LibType="static"/>
   </ProductDirectoryList>
 
-  <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
+  <Part Name="iModelJsNative-Mobile" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
     <!-- Get the node-addon-api (declaration) from iModelJs, not from node! -->
     <SubPart PartName="VendorAPI" PartFile="iModelJsMobile" Repository="iModelJsMobile"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <SubPart PartName="iModelJsNodeAddonSqlang"/>
+    <SubPart PartName="iModelJsNativeLibCommon"/>
+    <SubPart PartName="iModelJsNativeLibSqlang"/>
     <Bindings>
         <Directory SourceName="Delivery/imodeljs-addon-iModelJs-objs" SubPartDirectory="imodeljs-addon-objs" />
         <Files SubPartDirectory="imodeljs-addon-build-tools">
@@ -66,8 +66,8 @@
 
   <Part Name="iModelJsLib" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke"  >
     <SubPart PartName="napi-lib-win" PartFile="node-addon-api/node-addon-api"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <SubPart PartName="iModelJsNodeAddonSqlang"/>
+    <SubPart PartName="iModelJsNativeLibCommon"/>
+    <SubPart PartName="iModelJsNativeLibSqlang"/>
     <Bindings>
       <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
@@ -76,15 +76,15 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" >
+  <Part Name="iModelJsNative-Dynamic" OnlyPlatforms="x64" ExcludeLibType="Static" >
     <SubPart PartName="iModelJsLib"/>
     <SubPart PartName="napi-dll-win" PartFile="node-addon-api/node-addon-api"/>
   </Part>
 
-  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" >
+  <Part Name="iModelJsNative-Static" OnlyPlatforms="Linux*,MacOS*"  ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" >
     <SubPart PartName="napi-stub-build"  PartFile="node-addon-api/node-addon-api"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <SubPart PartName="iModelJsNodeAddonSqlang"/>
+    <SubPart PartName="iModelJsNativeLibCommon"/>
+    <SubPart PartName="iModelJsNativeLibSqlang"/>
     <Bindings>
         <Files ProductDirectoryName="StaticAssemblies">Delivery/imodeljs.node</Files>
         <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
@@ -93,32 +93,21 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsNodeAddonLib-Darwin" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" >
-    <SubPart PartName="napi-stub-build"  PartFile="node-addon-api/node-addon-api"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <SubPart PartName="iModelJsNodeAddonSqlang"/>
-    <Bindings>
-      <Files ProductDirectoryName="StaticAssemblies"> Delivery/imodeljs.node</Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>
-    </Bindings>
-  </Part>
-
-  <Part Name="iModelJsNodeAddonSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelJsNodeAddon/iModelJsNodeAddon_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
-    <SubPart PartName="iModelJsNodeAddonLibCommon" />
+  <Part Name="iModelJsNativeLibSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelJsNodeAddon/iModelJsNodeAddon_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+    <SubPart PartName="iModelJsNativeLibCommon" />
     <Bindings>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/iModelJsNodeAddon_en.sqlang.db3</Files>
     </Bindings>
   </Part>
 
   <!-- This part builds our node native code addon -->
-  <Part Name="iModelJsNodeAddonLibCommon">
-    <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
-    <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
-    <SubPart PartName="ECObjectsNative"     PartFile="iModelCore/ecobjects/ECObjects"    Repository="imodel02" />
-    <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
-    <SubPart PartName="Licensing" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" Repository="imodel02" />
-    <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
+  <Part Name="iModelJsNativeLibCommon">
+    <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+    <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation"/>
+    <SubPart PartName="ECObjectsNative"     PartFile="iModelCore/ecobjects/ECObjects"    />
+    <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
+    <SubPart PartName="Licensing" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" />
+    <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient"/>
   </Part>
+
 </BuildContext>

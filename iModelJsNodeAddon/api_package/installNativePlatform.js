@@ -32,16 +32,16 @@ try { fs.mkdirSync(installDir); } catch (err) { }
 fs.copyFileSync(path.join(__dirname, "package.json"),  path.join(installDir, "package.json"));
 
 // We will then copy the results of the install from the temp directory into sub-directories below this one.
-function installNativePlatformPackage(packages) {
-    const cmdLine = `npm install --no-save ${packages}`;
+function installNativePackage(package) {
+    const cmdLine = `npm install --no-save @bentley/${package}`;
     console.log(cmdLine);
     exec(cmdLine, { cwd: installDir }, (error, stdout, stderr) => {
         if (error)
             throw error;
         console.log(stdout);
         console.log(stderr);
-        copyFolderRecursiveSync(path.join(installDir, "node_modules/@bentley"), __dirname);
+        copyFolderRecursiveSync(path.join(installDir, "node_modules", "@bentley"), __dirname);
     });
 }
 
-installNativePlatformPackage(`@bentley/${formatPackageName()}@${version}`);
+installNativePackage(`${formatPackageName()}@${version}`);
