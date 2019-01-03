@@ -1,0 +1,376 @@
+
+iModelBridgeTests.Test1
+
+    # VSTS#54915
+    # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/02/2019
+    # Crash
+
+iModelBridgeTests.DelDocTest1
+
+    # VSTS#54916
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/02/2019
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_CredentialsNotSet failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_InvalidServerURL failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_InvalidiModelName failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_InvalidiModelId failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_InvalidiModelConnection failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_InvalidChangeSet failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_UserDoesNotExist failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_iModelIsNotInitialized failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_FileIsNotYetInitialized failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_FileIsOutdated failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_FileCodeTooLong failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_FileInitializationFailed failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_BriefcaseIsReadOnly failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_FileNotFound failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_PullIsRequired failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_TrackingNotEnabled failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_FileAlreadyExists failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_FileIsNotBriefcase failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_ApplyError failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_ChangeSetManagerError failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_MergeSchemaChangesOnOpen failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_ReverseOrReinstateSchemaChangesOnOpen failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_ChangeSetDoesNotExist failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_ConflictsAggregate failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_EventCallbackAlreadySubscribed failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_EventServiceSubscribingError failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_EventCallbackNotFound failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_EventCallbackNotSpecified failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_NoEventsFound failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_NotSubscribedToEventService failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_NoSASFound failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_NoSubscriptionFound failed.
+    # 2019-01-01 16:53:38,526 ERROR [0x00003340] BeSQLite.L10N - Attempt to lookup localized string iModelHubError MESSAGE_Unknown failed.
+    # c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\iModelBridgeFwk.logging.config.xml: file not found.
+    # 2019-01-01 16:53:38,558 TRACE [0x00003340] iModelBridge - Ignoring DMS staging since no supporting library is specified.
+    # 2019-01-01 16:53:38,589 INFO  [0x00003340] iModelBridgeFwk - Running bridge [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests-DelDocTest1] staging dir [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1] input [Foo]
+    # 2019-01-01 16:53:38,604 INFO  [0x00003340] iModelBridge.Performance - Initialized iModelBridge Fwk|40 millisecs
+    # 2019-01-01 16:53:38,604 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub
+    # 2019-01-01 16:53:38,604 INFO  [0x00003340] iModelBridge.Performance - Logging into iModelHub|0 millisecs
+    # 2019-01-01 16:53:38,604 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub : Done
+    # 2019-01-01 16:53:38,604 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges
+    # 2019-01-01 16:53:38,604 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges  : Done
+    # 2019-01-01 16:53:38,604 TRACE [0x00003340] iModelBridgeFwk - Setting up iModel Briefcase for processing
+    # 2019-01-01 16:53:38,604 INFO  [0x00003340] iModelBridge - State=0
+    # 2019-01-01 16:53:38,604 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - acquiring briefcase.
+    # 2019-01-01 16:53:38,604 INFO  [0x00003340] iModelBridge - AcquireBriefcase
+    # [ ] AcquireBriefcase:
+    # 2019-01-01 16:53:38,604 ERROR [0x00003340] iModelBridge - iModelBridgeTests_DelDocTest1 - iModel not found in project
+    # 2019-01-01 16:53:38,604 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Initializing bridge.
+    # 2019-01-01 16:53:38,604 INFO  [0x00003340] iModelBridge.Performance - Inititalize the bridge.|0 millisecs
+    # 2019-01-01 16:53:38,729 TRACE [0x00003340] DgnCore - Application schema BisCore.01.00.01 was not found in the BIM.
+    # 2019-01-01 16:53:38,729 WARN  [0x00003340] DgnCore - Schema for a required domain BisCore is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch
+    # 2019-01-01 16:53:38,729 TRACE [0x00003340] DgnCore - Application schema Generic.01.00.00 was not found in the BIM.
+    # 2019-01-01 16:53:38,729 WARN  [0x00003340] DgnCore - Schema for a required domain Generic is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch
+    # 2019-01-01 16:53:38,729 TRACE [0x00003340] DgnCore - Application schema ECDbSchemaPolicies.01.00.00 was not found in the BIM.
+    # 2019-01-01 16:53:38,729 DEBUG [0x00003340] DgnCore - Schemas to be imported:
+    # 2019-01-01 16:53:38,729 DEBUG [0x00003340] DgnCore - 	BisCore.01.00.01
+    # 2019-01-01 16:53:38,729 DEBUG [0x00003340] DgnCore - 	Generic.01.00.00
+    # 2019-01-01 16:53:38,729 DEBUG [0x00003340] DgnCore - 	ECDbSchemaPolicies.01.00.00
+    # 2019-01-01 16:53:38,839 WARN  [0x00003340] ECDb - Index 'ix_bis_UrlLink_Url' [Created for ECClass BisCore:UrlLink] on table 'bis_InformationReferenceElement' has the same definition as the already existing index 'ix_bis_EmbeddedFileLink_Name' [Created for ECClass BisCore:EmbeddedFileLink]. ECDb does not create this index.
+    # 2019-01-01 16:53:39,104 INFO  [0x00003340] iModelBridge.Performance - Time required to open source file and BIM|77 millisecs
+    # 2019-01-01 16:53:39,151 INFO  [0x00003340] iModelBridge - [Foo] - document recorded in syncinfo with id=[6640b375-a539-4e73-b3e1-2c0ceb912551], rowid=1
+    # 2019-01-01 16:53:39,292 INFO  [0x00003340] iModelBridge.Performance - Time required to close source file and BIM|126 millisecs
+    # 2019-01-01 16:53:39,339 INFO  [0x00003340] iModelBridge - State=1
+    # [ ] CreateRepository:
+    # 2019-01-01 16:53:39,386 INFO  [0x00003340] iModelBridge - CreateRepository iModelBridgeTests_DelDocTest1
+    # 2019-01-01 16:53:39,417 INFO  [0x00003340] iModelBridge - State=2
+    # 2019-01-01 16:53:39,417 INFO  [0x00003340] iModelBridge - AcquireBriefcase
+    # [ ] AcquireBriefcase:
+    # 2019-01-01 16:53:39,605 INFO  [0x00003340] iModelBridge - State=3
+    # 2019-01-01 16:53:39,667 ERROR [0x00003340] iModelBridge - Logging.config.xml not specified. Activating default logging using console provider.
+    # c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\iModelBridgeFwk.logging.config.xml: file not found.
+    # 2019-01-01 16:53:39,683 TRACE [0x00003340] iModelBridge - Ignoring DMS staging since no supporting library is specified.
+    # 2019-01-01 16:53:39,683 INFO  [0x00003340] iModelBridgeFwk - Running bridge [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests-DelDocTest1] staging dir [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1] input [Bar]
+    # 2019-01-01 16:53:39,683 INFO  [0x00003340] iModelBridge.Performance - Initialized iModelBridge Fwk|5 millisecs
+    # 2019-01-01 16:53:39,683 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub
+    # 2019-01-01 16:53:39,683 INFO  [0x00003340] iModelBridge.Performance - Logging into iModelHub|0 millisecs
+    # 2019-01-01 16:53:39,683 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub : Done
+    # 2019-01-01 16:53:39,683 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges
+    # 2019-01-01 16:53:39,683 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges  : Done
+    # 2019-01-01 16:53:39,683 TRACE [0x00003340] iModelBridgeFwk - Setting up iModel Briefcase for processing
+    # 2019-01-01 16:53:39,683 INFO  [0x00003340] iModelBridge.Performance - Getting iModel Briefcase from iModelHub|0 millisecs
+    # 2019-01-01 16:53:39,683 TRACE [0x00003340] iModelBridgeFwk - Setting up iModel Briefcase for processing  : Done
+    # 2019-01-01 16:53:39,683 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Opening briefcase I.
+    # 2019-01-01 16:53:39,683 TRACE [0x00003340] iModelBridgeFwk - TryOpenBimWithBisSchemaUpgrade
+    # 2019-01-01 16:53:39,683 TRACE [0x00003340] iModelBridge - Entering TryOpenBimWithBisSchemaUpgrade
+    # 2019-01-01 16:53:39,714 INFO  [0x00003340] iModelBridge.Performance - TryOpenBimWithBisSchemaUpgrade|36 millisecs
+    # 2019-01-01 16:53:39,714 TRACE [0x00003340] iModelBridgeFwk - TryOpenBimWithBisSchemaUpgrade  : Done
+    # [ ] PullMergePush:
+    # 2019-01-01 16:53:39,714 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) -
+    # 2019-01-01 16:53:39,761 INFO  [0x00003340] iModelBridge.Performance - Briefcase_PullMergePush(1,1) to iModelHub|40 millisecs
+    # 2019-01-01 16:53:39,761 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 : Done
+    # [ ] ReleaseSharedLocks:
+    # 2019-01-01 16:53:39,792 INFO  [0x00003340] iModelBridge.Performance - Briefcase_ReleaseAllPublicLocks to iModelHub|37 millisecs
+    # 2019-01-01 16:53:39,839 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Initializing bridge.
+    # 2019-01-01 16:53:39,839 INFO  [0x00003340] iModelBridge.Performance - Inititalize the bridge.|0 millisecs
+    # 2019-01-01 16:53:39,839 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Opening briefcase II.
+    # 2019-01-01 16:53:39,839 TRACE [0x00003340] iModelBridge - Entering TryOpenBimWithBisSchemaUpgrade
+    # 2019-01-01 16:53:39,870 INFO  [0x00003340] iModelBridge.Performance - TryOpenBimWithBisSchemaUpgrade|36 millisecs
+    # 2019-01-01 16:53:39,870 INFO  [0x00003340] iModelBridge - GetSchemaLock.
+    # 2019-01-01 16:53:39,886 INFO  [0x00003340] iModelBridge.Performance - Time required to open source file and BIM|2 millisecs
+    # 2019-01-01 16:53:39,886 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - MakeSchemaChanges.
+    # 2019-01-01 16:53:39,886 WARN  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Storing iModel Bridge Header Data Failed.
+    # 2019-01-01 16:53:39,886 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - MakeDefinitionChanges.
+    # 2019-01-01 16:53:39,901 INFO  [0x00003340] iModelBridge - [Bar] - document recorded in syncinfo with id=[6640b375-a539-4e73-b3e1-2c0ceb912552], rowid=5
+    # [ ] PullMergePush:
+    # 2019-01-01 16:53:40,058 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 iModelBridgeTests_Test1_Bridge - Bar (6640b375-a539-4e73-b3e1-2c0ceb912552) - definitions
+    # 2019-01-01 16:53:40,058 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests_DelDocTest1.bim
+    # 2019-01-01 16:53:40,089 TRACE [0x00003340] DgnCore - CreateRevisionObject c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\CurrentChangeSet.cs for cs c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\9d07689777dcb6b4a2f46d1c09adc440c958a028.cs
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - Id : 9d07689777dcb6b4a2f46d1c09adc440c958a028
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - ParentId :
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - Initial ParentId :
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - DbGuid: cca3d1dd-f3ca-4db6-a22c-0b9940ec068d
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - User Name:
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - Summary: iModelBridgeTests_Test1_Bridge - Bar (6640b375-a539-4e73-b3e1-2c0ceb912552) - definitions
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - ChangeStreamFile: c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\9d07689777dcb6b4a2f46d1c09adc440c958a028.cs
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - DateTime: 2019-01-01T21:53:40.089Z
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - Contains Schema Changes: no
+    # 2019-01-01 16:53:40,105 INFO  [0x00003340] DgnCore - Contains DbSchema Changes: no
+    # 2019-01-01 16:53:40,136 INFO  [0x00003340] iModelBridge.Performance - Briefcase_PullMergePush(1,1) to iModelHub|74 millisecs
+    # 2019-01-01 16:53:40,136 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 : Done
+    # [ ] ReleaseSharedLocks:
+    # 2019-01-01 16:53:40,136 INFO  [0x00003340] iModelBridge - Releasing lock: type=3 level=2 objid=1
+    # 2019-01-01 16:53:40,136 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests_DelDocTest1.bim
+    # 2019-01-01 16:53:40,136 ERROR [0x00003340] iModelBridge - DemoteLocks failed with error 15007
+    # 2019-01-01 16:53:40,136 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Convert Data.
+    # 2019-01-01 16:53:40,261 INFO  [0x00003340] iModelBridge.Performance - Time required to close source file and BIM|104 millisecs
+    # 2019-01-01 16:53:40,261 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Pushing Data Changeset.
+    # [ ] PullMergePush:
+    # 2019-01-01 16:53:40,261 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 iModelBridgeTests_Test1_Bridge - Bar (6640b375-a539-4e73-b3e1-2c0ceb912552) -
+    # 2019-01-01 16:53:40,261 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests_DelDocTest1.bim
+    # 2019-01-01 16:53:40,323 INFO  [0x00003340] iModelBridge.Performance - Briefcase_PullMergePush(1,1) to iModelHub|68 millisecs
+    # 2019-01-01 16:53:40,323 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 : Done
+    # [ ] ReleaseSharedLocks:
+    # 2019-01-01 16:53:40,323 INFO  [0x00003340] iModelBridge - Releasing lock: type=3 level=2 objid=1
+    # 2019-01-01 16:53:40,323 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests_DelDocTest1.bim
+    # 2019-01-01 16:53:40,370 TRACE [0x00003340] DgnCore - CreateRevisionObject c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\CurrentChangeSet.cs for cs c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\84f419242f574b9ce103d333c9c96cfc14b4f6ba.cs
+    # 2019-01-01 16:53:40,464 INFO  [0x00003340] iModelBridge.Performance - Briefcase_ReleaseAllPublicLocks to iModelHub|133 millisecs
+    # 2019-01-01 16:53:40,464 INFO  [0x00003340] iModelBridge.Performance - Updating Existing Bim file.|777 millisecs
+    # 2019-01-01 16:53:40,480 INFO  [0x00003340] iModelBridge.Performance - Briefcase_ReleaseAllPublicLocks to iModelHub|16 millisecs
+    # 2019-01-01 16:53:40,511 FATAL [0x00003340] iModelBridgeFwk - c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests-DelDocTest1: not found or could not be loaded
+    # 2019-01-01 16:53:40,511 ERROR [0x00003340] iModelBridgeFwk - c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests-DelDocTest1: Does not export a function called 'iModelBridge_releaseInstance'
+    # 2019-01-01 16:53:40,511 ERROR [0x00003340] iModelBridgeFwk - iModelBridgeTests_Test1_Bridge - Memory leak. This bridge was not released properly.
+    # 2019-01-01 16:53:40,511 ERROR [0x00003340] iModelBridge - Logging.config.xml not specified. Activating default logging using console provider.
+    # c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\iModelBridgeFwk.logging.config.xml: file not found.
+    # 2019-01-01 16:53:40,511 TRACE [0x00003340] iModelBridge - Ignoring DMS staging since no supporting library is specified.
+    # 2019-01-01 16:53:40,511 INFO  [0x00003340] iModelBridgeFwk - Running bridge [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests-DelDocTest1] staging dir [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1] input [Foo]
+    # 2019-01-01 16:53:40,511 INFO  [0x00003340] iModelBridge.Performance - Initialized iModelBridge Fwk|5 millisecs
+    # 2019-01-01 16:53:40,511 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub
+    # 2019-01-01 16:53:40,511 INFO  [0x00003340] iModelBridge.Performance - Logging into iModelHub|0 millisecs
+    # 2019-01-01 16:53:40,511 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub : Done
+    # 2019-01-01 16:53:40,527 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges
+    # 2019-01-01 16:53:40,527 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges  : Done
+    # 2019-01-01 16:53:40,527 TRACE [0x00003340] iModelBridgeFwk - Setting up iModel Briefcase for processing
+    # 2019-01-01 16:53:40,527 INFO  [0x00003340] iModelBridge.Performance - Getting iModel Briefcase from iModelHub|0 millisecs
+    # 2019-01-01 16:53:40,527 TRACE [0x00003340] iModelBridgeFwk - Setting up iModel Briefcase for processing  : Done
+    # 2019-01-01 16:53:40,527 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Opening briefcase I.
+    # 2019-01-01 16:53:40,527 TRACE [0x00003340] iModelBridgeFwk - TryOpenBimWithBisSchemaUpgrade
+    # 2019-01-01 16:53:40,527 TRACE [0x00003340] iModelBridge - Entering TryOpenBimWithBisSchemaUpgrade
+    # 2019-01-01 16:53:40,542 INFO  [0x00003340] iModelBridge.Performance - TryOpenBimWithBisSchemaUpgrade|28 millisecs
+    # 2019-01-01 16:53:40,542 TRACE [0x00003340] iModelBridgeFwk - TryOpenBimWithBisSchemaUpgrade  : Done
+    # [ ] PullMergePush:
+    # 2019-01-01 16:53:40,542 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 iModelBridgeTests_Test1_Bridge - Bar (6640b375-a539-4e73-b3e1-2c0ceb912552) -
+    # 2019-01-01 16:53:40,542 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests_DelDocTest1.bim
+    # 2019-01-01 16:53:40,589 TRACE [0x00003340] DgnCore - CreateRevisionObject c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\CurrentChangeSet.cs for cs c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\84f419242f574b9ce103d333c9c96cfc14b4f6ba.cs
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - Id : 84f419242f574b9ce103d333c9c96cfc14b4f6ba
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - ParentId : 9d07689777dcb6b4a2f46d1c09adc440c958a028
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - Initial ParentId : 9d07689777dcb6b4a2f46d1c09adc440c958a028
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - DbGuid: cca3d1dd-f3ca-4db6-a22c-0b9940ec068d
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - User Name:
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - Summary: iModelBridgeTests_Test1_Bridge - Bar (6640b375-a539-4e73-b3e1-2c0ceb912552) -
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - ChangeStreamFile: c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\84f419242f574b9ce103d333c9c96cfc14b4f6ba.cs
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - DateTime: 2019-01-01T21:53:40.589Z
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - Contains Schema Changes: no
+    # 2019-01-01 16:53:40,636 INFO  [0x00003340] DgnCore - Contains DbSchema Changes: no
+    # 2019-01-01 16:53:40,667 INFO  [0x00003340] iModelBridge.Performance - Briefcase_PullMergePush(1,1) to iModelHub|123 millisecs
+    # 2019-01-01 16:53:40,667 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 : Done
+    # [ ] ReleaseSharedLocks:
+    # 2019-01-01 16:53:40,698 INFO  [0x00003340] iModelBridge.Performance - Briefcase_ReleaseAllPublicLocks to iModelHub|35 millisecs
+    # 2019-01-01 16:53:40,745 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Initializing bridge.
+    # 2019-01-01 16:53:40,745 INFO  [0x00003340] iModelBridge.Performance - Inititalize the bridge.|0 millisecs
+    # 2019-01-01 16:53:40,745 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Opening briefcase II.
+    # 2019-01-01 16:53:40,745 TRACE [0x00003340] iModelBridge - Entering TryOpenBimWithBisSchemaUpgrade
+    # 2019-01-01 16:53:40,777 INFO  [0x00003340] iModelBridge.Performance - TryOpenBimWithBisSchemaUpgrade|34 millisecs
+    # 2019-01-01 16:53:40,777 INFO  [0x00003340] iModelBridge - GetSchemaLock.
+    # 2019-01-01 16:53:40,792 INFO  [0x00003340] iModelBridge.Performance - Time required to open source file and BIM|2 millisecs
+    # [ ] PullMergePush:
+    # 2019-01-01 16:53:40,792 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - initialization changes
+    # 2019-01-01 16:53:40,792 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests_DelDocTest1.bim
+    # 2019-01-01 16:53:40,839 TRACE [0x00003340] DgnCore - CreateRevisionObject c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\CurrentChangeSet.cs for cs c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\84f419242f574b9ce103d333c9c96cfc14b4f6ba.cs
+    # 2019-01-01 16:53:40,886 INFO  [0x00003340] iModelBridge.Performance - Briefcase_PullMergePush(1,1) to iModelHub|94 millisecs
+    # 2019-01-01 16:53:40,886 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_DelDocTest1 : Done
+    # 2019-01-01 16:53:40,886 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - MakeSchemaChanges.
+    # 2019-01-01 16:53:40,886 WARN  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Storing iModel Bridge Header Data Failed.
+    # 2019-01-01 16:53:40,886 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - MakeDefinitionChanges.
+    # [ ] ReleaseSharedLocks:
+    # 2019-01-01 16:53:40,886 INFO  [0x00003340] iModelBridge - Releasing lock: type=3 level=2 objid=1
+    # 2019-01-01 16:53:40,886 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests_DelDocTest1.bim
+    # 2019-01-01 16:53:40,902 INFO  [0x00003340] iModelBridge.Performance - Briefcase_ReleaseAllPublicLocks to iModelHub|22 millisecs
+    # 2019-01-01 16:53:40,902 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_DelDocTest1 - Convert Data.
+    # 2019-01-01 16:53:40,917 INFO  [0x00003340] iModelBridge.Performance - Time required to close source file and BIM|1 millisecs
+    # 2019-01-01 16:53:40,917 INFO  [0x00003340] iModelBridge - No changes were detected and there are no Txns waiting to be pushed or shared locks to be released.
+    # 2019-01-01 16:53:40,917 INFO  [0x00003340] iModelBridge.Performance - Updating Existing Bim file.|393 millisecs
+    # 2019-01-01 16:53:40,948 INFO  [0x00003340] iModelBridge.Performance - Briefcase_ReleaseAllPublicLocks to iModelHub|40 millisecs
+    # 2019-01-01 16:53:40,980 FATAL [0x00003340] iModelBridgeFwk - c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests-DelDocTest1: not found or could not be loaded
+    # 2019-01-01 16:53:40,980 ERROR [0x00003340] iModelBridgeFwk - c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\DelDocTest1\iModelBridgeTests-DelDocTest1: Does not export a function called 'iModelBridge_releaseInstance'
+    # 2019-01-01 16:53:40,980 ERROR [0x00003340] iModelBridgeFwk - iModelBridgeTests_Test1_Bridge - Memory leak. This bridge was not released properly.
+    # 2019-01-01 16:53:40,980 ERROR [0x00003340] iModelBridge - Logging.config.xml not specified. Activating default logging using console provider.
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [17] _chkstk (0x7ff9538c4db0)
+    # [16] RtlWalkFrameChain (0x7ff953844b40)
+    # [15] KiUserExceptionDispatcher (0x7ff9538c3dd0)
+    # [14] std::deque<bool,std::allocator<bool> >::push_back (0x7ff719c7b290)
+    # [13] iModelBridgeTests_DelDocTest1_Test::TestBody (0x7ff719c6e320)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff719c7e320)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff719c7e1b0)
+    # [10] testing::TestInfo::Run (0x7ff719c8f790)
+    # [9] testing::TestCase::Run (0x7ff719c8f5b0)
+    # [8] testing::internal::UnitTestImpl::RunAllTests (0x7ff719c8fb40)
+    # [7] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff719c7e3c0)
+    # [6] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff719c7e2a0)
+    # [5] testing::UnitTest::Run (0x7ff719c8fa20)
+    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_90af95f0f43eb4cf96d060fd72bdc335> >,std::default_delete<std::tuple<<lambda_90af95f0f43eb4cf96d060fd72bdc335> > > > >::_Run (0x7ff719c54860)
+    # [3] std::_Pad::_Call_func (0x7ff719c54440)
+    # [2] iswascii (0x7ff94ff3da10)
+    # [1] BaseThreadInitThunk (0x7ff9530a1fd0)
+    # [0] RtlUserThreadStart (0x7ff95388cb60)
+
+iModelBridgeTests.SpatialDataTransformTest
+
+    # VSTS#54916
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/02/2019
+    # c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\iModelBridgeFwk.logging.config.xml: file not found.
+    # 2019-01-01 16:53:42,808 TRACE [0x00003340] iModelBridge - Ignoring DMS staging since no supporting library is specified.
+    # 2019-01-01 16:53:42,839 INFO  [0x00003340] iModelBridgeFwk - Running bridge [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\SpatialDataTransformTest\iModelBridgeTests-SpatialDataTransformTest] staging dir [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\SpatialDataTransformTest] input [Foo]
+    # 2019-01-01 16:53:42,855 INFO  [0x00003340] iModelBridge.Performance - Initialized iModelBridge Fwk|45 millisecs
+    # 2019-01-01 16:53:42,855 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub
+    # 2019-01-01 16:53:42,855 INFO  [0x00003340] iModelBridge.Performance - Logging into iModelHub|0 millisecs
+    # 2019-01-01 16:53:42,855 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub : Done
+    # 2019-01-01 16:53:42,855 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges
+    # 2019-01-01 16:53:42,855 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges  : Done
+    # 2019-01-01 16:53:42,855 TRACE [0x00003340] iModelBridgeFwk - Setting up iModel Briefcase for processing
+    # 2019-01-01 16:53:42,855 INFO  [0x00003340] iModelBridge - State=0
+    # 2019-01-01 16:53:42,855 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - acquiring briefcase.
+    # 2019-01-01 16:53:42,855 INFO  [0x00003340] iModelBridge - AcquireBriefcase
+    # [ ] AcquireBriefcase:
+    # 2019-01-01 16:53:42,855 ERROR [0x00003340] iModelBridge - iModelBridgeTests_SpatialDataTransformTest - iModel not found in project
+    # 2019-01-01 16:53:42,855 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - Initializing bridge.
+    # 2019-01-01 16:53:42,855 INFO  [0x00003340] iModelBridge.Performance - Inititalize the bridge.|0 millisecs
+    # 2019-01-01 16:53:42,949 TRACE [0x00003340] DgnCore - Application schema BisCore.01.00.01 was not found in the BIM.
+    # 2019-01-01 16:53:42,949 WARN  [0x00003340] DgnCore - Schema for a required domain BisCore is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch
+    # 2019-01-01 16:53:42,964 TRACE [0x00003340] DgnCore - Application schema Generic.01.00.00 was not found in the BIM.
+    # 2019-01-01 16:53:42,964 WARN  [0x00003340] DgnCore - Schema for a required domain Generic is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch
+    # 2019-01-01 16:53:42,964 TRACE [0x00003340] DgnCore - Application schema ECDbSchemaPolicies.01.00.00 was not found in the BIM.
+    # 2019-01-01 16:53:42,964 DEBUG [0x00003340] DgnCore - Schemas to be imported:
+    # 2019-01-01 16:53:42,964 DEBUG [0x00003340] DgnCore - 	BisCore.01.00.01
+    # 2019-01-01 16:53:42,964 DEBUG [0x00003340] DgnCore - 	Generic.01.00.00
+    # 2019-01-01 16:53:42,964 DEBUG [0x00003340] DgnCore - 	ECDbSchemaPolicies.01.00.00
+    # 2019-01-01 16:53:43,042 WARN  [0x00003340] ECDb - Index 'ix_bis_UrlLink_Url' [Created for ECClass BisCore:UrlLink] on table 'bis_InformationReferenceElement' has the same definition as the already existing index 'ix_bis_EmbeddedFileLink_Name' [Created for ECClass BisCore:EmbeddedFileLink]. ECDb does not create this index.
+    # 2019-01-01 16:53:43,136 INFO  [0x00003340] iModelBridge.Performance - Time required to open source file and BIM|35 millisecs
+    # 2019-01-01 16:53:43,167 INFO  [0x00003340] iModelBridge - [Foo] - document recorded in syncinfo with id=[6640b375-a539-4e73-b3e1-2c0ceb912551], rowid=1
+    # 2019-01-01 16:53:43,246 INFO  [0x00003340] iModelBridge.Performance - Time required to close source file and BIM|66 millisecs
+    # 2019-01-01 16:53:43,292 INFO  [0x00003340] iModelBridge - State=1
+    # [ ] CreateRepository:
+    # 2019-01-01 16:53:43,339 INFO  [0x00003340] iModelBridge - CreateRepository iModelBridgeTests_SpatialDataTransformTest
+    # 2019-01-01 16:53:43,371 INFO  [0x00003340] iModelBridge - State=2
+    # 2019-01-01 16:53:43,371 INFO  [0x00003340] iModelBridge - AcquireBriefcase
+    # [ ] AcquireBriefcase:
+    # 2019-01-01 16:53:43,621 INFO  [0x00003340] iModelBridge - State=3
+    # 2019-01-01 16:53:43,667 ERROR [0x00003340] iModelBridge - Logging.config.xml not specified. Activating default logging using console provider.
+    # c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\iModelBridgeFwk.logging.config.xml: file not found.
+    # 2019-01-01 16:53:43,667 TRACE [0x00003340] iModelBridge - Ignoring DMS staging since no supporting library is specified.
+    # 2019-01-01 16:53:43,667 INFO  [0x00003340] iModelBridgeFwk - Running bridge [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\SpatialDataTransformTest\iModelBridgeTests-SpatialDataTransformTest] staging dir [c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\SpatialDataTransformTest] input [Foo]
+    # 2019-01-01 16:53:43,683 INFO  [0x00003340] iModelBridge.Performance - Initialized iModelBridge Fwk|8 millisecs
+    # 2019-01-01 16:53:43,683 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub
+    # 2019-01-01 16:53:43,683 INFO  [0x00003340] iModelBridge.Performance - Logging into iModelHub|0 millisecs
+    # 2019-01-01 16:53:43,683 TRACE [0x00003340] iModelBridgeFwk - Logging into iModel Hub : Done
+    # 2019-01-01 16:53:43,683 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges
+    # 2019-01-01 16:53:43,683 TRACE [0x00003340] iModelBridgeFwk - Setting up workspace for standalone bridges  : Done
+    # 2019-01-01 16:53:43,683 TRACE [0x00003340] iModelBridgeFwk - Setting up iModel Briefcase for processing
+    # 2019-01-01 16:53:43,683 INFO  [0x00003340] iModelBridge.Performance - Getting iModel Briefcase from iModelHub|0 millisecs
+    # 2019-01-01 16:53:43,683 TRACE [0x00003340] iModelBridgeFwk - Setting up iModel Briefcase for processing  : Done
+    # 2019-01-01 16:53:43,683 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - Opening briefcase I.
+    # 2019-01-01 16:53:43,683 TRACE [0x00003340] iModelBridgeFwk - TryOpenBimWithBisSchemaUpgrade
+    # 2019-01-01 16:53:43,683 TRACE [0x00003340] iModelBridge - Entering TryOpenBimWithBisSchemaUpgrade
+    # 2019-01-01 16:53:43,714 INFO  [0x00003340] iModelBridge.Performance - TryOpenBimWithBisSchemaUpgrade|37 millisecs
+    # 2019-01-01 16:53:43,714 TRACE [0x00003340] iModelBridgeFwk - TryOpenBimWithBisSchemaUpgrade  : Done
+    # [ ] PullMergePush:
+    # 2019-01-01 16:53:43,714 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_SpatialDataTransformTest iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) -
+    # 2019-01-01 16:53:43,761 INFO  [0x00003340] iModelBridge.Performance - Briefcase_PullMergePush(1,1) to iModelHub|35 millisecs
+    # 2019-01-01 16:53:43,761 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_SpatialDataTransformTest : Done
+    # [ ] ReleaseSharedLocks:
+    # 2019-01-01 16:53:43,777 INFO  [0x00003340] iModelBridge.Performance - Briefcase_ReleaseAllPublicLocks to iModelHub|24 millisecs
+    # 2019-01-01 16:53:43,792 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - Initializing bridge.
+    # 2019-01-01 16:53:43,792 INFO  [0x00003340] iModelBridge.Performance - Inititalize the bridge.|0 millisecs
+    # 2019-01-01 16:53:43,792 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - Opening briefcase II.
+    # 2019-01-01 16:53:43,792 TRACE [0x00003340] iModelBridge - Entering TryOpenBimWithBisSchemaUpgrade
+    # 2019-01-01 16:53:43,824 INFO  [0x00003340] iModelBridge.Performance - TryOpenBimWithBisSchemaUpgrade|23 millisecs
+    # 2019-01-01 16:53:43,824 INFO  [0x00003340] iModelBridge - GetSchemaLock.
+    # 2019-01-01 16:53:43,824 INFO  [0x00003340] iModelBridge.Performance - Time required to open source file and BIM|1 millisecs
+    # 2019-01-01 16:53:43,824 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - MakeSchemaChanges.
+    # 2019-01-01 16:53:43,839 INFO  [0x00003340] iModelBridge - GetSchemaLock.
+    # 2019-01-01 16:53:43,839 TRACE [0x00003340] DgnCore - Application schema SourceInfo.01.00.00 was not found in the BIM.
+    # 2019-01-01 16:53:43,839 DEBUG [0x00003340] DgnCore - Schemas to be imported:
+    # 2019-01-01 16:53:43,839 DEBUG [0x00003340] DgnCore - 	SourceInfo.01.00.00
+    # 2019-01-01 16:53:44,074 INFO  [0x00003340] iModelBridge.Performance - Time required to close source file and BIM|128 millisecs
+    # 2019-01-01 16:53:44,074 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - PullMergeAndPushChange dynamic schemas.
+    # [ ] PullMergePush:
+    # 2019-01-01 16:53:44,074 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_SpatialDataTransformTest iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - dynamic schemas
+    # 2019-01-01 16:53:44,074 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\SpatialDataTransformTest\iModelBridgeTests_SpatialDataTransformTest.bim
+    # 2019-01-01 16:53:44,152 TRACE [0x00003340] DgnCore - CreateRevisionObject c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\CurrentChangeSet.cs for cs c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\334fee1e960a436d63904e9b600f08c649c22e96.cs
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - Id : 334fee1e960a436d63904e9b600f08c649c22e96
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - ParentId :
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - Initial ParentId :
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - DbGuid: d1211d7a-133b-4a77-a13c-2a820b666050
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - User Name:
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - Summary: iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - dynamic schemas
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - ChangeStreamFile: c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\334fee1e960a436d63904e9b600f08c649c22e96.cs
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - DateTime: 2019-01-01T21:53:44.152Z
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - Contains Schema Changes: yes
+    # 2019-01-01 16:53:44,199 INFO  [0x00003340] DgnCore - Contains DbSchema Changes: yes
+    # 2019-01-01 16:53:44,246 INFO  [0x00003340] iModelBridge.Performance - Briefcase_PullMergePush(1,1) to iModelHub|172 millisecs
+    # 2019-01-01 16:53:44,246 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_SpatialDataTransformTest : Done
+    # 2019-01-01 16:53:44,277 INFO  [0x00003340] iModelBridge.Performance - Time required to open source file and BIM|1 millisecs
+    # 2019-01-01 16:53:44,277 WARN  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - Storing iModel Bridge Header Data Failed.
+    # 2019-01-01 16:53:44,277 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - MakeDefinitionChanges.
+    # 2019-01-01 16:53:44,277 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_SpatialDataTransformTest iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - definitions
+    # 2019-01-01 16:53:44,277 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\SpatialDataTransformTest\iModelBridgeTests_SpatialDataTransformTest.bim
+    # 2019-01-01 16:53:44,339 TRACE [0x00003340] DgnCore - CreateRevisionObject c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\CurrentChangeSet.cs for cs c:\build\out\mds06t_2019-01-01_16-34-58\temp\Bentley\Build\tmp20156\DgnDbChangeSets\3904\334fee1e960a436d63904e9b600f08c649c22e96.cs
+    # 2019-01-01 16:53:44,433 INFO  [0x00003340] iModelBridge.Performance - Briefcase_PullMergePush(1,1) to iModelHub|147 millisecs
+    # 2019-01-01 16:53:44,433 INFO  [0x00003340] iModelBridge - PullMergePush iModelBridgeTests_SpatialDataTransformTest : Done
+    # [ ] ReleaseSharedLocks:
+    # 2019-01-01 16:53:44,433 INFO  [0x00003340] iModelBridge - Releasing lock: type=3 level=2 objid=1
+    # 2019-01-01 16:53:44,433 TRACE [0x00003340] DgnCore - RevisonManager::StartCreateRevision for c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\SpatialDataTransformTest\iModelBridgeTests_SpatialDataTransformTest.bim
+    # 2019-01-01 16:53:44,480 INFO  [0x00003340] iModelBridge.Performance - Briefcase_ReleaseAllPublicLocks to iModelHub|57 millisecs
+    # 2019-01-01 16:53:44,480 INFO  [0x00003340] iModelBridge - bridge:iModelBridgeTests_Test1_Bridge iModel:iModelBridgeTests_SpatialDataTransformTest - Convert Data.
+    # 2019-01-01 16:53:44,496 INFO  [0x00003340] iModelBridge.Performance - Time required to close source file and BIM|1 millisecs
+    # 2019-01-01 16:53:44,496 INFO  [0x00003340] iModelBridge - No changes were detected and there are no Txns waiting to be pushed or shared locks to be released.
+    # 2019-01-01 16:53:44,496 INFO  [0x00003340] iModelBridge.Performance - Updating Existing Bim file.|811 millisecs
+    # 2019-01-01 16:53:44,543 INFO  [0x00003340] iModelBridge.Performance - Briefcase_ReleaseAllPublicLocks to iModelHub|46 millisecs
+    # 2019-01-01 16:53:44,574 FATAL [0x00003340] iModelBridgeFwk - c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\SpatialDataTransformTest\iModelBridgeTests-SpatialDataTransformTest: not found or could not be loaded
+    # 2019-01-01 16:53:44,574 ERROR [0x00003340] iModelBridgeFwk - c:\build\out\mds06t_2019-01-01_16-34-58\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests\Fwk\SpatialDataTransformTest\iModelBridgeTests-SpatialDataTransformTest: Does not export a function called 'iModelBridge_releaseInstance'
+    # 2019-01-01 16:53:44,574 ERROR [0x00003340] iModelBridgeFwk - iModelBridgeTests_Test1_Bridge - Memory leak. This bridge was not released properly.
+    # 2019-01-01 16:53:44,574 ERROR [0x00003340] iModelBridge - Logging.config.xml not specified. Activating default logging using console provider.
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [17] _chkstk (0x7ff9538c4db0)
+    # [16] RtlWalkFrameChain (0x7ff953844b40)
+    # [15] KiUserExceptionDispatcher (0x7ff9538c3dd0)
+    # [14] std::deque<bool,std::allocator<bool> >::push_back (0x7ff719c7b290)
+    # [13] iModelBridgeTests_SpatialDataTransformTest_Test::TestBody (0x7ff719c71790)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff719c7e320)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff719c7e1b0)
+    # [10] testing::TestInfo::Run (0x7ff719c8f790)
+    # [9] testing::TestCase::Run (0x7ff719c8f5b0)
+    # [8] testing::internal::UnitTestImpl::RunAllTests (0x7ff719c8fb40)
+    # [7] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff719c7e3c0)
+    # [6] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff719c7e2a0)
+    # [5] testing::UnitTest::Run (0x7ff719c8fa20)
+    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_90af95f0f43eb4cf96d060fd72bdc335> >,std::default_delete<std::tuple<<lambda_90af95f0f43eb4cf96d060fd72bdc335> > > > >::_Run (0x7ff719c54860)
+    # [3] std::_Pad::_Call_func (0x7ff719c54440)
+    # [2] iswascii (0x7ff94ff3da10)
+    # [1] BaseThreadInitThunk (0x7ff9530a1fd0)
+    # [0] RtlUserThreadStart (0x7ff95388cb60)

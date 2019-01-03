@@ -1013,6 +1013,17 @@ void RootModelConverter::UpdateCalculatedProperties()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            12/2018
 //---------------+---------------+---------------+---------------+---------------+-------
+void RootModelConverter::CreatePresentationRulesWithExceptionHandling()
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        CreatePresentationRules();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedPresentationRules())
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2018
+//---------------+---------------+---------------+---------------+---------------+-------
 void RootModelConverter::CreatePresentationRules()
     {
     if (!m_dgndb->Schemas().ContainsSchema("IFC2x3"))
@@ -1461,7 +1472,7 @@ void RootModelConverter::_FinishConversion()
 
     EmbedSpecifiedFiles();
 
-    CreatePresentationRules();
+    CreatePresentationRulesWithExceptionHandling();
 
     for (auto f : m_finishers)
         {

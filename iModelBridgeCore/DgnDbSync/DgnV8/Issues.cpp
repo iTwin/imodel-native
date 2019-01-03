@@ -589,4 +589,8 @@ void Converter::ReportFailedThumbnails()
     ReportIssue(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToConvertThumbnails(), nullptr);
     }
 
+void Converter::ReportFailedPresentationRules()
+    {
+    ReportIssue(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToCreatePresentationRules(), nullptr);
+    }
 END_DGNDBSYNC_DGNV8_NAMESPACE
