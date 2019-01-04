@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/tests.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 programName = BuildingDomainTests
@@ -38,6 +38,9 @@ $(o)BuildingDomainBaseFixture.obj      : $(BEGTEST_INPUT)BuildingDomainBaseFixtu
 $(o)BuildingDomainTestsMain.obj        : $(BEGTEST_INPUT)BuildingDomainTestsMain.cpp          $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)BuildingDomainTests.obj            : $(BEGTEST_INPUT)BuildingDomainTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
+
+# ignore: 'std::tr1': warning STL4002: The non-Standard std::tr1 namespace and TR1-only machinery are deprecated and will be REMOVED
+CCompOpts + -wd4996
 
 %include MultiCppCompileGo.mki
 
