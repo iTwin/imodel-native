@@ -9,6 +9,7 @@
 
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBaseGeoCoord.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCsmapStatic.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCurl.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeFolly.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeIcu4c.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJpeg.a

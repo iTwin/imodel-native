@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
-const exec = require('child_process').exec;
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
+const exec = require("child_process").exec;
+const path = require("path");
+const fs = require("fs");
+const os = require("os");
 const version = require("./package.json").version;
-const formatPackageName = require("'./loadNativePlatform.js").formatPackageName;
+const formatPackageName = require("./loadNativePlatform.js").formatPackageName;
 
 function copyFolderRecursiveSync(source, target) {
     if (!fs.existsSync(target))
@@ -32,16 +32,16 @@ try { fs.mkdirSync(installDir); } catch (err) { }
 fs.copyFileSync(path.join(__dirname, "package.json"),  path.join(installDir, "package.json"));
 
 // We will then copy the results of the install from the temp directory into sub-directories below this one.
-function installNativePlatformPackage(packages) {
-    const cmdLine = `npm install --no-save ${packages}`;
+function installNativePackage(package) {
+    const cmdLine = `npm install --no-save @bentley/${package}`;
     console.log(cmdLine);
     exec(cmdLine, { cwd: installDir }, (error, stdout, stderr) => {
         if (error)
             throw error;
         console.log(stdout);
         console.log(stderr);
-        copyFolderRecursiveSync(path.join(installDir, "node_modules/@bentley"), __dirname);
+        copyFolderRecursiveSync(path.join(installDir, "node_modules", "@bentley"), __dirname);
     });
 }
 
-installNativePlatformPackage(`${formatPackageName()}@${version}`);
+installNativePackage(`${formatPackageName()}@${version}`);
