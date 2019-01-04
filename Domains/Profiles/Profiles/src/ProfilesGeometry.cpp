@@ -516,44 +516,78 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     double const halfWidth = profile->GetFlangeWidth() / 2.0;
     double const halfDepth = profile->GetDepth() / 2.0;
     double const wallThickness = profile->GetWallThickness();
-    double const innerFilletRadius = profile->GetFilletRadius();
-    double const outerFilletRadius = innerFilletRadius + wallThickness;
+    double const filletRadius = profile->GetFilletRadius();
     double const girth = profile->GetGirth();
 
-    DPoint3d const outerTopLeft     = { -halfWidth,  halfDepth,  0.0 };
-    DPoint3d const outerBottomLeft  = { -halfWidth,  -halfDepth, 0.0 };
-    DPoint3d const outerBottomRight = { halfWidth,   -halfDepth, 0.0 };
-    DPoint3d const outerTopRight =    { halfWidth,   halfDepth,  0.0 };
+    DPoint3d const tl_outerRangeApex  = { -halfWidth, halfDepth, 0.0 };
+    DPoint3d const tl_outerLeft       = { -halfWidth, halfDepth - wallThickness - filletRadius, 0.0 };
+    DPoint3d const bl_outerLeft       = { -halfWidth, -(halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d const bl_outerRangeApex  = { -halfWidth, -halfDepth, 0.0 };
+    DPoint3d const bl_outerBottom     = { -(halfWidth - wallThickness - filletRadius), -halfDepth, 0.0 };
+    DPoint3d const br_outerBottom     = { (halfWidth - wallThickness - filletRadius), -halfDepth, 0.0 };
+    DPoint3d const br_outerRangeApex  = { halfWidth, -halfDepth, 0.0 };
+    DPoint3d const br_outerRight      = { halfWidth, -(halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d const br_outerRightGirth = { halfWidth, -(halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d const br_innerRightGirth = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d const br_innerRight      = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d const br_innerRangeApex  = { halfWidth - wallThickness, -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const br_innerBottom     = { (halfWidth - wallThickness - filletRadius), -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const bl_innerBottom     = { -(halfWidth - wallThickness - filletRadius), -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const bl_innerRangeApex  = { -(halfWidth - wallThickness), -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const bl_innerLeft       = { -(halfWidth - wallThickness), -(halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d const tl_innerLeft       = { -(halfWidth - wallThickness), halfDepth - wallThickness - filletRadius, 0.0 };
+    DPoint3d const tl_innerRangeApex  = { -(halfWidth - wallThickness), halfDepth - wallThickness, 0.0 };
+    DPoint3d const tl_innerTop        = { -(halfWidth - wallThickness - filletRadius), (halfDepth - wallThickness), 0.0 };
+    DPoint3d const tr_innerTop        = { (halfWidth - wallThickness - filletRadius), (halfDepth - wallThickness), 0.0 };
+    DPoint3d const tr_innerRangeApex  = { halfWidth - wallThickness, (halfDepth - wallThickness), 0.0 };
+    DPoint3d const tr_innerRight      = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d const tr_innerRightGirth = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d const tr_outerRightGirth = { halfWidth, (halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d const tr_outerRight      = { halfWidth, (halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d const tr_outerRangeApex  = { halfWidth, halfDepth, 0.0 };
+    DPoint3d const tr_outerTop        = { (halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
 
-    DPoint3d const outerTopGirth    = { halfWidth,   halfDepth - girth,     0.0 };
-    DPoint3d const outerBottomGirth = { halfWidth,   -(halfDepth - girth),  0.0 };
-
-    DPoint3d const innerTopGirth    = { halfWidth - wallThickness,   halfDepth - girth,     0.0 };
-    DPoint3d const innerBottomGirth = { halfWidth - wallThickness,   -(halfDepth - girth),  0.0 };
-
-    DPoint3d const innerTopLeft     = { -(halfWidth - wallThickness),  halfDepth - wallThickness, 0.0 };
-    DPoint3d const innerBottomLeft  = { -(halfWidth - wallThickness), -(halfDepth - wallThickness), 0.0 };
-    DPoint3d const innerBottomRight = { halfWidth - wallThickness, -(halfDepth - wallThickness), 0.0 };
-    DPoint3d const innerTopRight    = { halfWidth - wallThickness, halfDepth - wallThickness, 0.0 };
-
-    ICurvePrimitivePtr line1 = ICurvePrimitive::CreateLine (outerTopLeft, outerTopRight);
-    ICurvePrimitivePtr line2 = ICurvePrimitive::CreateLine (outerTopRight, outerTopGirth);
-    ICurvePrimitivePtr line3 = ICurvePrimitive::CreateLine (outerTopGirth, innerTopGirth);
-    ICurvePrimitivePtr line4 = ICurvePrimitive::CreateLine (innerTopGirth, innerTopRight);
-    ICurvePrimitivePtr line5 = ICurvePrimitive::CreateLine (innerTopRight, innerTopLeft);
-    ICurvePrimitivePtr line6 = ICurvePrimitive::CreateLine (innerTopLeft, innerBottomLeft);
-    ICurvePrimitivePtr line7 = ICurvePrimitive::CreateLine (innerBottomLeft, innerBottomRight);
-    ICurvePrimitivePtr line8 = ICurvePrimitive::CreateLine (innerBottomRight, innerBottomGirth);
-    ICurvePrimitivePtr line9 = ICurvePrimitive::CreateLine (innerBottomGirth, outerBottomGirth);
+    ICurvePrimitivePtr  line1 = ICurvePrimitive::CreateLine (tl_outerRangeApex, tl_outerLeft);
+    ICurvePrimitivePtr  line2 = ICurvePrimitive::CreateLine (tl_outerLeft, bl_outerLeft);
+    ICurvePrimitivePtr  line3 = ICurvePrimitive::CreateLine (bl_outerLeft, bl_outerRangeApex);
+    ICurvePrimitivePtr  line4 = ICurvePrimitive::CreateLine (bl_outerRangeApex, bl_outerBottom);
+    ICurvePrimitivePtr  line5 = ICurvePrimitive::CreateLine (bl_outerBottom, br_outerBottom);
+    ICurvePrimitivePtr  line6 = ICurvePrimitive::CreateLine (br_outerBottom, br_outerRangeApex);
+    ICurvePrimitivePtr  line7 = ICurvePrimitive::CreateLine (br_outerRangeApex, br_outerRight);
+    ICurvePrimitivePtr  line8 = ICurvePrimitive::CreateLine (br_outerRight, br_outerRightGirth);
+    ICurvePrimitivePtr  line9 = ICurvePrimitive::CreateLine (br_outerRightGirth, br_innerRightGirth);
+    ICurvePrimitivePtr line10 = ICurvePrimitive::CreateLine (br_innerRightGirth, br_innerRight);
+    ICurvePrimitivePtr line11 = ICurvePrimitive::CreateLine (br_innerRight, br_innerRangeApex);
+    ICurvePrimitivePtr line12 = ICurvePrimitive::CreateLine (br_innerRangeApex, br_innerBottom);
+    ICurvePrimitivePtr line13 = ICurvePrimitive::CreateLine (br_innerBottom, bl_innerBottom);
+    ICurvePrimitivePtr line14 = ICurvePrimitive::CreateLine (bl_innerBottom, bl_innerRangeApex);
+    ICurvePrimitivePtr line15 = ICurvePrimitive::CreateLine (bl_innerRangeApex, bl_innerLeft);
+    ICurvePrimitivePtr line16 = ICurvePrimitive::CreateLine (bl_innerLeft, tl_innerLeft);
+    ICurvePrimitivePtr line17 = ICurvePrimitive::CreateLine (tl_innerLeft, tl_innerRangeApex);
+    ICurvePrimitivePtr line18 = ICurvePrimitive::CreateLine (tl_innerRangeApex, tl_innerTop);
+    ICurvePrimitivePtr line19 = ICurvePrimitive::CreateLine (tl_innerTop, tr_innerTop);
+    ICurvePrimitivePtr line20 = ICurvePrimitive::CreateLine (tr_innerTop, tr_innerRangeApex);
+    ICurvePrimitivePtr line21 = ICurvePrimitive::CreateLine (tr_innerRangeApex, tr_innerRight);
+    ICurvePrimitivePtr line22 = ICurvePrimitive::CreateLine (tr_innerRight, tr_innerRightGirth);
+    ICurvePrimitivePtr line23 = ICurvePrimitive::CreateLine (tr_innerRightGirth, tr_outerRightGirth);
+    ICurvePrimitivePtr line24 = ICurvePrimitive::CreateLine (tr_outerRightGirth, tr_outerRight);
+    ICurvePrimitivePtr line25 = ICurvePrimitive::CreateLine (tr_outerRight, tr_outerRangeApex);
+    ICurvePrimitivePtr line26 = ICurvePrimitive::CreateLine (tr_outerRangeApex, tr_outerTop);
 
     bvector<ICurvePrimitivePtr> curves =
         {
         line1, line2, line3,
         line4, line5, line6,
         line7, line8, line9,
+        line10, line11, line12, 
+        line13, line14, line15, 
+        line16, line17, line18, 
+        line19, line20, line21, 
+        line22, line23, line24,
+        line25, line26,
         };
 
-    return createGeometryFromPrimitiveArray(curves);
+    return createGeometryFromPrimitiveArray (curves);
     }
 
 /*---------------------------------------------------------------------------------**//**
