@@ -20,19 +20,19 @@
   <Product Name="iModelJsNative-Windows">
     <SubPart PartName="iModelJsNative-Dynamic" LibType="Dynamic" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
-    <FeatureExclude>GeoCoordAssets</FeatureExclude>
+    <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude>
   </Product>
 
   <Product Name="iModelJsNative-Linux">
     <SubPart PartName="iModelJsNative-Static" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
-    <FeatureExclude>GeoCoordAssets</FeatureExclude>
+    <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude>
   </Product>
 
   <Product Name="iModelJsNative-Darwin">
     <SubPart PartName="iModelJsNative-Static" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
-    <FeatureExclude>GeoCoordAssets</FeatureExclude>
+    <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude>
   </Product>
 
   <ProductDirectoryList ListName="iModelJsNodeAddonDeliveryList">

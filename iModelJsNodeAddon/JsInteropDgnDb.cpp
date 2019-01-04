@@ -37,6 +37,13 @@ BE_JSON_NAME(properties)
 BE_JSON_NAME(readOnly)
 BE_JSON_NAME(relationshipClass)
 BE_JSON_NAME(structName)
+BE_JSON_NAME(geoCoords)
+BE_JSON_NAME(iModelCoords)
+BE_JSON_NAME(sourceDatum)
+BE_JSON_NAME(targetDatum)
+BE_JSON_NAME(p) // point - used in array so kept very short.
+BE_JSON_NAME(s) // status - used in array so kept short
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
@@ -866,3 +873,145 @@ void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb)
     if (ecefLocation.m_isValid)
         val[json_ecefLocation()] = ecefLocation.ToJson();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Barry.Bentley                 12/18
+//---------------------------------------------------------------------------------------
+BentleyStatus JsInterop::GetGeoCoordsFromIModelCoords (JsonValueR results, DgnDbR dgnDb, JsonValueCR props)
+    {
+    // get the vector of points.
+    bvector<DPoint3d> iModelPoints;
+    JsonUtils::DPoint3dVectorFromJson (iModelPoints, props[json_iModelCoords()]);
+
+    // create return vectors.
+    bvector<DPoint3d> geoPoints(iModelPoints.size());
+    bvector<ReprojectStatus> statusList(geoPoints.size());
+
+    GeoCoordinates::DatumConverterP datumConverter = nullptr;
+    GeoCoordinates::DatumCP      sourceDatum = nullptr;
+    GeoCoordinates::DatumCP      targetDatum = nullptr;
+    Utf8String                   targetDatumNameUtf8 = props[json_targetDatum()].ToString();
+    targetDatumNameUtf8.DropQuotes();
+
+    // get the GCS
+    DgnGCSCPtr  iModelGcs = dgnDb.GeoLocation().GetDgnGCS();
+    if (iModelGcs->IsValid() && !targetDatumNameUtf8.empty()) 
+        {
+        WCharCP     iModelDatumName = iModelGcs->GetDatumName();
+        WString     targetDatumName(targetDatumNameUtf8.c_str(), true);
+
+        if (!targetDatumName.Equals (iModelDatumName))
+            {
+            sourceDatum = GeoCoordinates::Datum::CreateDatum (iModelDatumName);
+            targetDatum = GeoCoordinates::Datum::CreateDatum (targetDatumName.c_str());
+            if ( (nullptr != sourceDatum) && (nullptr != targetDatum) )
+                datumConverter = GeoCoordinates::DatumConverter::Create (*sourceDatum, *targetDatum);
+            }
+        }    
+
+    auto outputStatus = statusList.begin();
+    for (auto input = iModelPoints.begin(), output = geoPoints.begin(); input != iModelPoints.end(); input++, output++, outputStatus++ )
+        {
+        if (iModelGcs.IsValid())
+            {
+            GeoPoint tempPoint;
+            *outputStatus = iModelGcs->LatLongFromUors(tempPoint, *input);
+            // get the output point into the desired Datum.
+            if (nullptr != datumConverter)
+                datumConverter->ConvertLatLong3D((GeoPointR)*output, tempPoint);
+            else
+                *((GeoPointP)output) = tempPoint;
+            }
+        else
+            *outputStatus = ReprojectStatus::REPROJECT_BadArgument;
+        }
+
+    // Put the results (a point named p and a status named s) into a Json object.
+    auto& pointsWithStatusJsonArray = results[json_geoCoords()];
+    for (size_t iPoint=0; iPoint<iModelPoints.size(); ++iPoint)
+        {
+        auto& outputPointWithStatus = pointsWithStatusJsonArray[(Json::ArrayIndex)iPoint];
+        auto& outputPoint = outputPointWithStatus[json_p()];
+        outputPoint[0] = geoPoints[iPoint].x;
+        outputPoint[1] = geoPoints[iPoint].y;
+        outputPoint[2] = geoPoints[iPoint].z;
+        outputPointWithStatus[json_s()] = statusList[iPoint];
+        }
+        
+    if (nullptr != sourceDatum)
+        sourceDatum->Destroy();
+    if (nullptr != targetDatum)
+        targetDatum->Destroy();
+    if (nullptr != datumConverter)
+        datumConverter->Destroy();
+        
+    return BentleyStatus::BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Barry.Bentley                 12/18
+//---------------------------------------------------------------------------------------
+BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDbR dgnDb, JsonValueCR props)
+    {
+    // get the vector of points.
+    bvector<DPoint3d> geoPoints;
+    JsonUtils::DPoint3dVectorFromJson (geoPoints, props[json_geoCoords()]);
+
+    // create return vectors.
+    bvector<DPoint3d> iModelPoints(geoPoints.size());
+    bvector<ReprojectStatus> statusList(geoPoints.size());
+
+    // get the GCS
+    DgnGCSCPtr iModelGcs = dgnDb.GeoLocation().GetDgnGCS();
+    GeoCoordinates::DatumConverterP datumConverter = nullptr;
+    GeoCoordinates::DatumCP      sourceDatum = nullptr;
+    GeoCoordinates::DatumCP      targetDatum = nullptr;
+    Utf8String                   sourceDatumNameUtf8 = props[json_sourceDatum()].ToString();
+    sourceDatumNameUtf8.DropQuotes();
+
+    if (iModelGcs->IsValid() && !sourceDatumNameUtf8.empty()) 
+        {
+        WCharCP     iModelDatumName = iModelGcs->GetDatumName();
+        WString     sourceDatumName(sourceDatumNameUtf8.c_str(), true);
+
+        if (!sourceDatumName.Equals (iModelDatumName))
+            {
+            sourceDatum = GeoCoordinates::Datum::CreateDatum (sourceDatumName.c_str());
+            targetDatum = GeoCoordinates::Datum::CreateDatum (iModelDatumName);
+            if ( (nullptr != sourceDatum) && (nullptr != targetDatum) )
+                datumConverter = GeoCoordinates::DatumConverter::Create (*sourceDatum, *targetDatum);
+            }
+        }    
+    
+    auto outputStatus = statusList.begin();
+    for (auto input = geoPoints.begin(), output = iModelPoints.begin(); input != geoPoints.end(); input++, output++, outputStatus++ )
+        {
+        if (iModelGcs.IsValid())
+            {
+            GeoPoint tempPoint;
+            // get point into the correct Datum.
+            if (nullptr != datumConverter)
+                datumConverter->ConvertLatLong3D (tempPoint, (GeoPointCR)*input);
+            else
+                tempPoint = *((GeoPointCP)input);
+            *outputStatus = iModelGcs->UorsFromLatLong(*output, tempPoint);
+            }
+        else
+            *outputStatus = ReprojectStatus::REPROJECT_BadArgument;
+        }
+        
+    // Put the results (a point named p and a status named s) into a Json object.
+    auto& pointsWithStatusJsonArray = results[json_iModelCoords()];
+    for (size_t iPoint=0; iPoint<iModelPoints.size(); ++iPoint)
+        {
+        auto& outputPointWithStatus = pointsWithStatusJsonArray[(Json::ArrayIndex)iPoint];
+        auto& outputPoint = outputPointWithStatus[json_p()];
+        outputPoint[0] = iModelPoints[iPoint].x;
+        outputPoint[1] = iModelPoints[iPoint].y;
+        outputPoint[2] = iModelPoints[iPoint].z;
+        outputPointWithStatus[json_s()] = statusList[iPoint];
+        }
+        
+    return BentleyStatus::BSISUCCESS;
+    }
+
