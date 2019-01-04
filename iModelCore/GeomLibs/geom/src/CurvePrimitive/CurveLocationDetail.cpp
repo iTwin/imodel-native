@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurveLocationDetail.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,7 +25,7 @@ CurveLocationDetail::CurveLocationDetail ()
 
 //! Construct from simple fraction in single component curve.
 CurveLocationDetail::CurveLocationDetail (ICurvePrimitiveCP _curve, size_t _numComponent)
-    : curve((ICurvePrimitiveP)_curve),
+    : curve((ICurvePrimitiveCP)_curve),
       fraction(0.0),
       componentIndex(0),
       numComponent(_numComponent),
@@ -38,7 +38,7 @@ CurveLocationDetail::CurveLocationDetail (ICurvePrimitiveCP _curve, size_t _numC
 
 //! Construct from simple fraction in single component curve.
 CurveLocationDetail::CurveLocationDetail (ICurvePrimitiveCP _curve, double _fraction, DPoint3dCR _point)
-    : curve((ICurvePrimitiveP)_curve),
+    : curve((ICurvePrimitiveCP)_curve),
       fraction(_fraction),
       componentIndex(0),
       numComponent(1),
@@ -50,7 +50,7 @@ CurveLocationDetail::CurveLocationDetail (ICurvePrimitiveCP _curve, double _frac
 
 //! Construct with full indexing
 CurveLocationDetail::CurveLocationDetail (ICurvePrimitiveCP _curve, double _fraction, DPoint3dCR _point, size_t _componentIndex, size_t _numComponent, double _componentFraction)
-    : curve((ICurvePrimitiveP)_curve),
+    : curve((ICurvePrimitiveCP)_curve),
       fraction(_fraction),
       componentIndex(_componentIndex),
       numComponent(_numComponent),

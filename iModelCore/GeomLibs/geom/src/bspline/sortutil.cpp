@@ -612,9 +612,9 @@ const void    *y1,
 const void    *y2
 )
     {
-    if (*(long*)y1==*(long*)y2)
+    if (*(long const*)y1==*(long const*)y2)
         return (0);
-    else if (*(long*)y1>*(long*)y2)
+    else if (*(long const*)y1>*(long const*)y2)
         return (1);
     else
         return(-1);
@@ -657,7 +657,7 @@ int           iValue
 
     if (p == NULL)
         return  -1;
-    return  (int) (p - (long *)pArray);
+    return  (int) (p - (long const*)pArray);
     }
 
 #if defined (testsort)

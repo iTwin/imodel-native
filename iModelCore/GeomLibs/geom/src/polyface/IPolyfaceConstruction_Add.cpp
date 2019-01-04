@@ -2470,7 +2470,7 @@ bvector<CurveVectorPtr> &children
     children.clear ();
     for (size_t i = 0; i < numParent; i++)
         {
-        CurveVectorPtr child ((CurveVectorP)parents[i]->at(index)->GetChildCurveVectorCP ());
+        CurveVectorPtr child (const_cast<CurveVectorP>(parents[i]->at(index)->GetChildCurveVectorCP ()));
 
         if (NULL == child.get ())
             return false;

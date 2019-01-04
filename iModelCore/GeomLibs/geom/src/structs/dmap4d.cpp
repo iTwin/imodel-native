@@ -1111,7 +1111,7 @@ double      fraction
         fraction = s_frustumFractionLimit;
 
         /* slab-world transformation */
-    slabToWorldTransform.InitFromOriginAndVectors(*pOrigin, *(DVec3d*)pUVector, *(DVec3d*)pVVector, *(DVec3d*)pWVector);
+    slabToWorldTransform.InitFromOriginAndVectors(*pOrigin, *(DVec3d const*)pUVector, *(DVec3d const*)pVVector, *(DVec3d const*)pWVector);
     if (!bsiDMap4d_initFromTransform (&worldToSlabMap,
                         &slabToWorldTransform, true)
         )

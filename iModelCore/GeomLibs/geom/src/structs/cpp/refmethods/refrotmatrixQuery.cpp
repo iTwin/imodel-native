@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refrotmatrixQuery.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -367,18 +367,19 @@ double      scale2
     {
     int i;
     RotMatrix sum;
-    double *pFrom, *pTo;
+    double const *pFrom;
+    double *pTo;
 
 
     sum = matrix0;
 
-    for (i = 0, pFrom = (double *)&matrix1, pTo = (double *)&sum;
+    for (i = 0, pFrom = (double const*)&matrix1, pTo = (double *)&sum;
         i < 9; i++, pFrom++, pTo++)
         {
         *pTo += *pFrom * scale1;
         }
 
-    for (i = 0, pFrom = (double *)&matrix2, pTo = (double *)&sum;
+    for (i = 0, pFrom = (double const*)&matrix2, pTo = (double *)&sum;
              i < 9; i++, pFrom++, pTo++)
         {
         *pTo += *pFrom * scale2;
@@ -398,7 +399,7 @@ double RotMatrix::SumSquares
 ) const
     {
     int i;
-    double *pij = (double *) this;
+    double const*pij = (double const*) this;
     double sum = 0.0;
 
     for (i = 0; i < 9; i++, pij++)
@@ -421,7 +422,7 @@ double RotMatrix::MaxAbs
 ) const
     {
     int i;
-    double *pij = (double *) this;
+    double const*pij = (double const*) this;
     double maxAbs = 0.0;
 
     for (i = 0; i < 9; i++, pij++)
@@ -448,8 +449,8 @@ RotMatrixCR matrix2
 ) const
     {
     int i;
-    double *pA = (double *) this;
-    double *pB = (double *) &matrix2;
+    double const*pA = (double const*) this;
+    double const*pB = (double const*) &matrix2;
     double absDiff;
     double maxDiff = 0.0;
 

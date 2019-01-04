@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bezier/ruledBezier.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -121,9 +121,9 @@ int order
         DVec3d tangentA, tangentB, dXdu, dXdv;
         double v;
         bsiBezier_functionAndDerivative ((double*)&xyzA, (double*)&tangentA,
-            (double*)coffA, order, 3, u);
+            const_cast<double*>((double const*)coffA), order, 3, u);
         bsiBezier_functionAndDerivative ((double*)&xyzB, (double*)&tangentB,
-            (double*)coffB, order, 3, u);
+            const_cast<double*>((double const*)coffB), order, 3, u);
         dXdv.DifferenceOf (xyzB, xyzA);
         if (DoubleOps::ChooseSafeDivideParameter (v, target.x - xyzA.x, dXdv.x, target.y - xyzA.y, dXdv.y, 0.0))
             {
@@ -256,7 +256,7 @@ int order
     if (order > MAX_BEZIER_CURVE_ORDER)
         return false;
     DPoint4d coffC[MAX_BEZIER_CURVE_ORDER];
-    bsiBezier_subtractPoles ((double*)coffC, (double*)coffB, (double*)coffA, order, 4);
+    bsiBezier_subtractPoles ((double *)coffC, const_cast<double*>((double const*)coffB), const_cast<double*>((double const*)coffA), order, 4);
     double Px[MAX_BEZIER_CURVE_ORDER];
     double Py[MAX_BEZIER_CURVE_ORDER];
     double Qx[MAX_BEZIER_CURVE_ORDER];
@@ -405,9 +405,9 @@ DVec3dR dXdv
     DPoint3d xyzA, xyzB;
     DVec3d tangentA, tangentB;
     bsiBezier_functionAndDerivative ((double*)&xyzA, (double*)&tangentA,
-            (double*)coffA, order, 3, u);
+            const_cast<double*>((double const*)coffA), order, 3, u);
     bsiBezier_functionAndDerivative ((double*)&xyzB, (double*)&tangentB,
-            (double*)coffB, order, 3, u);
+            const_cast<double*>((double const*)coffB), order, 3, u);
     xyz.Interpolate (xyzA, v, xyzB);
     dXdv.DifferenceOf (xyzB, xyzA);
     dXdu.Interpolate (tangentA, v, tangentB);
@@ -493,8 +493,8 @@ int order
     for (int i = 0; i <= numEdge; i++)
         {
         double u = i * du;
-        bsiBezier_evaluate ((double*)&pointA, (double*)coffA, order, 4, u);
-        bsiBezier_evaluate ((double*)&pointB, (double*)coffB, order, 4, u);
+        bsiBezier_evaluate ((double *)&pointA, const_cast<double*>((double const*)coffA), order, 4, u);
+        bsiBezier_evaluate ((double *)&pointB, const_cast<double*>((double const*)coffB), order, 4, u);
         searcher.UpdateByProjectionOnLine (pointA, pointB, u);
         }
     if (searcher.IsValid ())

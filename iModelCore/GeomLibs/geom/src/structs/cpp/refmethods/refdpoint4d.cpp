@@ -759,7 +759,7 @@ DPoint3dCR normal
     bool    result;
     double d;
 
-    if (unitNormal.Normalize (*((DVec3d*)&normal)) > 0.0)
+    if (unitNormal.Normalize (*((DVec3d const*)&normal)) > 0.0)
         {
         d = unitNormal.DotProduct (origin);
         Init (unitNormal, -d);
@@ -830,7 +830,7 @@ DPoint3dCR vector1
         DVec3d W;
         double a, b;
         a = origin.w;
-        W.CrossProduct (*(DVec3d*)&vector0, *(DVec3d*)&vector1);
+        W.CrossProduct (*(DVec3d const*)&vector0, *(DVec3d const*)&vector1);
         b = origin.DotProduct (W, 0.0);
         SetComponents (a * W.x, a * W.y, a * W.z, -b);
         }
@@ -1569,9 +1569,9 @@ void DPoint4d::InitDisconnect ()
 // INDICES ARE NOT CHECKED !!!!  INTENDED FOR USE BY INTERNAL TRUSTED CODE
 static double DPoint4d__DeterminantOf3Components (DPoint4dCR pointA, DPoint4dCR pointB, DPoint4dCR pointC, int i, int j, int k)
     {
-    double *a = (double*)&pointA;
-    double *b = (double*)&pointB;
-    double *c = (double*)&pointC;
+    double const *a = (double const*)&pointA;
+    double const *b = (double const*)&pointB;
+    double const *c = (double const*)&pointC;
     return
          a[i] * (b[j] * c[k] - b[k] * c[j])
         +a[j] * (b[k] * c[i] - b[i] * c[k])

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refrotmatrixMultiply.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -19,7 +19,7 @@ void RotMatrix::Add (RotMatrixCR delta)
     {
     int i;
     double *pA = (double *)this;
-    double *pB = (double *)&delta;
+    double const*pB = (double const*)&delta;
     for (i = 0; i < 9; i++, pA++, pB++)
         {
         *pA += *pB;
@@ -130,7 +130,7 @@ RotMatrixCR delta
     {
     int i;
     double *pA = (double *)this;
-    double *pB = (double *)&delta;
+    double const*pB = (double const*)&delta;
     for (i = 0; i < 9; i++, pA++, pB++)
         {
         *pA -= *pB;

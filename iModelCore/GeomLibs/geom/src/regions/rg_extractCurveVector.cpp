@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/regions/rg_extractCurveVector.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -252,7 +252,7 @@ DPoint3dCR          refPoint
         RG_NULL_CURVEID != currCurveId &&
         jmdlRIMSBS_getDEllipse3d (m_pCurves, &baseEllipse, currCurveId, currCurveIsReversed))
         {
-        jmdlRG_getEdgeSweepProperties (m_pRG, &currArea, NULL, (DPoint3dP) &refPoint, currNodeId);
+        jmdlRG_getEdgeSweepProperties (m_pRG, &currArea, NULL, const_cast<DPoint3dP>(&refPoint), currNodeId);
 
         areaToCurve += currArea;
         totalSweep = baseEllipse.sweep;
@@ -268,7 +268,7 @@ DPoint3dCR          refPoint
                jmdlRIMSBS_getDEllipse3d (m_pCurves, &currEllipse, currCurveId, currCurveIsReversed) && 
                AlignEllipses (baseEllipse, currEllipse, 1.0e-12, &currSweep))
             {
-            jmdlRG_getEdgeSweepProperties (m_pRG, &currArea, NULL, (DPoint3dP) &refPoint, currNodeId);
+            jmdlRG_getEdgeSweepProperties (m_pRG, &currArea, NULL, const_cast<DPoint3dP>(&refPoint), currNodeId);
 
             areaToCurve += currArea;
             totalSweep = currSweep;
@@ -321,7 +321,7 @@ DPoint3dCR              refPoint
         RG_NULL_CURVEID != currCurveId && 
         jmdlRIMSBS_getCurveInterval (m_pCurves, &currParentId, &currStartFraction, &currEndFraction, currCurveId, currCurveIsReversed))
         {
-        jmdlRG_getEdgeSweepProperties (m_pRG, &areaToCurve, NULL, (DPoint3dP) &refPoint, currNodeId);
+        jmdlRG_getEdgeSweepProperties (m_pRG, &areaToCurve, NULL, const_cast<DPoint3dP>(&refPoint), currNodeId);
 
         sectorSequence.m_parentCurveId = currParentId;
         sectorSequence.m_s00           = currStartFraction;
@@ -344,7 +344,7 @@ DPoint3dCR              refPoint
                   It also prevents continuing smoothly along an ellipse (not good, not real bad) or periodic spline */
                fabs (currStartFraction - prevEndFraction) < 1.0e-8)
             {
-            jmdlRG_getEdgeSweepProperties (m_pRG, &currArea, NULL, (DPoint3dP) &refPoint, currNodeId);
+            jmdlRG_getEdgeSweepProperties (m_pRG, &currArea, NULL, const_cast<DPoint3dP>(&refPoint), currNodeId);
 
             areaToCurve += currArea;
             sectorSequence.m_s10       = currStartFraction;

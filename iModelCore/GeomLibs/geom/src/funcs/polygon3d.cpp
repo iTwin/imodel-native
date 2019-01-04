@@ -1798,8 +1798,8 @@ void const *vpA,
 void const *vpB
 )
     {
-    DPoint4d *pA = (DPoint4d*)vpA;
-    DPoint4d *pB = (DPoint4d*)vpB;
+    DPoint4d const*pA = (DPoint4d const*)vpA;
+    DPoint4d const*pB = (DPoint4d const*)vpB;
     if (pA->w < pB->w)
         return -1;
     if (pA->w > pB->w)
