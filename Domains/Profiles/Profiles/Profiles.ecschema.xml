@@ -404,7 +404,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-<ECEntityClass typeName="ArbitraryCompositeProfile" modifier="Sealed" description="A Profile comprised of multiple SinglePerimeterProfiles.">
+    <ECEntityClass typeName="ArbitraryCompositeProfile" modifier="Sealed" description="A Profile comprised of multiple SinglePerimeterProfiles.">
         <BaseClass>CompositeProfile</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
@@ -423,7 +423,7 @@
         <ECProperty propertyName="Offset" typeName="point2d" description="" />
         <ECProperty propertyName="Rotation" typeName="double" description="" />
     </ECRelationshipClass>
-    
+
     <ECEntityClass typeName="DoubleLShapeProfile" modifier="Sealed" description="A CompositeProfile comprised of back-to-back Ls with the horizontal legs at the top of the Profile.">
         <BaseClass>CompositeProfile</BaseClass>
         <ECCustomAttributes>
@@ -431,14 +431,14 @@
         </ECCustomAttributes>
         <ECProperty propertyName="Spacing" typeName="double" description="" />
         <ECProperty propertyName="Type" typeName="DoubleLShapeProfileType" description="" />
+        <ECNavigationProperty propertyName="SingleProfile" relationshipName="DoubleLShapeProfileRefersToLShapeProfile" direction="Forward" description="" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="DoubleLShapeProfileRefersToLShapeProfile" modifier="Sealed" strength="referencing">
-        <BaseClass>bis:ElementGroupsMembers</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
+        <Source multiplicity="(0..*)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleLShapeProfile" />
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="false">
             <Class class="LShapeProfile" />
         </Target>
     </ECRelationshipClass>
@@ -456,7 +456,7 @@
         <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleCShapeProfile" />
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="false">
             <Class class="CShapeProfile" />
         </Target>
     </ECRelationshipClass>
