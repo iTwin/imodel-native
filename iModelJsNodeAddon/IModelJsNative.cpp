@@ -690,6 +690,11 @@ static void initializeGcs()
         return;
     s_initialized = true;
     BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    // we are getting back assetsDir with something like "\\?\d:\bentleyjs\imodeljs\.....". The "\\?\" part won't work when we try to open files with fopen,
+    // so remove it.
+    if (assetsDir.StartsWith (L"\\\\?\\"))
+        assetsDir = BeFileName(assetsDir.substr (4));
+
     BeFileName dgnGeoCoordDir = assetsDir.AppendToPath(L"DgnGeoCoord");
     BentleyApi::GeoCoordinates::BaseGCS::Initialize(dgnGeoCoordDir.c_str());
     }
