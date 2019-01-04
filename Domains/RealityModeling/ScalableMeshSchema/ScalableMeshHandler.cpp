@@ -908,12 +908,14 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
  +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNode::ReadHeader(Transform& locationTransform)
     {
-    m_range.low = m_scalableMeshNodePtr->GetContentExtent().low;
-    m_range.high = m_scalableMeshNodePtr->GetContentExtent().high;
+    DPoint3d low = m_scalableMeshNodePtr->GetContentExtent().low;
+    DPoint3d high = m_scalableMeshNodePtr->GetContentExtent().high;
+    
+    locationTransform.Multiply(low);
+    locationTransform.Multiply(high);
 
-    locationTransform.Multiply(m_range.low);
-    locationTransform.Multiply(m_range.high);
-  
+    m_range.InitFrom(low, high);
+     
     float geometricResolution;
     float textureResolution;
 
