@@ -627,7 +627,7 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
             LOG_LINETYPE.tracev ("Processinging DWG Linetype %ls", name.c_str());
 
         // if found the linestyle in db, use it (i.e. share it with other apps)
-        DgnStyleId  lstyleId = LineStyleElement::QueryId (*m_dgndb, Utf8String(name).c_str());
+        DgnStyleId  lstyleId = LineStyleElement::QueryId (*m_dgndb, Utf8String(name.c_str()).c_str());
         if (lstyleId.IsValid())
             {
             this->GetSyncInfo().InsertLinetype (lstyleId, *linetype.get());
