@@ -7,17 +7,54 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\DoubleLShapeProfile.h>
+#include <ProfilesInternal\ProfilesProperty.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (DoubleLShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DoubleLShapeProfilePtr DoubleLShapeProfile::Create (/*TODO: args*/)
+DoubleLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing,
+                                                 DgnElementId const& singleProfileId, DoubleLShapeProfileType type)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , spacing (spacing)
+    , singleProfileId (singleProfileId)
+    , type (type)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DoubleLShapeProfile::DoubleLShapeProfile (CreateParams const& params)
+    : T_Super (params)
     {
-    return nullptr; // TODO: Not Implemented
+    if (params.m_isLoadingElement)
+        return;
+
+    SetSpacing (params.spacing);
+    SetSingleProfile (params.singleProfileId);
+    SetType (params.type);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DoubleLShapeProfile::_Validate() const
+    {
+    if (!T_Super::_Validate())
+        return false;
+
+    if (!ProfilesProperty::IsGreaterOrEqualToZero (GetSpacing()))
+        return false;
+
+    LShapeProfileCPtr singleProfilePtr = GetSingleProfile();
+    if (singleProfilePtr.IsNull())
+        return false;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,17 +76,34 @@ void DoubleLShapeProfile::SetSpacing (double value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DoubleLShapeProfile::GetType() const
+DoubleLShapeProfileType DoubleLShapeProfile::GetType() const
     {
-    return GetPropertyValueInt32 (PRF_PROP_DoubleLShapeProfile_Type);
+    return static_cast<DoubleLShapeProfileType> (GetPropertyValueInt32 (PRF_PROP_DoubleLShapeProfile_Type));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleLShapeProfile::SetType (int value)
+void DoubleLShapeProfile::SetType (DoubleLShapeProfileType value)
     {
-    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_Type, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_Type, ECN::ECValue (static_cast<int> (value)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+LShapeProfilePtr DoubleLShapeProfile::GetSingleProfile() const
+    {
+    DgnElementId singleProfileId = GetPropertyValueId<DgnElementId> (PRF_PROP_DoubleLShapeProfile_SingleProfile);
+    return GetDgnDb().Elements().GetForEdit<LShapeProfile> (singleProfileId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DoubleLShapeProfile::SetSingleProfile (DgnElementId const& singleProfileId)
+    {
+    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_SingleProfile, singleProfileId);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -40,9 +40,6 @@ END_BENTLEY_PROFILES_NAMESPACE
 // ECClass names
 //-----------------------------------------------------------------------------------------
 
-// Models
-
-
 // Elements
 #define PRF_CLASS_AsymmetricIShapeProfile                            "AsymmetricIShapeProfile"
 #define PRF_CLASS_BentPlateProfile                                   "BentPlateProfile"
@@ -76,14 +73,11 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_TrapeziumProfile                                   "TrapeziumProfile"
 #define PRF_CLASS_ZShapeProfile                                      "ZShapeProfile"
 
-
 // Aspects
 #define PRF_CLASS_StandardProfileAspect                              "StandardProfileAspect"
 #define PRF_CLASS_CustomCardinalPointsAspect                         "CustomCardinalPointsAspect"
 
-
 // Relationships
-
 
 // Properties
 #define PRF_PROP_AsymmetricIShapeProfile_TopFlangeWidth                          "TopFlangeWidth"
@@ -131,6 +125,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_DoubleCShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Type                                        "Type"
+#define PRF_PROP_DoubleLShapeProfile_SingleProfile                               "SingleProfile"
 #define PRF_PROP_EllipseProfile_XRadius                                          "XRadius"
 #define PRF_PROP_EllipseProfile_YRadius                                          "YRadius"
 #define PRF_PROP_HollowCircleProfile_Radius                                      "Radius"
@@ -295,17 +290,3 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TTShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TrapeziumProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ZShapeProfile)
-
-
-//-----------------------------------------------------------------------------------------
-// Define enums in the Profiles namespace
-//-----------------------------------------------------------------------------------------
-BEGIN_BENTLEY_PROFILES_NAMESPACE
-
-enum class DoubleLProfileType : int32_t
-{
-    LLBB = 0,
-    SLBB = 1,
-}; // DoubleLProfileType
-
-END_BENTLEY_PROFILES_NAMESPACE

@@ -9,8 +9,21 @@
 
 #include "ProfilesDefinitions.h"
 #include "CompositeProfile.h"
+#include "LShapeProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
+
+//=======================================================================================
+//! 
+//! @ingroup GROUP_Profiles
+//=======================================================================================
+enum class DoubleLShapeProfileType : int32_t
+{
+    LLBB = 0, // Long Legs Back to Back
+    SLBB = 1, // Short Legs Back to Back
+
+}; // DoubleLShapeProfileType
+
 
 //=======================================================================================
 //! A CompositeProfile comprised of back-to-back Ls with the horizontal legs at the top of the Profile.
@@ -21,21 +34,48 @@ struct DoubleLShapeProfile : CompositeProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_DoubleLShapeProfile, CompositeProfile);
     friend struct DoubleLShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(DoubleLShapeProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing,
+                                               Dgn::DgnElementId const& singleProfileId = Dgn::DgnElementId(),
+                                               DoubleLShapeProfileType type = DoubleLShapeProfileType::LLBB);
+
+    public:
+        //! Required properties
+        double spacing = 0.0;
+        Dgn::DgnElementId singleProfileId = Dgn::DgnElementId();
+        DoubleLShapeProfileType type = DoubleLShapeProfileType::LLBB;
+        };
+
 protected:
-    explicit DoubleLShapeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit DoubleLShapeProfile (CreateParams const& params);
+
+    virtual bool _Validate() const override;
+
+private:
+    bool ValidateSpacing() const;
+    bool ValidateType() const;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleLShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (DoubleLShapeProfile)
 
-    PROFILES_EXPORT static DoubleLShapeProfilePtr Create (/*TODO: args*/);
+    PROFILES_EXPORT static DoubleLShapeProfilePtr Create (CreateParams const& params) { return new DoubleLShapeProfile (params); }
 
 public:
     PROFILES_EXPORT double GetSpacing() const;
     PROFILES_EXPORT void SetSpacing (double value);
 
-    PROFILES_EXPORT int GetType() const;
-    PROFILES_EXPORT void SetType (int value);
+    PROFILES_EXPORT DoubleLShapeProfileType GetType() const;
+    PROFILES_EXPORT void SetType (DoubleLShapeProfileType value);
+
+    PROFILES_EXPORT LShapeProfilePtr GetSingleProfile() const;
+    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId);
 
     }; // DoubleLShapeProfile
 
