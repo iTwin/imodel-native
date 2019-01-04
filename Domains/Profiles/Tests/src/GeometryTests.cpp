@@ -158,11 +158,11 @@ template<typename T>
 RefCountedPtr<T> GeometryTestCase::InsertProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow)
     {
     RefCountedPtr<T> profilePtr = typename T::Create (createParams);
-    //ASSERT_TRUE (profilePtr.IsValid());
+    BeAssert (profilePtr.IsValid());
 
     DgnDbStatus status;
     profilePtr->Insert (&status);
-    //ASSERT_EQ (DgnDbStatus::Success, status) << "Failed to insert Profile to DgnDb.";
+    BeAssert (status == DgnDbStatus::Success && "Failed to insert Profile");
 
     InsertPhysicalElement (profilePtr, placeInNewRow);
 
