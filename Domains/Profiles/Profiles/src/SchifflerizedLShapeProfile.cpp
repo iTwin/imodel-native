@@ -6,7 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
-#include <Profiles/SchifflerizedLShapeProfile.h>
+#include <Profiles\SchifflerizedLShapeProfile.h>
+#include <ProfilesInternal\ProfilesProperty.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -46,6 +47,60 @@ SchifflerizedLShapeProfile::SchifflerizedLShapeProfile (CreateParams const& para
     SetLegBendOffset (params.legBendOffset);
     SetFilletRadius (params.filletRadius);
     SetEdgeRadius (params.edgeRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SchifflerizedLShapeProfile::_Validate() const
+    {
+    if (!T_Super::_Validate())
+        return false;
+
+    bool const isLegLengthValid = ProfilesProperty::IsGreaterThanZero (GetLegLength());
+    bool const isThicknessValid = ValidateThickness();
+    bool const isLegBendOffsetValid = ValidateLegBendOffset();
+    bool const isFilletRadiusValid = ValidateFilletRadius();
+    bool const isEdgeRadiusValid = ValidateEdgeRadius();
+
+    return isLegLengthValid && isThicknessValid && isLegBendOffsetValid && isFilletRadiusValid && isEdgeRadiusValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SchifflerizedLShapeProfile::ValidateThickness() const
+    {
+    double const thickness = GetThickness();
+    bool const isPossitive = ProfilesProperty::IsGreaterThanZero (thickness);
+    // Maximum thickness is calculated as if LegBendOffset is 0
+    bool const fitsBetweenLegs = thickness < GetLegLength() / std::sqrt (3.0);
+
+    return isPossitive && fitsBetweenLegs;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SchifflerizedLShapeProfile::ValidateLegBendOffset() const
+    {
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SchifflerizedLShapeProfile::ValidateFilletRadius() const
+    {
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SchifflerizedLShapeProfile::ValidateEdgeRadius() const
+    {
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

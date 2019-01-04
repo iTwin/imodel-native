@@ -46,11 +46,19 @@ public:
 protected:
     explicit SchifflerizedLShapeProfile (CreateParams const& params);
 
+    virtual bool _Validate() const override;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (SchifflerizedLShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (SchifflerizedLShapeProfile)
 
     PROFILES_EXPORT static SchifflerizedLShapeProfilePtr Create (CreateParams const& params) { return new SchifflerizedLShapeProfile (params); }
+
+private:
+    bool ValidateThickness() const;
+    bool ValidateLegBendOffset() const;
+    bool ValidateFilletRadius() const;
+    bool ValidateEdgeRadius() const;
 
 public:
     PROFILES_EXPORT double GetLegLength() const;
