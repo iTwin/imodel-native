@@ -818,6 +818,10 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
     if (sourceProperty->IsPriorityLocallyDefined())
         destProperty->SetPriority(sourceProperty->GetPriority());
 
+    // This is needed so that roundtrip – deserialize schema -> copy schema -> serialize schema – would preserve unrecognized typeNames
+    if (!sourceProperty->m_originalTypeName.empty())
+        destProperty->m_originalTypeName = sourceProperty->m_originalTypeName;
+
     if (sourceProperty->IsCategoryDefinedLocally())
         {
         PropertyCategoryCP sourcePropCategory = sourceProperty->GetCategory();

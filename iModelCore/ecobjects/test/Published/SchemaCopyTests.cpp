@@ -1401,6 +1401,47 @@ TEST_F(SchemaCopyTest, SuccessfullCopiesKindOfQuantityPropertyWithPersistenceUni
     EXPECT_EQ(copiedSchema->GetUnitCP("TestUnit"), copiedSchema->GetKindOfQuantityCP("TestKindOfQuantity")->GetPersistenceUnit());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyPropertyCopiesOriginalTypeNameInfo)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass">
+                <ECProperty propertyName="TestProperty" typeName="notDouble"/>
+                <ECArrayProperty propertyName="TestArrayProperty" typeName="notInt" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    Utf8String ecSchemaXml;
+    SchemaWriteStatus writeStatus = schemaCopyFrom->WriteToXmlString(ecSchemaXml);
+    ASSERT_EQ(SchemaWriteStatus::Success, writeStatus);
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("TestClass"), "TestClass", false));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("TestClass"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestArrayProperty"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestArrayProperty")->GetAsArrayProperty());
+
+    writeStatus = schemaCopyTo->WriteToXmlString(ecSchemaXml);
+    EXPECT_EQ(SchemaWriteStatus::Success, writeStatus);
+
+    EXPECT_NE(Utf8String::npos, ecSchemaXml.find("typeName=\"notDouble\""));
+    EXPECT_NE(Utf8String::npos, ecSchemaXml.find("typeName=\"notInt\""));
+    }
+
+
 //=======================================================================================
 //! ClassCopyTest
 //
