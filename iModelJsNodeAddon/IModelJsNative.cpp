@@ -1138,7 +1138,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         // get a Json::Value from the string.
         Json::Value geoCoordProps = Json::Value::From(geoCoordStr);
         Json::Value results;
-        auto status = JsInterop::GetIModelCoordsFromGeoCoords (results, GetDgnDb(), geoCoordProps);
+        JsInterop::GetIModelCoordsFromGeoCoords (results, GetDgnDb(), geoCoordProps);
         return toJsString(Env(), results.ToString());
         }
 
@@ -1152,7 +1152,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         // get a Json::Value from the string.
         Json::Value iModelCoordProps = Json::Value::From(iModelCoordStr);
         Json::Value results;
-        auto status = JsInterop::GetGeoCoordsFromIModelCoords(results, GetDgnDb(), iModelCoordProps);
+        JsInterop::GetGeoCoordsFromIModelCoords(results, GetDgnDb(), iModelCoordProps);
         return toJsString(Env(), results.ToString());
         }
 
