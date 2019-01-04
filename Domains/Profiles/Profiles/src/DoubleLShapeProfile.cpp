@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\DoubleLShapeProfile.h>
+#include <ProfilesInternal\ProfilesGeometry.h>
 #include <ProfilesInternal\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -55,6 +56,14 @@ bool DoubleLShapeProfile::_Validate() const
         return false;
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr DoubleLShapeProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateDoubleLShape (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

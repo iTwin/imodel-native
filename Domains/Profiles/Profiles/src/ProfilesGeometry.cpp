@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/ProfilesGeometry.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -721,6 +721,53 @@ IGeometryPtr ProfilesGeomApi::CreateTrapezium (TrapeziumProfileCPtr profile)
 
     bvector<ICurvePrimitivePtr> orderedCurves = { topLine, rightLine, bottomLine, leftLine };
     return createGeometryFromPrimitiveArray (orderedCurves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateDoubleLShape (DoubleLShapeProfileCPtr profile)
+    {
+    LShapeProfileCPtr singleProfilePtr = profile->GetSingleProfile();
+    if (singleProfilePtr.IsNull())
+        return nullptr;
+
+    IGeometryPtr singleProfileGeometryPtr = singleProfilePtr->GetShape();
+    if (singleProfileGeometryPtr.IsNull())
+        return nullptr;
+
+    double const width = singleProfilePtr->GetWidth();
+    double const depth = singleProfilePtr->GetDepth();
+
+    bool const needsRotation = depth > width && profile->GetType() == DoubleLShapeProfileType::SLBB ||
+                               width > depth && profile->GetType() == DoubleLShapeProfileType::LLBB;
+    double const singleSideOffset = profile->GetSpacing() / 2.0 + (needsRotation ? depth : width) / 2.0;
+
+    DMatrix4d rightSideMatrix, leftSideMatrix;
+    if (needsRotation)
+        {
+        DMatrix4d rotation = DMatrix4d::From (RotMatrix::FromVectorAndRotationAngle (DVec3d::From (0.0, 0.0, 1.0), -PI / 2.0));
+        DMatrix4d rightSideTranslation = DMatrix4d::FromScaleAndTranslation (DPoint3d::From (1.0, 1.0, 1.0), DPoint3d::From (singleSideOffset, 0.0, 0.0));
+        DMatrix4d leftSideTranslation = DMatrix4d::FromScaleAndTranslation (DPoint3d::From (-1.0, 1.0, 1.0), DPoint3d::From (-singleSideOffset, 0.0, 0.0));
+
+        rightSideMatrix = rightSideTranslation * rotation;
+        leftSideMatrix = leftSideTranslation * rotation;
+        }
+    else
+        {
+        rightSideMatrix = DMatrix4d::FromScaleAndTranslation (DPoint3d::From (1.0, -1.0, 1.0), DPoint3d::From (singleSideOffset, 0.0, 0.0));
+        leftSideMatrix = DMatrix4d::FromScaleAndTranslation (DPoint3d::From (-1.0, -1.0, 1.0), DPoint3d::From (-singleSideOffset, 0.0, 0.0));
+        }
+
+    Transform rightSideTransform, leftSideTransform;
+    BeAssert (rightSideTransform.InitFrom (rightSideMatrix));
+    BeAssert (leftSideTransform.InitFrom (leftSideMatrix));
+
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+    curveVector->Add (singleProfileGeometryPtr->Clone (rightSideTransform)->GetAsCurveVector());
+    curveVector->Add (singleProfileGeometryPtr->Clone (leftSideTransform)->GetAsCurveVector());
+
+    return IGeometry::Create (curveVector);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

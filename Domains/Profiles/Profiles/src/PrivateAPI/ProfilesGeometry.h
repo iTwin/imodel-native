@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PrivateAPI/ProfilesGeometry.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,6 +34,8 @@ public:
     static IGeometryPtr CreateRoundedRectangle (RoundedRectangleProfileCPtr profile);
     static IGeometryPtr CreateHollowRectangle (HollowRectangleProfileCPtr profile);
     static IGeometryPtr CreateTrapezium (TrapeziumProfileCPtr profile);
+    static IGeometryPtr CreateDoubleLShape (DoubleLShapeProfileCPtr profile);
+
     };
 
 END_BENTLEY_PROFILES_NAMESPACE
