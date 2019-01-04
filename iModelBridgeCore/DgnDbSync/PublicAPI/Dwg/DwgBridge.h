@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Dwg/DwgBridge.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,6 +49,8 @@ protected:
     DWG_EXPORT BentleyStatus  _ConvertToBim (Dgn::SubjectCR jobSubject) override;
     //! Default implementation walks through DWG block section and create the DwgAttributeDefinitions schema.
     DWG_EXPORT BentleyStatus  _MakeSchemaChanges () override;
+    //! Share common dictionaries (categories, materials, linestyles & textstyles) with other bridges.
+    DWG_EXPORT BentleyStatus  _MakeDefinitionChanges(SubjectCR jobSubject) override;
     DWG_EXPORT BentleyStatus  _OnOpenBim (DgnDbR db) override;
     DWG_EXPORT void           _OnCloseBim (BentleyStatus, iModelBridge::ClosePurpose purpose) override;
     DWG_EXPORT BentleyStatus  _OpenSource () override;

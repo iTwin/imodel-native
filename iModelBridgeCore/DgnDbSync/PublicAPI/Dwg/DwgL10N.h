@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Dwg/DwgL10N.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,7 +55,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(Exception)                   // =="Exception thrown: %s"==
     L10N_STRING(FatalError)                  // =="A fatal error is stopping the conversion: %s"==
     L10N_STRING(ProgramExits)                // =="The importer must exit due to a fatal error!"==
-    L10N_STRING(FileFilteredOut)             // =="File [%s] was not converted."==
+    L10N_STRING(XrefFileFilteredOut)         // =="Xref file [%s] was not converted."==
     L10N_STRING(FileInUse)                   // =="File [%s] is in use"==
     L10N_STRING(FileNotFound)                // =="File [%s] was not found"==
     L10N_STRING(FileReadOnly)                // =="The file is read-only"==

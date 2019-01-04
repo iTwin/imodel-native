@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgImporter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -84,19 +84,56 @@ BentleyStatus   DwgImporter::MakeSchemaChanges ()
     if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
-    // collect attribute definitions from regular blocks
+    m_paperspaceBlockIds.clear ();
+    m_loadedXrefFiles.clear ();
+
+    /*-----------------------------------------------------------------------------------
+    Iterate the block table once for multiple tasks in an import job:
+        1) Load xRef files from xRef block table records
+        2) Cache layout block object ID's from paperspace block table records
+        3) Collect attribute definitions from regular block table records
+    -----------------------------------------------------------------------------------*/
     ECSchemaPtr     attrdefSchema;
     for (iter->Start(); !iter->Done(); iter->Step())
         {
         DwgDbObjectId   blockId = iter->GetRecordId ();
-        if (!blockId.IsValid() || m_dwgdb->GetModelspaceId() == blockId || m_dwgdb->GetPaperspaceId() == blockId)
+        if (!blockId.IsValid() || m_dwgdb->GetModelspaceId() == blockId)
             continue;
 
         DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForRead);
-        if (block.IsNull() || block->IsLayout() || block->IsExternalReference())
+        if (block.OpenStatus() != DwgDbStatus::Success)
             continue;
 
-        // create an attrdef ECClass from the block:
+        // if the block is a layout, cache the block ID:
+        auto name = block->GetName ();
+        if (block->IsLayout())
+            {
+            m_paperspaceBlockIds.push_back (blockId);
+            continue;
+            }
+
+        // if the block is an xRef, load the file and cache the dwg:
+        if (block->IsExternalReference())
+            {
+            DwgXRefHolder   xref(*block, *this);
+            if (xref.IsValid())
+                {
+                // add the new xref in local cache as well as in the syncInfo:
+                m_loadedXrefFiles.push_back (xref);
+                this->_AddFileInSyncInfo (xref.GetDatabaseR(), this->_GetDwgFileIdPolicy());
+                }
+            else
+                {
+                // can't load the xRef file - error out
+                Utf8String  filename = xref.GetResolvedPath().GetNameUtf8 ();
+                if (filename.empty())
+                    filename = Utf8String (name.c_str());
+                this->ReportError (IssueCategory::DiskIO(), Issue::FileNotFound(), filename.c_str());
+                }
+            continue;
+            }
+
+        // if the block has ATTRDEF's, create an attrdef ECClass from the block:
         if (block->HasAttributeDefinitions())
             this->AddAttrdefECClassFromBlock(attrdefSchema, *block.get());
         }
@@ -1257,46 +1294,31 @@ ResolvedModelMapping DwgImporter::_ImportXrefModel (DwgDbBlockTableRecordCR bloc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::ImportModelsFrom (DwgDbBlockTableRecordR block, SubjectCR parentSubject, bool& hasPushedReferencesSubject)
+BentleyStatus   DwgImporter::ImportXrefModelsFrom (DwgXRefHolder& xref, SubjectCR parentSubject, bool& hasPushedReferencesSubject)
     {
-    auto name = block.GetName ();
+    DwgDbBlockTableRecordPtr    block(xref.GetBlockIdInRootFile(), DwgDbOpenMode::ForRead);
+    if (block.OpenStatus() != DwgDbStatus::Success)
+        {
+        this->ReportError (IssueCategory::CorruptData(), Issue::CantOpenObject(), "xRef block");
+        return  BSIERROR;
+        }
+
+    auto name = block->GetName ();
     if (name.IsEmpty())
         {
-        this->ReportIssueV (IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::ConfigUsingDefault(), IssueReporter::FmtModel(block).c_str());
-        name = L"Default";
+        this->ReportIssueV (IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::ConfigUsingDefault(), IssueReporter::FmtModel(*block).c_str());
+        name = L"Xref";
         }
 
-    // create a model for the DWG layout/paperspace
-    if (block.IsLayout())
+    // expect an xRef block
+    if (!block->IsExternalReference())
         {
-        LOG_MODEL.tracev("Creating DgnModel from DWG layout block %ls", name.c_str());
-        return  this->_ImportLayoutModel(block).IsValid() ? BSISUCCESS : BSIERROR;
-        }
-
-    // create a model for the DWG xref attachment
-    if (!block.IsExternalReference())
-        return  BSISUCCESS;
-
-    // load the DWG xRef file:
-    DwgXRefHolder   xref(block, *this);
-    if (xref.IsValid())
-        {
-        // add the new xref in local cache as well as in the syncInfo:
-        m_loadedXrefFiles.push_back (xref);
-        this->_AddFileInSyncInfo (xref.GetDatabaseR(), this->_GetDwgFileIdPolicy());
-        }
-    else
-        {
-        // can't load the xRef file - error out
-        Utf8String  filename = xref.GetResolvedPath().GetNameUtf8 ();
-        if (filename.empty())
-            filename = Utf8String (name.c_str());
-        this->ReportError (IssueCategory::DiskIO(), Issue::FileNotFound(), filename.c_str());
+        this->ReportError (IssueCategory::UnexpectedData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*block).c_str());
         return  BSIERROR;
         }
 
     DwgDbObjectIdArray  ids;
-    if (DwgDbStatus::Success != block.GetBlockReferenceIds(ids))
+    if (DwgDbStatus::Success != block->GetBlockReferenceIds(ids))
         {
         /*------------------------------------------------------------------------------------------------
         There could be legitimate reasons as well as file errors that no instances found for an xref block.
@@ -1313,7 +1335,7 @@ BentleyStatus   DwgImporter::ImportModelsFrom (DwgDbBlockTableRecordR block, Sub
     for (auto const& id : ids)
         {
         DgnModelP   model;
-        auto modelMap = this->_ImportXrefModel (block, id, xref.GetDatabaseP());
+        auto modelMap = this->_ImportXrefModel (*block, id, xref.GetDatabaseP());
         if (!modelMap.IsValid() || (model = modelMap.GetModel()) == nullptr)
             continue;
 
@@ -1334,7 +1356,7 @@ BentleyStatus   DwgImporter::ImportModelsFrom (DwgDbBlockTableRecordR block, Sub
                 }
             else
                 {
-                ReportError (IssueCategory::Unsupported(), Issue::Error(), Utf8PrintfString("Failed to create references subject. XRef[%s].", IssueReporter::FmtXReference(block).c_str()).c_str());
+                ReportError (IssueCategory::Unsupported(), Issue::Error(), Utf8PrintfString("Failed to create references subject. XRef[%s].", IssueReporter::FmtXReference(*block).c_str()).c_str());
                 BeAssert (false && "Failed creating xrefrences subject!");
                 }
             }
@@ -1348,12 +1370,7 @@ BentleyStatus   DwgImporter::ImportModelsFrom (DwgDbBlockTableRecordR block, Sub
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportDwgModels ()
     {
-    // Create models from layout and xRef block definitions
-    DwgDbBlockTablePtr  blockTable (m_dwgdb->GetBlockTableId(), DwgDbOpenMode::ForRead);
-    if (DwgDbStatus::Success != blockTable.OpenStatus())
-        return  BSIERROR;
-
-    // should have created root model when initiating or finding the importer job:
+    // should have created root model when initializing or finding the importer job:
     BeAssert (this->GetRootModel().IsValid());
 
     bool        hasPushedReferencesSubject = false;
@@ -1364,23 +1381,23 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
         return  BSIERROR;
         }
 
-    DwgDbSymbolTableIteratorPtr iter = blockTable->NewIterator ();
-    if (!iter.IsValid() || !iter->IsValid())
-        return  BSIERROR;
+    // create models for xRef block references:
+    for (auto xref : m_loadedXrefFiles)
+        this->ImportXrefModelsFrom (xref, *parentSubject, hasPushedReferencesSubject);
 
-    // walk through all blocks and create models for paperspace and xref blocks:
-    for (iter->Start(); !iter->Done(); iter->Step())
+    // create models for paperspaces
+    for (auto paperspaceId : m_paperspaceBlockIds)
         {
-        DwgDbObjectId   blockId = iter->GetRecordId ();
-        if (!blockId.IsValid() || blockId == m_modelspaceId)
-            continue;
-
-        DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForWrite);
-        if (block.IsNull())
-            continue;
-
-        // check and create model(s) from this block as appropriate:
-        this->ImportModelsFrom (*block, *parentSubject, hasPushedReferencesSubject);
+        DwgDbBlockTableRecordPtr    block(paperspaceId, DwgDbOpenMode::ForRead);
+        if (block.OpenStatus() == DwgDbStatus::Success && block->IsLayout())
+            {
+            LOG_MODEL.tracev("Creating DgnModel from DWG layout block %ls", block->GetName().c_str());
+            this->_ImportLayoutModel (*block);
+            }
+        else
+            {
+            this->ReportError (IssueCategory::CorruptData(), Issue::CantOpenObject(), "paperspace block");
+            }
         }
 
     /*-----------------------------------------------------------------------------------
@@ -1419,7 +1436,7 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
         m_rootTransformInfo.SetRootTransform (newRootTransform);
         }
 
-    m_dgndb->SaveSettings ();
+    // m_dgndb->SaveSettings ();
     m_syncInfo.SetValid (true);
 
     return BSISUCCESS;
@@ -1911,6 +1928,7 @@ void            DwgImporter::_BeginImport ()
     {
     this->_GetChangeDetector()._Prepare (*this);
     m_dgndb->AddIssueListener (m_issueReporter.GetECDbIssueListener());
+    m_hasBegunProcessing = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1999,6 +2017,70 @@ void            DwgImporter::_FinishImport ()
 #ifdef DEBUG_DELETE_DOCUMENTS
     this->_DetectDeletedDocuments ();
 #endif
+    m_hasBegunProcessing = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::MakeDefinitionChanges (SubjectCR jobSubject)
+    {
+    // only import dictionary tables that are shared with other bridges
+    if (!m_hasBegunProcessing)
+        {
+        this->_BeginImport ();
+        if (this->WasAborted())
+            return BSIERROR;
+        }
+
+    StopWatch totalTimer (true);
+    StopWatch timer (true);
+
+    timer.Start();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportTextStyleSection ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing text styles"));
+    if (this->WasAborted())
+        return BSIERROR;
+
+    DwgImportLogging::LogPerformance(timer, "Import Text Styles");
+
+    timer.Start();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportLineTypeSection ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing line types"));
+    if (this->WasAborted())
+        return BSIERROR;
+
+    DwgImportLogging::LogPerformance(timer, "Import Linetype Section");
+
+    timer.Start();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportMaterialSection ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing materials"));
+    if (this->WasAborted())
+        return BSIERROR;
+
+    DwgImportLogging::LogPerformance(timer, "Import Material Section");
+
+    timer.Start();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportLayerSection ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing layers"));
+    if (this->WasAborted())
+        return BSIERROR;
+
+    DwgImportLogging::LogPerformance(timer, "Import Layer Section");
+
+    return  BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2006,6 +2088,7 @@ void            DwgImporter::_FinishImport ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::Process ()
     {
+    // import everything else that has not been imported in previous MakeDefinitionChanges
     StopWatch totalTimer (true);
     StopWatch timer (true);
 
@@ -2015,13 +2098,12 @@ BentleyStatus   DwgImporter::Process ()
         return  BSIERROR;
         }
 
-    // Initializing ImportJob should have set the root model ID, but check it anyway.
-    if (m_modelspaceId.IsNull())
-        m_modelspaceId = m_dwgdb->GetModelspaceId ();
-
-    this->_BeginImport ();
-    if (this->WasAborted())
-        return BSIERROR;
+    if (!m_hasBegunProcessing)
+        {
+        this->_BeginImport ();
+        if (this->WasAborted())
+            return BSIERROR;
+        }
 
     this->_ImportSpaces ();
     DwgImportLogging::LogPerformance(timer, "Create Spaces");
@@ -2036,34 +2118,6 @@ BentleyStatus   DwgImporter::Process ()
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Create Models");
-
-    timer.Start();
-    this->_ImportTextStyleSection ();
-    if (this->WasAborted())
-        return BSIERROR;
-
-    DwgImportLogging::LogPerformance(timer, "Import Text Styles");
-
-    timer.Start();
-    this->_ImportLineTypeSection ();
-    if (this->WasAborted())
-        return BSIERROR;
-
-    DwgImportLogging::LogPerformance(timer, "Import Linetype Section");
-
-    timer.Start();
-    this->_ImportMaterialSection ();
-    if (this->WasAborted())
-        return BSIERROR;
-
-    DwgImportLogging::LogPerformance(timer, "Import Material Section");
-
-    timer.Start();
-    this->_ImportLayerSection ();
-    if (this->WasAborted())
-        return BSIERROR;
-
-    DwgImportLogging::LogPerformance(timer, "Import Layer Section");
 
     timer.Start();
     this->_ImportModelspaceViewports ();
@@ -2148,6 +2202,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_currentspaceId.SetNull ();
     m_dwgModelMap.clear ();
     m_materialSearchPaths.clear ();
+    m_hasBegunProcessing = false;
     m_isProcessingDwgModelMap = false;
     m_presentationRuleContents.clear ();
 

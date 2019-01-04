@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Apps/DwgBridge.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <Dwg/DwgBridge.h>
@@ -164,6 +164,16 @@ BentleyStatus   DwgBridge::_MakeSchemaChanges ()
     {
     // create DwgAttributeDefinition shema
     if (BentleyStatus::SUCCESS != m_importer->MakeSchemaChanges() || m_importer->WasAborted())
+        return  BentleyStatus::ERROR;
+    return  BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgBridge::_MakeDefinitionChanges (SubjectCR jobSubject)
+    {
+    if (BentleyStatus::SUCCESS != m_importer->MakeDefinitionChanges(jobSubject) || m_importer->WasAborted())
         return  BentleyStatus::ERROR;
     return  BentleyStatus::SUCCESS;
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportLinetypes.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -626,10 +626,20 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
         else
             LOG_LINETYPE.tracev ("Processinging DWG Linetype %ls", name.c_str());
 
+        // if found the linestyle in db, use it (i.e. share it with other apps)
+        DgnStyleId  lstyleId = LineStyleElement::QueryId (*m_dgndb, Utf8String(name).c_str());
+        if (lstyleId.IsValid())
+            {
+            this->GetSyncInfo().InsertLinetype (lstyleId, *linetype.get());
+            m_importedLinestyles.insert (T_DwgDgnLineStyleId(linetype->GetObjectId(), lstyleId));
+            continue;
+            }
+
+        // when updating, if found the linestyle in the syncInfo, update it
         if (this->IsUpdating())
             {
             // this is an unscaled linestyle
-            DgnStyleId  lstyleId = m_syncInfo.FindLineStyle (linetype->GetObjectId());
+            lstyleId = m_syncInfo.FindLineStyle (linetype->GetObjectId());
             if (lstyleId.IsValid())
                 {
                 // update syncInfo
@@ -643,6 +653,7 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
         if ((count++ % 100) == 0)
             this->Progress ();
 
+        // create a new linestyle
         this->_ImportLineType (linetype);
         }
     
