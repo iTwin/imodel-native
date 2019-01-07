@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/basegeocoord.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4242) // toupper returns an int which is stuffed into this char string.  
@@ -9893,15 +9893,9 @@ bool shallowCompare
     for (int idxXForms=0 ; datumsEquivalent && (idxXForms < theDatumConverter1->xfrmCount); idxXForms++)
         {
         // Compare selected fields only
-        if ((theDatumConverter1->xforms[idxXForms]->methodCode != theDatumConverter1->xforms[idxXForms]->methodCode) ||
-            (theDatumConverter1->xforms[idxXForms]->isNullXfrm != theDatumConverter1->xforms[idxXForms]->isNullXfrm) ||
-            (theDatumConverter1->xforms[idxXForms]->maxItr != theDatumConverter1->xforms[idxXForms]->maxItr) ||
-            (theDatumConverter1->xforms[idxXForms]->inverseSupported != theDatumConverter1->xforms[idxXForms]->inverseSupported) ||
-            (theDatumConverter1->xforms[idxXForms]->maxIterations != theDatumConverter1->xforms[idxXForms]->maxIterations) ||
-            (theDatumConverter1->xforms[idxXForms]->userDirection != theDatumConverter1->xforms[idxXForms]->userDirection) ||
-            (theDatumConverter1->xforms[idxXForms]->cnvrgValue != theDatumConverter1->xforms[idxXForms]->cnvrgValue) ||
-            (theDatumConverter1->xforms[idxXForms]->errorValue != theDatumConverter1->xforms[idxXForms]->errorValue) ||
-            (theDatumConverter1->xforms[idxXForms]->accuracy != theDatumConverter1->xforms[idxXForms]->accuracy))
+        if ((theDatumConverter1->xforms[idxXForms]->methodCode       != theDatumConverter2->xforms[idxXForms]->methodCode) ||
+            (theDatumConverter1->xforms[idxXForms]->isNullXfrm       != theDatumConverter2->xforms[idxXForms]->isNullXfrm) ||
+            (!doubleSame(theDatumConverter1->xforms[idxXForms]->accuracy, theDatumConverter2->xforms[idxXForms]->accuracy)))
             datumsEquivalent = false;
 
         // So far so good but now we must check the specific parameters. Except for grid shift files we can assume
@@ -10013,6 +10007,23 @@ bool shallowCompare
     // Release the datum converters.
     CSMap::CS_dtcls (theDatumConverter1);
     CSMap::CS_dtcls (theDatumConverter2);
+
+    // The following additional step is required for cases where the datum transformations to WGS84 are identical but there exists a
+    // specific geodetic path between the two specified datums. This will occur for example for some NAD83 variants.
+    // NAD83 is considered coincident to WGS84 and so is NSRS11 (NAD83/2011) but there exists a complex geodetic transformation
+    // path between NAD83 to NSRS11 that must be applied anyway for these source and target.
+    if (datumsEquivalent)
+        {    
+        CSDatumConvert* theDatumConverterDirect = CSMap::CSdtcsu(&datum1, &datum2);
+        // If datum converter can be created we cannot judge the equivalence.
+        // We will consider the datums equal since in all likelyhood they effectively are.
+        if (NULL == theDatumConverterDirect)
+            return true;
+
+        // The datum transformation must contain a null transformation only
+        if (theDatumConverterDirect->xfrmCount != 1 || (false == theDatumConverterDirect->xforms[0]->isNullXfrm))
+            datumsEquivalent = false;
+        }
 
     return datumsEquivalent;
     }
