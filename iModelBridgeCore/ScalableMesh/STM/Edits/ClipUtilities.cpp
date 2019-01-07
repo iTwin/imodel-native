@@ -2695,13 +2695,13 @@ MeshClipper::RegionResult MeshClipper::GetSelectedRegion(PolyfaceHeaderPtr& mesh
     return selectionError;
 }
 
-bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& MeshClipper::GetSelectedRegions(MeshClipper::RegionResult& result)
+bvector<bpair<uint64_t, PolyfaceHeaderPtr>> MeshClipper::GetSelectedRegions(MeshClipper::RegionResult& result)
 {
     bvector<bpair<uint64_t, PolyfaceHeaderPtr>> vec;
     if (selectionError != MeshClipper::RegionResult::Success)
     {
         result = selectionError;
-        return std::move(vec);
+        return vec;
     }
 
 
@@ -2714,7 +2714,7 @@ bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& MeshClipper::GetSelectedRegions(Me
             vec.push_back(make_bpair(reg->id, m));
     }
     result = MeshClipper::RegionResult::Success;
-    return std::move(vec);
+    return vec;
 }
 
 void MeshClipper::ClearSelection()
