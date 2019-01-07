@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/ProfilesTestCase.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesTestCase.h"
@@ -10,6 +10,7 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_PROFILES
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
@@ -80,6 +81,12 @@ ProfilesTestCase::ProfilesTestCase()
     SpatialCategoryCPtr categoryPtr = category.Insert (DgnSubCategory::Appearance(), &status);
     BeAssert (status == DgnDbStatus::Success);
     m_categoryId = categoryPtr->GetCategoryId();
+
+    CodeSpecPtr codeSpec = CodeSpec::Create(*m_dbPtr, "ProfilesMaterialCodeSpec", CodeScopeSpec::CreateRepositoryScope());
+    BeAssert (codeSpec.IsValid());
+
+    status = codeSpec->Insert();
+    BeAssert (status == DgnDbStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -124,4 +131,42 @@ DgnCategoryId ProfilesTestCase::GetCategoryId()
     {
     BeAssert (m_categoryId.IsValid());
     return m_categoryId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ProfilesTestCase::CreateAndGetMaterialId(Utf8CP codeValue)
+    {
+    DgnClassId classId(m_dbPtr->Schemas().GetClassId(PRF_SCHEMA_NAME, "TempMaterial"));
+    dgn_ElementHandler::Element* handler = Dgn::dgn_ElementHandler::Element::FindHandler(*m_dbPtr, classId);
+    DgnElementPtr element = handler->Create(DgnElement::CreateParams(*m_dbPtr, m_definitionModelPtr->GetModelId(), classId));
+    element->SetCode(CodeSpec::CreateCode(*m_dbPtr, "ProfilesMaterialCodeSpec", codeValue));
+    Dgn::DgnDbStatus status;
+    element->Insert(&status);
+    if (status != Dgn::DgnDbStatus::Success)
+        {
+        BeAssert(false && "Failed to create Profile");
+        return DgnElementId();
+        }
+
+    return element->GetElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ProfilesTestCase::CreateAndGetProfileId()
+    {
+    CShapeProfile::CreateParams params(GetModel(), "C", 10, 10, 1, 1);
+    CShapeProfilePtr profilePtr = CShapeProfile::Create(params);
+    Dgn::DgnDbStatus status;
+    profilePtr->Insert(&status);
+    if (status != Dgn::DgnDbStatus::Success)
+        {
+        BeAssert(false && "Failed to create Profile");
+        return DgnElementId();
+        }
+
+    return profilePtr->GetElementId();
     }

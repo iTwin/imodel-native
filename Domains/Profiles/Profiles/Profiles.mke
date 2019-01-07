@@ -2,7 +2,7 @@
 #
 #     $Source: Profiles/Profiles.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -119,6 +119,10 @@ $(o)TTShapeProfile$(oext) : $(appSrc)TTShapeProfile.cpp ${MultiCompileDepends} $
 $(o)TrapeziumProfile$(oext) : $(appSrc)TrapeziumProfile.cpp ${MultiCompileDepends} $(appPublicApi)TrapeziumProfile.h
 
 $(o)ZShapeProfile$(oext) : $(appSrc)ZShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)ZShapeProfile.h
+
+$(o)MaterialProfileDefinition$(oext) : $(appSrc)MaterialProfileDefinition.cpp ${MultiCompileDepends} $(appPublicApi)MaterialProfileDefinition.h
+
+$(o)MaterialProfile$(oext) : $(appSrc)MaterialProfile.cpp ${MultiCompileDepends} $(appPublicApi)MaterialProfile.h
 
 %include MultiCppCompileGo.mki
 

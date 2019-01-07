@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/ProfilesDomain.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -41,6 +41,8 @@
 #include <Profiles\TShapeProfile.h>
 #include <Profiles\TTShapeProfile.h>
 #include <Profiles\ZShapeProfile.h>
+#include <Profiles\MaterialProfileDefinition.h>
+#include <Profiles\MaterialProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -84,6 +86,8 @@ ProfilesDomain::ProfilesDomain() : DgnDomain (PRF_SCHEMA_NAME, "Bentley Profiles
     RegisterHandler (TShapeProfileHandler::GetHandler());
     RegisterHandler (TTShapeProfileHandler::GetHandler());
     RegisterHandler (ZShapeProfileHandler::GetHandler());
+    RegisterHandler (MaterialProfileDefinitionHandler::GetHandler());
+    RegisterHandler (MaterialProfileHandler::GetHandler());
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

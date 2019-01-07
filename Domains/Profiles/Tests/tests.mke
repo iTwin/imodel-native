@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/tests.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 programName = ProfilesTests
@@ -72,6 +72,8 @@ $(o)RectangleProfileTests.obj           : $(BEGTEST_INPUT)RectangleProfileTests.
 $(o)RoundedRectangleProfileTests.obj    : $(BEGTEST_INPUT)RoundedRectangleProfileTests.cpp ${MultiCompileDepends}
 
 $(o)HollowRectangleProfileTests.obj     : $(BEGTEST_INPUT)HollowRectangleProfileTests.cpp ${MultiCompileDepends}
+
+$(o)MaterialProfileTests.obj            : $(BEGTEST_INPUT)MaterialProfileTests.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

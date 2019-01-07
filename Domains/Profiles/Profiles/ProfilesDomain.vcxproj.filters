@@ -58,6 +58,12 @@
     <Filter Include="PrivateAPI">
       <UniqueIdentifier>{993b6ab6-20b4-4636-a042-2711dd570a8c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="PublicAPI\MaterialProfiles">
+      <UniqueIdentifier>{5796a681-3ed1-493a-aa7d-b83b5d789861}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\MaterialProfiles">
+      <UniqueIdentifier>{70b32bb4-2188-4247-9be4-cf681a820d88}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Profiles.mke">
@@ -193,6 +199,12 @@
     <ClCompile Include="src\ProfilesProperty.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="src\MaterialProfileDefinition.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MaterialProfile.cpp">
+      <Filter>Src\MaterialProfiles</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\PublicAPI\Profile.h">
@@ -314,6 +326,12 @@
     </ClInclude>
     <ClInclude Include="src\ProfilesInternal.h">
       <Filter>Pch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PublicAPI\MaterialProfileDefinition.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PublicAPI\MaterialProfile.h">
+      <Filter>PublicAPI\MaterialProfiles</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

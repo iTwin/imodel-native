@@ -64,6 +64,7 @@
     <ClCompile Include="src\HollowRectangleProfileTests.cpp" />
     <ClCompile Include="src\IShapeProfileTests.cpp" />
     <ClCompile Include="src\LShapeProfileTests.cpp" />
+    <ClCompile Include="src\MaterialProfileTests.cpp" />
     <ClCompile Include="src\ProfilesTestCase.cpp" />
     <ClCompile Include="src\DomainTests.cpp" />
     <ClCompile Include="src\Main.cpp" />

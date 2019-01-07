@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/ProfilesTestCase.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,4 +30,6 @@ protected:
     Dgn::DgnModel& GetModel();
     Dgn::PhysicalModel& GetPhysicalModel();
     Dgn::DgnCategoryId GetCategoryId();
+    Dgn::DgnElementId CreateAndGetMaterialId(Utf8CP codeValue);
+    Dgn::DgnElementId CreateAndGetProfileId();
     };

@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/ProfilesApi.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,3 +43,5 @@
 #include "TTShapeProfile.h"
 #include "ZShapeProfile.h"
 #include "ProfilesDomain.h"
+#include "MaterialProfileDefinition.h"
+#include "MaterialProfile.h"

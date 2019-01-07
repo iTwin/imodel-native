@@ -72,7 +72,8 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_TTShapeProfile                                     "TTShapeProfile"
 #define PRF_CLASS_TrapeziumProfile                                   "TrapeziumProfile"
 #define PRF_CLASS_ZShapeProfile                                      "ZShapeProfile"
-
+#define PRF_CLASS_MaterialProfileDefinition                          "MaterialProfileDefinition"
+#define PRF_CLASS_MaterialProfile                                    "MaterialProfile"
 // Aspects
 #define PRF_CLASS_StandardProfileAspect                              "StandardProfileAspect"
 #define PRF_CLASS_CustomCardinalPointsAspect                         "CustomCardinalPointsAspect"
@@ -196,6 +197,8 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_ZShapeProfile_FilletRadius                                      "FilletRadius"
 #define PRF_PROP_ZShapeProfile_FlangeEdgeRadius                                  "FlangeEdgeRadius"
 #define PRF_PROP_ZShapeProfile_FlangeSlope                                       "FlangeSlope"
+#define PRF_PROP_MaterialProfile_Material                                        "Material"
+#define PRF_PROP_MaterialProfile_Profile                                         "Profile"
 
 
 //-----------------------------------------------------------------------------------------
@@ -290,3 +293,5 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TTShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TrapeziumProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ZShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (MaterialProfileDefinition)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (MaterialProfile)

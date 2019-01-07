@@ -36,6 +36,8 @@
     <ClCompile Include="src\BentPlateProfile.cpp" />
     <ClCompile Include="src\CapsuleProfile.cpp" />
     <ClCompile Include="src\CustomCardinalPointsAspect.cpp" />
+    <ClCompile Include="src\MaterialProfile.cpp" />
+    <ClCompile Include="src\MaterialProfileDefinition.cpp" />
     <ClCompile Include="src\ParametricProfile.cpp" />
     <ClCompile Include="src\CenterLineCShapeProfile.cpp" />
     <ClCompile Include="src\CenterLineLShapeProfile.cpp" />
@@ -79,6 +81,8 @@
     <ClInclude Include="src\PublicAPI\BentPlateProfile.h" />
     <ClInclude Include="src\PublicAPI\CapsuleProfile.h" />
     <ClInclude Include="src\PublicAPI\CustomCardinalPointsAspect.h" />
+    <ClInclude Include="src\PublicAPI\MaterialProfile.h" />
+    <ClInclude Include="src\PublicAPI\MaterialProfileDefinition.h" />
     <ClInclude Include="src\PublicAPI\ParametricProfile.h" />
     <ClInclude Include="src\PublicAPI\CenterLineCShapeProfile.h" />
     <ClInclude Include="src\PublicAPI\CenterLineLShapeProfile.h" />

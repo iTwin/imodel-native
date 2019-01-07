@@ -8,7 +8,13 @@
         <ECEnumerator value="1" displayLabel="SLBB" />
     </ECEnumeration>
 
-    <!-- Mixins -->
+    <ECEnumeration typeName="MaterialProfileCategoryType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Load Bearing" />
+        <ECEnumerator value="1" displayLabel="Insulation" />
+        <ECEnumerator value="2" displayLabel="Finish" />
+    </ECEnumeration>
+
+  <!-- Mixins -->
     <ECEntityClass typeName="ICenterLineProfile" modifier="Abstract" displayLabel="Center Line Profile Mixin">
         <ECCustomAttributes>
             <IsMixin xmlns="CoreCustomAttributes.1.0">
@@ -458,6 +464,49 @@
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="false">
             <Class class="CShapeProfile" />
+        </Target>
+    </ECRelationshipClass>
+
+    <!-- Material Profile classes-->
+    <ECEntityClass typeName="MaterialProfileDefinition" modifier="abstract" description="Material Profile Definition">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="MaterialProfile" modifier="Sealed" description="Material Profile">
+        <BaseClass>MaterialProfileDefinition</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Priority" typeName="int" description="" />
+        <ECProperty propertyName="Category" typeName="MaterialProfileCategoryType" description="" />
+        <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileHasMaterial" direction="Forward" displayLabel="Material" />
+        <ECNavigationProperty propertyName="Profile" relationshipName="MaterialProfileHasProfile" direction="Forward" displayLabel="Profile" />
+    </ECEntityClass>
+
+    <!--TODO: remove this after material schema is developed-->
+    <ECEntityClass typeName="TempMaterial" modifier="Sealed" displayLabel="Material">
+        <BaseClass>bis:PhysicalMaterial</BaseClass>
+    </ECEntityClass>
+
+    <!-- TODO: Replace bis Element with material instance-->
+    <ECRelationshipClass typeName="MaterialProfileRefersToMaterial" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+            <Class class="MaterialProfile" />
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="TempMaterial"/>
+        </Target>
+    </ECRelationshipClass>
+
+   <ECRelationshipClass typeName="MaterialProfileRefersToProfile" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+            <Class class="MaterialProfile" />
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="Profile"/>
         </Target>
     </ECRelationshipClass>
 </ECSchema>
