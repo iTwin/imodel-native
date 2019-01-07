@@ -48,14 +48,11 @@ bool DoubleLShapeProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    if (!ProfilesProperty::IsGreaterOrEqualToZero (GetSpacing()))
-        return false;
+    bool const isSpacingValid = ProfilesProperty::IsGreaterOrEqualToZero (GetSpacing());
+    bool const isSingleProfileValid = ValidateSingleProfile();
+    bool const isTypeValid = ValidateType();
 
-    LShapeProfileCPtr singleProfilePtr = GetSingleProfile();
-    if (singleProfilePtr.IsNull())
-        return false;
-
-    return true;
+    return isSpacingValid && isSingleProfileValid && isTypeValid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -64,6 +61,30 @@ bool DoubleLShapeProfile::_Validate() const
 IGeometryPtr DoubleLShapeProfile::_CreateGeometry() const
     {
     return ProfilesGeomApi::CreateDoubleLShape (this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DoubleLShapeProfile::ValidateSingleProfile() const
+    {
+    LShapeProfileCPtr singleProfilePtr = GetSingleProfile();
+    return singleProfilePtr.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DoubleLShapeProfile::ValidateType() const
+    {
+    switch (GetType())
+        {
+        case DoubleLShapeProfileType::LLBB:
+        case DoubleLShapeProfileType::SLBB:
+            return true;
+        default:
+            return false;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

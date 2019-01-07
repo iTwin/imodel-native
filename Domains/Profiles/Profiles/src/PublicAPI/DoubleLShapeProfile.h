@@ -59,7 +59,7 @@ protected:
     virtual IGeometryPtr _CreateGeometry() const override;
 
 private:
-    bool ValidateSpacing() const;
+    bool ValidateSingleProfile() const;
     bool ValidateType() const;
 
 public:
