@@ -546,45 +546,104 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     DPoint3d const tr_outerRight      = { halfWidth, (halfDepth - wallThickness - filletRadius), 0.0 };
     DPoint3d const tr_outerRangeApex  = { halfWidth, halfDepth, 0.0 };
     DPoint3d const tr_outerTop        = { (halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
+    DPoint3d const tl_outerTop        = { -(halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
 
-    ICurvePrimitivePtr  line1 = ICurvePrimitive::CreateLine (tl_outerRangeApex, tl_outerLeft);
-    ICurvePrimitivePtr  line2 = ICurvePrimitive::CreateLine (tl_outerLeft, bl_outerLeft);
-    ICurvePrimitivePtr  line3 = ICurvePrimitive::CreateLine (bl_outerLeft, bl_outerRangeApex);
-    ICurvePrimitivePtr  line4 = ICurvePrimitive::CreateLine (bl_outerRangeApex, bl_outerBottom);
+    ICurvePrimitivePtr line2 = ICurvePrimitive::CreateLine (tl_outerLeft, bl_outerLeft);
+    ICurvePrimitivePtr line3 = ICurvePrimitive::CreateLine (bl_outerLeft, bl_outerRangeApex);
+    ICurvePrimitivePtr line4 = ICurvePrimitive::CreateLine (bl_outerRangeApex, bl_outerBottom);
+
+    if (DBL_EPSILON < filletRadius)
+        {
+        line3 = createArcBetweenLines(line3, line4, filletRadius + wallThickness);
+        line4 = nullptr;
+        }
+
     ICurvePrimitivePtr  line5 = ICurvePrimitive::CreateLine (bl_outerBottom, br_outerBottom);
     ICurvePrimitivePtr  line6 = ICurvePrimitive::CreateLine (br_outerBottom, br_outerRangeApex);
     ICurvePrimitivePtr  line7 = ICurvePrimitive::CreateLine (br_outerRangeApex, br_outerRight);
+
+    if (DBL_EPSILON < filletRadius)
+        {
+        line6 = createArcBetweenLines(line6, line7, filletRadius + wallThickness);
+        line7 = nullptr;
+        }
+   
     ICurvePrimitivePtr  line8 = ICurvePrimitive::CreateLine (br_outerRight, br_outerRightGirth);
     ICurvePrimitivePtr  line9 = ICurvePrimitive::CreateLine (br_outerRightGirth, br_innerRightGirth);
     ICurvePrimitivePtr line10 = ICurvePrimitive::CreateLine (br_innerRightGirth, br_innerRight);
     ICurvePrimitivePtr line11 = ICurvePrimitive::CreateLine (br_innerRight, br_innerRangeApex);
     ICurvePrimitivePtr line12 = ICurvePrimitive::CreateLine (br_innerRangeApex, br_innerBottom);
+
+    if (DBL_EPSILON < filletRadius)
+        {
+        line11 = createArcBetweenLines(line11, line12, filletRadius);
+        line12 = nullptr;
+        }
+
     ICurvePrimitivePtr line13 = ICurvePrimitive::CreateLine (br_innerBottom, bl_innerBottom);
     ICurvePrimitivePtr line14 = ICurvePrimitive::CreateLine (bl_innerBottom, bl_innerRangeApex);
     ICurvePrimitivePtr line15 = ICurvePrimitive::CreateLine (bl_innerRangeApex, bl_innerLeft);
+
+    if (DBL_EPSILON < filletRadius)
+        {
+        line14 = createArcBetweenLines(line14, line15, filletRadius);
+        line15 = nullptr;
+        }
+
     ICurvePrimitivePtr line16 = ICurvePrimitive::CreateLine (bl_innerLeft, tl_innerLeft);
     ICurvePrimitivePtr line17 = ICurvePrimitive::CreateLine (tl_innerLeft, tl_innerRangeApex);
     ICurvePrimitivePtr line18 = ICurvePrimitive::CreateLine (tl_innerRangeApex, tl_innerTop);
+
+    if (DBL_EPSILON < filletRadius)
+        {
+        line17 = createArcBetweenLines(line17, line18, filletRadius);
+        line18 = nullptr;
+        }
+
     ICurvePrimitivePtr line19 = ICurvePrimitive::CreateLine (tl_innerTop, tr_innerTop);
     ICurvePrimitivePtr line20 = ICurvePrimitive::CreateLine (tr_innerTop, tr_innerRangeApex);
     ICurvePrimitivePtr line21 = ICurvePrimitive::CreateLine (tr_innerRangeApex, tr_innerRight);
+
+    if (DBL_EPSILON < filletRadius)
+        {
+        line20 = createArcBetweenLines(line20, line21, filletRadius);
+        line21 = nullptr;
+        }
+
     ICurvePrimitivePtr line22 = ICurvePrimitive::CreateLine (tr_innerRight, tr_innerRightGirth);
     ICurvePrimitivePtr line23 = ICurvePrimitive::CreateLine (tr_innerRightGirth, tr_outerRightGirth);
     ICurvePrimitivePtr line24 = ICurvePrimitive::CreateLine (tr_outerRightGirth, tr_outerRight);
     ICurvePrimitivePtr line25 = ICurvePrimitive::CreateLine (tr_outerRight, tr_outerRangeApex);
     ICurvePrimitivePtr line26 = ICurvePrimitive::CreateLine (tr_outerRangeApex, tr_outerTop);
 
+    if (DBL_EPSILON < filletRadius)
+        {
+        line25 = createArcBetweenLines(line25, line26, filletRadius + wallThickness);
+        line26 = nullptr;
+        }
+
+    ICurvePrimitivePtr line27 = ICurvePrimitive::CreateLine (tr_outerTop, tl_outerTop);
+    ICurvePrimitivePtr line28 = ICurvePrimitive::CreateLine (tl_outerTop, tl_outerRangeApex);
+    ICurvePrimitivePtr  line1 = ICurvePrimitive::CreateLine (tl_outerRangeApex, tl_outerLeft);
+
+    if (DBL_EPSILON < filletRadius)
+        {
+        line28 = createArcBetweenLines (line28, line1, filletRadius + wallThickness);
+        line1 = nullptr;
+        }
+
     bvector<ICurvePrimitivePtr> curves =
         {
         line1, line2, line3,
-        line4, line5, line6,
+        line4,
+        line5, line6,
         line7, line8, line9,
-        line10, line11, line12, 
-        line13, line14, line15, 
+        line10, line11, line12,
+        line13, line14, line15,
         line16, line17, line18, 
         line19, line20, line21, 
         line22, line23, line24,
-        line25, line26,
+        line25, line26, line27, line28,
         };
 
     return createGeometryFromPrimitiveArray (curves);
