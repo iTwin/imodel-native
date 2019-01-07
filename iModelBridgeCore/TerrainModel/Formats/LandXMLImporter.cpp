@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LandXMLImporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -794,6 +794,7 @@ void LandXMLImporter::ReadContour ()
         {
         if ((m_options & LandXMLOptions::Source) != LandXMLOptions::Source)
             {
+            if (!m_reader->IsCurrentElementEmpty())
             m_reader->ReadToEndOfElement ();
             return;
             }
@@ -834,6 +835,7 @@ void LandXMLImporter::ReadContour ()
 
         if ((m_options & LandXMLOptions::Definition) != LandXMLOptions::Definition)
             {
+            if (!m_reader->IsCurrentElementEmpty())
             m_reader->ReadToEndOfElement ();
             return;
             }
@@ -896,7 +898,10 @@ void LandXMLImporter::ReadContour ()
                             }
                         }
                     else if (nodeName == cFaces && m_pntRefs != NULL && !m_secondPass)
+                        {
+                        if (!m_reader->IsCurrentElementEmpty())
                         m_reader->ReadToEndOfElement  ();
+                        }
                     else if (nodeName == cF)
                         {
                         if (m_pntRefs == NULL || m_secondPass)
@@ -940,6 +945,7 @@ void LandXMLImporter::ReadContour ()
 
         if (!m_importAllDTMS && m_namedDtms.size() && m_namedDtms.find (currentName) == m_namedDtms.end())
             {
+            if (!m_reader->IsCurrentElementEmpty())
             m_reader->ReadToEndOfElement  ();
             return;
             }
@@ -953,6 +959,7 @@ void LandXMLImporter::ReadContour ()
                 if (m_callback)
                     if (!m_callback->StartTerrain (currentName.GetWCharCP(), L"", m_dtm))
                         {
+                        if (!m_reader->IsCurrentElementEmpty())
                         m_reader->ReadToEndOfElement  ();
                         return;
                         }
@@ -977,7 +984,10 @@ void LandXMLImporter::ReadContour ()
                         if (!m_secondPass && m_dtm.IsValid ())
                             ReadSourceData ();
                         else
+                            {
+                            if (!m_reader->IsCurrentElementEmpty())
                             m_reader->ReadToEndOfElement  ();
+                        }
                         }
                     else if (nodeName == cDefinition)
                         {
@@ -992,8 +1002,11 @@ void LandXMLImporter::ReadContour ()
                             m_namedDtms[currentName] = m_dtm;
                             }
                         else
+                            {
+                            if (!m_reader->IsCurrentElementEmpty())
                             m_reader->ReadToEndOfElement  ();
                         }
+                    }
                     }
                     break;
                 case BeXmlReader::NODE_TYPE_EndElement:
@@ -1044,6 +1057,7 @@ void LandXMLImporter::ReadContour ()
         WString epsgCode = attrs.GetAttribute (cEpsgCode);
         WString ogcWktCode = attrs.GetAttribute (cOgcWktCode);
 
+        if (!m_reader->IsCurrentElementEmpty())
         m_reader->ReadToEndOfElement ();
 
         m_gcs = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS ();
@@ -1055,13 +1069,13 @@ void LandXMLImporter::ReadContour ()
         if (!epsgCode.empty ())
             ret = m_gcs->InitFromEPSGCode (nullptr, nullptr, ConvertToInt (epsgCode));
 
-        if (ret != SUCCESS && !ogcWktCode.empty())// Try a different method
+        if ((ret != SUCCESS || !m_gcs->IsValid()) && !ogcWktCode.empty())// Try a different method
             ret = m_gcs->InitFromWellKnownText (nullptr, nullptr, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, ogcWktCode.GetWCharCP ());
 
-        if (ret != SUCCESS && !name.empty())// Try a different method
+        if ((ret != SUCCESS || !m_gcs->IsValid())  && !name.empty())// Try a different method
             ret = m_gcs->SetFromCSName(name.c_str());
 
-        if (ret != SUCCESS)
+        if ((ret != SUCCESS || !m_gcs->IsValid()))
             m_gcs = nullptr;
         }
     void LandXMLImporter::ReadUnits ()
@@ -1179,6 +1193,7 @@ void LandXMLImporter::ReadContour ()
                             {
                             if (m_pntRefs == NULL)
                                 {
+                                if (!m_reader->IsCurrentElementEmpty())
                                 m_reader->ReadToEndOfElement  ();
                                 }
                             else
@@ -1248,7 +1263,10 @@ void LandXMLImporter::ReadContour ()
                     else if (nodeName == cCoordinateSystem)
                         ReadCoordinateSystem ();
                     else if (nodeName == cCgPoints)
+                        {
+                        if (!m_reader->IsCurrentElementEmpty())
                         m_reader->ReadToEndOfElement  ();
+                        }
                     break;
                 }
             }

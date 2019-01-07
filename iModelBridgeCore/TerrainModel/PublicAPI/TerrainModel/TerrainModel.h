@@ -2,7 +2,7 @@
 |
 |   $Source: PublicAPI/TerrainModel/TerrainModel.h $
 |
-| $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,9 +33,9 @@
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
 #ifndef BUILDTMFORDGNDB
-  #ifndef ADD_BENTLEY_TYPEDEFS
-  #define BUILDTMFORDGNDB
-  #endif
+#ifndef ADD_BENTLEY_TYPEDEFS
+#define BUILDTMFORDGNDB
+#endif
 #endif
 
 #ifdef BUILDTMFORDGNDB
@@ -97,7 +97,7 @@ TERRAINMODEL_TYPEDEFS(BcDTMSpot)
 //ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, BcDTMDrapedLine, BcDTMDrapedLine, struct)
 //ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, BcDTMFeature, BcDTMFeature, struct)
 
-TERRAINMODEL_TYPEDEFS (TMTransformHelper)
+TERRAINMODEL_TYPEDEFS(TMTransformHelper)
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
@@ -120,13 +120,13 @@ typedef RefCountedPtr<BcDTMSpot> BcDTMSpotPtr;
 
 struct DtmString : bvector<DPoint3d>
     {
-    DtmString ()
+    DtmString()
         {
         }
-    DtmString (DPoint3dCP pt, int numPts)
+    DtmString(DPoint3dCP pt, int numPts)
         {
-        resize (numPts);
-        memcpy (data (), pt, numPts * sizeof(DPoint3d));
+        resize(numPts);
+        memcpy(data(), pt, numPts * sizeof(DPoint3d));
         }
     };
 typedef bvector<DtmString> DtmVectorString;
@@ -135,16 +135,16 @@ typedef bvector<DtmString> DtmVectorString;
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE
 
-TERRAINMODEL_TYPEDEFS (IDTM)
-TERRAINMODEL_TYPEDEFS (IDTMDrainageFeature)
-TERRAINMODEL_TYPEDEFS (IDTMDrapedLine)
-TERRAINMODEL_TYPEDEFS (IDTMDrapedLinePoint)
+TERRAINMODEL_TYPEDEFS(IDTM)
+TERRAINMODEL_TYPEDEFS(IDTMDrainageFeature)
+TERRAINMODEL_TYPEDEFS(IDTMDrapedLine)
+TERRAINMODEL_TYPEDEFS(IDTMDrapedLinePoint)
 //__PUBLISH_SECTION_END__
-TERRAINMODEL_TYPEDEFS (IDTMDraping)
-TERRAINMODEL_TYPEDEFS (IDTMDrainage)
-TERRAINMODEL_TYPEDEFS (IDTMContouring)
-TERRAINMODEL_TYPEDEFS (IDTMVolume)
-TERRAINMODEL_TYPEDEFS (TMTransformHelper)
+TERRAINMODEL_TYPEDEFS(IDTMDraping)
+TERRAINMODEL_TYPEDEFS(IDTMDrainage)
+TERRAINMODEL_TYPEDEFS(IDTMContouring)
+TERRAINMODEL_TYPEDEFS(IDTMVolume)
+TERRAINMODEL_TYPEDEFS(TMTransformHelper)
 //__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
@@ -297,7 +297,7 @@ enum class DTMCleanupFlags : short
     All = Changes | VoidsAndIslands,
     };
 
-ENUM_IS_FLAGS (DTMCleanupFlags)
+ENUM_IS_FLAGS(DTMCleanupFlags)
 
 //__PUBLISH_SECTION_START__
 enum class DTMState : uint32_t
@@ -406,10 +406,12 @@ struct DTM_CROSSING_FEATURE_ERROR;
 struct          DTMAppDataKey
     {
     private:
-        DTMAppDataKey (DTMAppDataKey const&);                  // illegal
+        DTMAppDataKey(DTMAppDataKey const&);                  // illegal
         DTMAppDataKey const& operator= (DTMAppDataKey const&); // illegal
     public:
-        DTMAppDataKey () {}
+        DTMAppDataKey()
+            {
+            }
     };
 
 //__PUBLISH_SECTION_END__
@@ -423,21 +425,33 @@ template <typename APPDATA, typename KEY, typename HOST> struct DTMAppDataList
         KEY const*   m_key;
         APPDATA*     m_obj;
 
-        AppDataEntry (APPDATA* entry, KEY const& key) : m_key (&key) { m_obj = entry; }
-        void ChangeValue (APPDATA* obj, HOST host) { APPDATA* was = m_obj; m_obj = obj; if (was) was->_OnCleanup (host); }
-        void Clear (HOST host) { ChangeValue (NULL, host); m_key = 0; }
+        AppDataEntry(APPDATA* entry, KEY const& key) : m_key(&key)
+            {
+            m_obj = entry;
+            }
+        void ChangeValue(APPDATA* obj, HOST host)
+            {
+            APPDATA* was = m_obj; m_obj = obj; if (was) was->_OnCleanup(host);
+            }
+        void Clear(HOST host)
+            {
+            ChangeValue(NULL, host); m_key = 0;
+            }
         };
 
     typedef bvector<AppDataEntry> T_List;
     bool    m_locked;
     T_List  m_list;
 
-    DTMAppDataList () { m_locked = false; }
+    DTMAppDataList()
+        {
+        m_locked = false;
+        }
 
     /*---------------------------------------------------------------------------------****
     * @bsimethod                                    Keith.Bentley                   10/07
     +---------------+---------------+---------------+---------------+---------------+------*/
-    APPDATA* FindAppData (KEY const& key) const
+    APPDATA* FindAppData(KEY const& key) const
         {
         for (AppDataEntry entry : m_list)
             {
@@ -451,12 +465,12 @@ template <typename APPDATA, typename KEY, typename HOST> struct DTMAppDataList
     /*---------------------------------------------------------------------------------****
     //! It is NOT legal to call AddAppData from within a callback.
     * @bsimethod                                    Keith.Bentley                   10/07
-                                                                                          +---------------+---------------+---------------+---------------+---------------+------*/
-    StatusInt  AddAppData (KEY const& key, APPDATA* obj, HOST host)
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    StatusInt  AddAppData(KEY const& key, APPDATA* obj, HOST host)
         {
         if (m_locked)
             {
-            BeAssert (0);
+            BeAssert(0);
             return ERROR;
             }
 
@@ -464,26 +478,26 @@ template <typename APPDATA, typename KEY, typename HOST> struct DTMAppDataList
             {
             if (&key == entry.m_key)
                 {
-                entry.ChangeValue (obj, host);
+                entry.ChangeValue(obj, host);
                 return  SUCCESS;
                 }
             }
 
-        m_list.push_back (AppDataEntry (obj, key));
+        m_list.push_back(AppDataEntry(obj, key));
         return  SUCCESS;
         }
 
     /*---------------------------------------------------------------------------------****
-                                                                                          //! It IS legal to call DropAppData from within a callback.
-                                                                                          * @bsimethod                                    Keith.Bentley                   10/07
-                                                                                          +---------------+---------------+---------------+---------------+---------------+------*/
-    StatusInt DropAppData (KEY const& key, HOST host)
+    //! It IS legal to call DropAppData from within a callback.
+    * @bsimethod                                    Keith.Bentley                   10/07
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    StatusInt DropAppData(KEY const& key, HOST host)
         {
         for (AppDataEntry entry : m_list)
             {
             if (&key == entry.m_key)
                 {
-                entry.Clear (host);        // doesn't get removed until next traversal
+                entry.Clear(host);        // doesn't get removed until next traversal
                 return  SUCCESS;
                 }
             }
@@ -491,21 +505,21 @@ template <typename APPDATA, typename KEY, typename HOST> struct DTMAppDataList
         }
 
     /*---------------------------------------------------------------------------------****
-                                                                                          * @bsimethod                                    Keith.Bentley                   10/07
-                                                                                          +---------------+---------------+---------------+---------------+---------------+------*/
-    template <typename CALLER> void CallAllDroppable (CALLER const& caller, HOST host)
+    * @bsimethod                                    Keith.Bentley                   10/07
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template <typename CALLER> void CallAllDroppable(CALLER const& caller, HOST host)
         {
         m_locked = true;
-        for (typename T_List::iterator entry = m_list.begin (); entry != m_list.end ();)
+        for (typename T_List::iterator entry = m_list.begin(); entry != m_list.end();)
             {
             if (NULL == entry->m_obj)      // was previously dropped
                 {
-                entry = m_list.erase (entry);
+                entry = m_list.erase(entry);
                 }
-            else if (caller.CallHandler (*entry->m_obj))
+            else if (caller.CallHandler(*entry->m_obj))
                 {
-                entry->ChangeValue (NULL, host);
-                entry = m_list.erase (entry);
+                entry->ChangeValue(NULL, host);
+                entry = m_list.erase(entry);
                 }
             else
                 ++entry;
@@ -514,20 +528,20 @@ template <typename APPDATA, typename KEY, typename HOST> struct DTMAppDataList
         }
 
     /*---------------------------------------------------------------------------------****
-                                                                                          * @bsimethod                                    Keith.Bentley                   10/07
-                                                                                          +---------------+---------------+---------------+---------------+---------------+------*/
-    template <typename CALLER> void CallAll (CALLER const& caller)
+    * @bsimethod                                    Keith.Bentley                   10/07
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template <typename CALLER> void CallAll(CALLER const& caller)
         {
         m_locked = true;
-        for (typename T_List::iterator entry = m_list.begin (); entry != m_list.end ();)
+        for (typename T_List::iterator entry = m_list.begin(); entry != m_list.end();)
             {
             if (NULL == entry->m_obj)   // was previously dropped
                 {
-                entry = m_list.erase (entry);
+                entry = m_list.erase(entry);
                 }
             else
                 {
-                caller.CallHandler (*entry->m_obj);
+                caller.CallHandler(*entry->m_obj);
                 ++entry;
                 }
             }

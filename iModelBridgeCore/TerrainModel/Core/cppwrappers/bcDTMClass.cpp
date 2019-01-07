@@ -383,7 +383,7 @@ static int digitalTM_nextOriginPoint
     *distOrigP = dc_zero;
     *diffSOrigP = dc_zero;
 
-    if (origStringP[*currPtOrigP].x == lineStringPtP->x && origStringP[*currPtOrigP].y == lineStringPtP->y)
+    if (origStringP[*currPtOrigP].AlmostEqualXY(*lineStringPtP))
         {
 
         // In the following loop we look for the next point in the original array which is not the same than

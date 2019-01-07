@@ -886,7 +886,7 @@ BENTLEYDTM_Public int bcdtmClip_toTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,long sta
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
    {
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
-    if( dtmFeatureP->dtmFeatureState != DTMFeatureState::Tin )
+    if( dtmFeatureP->dtmFeatureState != DTMFeatureState::Tin && dtmFeatureP->dtmFeatureState != DTMFeatureState::PointsArray )
       {
        if( bcdtmInsert_removeDtmFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
       }

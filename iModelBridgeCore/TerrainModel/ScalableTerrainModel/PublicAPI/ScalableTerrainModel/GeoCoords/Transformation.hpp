@@ -6,7 +6,7 @@
 |       $Date: 2011/10/20 18:47:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -51,12 +51,12 @@ inline const TransfoMatrix& TransfoMatrix::GetIdentity ()
 
 inline TransfoMatrix::TransfoMatrix ()
     {
-    memcpy(m_parameters[0], GetIdentity().m_parameters[0], 12 * sizeof(double));
+    memcpy(m_parameters, GetIdentity().m_parameters, 12 * sizeof(double));
     }
 
 inline TransfoMatrix::TransfoMatrix (const double parameters[][4])
     {
-    memcpy(m_parameters[0], parameters[0], 12 * sizeof(double));
+    memcpy(m_parameters, parameters, 12 * sizeof(double));
     }
 
 
@@ -67,7 +67,7 @@ inline TransfoMatrix::TransfoMatrix    (double r0c0, double r0c1, double r0c2, d
         const double parameters[3][4] = {{r0c0, r0c1, r0c2, r0c3},
                                          {r1c0, r1c1, r1c2, r1c3},
                                          {r2c0, r2c1, r2c2, r2c3}};
-    memcpy(m_parameters[0], parameters[0], 12 * sizeof(double));
+    memcpy(m_parameters, parameters, 12 * sizeof(double));
     }
 
 inline TransfoMatrix::CRowProxy TransfoMatrix::operator[] (size_t idx) const
@@ -92,3 +92,4 @@ inline DPoint3d    operator*   (const TransfoMatrix&    lhs,
 
     return result;
     }
+
