@@ -1382,7 +1382,7 @@ TEST_F(SchemaCopyTest, SuccessfullCopiesKindOfQuantityPropertyWithPersistenceUni
     ECSchemaPtr originalSchema;
     auto const schemaContext = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *schemaContext));
-
+    
     ASSERT_NE(nullptr, originalSchema->GetUnitCP("TestUnit"));
     ASSERT_NE(nullptr, originalSchema->GetKindOfQuantityCP("TestKindOfQuantity"));
 
@@ -1439,6 +1439,57 @@ TEST_F(ClassCopyTest, CopyPropertyCopiesOriginalTypeNameInfo)
 
     EXPECT_NE(Utf8String::npos, ecSchemaXml.find("typeName=\"notDouble\""));
     EXPECT_NE(Utf8String::npos, ecSchemaXml.find("typeName=\"notInt\""));
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, CopyCustomAttributeEC2)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" nameSpacePrefix="ts" version="01.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="CustomClass" isCustomAttributeClass="True"/>
+            <ECCustomAttributes>
+                <CustomClass xmlns="testSchema.01.02"/>
+            </ECCustomAttributes>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr originalSchema;
+    auto&& schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *schemaContext));
+    
+    ECSchemaPtr copySchema;
+    EC_EXPECT_SUCCESS(originalSchema->CopySchema(copySchema));
+
+    EXPECT_TRUE(copySchema->GetCustomAttribute("testSchema", "CustomClass").IsValid());
+    EXPECT_STREQ("testSchema.01.02", copySchema->GetCustomAttribute("testSchema", "CustomClass")->GetClass().GetSchema().GetLegacyFullSchemaName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, CopyCustomAttributeEC3)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
+            <ECCustomAttributes>
+                <CustomClass xmlns="testSchema.01.02.03"/>
+            </ECCustomAttributes>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr originalSchema;
+    auto&& schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *schemaContext));
+
+    ECSchemaPtr copySchema;
+    EC_EXPECT_SUCCESS(originalSchema->CopySchema(copySchema));
+
+    EXPECT_TRUE(copySchema->GetCustomAttribute("testSchema", "CustomClass").IsValid());
+    EXPECT_STREQ("testSchema.01.02.03", copySchema->GetCustomAttribute("testSchema", "CustomClass")->GetClass().GetSchema().GetFullSchemaName().c_str());
     }
 
 
@@ -1607,7 +1658,7 @@ TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedCAClass)
     {
     Utf8CP referenceSchemaString = R"(
         <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>CopyKindOfQuantity_CopyingWithCopyReferencesTrueCopiesPresentationUnit
+            <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
         </ECSchema>
         )";
 

@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -164,7 +164,11 @@ IECInstancePtr IECInstance::CreateCopyThroughSerialization()
 IECInstancePtr IECInstance::CreateCopyThroughSerialization(ECSchemaCR targetSchema)
     {
     Utf8String ecInstanceXml;
-    this->WriteToXmlString(ecInstanceXml, true, false);
+
+    if (targetSchema.GetECVersion() == ECVersion::V2_0)
+        this->WriteToXmlString(ecInstanceXml, true, false);
+    else
+        this->WriteToXmlStringLatestVersion(ecInstanceXml, true, false);
 
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(targetSchema);
 
@@ -3817,6 +3821,16 @@ struct  InstanceXmlWriter
             return WriteInstance(ecInstance, writeInstanceId, className);
             }
 
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                    Gintaras.Volkvicius            01/19
+        //---------------------------------------------------------------------------------------
+        InstanceWriteStatus     WriteInstanceLatestVersion(IECInstanceCR ecInstance, bool writeInstanceId)
+            {
+            Utf8CP className = ecInstance.GetClass().GetName().c_str();
+
+            return WriteInstanceLatestVersion(ecInstance, writeInstanceId, className);
+            }
+
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Barry.Bentley                   04/10
         +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4303,7 +4317,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile(WCharCP fileName, bool write
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Paul.Connelly   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString(T_STR& ecInstanceXml, bool isStandAlone, bool writeInstanceId, IECInstanceR instance)
+template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString(T_STR& ecInstanceXml, bool isStandAlone, bool writeInstanceId, IECInstanceR instance, bool useLatestXml)
     {
     ecInstanceXml.clear();
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
@@ -4312,7 +4326,12 @@ template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString(T_STR& ecI
         xmlWriter->WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
 
     InstanceWriteStatus status;
-    if (InstanceWriteStatus::Success != (status = instanceWriter.WriteInstance(instance, writeInstanceId)))
+    if (useLatestXml)
+        {
+        if (InstanceWriteStatus::Success != (status = instanceWriter.WriteInstanceLatestVersion(instance, writeInstanceId)))
+            return status;
+        }
+    else if (InstanceWriteStatus::Success != (status = instanceWriter.WriteInstance(instance, writeInstanceId)))
         return status;
 
     xmlWriter->ToString(ecInstanceXml);
@@ -4324,7 +4343,7 @@ template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString(T_STR& ecI
 //+---------------+---------------+---------------+---------------+---------------+------
 InstanceWriteStatus     IECInstance::WriteToXmlString(Utf8String & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
     {
-    return writeInstanceToXmlString(ecInstanceXml, isStandAlone, writeInstanceId, *this);
+    return writeInstanceToXmlString(ecInstanceXml, isStandAlone, writeInstanceId, *this, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4332,7 +4351,23 @@ InstanceWriteStatus     IECInstance::WriteToXmlString(Utf8String & ecInstanceXml
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceWriteStatus     IECInstance::WriteToXmlString(WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
     {
-    return writeInstanceToXmlString(ecInstanceXml, isStandAlone, writeInstanceId, *this);
+    return writeInstanceToXmlString(ecInstanceXml, isStandAlone, writeInstanceId, *this, false);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+InstanceWriteStatus     IECInstance::WriteToXmlStringLatestVersion(Utf8String & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
+    {
+    return writeInstanceToXmlString(ecInstanceXml, isStandAlone, writeInstanceId, *this, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceWriteStatus     IECInstance::WriteToXmlStringLatestVersion(WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
+    {
+    return writeInstanceToXmlString(ecInstanceXml, isStandAlone, writeInstanceId, *this, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
