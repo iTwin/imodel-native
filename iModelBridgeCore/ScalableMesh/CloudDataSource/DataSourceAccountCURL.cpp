@@ -260,7 +260,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         //assert(!"cURL error, download failed");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
-    else if (!IsResponseOK(response_header))
+    else if (BeFileName::IsUrl(url.c_str()) && !IsResponseOK(response_header))
         {
         //assert(!"HTTP error, download failed or resource not found");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
