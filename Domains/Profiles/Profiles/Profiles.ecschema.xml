@@ -482,8 +482,8 @@
         </ECCustomAttributes>
         <ECProperty propertyName="Priority" typeName="int" description="" />
         <ECProperty propertyName="Category" typeName="MaterialProfileCategoryType" description="" />
-        <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileHasMaterial" direction="Forward" displayLabel="Material" />
-        <ECNavigationProperty propertyName="Profile" relationshipName="MaterialProfileHasProfile" direction="Forward" displayLabel="Profile" />
+        <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" displayLabel="Material" />
+        <ECNavigationProperty propertyName="Profile" relationshipName="MaterialProfileRefersToProfile" direction="Forward" displayLabel="Profile" />
     </ECEntityClass>
 
     <!--TODO: remove this after material schema is developed-->
