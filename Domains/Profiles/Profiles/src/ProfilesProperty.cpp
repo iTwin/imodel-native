@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/ProfilesProperty.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProfilesProperty::IsGreaterThanZero (double value)
     {
-    return BeNumerical::BeFinite (value) && BeNumerical::Compare (value, 0.0) >= 1.0;
+    return BeNumerical::BeFinite (value) && BeNumerical::IsGreaterThanZero (value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -23,7 +23,7 @@ bool ProfilesProperty::IsGreaterThanZero (double value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProfilesProperty::IsGreaterOrEqualToZero (double value)
     {
-    return BeNumerical::BeFinite (value) && BeNumerical::Compare (value, 0.0) >= 0.0;
+    return BeNumerical::BeFinite (value) && BeNumerical::IsGreaterOrEqualToZero (value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,7 +31,7 @@ bool ProfilesProperty::IsGreaterOrEqualToZero (double value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProfilesProperty::IsEqualToZero (double value)
     {
-    return BeNumerical::BeFinite (value) && BeNumerical::Compare (value, 0.0) == 0;
+    return BeNumerical::BeFinite (value) && BeNumerical::IsEqualToZero (value);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
