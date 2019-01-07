@@ -75,6 +75,8 @@ $(o)HollowRectangleProfileTests.obj     : $(BEGTEST_INPUT)HollowRectangleProfile
 
 $(o)MaterialProfileTests.obj            : $(BEGTEST_INPUT)MaterialProfileTests.cpp ${MultiCompileDepends}
 
+$(o)DoubleLShapeProfileTests.obj        : $(BEGTEST_INPUT)DoubleLShapeProfileTests.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts
