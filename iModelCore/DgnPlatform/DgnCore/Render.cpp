@@ -215,6 +215,45 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::AmbientOcclusionParams::ToJson() const
+    {
+    AmbientOcclusionParams defaults;
+    Json::Value json;
+    
+    if (m_bias != defaults.m_bias) json[json_bias()] = m_bias;
+    if (m_zLengthCap != defaults.m_zLengthCap) json[json_zLengthCap()] = m_zLengthCap;
+    if (m_intensity != defaults.m_intensity) json[json_intensity()] = m_intensity;
+    if (m_texelStepSize != defaults.m_texelStepSize) json[json_texelStepSize()] = m_texelStepSize;
+    if (m_blurDelta != defaults.m_blurDelta) json[json_blurDelta()] = m_blurDelta;
+    if (m_blurSigma != defaults.m_blurSigma) json[json_blurSigma()] = m_blurSigma;
+    if (m_blurTexelStepSize != defaults.m_blurTexelStepSize) json[json_blurTexelStepSize()] = m_blurTexelStepSize;
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::AmbientOcclusionParams Render::AmbientOcclusionParams::FromJson(JsonValueCR json)
+    {
+    AmbientOcclusionParams params;
+    if (json.isObject())
+        {
+        params.m_bias = json[json_bias()].asDouble(params.m_bias);
+        params.m_zLengthCap = json[json_zLengthCap()].asDouble(params.m_zLengthCap);
+        params.m_intensity = json[json_intensity()].asDouble(params.m_intensity);
+        params.m_texelStepSize = json[json_texelStepSize()].asDouble(params.m_texelStepSize);
+        params.m_blurDelta = json[json_blurDelta()].asDouble(params.m_blurDelta);
+        params.m_blurSigma = json[json_blurSigma()].asDouble(params.m_blurSigma);
+        params.m_blurTexelStepSize = json[json_blurTexelStepSize()].asDouble(params.m_blurTexelStepSize);
+        }
+
+    return params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Feature::operator<(FeatureCR rhs) const
