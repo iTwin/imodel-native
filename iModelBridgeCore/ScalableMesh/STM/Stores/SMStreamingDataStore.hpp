@@ -2318,7 +2318,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         url.AppendToPath((L"p_" + std::to_wstring(blockID.m_integerID) + extension).c_str());
 
         BeFile file;
-        BeFileStatus status = file.Open(url.c_str(), BeFileAccess::Write);
+        BeFileStatus status = OPEN_FILE(file, url.c_str(), BeFileAccess::Write);
         if (BeFileStatus::Success != status)
             {
             status = file.Create(url.c_str());

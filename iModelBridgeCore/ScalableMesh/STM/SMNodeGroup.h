@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.h $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -807,7 +807,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             m_isRoot = m_ParentGroup == nullptr;
 
             BeFileName outDir(m_outputDirPath.c_str());
-            if (!outDir.IsDirectory())
+            if (!BeFileName::IsDirectory(outDir.c_str()))
                 {
                 BeFileNameStatus status = BeFileName::CreateNewDirectory(m_outputDirPath.c_str());
                 BeAssert(BeFileNameStatus::Success == status);
@@ -1403,7 +1403,7 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
     BeFile file;
     BeFileStatus status;
     int numRetries = 0;
-    while (numRetries < 10 && BeFileStatus::FileNotFoundError != (status = file.Open(group_filename.c_str(), BeFileAccess::Write)))
+    while (numRetries < 10 && BeFileStatus::FileNotFoundError != (status = OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write)))
         {
         BeThreadUtilities::BeSleep(100);
         ++numRetries;

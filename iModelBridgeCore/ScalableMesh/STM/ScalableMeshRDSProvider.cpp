@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -271,9 +271,14 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, body.c_str(), body.size());
         BeAssert(reader.IsValid());
         WString value, fileName;
-        auto xmlResult = reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "string", false, &value);
+#ifdef VANCOUVER_API
+#define XML_READTO(reader, type, name, stayInCurrentElement, value) reader->ReadTo(type, name, value);
+#else
+#define XML_READTO(reader, type, name, stayInCurrentElement, value) reader->ReadTo(type, name, stayInCurrentElement, value);
+#endif
+        auto xmlResult = XML_READTO(reader, IBeXmlReader::NodeType::NODE_TYPE_Element, "string", false, &value);
         BeAssert(xmlResult == IBeXmlReader::ReadResult::READ_RESULT_Success);
-        xmlResult = reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
+        xmlResult = XML_READTO(reader, IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
         BeAssert(xmlResult == IBeXmlReader::ReadResult::READ_RESULT_Success);
         serverUrl = Utf8String(value.c_str());
         }
