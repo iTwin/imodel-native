@@ -2,14 +2,18 @@
 |
 |     $Source: Licensing/Utils/BuddiError.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ClientInternal.h"
-#include <WebServices/Configuration/BuddiError.h>
+//#include "ClientInternal.h"
+//#include <Licensing/Utils/BuddiError.h>
+#include "../../PublicAPI/Licensing/Utils/BuddiError.h"
 
 #include <BeHttp/HttpStatusHelper.h>
-#include "BuddiError.xliff.h"
+//#include "BuddiError.xliff.h"
+#include "../../PublicAPI/Licensing/Utils/BuddiError.xliff.h"
+
+USING_NAMESPACE_BENTLEY_LICENSING
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Julija.Semenenko   06/2015
@@ -33,17 +37,17 @@ BuddiError::BuddiError(Status status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BuddiError::BuddiError(Http::ResponseCR httpResponse) : BuddiError()
     {
-    if (ConnectionStatus::OK != httpResponse.GetConnectionStatus())
+    if (Http::ConnectionStatus::OK != httpResponse.GetConnectionStatus())
         {
-        m_message = HttpError(httpResponse).GetDisplayMessage();
+        m_message = Http::HttpError(httpResponse).GetDisplayMessage();
         m_description.clear();
         m_status = Status::ConnectionError;
         return;
         }
 
-    if (HttpStatus::OK != httpResponse.GetHttpStatus())
+    if (Http::HttpStatus::OK != httpResponse.GetHttpStatus())
         {
-        m_message = HttpError(httpResponse).GetDisplayMessage();
+        m_message = Http::HttpError(httpResponse).GetDisplayMessage();
         m_description.clear();
         m_status = Status::UnxpectedError;
         return;

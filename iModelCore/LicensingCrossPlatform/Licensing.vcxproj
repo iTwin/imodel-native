@@ -7,7 +7,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Licensing\ApplicationInfo.cpp" />
+    <ClCompile Include="Licensing\Connect\ConnectAuthenticationHandler.cpp" />
+    <ClCompile Include="Licensing\Connect\ConnectAuthenticationPersistence.cpp" />
+    <ClCompile Include="Licensing\Connect\ConnectSessionAuthenticationPersistence.cpp" />
+    <ClCompile Include="Licensing\Connect\ConnectSignInManager.cpp" />
+    <ClCompile Include="Licensing\Connect\ConnectTokenProvider.cpp" />
+    <ClCompile Include="Licensing\Connect\DelegationTokenProvider.cpp" />
+    <ClCompile Include="Licensing\Connect\IConnectSignInManager.cpp" />
+    <ClCompile Include="Licensing\Connect\IdentityAuthenticationPersistence.cpp" />
+    <ClCompile Include="Licensing\Connect\IdentityTokenProvider.cpp" />
+    <ClCompile Include="Licensing\Connect\ImsClient.cpp" />
+    <ClCompile Include="Licensing\Connect\SamlToken.cpp" />
+    <ClCompile Include="Licensing\Utils\ApplicationInfo.cpp" />
     <ClCompile Include="Licensing\Client.cpp" />
     <ClCompile Include="Licensing\ClientFreeImpl.cpp" />
     <ClCompile Include="Licensing\ClientImpl.cpp" />
@@ -28,9 +39,29 @@
     <ClCompile Include="Licensing\Utils\UrlSafeBase64Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PublicAPI\Licensing\Utils\BuddiError.xliff.h" />
     <ClInclude Include="Licensing\ClientFreeImpl.h" />
     <ClInclude Include="Licensing\ClientImpl.h" />
-    <ClInclude Include="Licensing\ApplicationInfo.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\Connect.xliff.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\ConnectAuthenticationHandler.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\ConnectAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\ConnectSessionAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\ConnectSignInManager.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\ConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\DelegationTokenProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\IConnectAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\IConnectAuthenticationProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\IConnectSignInManager.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\IConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\IdentityAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\IdentityTokenProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\IImsClient.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\ImsClient.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\ISecurityToken.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\ITokenStore.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\SamlToken.h" />
+    <ClInclude Include="PublicAPI\Licensing\Connect\WrapperTokenProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\ApplicationInfo.h" />
     <ClInclude Include="Licensing\ClientInterface.h" />
     <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\BuddiClient.h" />
@@ -100,7 +131,7 @@
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);D:\dev\crossDev\src\licensing\LicensingCrossPlatform\PublicAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
+    <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);D:\dev\crossplatformlicdev\src\licensing\LicensingCrossPlatform\PublicAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;D:\dev\crossplatformlicdev\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>

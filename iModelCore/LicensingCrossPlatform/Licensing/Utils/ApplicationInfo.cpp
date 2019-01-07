@@ -1,15 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/ApplicationInfo.cpp $
+|     $Source: Licensing/Utils/ApplicationInfo.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeSystemInfo.h>
+#include <mutex>
 
-#include "ApplicationInfo.h"
+#include "../../PublicAPI/Licensing/Utils/ApplicationInfo.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
+USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Carlos.Thomas    12/2018
@@ -166,6 +168,84 @@ Utf8String ApplicationInfo::GetSystemDescription() const
     {
     return m_systemDescription;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jedrzej.Kosinski    01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ApplicationInfo::GetAcceptLanguage() const
+{
+	BeMutexHolder lock(m_headersCS);
+
+	/*if (m_languageTag.empty() && m_fallbackLanguageTag.empty())
+	{
+		return ApplicationInfo::DefaultLanguage;
+	}*/
+
+	if (m_languageTag.EqualsI(m_fallbackLanguageTag))
+	{
+		return m_languageTag;
+	}
+
+	if (m_languageTag.empty())
+	{
+		return m_fallbackLanguageTag;
+	}
+
+	if (m_fallbackLanguageTag.empty())
+	{
+		return m_languageTag;
+	}
+
+	return m_languageTag + ", " + m_fallbackLanguageTag + ";q=0.6";
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ApplicationInfo::GetUserAgent() const
+{
+	return Utf8PrintfString("%s (%s)", GetProductToken().c_str(), m_systemDescription.c_str());
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ApplicationInfo::GetProductToken() const
+{
+	return Utf8PrintfString("%s/%s", m_applicationName.c_str(), m_applicationVersion.ToString().c_str());
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jedrzej.Kosinski    01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ApplicationInfo::FillHttpRequestHeaders(HttpRequestHeaders& headers) const
+{
+	BeMutexHolder lock(m_headersCS);
+	if (nullptr == m_headers)
+	{
+		m_headers = std::make_shared<HttpRequestHeaders>();
+
+		// Reporting application that connects
+		m_headers->SetUserAgent(GetUserAgent());
+
+		// Request localized response
+		m_headers->SetAcceptLanguage(GetAcceptLanguage());
+
+		// WSG feature usage tracking
+		m_headers->SetValue(HEADER_MasUuid, m_deviceId);
+		m_headers->SetValue(HEADER_MasAppGuid, m_applicationGUID);
+		}
+
+	/*if (nullptr != m_primaryHeaderProvider)
+	{
+		m_primaryHeaderProvider->FillHttpRequestHeaders(headers);
+	}*/
+
+	for (auto& pair : m_headers->GetMap())
+	{
+		headers.SetValue(pair.first, pair.second);
+	}
+	}
 
 #if defined (__ANDROID__)
 

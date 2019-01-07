@@ -2,7 +2,7 @@
  |
  |     $Source: Licensing/ClientImpl.h $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@
 #include "ClientInterface.h"
 #include "UsageDb.h"
 #include "Policy.h"
-#include "ApplicationInfo.h"
+#include "../PublicAPI/Licensing/Utils/ApplicationInfo.h"
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
@@ -23,6 +23,8 @@
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
 #include <BeHttp/HttpClient.h>
+
+#include "../PublicAPI/Licensing/Connect/ConnectSignInManager.h"
 
 //#include <WebServices/Connect/IConnectAuthenticationProvider.h>
 //#include <WebServices/Client/ClientInfo.h>

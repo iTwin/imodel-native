@@ -2,7 +2,7 @@
 |
 |     $Source: Licensing/ClientFreeImpl.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientFreeImpl.h"
@@ -29,7 +29,7 @@ ClientFreeImpl::ClientFreeImpl(
 
 	Utf8String deviceInfo = BeSystemInfo::GetDeviceId();
 	if (deviceInfo.Equals("")) deviceInfo = "DefaultDevice";
-	m_clientInfo = std::make_shared<ClientInfo>("FreeApplication",BeVersion(1,0),"FreeGUID",deviceInfo,"FreeDescriptor");
+	m_applicationInfo = std::make_shared<ApplicationInfo>("FreeApplication",BeVersion(1,0),"FreeGUID",deviceInfo,"FreeDescriptor");
 	m_featureString = featureString;
 	m_httpHandler = httpHandler;
 	m_correlationId = BeGuid(true).ToString();

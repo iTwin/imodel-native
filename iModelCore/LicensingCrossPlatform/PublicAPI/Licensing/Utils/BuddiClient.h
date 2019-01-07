@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Licensing/Utils/BuddiClient.h $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,9 @@
 #include <BeHttp/HttpClient.h>
 #include <BeXml/BeXml.h>
 
-#include <Licensing/Utils/BuddiError.h>
+#include <Licensing/Licensing.h>
+//#include <Licensing/Utils/BuddiError.h>
+#include "BuddiError.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 

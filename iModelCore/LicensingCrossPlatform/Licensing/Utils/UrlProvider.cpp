@@ -2,12 +2,13 @@
 |
 |     $Source: Licensing/Utils/UrlProvider.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Licensing.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <Licensing/Utils/UrlProvider.h>
+//#include <Licensing/Utils/UrlProvider.h>
+#include "../../PublicAPI/Licensing/Utils/UrlProvider.h"
 #include <BeHttp/HttpConfigurationHandler.h>
 #include <Bentley/Tasks/WorkerThread.h>
 

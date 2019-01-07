@@ -2,7 +2,7 @@
 #
 #     $Source: Licensing.mki $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -17,6 +17,9 @@ Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
 Headers + $(SourceDir)UsageDb.h
 Headers + $(SourceDir)FreeApplicationPolicyHelper.h
+Headers + $(PublicApiDir)Utils/BuddiClient.h
+Headers + $(PublicApiDir)Utils/BuddiError.h
+Headers + $(PublicApiDir)Utils/UrlProvider.h
 Headers + $(PublicApiDir)Client.h
 Headers + $(PublicApiDir)LicenseStatus.h
 Headers + $(PublicApiDir)Licensing.h
@@ -29,6 +32,28 @@ Headers + $(PublicApiDir)Utils/SCVWritter.h
 Headers + $(PublicApiDir)Utils/TimeRetriever.h
 Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
 Headers + $(PublicApiDir)Utils/DateHelper.h
+Headers + $(PublicApiDir)Utils/ApplicationInfo.h
+
+Headers + $(PublicApiDir)Connect/Connect.xliff.h
+Headers + $(PublicApiDir)Connect/ConnectAuthenticationHandler.h
+Headers + $(PublicApiDir)Connect/ConnectAuthenticationPersistence.h
+Headers + $(PublicApiDir)Connect/ConnectSessionAuthenticationPersistence.h
+Headers + $(PublicApiDir)Connect/ConnectSignInManager.h
+Headers + $(PublicApiDir)Connect/ConnectTokenProvider.h
+Headers + $(PublicApiDir)Connect/DelegationTokenProvider.h
+Headers + $(PublicApiDir)Connect/IConnectAuthenticationPersistence.h
+Headers + $(PublicApiDir)Connect/IConnectAuthenticationProvider.h
+Headers + $(PublicApiDir)Connect/IConnectSignInManager.h
+Headers + $(PublicApiDir)Connect/IConnectTokenProvider.h
+Headers + $(PublicApiDir)Connect/IdentityAuthenticationPersistence.h
+Headers + $(PublicApiDir)Connect/IdentityTokenProvider.h
+Headers + $(PublicApiDir)Connect/IImsClient.h
+Headers + $(PublicApiDir)Connect/ImsClient.h
+Headers + $(PublicApiDir)Connect/ISecurityToken.h
+Headers + $(PublicApiDir)Connect/ITokenStore.h
+Headers + $(PublicApiDir)Connect/SamlToken.h
+Headers + $(PublicApiDir)Connect/WrapperTokenProvider.h
+
 
 
 #---------------------------------------------------------------------------------------+
@@ -48,6 +73,12 @@ $(o)Policy$(oext)                    : $(SourceDir)Policy.cpp $(Headers) ${Multi
 
 $(o)GenerateSID$(oext)               : $(SourceDir)GenerateSID.cpp $(Headers) ${MultiCompileDepends}
 
+$(o)BuddiClient$(oext)		         : $(SourceDir)Utils/BuddiClient.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)BuddiError$(oext)		         : $(SourceDir)Utils/BuddiError.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)UrlProvider$(oext)		         : $(SourceDir)Utils/UrlProvider.cpp $(Headers) ${MultiCompileDepends}
+
 $(o)SCVWritter$(oext)                : $(SourceDir)Utils/SCVWritter.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)JWToken$(oext)                   : $(SourceDir)Utils/JWToken.cpp $(Headers) ${MultiCompileDepends}
@@ -60,6 +91,34 @@ $(o)DelayedExecutor$(oext)           : $(SourceDir)Utils/DelayedExecutor.cpp $(H
 
 $(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Headers) ${MultiCompileDepends}
 
-$(o)FeatureUserDataMap$(oext)         : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
+$(o)FeatureUserDataMap$(oext)        : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ApplicationInfo$(oext)		     : $(SourceDir)Utils/ApplicationInfo.cpp $(Headers) ${MultiCompileDepends}
+
+
+
+$(o)ConnectAuthenticationHandler$(oext)		     : $(SourceDir)Connect/ConnectAuthenticationHandler.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ConnectAuthenticationPersistence$(oext)		     : $(SourceDir)Connect/ConnectAuthenticationPersistence.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ConnectSessionAuthenticationPersistence$(oext)		     : $(SourceDir)Connect/ConnectSessionAuthenticationPersistence.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ConnectSignInManager$(oext)		     : $(SourceDir)Connect/ConnectSignInManager.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ConnectTokenProvider$(oext)		     : $(SourceDir)Connect/ConnectTokenProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)DelegationTokenProvider$(oext)		     : $(SourceDir)Connect/DelegationTokenProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)IConnectSignInManager$(oext)		     : $(SourceDir)Connect/IConnectSignInManager.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)IdentityAuthenticationPersistence$(oext)		     : $(SourceDir)Connect/IdentityAuthenticationPersistence.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)IdentityTokenProvider$(oext)		     : $(SourceDir)Connect/IdentityTokenProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ImsClient$(oext)		     : $(SourceDir)Connect/ImsClient.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)SamlToken$(oext)		     : $(SourceDir)Connect/SamlToken.cpp $(Headers) ${MultiCompileDepends}
+
+
 
 %include MultiCppCompileGo.mki

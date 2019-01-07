@@ -1,17 +1,23 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/ApplicationInfo.h $
+|     $Source: PublicAPI/Licensing/Utils/ApplicationInfo.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <Licensing/Licensing.h>
-
+#include <BeHttp/IHttpHeaderProvider.h>
 #include <Bentley/BeVersion.h>
+#include <Bentley/BeThread.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_HTTP
+
+#define HEADER_MasUuid      "Mas-Uuid"
+#define HEADER_MasAppGuid   "Mas-App-Guid"
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Carlos.Thomas    12/2018
@@ -20,9 +26,12 @@ typedef std::shared_ptr<struct ApplicationInfo> ApplicationInfoPtr;
 typedef const struct  ApplicationInfo& ApplicationInfoCR;
 typedef struct ApplicationInfo& ApplicationInfoR;
 
-struct ApplicationInfo
+struct ApplicationInfo : public IHttpHeaderProvider
     {
     private:
+		mutable BeMutex m_headersCS;
+		mutable std::shared_ptr<HttpRequestHeaders> m_headers;
+
         Utf8String m_applicationName;
         BeVersion m_applicationVersion;
         Utf8String m_applicationGUID;
@@ -32,6 +41,9 @@ struct ApplicationInfo
 
         Utf8String m_languageTag;
         Utf8String m_fallbackLanguageTag;
+
+		Utf8String GetUserAgent() const;
+		Utf8String GetAcceptLanguage() const;
 
     public:
         LICENSING_EXPORT static ApplicationInfoPtr Create
@@ -69,6 +81,12 @@ struct ApplicationInfo
         LICENSING_EXPORT Utf8String GetApplicationProductId() const;
         LICENSING_EXPORT Utf8String GetDeviceId() const;
         LICENSING_EXPORT Utf8String GetSystemDescription() const;
+
+		//! Create product token used in User-Agent header. Example: "TestApplicationName/4.2"
+		LICENSING_EXPORT Utf8String GetProductToken() const;
+
+		//! Fill required headers using ClientInfo values
+		LICENSING_EXPORT virtual void FillHttpRequestHeaders(HttpRequestHeaders& headersOut) const override;
 
 #if defined (__ANDROID__)
 

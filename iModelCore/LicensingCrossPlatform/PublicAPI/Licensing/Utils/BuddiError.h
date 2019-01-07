@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Licensing/Utils/BuddiError.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,7 +26,7 @@ typedef const BuddiError& BuddiErrorCR;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BuddiError : public AsyncError
     {
-    public:
+	public:
         enum Status
             {
             //! Request ConnectionStatus != OK

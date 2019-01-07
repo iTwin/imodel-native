@@ -2,7 +2,7 @@
 #
 #     $Source: Licensing.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 CompileOptionsMki = $(_MakeFilePath)LicensingCompileOptions.mki
@@ -42,7 +42,7 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(libext)
-LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(libext)
+#LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(libext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
 #LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeZlib$(stlibext)

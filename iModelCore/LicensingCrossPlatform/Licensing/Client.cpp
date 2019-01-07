@@ -2,10 +2,11 @@
 |
 |     $Source: Licensing/Client.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Licensing/Client.h>
+//#include <Licensing/Client.h>
+#include "../PublicAPI/Licensing/Client.h"
 #include "ClientImpl.h"
 #include "ClientFreeImpl.h"
 #include "ClientWithKeyImpl.h"

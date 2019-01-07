@@ -2,16 +2,20 @@
  |
  |     $Source: Licensing/Utils/BuddiClient.cpp $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
-#include "ClientInternal.h"
-#include <WebServices/Configuration/BuddiClient.h>
+//#include "ClientInternal.h"
+//#include <WebServices/Configuration/BuddiClient.h>
+//#include <Licensing/Utils/BuddiClient.h>
+#include "../../PublicAPI/Licensing/Utils/BuddiClient.h"
 #include <BeHttp/HttpError.h>
 
 #define BUDDI_URL "https://buddi.bentley.com/discovery.asmx"
 
-USING_NAMESPACE_BENTLEY_WEBSERVICES
+//USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+USING_NAMESPACE_BENTLEY_LICENSING
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

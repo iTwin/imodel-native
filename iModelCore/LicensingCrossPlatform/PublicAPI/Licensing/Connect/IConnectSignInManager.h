@@ -1,0 +1,160 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Licensing/Connect/IConnectSignInManager.h $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+//#include <WebServices/WebServices.h>
+#include <Licensing/Licensing.h>
+#include "IConnectAuthenticationPersistence.h"
+#include "IConnectAuthenticationProvider.h"
+#include "IConnectTokenProvider.h"
+//#include "IConnectionClientInterface.h"
+#include <BeHttp/AuthenticationHandler.h>
+
+BEGIN_BENTLEY_LICENSING_NAMESPACE
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef std::shared_ptr<struct IConnectSignInManager> IConnectSignInManagerPtr;
+typedef AsyncResult<void, AsyncError> WSConnectVoidResult;
+struct IConnectSignInManager : IConnectAuthenticationProvider
+    {
+    public:
+        struct IListener
+            {
+            virtual ~IListener() {};
+            //! Will be called when token expiration is detected
+            virtual void _OnUserTokenExpired() {};
+            //! Will be called when token expiration is detected
+            virtual void _OnUserTokenRenew(bool success, int64_t tokenExpireTimestamp) {};
+            //! Will be called when user change is detected
+            virtual void _OnUserChanged() {};
+            //! Will be called after finalizing user sign-in
+            virtual void _OnUserSignedIn() {};
+            //! Will be called after user sign-out
+            virtual void _OnUserSignedOut() {};
+            //! Will be called after user signs in to Connection Client
+            virtual void _OnUserSignedInViaConnectionClient() {};
+            };
+
+        struct UserInfo
+            {
+            Utf8String username;
+            Utf8String firstName;
+            Utf8String lastName;
+            Utf8String userId;
+            Utf8String organizationId;
+
+            public:
+                LICENSING_EXPORT bool IsComplete() const;
+                LICENSING_EXPORT Utf8String ToString() const;
+
+                UserInfo() {}
+                LICENSING_EXPORT UserInfo(Utf8StringCR serialized);
+            };
+
+    protected:
+        mutable BeMutex m_mutex;
+
+        bset<IListener*> m_listeners;
+        std::function<void()> m_tokenExpiredHandler;
+        std::function<void()> m_userChangeHandler;
+        std::function<void()> m_userSignInHandler;
+        std::function<void()> m_userSignOutHandler;
+        std::function<void()> m_connectionClientSignInHandler;
+
+    protected:
+        LICENSING_EXPORT void OnUserTokenExpired() const;
+        LICENSING_EXPORT void OnUserTokenRenew(bool success, int64_t expireTime) const;
+        LICENSING_EXPORT void OnUserChanged() const;
+        LICENSING_EXPORT void OnUserSignedIn() const;
+        LICENSING_EXPORT void OnUserSignedOut() const;
+        LICENSING_EXPORT void OnUserSignedInViaConnectionClient() const;
+
+        LICENSING_EXPORT void CheckUserChange();
+
+    protected:
+        //! Will be called thread safe by CheckAndUpdateToken
+        virtual AsyncTaskPtr<WSConnectVoidResult> _CheckAndUpdateToken() = 0;
+        //! Will be called thread safe by SignOut
+        virtual AsyncTaskPtr<WSConnectVoidResult> _SignOut() = 0;
+        //! Will be called thread safe by IsSignedIn
+        virtual bool _IsSignedIn() const = 0;
+        //! Will be called thread safe by GetUserInfo
+        virtual UserInfo _GetUserInfo() const = 0;
+        //! Will be called thread safe by GetLastUsername
+        virtual Utf8String _GetLastUsername() const = 0;
+        //! Will be called thread safe by GetTokenProvider
+        virtual IConnectTokenProviderPtr _GetTokenProvider(Utf8StringCR rpUri) const = 0;
+        //! Will be called thread safe by GetAuthenticationHandler
+        virtual AuthenticationHandlerPtr _GetAuthenticationHandler
+            (
+            Utf8StringCR serverUrl,
+            IHttpHandlerPtr httpHandler = nullptr,
+            HeaderPrefix prefix = HeaderPrefix::Token
+            ) const = 0;
+        //! Will be called by CheckUserChange
+        virtual void _StoreSignedInUser() = 0;
+
+    public:
+        virtual ~IConnectSignInManager() {}
+
+        //! Check if token expired and renew/handle expiration
+        LICENSING_EXPORT AsyncTaskPtr<void> CheckAndUpdateToken();
+
+        //! Sign-out user and remove all user information from disk
+        LICENSING_EXPORT AsyncTaskPtr<void> SignOut();
+
+        //! Check if user is signed-in
+        //! Uses IsSignedInNoLock, GetLastUsername, StoreSignedInUser
+        //! Calls GetUserInfo and listener function
+        LICENSING_EXPORT bool IsSignedIn() const;
+
+        //! Get user information stored in identity token
+        LICENSING_EXPORT UserInfo GetUserInfo() const;
+
+        //! Get last or current user that was signed in. Returns empty if no user was signed in
+        LICENSING_EXPORT Utf8String GetLastUsername() const;
+
+        //! Get authentication handler for specific server.
+        //! Will automatically authenticate all HttpRequests that is used with. 
+        //! Will always represent user that is signed-in when authenticating.
+        //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
+        //! @param serverUrl should contain server URL without any directories
+        //! @param httpHandler optional custom HTTP handler to send all given server authenticated requests trough. It will not be used for secure/sensitive token retrieval service.
+        //! @param prefix optional custom header prefix to use. Some services require different header format
+        LICENSING_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler
+            (
+            Utf8StringCR serverUrl,
+            IHttpHandlerPtr httpHandler = nullptr,
+            HeaderPrefix prefix = HeaderPrefix::Token
+            ) const override;
+
+        //! Get delegation token provider when signed in. Delegation tokens are short lived.
+        //! Only use this if AuthenticationHandlerPtr cannot be used.
+        //! Will always represent user that is signed-in when prividing token.
+        //! @param rpUri relying party URI to use token for
+        LICENSING_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri) const;
+
+        //! Register listener to get user state change events
+        LICENSING_EXPORT void RegisterListener(IListener* listener);
+        //! Unregister listener registered with RegisterListener()
+        LICENSING_EXPORT void UnregisterListener(IListener* listener);
+        //! DEPRECATED, Use RegisterListener()! Will be called when token expiration is detected
+        LICENSING_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
+        //! DEPRECATED, Use RegisterListener()! Will be called when user change is detected. Should be set when starting application.
+        LICENSING_EXPORT void SetUserChangeHandler(std::function<void()> handler);
+        //! DEPRECATED, Use RegisterListener()! Will be called after finalizing user sign-in
+        LICENSING_EXPORT void SetUserSignInHandler(std::function<void()> handler);
+        //! DEPRECATED, Use RegisterListener()! Will be called after user sign-out
+        LICENSING_EXPORT void SetUserSignOutHandler(std::function<void()> handler);
+        //! DEPRECATED, Use RegisterListener()! Will be called after user signs in to Connection Client
+        LICENSING_EXPORT void SetConnectionClientSignInHandler(std::function<void()> handler);
+    };
+
+END_BENTLEY_LICENSING_NAMESPACE

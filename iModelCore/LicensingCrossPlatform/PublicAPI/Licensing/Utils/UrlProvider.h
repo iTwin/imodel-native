@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Licensing/Utils/UrlProvider.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,8 @@
 #include <Bentley/WString.h>
 #include <Bentley/Tasks/TaskScheduler.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <Licensing/Utils/BuddiClient.h>
+#include "UrlProvider.h"
+#include "BuddiClient.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 

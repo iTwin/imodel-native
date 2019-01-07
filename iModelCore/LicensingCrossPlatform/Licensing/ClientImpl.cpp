@@ -2,7 +2,7 @@
 |
 |     $Source: Licensing/ClientImpl.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientImpl.h"
@@ -12,7 +12,7 @@
 
 #include <Licensing/Utils/LogFileHelper.h>
 #include <Licensing/Utils/UsageJsonHelper.h>
-#include <Licensing/Utils/UrlProvider.h>
+#include "../PublicAPI/Licensing/Utils/UrlProvider.h"
 
 #include <BeHttp/HttpError.h>
 //#include <WebServices/Configuration/UrlProvider.h>
@@ -722,7 +722,7 @@ folly::Future<BentleyStatus> ClientImpl::SendUsageRealtime(Utf8StringCR accessTo
 
 	// create Json body
 	auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids(
-		m_clientInfo->GetDeviceId(),
+		m_applicationInfo->GetDeviceId(),
 		m_featureString,
 		version,
 		projectId

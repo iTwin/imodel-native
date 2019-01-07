@@ -2,7 +2,7 @@
 |
 |     $Source: Licensing/ClientWithKeyImpl.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientWithKeyImpl.h"
@@ -10,13 +10,14 @@
 #include "Logging.h"
 #include "UsageDb.h"
 #include "FreeApplicationPolicyHelper.h"
-#include "ApplicationInfo.h"
+#include "../PublicAPI/Licensing/Utils/ApplicationInfo.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
 #include <Licensing/Utils/UsageJsonHelper.h>
 #include <fstream>
 
 #include <BeHttp/HttpError.h>
+#include "../PublicAPI/Licensing/Utils/UrlProvider.h"
 //#include <WebServices/Configuration/UrlProvider.h>
 
 //USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -24,7 +25,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 
 ClientWithKeyImpl::ClientWithKeyImpl(
 	Utf8StringCR accessKey,
-	ClientInfoPtr clientInfo,
+	ApplicationInfoPtr applicationInfo,
 	BeFileNameCR db_path,
 	bool offlineMode,
 	Utf8StringCR projectId,

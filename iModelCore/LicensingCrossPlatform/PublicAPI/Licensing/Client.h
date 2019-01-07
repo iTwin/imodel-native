@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Licensing/Client.h $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,8 +10,9 @@
 
 #include <Licensing/Licensing.h>
 
-#include "LicenseStatus.h"
-#include "ApplicationInfo.h"
+#include <Licensing/LicenseStatus.h>
+#include "Utils/ApplicationInfo.h"
+#include "Connect/ConnectSignInManager.h"
 
 #include <Licensing/Utils/FeatureUserDataMap.h>
 

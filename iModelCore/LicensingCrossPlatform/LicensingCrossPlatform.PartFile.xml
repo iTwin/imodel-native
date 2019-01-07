@@ -8,11 +8,16 @@
         </Bindings>
     </Part>
 
-    <Part Name="LicensingNativeLib" BentleyBuildMakeFile="Licensing.mke" >
+    <Part Name="LicensingNativeLib" BentleyBuildMakeFile="Licensing.mke">
         <!--<SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />-->
+        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/>
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" /> 
+        <SubPart PartName="BeHttpLibrary" PartFile="BeHttp" Repository="BeHttp" />
+        <!--<SubPart PartName="LibXml2" PartFile="Libsrc-Nugets" Repository="bsicommon"/> -->
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
+        <SubPart PartName="BeSecurityLibrary" PartFile="BeSecurity" Repository="BeSecurity" />
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
         <!--<SubPart PartName="NativeClient.Docs"/>-->
         
         <Bindings>
@@ -20,7 +25,7 @@
             <Assemblies>Delivery/$(shlibprefix)Licensing$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-	
+
     <Part Name="Licensing" >
         <SubPart PartName="Licensing-Winx64-Only" />
         <SubPart PartName="Licensing-iOSARMActive-Only" />
