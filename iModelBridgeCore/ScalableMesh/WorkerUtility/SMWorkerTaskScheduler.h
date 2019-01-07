@@ -46,6 +46,9 @@ struct TaskScheduler
         void PerformMeshTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
 
         void PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+
+        void PerformGenerateTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+        
     
     public:
     

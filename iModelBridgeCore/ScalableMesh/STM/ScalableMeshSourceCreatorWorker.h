@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 11:02:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -86,7 +86,9 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         StatusInt                    ProcessStitchTask(BeXmlNodeP pXmlTaskNode);
 
-        StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode);        
+        StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode);       
+
+        StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode);         
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

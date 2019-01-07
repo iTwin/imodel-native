@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:35:02 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -78,7 +78,9 @@ struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator
 
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessStitchTask(BeXmlNodeP pXmlTaskNode) const;
 
-        BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode) const;        
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode) const;
+
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode) const;
                 
     };
 
