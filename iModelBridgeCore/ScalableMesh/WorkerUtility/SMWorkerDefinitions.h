@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,6 +30,7 @@ enum class WorkerTaskType
     INDEX,
     MESH,
     STITCH,
+    GENERATE,
     TASK_TYPE_QTY,
     };
 

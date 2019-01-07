@@ -527,6 +527,8 @@ bool TaskScheduler::ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType&
                 t = WorkerTaskType::MESH;
             else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"stitch"))
                 t = WorkerTaskType::STITCH;            
+            else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"generate"))
+                t = WorkerTaskType::GENERATE;                        
             else return false;
         }
         else return false;
@@ -599,6 +601,10 @@ bool TaskScheduler::ProcessTask(FILE* file)
             case WorkerTaskType::STITCH:
                 PerformStitchTask(pXmlTaskNode/*, pResultFile*/);
                 break;
+            case WorkerTaskType::GENERATE:
+                PerformGenerateTask(pXmlTaskNode/*, pResultFile*/);
+                break;                
+
             default: break;
             }
 /*
@@ -798,5 +804,15 @@ void TaskScheduler::PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
 
     assert(status == SUCCESS);    
     }
+
+void TaskScheduler::PerformGenerateTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+    {
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker());               
+
+    StatusInt status = creatorWorkerPtr->ProcessGenerateTask(pXmlTaskNode);
+
+    assert(status == SUCCESS);
+    }
+
 
 END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
