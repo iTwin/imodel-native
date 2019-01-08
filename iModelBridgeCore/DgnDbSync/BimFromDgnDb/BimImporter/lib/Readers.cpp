@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/Readers.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -378,7 +378,7 @@ DgnCode ElementReader::CreateCodeFromJson(Json::Value& element)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus GenericElementAspectReader::_Read(Json::Value& aspect)
+BentleyStatus ElementAspectReader::_Read(Json::Value& aspect)
     {
     DgnElementId instanceId = ECJsonUtilities::JsonToId<DgnElementId>(aspect[ECJsonSystemNames::Id()]);
     if (!instanceId.IsValid())
@@ -390,14 +390,7 @@ BentleyStatus GenericElementAspectReader::_Read(Json::Value& aspect)
 
     aspect.removeMember("Element");
 
-    IECInstancePtr ecInstance = _CreateInstance(aspect);
-    if (!ecInstance.IsValid())
-        {
-        GetLogger().errorv("Failed to create IECInstance for elementaspect\n");
-        return ERROR;
-        }
-
-    DgnDbStatus stat;
+    DgnDbStatus stat = DgnDbStatus::Success;
     DgnElementPtr element = GetDgnDb()->Elements().GetForEdit<DgnElement>(elementId);
 
     if (!element.IsValid())
@@ -405,6 +398,13 @@ BentleyStatus GenericElementAspectReader::_Read(Json::Value& aspect)
         GetLogger().errorv("Unable to get associated Element for ElementAspect.");
         return ERROR;
         }
+    IECInstancePtr ecInstance = _CreateInstance(aspect);
+    if (!ecInstance.IsValid())
+        {
+        GetLogger().errorv("Failed to create IECInstance for elementaspect\n");
+        return ERROR;
+        }
+
     stat = DgnElement::GenericMultiAspect::AddAspect(*element, *ecInstance);
     if (DgnDbStatus::Success != stat)
         {
