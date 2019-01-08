@@ -34,6 +34,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_SCHEMA_PATH                             PRF_SCHEMA_LOCATION PRF_SCHEMA_FILE
 #define PRF_SCHEMA(name)                            PRF_SCHEMA_NAME "." name
 #define PRF_SCHEMA_CODE(name)                       PRF_SCHEMA_NAME "_" name
+#define PRF_LOGGER_NAMESPACE                        "ProfilesDomain"
 
 
 //-----------------------------------------------------------------------------------------

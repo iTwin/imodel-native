@@ -333,5 +333,11 @@
     <ClInclude Include="src\PublicAPI\MaterialProfile.h">
       <Filter>PublicAPI\MaterialProfiles</Filter>
     </ClInclude>
+    <ClInclude Include="src\PrivateAPI\ProfilesLogging.h">
+      <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PrivateAPI\ProfilesPrivateApi.h">
+      <Filter>PrivateAPI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

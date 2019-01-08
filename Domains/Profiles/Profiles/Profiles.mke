@@ -15,7 +15,7 @@ appSrc = $(_MakeFilePath)src\\
 appPublicApi = $(appSrc)PublicAPI\\
 appPrivateApi = $(appSrc)PrivateAPI\\
 
-MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ProfilesInternal.h $(appPublicApi)ProfilesApi.h
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ProfilesInternal.h $(appPublicApi)ProfilesApi.h $(appPrivateApi)
 PublicApiIncludes = -I${BuildContext}\PrivateAPI\ -I${BuildContext}\PublicAPI\ -I${BuildContext}\VendorAPI\\
 
 always:
