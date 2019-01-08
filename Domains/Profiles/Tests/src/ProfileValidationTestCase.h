@@ -8,52 +8,45 @@
 #pragma once
 #include "ProfilesTestCase.h"
 
-#define EXPECT_SUCCESS_Insert(createParams) EXPECT_EQ (DgnDbStatus::Success, InsertProfile (createParams))
-#define EXPECT_FAIL_Insert(createParams) EXPECT_EQ (DgnDbStatus::ValidationFailed, InsertProfile (createParams))
+#define EXPECT_SUCCESS_Insert(createParams) EXPECT_EQ (DgnDbStatus::Success, InsertAndUpdateProfile (createParams))
+#define EXPECT_FAIL_Insert(createParams) EXPECT_EQ (DgnDbStatus::ValidationFailed, InsertAndUpdateProfile (createParams))
 
 /*---------------------------------------------------------------------------------**//**
-* Test case for Profiles domain entity class validation tests.
+* Test case for Profiles domain section entity class validation tests.
 * @param T - concrete Profiles entity class e.g. IShapeProfile.
-* @bsiclass                                                                      12/2017
+* @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
 struct ProfileValidationTestCase : ProfilesTestCase
     {
 public:
     /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                                     12/2018
+    * @bsimethod                                                                     01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    RefCountedPtr<T> CreateProfile (Profiles::Profile::CreateParams const& createParams)
+    RefCountedPtr<T> CreateProfile (typename T::CreateParams const& createParams)
         {
-        typename T::CreateParams const* pParams = dynamic_cast<typename T::CreateParams const*> (&createParams);
-        if (pParams == nullptr)
-            BeAssert (false && "CreateParams must be of the class that is being created");
-
-        return T::Create (*pParams);
+        return typename T::Create (createParams);
         }
 
     /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                                     12/2018
+    * @bsimethod                                                                     01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    Dgn::DgnDbStatus InsertProfile (Profiles::Profile::CreateParams const& createParams)
+    Dgn::DgnDbStatus InsertAndUpdateProfile (typename T::CreateParams const& createParams)
         {
-        Profiles::ProfilePtr profilePtr = CreateProfile (createParams);
-        BeAssert (profilePtr.IsValid());
-
         Dgn::DgnDbStatus status;
-        profilePtr->Insert (&status);
+        RefCountedPtr<T> instancePtr = InsertElement<T> (createParams, &status);
         if (status != Dgn::DgnDbStatus::Success)
             return status;
 
         // Perform an Update just to double check same validation is happenning on update.
-        profilePtr->Update (&status);
+        instancePtr->Update (&status);
         return status;
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                                     12/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void TestParameterToBeFiniteAndPositive (Profiles::Profile::CreateParams const& createParams, double& parameterToCheck,
+    void TestParameterToBeFiniteAndPositive (typename T::CreateParams const& createParams, double& parameterToCheck,
                                              Utf8CP pParameterName, bool allowEqualToZero)
         {
         parameterToCheck = -1.0;
@@ -78,7 +71,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                                     01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void TestParameterToBeFiniteAndPositive (Profiles::Profile::CreateParams const& createParams, Angle& parameterToCheck,
+    void TestParameterToBeFiniteAndPositive (typename T::CreateParams const& createParams, Angle& parameterToCheck,
                                              Utf8CP pParameterName, bool allowEqualToZero)
         {
         if (sizeof (Angle) != sizeof (double) || Angle::FromRadians (123.456).Radians() != 123.456)

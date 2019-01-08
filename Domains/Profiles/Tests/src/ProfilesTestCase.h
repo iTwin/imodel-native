@@ -32,4 +32,25 @@ protected:
     Dgn::DgnCategoryId GetCategoryId();
     Dgn::DgnElementId CreateAndGetMaterialId(Utf8CP codeValue);
     Dgn::DgnElementId CreateAndGetProfileId();
+
+    /*---------------------------------------------------------------------------------**//**
+    * Template function to create and insert entity class instance.
+    * @bsimethod                                                                     01/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename T>
+    RefCountedPtr<T> InsertElement (typename T::CreateParams const& createParams, Dgn::DgnDbStatus* pStatus = nullptr)
+        {
+        RefCountedPtr<T> instancePtr = typename T::Create (createParams);
+        BeAssert (instancePtr.IsValid());
+
+        Dgn::DgnDbStatus status;
+        if (pStatus == nullptr)
+            pStatus = &status;
+
+        instancePtr->Insert (pStatus);
+        if (*pStatus != Dgn::DgnDbStatus::Success)
+            return nullptr;
+
+        return instancePtr;
+        }
     };
