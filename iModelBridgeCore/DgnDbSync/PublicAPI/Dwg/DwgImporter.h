@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Dwg/DwgImporter.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -934,6 +934,7 @@ protected:
     DwgDbObjectId               m_currentspaceId;
     T_DwgModelMapping           m_dwgModelMap;
     ResolvedModelMapping        m_rootDwgModelMap;
+    bool                        m_hasBegunProcessing;
     bool                        m_isProcessingDwgModelMap;
     StandardUnit                m_modelspaceUnits;
     bool                        m_wasAborted;
@@ -961,6 +962,7 @@ protected:
     DgnModelIdSet               m_modelspaceXrefs;
     T_DwgXRefsInPaperspaces     m_paperspaceXrefs;
     T_PaperspaceViewMap         m_paperspaceViews;
+    DwgDbObjectIdArray          m_paperspaceBlockIds;
     T_TextStyleIdMap            m_importedTextstyles;
     T_LineStyleIdMap            m_importedLinestyles;
     T_MaterialIdMap             m_importedMaterials;
@@ -998,7 +1000,7 @@ private:
     Utf8String              RemapNameString (Utf8String filename, Utf8StringCR name, Utf8StringCR suffix);
     void                    OpenAndImportEntity (ElementImportInputs& inputs);
     Utf8String              ComputeModelName (Utf8StringR proposedName, BeFileNameCR baseFileName, BeFileNameCR refPath, Utf8CP inSuffix, DgnClassId modelType);
-    BentleyStatus           ImportModelsFrom (DwgDbBlockTableRecordR block, SubjectCR parentSubject, bool& hasPushedReferencesSubject);
+    BentleyStatus           ImportXrefModelsFrom (DwgXRefHolder& xref, SubjectCR parentSubject, bool& hasPushedReferencesSubject);
     ECN::ECObjectsStatus    AddAttrdefECClassFromBlock (ECN::ECSchemaPtr& schema, DwgDbBlockTableRecordCR block);
     void                    ImportAttributeDefinitionSchema (ECN::ECSchemaR attrdefSchema);
     void                    ImportDomainSchema (WCharCP fileName, DgnDomain& domain);
@@ -1306,8 +1308,14 @@ public:
     //! Get/create the DefinitionModel that stores all other job specific definitions, expcept for GeometryParts.
     DefinitionModelPtr          GetOrCreateJobDefinitionModel ();
 
-    //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
+    //! An iModelBridge must call this method from _MakeSchemaChanges, to change schemass.
+    //! The default implementation iterates DWG block table for multiple tasks:
+    //! 1) Create or update dynamic DwgAttributeDefinitions schema from ATTRDEF's
+    //! 2) Load xRef files and cache them in m_loadedXrefFiles
+    //! 3) Cache paperspace/layout block ID's in m_paperspaceBlockIds
     DWG_EXPORT BentleyStatus    MakeSchemaChanges ();
+    //! An iModelBridge must call this method from _MakeDefinitionChanges, to change dictionaries possibly shared with other bridges.
+    DWG_EXPORT BentleyStatus    MakeDefinitionChanges (SubjectCR jobSubject);
 
     //! Call this once before working with DwgImporter, after initializing DgnDb's DgnPlatformLib
     //! @param toolkitDir Installed RealDWG or OpenDWG folder; default to the same folder as the EXE.

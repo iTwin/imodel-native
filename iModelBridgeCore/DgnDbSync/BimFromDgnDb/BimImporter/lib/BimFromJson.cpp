@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/BimFromJson.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -74,7 +74,17 @@ BimFromJson::BimFromJson(const wchar_t* bimPath) : m_outputPath(bimPath), m_impo
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-
+    //HINSTANCE handle = ::LoadLibrary("d:\\bsw\\bim\\0200dev\\output\\DgnClient\\Debug\\Winx64\\build\\ConstructionSchema\\ConstructionSchemaB02.dll");
+    //if (nullptr != handle)
+    //    {
+    //    GetDomainFn getDomainFn = (GetDomainFn) GetProcAddress(handle, "?GetDomain@ConstructionPlanningDomain@ConstructionPlanning@BentleyB0200@@SAAEAU123@XZ");
+    //    if (nullptr != getDomainFn)
+    //        {
+    //        DgnDomainP domain = getDomainFn();
+    //        if (nullptr != domain)
+    //            DgnDomains::RegisterDomain(*domain, DgnDomain::Required::No, DgnDomain::Readonly::No);
+    //        }
+    //    }
     }
 
 //---------------------------------------------------------------------------------------

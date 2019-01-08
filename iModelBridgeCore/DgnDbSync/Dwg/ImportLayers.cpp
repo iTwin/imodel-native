@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportLayers.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -172,7 +172,7 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
     // use dictionary model(0) for layers in the syncInfo
     DwgSyncInfo::DwgModelSource     modelSource (DwgSyncInfo::GetDwgFileId(*dwg));
 
-    // use the default Unrecognized level for layer "0"
+    // use the default Unrecognized category for layer "0"
     DgnCategoryId   categoryId = this->GetUncategorizedCategory ();
     if (layer.GetObjectId() == dwg->GetLayer0Id())
         {
@@ -209,11 +209,11 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
     DgnDbTable::ReplaceInvalidCharacters(name, DgnCategory::GetIllegalCharacters(), '_');
     name.Trim ();
 
-    DefinitionModelP    definitionModel = this->GetOrCreateJobDefinitionModel().get ();
+    auto definitionModel = this->GetOptions().GetMergeDefinitions() ? &db.GetDictionaryModel() : this->GetOrCreateJobDefinitionModel().get();
     if (nullptr == definitionModel)
         {
         this->ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "SpartialCategory");
-        definitionModel = &db.GetDictionaryModel ();
+        return  BSIERROR;
         }
 
     bool isRoot3d = this->GetRootModel().GetModel()->Is3d ();
@@ -381,12 +381,13 @@ BentleyStatus   DwgImporter::_ImportLayerSection ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::InitUncategorizedCategory ()
     {
-    static Utf8CP name = "0";
+    static Utf8CP s_name = "0";
     DefinitionModelP    definitionModel = this->GetOrCreateJobDefinitionModel().get ();
     if (nullptr == definitionModel)
         {
         this->ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "SpartialCategory");
-        definitionModel = &m_dgndb->GetDictionaryModel ();
+        BeAssert (false && "Invalid dictionary model for uncategorized category");
+        return;
         }
 
     // allow an app to create a 2d model representing the modelspace
@@ -397,13 +398,25 @@ void            DwgImporter::InitUncategorizedCategory ()
 
     if (isRoot3d)
         {
-        DgnCode categoryCode = SpatialCategory::CreateCode (*definitionModel, name);
+        DgnCode categoryCode = SpatialCategory::CreateCode (*definitionModel, s_name);
         m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
+        if (!m_uncategorizedCategoryId.IsValid() && this->GetOptions().GetMergeDefinitions())
+            {
+            // try BisCore.Dictionary model for "0" which might be created from DgnV8Bridge:
+            categoryCode = SpatialCategory::CreateCode (m_dgndb->GetDictionaryModel(), s_name);
+            m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId (m_dgndb->GetDictionaryModel(), categoryCode.GetValueUtf8());
+            }
         }
     else
         {
-        DgnCode categoryCode = DrawingCategory::CreateCode (*definitionModel, name);
+        DgnCode categoryCode = DrawingCategory::CreateCode (*definitionModel, s_name);
         m_uncategorizedCategoryId = DrawingCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
+        if (!m_uncategorizedCategoryId.IsValid() && this->GetOptions().GetMergeDefinitions())
+            {
+            // try BisCore.Dictionary model for "0" which might be created from DgnV8Bridge:
+            categoryCode = DrawingCategory::CreateCode (m_dgndb->GetDictionaryModel(), s_name);
+            m_uncategorizedCategoryId = DrawingCategory::QueryCategoryId (m_dgndb->GetDictionaryModel(), categoryCode.GetValueUtf8());
+            }
         }
 
     if (m_uncategorizedCategoryId.IsValid())
@@ -411,14 +424,14 @@ void            DwgImporter::InitUncategorizedCategory ()
 
     if (isRoot3d)
         {
-        SpatialCategory category (*definitionModel, name, DgnCategory::Rank::Application);
+        SpatialCategory category (*definitionModel, s_name, DgnCategory::Rank::Application);
         if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
             BeAssert(false);
         m_uncategorizedCategoryId = category.GetCategoryId();
         }
     else
         {
-        DrawingCategory category (*definitionModel, name, DgnCategory::Rank::Application);
+        DrawingCategory category (*definitionModel, s_name, DgnCategory::Rank::Application);
         if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
             BeAssert(false);
         m_uncategorizedCategoryId = category.GetCategoryId();
@@ -452,12 +465,12 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
     DgnDbTable::ReplaceInvalidCharacters (name, DgnCategory::GetIllegalCharacters(), '_');
 
     // create a draw category code & retrieve the category from the db:
-    DgnDbR          db = model.GetDgnDb ();
-    DefinitionModelP definitionModel = this->GetOrCreateJobDefinitionModel().get ();
+    auto& db = model.GetDgnDb ();
+    auto definitionModel = this->GetOptions().GetMergeDefinitions() ? &db.GetDictionaryModel() : this->GetOrCreateJobDefinitionModel().get();
     if (nullptr == definitionModel)
         {
         this->ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "DrawingCategory");
-        definitionModel = &db.GetDictionaryModel();
+        return DgnCategoryId();
         }
 
     DgnCode         code = DrawingCategory::CreateCode (*definitionModel, name.c_str());
