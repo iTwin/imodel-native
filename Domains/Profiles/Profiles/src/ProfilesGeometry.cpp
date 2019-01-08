@@ -511,6 +511,20 @@ IGeometryPtr ProfilesGeomApi::CreateZShape (ZShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeomApi::CreateCenterLineLShape(CenterLineLShapeProfileCPtr profile)
+    {
+    double const halfWidth = profile->GetWidth() / 2.0;
+    double const halfDepth = profile->GetDepth() / 2.0;
+    double const wallThickness = profile->GetWallThickness();
+    double const filletRadius = profile->GetFilletRadius();
+    double const girth = profile->GetGirth();
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr profile)
     {
     double const halfWidth = profile->GetFlangeWidth() / 2.0;

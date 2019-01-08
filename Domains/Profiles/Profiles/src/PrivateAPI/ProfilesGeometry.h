@@ -27,6 +27,7 @@ public:
     static IGeometryPtr CreateTShape (TShapeProfileCPtr profile);
     static IGeometryPtr CreateZShape (ZShapeProfileCPtr profile);
     static IGeometryPtr CreateCenterLineCShape (CenterLineCShapeProfileCPtr profile);
+    static IGeometryPtr CreateCenterLineLShape (CenterLineLShapeProfileCPtr profile);
     static IGeometryPtr CreateCircle (CircleProfileCPtr profile);
     static IGeometryPtr CreateHollowCircle (HollowCircleProfileCPtr profile);
     static IGeometryPtr CreateEllipse (EllipseProfileCPtr profile);

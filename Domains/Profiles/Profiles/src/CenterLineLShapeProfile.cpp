@@ -7,11 +7,75 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\CenterLineLShapeProfile.h>
+#include <ProfilesInternal\ProfilesGeometry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (CenterLineLShapeProfileHandler)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double girth, double wallThickness, double filletRadius /*= 0.0*/)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , width (flangeWidth)
+    , depth (depth)
+    , girth(girth)
+    , wallThickness (wallThickness)
+    , filletRadius (filletRadius)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CenterLineLShapeProfile::CenterLineLShapeProfile(CreateParams const& params)
+    : T_Super (params)
+    {
+    if (false != params.m_isLoadingElement)
+        {
+        return;
+        }
+
+    SetWidth (params.width);
+    SetDepth (params.depth);
+    SetGirth (params.girth);
+    SetFilletRadius (params.filletRadius);
+    SetWallThickness (params.wallThickness);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CenterLineLShapeProfile::_Validate() const
+    {
+    bool bValid(T_Super::_Validate());
+
+    bValid = bValid && std::isfinite(GetWidth()) && (GetWidth() > 0.0);
+    bValid = bValid && std::isfinite(GetDepth()) && (GetDepth() > 0.0);
+    bValid = bValid && std::isfinite(GetGirth()) && (GetGirth() > 0.0);
+    bValid = bValid && std::isfinite(GetWallThickness()) && (GetWallThickness() > 0.0);
+    bValid = bValid && std::isfinite(GetFilletRadius());
+
+    return bValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CenterLineLShapeProfile::_CreateGeometry() const
+    {
+    return ProfilesGeomApi::CreateCenterLineLShape (this);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018

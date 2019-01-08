@@ -36,13 +36,12 @@ public:
         //! Required properties
         double flangeWidth = 0.0;
         double depth = 0.0;
-        double girth = 0.0;
         double wallThickness = 0.0;
 
         //! Optional properties
+        double girth = 0.0;
         double filletRadius = 0.0;
         };
-
 
 protected:
     explicit CenterLineCShapeProfile(CreateParams const& params);
@@ -78,7 +77,6 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE CenterLineCShapeProfileHandler : ParametricProfileHandler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_CenterLineCShapeProfile, CenterLineCShapeProfile, CenterLineCShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
-
     }; // CenterLineCShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE
