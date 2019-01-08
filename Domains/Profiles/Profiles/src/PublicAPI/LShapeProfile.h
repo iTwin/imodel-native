@@ -50,6 +50,8 @@ protected:
     virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateGeometry() const override;
 
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
+
 private:
     bool ValidateThickness() const;
     bool ValidateFilletRadius() const;

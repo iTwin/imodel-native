@@ -6,11 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
+#include <ProfilesInternal\ProfilesPrivateApi.h>
 #include <Profiles\LShapeProfile.h>
-#include <ProfilesInternal\ProfilesGeometry.h>
-#include <ProfilesInternal\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (LShapeProfileHandler)
@@ -77,6 +78,38 @@ bool LShapeProfile::_Validate() const
 IGeometryPtr LShapeProfile::_CreateGeometry() const
     {
     return ProfilesGeomApi::CreateLShape (this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Prohibit deletion of this profile if it is referenced by any DoubleLShapeProfile.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus LShapeProfile::_OnDelete() const
+    {
+    ECSqlStatement sqlStatement;
+    Utf8CP pSqlString = "SELECT ECInstanceId FROM " PRF_SCHEMA (PRF_CLASS_DoubleLShapeProfile)
+                        " WHERE " PRF_PROP_DoubleLShapeProfile_SingleProfile ".Id=? LIMIT 1";
+
+    ECSqlStatus status = sqlStatement.Prepare (GetDgnDb(), pSqlString);
+    if (status != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+
+    status = sqlStatement.BindId (1, GetElementId());
+    if (status != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+
+    if (DbResult::BE_SQLITE_ROW == sqlStatement.Step())
+        {
+        Utf8Char thisIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH], otherIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH];
+        GetElementId().ToString (thisIdBuffer, BeInt64Id::UseHex::Yes);
+        sqlStatement.GetValueId<DgnElementId> (0).ToString (otherIdBuffer, BeInt64Id::UseHex::Yes);
+
+        PROFILES_LOG.errorv ("Failed to delete LShapeProfile instance (id: %s), because it is being referenced by DoubleLShapeProfile instance (id: %#010x).",
+                             thisIdBuffer, otherIdBuffer);
+        return DgnDbStatus::DeletionProhibited;
+        }
+
+    return T_Super::_OnDelete();
     }
 
 /*---------------------------------------------------------------------------------**//**
