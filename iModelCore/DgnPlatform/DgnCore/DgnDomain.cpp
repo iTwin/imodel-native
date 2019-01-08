@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDomain.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -579,7 +579,12 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
                 domainsToImport->push_back(domain);
             if (schemasToImport)
                 schemasToImport->push_back(schema);
-            LOG.warningv("Schema for a required domain %s is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch", domain->GetDomainName());
+
+            // an iModelBridge may open db twice, one to check if schemas need upgrades and another to actually upgrade them. Separate logs to help diagnosis in PROD:
+            if (m_schemaUpgradeOptions.GetDomainUpgradeOptions() == SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade && m_allowSchemaImport)
+                LOG.infov("Domain schema %s will be imported", domain->GetDomainName());
+            else
+                LOG.infov("Schema for a required domain %s is not found, but may be imported later in the process by the same calling app", domain->GetDomainName());
             continue;
             }
             
