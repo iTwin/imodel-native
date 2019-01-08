@@ -1108,13 +1108,6 @@ bool  IsElementChanged(SyncInfo::V8ElementMapping& elementMapping, DgnV8Api::Edi
     else
         {
         elementMapping = m_converter.RecordMappingInSyncInfo(m_parentModelMapping.GetDgnModel().GetModeledElementId(), v8eh, m_parentModelMapping);
-        if (m_converter._WantModelProvenanceInBim())
-            {
-            auto modeledElement = m_parentModelMapping.GetDgnModel().GetDgnDb().Elements().GetElement(m_parentModelMapping.GetDgnModel().GetModeledElementId())->CopyForEdit();
-            SyncInfo::V8ElementSyncInfoAspectData elprov(m_parentModelMapping.GetDgnModel().GetModelId(), v8eh.GetElementId(), syncInfoSearch.m_currentElementProvenance);
-            m_converter.WriteProvenanceAspect(*modeledElement, elprov);
-            modeledElement->Update();
-            }
         }
     return true;
     }

@@ -2483,6 +2483,15 @@ SyncInfo::V8ElementMapping Converter::RecordMappingInSyncInfo(DgnElementId bimEl
     SyncInfo::ElementProvenance newProv(v8eh, GetSyncInfo(), StableIdPolicy::ById);
     SyncInfo::V8ElementMapping mapping(bimElementId, v8eh, v8mm.GetV8ModelSyncInfoId(), newProv);
     GetSyncInfo().InsertElement(mapping);
+
+    if (_WantModelProvenanceInBim())
+        {
+        auto el = v8mm.GetDgnModel().GetDgnDb().Elements().GetElement(bimElementId)->CopyForEdit();
+        SyncInfo::V8ElementSyncInfoAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), newProv);
+        WriteProvenanceAspect(*el, elprov);
+        el->Update();
+        }
+
     return mapping;
     }
 
@@ -2494,6 +2503,15 @@ SyncInfo::V8ElementMapping Converter::UpdateMappingInSyncInfo(DgnElementId bimEl
     SyncInfo::ElementProvenance newProv(v8eh, GetSyncInfo(), StableIdPolicy::ById);
     SyncInfo::V8ElementMapping mapping(bimElementId, v8eh, v8mm.GetV8ModelSyncInfoId(), newProv);
     GetSyncInfo().UpdateElement(mapping);
+
+    if (_WantModelProvenanceInBim())
+        {
+        auto el = v8mm.GetDgnModel().GetDgnDb().Elements().GetElement(bimElementId)->CopyForEdit();
+        SyncInfo::V8ElementSyncInfoAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), newProv);
+        WriteProvenanceAspect(*el, elprov);
+        el->Update();
+        }
+
     return mapping;
     }
 
