@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/EntityConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -968,10 +968,16 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
             ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
             ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
             ECEntityClassCP baseConstraintClass = baseConstraint.GetConstraintClasses()[0]->GetEntityClassCP();
-            if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*(baseConstraintClass)))
+            ECObjectsStatus status = constraint.AddClass(*(baseConstraintClass));
+            if (ECObjectsStatus::SchemaNotFound == status)
                 {
                 relClass.GetSchemaR().AddReferencedSchema(const_cast<ECSchemaR>(baseConstraintClass->GetSchema()));
                 constraint.AddClass(*(baseConstraintClass));
+                }
+            else if (ECObjectsStatus::RelationshipConstraintsNotCompatible == status && RelationshipMultiplicity::Compare(constraint.GetMultiplicity(), baseConstraint.GetMultiplicity()) == -1)
+                {
+                constraint.SetMultiplicity(baseConstraint.GetMultiplicity());
+                status = constraint.AddClass(*(baseConstraintClass));
                 }
             }
         else if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
