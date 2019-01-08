@@ -899,7 +899,7 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
         constraint.SetIsPolymorphic(true);
         }
 
-    if (isSource && !constraint.GetAbstractConstraint()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
+    if (isSource && constraint.IsAbstractConstraintDefined() && !constraint.GetAbstractConstraint()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
         constraint.RemoveAbstractConstraint();
 
     constraintsToRemove.clear();
