@@ -6,7 +6,7 @@
 |       $Date: 2011/08/10 15:10:20 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -92,6 +92,7 @@ TINType3d64fCreator::TINType3d64fCreator ()
     {
     }
 
+/*
 namespace {
 const WChar TIN_AS_LINEAR_HEADER_TYPE_NAME[] = L"TINAsLinearHeader";
 BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearHeaderType(TIN_AS_LINEAR_HEADER_TYPE_NAME, sizeof(ISMStore::FeatureHeader));
@@ -99,7 +100,9 @@ BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_Register
 const WChar TIN_AS_LINEAR_POINT_TYPE_NAME[] = L"TINAsLinearPoint";
 BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearPointType(TIN_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
 }
-
+*/
+const WChar TIN_AS_LINEAR_HEADER_TYPE_NAME[] = L"TINAsLinearHeader";
+const WChar TIN_AS_LINEAR_POINT_TYPE_NAME[] = L"TINAsLinearPoint";
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
