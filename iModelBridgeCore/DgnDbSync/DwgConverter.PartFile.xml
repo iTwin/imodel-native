@@ -43,7 +43,7 @@
         <Bindings>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DwgImporter_en.xliff</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/DwgImporter_en-US.sqlang.db3</Files>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/ConvertConfig.xml</Files>
+            <Files ProductDirectoryName="Assets">Delivery/ConvertConfig.xml</Files>
             <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/DwgImporter.logging.config.xml</Files>
         </Bindings>
     </Part>
