@@ -1724,6 +1724,68 @@ void SyncInfo::V8ElementSyncInfoAspect::AssertMatch(DgnElementCR el, DgnV8Api::E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetSyncInfoAspectIds(DgnElementCR el, SyncInfoAspect::Kind kind)
+    {
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " WHERE (Element.Id=? AND Kind=?)");
+    sel->BindId(1, el.GetElementId());
+    sel->BindText(2, SyncInfoAspect::KindToString(kind), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    bvector<BeSQLite::EC::ECInstanceId> ids;
+    while (BE_SQLITE_ROW == sel->Step())
+        ids.push_back(sel->GetValueId<BeSQLite::EC::ECInstanceId>(0));
+    return ids;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Get(DgnElementR el)
+    {
+    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Element);
+    if (ids.size() == 0)
+        return V8ElementSyncInfoAspect(nullptr);
+    BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element");
+    return V8ElementSyncInfoAspect(GetAspect(el, ids.front()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Get(DgnElementCR el)
+    {
+    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Element);
+    if (ids.size() == 0)
+        return V8ElementSyncInfoAspect(nullptr);
+    BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element");
+    return V8ElementSyncInfoAspect(GetAspect(el, ids.front()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Get(DgnElementR el)
+    {
+    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Model);
+    if (ids.size() == 0)
+        return V8ModelSyncInfoAspect(nullptr);
+    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element");
+    return V8ModelSyncInfoAspect(GetAspect(el, ids.front()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Get(DgnElementCR el)
+    {
+    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Model);
+    if (ids.size() == 0)
+        return V8ModelSyncInfoAspect(nullptr);
+    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element");
+    return V8ModelSyncInfoAspect(GetAspect(el, ids.front()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8ElementSyncInfoAspect::V8ElementSyncInfoAspect(iModelSyncInfoAspect const& aspect) : SyncInfoAspect(aspect.m_instance.get())
     {
     if (!IsValid())

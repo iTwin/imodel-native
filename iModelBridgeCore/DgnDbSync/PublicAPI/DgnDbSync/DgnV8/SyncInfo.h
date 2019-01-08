@@ -544,10 +544,10 @@ struct SyncInfo
         //! Create a new aspect in memory. Caller must call AddTo.
         DGNDBSYNC_EXPORT static V8ElementSyncInfoAspect Make(V8ElementSyncInfoAspectData const&, DgnDbR);
         
-        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
-        static V8ElementSyncInfoAspect Get(DgnElementR el) {return V8ElementSyncInfoAspect(V8ElementSyncInfoAspect::GetAspect(el));}
-        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
-        static V8ElementSyncInfoAspect Get(DgnElementCR el) {return V8ElementSyncInfoAspect(V8ElementSyncInfoAspect::GetAspect(el));}
+        //! Get existing syncinfo aspects from the specified element in the case where we know that it was derived from a V8 *element*.
+        static V8ElementSyncInfoAspect Get(DgnElementR);
+        //! Get existing syncinfo aspects from the specified element in the case where we know that it was derived from a V8 *element*.
+        static V8ElementSyncInfoAspect Get(DgnElementCR);
 
         DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov); 
 
@@ -570,11 +570,9 @@ struct SyncInfo
         DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Make(DgnV8ModelCR, TransformCR, Converter&);
         
         //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
-        static V8ModelSyncInfoAspect Get(DgnElementR el) {return V8ModelSyncInfoAspect(V8ModelSyncInfoAspect::GetAspect(el));}
-        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnModelR);
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnElementR);
         //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
-        static V8ModelSyncInfoAspect Get(DgnElementCR el) {return V8ModelSyncInfoAspect(V8ModelSyncInfoAspect::GetAspect(el));}
-        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnModelCR);
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnElementCR);
 
         DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8ModelId() const;
         DGNDBSYNC_EXPORT Transform GetTransform() const;
@@ -765,6 +763,8 @@ protected:
     BentleyStatus PerformVersionChecks();
 
 public:
+    static bvector<BeSQLite::EC::ECInstanceId> GetSyncInfoAspectIds(DgnElementCR el, SyncInfoAspect::Kind);
+
     BentleyStatus CreateTables();
     BentleyStatus CreateNamedGroupTable(bool createIndex);
     void CreateECTables();

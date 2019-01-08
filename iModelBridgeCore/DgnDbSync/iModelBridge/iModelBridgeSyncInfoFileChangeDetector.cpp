@@ -288,7 +288,7 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
 
             if (nullptr != aspectClass)
                 {
-                iModelSyncInfoAspect aspect = iModelSyncInfoAspect::GetAspect(*conversionResults.m_element, aspectClass);
+                iModelSyncInfoAspect aspect = iModelSyncInfoAspect::GetAspect(*conversionResults.m_element, BeSQLite::EC::ECInstanceId(), aspectClass); // NEEDS WORK: This valid only if you know that element will have just one aspect
                 if (aspect.IsValid())
                     aspect.SetSourceState(changeDetectorResults.GetSyncInfoRecord().GetSourceState().GetAspectState());
                 else

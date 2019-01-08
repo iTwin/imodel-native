@@ -814,13 +814,13 @@ ECN::ECClassCP iModelSyncInfoAspect::GetAspectClass(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass)
+iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementCR el, BeSQLite::EC::ECInstanceId aspectid, ECN::ECClassCP aspectClass)
     {
     if (!aspectClass)
         aspectClass = GetAspectClass(el.GetDgnDb());
     if (nullptr == aspectClass)
         return iModelSyncInfoAspect();
-    auto instance = DgnElement::GenericMultiAspect::GetAspect (el, *aspectClass, BeSQLite::EC::ECInstanceId()); // Get read-only copy of the aspect.
+    auto instance = DgnElement::GenericMultiAspect::GetAspect (el, *aspectClass, aspectid); // Get read-only copy of the aspect.
     if (nullptr == instance)
         return iModelSyncInfoAspect();
     return iModelSyncInfoAspect(instance);
@@ -829,13 +829,13 @@ iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementCR el, ECN::ECCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementR el, ECN::ECClassCP aspectClass)
+iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementR el, BeSQLite::EC::ECInstanceId aspectid, ECN::ECClassCP aspectClass)
     {
     if (!aspectClass)
         aspectClass = GetAspectClass(el.GetDgnDb());
     if (nullptr == aspectClass)
         return iModelSyncInfoAspect();
-    auto instance = DgnElement::GenericMultiAspect::GetAspectP(el, *aspectClass, BeSQLite::EC::ECInstanceId());    // NB: Call GetAspectP, not GetAspect! GetAspectP sets the aspect's dirty flag, which tells its _OnUpdate method to write out changes.
+    auto instance = DgnElement::GenericMultiAspect::GetAspectP(el, *aspectClass, aspectid);    // NB: Call GetAspectP, not GetAspect! GetAspectP sets the aspect's dirty flag, which tells its _OnUpdate method to write out changes.
     if (nullptr == instance)
         return iModelSyncInfoAspect();
     return iModelSyncInfoAspect(instance);

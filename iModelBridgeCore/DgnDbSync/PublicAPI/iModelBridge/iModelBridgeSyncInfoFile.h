@@ -298,9 +298,9 @@ struct iModelSyncInfoAspect
     IMODEL_BRIDGE_EXPORT static ECN::ECClassCP GetAspectClass(DgnDbR);
 
     //! Get an existing syncinfo aspect from the specified element
-    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass = nullptr);
+    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementCR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
     //! Get an existing syncinfo aspect from the specified element
-    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementR el, ECN::ECClassCP aspectClass = nullptr);
+    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
 
     //! Create a new ECInstance of the specified provenance aspect class
     //! Bridges will probably want factory methods with signatures that are customized to the bridge.
