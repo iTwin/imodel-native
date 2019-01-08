@@ -10,6 +10,9 @@
 #include <DgnView\DgnViewLib.h>
 #include <Profiles\ProfilesApi.h>
 
+#define EXPECT_SUCCESS_Insert(createParams) EXPECT_EQ (DgnDbStatus::Success, InsertAndUpdateElement (createParams))
+#define EXPECT_FAIL_Insert(createParams) EXPECT_EQ (DgnDbStatus::ValidationFailed, InsertAndUpdateElement (createParams))
+
 /*---------------------------------------------------------------------------------**//**
 * Base class for Profiles domain test cases.
 * @bsiclass                                                                      11/2017
@@ -30,11 +33,9 @@ protected:
     Dgn::DgnModel& GetModel();
     Dgn::PhysicalModel& GetPhysicalModel();
     Dgn::DgnCategoryId GetCategoryId();
-    Dgn::DgnElementId CreateAndGetMaterialId(Utf8CP codeValue);
-    Dgn::DgnElementId CreateAndGetProfileId();
 
     /*---------------------------------------------------------------------------------**//**
-    * Template function to create and insert entity class instance.
+    * Create and insert an entity class instance.
     * @bsimethod                                                                     01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
     template<typename T>
@@ -52,5 +53,22 @@ protected:
             return nullptr;
 
         return instancePtr;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * Insert and update an element, returning the status of these operations.
+    * @bsimethod                                                                     01/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename T>
+    Dgn::DgnDbStatus InsertAndUpdateElement (typename T::CreateParams const& createParams)
+        {
+        Dgn::DgnDbStatus status;
+        RefCountedPtr<T> instancePtr = InsertElement<T> (createParams, &status);
+        if (status != Dgn::DgnDbStatus::Success)
+            return status;
+
+        // Perform an Update just to double check same validation is happenning on update.
+        instancePtr->Update (&status);
+        return status;
         }
     };

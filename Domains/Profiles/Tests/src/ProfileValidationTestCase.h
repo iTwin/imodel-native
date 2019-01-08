@@ -8,9 +8,6 @@
 #pragma once
 #include "ProfilesTestCase.h"
 
-#define EXPECT_SUCCESS_Insert(createParams) EXPECT_EQ (DgnDbStatus::Success, InsertAndUpdateProfile (createParams))
-#define EXPECT_FAIL_Insert(createParams) EXPECT_EQ (DgnDbStatus::ValidationFailed, InsertAndUpdateProfile (createParams))
-
 /*---------------------------------------------------------------------------------**//**
 * Test case for Profiles domain section entity class validation tests.
 * @param T - concrete Profiles entity class e.g. IShapeProfile.
@@ -31,16 +28,9 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                                     01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    Dgn::DgnDbStatus InsertAndUpdateProfile (typename T::CreateParams const& createParams)
+    Dgn::DgnDbStatus InsertAndUpdateElement (typename T::CreateParams const& createParams)
         {
-        Dgn::DgnDbStatus status;
-        RefCountedPtr<T> instancePtr = InsertElement<T> (createParams, &status);
-        if (status != Dgn::DgnDbStatus::Success)
-            return status;
-
-        // Perform an Update just to double check same validation is happenning on update.
-        instancePtr->Update (&status);
-        return status;
+        return ProfilesTestCase::InsertAndUpdateElement<T> (createParams);
         }
 
     /*---------------------------------------------------------------------------------**//**

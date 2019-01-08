@@ -11,9 +11,6 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_PROFILES
 
-#define EXPECT_SUCCESS_Insert(createParams) EXPECT_EQ (DgnDbStatus::Success, Insert (createParams))
-#define EXPECT_FAIL_Insert(createParams) EXPECT_EQ (DgnDbStatus::ValidationFailed, Insert (createParams))
-
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -23,26 +20,53 @@ public:
     typedef MaterialProfile::CreateParams CreateParams;
 
     /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                                     01/2018
+    * @bsimethod                                                                     01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    Dgn::DgnDbStatus Insert (CreateParams const& createParams)
+    Dgn::DgnDbStatus InsertAndUpdateElement (CreateParams const& createParams)
         {
-        MaterialProfilePtr materialProfilePtr = MaterialProfile::Create (createParams);
-        BeAssert (materialProfilePtr.IsValid());
+        return ProfilesTestCase::InsertAndUpdateElement<MaterialProfile> (createParams);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * Create and insert a TEMPORARY Material element.
+    * @bsimethod                                                                     01/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Dgn::DgnElementId CreateAndGetMaterialId (Utf8CP pCodeValue)
+        {
+        Dgn::DgnDb& db = GetDb();
+
+        DgnClassId classId (db.Schemas().GetClassId (PRF_SCHEMA_NAME, "TempMaterial"));
+        dgn_ElementHandler::Element* pHandler = Dgn::dgn_ElementHandler::Element::FindHandler (db, classId);
+
+        DgnElementPtr elementPtr = pHandler->Create (DgnElement::CreateParams (db, GetModel().GetModelId(), classId));
+        elementPtr->SetCode (CodeSpec::CreateCode (db, "ProfilesMaterialCodeSpec", pCodeValue));
 
         Dgn::DgnDbStatus status;
-        materialProfilePtr->Insert (&status);
+        elementPtr->Insert (&status);
         if (status != Dgn::DgnDbStatus::Success)
-            return status;
+            {
+            BeAssert (false && "Failed to insert TempMaterial");
+            return DgnElementId();
+            }
 
-        // Perform an Update just to double check same validation is happenning on update.
-        materialProfilePtr->Update (&status);
-        return status;
+        return elementPtr->GetElementId();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * Create and insert a generic profile instnace, used to test MaterialProfile.
+    * @bsimethod                                                                     01/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Dgn::DgnElementId CreateAndGetProfileId()
+        {
+        CShapeProfile::CreateParams params (GetModel(), "C", 10, 10, 1, 1);
+        CShapeProfilePtr profilePtr = InsertElement<CShapeProfile> (params);
+
+        return profilePtr->GetElementId();
         }
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                      01/2018
+* @bsimethod                                                                      01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MaterialProfileTestCase, Create_MinimalCreateParams_ValidInstance)
     {
@@ -52,7 +76,7 @@ TEST_F (MaterialProfileTestCase, Create_MinimalCreateParams_ValidInstance)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                      01/2018
+* @bsimethod                                                                      01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MaterialProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
     {
@@ -62,7 +86,7 @@ TEST_F (MaterialProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2018
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MaterialProfileTestCase, Insert_EmptyCreateParams_FailedInsert)
     {
@@ -71,7 +95,7 @@ TEST_F (MaterialProfileTestCase, Insert_EmptyCreateParams_FailedInsert)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2018
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MaterialProfileTestCase, Insert_InvalidCreateParams_FailedInsert)
     {
@@ -80,7 +104,7 @@ TEST_F (MaterialProfileTestCase, Insert_InvalidCreateParams_FailedInsert)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2018
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MaterialProfileTestCase, GetProperties_MaterialProfileInstance_ValidProperties)
     {
@@ -95,7 +119,7 @@ TEST_F (MaterialProfileTestCase, GetProperties_MaterialProfileInstance_ValidProp
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2018
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MaterialProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     {
