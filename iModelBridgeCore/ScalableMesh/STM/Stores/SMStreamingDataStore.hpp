@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMStreamingDataStore.hpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -107,7 +107,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         auto projectIDStartPos = url.find(L"S3MXECPlugin--") + 14;
         auto projectIDEndPos = url.find_first_of(L"/", projectIDStartPos);
         auto projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
-        BeAssert(projectID.Equals(this->m_projectID.c_str()));
+        //BeAssert(projectID.Equals(this->m_projectID.c_str()));
         }
     else if (url.ContainsI(L"blob.core.windows.net"))
         { // Direct link to Azure
@@ -1286,6 +1286,22 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     return 1;
     }
 
+template <class EXTENT> SMNodeHeaderLocation SMStreamingStore<EXTENT>::GetNodeHeaderLocation(HPMBlockID blockID) 
+    {    
+    auto group = m_CesiumGroup->GetCache()->GetGroupForNodeIDFromCache(blockID.m_integerID);
+
+    if (!group.IsValid()) 
+        return SMNodeHeaderLocation::Network;
+
+    if (!group->IsLoaded())
+        {
+        return SMNodeHeaderLocation::Network;
+        }
+
+    return SMNodeHeaderLocation::NetworkLocallyCached;    
+    }
+
+
 template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
@@ -2302,7 +2318,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         url.AppendToPath((L"p_" + std::to_wstring(blockID.m_integerID) + extension).c_str());
 
         BeFile file;
-        BeFileStatus status = file.Open(url.c_str(), BeFileAccess::Write);
+        BeFileStatus status = OPEN_FILE(file, url.c_str(), BeFileAccess::Write);
         if (BeFileStatus::Success != status)
             {
             status = file.Create(url.c_str());

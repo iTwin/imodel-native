@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/GTests/SMUnitTestProgress.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -112,7 +112,7 @@ struct MockMultiStepWorker : MockWorker<NIterations>
                 progress->Progress() = 0.0;
                 progress->ProgressStep() = steps[step - 1];
                 progress->UpdateListeners();
-                DoWork(progress);
+                MockWorker<NIterations>::DoWork(progress);
                 }
             return progress->GetProgress() == 1;
             });
@@ -150,7 +150,7 @@ struct MockMultiProcessWorker : MockWorker<NIterations>
                 progress->ProgressStepProcess() = processes[process];
                 progress->Progress() = 0.0;
                 progress->UpdateListeners();
-                DoWork(progress);
+                MockWorker<NIterations>::DoWork(progress);
                 }
             return progress->GetProgress() == 1;
             });

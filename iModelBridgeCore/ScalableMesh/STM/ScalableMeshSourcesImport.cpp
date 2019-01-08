@@ -23,7 +23,7 @@
 #include <ScalableMesh/Import/SourceReferenceVisitor.h>
 #include <STMInternal/GeoCoords/WKTUtils.h>
 
-#include "Plugins\ScalableMeshIDTMFileTraits.h"
+#include "Plugins/ScalableMeshIDTMFileTraits.h"
 #include <ScalableMesh/Memory/PacketAccess.h>
 
 #include "../Import/Sink.h"

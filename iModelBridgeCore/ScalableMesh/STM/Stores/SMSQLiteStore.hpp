@@ -2,7 +2,7 @@
 
 #include "SMSQLiteStore.h"
 #include "SMStreamedSourceStore.h"
-#include "..\ScalableMeshSourcesPersistance.h"
+#include "../ScalableMeshSourcesPersistance.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/IScalableMeshDocumentEnv.h>
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>
@@ -10,11 +10,11 @@
 #include <ScalableMesh/Import/SourceReference.h>
 
 #include <ScalableMesh/Import/Source.h>
-#include "..\RasterUtilities.h"
+#include "../RasterUtilities.h"
 
-#include <ImagePP\all\h\HGF2DProjective.h>
+#include <ImagePP/all/h/HGF2DProjective.h>
 
-#include <ImagePP\all\h\HRFVirtualEarthFile.h>
+#include <ImagePP/all/h/HRFVirtualEarthFile.h>
 #include <BeJpeg/BeJpeg.h>
 
 
@@ -228,6 +228,11 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
     header->m_graphID = blockID;
     return sizeof(*header);
     }    
+
+template <class EXTENT> SMNodeHeaderLocation SMSQLiteStore<EXTENT>::GetNodeHeaderLocation(HPMBlockID blockID) 
+    {        
+    return SMNodeHeaderLocation::Local;    
+    }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {

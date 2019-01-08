@@ -210,6 +210,7 @@ enum class SMTextureType
 enum class SMNodeViewStatus
     {
     NotVisible = 0,
+    NotLoaded,
     TooCoarse,
     Fine
     };

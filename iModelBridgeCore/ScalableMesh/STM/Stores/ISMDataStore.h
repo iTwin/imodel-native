@@ -200,6 +200,14 @@ typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtI
 typedef RefCountedPtr<ISMNodeDataStore<bvector<Byte>>>  ISMTileMeshDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<Cesium3DTilesBase>>  ISMCesium3DTilesDataStorePtr;
 
+enum class SMNodeHeaderLocation
+    {
+    Local = 0,             //On local drive.
+    Network,              //On network, needs to be downloaded.
+    NetworkLocallyCached, //On network, already cached locally, no need to download.
+    Qty
+    };
+
 
 template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : public RefCountedBase
     {
@@ -255,6 +263,12 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
          block of data of type DataType.
         -----------------------------------------------------------------------------*/
         virtual size_t LoadNodeHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
+
+        /**----------------------------------------------------------------------------
+         Get the node header location. Useful to optimize the loading of node, for 
+         example in the rendering thread.
+        -----------------------------------------------------------------------------*/
+        virtual SMNodeHeaderLocation GetNodeHeaderLocation(HPMBlockID blockID) = 0;
 
         /**----------------------------------------------------------------------------
          Set the path of the files created for a given project (e.g. : dgndb file). 

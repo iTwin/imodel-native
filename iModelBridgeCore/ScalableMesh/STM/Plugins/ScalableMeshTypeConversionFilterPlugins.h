@@ -14,9 +14,9 @@
 #include "../ImagePPHeaders.h"
 #include <ScalableMesh/Import/DataTypeDescription.h>
 #include "../Import/DimensionIterator.h"
-#include "..\IDTMFeatureArray.h"
+#include "../IDTMFeatureArray.h"
 #include "ScalableMeshDimensionTypeConversionFilter.h"
-#include "..\Stores\SMStoreUtils.h"
+#include "../Stores/SMStoreUtils.h"
 #include "ScalableMeshIDTMFileTraits.h"
 
 
