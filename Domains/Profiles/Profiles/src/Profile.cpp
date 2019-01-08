@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/Profile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
@@ -92,6 +92,14 @@ DgnDbStatus Profile::ValidateAndCreateGeometry()
 
     SetShape (geometryPtr);
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::Validate() const
+    {
+    return _Validate() ? DgnDbStatus::Success : DgnDbStatus::ValidationFailed;
     }
 
 /*---------------------------------------------------------------------------------**//**
