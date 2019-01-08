@@ -475,3 +475,21 @@ TEST_F (LShapeProfileTestCase, Insert_LegSlopeOf90Degrees_FailedInsert)
     params.legSlope = Angle::FromRadians (PI / 2.0);
     EXPECT_FAIL_Insert (params) << "Leg slope should be less than 90 degrees.";
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (LShapeProfileTestCase, Delete_ExistingDoubleLInstances_FailedDelete)
+    {
+    LShapeProfilePtr singleProfilePtr = InsertElement<LShapeProfile> (CreateParams (GetModel(), "L", 6.0, 10.0, 1.0));
+
+    DoubleLShapeProfile::CreateParams doubleLParams (GetModel(), "DL", 1.0, singleProfilePtr->GetElementId());
+    DoubleLShapeProfilePtr firstDoubleProfilePtr = InsertElement<DoubleLShapeProfile> (doubleLParams);
+    DoubleLShapeProfilePtr secondDoubleProfilePtr = InsertElement<DoubleLShapeProfile> (doubleLParams);
+
+    ASSERT_EQ (DgnDbStatus::DeletionProhibited, singleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::Success, firstDoubleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::DeletionProhibited, singleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::Success, secondDoubleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::Success, singleProfilePtr->Delete());
+    }
