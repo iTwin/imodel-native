@@ -8,6 +8,7 @@
 
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include "BeXml/BeXml.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -63,6 +64,8 @@ struct SchemaCopyTest : CopyTestFixture
 
         void CopySchema() { CopySchema(m_targetSchema); }
         void CopySchema(ECSchemaPtr& targetSchema);
+
+        void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root);
     };
 
 //=======================================================================================
@@ -100,6 +103,27 @@ void SchemaCopyTest::CopySchema(ECSchemaPtr& targetSchema)
     EC_ASSERT_SUCCESS(m_sourceSchema->CopySchema(targetSchema));
     EXPECT_TRUE(targetSchema.IsValid());
     EXPECT_NE(m_sourceSchema, targetSchema);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Gintaras.Volkvicius    01/2019
+//---------------------------------------------------------------------------------------
+void SchemaCopyTest::ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root)
+    {
+    BeXmlNodeP currentNode = root->GetFirstChild();
+    for(auto expectedTypeName : expectedTypeNames)
+        {
+        if(currentNode == nullptr)
+            {
+            FAIL() << "Expected end of document, Node '" << expectedTypeName << "' expected.";
+            }
+
+        Utf8String nodeTypeName;
+        EXPECT_EQ(BeXmlStatus::BEXML_Success, currentNode->GetAttributeStringValue(nodeTypeName, "typeName"));
+        EXPECT_EQ(expectedTypeName, nodeTypeName);
+
+        currentNode = currentNode->GetNextSibling();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1492,6 +1516,139 @@ TEST_F(SchemaCopyTest, CopyCustomAttributeEC3)
     EXPECT_STREQ("testSchema.01.02.03", copySchema->GetCustomAttribute("testSchema", "CustomClass")->GetClass().GetSchema().GetFullSchemaName().c_str());
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, RoundtripCopiedEC2SchemaDropsMinMaxValue)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" nameSpacePrefix="ts" version="01.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" isDomainClass="true">
+                <ECProperty propertyName="TestProperty" typeName="double" MinimumValue="3.0" MaximumValue="42"/>
+            </ECClass>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr originalSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *ECSchemaReadContext::CreateContext()));
+
+    ECSchemaPtr copiedSchema;
+    EC_ASSERT_SUCCESS(originalSchema->CopySchema(copiedSchema));
+
+    ASSERT_NE(nullptr, copiedSchema->GetClassCP("TestClass"));
+    ASSERT_NE(nullptr, copiedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
+
+    ECValue minValue;
+    ECValue maxValue;
+    EC_ASSERT_SUCCESS(copiedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty")->GetMinimumValue(minValue));
+    EC_ASSERT_SUCCESS(copiedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty")->GetMaximumValue(maxValue));
+    ASSERT_FALSE(minValue.IsNull());
+    ASSERT_FALSE(maxValue.IsNull());
+    ASSERT_EQ( 3, minValue.GetDouble());
+    ASSERT_EQ(42, maxValue.GetDouble());
+
+    Utf8String serializedSchema;
+    ASSERT_EQ(SchemaWriteStatus::Success, copiedSchema->WriteToXmlString(serializedSchema, ECVersion::V2_0));
+
+    ECSchemaPtr roundTrippedSchema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(roundTrippedSchema, serializedSchema.c_str(), *ECSchemaReadContext::CreateContext()));
+
+    EXPECT_NE(nullptr, roundTrippedSchema->GetClassCP("TestClass"));
+    EXPECT_NE(nullptr, roundTrippedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
+
+    EXPECT_FALSE(roundTrippedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty")->IsMinimumValueDefined());
+    EXPECT_FALSE(roundTrippedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty")->IsMaximumValueDefined());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Gintaras.Volkvicius    01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, TestCopySchemaNotPreserveElementOrder)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetPreserveElementOrder(true);
+
+    Utf8CP schemaXML = R"(
+        <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+            <ECEntityClass typeName="GHI" description="Project ECClass" displayLabel="Class GHI" />
+            <ECEntityClass typeName="ABC" description="Project ECClass" displayLabel="Class ABC" />
+            <ECEnumeration typeName="DEF" displayLabel="Enumeration DEF" backingTypeName="int" />
+        </ECSchema>
+        )";
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+   
+    ECSchemaPtr copySchema;
+    EC_EXPECT_SUCCESS(schema->CopySchema(copySchema));
+
+    WString ecSchemaXmlString;
+    ASSERT_EQ(SchemaWriteStatus::Success, copySchema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+
+    // Enumerations(DEF) are serialized first, then classes(ABC, GHI)
+    bvector<Utf8String> typeNames = {"DEF", "ABC", "GHI"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Gintaras.Volkvicius    01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, TestCopySchemaNotPreserveOrderWithBaseClassAndRelationships)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetPreserveElementOrder(true);
+    
+    Utf8CP schemaXML = R"*(
+        <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+            <ECEntityClass typeName="GHI" description="Project ECClass" displayLabel="Class GHI" />
+            <ECEntityClass typeName="ABC" description="Project ECClass" displayLabel="Class ABC">
+                <BaseClass>MNO</BaseClass>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="DEF" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0, 1)" polymorphic="True">
+                  <Class class="MNO" />
+              </Source>
+              <Target cardinality="(0, 1)" polymorphic="True">
+                  <Class class="JKL">
+                      <Key>
+                          <Property name="Property1" />
+                          <Property name="Property2" />
+                      </Key>
+                  </Class>
+              </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="MNO" description="Project ECClass" displayLabel="Class MNO" />
+            <ECEntityClass typeName="JKL" description="Project ECClass" displayLabel="Class JKL">
+                <ECProperty propertyName="Property1" typeName="string" />
+                <ECProperty propertyName="Property2" typeName="string" />
+            </ECEntityClass>
+            <ECEnumeration typeName="PQR" displayLabel="Enumeration PQR" backingTypeName="int" />
+        </ECSchema>
+        )*";
+    ECSchemaPtr schema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+
+    ECSchemaPtr copySchema;
+    EC_EXPECT_SUCCESS(schema->CopySchema(copySchema));
+
+    WString ecSchemaXmlString;
+    EXPECT_EQ(SchemaWriteStatus::Success, copySchema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    // First Enumeration(PQR), then classes alphabetically(ABC, DEF, GHI). As MNO is the base class of ABC and
+    // JKL has a constraint in DEF, those two classes are written before the class they depend in.
+    bvector<Utf8String> typeNames = {"PQR", "MNO", "ABC", "JKL", "DEF", "GHI"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
+    }
 
 //=======================================================================================
 //! ClassCopyTest
