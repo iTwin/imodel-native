@@ -899,6 +899,9 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
         constraint.SetIsPolymorphic(true);
         }
 
+    if (isSource && !constraint.GetAbstractConstraint()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
+        constraint.RemoveAbstractConstraint();
+
     constraintsToRemove.clear();
     bvector<ECClassCP> constraintsToAdd;
 
@@ -980,10 +983,15 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
                 status = constraint.AddClass(*(baseConstraintClass));
                 }
             }
-        else if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
+        else
             {
-            relClass.GetSchemaR().AddReferencedSchema(defaultConstraintClass->GetSchemaR());
-            constraint.AddClass(*defaultConstraintClass);
+            constraint.RemoveAbstractConstraint();
+            ECObjectsStatus status = constraint.AddClass(*defaultConstraintClass);
+            if (ECObjectsStatus::SchemaNotFound == status)
+                {
+                relClass.GetSchemaR().AddReferencedSchema(defaultConstraintClass->GetSchemaR());
+                constraint.AddClass(*defaultConstraintClass);
+                }
             }
         }
     else if (relClass.HasBaseClasses())
