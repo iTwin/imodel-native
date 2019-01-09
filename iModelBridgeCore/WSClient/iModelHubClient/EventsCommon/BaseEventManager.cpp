@@ -61,9 +61,14 @@ AzureServiceBusSASDTOPtr BaseEventManager::CreateEventSASFromResponse(JsonValueC
 //---------------------------------------------------------------------------------------
 AzureServiceBusSASDTOTaskPtr BaseEventManager::GetEventServiceSASToken(const ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "BaseEventManager::GetEventServiceSASToken";
     //POST to https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSAS
     std::shared_ptr<AzureServiceBusSASDTOResult> finalResult = std::make_shared<AzureServiceBusSASDTOResult>();
-    return m_wsRepositoryClient->SendCreateObjectRequest(GenerateEventSASJson(), BeFileName(), nullptr, cancellationToken)
+
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, requestOptions, "Creating event service SAS token.");
+
+    return m_wsRepositoryClient->SendCreateObjectRequestWithOptions(GenerateEventSASJson(), BeFileName(), nullptr, requestOptions, cancellationToken)
         ->Then([=] (const WSCreateObjectResult& result)
         {
         if (result.IsSuccess())
@@ -128,8 +133,13 @@ Json::Value BaseEventManager::EventSubscriptionResponseToJsonInstance(const Utf8
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<WSChangesetResult> BaseEventManager::SendChangesetRequest(const std::shared_ptr<WSChangeset> changeset, const ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "BaseEventManager::SendChangesetRequest";
+
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, requestOptions, "Sending changeset request.");
+
     const HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken);
+    return m_wsRepositoryClient->SendChangesetRequestWithOptions(request, nullptr, requestOptions, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,7 +147,12 @@ AsyncTaskPtr<WSChangesetResult> BaseEventManager::SendChangesetRequest(const std
 //---------------------------------------------------------------------------------------
 StatusTaskPtr BaseEventManager::SendDeleteObjectRequest(const ObjectId eventSubscriptionObject) const
     {
-    return m_wsRepositoryClient->SendDeleteObjectRequestWithOptions(eventSubscriptionObject)->Then<StatusResult>([=] (WSVoidResult const& deleteResult)
+    const Utf8String methodName = "BaseEventManager::SendDeleteObjectRequest";
+
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, requestOptions, "Deleting subscription %s.", eventSubscriptionObject.ToString().c_str());
+
+    return m_wsRepositoryClient->SendDeleteObjectRequestWithOptions(eventSubscriptionObject, requestOptions)->Then<StatusResult>([=] (WSVoidResult const& deleteResult)
         {
         if (!deleteResult.IsSuccess())
             {

@@ -10,6 +10,7 @@
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <FakeServer/MockIMHubHttpHandler.h>
+#include "RequestVerifyHttpHandler.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -69,7 +70,8 @@ void InitializeTests()
     //auto mockHandler = std::make_shared<MockIMSHttpHandler>();
     //UrlProvider::SetHttpHandler(mockHandler);
     //ClientHelper::Initialize(IntegrationTestsSettings::Instance().GetClientInfo(), StubLocalState::Instance(), mockHandler);
-    ClientHelper::Initialize(IntegrationTestsSettings::Instance().GetClientInfo(), StubLocalState::Instance(), ProxyHttpHandler::GetFiddlerProxyIfReachable());
+    auto handler = std::make_shared<RequestVerifyHttpHandler>(ProxyHttpHandler::GetFiddlerProxyIfReachable());
+    ClientHelper::Initialize(IntegrationTestsSettings::Instance().GetClientInfo(), StubLocalState::Instance(), handler);
     ClientHelper::GetInstance()->SetUrl(IntegrationTestsSettings::Instance().GetServerUrl());
 
     s_initialized = true;

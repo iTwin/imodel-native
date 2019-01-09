@@ -26,7 +26,8 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "StatisticsManager::QueryUserStatistics";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
     ObjectId userInfoObject(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo, userId);
     WSQuery query(userInfoObject);
@@ -38,7 +39,7 @@ ICancellationTokenPtr cancellationToken
     return ExecuteWithRetry<StatisticsInfoPtr>([=] ()
         {
         //Execute query
-        return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<StatisticsInfoResult>
+        return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<StatisticsInfoResult>
             ([=] (const WSObjectsResult& result)
             {
             if (!result.IsSuccess())
@@ -47,23 +48,23 @@ ICancellationTokenPtr cancellationToken
             auto userInfoInstances = result.GetValue().GetInstances();
             if (userInfoInstances.IsEmpty())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "User does not exist.");
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, "User does not exist.");
                 return StatisticsInfoResult::Error(Error::Id::UserDoesNotExist);
                 }
             if (userInfoInstances.Size() > 1)
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Multiple users found.");
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, "Multiple users found.");
                 return StatisticsInfoResult::Error(Error::Id::Unknown);
                 }
             auto statistics = StatisticsInfo::ParseFromRelated(*userInfoInstances.begin());
             if (statistics.IsNull())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Failed to parse statistics instance.");
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, "Failed to parse statistics instance.");
                 return StatisticsInfoResult::Error(Error::Id::Unknown);
                 }
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), requestOptions, "");
             return StatisticsInfoResult::Success(statistics);
             });
         });
@@ -80,7 +81,8 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "StatisticsManager::QueryAllUsersStatistics";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
 
     Utf8String select = "*";
@@ -90,7 +92,7 @@ ICancellationTokenPtr cancellationToken
     return ExecuteWithRetry<bvector<StatisticsInfoPtr> >([=] ()
         {
         //Execute query
-        return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)
+        return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)
             ->Then<MultipleStatisticsInfoResult>
             ([=] (const WSObjectsResult& result)
             {
@@ -103,14 +105,14 @@ ICancellationTokenPtr cancellationToken
                 auto statistics = StatisticsInfo::ParseFromRelated(value);
                 if (statistics.IsNull())
                     {
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Failed to parse statistics instance.");
+                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, "Failed to parse statistics instance.");
                     return MultipleStatisticsInfoResult::Error(Error::Id::Unknown);
                     }
 
                 statisticsList.push_back(statistics);
                 }
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), requestOptions, "");
             return MultipleStatisticsInfoResult::Success(statisticsList);
             });
         });
@@ -128,7 +130,8 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "StatisticsManager::QueryUsersStatistics";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
     std::deque<ObjectId> usersIdsQueue;
     for (auto userId : usersIds)
@@ -147,7 +150,7 @@ ICancellationTokenPtr cancellationToken
         auto queryStatisticsResult = ExecuteWithRetry<void>([&] ()
             {
             //Execute query
-            return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<StatusResult>
+            return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<StatusResult>
                 ([&] (const WSObjectsResult& result) mutable
                 {
                 if (!result.IsSuccess())
@@ -158,7 +161,7 @@ ICancellationTokenPtr cancellationToken
                     auto statistics = StatisticsInfo::ParseFromRelated(value);
                     if (statistics.IsNull())
                         {
-                        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Failed to parse statistics instance.");
+                        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, "Failed to parse statistics instance.");
                         return StatusResult::Error(Error::Id::Unknown);
                         }
 
@@ -173,7 +176,7 @@ ICancellationTokenPtr cancellationToken
         }
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), requestOptions, "");
 
     return CreateCompletedAsyncTask<MultipleStatisticsInfoResult>(MultipleStatisticsInfoResult::Success(statisticsList));
     }

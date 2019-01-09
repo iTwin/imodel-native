@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 GlobalConnection::GlobalConnection(const Utf8String serverUrl, CredentialsCR credentials, const ClientInfoPtr clientInfo, const IHttpHandlerPtr customHandler)
     {
-    auto wsRepositoryClient = WSRepositoryClient::Create(serverUrl, ServerSchema::Plugin::Global + Utf8String("--") + ServerSchema::Plugin::Global, clientInfo, nullptr, customHandler);
+    auto wsRepositoryClient = WSRepositoryClient::Create(serverUrl, ServerProperties::ServiceVersion(), ServerSchema::Plugin::Global + Utf8String("--") + ServerSchema::Plugin::Global, clientInfo, nullptr, customHandler);
     CompressionOptions options;
     options.EnableRequestCompression(true, 1024);
     wsRepositoryClient->Config().SetCompressionOptions(options);

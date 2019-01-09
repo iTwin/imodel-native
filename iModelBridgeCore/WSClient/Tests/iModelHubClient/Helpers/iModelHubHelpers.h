@@ -62,5 +62,7 @@ namespace iModelHubHelpers
 
     IAzureBlobStorageClientPtr CreateAzureClient(std::shared_ptr<MockHttpHandler> mockHandler);
     void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector);
+
+    IWSRepositoryClient::RequestOptionsPtr CreateiModelHubRequestOptions();
     }
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
