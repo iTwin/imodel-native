@@ -33,13 +33,13 @@ o = $(OutputRootDir)build/$(programName)/
 always:
     !~@mkdir $(o)
 
-MultiCompileDepends = $(_MakeFileSpec)
+MultiCompileDepends = $(_MakeFileSpec) $(BEGTEST_INPUT)ProfilesTestCase.h $(BEGTEST_INPUT)ProfileValidationTestCase.h
 
 %include MultiCppCompileRule.mki
 
 $(o)Main.obj                            : $(BEGTEST_INPUT)Main.cpp ${MultiCompileDepends}
 
-$(o)TestHost.obj                        : $(BEGTEST_INPUT)TestHost.cpp ${MultiCompileDepends}
+$(o)TestHost.obj                        : $(BEGTEST_INPUT)TestHost.cpp ${MultiCompileDepends} $(BEGTEST_INPUT)TestHost.h
 
 $(o)ProfilesTestCase.obj                : $(BEGTEST_INPUT)ProfilesTestCase.cpp ${MultiCompileDepends}
 
