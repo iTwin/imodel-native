@@ -51,6 +51,7 @@ protected:
     virtual IGeometryPtr _CreateGeometry() const override;
 
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
 
 private:
     bool ValidateThickness() const;

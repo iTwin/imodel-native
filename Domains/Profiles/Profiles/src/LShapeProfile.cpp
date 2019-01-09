@@ -98,7 +98,7 @@ DgnDbStatus LShapeProfile::_OnDelete() const
     if (status != ECSqlStatus::Success)
         return DgnDbStatus::SQLiteError;
 
-    if (DbResult::BE_SQLITE_ROW == sqlStatement.Step())
+    if (sqlStatement.Step() == DbResult::BE_SQLITE_ROW)
         {
         Utf8Char thisIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH], otherIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH];
         GetElementId().ToString (thisIdBuffer, BeInt64Id::UseHex::Yes);
@@ -110,6 +110,43 @@ DgnDbStatus LShapeProfile::_OnDelete() const
         }
 
     return T_Super::_OnDelete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Update all DoubleLShapeProfiles that are referencing this profile.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus LShapeProfile::_OnUpdate (DgnElement const& original)
+    {
+    ECSqlStatement sqlStatement;
+    Utf8CP pSqlString = "SELECT ECInstanceId FROM " PRF_SCHEMA (PRF_CLASS_DoubleLShapeProfile)
+                        " WHERE " PRF_PROP_DoubleLShapeProfile_SingleProfile ".Id=?";
+
+    ECSqlStatus status = sqlStatement.Prepare (GetDgnDb(), pSqlString);
+    if (status != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+
+    status = sqlStatement.BindId (1, GetElementId());
+    if (status != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+
+    while (sqlStatement.Step() == DbResult::BE_SQLITE_ROW)
+        {
+        DgnElementId doubleProfileId = sqlStatement.GetValueId<DgnElementId> (0);
+        DoubleLShapeProfilePtr doubleProfilePtr = m_dgndb.Elements().GetForEdit<DoubleLShapeProfile> (doubleProfileId);
+        if (doubleProfilePtr.IsNull())
+            {
+            BeAssert (false && "Failed to get element");
+            return DgnDbStatus::BadElement;
+            }
+
+        DgnDbStatus status;
+        doubleProfilePtr->Update (&status);
+        if (status != DgnDbStatus::Success)
+            return status;
+        }
+
+    return T_Super::_OnUpdate (original);
     }
 
 /*---------------------------------------------------------------------------------**//**
