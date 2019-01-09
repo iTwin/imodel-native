@@ -28,7 +28,7 @@ DPoint2dCP              PolyfaceVectors::_GetParamCP ()              const  {ret
 FacetFaceDataCP         PolyfaceVectors::_GetFaceDataCP ()           const  {return m_faceData.GetCP(); }
 PolyfaceEdgeChainCP     PolyfaceVectors::_GetEdgeChainCP ()          const  {return m_edgeChain.GetCP(); }
 PolyfaceAuxDataCPtr     PolyfaceVectors::_GetAuxDataCP()             const  {return m_auxData; }
-uint32_t const*         PolyfaceVectors::_GetIntColorCP ()           const  {return (uint32_t*)m_intColor.GetCP();}
+uint32_t const*         PolyfaceVectors::_GetIntColorCP ()           const  {return (uint32_t const*)m_intColor.GetCP();}
 
 /** For Color, Param, and normal indices, resolveToDefaults allows caller to request using
 PointIndex (or other default decision) if respective index is same as PointIndex. */

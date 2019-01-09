@@ -439,7 +439,7 @@ MSBsplineStatus MSBsplineCurve::ExtractSegmentBetweenKnots (MSBsplineCurveR targ
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineCurve::AppendCurve (MSBsplineCurveCR inCurve)
     {
-    return bspcurv_appendCurves (this, this, (MSBsplineCurveP)&inCurve, false, false);
+    return bspcurv_appendCurves (this, this, const_cast<MSBsplineCurveP>(&inCurve), false, false);
     }
 
 bool MSBsplineCurve::IsSameGeometry (MSBsplineCurveCR other) const

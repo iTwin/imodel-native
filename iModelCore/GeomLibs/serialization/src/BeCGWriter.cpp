@@ -168,7 +168,7 @@ void BeCGWriter::WriteList (bvector<DPoint3d> const & data, Utf8CP listName, Utf
         if (0 == data.size())
             return;
         m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
-            data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
+            data.size () > 0 ? (double const*)&data.front () : nullptr, 3, data.size ());
         }
     }
 
@@ -189,7 +189,7 @@ void BeCGWriter::WriteList (bvector<DVec3d> const & data, Utf8CP listName, Utf8C
         if (0 == data.size())
             return;
         m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
-            data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
+            data.size () > 0 ? (double const*)&data.front () : nullptr, 3, data.size ());
         }
     }
 
@@ -207,7 +207,7 @@ void BeCGWriter::WriteList (bvector<RgbFactor> const & data, Utf8CP listName, Ut
     else
         {
         m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
-            data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
+            data.size () > 0 ? (double const*)&data.front () : nullptr, 3, data.size ());
         }
     }
 
@@ -230,7 +230,7 @@ void BeCGWriter::WriteList (bvector<DPoint2d> const & data, Utf8CP listName, Utf
     else
         {
         m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
-            data.size () > 0 ? (double *)&data.front () : nullptr, 2, data.size ());
+            data.size () > 0 ? (double const*)&data.front () : nullptr, 2, data.size ());
         }
     }
 
@@ -247,7 +247,7 @@ void BeCGWriter::WriteList (bvector<double> const & data, Utf8CP listName, Utf8C
         return;
     m_dest.WriteDoubleArray (listName, shortName,
         itemName, true,
-        (double *)&data.front (), data.size ());
+        (double const*)&data.front (), data.size ());
     }
 
 void BeCGWriter::WritePlacementZX

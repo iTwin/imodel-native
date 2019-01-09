@@ -1296,7 +1296,7 @@ const MSBsplineSurface      *surface
         if (fabs (tol) < minTolerance)
             return ERROR;
 #else
-        double surfaceTol = bsputil_surfaceTolerance ((MSBsplineSurfaceP)surface);
+        double surfaceTol = bsputil_surfaceTolerance ((MSBsplineSurfaceCP)surface);
         tol = data->x;
         if (tol <= surfaceTol)
             return ERROR;

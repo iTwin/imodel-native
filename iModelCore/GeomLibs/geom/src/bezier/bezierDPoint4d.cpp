@@ -100,15 +100,15 @@ int         lineProductOrder
                 boolstat= bsiBezier_accumulateUnivariateProduct (
                         (double*)pProductPoles, out, outputStrideDoubles,
                         s,
-                        (double*)pPointPolesi, stringerOrder, in0, inputStrideDoubles,
-                        (double*)pPointPolesj, stringerOrder, in1, inputStrideDoubles
+                        const_cast<double*>((double const*)pPointPolesi), stringerOrder, in0, inputStrideDoubles,
+                        const_cast<double*>((double const*)pPointPolesj), stringerOrder, in1, inputStrideDoubles
                         );
             if (boolstat)
                 boolstat= bsiBezier_accumulateUnivariateProduct (
                         (double*)pProductPoles, out, outputStrideDoubles,
                         -s,
-                        (double*)pPointPolesi, stringerOrder, in1, inputStrideDoubles,
-                        (double*)pPointPolesj, stringerOrder, in0, inputStrideDoubles
+                        const_cast<double*>((double const*)pPointPolesi), stringerOrder, in1, inputStrideDoubles,
+                        const_cast<double*>((double const*)pPointPolesj), stringerOrder, in0, inputStrideDoubles
                         );
             }
         }
@@ -156,7 +156,7 @@ int             numDim
     int productOrder = order + derivativeOrder - 1;
 
     *pOrderOut = 0;
-    bsiBezier_derivativePoles ((double *)derivativePoles, (double*)pPoleIn, order, 4);
+    bsiBezier_derivativePoles ((double *)derivativePoles, const_cast<double*>((double const*)pPoleIn), order, 4);
 
     if (bsiBezierDPoint4d_isUnitWeight (pPoleIn, order, s_unitWeightRelTol))
         {
@@ -190,10 +190,10 @@ int             numDim
             {
             bsiBezier_univariateProduct (poleXPrimeW, 0, 1,
                             (double *)derivativePoles, derivativeOrder, i, 4,
-                            (double *)pPoleIn, order, 3, 4
+                            const_cast<double*>((double const*)pPoleIn), order, 3, 4
                             );
             bsiBezier_univariateProduct (poleXWPrime, 0, 1,
-                            (double *)pPoleIn, order, i, 4,
+                            const_cast<double*>((double const*)pPoleIn), order, i, 4,
                             (double *)derivativePoles, derivativeOrder, 3, 4);
             bsiBezier_subtractPoles (poleDiff, poleXPrimeW, poleXWPrime, productOrder, 1);
             bsiBezier_copyComponent ((double *)pPoleOut, i, 3, poleDiff, 0, 1, productOrder);
@@ -328,7 +328,7 @@ const   DPoint4d    *pPoles,
         bsiBezier_univariateRoots (root, &numRoot, componentPoles, tangentOrder);
         for (j = 0; j < numRoot; j++)
             {
-            bsiBezier_functionAndDerivative ((double*)&extremePoint, NULL, (double *)pPoles, order, 4, root[j]);
+            bsiBezier_functionAndDerivative ((double*)&extremePoint, NULL, const_cast<double*>((double const*)pPoles), order, 4, root[j]);
             pRange->Extend (extremePoint);
             }
         }
@@ -375,7 +375,7 @@ int         order
         bsiBezier_univariateRoots (root, &numRoot, tangentPoles[componentIndex], tangentOrder);
         for (int rootIndex = 0; rootIndex < numRoot; rootIndex++)
             {
-            bsiBezier_functionAndDerivative ((double*)&extremePoint, NULL, (double *)pPoles, order, 3, root[rootIndex]);
+            bsiBezier_functionAndDerivative ((double*)&extremePoint, NULL, const_cast<double*>((double const*)pPoles), order, 3, root[rootIndex]);
             pRange->Extend (extremePoint);
             }
         }
@@ -430,7 +430,7 @@ ArcLengthParams *pParams
     DPoint4d X, dX;
     double ex, ey, ez;
     bsiBezier_functionAndDerivative ((double*)&X, (double*)&dX,
-                        (double *)pParams->pPoleArray, pParams->order, 4, s);
+                        const_cast<double*>((double const*)pParams->pPoleArray), pParams->order, 4, s);
 
     pParams->count++;
     if (X.w == 1.0 && dX.w == 0.0)
@@ -471,7 +471,7 @@ ArcLengthParams *pParams
     DPoint4d X, dX;
     double ex, ey, ez;
     bsiBezier_functionAndDerivative ((double*)&X, (double*)&dX,
-                        (double *)pParams->pPoleArray, pParams->order, 4, s);
+                        const_cast<double*>((double const*)pParams->pPoleArray), pParams->order, 4, s);
     DVec3d vector;
     pParams->count++;
     if (X.w == 1.0 && dX.w == 0.0)
@@ -594,7 +594,7 @@ const   DPoint4d    *pPoleArray,
     for (i = 0; i < numParam; i++)
         {
         bsiBezier_functionAndDerivativeExt ((double*)&X, (double*)&dX, (double*)&ddX,
-                        (double *)pPoleArray, order, 4, pParam[i]);
+                        const_cast<double*>((double const*)pPoleArray), order, 4, pParam[i]);
 
         w = X.w;
         dw = dX.w;
@@ -653,7 +653,7 @@ const   DPoint4d    *pPoleArray,
         {
         double f = i * df;
         bsiBezier_functionAndDerivativeExt ((double*)&X, (double*)&dX, (double*)&ddX,
-                        (double *)pPoleArray, order, 4, f);
+                        const_cast<double*>((double const*)pPoleArray), order, 4, f);
 
         w = X.w;
         dw = dX.w;
@@ -713,7 +713,7 @@ const   DPoint4d    *pPoleArray,
                         (double*)(pX+i),
                         (double*)(pdX+i),
                         (double*)(pddX+i),
-                        (double*) pPoleArray,
+                        const_cast<double*>((double const*)pPoleArray),
                         order,
                         4,
                         pParam[i]);
@@ -892,11 +892,11 @@ const   DPoint4d    *pPoleArray,
     /* Remark: 'twould be nice to avoid full evaluation of these points in the (common)
         cases where s0 and s1 are endpoints */
 
-    bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, (double*)pPoleArray, order, 4, s0);
+    bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, const_cast<double*>((double const*)pPoleArray), order, 4, s0);
     jmdlBezierDPoint4d_updateClosePoint (&firstPoint, pClosePoint, pCloseParam, pCloseDist2,
                         &candidatePoint, s0, xx, yy);
 
-    bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, (double*)pPoleArray, order, 4, s1);
+    bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, const_cast<double*>((double const*)pPoleArray), order, 4, s1);
     jmdlBezierDPoint4d_updateClosePoint (&firstPoint, pClosePoint, pCloseParam, pCloseDist2,
                             &candidatePoint, s1, xx, yy);
 
@@ -916,7 +916,7 @@ const   DPoint4d    *pPoleArray,
         s = rootArray[i];
         if ( s > sMin && s < sMax)
             {
-            bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, (double*)pPoleArray, order, 4, s);
+            bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, const_cast<double*>((double const*)pPoleArray), order, 4, s);
             jmdlBezierDPoint4d_updateClosePoint (&firstPoint, pClosePoint, pCloseParam, pCloseDist2,
                                 &candidatePoint, s, xx, yy);
             }
@@ -972,11 +972,11 @@ const   DPoint4d    *pPoleArray,
     /* Remark: 'twould be nice to avoid full evaluation of these points in the (common)
         cases where s0 and s1 are endpoints */
 
-    bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, (double*)pPoleArray, order, 4, s0);
+    bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, const_cast<double*>((double const*)pPoleArray), order, 4, s0);
     jmdlBezierDPoint4d_updateClosePointXYZ (&firstPoint, pClosePoint, pCloseParam, pCloseDist2,
                         &candidatePoint, s0, xx, yy, zz);
 
-    bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, (double*)pPoleArray, order, 4, s1);
+    bsiBezier_functionAndDerivative ((double*)&candidatePoint, NULL, const_cast<double*>((double const*)pPoleArray), order, 4, s1);
     jmdlBezierDPoint4d_updateClosePointXYZ (&firstPoint, pClosePoint, pCloseParam, pCloseDist2,
                             &candidatePoint, s1, xx, yy, zz);
 
@@ -997,7 +997,7 @@ const   DPoint4d    *pPoleArray,
         if ( s > sMin && s < sMax)
             {
             bsiBezier_functionAndDerivative
-                    ((double*)&candidatePoint, NULL, (double*)pPoleArray, order, 4, s);
+                    ((double*)&candidatePoint, NULL, const_cast<double*>((double const*)pPoleArray), order, 4, s);
             jmdlBezierDPoint4d_updateClosePointXYZ (&firstPoint, pClosePoint, pCloseParam, pCloseDist2,
                                 &candidatePoint, s, xx, yy, zz);
             }
@@ -1032,7 +1032,7 @@ const   DPoint4d    *pPoleArray,
         bsiBezier_functionAndDerivative
                         (
                         (double*)&pPointArray[i],
-                        NULL, (double*)pPoleArray,
+                        NULL, const_cast<double*>((double const*)pPoleArray),
                         order,
                         4,
                         s);
@@ -1381,7 +1381,7 @@ const   DPoint4d    *pFixedPoint,
     if (order <= 2)
         return true;
 
-    bsiBezier_derivativePoles ((double *)derivativePoles, (double*)pPoleArray, order, 4);
+    bsiBezier_derivativePoles ((double *)derivativePoles, const_cast<double*>((double const*)pPoleArray), order, 4);
 
     /* Form R ... */
     for (i = 0; i < order; i++)
@@ -1397,12 +1397,12 @@ const   DPoint4d    *pFixedPoint,
             (
             (double *)t0PoleArray, k, 3,
             (double *)derivativePoles, orderDerivative, k, 4,   /* X'.k */
-            (double *)pPoleArray, order, 3, 4                   /* X.w  */
+            const_cast<double*>((double const*)pPoleArray), order, 3, 4                   /* X.w  */
             );
         bsiBezier_univariateProduct
             (
             (double *)t1PoleArray, k, 3,
-            (double *)pPoleArray, order, k, 4,                  /* X.k */
+            const_cast<double*>((double const*)pPoleArray), order, k, 4,                  /* X.k */
             (double *)derivativePoles, orderDerivative, 3, 4    /* X'.w  */
             );
         }
@@ -1728,9 +1728,9 @@ const   DPoint4d    *pInPoles,
 
     /* fill derivative arrays */
     bsiBezier_copyPoles
-        ((double *) poleDerivs[0], 0, (double *) pInPoles, 0, order, 4);
+        ((double *) poleDerivs[0], 0, const_cast<double*>((double const*)pInPoles), 0, order, 4);
     bsiBezier_derivativePoles
-        ((double *) poleDerivs[1], (double *) pInPoles, order, 4);
+        ((double *) poleDerivs[1], const_cast<double*>((double const*)pInPoles), order, 4);
     bsiBezier_derivativePoles
         ((double *) poleDerivs[2], (double *) poleDerivs[1], order - 1, 4);
 
@@ -1835,7 +1835,7 @@ const   DPoint4d    *pPoleArray,
                 bsiBezier_functionAndDerivative
                     (
                     (double *) &pInflectPoints[i], NULL,
-                    (double *) pPoleArray, order, 4, rootsP[i]
+                    const_cast<double*>((double const*)pPoleArray), order, 4, rootsP[i]
                     );
                 }
 
@@ -1848,7 +1848,7 @@ const   DPoint4d    *pPoleArray,
                 bsiBezier_functionAndDerivative
                     (
                     (double *) &pInflectPoints[i], NULL,
-                    (double *) pPoleArray, order, 4, rootsP[i]
+                    const_cast<double*>((double const*)pPoleArray), order, 4, rootsP[i]
                     );
 
         return numRoot;
@@ -2021,7 +2021,7 @@ const   double      *pParamArray,
                     (
                     (double *)(pPointArray ? &pPointArray[i] : NULL),
                     (double *)(pDerivArray ? &pDerivArray[i] : NULL),
-                    (double *)pPoleArray,
+                    const_cast<double*>((double const*)pPoleArray),
                     order,
                     4,
                     pParamArray[i]);
@@ -2057,7 +2057,7 @@ const   double      *pParamArray,
                     (
                     (double *)(pPointArray ? &pPointArray[i] : NULL),
                     (double *)(pDerivArray ? &pDerivArray[i] : NULL),
-                    (double *)pPoleArray,
+                    const_cast<double*>((double const*)pPoleArray),
                     order,
                     3,
                     pParamArray[i]);
@@ -2090,7 +2090,7 @@ const   double      param
                 (
                 (double *)pPoint,
                 (double *)pDeriv,
-                (double *)pPoleArray,
+                const_cast<double*>((double const*)pPoleArray),
                 order,
                 4,
                 param);
@@ -2120,7 +2120,7 @@ const   double      param
                 (
                 (double *)pPoint,
                 (double *)pDeriv,
-                (double *)pPoleArray,
+                const_cast<double*>((double const*)pPoleArray),
                 order,
                 3,
                 param);
@@ -3143,7 +3143,7 @@ bool extendSegment1
         DPoint4d curvePoint, segmentPoint;
         double segmentFraction;
         double curveFraction = root[i];
-        bsiBezier_functionAndDerivative ((double*)&curvePoint, NULL, (double*)bezierPoles, (int)order, 4, curveFraction);
+        bsiBezier_functionAndDerivative ((double*)&curvePoint, NULL, const_cast<double*>((double const*)bezierPoles), (int)order, 4, curveFraction);
         if (segment.ProjectPointUnboundedCartesianXYW (segmentPoint, segmentFraction, curvePoint))
             {
             if (!extendSegment0 && segmentFraction < -epsilon)

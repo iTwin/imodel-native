@@ -12,7 +12,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 DPoint3dCP                          PolyfaceVisitor::GetPointCP () const                { return m_point.GetCP(); }
 DVec3dCP                            PolyfaceVisitor::GetNormalCP () const               { return m_normal.GetCP(); }
 DPoint2dCP                          PolyfaceVisitor::GetParamCP () const                { return m_param.GetCP(); }
-uint32_t const*                     PolyfaceVisitor::GetIntColorCP () const             { return (uint32_t*)m_intColor.GetCP(); }
+uint32_t const*                     PolyfaceVisitor::GetIntColorCP () const             { return (uint32_t const*)m_intColor.GetCP(); }
 FacetFaceDataCP                     PolyfaceVisitor::GetFaceDataCP () const             { return m_faceData.GetCP(); }
 PolyfaceAuxDataCPtr                 PolyfaceVisitor::GetAuxDataCP() const               { return _GetAuxDataCP(); }
 

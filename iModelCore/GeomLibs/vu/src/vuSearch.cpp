@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: vu/src/vuSearch.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include <Geom/cluster.h>
@@ -1363,7 +1363,7 @@ Public void vu_insertAndRetriangulate (VuSetP pGraph, DPoint3dCP rawPoints, size
     diagonal.DifferenceOf (range.high, range.low);
     static double s_relTol = 1.0e-6;
     double abstol = s_relTol * diagonal.MagnitudeXY ();
-    bsiDPoint3dArray_findClusters ((DPoint3d*)rawPoints, numRaw, clusterIndices, &points, abstol, false, false);
+    bsiDPoint3dArray_findClusters (const_cast<DPoint3dP>(rawPoints), numRaw, clusterIndices, &points, abstol, false, false);
     InsertSeedPoints (context, points, newZWins, s_targetPerBlock, s_maxBlockPerSide);
     vu_flipTrianglesToImproveQuadraticAspectRatio (pGraph);   
 #define continuousFlip 1     
