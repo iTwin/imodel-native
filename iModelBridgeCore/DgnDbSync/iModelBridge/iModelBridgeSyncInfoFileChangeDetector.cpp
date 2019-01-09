@@ -238,6 +238,7 @@ DgnDbStatus     iModelBridgeSyncInfoFile::ChangeDetector::AddProvenanceAspect(iM
         return DgnDbStatus::MissingDomain;
 
     iModelSyncInfoAspect::SourceState state = syncInfoRecord.GetSourceState().GetAspectState();
+    // *** NEEDS WORK Abeesh: The "Scope" property must be DgnElementId of the element in the *iModel* that corresponds to whatever is identified by syncInfoRecord.GetSourceIdentity().GetScopeROWID(). For most non-Dgn converters, the scope is the source file, and so the Scope property should be the DgnElementId of the corresponding RepositoryLink element.
     ECN::IECInstancePtr instance = iModelSyncInfoAspect::MakeInstance(element.GetElementId(), syncInfoRecord.GetSourceIdentity().GetKind().c_str(),
                                                                       syncInfoRecord.GetSourceIdentity().GetId().c_str(), &state, *aspectClass);
     iModelSyncInfoAspect aspect = iModelSyncInfoAspect(instance.get());

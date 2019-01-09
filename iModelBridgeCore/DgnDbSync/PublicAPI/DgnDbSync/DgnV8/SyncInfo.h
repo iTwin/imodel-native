@@ -503,7 +503,7 @@ struct SyncInfo
       public:
         enum Kind
             {
-            Element, Model, DrawingGraphic, Level
+            Element, Model, DrawingGraphic, Level, GeomPart
             };
 
         static Utf8CP KindToString(Kind kind)
@@ -514,6 +514,7 @@ struct SyncInfo
                 case Kind::Model: return "Model";
                 case Kind::DrawingGraphic: return "DrawingGraphic";
                 case Kind::Level: return "Level";
+                case Kind::GeomPart: return "GeomPart";
                 }
             BeAssert(false);
             return "Element";
@@ -525,6 +526,7 @@ struct SyncInfo
             if (0==strcmp(str,"Model")) return Kind::Model;
             if (0==strcmp(str,"DrawingGraphic")) return Kind::DrawingGraphic;
             if (0==strcmp(str,"Level")) return Kind::Level;
+            if (0==strcmp(str,"GeomPart")) return Kind::GeomPart;
             BeAssert(false);
             return Kind::Element;
             }
@@ -532,14 +534,26 @@ struct SyncInfo
         DGNDBSYNC_EXPORT SyncInfoAspect::Kind GetKind() const;
         };
 
+    //! A GeomPart mapping
+    struct GeomPartSyncInfoAspect : SyncInfoAspect
+        {
+        private:
+        GeomPartSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
+        public:
+        //! Create a new aspect in memory. partId should identify the GeomPart element in the BIM. It will be the set as the value of the Scope property. Caller must call AddTo. This aspect should be added to the job's definition model element, not the GeomPart element!
+        DGNDBSYNC_EXPORT static GeomPartSyncInfoAspect Make(Utf8StringCR tag, DgnGeometryPartId partId, DgnDbR);
+        //! Look up an existing GeomPart aspect by its tag. el should be the job's definition model element.
+        DGNDBSYNC_EXPORT static GeomPartSyncInfoAspect GetByTag(DgnElementCR el, Utf8StringCR tag);
+        //! Look up an existing GeomPart aspect by its partId. el should be the job's definition model element.
+        DGNDBSYNC_EXPORT static GeomPartSyncInfoAspect GetByPartId(DgnElementCR el, DgnGeometryPartId partId);
+        };
+
     //! Identifies the source of an element in an iModel that was created from an element in a V8 model.
     //! Replacement for V8ElementMapping
     struct V8ElementSyncInfoAspect : SyncInfoAspect
         {
       private:
-        V8ElementSyncInfoAspect(iModelSyncInfoAspect const&);
         V8ElementSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
-
       public:
         static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return Utf8PrintfString("%lld", v8Id);}
         static Utf8String FormatSourceId(DgnV8EhCR el) {return FormatSourceId(el.GetElementId());}
@@ -567,9 +581,7 @@ struct SyncInfo
     struct V8ModelSyncInfoAspect : SyncInfoAspect
         {
       private:
-        V8ModelSyncInfoAspect(iModelSyncInfoAspect const&);
         V8ModelSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
-
       public:
         static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return Utf8PrintfString("%lld", v8Id);}
         static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/GeometryConversion.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -929,7 +929,19 @@ void ProcessSymbol(DgnV8Api::IDisplaySymbol& symbol, DgnV8ModelR model) {DgnV8Ap
 DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
     {
     SyncInfo::GeomPart sigp;
-    return (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
+    auto partId = (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
+#ifdef TEST_SYNC_INFO_ASPECT
+    if (_WantModelProvenanceInBim())
+        {
+        auto aspect = SyncInfo::GeomPartSyncInfoAspect::GetByTag(*GetJobDefinitionModel()->GetModeledElement(), name);
+        BeAssert(aspect.IsValid() == partId.IsValid());
+        if (aspect.IsValid())
+            {
+            BeAssert(partId == aspect.GetScope());
+            }
+        }
+#endif
+    return partId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -938,7 +950,19 @@ DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
 Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
     {
     SyncInfo::GeomPart sigp;
-    return (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
+    auto tag = (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
+#ifdef TEST_SYNC_INFO_ASPECT
+    if (_WantModelProvenanceInBim())
+        {
+        auto aspect = SyncInfo::GeomPartSyncInfoAspect::GetByPartId(*GetJobDefinitionModel()->GetModeledElement(), partId);
+        BeAssert(aspect.IsValid() == !tag.empty());
+        if (aspect.IsValid())
+            {
+            BeAssert(tag == aspect.GetSourceId());
+            }
+        }
+#endif
+    return tag;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -949,7 +973,17 @@ BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8Stri
     SyncInfo::GeomPart siTag(partId, partTag);
     auto rc = siTag.Insert(*m_dgndb);
     if (BeSQLite::BE_SQLITE_DONE == rc)
+        {
+        if (_WantModelProvenanceInBim())
+            {
+            auto aspect = SyncInfo::GeomPartSyncInfoAspect::Make(partTag, partId, GetDgnDb());
+            auto defModelEd = GetDgnDb().Elements().GetForEdit<DgnElement>(GetJobDefinitionModel()->GetModeledElementId());
+            aspect.AddTo(*defModelEd);
+            defModelEd->Update();
+            }
+
         return BSISUCCESS;
+        }
     LOG.errorv("Insert geompart in sync info (%lld, %s) failed with error %x", partId.GetValue(), partTag.c_str(), rc);
     BeAssert(false && "Caller must check that geompart tag is unique and not empty");
     return BSIERROR;

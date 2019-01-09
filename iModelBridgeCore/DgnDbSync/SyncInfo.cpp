@@ -1745,7 +1745,7 @@ SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Get(DgnElem
     if (ids.size() == 0)
         return V8ElementSyncInfoAspect(nullptr);
     BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
-    return V8ElementSyncInfoAspect(GetAspect(el, ids.front()));
+    return V8ElementSyncInfoAspect(GetAspect(el, ids.front()).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1757,7 +1757,7 @@ SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Get(DgnElem
     if (ids.size() == 0)
         return V8ElementSyncInfoAspect(nullptr);
     BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
-    return V8ElementSyncInfoAspect(GetAspect(el, ids.front()));
+    return V8ElementSyncInfoAspect(GetAspect(el, ids.front()).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1769,7 +1769,7 @@ SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Get(DgnElementR
     if (ids.size() == 0)
         return V8ModelSyncInfoAspect(nullptr);
     BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element from a given sourceId");
-    return V8ModelSyncInfoAspect(GetAspect(el, ids.front()));
+    return V8ModelSyncInfoAspect(GetAspect(el, ids.front()).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1781,21 +1781,7 @@ SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Get(DgnElementC
     if (ids.size() == 0)
         return V8ModelSyncInfoAspect(nullptr);
     BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element from a given sourceId");
-    return V8ModelSyncInfoAspect(GetAspect(el, ids.front()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementSyncInfoAspect::V8ElementSyncInfoAspect(iModelSyncInfoAspect const& aspect) : SyncInfoAspect(aspect.m_instance.get())
-    {
-    if (!IsValid())
-        return;
-    if (GetKind() != Kind::Element)
-        {
-        BeAssert(false);
-        m_instance = nullptr;
-        }
+    return V8ModelSyncInfoAspect(GetAspect(el, ids.front()).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1824,20 +1810,6 @@ DgnV8Api::ElementId SyncInfo::V8ElementSyncInfoAspect::GetV8ElementId() const
     int64_t id = 0;
     sscanf(GetSourceId(), "%lld", &id);
     return id;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelSyncInfoAspect::V8ModelSyncInfoAspect(iModelSyncInfoAspect const& aspect) : SyncInfoAspect(aspect.m_instance.get())
-    {
-    if (!IsValid())
-        return;
-    if (GetKind() != Kind::Model)
-        {
-        BeAssert(false);
-        m_instance = nullptr;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1906,6 +1878,50 @@ void SyncInfo::V8ModelSyncInfoAspect::AssertMatch(V8ModelMapping const& mapping)
     BeAssert(GetV8ModelName().Equals(mapping.GetV8Name()));
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPartSyncInfoAspect SyncInfo::GeomPartSyncInfoAspect::Make(Utf8StringCR tag, DgnGeometryPartId partId, DgnDbR db)
+    {
+    auto aspectClass = GetAspectClass(db);
+    if (nullptr == aspectClass)
+        return GeomPartSyncInfoAspect(nullptr);
+                
+    auto instance = iModelSyncInfoAspect::MakeInstance(partId, KindToString(Kind::GeomPart), tag, nullptr, *aspectClass);
+    return GeomPartSyncInfoAspect(instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPartSyncInfoAspect SyncInfo::GeomPartSyncInfoAspect::GetByTag(DgnElementCR el, Utf8StringCR tag)
+    {
+    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Kind::GeomPart, tag);
+    if (ids.size() == 0)
+        return GeomPartSyncInfoAspect(nullptr);
+    BeAssert(ids.size() == 1 && "Not supporting multiple GeomPart kind aspects on a single bim element for a given tag");
+    return GeomPartSyncInfoAspect(GetAspect(el, ids.front()).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPartSyncInfoAspect SyncInfo::GeomPartSyncInfoAspect::GetByPartId(DgnElementCR el, DgnGeometryPartId partId)
+    {
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " WHERE (Element.Id=? AND Kind=? AND Scope.Id=?)");
+    sel->BindId(1, el.GetElementId());
+    sel->BindText(2, SyncInfoAspect::KindToString(SyncInfoAspect::Kind::GeomPart), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sel->BindId(3, partId);
+    if (BE_SQLITE_ROW != sel->Step())
+        return GeomPartSyncInfoAspect(nullptr);
+    
+    auto aspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+    
+    BeAssert((BE_SQLITE_ROW != sel->Step()) && "Not supporting multiple GeomPart kind aspects on a single bim element for a given partId");
+
+    return GeomPartSyncInfoAspect(GetAspect(el, aspectId).m_instance.get());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
