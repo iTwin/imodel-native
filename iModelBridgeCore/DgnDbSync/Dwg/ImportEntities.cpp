@@ -1624,23 +1624,23 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgS
     // draw underlines and overlines decorated by the escape codes:
     for (auto const& underline : underlines)
         {
-        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLine (underline);
-        if (primitive.IsValid())
-            this->AppendGeometry (*primitive.get());
+        ICurvePrimitivePtr  line = ICurvePrimitive::CreateLine (underline);
+        if (line.IsValid())
+            this->AppendGeometry (*line.get());
         }
     for (auto const& overline : overlines)
         {
-        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLine (overline);
-        if (primitive.IsValid())
-            this->AppendGeometry (*primitive.get());
+        ICurvePrimitivePtr  line = ICurvePrimitive::CreateLine (overline);
+        if (line.IsValid())
+            this->AppendGeometry (*line.get());
         }
 
     // now draw strike through
     if (giStyle.IsStrikethrough())
         {
-        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLine (strikeThrough);
-        if (primitive.IsValid())
-            this->AppendGeometry (*primitive.get());
+        ICurvePrimitivePtr  line = ICurvePrimitive::CreateLine (strikeThrough);
+        if (line.IsValid())
+            this->AppendGeometry (*line.get());
         }
     }
 
@@ -1661,6 +1661,7 @@ virtual void    _Xline (DPoint3dCR point1, DPoint3dCR point2) override
 
     // shooting the vector from point1 to a far distance
     DSegment3d  line;
+    line.InitZero ();
     line.point[1].SumOf (point1, vector, length);
 
     // shooting the inverted vector to a far distance
@@ -2855,7 +2856,7 @@ bool            DwgImporter::_SkipEmptyElement (DwgDbEntityCP entity)
     if (nullptr != blockRef)
         {
         DwgDbObjectIteratorPtr  attrIter = blockRef->GetAttributeIterator ();
-        if (attrIter->IsValid() && attrIter->IsValid())
+        if (attrIter.IsValid() && attrIter->IsValid())
             {
             attrIter->Start ();
             if (!attrIter->Done())
