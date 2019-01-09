@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchemaConverter.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -240,6 +240,8 @@ private:
 
 public:
     bool Equals(const StandardValueInfo& sd) const;
+    bool Equals(ECEnumerationCP ecEnum) const;
+    bool ContainedBy(ECEnumerationCP ecEnum) const;
     bool Contains(const StandardValueInfo& sd) const;
 
     StandardValueInfo(ECEnumerationP& ecEnum);

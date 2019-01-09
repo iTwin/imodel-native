@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -101,7 +101,7 @@ protected:
     SchemaWriteStatus                   WriteCustomAttributes(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
     bool                                WriteCustomAttributes(Json::Value& outValue) const;
     //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
-    ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer) const;
+    ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer, bool copyReferences) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
     void                                AddUniquePrimaryCustomAttributesToList(ECCustomAttributeCollection& returnList);
@@ -1719,12 +1719,12 @@ private:
     static bool     AddUniquePropertiesToList(ECClassCP curentBaseClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
 
-    void            AddDerivedClass(ECClassCR derivedClass) const {m_derivedClasses.push_back((ECClassP) &derivedClass);}
+    void            AddDerivedClass(ECClassCR derivedClass) const {m_derivedClasses.push_back(const_cast<ECClassP>(&derivedClass));}
     void            RemoveDerivedClass(ECClassCR derivedClass) const;
     void            RemoveDerivedClasses();
     static void     SetErrorHandling(bool doAssert);
 
-    static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
+    static bool     ConvertPropertyToPrimitiveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
     ECObjectsStatus FixArrayPropertyOverrides();
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty, Utf8StringR errMsg) const;
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
@@ -1746,6 +1746,7 @@ protected:
     virtual ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass);
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
+
     ECSchemaCP _GetContainerSchema() const override {return &m_schema;}
     Utf8CP _GetContainerName() const override {return GetFullName();}
 
@@ -2332,6 +2333,9 @@ public:
     
     //! Determine whether the abstract constraint is set in this constraint.
     bool IsAbstractConstraintDefined() const {return nullptr != m_abstractConstraint;}
+
+    //! Remove the abstract constraint
+    void RemoveAbstractConstraint() { m_abstractConstraint = nullptr; }
 
     //! Add the specified entity class to the constraint. 
     //! @param[in] classConstraint  The ECEntityClass to add as a constraint class
@@ -3997,7 +4001,9 @@ public:
     //! Given a source kind of quantity, will copy that kind of quantity into this schema if it does not already exist
     //! @param[out] targetKOQ If successful, will contain a new KindOfQuantity object that is a copy of the sourceKOQ
     //! @param[in]  sourceKOQ The kind of quantity to copy
-    ECOBJECTS_EXPORT ECObjectsStatus CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ);
+    //! @param[in]  copyReferences If true the method will copy types from the source schema into the target schema, if they do not already exist.
+    //!             If false, there will be a schema reference created to the source schema if necessary.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ, bool copyReferences = false);
 
     //! Given a source PropertyCategory, will copy that PropertyCategory into this schema if it does not already exist
     //! @param[out] targetPropCategory If successful, will contain a new PropertyCategory object that is a copy of the sourcePropCategory

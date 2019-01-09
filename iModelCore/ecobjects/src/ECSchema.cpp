@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1561,7 +1561,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             return status;
         }
 
-    return sourceClass.CopyCustomAttributesTo(*targetClass);
+    return sourceClass.CopyCustomAttributesTo(*targetClass, copyReferences);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1602,7 +1602,7 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ)
+ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ, bool copyReferences)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1623,17 +1623,31 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
     ECUnitCP persistUnit = sourceKOQ.GetPersistenceUnit();
     if (nullptr != persistUnit)
         {
-        ECSchemaCR persistUnitSchema = persistUnit->GetSchema();
-        if (!this->GetSchemaKey().Matches(persistUnitSchema.GetSchemaKey(), SchemaMatchType::Exact))
+        ECUnitCP const targetPersistUnit = GetUnitCP(persistUnit->GetName().c_str());
+        if (nullptr == targetPersistUnit)
             {
-            // TODO: I don't like how this attempts to add the schema as a reference again. There are two scenarios; this method is called from CopySchema, which takes care of
-            // copying the references, or it is called from the public API, and in that case it should fail to Copy if the appropriate schemas aren't referenced? Make it an option, possibly only in public API?
-            ECSchemaP foundSchema = copyFromSchema.FindSchemaP(persistUnitSchema.GetSchemaKey(), SchemaMatchType::Exact);
-            if (nullptr != foundSchema)
-                AddReferencedSchema(*foundSchema);
+            if (sourceKOQ.GetSchema().GetSchemaKey().Matches(persistUnit->GetSchema().GetSchemaKey(), SchemaMatchType::Exact))
+                {
+                if (copyReferences)
+                    {
+                    ECUnitP ecUnit;
+                    if (ECObjectsStatus::Success != (status = CopyUnit(ecUnit, *persistUnit)))
+                        return status;
+                    persistUnit = ecUnit;
+                    }
+                else
+                    {
+                    // TODO: I don't like how this attempts to add the schema as a reference again. There are two scenarios; this method is called from CopySchema, which takes care of
+                    // copying the references, or it is called from the public API, and in that case it should fail to Copy if the appropriate schemas aren't referenced? Make it an option, possibly only in public API?
+                    if (!IsSchemaReferenced(*this, sourceKOQ.GetSchema()))
+                        AddReferencedSchema(const_cast<ECSchemaR>(persistUnit->GetSchema()));
+                    }
+                }
+            else if (!IsSchemaReferenced(*this, persistUnit->GetSchema()))
+                AddReferencedSchema(const_cast<ECSchemaR>(persistUnit->GetSchema())); // TODO: Same concerns as above
             }
         else
-            persistUnit = GetUnitCP(persistUnit->GetName().c_str());
+            persistUnit = targetPersistUnit;
 
         targetKOQ->SetPersistenceUnit(*persistUnit);
         }
@@ -1765,8 +1779,8 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit)
                 status = this->CopyUnit(copiedParent, *sourceUnit.GetInvertingUnit());
                 if(ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
                     return status;
-                parent = copiedParent;
                 }
+            parent = copiedParent;
             }
         status = CreateInvertedUnit(targetUnit, *parent, sourceUnit.GetName().c_str(), *system);
         }
@@ -1864,6 +1878,9 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     if (ECObjectsStatus::Success != status)
         return status;
 
+    // We intentionally do not copy original ECXML version because ... (maybe write something here or just don't, not sure)
+    // schemaOut->SetOriginalECXmlVersion(GetOriginalECXmlVersionMajor(), GetOriginalECXmlVersionMinor());
+
     schemaOut->SetDescription(GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
         schemaOut->SetDisplayLabel(GetInvariantDisplayLabel().c_str());
@@ -1871,8 +1888,8 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     ECSchemaReferenceListCR referencedSchemas = GetReferencedSchemas();
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
         schemaOut->AddReferencedSchema(*iter->second.get());
-        
-    for(ECClassP ecClass: m_classContainer)
+
+    for (ECClassP ecClass: m_classContainer)
         {
         ECClassP copyClass;
         status = schemaOut->CopyClass(copyClass, *ecClass, ecClass->GetName(), true);
@@ -1931,12 +1948,12 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     for (auto koq : m_kindOfQuantityContainer)
         {
         KindOfQuantityP copyKOQ;
-        status = schemaOut->CopyKindOfQuantity(copyKOQ, *koq);
+        status = schemaOut->CopyKindOfQuantity(copyKOQ, *koq, false);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
 
-    return CopyCustomAttributesTo(*schemaOut);
+    return CopyCustomAttributesTo(*schemaOut, true);
     }
 
 //--------------------------------------------------------------------------------------
@@ -1989,7 +2006,7 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
     if (schema.GetSchemaKey() == GetSchemaKey())
         return ECObjectsStatus::Success;
 
-    bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator = m_referencedSchemaAliasMap.find((ECSchemaP) &schema);
+    bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator = m_referencedSchemaAliasMap.find(const_cast<ECSchemaP>(&schema));
     if (schemaIterator != m_referencedSchemaAliasMap.end())
         {
         alias = schemaIterator->second;
@@ -2914,12 +2931,12 @@ struct ChecksumHelper
     static Utf8String ComputeCheckSumForString(Utf8CP string, size_t len)
         {
         SHA1 sha1;
-        return sha1((Byte*)string, sizeof(Utf8Char) * len);
+        return sha1((Byte const*)string, sizeof(Utf8Char) * len);
         }
     static Utf8String ComputeCheckSumForString(WCharCP string, size_t len)
         {
         SHA1 sha1;
-        return sha1((Byte*)string, sizeof(WChar) * len);
+        return sha1((Byte const*)string, sizeof(WChar) * len);
         }
     static Utf8String ComputeCheckSumForFile(WCharCP schemaFile)
         {
@@ -2939,7 +2956,7 @@ struct ChecksumHelper
             }
 
         SHA1 sha1;
-        return sha1((Byte*)fileContents.GetData(), fileContents.GetSize());
+        return sha1((Byte const*)fileContents.GetData(), fileContents.GetSize());
         }
 };
 
@@ -2966,7 +2983,7 @@ Utf8String ECSchema::ComputeCheckSum()
         return "";
 
     SHA1 sha1;
-    m_key.m_checksum = sha1((Byte*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
+    m_key.m_checksum = sha1((Byte const*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
     return m_key.m_checksum;
     }
 
