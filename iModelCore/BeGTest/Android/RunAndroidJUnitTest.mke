@@ -89,8 +89,6 @@ BreakOnFailure = 0
 %endif
 
 always:
+    $(adbCmd) kill-server
     python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] $(BreakOnFailure)
-
-always:
     ~linkfile "$(BuildContext)Delivery/ANJU/Logs/$(ANDROIDJUNIT_LOGFILE_NAME)=$(logFile)"
-
