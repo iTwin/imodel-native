@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -694,6 +694,20 @@ public:
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
 
+    //! Serializes the instance to a Utf8 string. This method uses full schema names with 3 part versions instead of the legacy 2 part versions
+    //! @param[out] ecInstanceXml   The string to write to
+    //! @param[in] isStandAlone If true, the Xml will start with the Xml declaration.  Otherwise, if this is part of a larger Xml stream, no declaration will be written
+    //! @param[in] writeInstanceId  If true, the instanceId will be written as an attribute on the node
+    //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlStringLatestVersion(Utf8String & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
+
+    //! Serializes the instance to a WString. This method uses full schema names with 3 part versions instead of the legacy 2 part versions
+    //! @param[out] ecInstanceXml   The string to write to
+    //! @param[in] isStandAlone If true, the Xml will start with the Xml declaration.  Otherwise, if this is part of a larger Xml stream, no declaration will be written
+    //! @param[in] writeInstanceId  If true, the instanceId will be written as an attribute on the node
+    //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlStringLatestVersion(WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
+
     //! Serializes the instance to an existing BeXmlWriter
     //! @param[in] xmlWriter The writer to write to.  It should be at the current point where to insert the instance
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
@@ -705,7 +719,7 @@ public:
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode(BeXmlWriterR xmlWriter, Utf8CP className);
 
-    //! Serializes the instance to an existing BeXmlWriter. This uses Full schemanames with 3 part versions instead of
+    //! Serializes the instance to an existing BeXmlWriter. This method uses full schema names with 3 part versions instead of
     //! the legacy 2 part versions
     //! @param[in] xmlWriter The writer to write to.  It should be at the current point where to insert the instance
     //! @param[in] className The overriding class name while serializing a schema

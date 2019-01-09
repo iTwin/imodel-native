@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/InstanceSerializationTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -528,6 +528,48 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
 #endif
     VerifyTestInstance (deserializedInstance.get(), false);
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Gintaras.Volkvicius                   01/2019 
+//---------------------------------------------------------------------------------------
+TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleEC3InstanceFromString)
+    {
+    Utf8CP referenceSchemaString = R"(
+        <ECSchema schemaName="referenceSchema" alias="rs" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
+        </ECSchema>
+        )";
+
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="referenceSchema" version="01.02.03" alias="rs"/>
+            <ECCustomAttributes>
+                <CustomClass xmlns="referenceSchema.01.02.03"/>
+            </ECCustomAttributes>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr referenceSchema;
+    auto&& schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(referenceSchema, referenceSchemaString, *schemaContext));
+
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaString, *schemaContext));
+
+    auto&& instance = schema->GetCustomAttribute("referenceSchema", "CustomClass");
+    ASSERT_TRUE(instance.IsValid());
+
+    Utf8String expectedXmlString;
+    EXPECT_EQ(InstanceWriteStatus::Success, instance->WriteToXmlStringLatestVersion(expectedXmlString, true, false));
+
+    auto&& instanceContext = ECInstanceReadContext::CreateContext(*schema);
+    EXPECT_EQ(InstanceReadStatus::Success, IECInstance::ReadFromXmlString(instance, expectedXmlString.c_str(), *instanceContext));
+
+    Utf8String actualXmlString;
+    EXPECT_EQ(InstanceWriteStatus::Success, instance->WriteToXmlStringLatestVersion(actualXmlString, true, false));
+
+    EXPECT_EQ(expectedXmlString, actualXmlString);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
