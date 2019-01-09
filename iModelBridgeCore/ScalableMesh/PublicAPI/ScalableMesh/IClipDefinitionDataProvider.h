@@ -4,11 +4,7 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
-#ifdef VANCOUVER_API
-#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
-#else
-#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
-#endif
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct IClipDefinitionDataProvider;

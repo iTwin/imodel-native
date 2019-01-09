@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -22,11 +22,13 @@ typedef RefCountedPtr<IScalableMeshPublisher> IScalableMeshPublisherPtr;
 struct IScalableMeshPublishParams;
 typedef RefCountedPtr<IScalableMeshPublishParams> IScalableMeshPublishParamsPtr;
 
+/*
 #ifdef VANCOUVER_API
 #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
 #else
 #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
 #endif
+*/
 
 enum class SMPublishType
     {

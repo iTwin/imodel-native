@@ -96,7 +96,7 @@ private:
     SMGroupGlobalParameters& operator=(const SMGroupGlobalParameters&) = delete;
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
 #endif
 
@@ -133,7 +133,7 @@ private:
     SMGroupCache(node_header_cache* nodeCache);
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     virtual uint32_t _GetExcessiveRefCountThreshold() const override;
 #endif
 
@@ -481,7 +481,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ADD_GROUPING_STRATEGY_FRIENDSHIPS
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     private:
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
 #endif

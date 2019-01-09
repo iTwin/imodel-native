@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshAdmin.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #else
     USING_NAMESPACE_BENTLEY_DGN

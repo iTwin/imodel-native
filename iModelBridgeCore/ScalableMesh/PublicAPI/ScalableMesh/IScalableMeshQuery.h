@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,13 +29,25 @@
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
-#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
 #else
     USING_NAMESPACE_BENTLEY_DGN
-#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
 #endif
+
+
+        /*
+#ifdef VANCOUVER_API
+    #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
+#else
+    #ifdef DGNDB06_API
+        #define CLIP_VECTOR_NAMESPACE 
+    #else
+        #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
+    #endif
+#endif
+*/
+
 
 
 

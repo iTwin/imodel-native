@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -45,11 +45,13 @@ namespace BENTLEY_NAMESPACE_NAME
 #define DGN_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
 #endif
 
+/*
 #ifdef VANCOUVER_API
 #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
 #else
 #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
 #endif
+*/
 
 //ADD_BENTLEY_TYPEDEFS (BENTLEY_NAMESPACE_NAME::ScalableMesh, IDTMVolume)
 

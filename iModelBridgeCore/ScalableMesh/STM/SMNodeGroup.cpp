@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.cpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -1020,7 +1020,7 @@ Json::Value * SMGroupCache::GetNodeFromCache(const uint64_t & nodeId)
     }
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre 08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
