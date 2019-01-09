@@ -544,9 +544,11 @@ struct SyncInfo
         //! Create a new aspect in memory. Caller must call AddTo.
         DGNDBSYNC_EXPORT static V8ElementSyncInfoAspect Make(V8ElementSyncInfoAspectData const&, DgnDbR);
         
-        //! Get existing syncinfo aspects from the specified element in the case where we know that it was derived from a V8 *element*.
+        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
+        //! Use this method only in the case where the element is known to have only a single element kind aspect.
         static V8ElementSyncInfoAspect Get(DgnElementR);
-        //! Get existing syncinfo aspects from the specified element in the case where we know that it was derived from a V8 *element*.
+        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
+        //! Use this method only in the case where the element is known to have only a single element kind aspect.
         static V8ElementSyncInfoAspect Get(DgnElementCR);
 
         DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov); 
@@ -570,8 +572,10 @@ struct SyncInfo
         DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Make(DgnV8ModelCR, TransformCR, Converter&);
         
         //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
+        //! Use this method only in the case where the element is known to have only a single model kind aspect.
         DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnElementR);
         //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
+        //! Use this method only in the case where the element is known to have only a single model kind aspect.
         DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnElementCR);
 
         DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8ModelId() const;
