@@ -129,7 +129,7 @@ void RulesetEmbedder::HandleElementOperationPrerequisites()
         return;
 
     InsertCodeSpecs();
-    m_db.SaveChanges();
+    iModelBridge::SaveChanges(m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/DbDatabase.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgDbInternal.h"
@@ -281,7 +281,8 @@ DwgDbStatus     DwgDbDatabase::GetFileIdPolicy (uint32_t& id, uint32_t& policy)
 #if VendorVersion < 2017
             ::sscanf (str.kszPtr(), DWGDB_FILEIDPOLICY_FORMAT, &id, &policy);
 #else
-            ::sscanf (str.utf8Ptr(), DWGDB_FILEIDPOLICY_FORMAT, &id, &policy);
+            if (::sscanf(str.utf8Ptr(), DWGDB_FILEIDPOLICY_FORMAT, &id, &policy) != 2)
+                id = policy = 0;
 #endif
             }
         
@@ -508,7 +509,7 @@ DwgDbObjectId   DwgDbDatabase::CreateXrefBlock (DwgStringCR xrefPath, DwgStringC
 
                 ACHAR*  path = nullptr;
                 AcDbBlockTableRecordPointer block(currId, AcDb::kForWrite);
-                if (block.openStatus() != Acad::eOk || !block->isFromExternalReference() || block->pathName(path) != Acad::eOk && nullptr != path)
+                if (block.openStatus() != Acad::eOk || !block->isFromExternalReference() || block->pathName(path) != Acad::eOk || nullptr == path)
                     continue;
                 
                 auto size = ::wcslen (path);
