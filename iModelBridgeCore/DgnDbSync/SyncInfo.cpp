@@ -1693,7 +1693,7 @@ void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
     if (!el.IsValid())
         return;
 
-    auto props = V8ElementSyncInfoAspect::Get(*el);
+    auto props = V8ElementSyncInfoAspect::Get(*el, mapping.m_v8ElementId);
     if (!props.IsValid())
         {
         // BeAssert(!m_converter._GetParams().GetWantProvenanceInBim());    Can't assert this until I convert all of the places that create syncinfo records to also create aspects
@@ -1724,11 +1724,12 @@ void SyncInfo::V8ElementSyncInfoAspect::AssertMatch(DgnElementCR el, DgnV8Api::E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetSyncInfoAspectIds(DgnElementCR el, SyncInfoAspect::Kind kind)
+bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetSyncInfoAspectIds(DgnElementCR el, SyncInfoAspect::Kind kind, Utf8StringCR sourceId)
     {
-    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " WHERE (Element.Id=? AND Kind=?)");
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " WHERE (Element.Id=? AND Kind=? AND SourceId=?)");
     sel->BindId(1, el.GetElementId());
     sel->BindText(2, SyncInfoAspect::KindToString(kind), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     bvector<BeSQLite::EC::ECInstanceId> ids;
     while (BE_SQLITE_ROW == sel->Step())
         ids.push_back(sel->GetValueId<BeSQLite::EC::ECInstanceId>(0));
@@ -1738,48 +1739,48 @@ bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetSyncInfoAspectIds(DgnElementCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Get(DgnElementR el)
+SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Get(DgnElementR el, DgnV8Api::ElementId v8Id)
     {
-    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Element);
+    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Element, FormatSourceId(v8Id));
     if (ids.size() == 0)
         return V8ElementSyncInfoAspect(nullptr);
-    BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element");
+    BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
     return V8ElementSyncInfoAspect(GetAspect(el, ids.front()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Get(DgnElementCR el)
+SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Get(DgnElementCR el, DgnV8Api::ElementId v8Id)
     {
-    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Element);
+    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Element, FormatSourceId(v8Id));
     if (ids.size() == 0)
         return V8ElementSyncInfoAspect(nullptr);
-    BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element");
+    BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
     return V8ElementSyncInfoAspect(GetAspect(el, ids.front()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Get(DgnElementR el)
+SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Get(DgnElementR el, DgnV8Api::ModelId v8Id)
     {
-    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Model);
+    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Model, FormatSourceId(v8Id));
     if (ids.size() == 0)
         return V8ModelSyncInfoAspect(nullptr);
-    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element");
+    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element from a given sourceId");
     return V8ModelSyncInfoAspect(GetAspect(el, ids.front()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Get(DgnElementCR el)
+SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Get(DgnElementCR el, DgnV8Api::ModelId v8Id)
     {
-    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Model);
+    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Model, FormatSourceId(v8Id));
     if (ids.size() == 0)
         return V8ModelSyncInfoAspect(nullptr);
-    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element");
+    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element from a given sourceId");
     return V8ModelSyncInfoAspect(GetAspect(el, ids.front()));
     }
 
@@ -1811,7 +1812,7 @@ SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Make(V8Elem
     ss.m_hash.insert(ss.m_hash.end(), provdata.m_prov.m_hash.m_buffer, &provdata.m_prov.m_hash.m_buffer[arraySize]);
 
     ss.m_lastModifiedTime = provdata.m_prov.m_lastModified;
-    auto instance = MakeInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), Utf8PrintfString("%lld", provdata.m_v8Id), &ss, *aspectClass);
+    auto instance = MakeInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), FormatSourceId(provdata.m_v8Id), &ss, *aspectClass);
     return V8ElementSyncInfoAspect(instance.get());
     }
 
@@ -1849,7 +1850,7 @@ SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Make(DgnV8Model
         return V8ModelSyncInfoAspect(nullptr);
     
     DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
-    auto instance = MakeInstance(repositoryLinkId, KindToString(Kind::Model), Utf8PrintfString("%d", v8Model.GetModelId()), nullptr, *aspectClass);
+    auto instance = MakeInstance(repositoryLinkId, KindToString(Kind::Model), FormatSourceId(v8Model), nullptr, *aspectClass);
     
     V8ModelSyncInfoAspect aspect(instance.get());
     

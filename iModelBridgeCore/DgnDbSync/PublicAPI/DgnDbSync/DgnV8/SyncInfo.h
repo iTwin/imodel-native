@@ -541,15 +541,18 @@ struct SyncInfo
         V8ElementSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
 
       public:
+        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return Utf8PrintfString("%lld", v8Id);}
+        static Utf8String FormatSourceId(DgnV8EhCR el) {return FormatSourceId(el.GetElementId());}
+
         //! Create a new aspect in memory. Caller must call AddTo.
         DGNDBSYNC_EXPORT static V8ElementSyncInfoAspect Make(V8ElementSyncInfoAspectData const&, DgnDbR);
         
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
         //! Use this method only in the case where the element is known to have only a single element kind aspect.
-        static V8ElementSyncInfoAspect Get(DgnElementR);
+        static V8ElementSyncInfoAspect Get(DgnElementR, DgnV8Api::ElementId);
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
         //! Use this method only in the case where the element is known to have only a single element kind aspect.
-        static V8ElementSyncInfoAspect Get(DgnElementCR);
+        static V8ElementSyncInfoAspect Get(DgnElementCR, DgnV8Api::ElementId);
 
         DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov); 
 
@@ -568,15 +571,18 @@ struct SyncInfo
         V8ModelSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
 
       public:
+        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return Utf8PrintfString("%lld", v8Id);}
+        static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}
+
         //! Create a new aspect in memory. Caller must call AddTo.
         DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Make(DgnV8ModelCR, TransformCR, Converter&);
         
         //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
         //! Use this method only in the case where the element is known to have only a single model kind aspect.
-        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnElementR);
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnElementR, DgnV8Api::ModelId);
         //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
         //! Use this method only in the case where the element is known to have only a single model kind aspect.
-        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnElementCR);
+        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnElementCR, DgnV8Api::ModelId);
 
         DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8ModelId() const;
         DGNDBSYNC_EXPORT Transform GetTransform() const;
@@ -767,7 +773,7 @@ protected:
     BentleyStatus PerformVersionChecks();
 
 public:
-    static bvector<BeSQLite::EC::ECInstanceId> GetSyncInfoAspectIds(DgnElementCR el, SyncInfoAspect::Kind);
+    static bvector<BeSQLite::EC::ECInstanceId> GetSyncInfoAspectIds(DgnElementCR el, SyncInfoAspect::Kind, Utf8StringCR sourceId);
 
     BentleyStatus CreateTables();
     BentleyStatus CreateNamedGroupTable(bool createIndex);

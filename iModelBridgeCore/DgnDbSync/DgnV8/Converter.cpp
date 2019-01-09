@@ -2140,10 +2140,12 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
 +---------------+---------------+---------------+---------------+---------------+------*/
  BentleyStatus  Converter::WriteProvenanceAspect(DgnElementR el, SyncInfo::V8ElementSyncInfoAspectData const& elprov)
     {
-    SyncInfo::V8ElementSyncInfoAspect aspect = SyncInfo::V8ElementSyncInfoAspect::Get(el); // GetSyncInfo().GetV8ElementAspect(el);
-    if (aspect.IsValid())
+#ifdef TEST_SYNC_INFO_ASPECT
+    iModelSyncInfoAspect::Dump(el, nullptr, NativeLogging::SEVERITY::LOG_INFO);
+#endif
+    SyncInfo::V8ElementSyncInfoAspect aspect = SyncInfo::V8ElementSyncInfoAspect::Get(el, elprov.m_v8Id);
+    if (aspect.IsValid() && (aspect.GetV8ElementId() == elprov.m_v8Id))
         {
-        BeAssert(aspect.GetV8ElementId() == elprov.m_v8Id);
         aspect.Update(elprov.m_prov);
         return BSISUCCESS;
         }
@@ -3369,7 +3371,7 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         modelAspect.AddTo(*modeledElement);
         modeledElement->Update();
 #ifdef TEST_SYNC_INFO_ASPECT
-        auto storedAspect = SyncInfo::V8ModelSyncInfoAspect::Get(*modeledElement);
+        auto storedAspect = SyncInfo::V8ModelSyncInfoAspect::Get(*modeledElement, v8Model.GetModelId());
         storedAspect.AssertMatch(mapping);
 #endif
         }

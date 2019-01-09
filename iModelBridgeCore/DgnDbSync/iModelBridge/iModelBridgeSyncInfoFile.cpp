@@ -812,6 +812,97 @@ ECN::ECClassCP iModelSyncInfoAspect::GetAspectClass(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<iModelSyncInfoAspect> iModelSyncInfoAspect::GetAll(DgnElementCR el, ECN::ECClassCP aspectClass)
+    {
+    bvector<iModelSyncInfoAspect> aspects;
+    if (!aspectClass)
+        aspectClass = GetAspectClass(el.GetDgnDb());
+    if (nullptr == aspectClass)
+        return aspects;
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " WHERE (Element.Id=?)");
+    sel->BindId(1, el.GetElementId());
+    while (BE_SQLITE_ROW == sel->Step())
+        {
+        auto aspectid = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+        auto aspect = GetAspect(el, aspectid);
+        aspects.push_back(aspect);
+        }
+    return aspects;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String iModelSyncInfoAspect::GetDumpHeaders(bool includeProperties, bool includeSourceState)
+    {
+    Utf8PrintfString str("%-10.10s %8.8s %-8.8s", "Kind", "Scope", "SourceId");
+    if (includeSourceState)
+        {
+        // TBD
+        }
+    if (includeProperties)
+        {
+        str.append("\tProperties");
+        }
+    return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String iModelSyncInfoAspect::FormatForDump(bool includeProperties, bool includeSourceState) const
+    {
+    Utf8PrintfString str("%-10.10s %8.0llx %-8.8s", GetKind(), GetScope().GetValue(), GetSourceId());
+    if (includeSourceState)
+        {
+        // TBD
+        }
+    if (includeProperties)
+        {
+        ECN::ECValue props;
+        if (ECN::ECObjectsStatus::Success == m_instance->GetValue(props, SOURCEINFO_Properties) && !props.IsNull() && props.IsString())
+            str.append("\t").append(props.GetUtf8CP());
+        }
+    return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void outDump(ILogger* logger, NativeLogging::SEVERITY sev, Utf8StringCR msg)
+    {
+    if (nullptr == logger)
+        {
+        printf("%s\n", msg.c_str());
+        return;
+        }
+    logger->message(sev, msg.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelSyncInfoAspect::Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY sev, bool includeProperties, bool includeSourceState)
+    {
+    auto aspects = GetAll(el, nullptr);
+    if (aspects.empty())
+        return;
+
+    ILogger* logger = loggingCategory? LoggingManager::GetLogger(loggingCategory): nullptr;
+
+    outDump(logger, sev, Utf8PrintfString("Element %llx (%s)", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName()));
+
+    outDump(logger, sev, GetDumpHeaders(includeProperties, includeSourceState));
+    for (auto const& aspect : aspects)
+        {
+        auto str = aspect.FormatForDump(includeProperties, includeSourceState);
+        outDump(logger, sev, str);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementCR el, BeSQLite::EC::ECInstanceId aspectid, ECN::ECClassCP aspectClass)

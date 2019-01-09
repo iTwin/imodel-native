@@ -284,7 +284,6 @@ struct iModelSyncInfoAspect
     IMODEL_BRIDGE_EXPORT Utf8CP GetKind() const;
     IMODEL_BRIDGE_EXPORT DgnElementId GetScope() const;
     IMODEL_BRIDGE_EXPORT Utf8CP GetSourceId() const;
-    IMODEL_BRIDGE_EXPORT Utf8CP GetAspectKind() const;
     IMODEL_BRIDGE_EXPORT BentleyStatus GetSourceState(SourceState&) const;
     IMODEL_BRIDGE_EXPORT rapidjson::Document GetProperties() const;
 
@@ -308,6 +307,10 @@ struct iModelSyncInfoAspect
 
     IMODEL_BRIDGE_EXPORT static void SetSourceState(ECN::IECInstanceR, SourceState const&);
 
+    IMODEL_BRIDGE_EXPORT static bvector<iModelSyncInfoAspect> GetAll(DgnElementCR, ECN::ECClassCP aspectClass = nullptr);
+    IMODEL_BRIDGE_EXPORT Utf8String FormatForDump(bool includeProperties, bool includeSourceState) const;
+    IMODEL_BRIDGE_EXPORT static Utf8String GetDumpHeaders(bool includeProperties, bool includeSourceState);
+    IMODEL_BRIDGE_EXPORT static void Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY, bool includeProperties = true, bool includeSourceState = false);
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
