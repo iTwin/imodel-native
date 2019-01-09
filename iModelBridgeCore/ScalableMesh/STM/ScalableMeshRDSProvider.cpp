@@ -265,7 +265,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         Utf8String buddiUrl((DEFAULT_BUDDI_RDS_URL + std::to_string(connectRegion)).c_str());
         BENTLEY_HTTP_NAMESPACE_NAME::HttpClient client;
         auto request = client.CreateRequest(buddiUrl.c_str(), "GET");
-        auto response = request.Perform().get();
+        auto response = request.PerformAsync()->GetResult();
         auto body = response.GetContent()->GetBody()->AsString();
         BeXmlStatus xmlStatus = BEXML_Success;
         BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, body.c_str(), body.size());
