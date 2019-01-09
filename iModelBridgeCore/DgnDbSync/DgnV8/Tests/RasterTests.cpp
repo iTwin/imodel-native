@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/RasterTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImportConfigEditor.h"
@@ -998,6 +998,13 @@ TEST_F(RasterTests, CRUD)
         ASSERT_TRUE(row1.IsEqual(actual1, 0.0001));
         ASSERT_TRUE(row2.IsEqual(actual2, 0.0001));
         }
+
+    BentleyApi::BeFileName popotons = GetOutputFileName(L"popotons.jpg");
+    time_t mtime;
+    popotons.GetFileTime(nullptr, nullptr, &mtime);
+    mtime += 1000;
+    popotons.SetFileTime(nullptr, &mtime);
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, true);
 
     // This test only works if either uploading to the reality data server or storing to local server
     Bentley::WString uploadConfigVar;
