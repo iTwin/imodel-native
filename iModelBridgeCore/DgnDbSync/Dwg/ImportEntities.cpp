@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportEntities.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -1758,6 +1758,9 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
         // trivial reject the entity if it is clipped away as a whole
         if (nullptr != m_spatialFilter && m_spatialFilter->IsEntityFilteredOut(*child.get()))
             return;
+        // skip this entity if it should not be drawn
+        if (this->SkipBlockChildGeometry(child.get()))
+            return;
 
         // give protocal extensions a chance to create their own geometry:
         if (this->CreateBlockChildGeometry(child.get()) == BSISUCCESS)
@@ -1795,6 +1798,17 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
 
         m_drawParams.CopyFrom (savedParams);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            SkipBlockChildGeometry (DwgDbEntityCP entity)
+    {
+    if (nullptr == entity)
+        return  true;
+    // if parent is a dimension, verify visibility:
+    return  false;
     }
 
 /*---------------------------------------------------------------------------------**//**

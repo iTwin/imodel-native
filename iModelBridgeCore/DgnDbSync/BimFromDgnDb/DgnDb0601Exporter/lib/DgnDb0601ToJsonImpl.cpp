@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/DgnDb0601Exporter/lib/DgnDb0601ToJsonImpl.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -42,7 +42,7 @@ static Utf8CP const JSON_TYPE_DictionaryModel = "DictionaryModel";
 static Utf8CP const JSON_TYPE_CodeSpec = "CodeSpec";
 static Utf8CP const JSON_TYPE_Schema = "Schema";
 static Utf8CP const JSON_TYPE_Element = "Element";
-static Utf8CP const JSON_TYPE_GenericElementAspect = "GenericElementAspect";
+static Utf8CP const JSON_TYPE_ElementAspect = "ElementAspect";
 static Utf8CP const JSON_TYPE_GeometricElement2d = "GeometricElement2d";
 static Utf8CP const JSON_TYPE_GeometricElement3d = "GeometricElement3d";
 static Utf8CP const JSON_TYPE_GeometryPart = "GeometryPart";
@@ -373,6 +373,8 @@ bool DgnDb0601ToJsonImpl::OpenDgnDb()
 
     m_elementClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element);
     m_elementAspectClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementAspect);
+    m_elementUniqueAspectClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ElementUniqueAspect");
+    m_elementMultiAspectClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementMultiAspect);
     m_viewDefinition3dClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ViewDefinition3d");
     m_viewDefinition2dClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ViewDefinition2d");
     m_spatialViewDefinitionId = m_dgndb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "SpatialViewDefinition");
@@ -531,7 +533,7 @@ void DgnDb0601ToJsonImpl::CalculateEntities()
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Font ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_ElementGroupsMembers ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_TextAnnotationData ");
-    sql.append("UNION ALL SELECT count(*) as rows FROM generic_MultiAspect ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM _dgn_ElementAspect ");
     sql.append(") u");
     
     Statement stmt;
@@ -2127,9 +2129,19 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportTimelines()
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects()
     {
+    if (ERROR == ExportElementAspects(m_elementMultiAspectClass->GetId()))
+        return ERROR;
+    return ExportElementAspects(m_elementUniqueAspectClass->GetId());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId)
+    {
     Statement stmt;
-    Utf8CP sql = "SELECT DISTINCT ECClassId from generic_MultiAspect";
-    if (BE_SQLITE_OK != (stmt.Prepare(*m_dgndb, sql)))
+    Utf8PrintfString sql("WITH RECURSIVE DerivedClasses(ClassId) AS ( VALUES (%" PRIu64 ") UNION SELECT ec_ClassHasBaseClasses.ClassId FROM ec_ClassHasBaseClasses, DerivedClasses WHERE ec_ClassHasBaseClasses.BaseClassId=DerivedClasses.ClassId ) SELECT DerivedClasses.ClassId FROM DerivedClasses", classId.GetValue());
+    if (BE_SQLITE_OK != (stmt.Prepare(*m_dgndb, sql.c_str())))
         {
         LogMessage(BimFromDgnDbLoggingSeverity::LOG_ERROR, "Unable to prepare statement to retrieve element aspect classes");
         return ERROR;
@@ -2137,9 +2149,10 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects()
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        ExportElementAspects(classId, ECInstanceId());
+        ECClassId derived = stmt.GetValueId<ECClassId>(0);
+        ExportElementAspects(derived, ECInstanceId());
         }
+
     return SUCCESS;
     }
 
@@ -2149,6 +2162,9 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects()
 BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECInstanceId aspectId)
     {
     ECClassCP ecClass = m_dgndb->Schemas().GetECClass(classId);
+
+    if (ecClass->GetName().Equals("ElementExternalKey"))
+        return SUCCESS;
 
     Utf8PrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     if (aspectId.IsValid())
@@ -2165,11 +2181,12 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
     JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
     jsonAdapter.SetStructArrayAsString(true);
     jsonAdapter.SetPreferNativeDgnTypes(true);
+    Utf8CP typeKey = JSON_TYPE_ElementAspect;
 
     while (BE_SQLITE_ROW == statement->Step())
         {
         auto entry = Json::Value(Json::ValueType::objectValue);
-        entry[JSON_TYPE_KEY] = JSON_TYPE_GenericElementAspect;
+        entry[JSON_TYPE_KEY] = typeKey;
 
         entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
         entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -2189,8 +2206,12 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
             obj.removeMember("PlanId");
             obj[JSON_TYPE_KEY] = JSON_TYPE_Baseline;
             }
+        if (obj.isMember("ElementId"))
+            MakeNavigationProperty(obj, "Element", IdToString(obj["ElementId"].asCString()).c_str());
+        // ElementUniqueAspect uses the same id for the aspect id and the element id
+        else
+            MakeNavigationProperty(obj, "Element", IdToString(obj["$ECInstanceId"].asCString()).c_str());
 
-        MakeNavigationProperty(obj, "Element", IdToString(obj["ElementId"].asCString()).c_str());
         obj.removeMember("ElementId");
 
         obj.removeMember("$ECClassKey");

@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/OidcTokenProvider.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "OidcTokenProvider.h"
@@ -37,12 +37,12 @@ Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> OidcTokenProvider::UpdateTok
             }
         rapidjson::Document document;
         document.Parse<0>(httpResponse.GetBody().AsString().c_str());
-        auto& tokenJosn = document["access_token"];
+        auto& tokenJson = document["access_token"];
         auto& timeJson = document["expires_in"];
-        if (!tokenJosn.IsNull())
+        if (tokenJson.IsNull())
             return m_token;
             
-        m_token = std::make_shared<OidcToken>(tokenJosn.GetString());
+        m_token = std::make_shared<OidcToken>(tokenJson.GetString());
         
         m_tokenValidUntil = BeTimePoint::FromNow(BeDuration::FromSeconds(timeJson.GetInt() - 10));//Reduce the expiration by 10 s.
         return m_token;

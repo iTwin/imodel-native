@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/Readers.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -51,7 +51,7 @@ static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
-static Utf8CP const JSON_TYPE_GenericElementAspect = "GenericElementAspect";
+static Utf8CP const JSON_TYPE_ElementAspect = "ElementAspect";
 static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
 static Utf8CP const JSON_TYPE_ThreeMxModel = "ThreeMxModel";
@@ -553,7 +553,7 @@ struct EmbeddedFileReader : Reader
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-struct GenericElementAspectReader : Reader
+struct ElementAspectReader : Reader
     {
     protected:
         BentleyStatus _Read(Json::Value& object) override;
