@@ -65,7 +65,7 @@
         <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
-        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
 
       <!--
             Barry: For full geocoordinate capabilities, the datum conversion files are required to allow you to convert from whatever datum the GCS uses to WGS84. If our publishing code (which will have access to the datum shift files) was always able to convert from a non-WGS84-based GCS to a WGS84-based GCS as it publishes DgnDb’s, we would not need those files. I do not know whether that is always possible, perhaps Alain Robert could comment.
@@ -274,6 +274,7 @@
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubProduct ProductName="IModelEvolutionTests"/>
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="napi-stub"  Repository="imodel02" PartFile="node-addon-api/node-addon-api"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/IModelEvolutionTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/IModelEvolutionTests/Assets" />
