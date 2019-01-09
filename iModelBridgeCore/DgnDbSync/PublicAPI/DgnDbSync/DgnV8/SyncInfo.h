@@ -599,7 +599,7 @@ struct SyncInfo
     //! Import "job" definition
     struct ImportJob
         {
-        //!< The type of converter used to create the ibim. NB This is persistent data. Do not change.
+        //!< The type of converter used to create the bim. NB This is persistent data. Do not change.
         enum class Type {RootModels, TiledFile}; 
 
         private:

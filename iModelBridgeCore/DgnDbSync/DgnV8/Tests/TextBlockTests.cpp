@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/TextBlockTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -56,7 +56,7 @@ void TextBlockTests::CreateTextElement(DgnV8Api::EditElementHandle &eeh, DgnV8Ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TextBlockTests, TextBlock)
     {
-    LineUpFiles(L"TextBlock.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"TextBlock.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     m_wantCleanUp = false;
     if (true)

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/DgnMaterial_Tests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -97,7 +97,7 @@ void DgnMaterialTests::TearDown()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnMaterialTests, MaterialAttachment)
     {
-    LineUpFiles(L"MaterialAttachment.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"MaterialAttachment.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     {
     V8FileEditor v8editor;
@@ -135,7 +135,7 @@ TEST_F(DgnMaterialTests, MaterialAttachment)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnMaterialTests, MaterialAssignment)
     {
-    LineUpFiles(L"MaterialAssignment.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"MaterialAssignment.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     {
     V8FileEditor v8editor;

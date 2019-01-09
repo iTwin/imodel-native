@@ -2,7 +2,7 @@
 |
 |  $Source: DgnV8/Tests/ConverterAppTestsBaseFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterAppTestsBaseFixture.h"
@@ -57,6 +57,6 @@ BentleyApi::BeFileName ConverterAppTestsBaseFixture::GetBimFileName(BentleyApi::
     {
     BentleyApi::BeFileName bimFile(inFile.GetDirectoryName(inFile.c_str()));
     bimFile.AppendToPath(inFile.GetFileNameWithoutExtension().c_str());
-    bimFile.AppendExtension(L"ibim");
+    bimFile.AppendExtension(L"bim");
     return bimFile;
     }

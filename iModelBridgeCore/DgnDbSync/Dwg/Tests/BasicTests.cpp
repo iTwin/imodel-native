@@ -2,7 +2,7 @@
 |
 |  $Source: Dwg/Tests/BasicTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImporterBaseFixture.h"
@@ -255,7 +255,7 @@ void CheckGenericGroup (Utf8StringCR expectedName, DwgDbObjectIdArrayCR expected
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicTests, CreateIBimFromDwg)
     {
-    LineUpFiles(L"createIBim.ibim", L"basictype.dwg", true); 
+    LineUpFiles(L"createIBim.bim", L"basictype.dwg", true); 
     EXPECT_EQ (5, GetCount());
     }
 
@@ -264,7 +264,7 @@ TEST_F(BasicTests, CreateIBimFromDwg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicTests, UpdateElements_AddDelete)
     {
-    LineUpFiles(L"addDeleteTest.ibim", L"basictype.dwg", true); 
+    LineUpFiles(L"addDeleteTest.bim", L"basictype.dwg", true); 
     // imported 5 elements from 5 entities?
     size_t  numElements = CountImportedElements ();
 
@@ -303,7 +303,7 @@ TEST_F(BasicTests, UpdateElements_AddDelete)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicTests, UpdateElements_DeleteMove)
     {
-    LineUpFiles(L"deleteMoveTest.ibim", L"basictype.dwg", true); 
+    LineUpFiles(L"deleteMoveTest.bim", L"basictype.dwg", true); 
 
     // will edit these entities in file basictype.dwg:
     T_EntityHandles handles;
@@ -373,7 +373,7 @@ TEST_F(BasicTests, UpdateElements_DeleteMove)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicTests, CreateNewDwg)
     {
-    LineUpFilesForNewDwg(L"createNewDwgTest.ibim", L"createdfromcratch.dwg");
+    LineUpFilesForNewDwg(L"createNewDwgTest.bim", L"createdfromcratch.dwg");
     InitializeImporterOptions (m_dwgFileName, false);
     
     DwgImporter*    importer = new DwgImporter(m_options);
@@ -397,7 +397,7 @@ TEST_F(BasicTests, CreateNewDwg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicTests, AttachXrefs)
     {
-    LineUpFilesForNewDwg(L"xrefAttachTest.ibim", L"master.dwg");
+    LineUpFilesForNewDwg(L"xrefAttachTest.bim", L"master.dwg");
     InitializeImporterOptions (m_dwgFileName, false);
 
     // create a host for DwgFileEditor
@@ -456,7 +456,7 @@ TEST_F(BasicTests, AttachXrefs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicTests, ChangeAndActivateLayout)
     {
-    LineUpFiles(L"testlayout.ibim", L"basictype.dwg", true); 
+    LineUpFiles(L"testlayout.bim", L"basictype.dwg", true); 
     CheckDefaultView ("Model[basictype]");
 
     // create a host for DwgFileEditor as well as updating db:
@@ -482,7 +482,7 @@ TEST_F(BasicTests, ChangeAndActivateLayout)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (BasicTests, AddAndUpdateGroup)
     {
-    LineUpFiles(L"groupTests.ibim", L"basictype.dwg", true); 
+    LineUpFiles(L"groupTests.bim", L"basictype.dwg", true); 
 
     DwgDbObjectId       modelspaceId;
     DwgDbObjectIdArray  members;
