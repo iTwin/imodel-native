@@ -1962,7 +1962,9 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
-
+    //This allow SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
+    m_briefcaseDgnDb->ExecuteSql("ANALYZE");
+    //
     dbres = m_briefcaseDgnDb->SaveChanges();
 
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
