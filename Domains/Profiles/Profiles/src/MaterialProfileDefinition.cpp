@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MaterialProfileDefinition::MaterialProfileDefinition(CreateParams const& params) : T_Super(params)
+MaterialProfileDefinition::MaterialProfileDefinition (CreateParams const& params) : T_Super (params)
     {
     }
 
@@ -51,6 +51,6 @@ DgnDbStatus MaterialProfileDefinition::Validate() const
     return _Validate() ? DgnDbStatus::Success : DgnDbStatus::ValidationFailed;
     }
 
-HANDLER_DEFINE_MEMBERS(MaterialProfileDefinitionHandler)
+HANDLER_DEFINE_MEMBERS (MaterialProfileDefinitionHandler)
 
 END_BENTLEY_PROFILES_NAMESPACE

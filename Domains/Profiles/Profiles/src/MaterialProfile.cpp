@@ -53,7 +53,7 @@ PhysicalMaterialCPtr MaterialProfile::GetMaterial() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MaterialProfile::SetProfile (DgnElementId const& profileId)
     {
-    SetPropertyValue(PRF_PROP_MaterialProfile_Profile, profileId);
+    SetPropertyValue (PRF_PROP_MaterialProfile_Profile, profileId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -76,6 +76,6 @@ ProfileCPtr MaterialProfile::GetProfile() const
     return m_dgndb.Elements().Get<Profile> (profileId);
     }
 
-HANDLER_DEFINE_MEMBERS(MaterialProfileHandler)
+HANDLER_DEFINE_MEMBERS (MaterialProfileHandler)
 
 END_BENTLEY_PROFILES_NAMESPACE

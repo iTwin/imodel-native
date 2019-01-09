@@ -19,13 +19,13 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct MaterialProfile : MaterialProfileDefinition
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_MaterialProfile, MaterialProfileDefinition);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_MaterialProfile, MaterialProfileDefinition);
     friend struct MaterialProfileHandler;
 
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(MaterialProfileDefinition::CreateParams);
+        DEFINE_T_SUPER (MaterialProfileDefinition::CreateParams);
         explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
 
     public:
@@ -43,8 +43,8 @@ protected:
     virtual bool _Validate() const;
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(MaterialProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(MaterialProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (MaterialProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (MaterialProfile)
 
     PROFILES_EXPORT static MaterialProfilePtr Create (CreateParams const& params) { return new MaterialProfile (params); }
 

@@ -43,9 +43,6 @@
     <Filter Include="Src\SinglePerimeterProfiles">
       <UniqueIdentifier>{e1d4a3e4-cf91-4e2f-9e13-75fdc59677ab}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Src\Aspects">
-      <UniqueIdentifier>{409ec9ce-42eb-491b-aa22-c908826ff77a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Src\SinglePerimeterProfiles\CenterLineShapes">
       <UniqueIdentifier>{74e1d26d-bea3-4665-9939-df00b4fd1315}</UniqueIdentifier>
     </Filter>
@@ -63,6 +60,9 @@
     </Filter>
     <Filter Include="Src\MaterialProfiles">
       <UniqueIdentifier>{70b32bb4-2188-4247-9be4-cf681a820d88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Aspects">
+      <UniqueIdentifier>{409ec9ce-42eb-491b-aa22-c908826ff77a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -199,10 +199,10 @@
     <ClCompile Include="src\ProfilesProperty.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="src\MaterialProfileDefinition.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="src\MaterialProfile.cpp">
+      <Filter>Src\MaterialProfiles</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MaterialProfileDefinition.cpp">
       <Filter>Src\MaterialProfiles</Filter>
     </ClCompile>
   </ItemGroup>
@@ -327,9 +327,6 @@
     <ClInclude Include="src\ProfilesInternal.h">
       <Filter>Pch</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\MaterialProfileDefinition.h">
-      <Filter>PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="src\PublicAPI\MaterialProfile.h">
       <Filter>PublicAPI\MaterialProfiles</Filter>
     </ClInclude>
@@ -338,6 +335,9 @@
     </ClInclude>
     <ClInclude Include="src\PrivateAPI\ProfilesPrivateApi.h">
       <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PublicAPI\MaterialProfileDefinition.h">
+      <Filter>PublicAPI\MaterialProfiles</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

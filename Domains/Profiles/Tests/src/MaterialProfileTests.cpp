@@ -84,7 +84,7 @@ TEST_F (MaterialProfileTestCase, Create_MinimalCreateParams_ValidInstance)
     {
     CreateParams params (GetModel());
     MaterialProfilePtr materialProfilePtr = MaterialProfile::Create (params);
-    EXPECT_TRUE(materialProfilePtr.IsValid());
+    EXPECT_TRUE (materialProfilePtr.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,9 +92,9 @@ TEST_F (MaterialProfileTestCase, Create_MinimalCreateParams_ValidInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MaterialProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
     {
-    CreateParams params(GetModel(), CreateAndGetProfileId(), CreateAndGetMaterialId("0"));
-    MaterialProfilePtr materialProfilePtr = MaterialProfile::Create(params);
-    EXPECT_SUCCESS_Insert(params) << "MaterialProfile should succeed to insert with valid create parameters.";
+    CreateParams params (GetModel(), CreateAndGetProfileId(), CreateAndGetMaterialId ("0"));
+    MaterialProfilePtr materialProfilePtr = MaterialProfile::Create (params);
+    EXPECT_SUCCESS_Insert (params) << "MaterialProfile should succeed to insert with valid create parameters.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,7 +111,7 @@ TEST_F (MaterialProfileTestCase, Insert_EmptyCreateParams_FailedInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MaterialProfileTestCase, Insert_InvalidCreateParams_FailedInsert)
     {
-    CreateParams params (GetModel(), CreateAndGetMaterialId("0"), CreateAndGetProfileId());
+    CreateParams params (GetModel(), CreateAndGetMaterialId ("0"), CreateAndGetProfileId());
     EXPECT_FAIL_Insert (params) << "MaterialProfile should fail with empty create parameters.";
     }
 
@@ -121,10 +121,10 @@ TEST_F (MaterialProfileTestCase, Insert_InvalidCreateParams_FailedInsert)
 TEST_F (MaterialProfileTestCase, GetProperties_MaterialProfileInstance_ValidProperties)
     {
     DgnElementId profileId = CreateAndGetProfileId();
-    DgnElementId materialId = CreateAndGetMaterialId("0");
+    DgnElementId materialId = CreateAndGetMaterialId ("0");
 
     CreateParams params (GetModel(), profileId, materialId);
-    MaterialProfilePtr materialProfilePtr = MaterialProfile::Create(params);
+    MaterialProfilePtr materialProfilePtr = MaterialProfile::Create (params);
 
     EXPECT_EQ (profileId, materialProfilePtr->GetProfile()->GetElementId());
     EXPECT_EQ (materialId, materialProfilePtr->GetMaterial()->GetElementId());
@@ -136,13 +136,13 @@ TEST_F (MaterialProfileTestCase, GetProperties_MaterialProfileInstance_ValidProp
 TEST_F (MaterialProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     {
     DgnElementId profileId = CreateAndGetProfileId();
-    DgnElementId materialId = CreateAndGetMaterialId("0");
+    DgnElementId materialId = CreateAndGetMaterialId ("0");
 
     CreateParams params (GetModel());
-    MaterialProfilePtr materialProfilePtr = MaterialProfile::Create(params);
+    MaterialProfilePtr materialProfilePtr = MaterialProfile::Create (params);
 
-    materialProfilePtr->SetProfile(profileId);
-    materialProfilePtr->SetMaterial(materialId);
+    materialProfilePtr->SetProfile (profileId);
+    materialProfilePtr->SetMaterial (materialId);
 
     EXPECT_EQ (profileId, materialProfilePtr->GetProfile()->GetElementId());
     EXPECT_EQ (materialId, materialProfilePtr->GetMaterial()->GetElementId());
