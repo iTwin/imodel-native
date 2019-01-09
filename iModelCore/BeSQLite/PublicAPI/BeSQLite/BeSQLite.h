@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/BeSQLite.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -538,11 +538,11 @@ public:
 
         //! Converts source to lower-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
         //! This is called when the SQL scalar function LOWER is processed.
-        virtual void _Lower(Utf16CP source, int sourceLen, Utf16CP result, int resultLen) = 0;
+        virtual void _Lower(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
 
         //! Converts source to upper-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
         //! This is called when the SQL scalar function UPPER is processed.
-        virtual void _Upper(Utf16CP source, int sourceLen, Utf16CP result, int resultLen) = 0;
+        virtual void _Upper(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
 
         //! Registers a collection of collations with the database.
         //! This is called when every database is opened, and collatorFreeFunc is called when the database is closed for each collator provided.
@@ -1234,9 +1234,9 @@ public:
     typedef typename T_SetType::const_iterator const_iterator;
     typedef typename T_SetType::iterator iterator;
 
-    const_iterator begin() const {return ((T_SetType&)m_set).begin();}
-    const_iterator end() const {return ((T_SetType&)m_set).end();}
-    const_iterator find(IdType id) const {return ((T_SetType&)m_set).find(id);}
+    const_iterator begin() const {return ((T_SetType const&)m_set).begin();}
+    const_iterator end() const {return ((T_SetType const&)m_set).end();}
+    const_iterator find(IdType id) const {return ((T_SetType const&)m_set).find(id);}
     bool operator==(T_Self const& other) const {return m_set==other.m_set;}
     bool operator!=(T_Self const& other) const {return m_set!=other.m_set;}
     bool empty() const {return m_set.empty();}
@@ -1520,7 +1520,7 @@ protected:
     mutable CachedStatementPtr m_stmt;
     NamedParams m_params;
 
-    explicit DbTableIterator(DbCR db) : m_db((DbP)&db) {}
+    explicit DbTableIterator(DbCR db) : m_db(const_cast<DbP>(&db)) {}
 
     //! Move ctor. DbTableIterator are not copyable, but they are movable.
     DbTableIterator(DbTableIterator&& rhs) : m_db(rhs.m_db), m_stmt(std::move(rhs.m_stmt)), m_params(rhs.m_params) {}
