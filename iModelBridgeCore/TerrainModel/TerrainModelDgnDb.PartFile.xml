@@ -23,6 +23,15 @@
         </Bindings>
     </Part>
 
+    <Part Name="Core_DgnDb06" BentleyBuildMakeFile="core\coreDgnDb_DgnDb06.mke" ApiNumber="G" OnlyPlatforms="x86,x64">
+        <SubPart PartName="HeaderFiles"/>
+        <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)TerrainModelCore$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
+        </Bindings>
+    </Part>
+
     <Part Name="CoreStatic" BentleyBuildMakeFile="Core/coreDgnDb.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
         <SubPart PartName="HeaderFiles" LibType="Static"/>
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" LibType="Static"/>
@@ -43,6 +52,21 @@
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
         <SubPart PartName="ImagePPDll"  PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>Delivery\$(shlibprefix)TerrainModelFormats$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery\$(libprefix)TerrainModelFormats$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+
+    <Part Name="Formats_DgnDb06" BentleyBuildMakeFile="Formats\formatsDgnDb_DgnDb06.mke" ApiNumber="G">
+        <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
+        <SubPart PartName="Core_DgnDb06" />
+        <SubPart PartName="inroadstmDgnDb" />
+        <SubPart PartName="BeSQLite"   PartFile="BeSQLite"  Repository="BeSQLite" />
+        <SubPart PartName="BeXmlDll"   PartFile="BeLibxml2" Repository="libsrc-libxml2" />
+        <SubPart PartName="GeoCoord"   PartFile="GeoCoord"  Repository="GeoCoord" />
+        <SubPart PartName="ImagePPDll" PartFile="ImagePP"   Repository="ImagePP" />
         <Bindings>
             <Assemblies>Delivery\$(shlibprefix)TerrainModelFormats$(ApiNumber)$(shlibext)</Assemblies>
             <Libs>Delivery\$(libprefix)TerrainModelFormats$(libext)</Libs>

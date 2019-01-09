@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/MX.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
@@ -453,9 +453,16 @@ MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inM
         DPoint3d fixedPoint;
         double scale;
         double aspectFix;
+
+#ifdef DGNDB06_API
+        DVec3d directionVector;
+        
+        if (!transform.IsUniformScaleAndRotateAroundLine(fixedPoint, directionVector, aspectFix, scale))
+#else
         RotMatrix axes;
 
         if (!transform.IsTranslateScaleRotateAroundZ(fixedPoint, axes, scale, aspectFix))
+#endif
             {
             return MXExportError::Error;
             }
