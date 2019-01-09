@@ -57,13 +57,26 @@ CenterLineCShapeProfile::CenterLineCShapeProfile(CreateParams const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CenterLineCShapeProfile::_Validate() const
     {
-    bool bValid (T_Super::_Validate());
+    bool bValid(T_Super::_Validate());
 
     bValid = bValid && std::isfinite(GetFlangeWidth()) && (GetFlangeWidth() > 0.0);
     bValid = bValid && std::isfinite(GetDepth()) && (GetDepth() > 0.0);
-    bValid = bValid && std::isfinite(GetGirth()) && (GetGirth() > 0.0);
+    bValid = bValid && std::isfinite(GetGirth()) && (GetGirth() >= 0.0);
     bValid = bValid && std::isfinite(GetWallThickness()) && (GetWallThickness() > 0.0);
-    bValid = bValid && std::isfinite(GetFilletRadius());
+    bValid = bValid && std::isfinite(GetFilletRadius()) && (GetFilletRadius() >= 0.0);
+
+    bValid = bValid && (GetWallThickness() < GetFlangeWidth() / 2.0) && (GetWallThickness() < GetDepth() / 2.0);
+
+    if (GetGirth() > 0.0)
+        {
+        bValid = bValid && (GetGirth() < (GetDepth() / 2.0));
+        }
+
+    if (GetFilletRadius() > 0.0)
+        {
+        bValid = bValid && (GetFilletRadius() <= (GetFlangeWidth() / 2.0 - GetWallThickness())) &&
+            (GetFilletRadius() <= (GetDepth() / 2.0 - GetWallThickness()));
+        }
 
     return bValid;
     }
