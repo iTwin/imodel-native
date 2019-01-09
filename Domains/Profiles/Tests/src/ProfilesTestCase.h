@@ -22,8 +22,6 @@ struct ProfilesTestCase : testing::Test
 private:
     Dgn::DgnDbPtr m_dbPtr;
     Dgn::DefinitionModelPtr m_definitionModelPtr;
-    Dgn::PhysicalModelPtr m_physicalModelPtr;
-    Dgn::DgnCategoryId m_categoryId;
 
 protected:
     ProfilesTestCase();
@@ -31,8 +29,6 @@ protected:
 
     Dgn::DgnDb& GetDb();
     Dgn::DgnModel& GetModel();
-    Dgn::PhysicalModel& GetPhysicalModel();
-    Dgn::DgnCategoryId GetCategoryId();
 
     /*---------------------------------------------------------------------------------**//**
     * Create and insert an entity class instance.
@@ -70,5 +66,30 @@ protected:
         // Perform an Update just to double check same validation is happenning on update.
         instancePtr->Update (&status);
         return status;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * Create and insert a DgnModel.
+    * @bsimethod                                                                     11/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename T_Model, typename T_Partition>
+    RefCountedPtr<T_Model> InsertDgnModel (Utf8CP pPartitionName)
+        {
+        Dgn::SubjectCPtr rootSubjectPtr = GetDb().Elements().GetRootSubject();
+
+        RefCountedPtr<T_Partition> partitionPtr = typename T_Partition::Create (*rootSubjectPtr, pPartitionName);
+        GetDb().BriefcaseManager().AcquireForElementInsert (*partitionPtr);
+
+        Dgn::DgnDbStatus status;
+        partitionPtr->Insert (&status);
+        if (status != Dgn::DgnDbStatus::Success)
+            return nullptr;
+
+        RefCountedPtr<T_Model> modelPtr = typename T_Model::Create (*partitionPtr);
+        status = modelPtr->Insert();
+        if (status != Dgn::DgnDbStatus::Success)
+            return nullptr;
+
+        return modelPtr;
         }
     };

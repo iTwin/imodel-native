@@ -22,6 +22,18 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                                     01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
+    MaterialProfileTestCase()
+        {
+        CodeSpecPtr codeSpec = CodeSpec::Create (GetDb(), "ProfilesMaterialCodeSpec", CodeScopeSpec::CreateRepositoryScope());
+        BeAssert (codeSpec.IsValid());
+
+        DgnDbStatus status = codeSpec->Insert();
+        BeAssert (status == DgnDbStatus::Success);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     01/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
     Dgn::DgnDbStatus InsertAndUpdateElement (CreateParams const& createParams)
         {
         return ProfilesTestCase::InsertAndUpdateElement<MaterialProfile> (createParams);

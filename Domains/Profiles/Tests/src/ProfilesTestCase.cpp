@@ -31,37 +31,13 @@ static BeFileName copyWorkingDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename ModelType, typename PartitionType>
-static RefCountedPtr<ModelType> createDgnModel (DgnDb& db, Utf8CP pPartitionName)
-    {
-    SubjectCPtr rootSubjectPtr = db.Elements().GetRootSubject();
-
-    RefCountedPtr<PartitionType> partitionPtr = PartitionType::Create (*rootSubjectPtr, pPartitionName);
-    db.BriefcaseManager().AcquireForElementInsert (*partitionPtr);
-
-    DgnDbStatus status;
-    partitionPtr->Insert (&status);
-    if (status != DgnDbStatus::Success)
-        return nullptr;
-
-    RefCountedPtr<ModelType> modelPtr = ModelType::Create (*partitionPtr);
-    status = modelPtr->Insert();
-    if (status != DgnDbStatus::Success)
-        return nullptr;
-
-    return modelPtr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProfilesTestCase::ProfilesTestCase()
     : m_dbPtr (nullptr)
     , m_definitionModelPtr (nullptr)
-    , m_physicalModelPtr (nullptr)
     {
+    // Copy and open a fresh DB
     BeFileName workingDbPath = copyWorkingDb();
 
     DgnDb::OpenParams openParams (BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
@@ -69,24 +45,9 @@ ProfilesTestCase::ProfilesTestCase()
     m_dbPtr = DgnDb::OpenDgnDb (&openStatus, workingDbPath, openParams);
     BeAssert (m_dbPtr.IsValid());
 
-    m_definitionModelPtr = createDgnModel<DefinitionModel, DefinitionPartition> (GetDb(), "ProfilesTestPartition_Definition");
+    // Create default model for definition elements
+    m_definitionModelPtr = InsertDgnModel<DefinitionModel, DefinitionPartition> ("ProfilesTestPartition_Definition");
     BeAssert (m_definitionModelPtr.IsValid());
-
-    m_physicalModelPtr = createDgnModel<PhysicalModel, PhysicalPartition> (GetDb(), "ProfilesTestPartition_Physical");
-    BeAssert (m_physicalModelPtr.IsValid());
-
-    SpatialCategory category (m_dbPtr->GetDictionaryModel(), "ProfilesTestCategory", DgnCategory::Rank::Application);
-
-    DgnDbStatus status;
-    SpatialCategoryCPtr categoryPtr = category.Insert (DgnSubCategory::Appearance(), &status);
-    BeAssert (status == DgnDbStatus::Success);
-    m_categoryId = categoryPtr->GetCategoryId();
-
-    CodeSpecPtr codeSpec = CodeSpec::Create(*m_dbPtr, "ProfilesMaterialCodeSpec", CodeScopeSpec::CreateRepositoryScope());
-    BeAssert (codeSpec.IsValid());
-
-    status = codeSpec->Insert();
-    BeAssert (status == DgnDbStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,22 +74,4 @@ DgnModel& ProfilesTestCase::GetModel()
     {
     BeAssert (m_definitionModelPtr.IsValid());
     return *m_definitionModelPtr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModel& ProfilesTestCase::GetPhysicalModel()
-    {
-    BeAssert (m_physicalModelPtr.IsValid());
-    return *m_physicalModelPtr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId ProfilesTestCase::GetCategoryId()
-    {
-    BeAssert (m_categoryId.IsValid());
-    return m_categoryId;
     }

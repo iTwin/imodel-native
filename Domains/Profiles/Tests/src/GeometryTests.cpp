@@ -18,6 +18,8 @@ USING_NAMESPACE_BENTLEY_PROFILES
 struct GeometryTestCase : ProfilesTestCase
     {
 private:
+    Dgn::PhysicalModelPtr m_physicalModelPtr;
+    DgnCategoryId m_categoryId;
     Render::GeometryParams m_geometryParams;
 
 protected:
@@ -26,6 +28,9 @@ protected:
     template<typename T>
     RefCountedPtr<T> InsertProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow = false);
 
+    DgnCategoryId GetCategoryId() { return m_categoryId; }
+    PhysicalModel& GetPhysicalModel() { return *m_physicalModelPtr; }
+
 private:
     void InsertPhysicalElement (ProfilePtr profilePtr, bool placeInNewRow);
 
@@ -33,95 +38,27 @@ private:
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                                      12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GeometryTestCase, ProfilesGemetry)
-    {
-    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_Plain", 6, 10, 1, 1, 0, 0));
-    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5));
-    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_MaxFillet", 6, 10, 1, 1, 2.5, 0.1));
-    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
-
-    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_Plain", 6, 10, 1, 1, 0, 0), true);
-    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5));
-    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_MaxFillet", 6, 10, 1, 1, 2.5 / 2.0, 0.1));
-    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
-
-    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_Plain",
-                                                    4, 6, 10, 0.5, 1, 1), true);
-    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_TopFlangeRoundings",
-                                                    4, 6, 10, 0.5, 1, 1, 0.5, 0.25));
-    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_BottomFlangeRoundings",
-                                                    4, 6, 10, 0.5, 1, 1, 0, 0, Angle::FromRadians (0), 0.5, 0.5));
-    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_MaxFillets",
-                                                    4, 6, 10, 0.5, 1, 1, 0.75, 0.1, Angle::FromRadians (0), 1.25, 0.1, Angle::FromRadians (0)));
-    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_Slopes",
-                                                    4, 6, 10, 0.5, 1, 1, 0, 0, Angle::FromRadians (PI / 18), 0, 0, Angle::FromRadians (PI / 18)));
-    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_SlopesAndRoundings",
-                                                    4, 6, 10, 0.5, 1, 1, 0.5, 0.25, Angle::FromRadians (PI / 18), 0.5, 0.5, Angle::FromRadians (PI / 18)));
-
-    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_Plain", 6, 10, 1, 0, 0), true);
-    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_FilletAndRoundedEdge", 6, 10, 1, 0.5, 0.5));
-    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_MaxFillet", 6, 10, 1, 2.5, 0.1));
-    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_SlopeAndRoundings", 6, 10, 1, 0.5, 0.5, Angle::FromRadians (PI / 32)));
-
-    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_Plain",
-                                          6, 10, 1, 1, 0, 0, Angle::FromRadians (0), 0, Angle::FromRadians (0)), true);
-    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_FilletAndRoundedEdge",
-                                          6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (0), 0.5, Angle::FromRadians (0)));
-    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_MaxFillet",
-                                          6, 10, 1, 1, 2.5 / 2.0, 0.1, Angle::FromRadians (0), 0.1, Angle::FromRadians (0)));
-    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_SlopeAndRoundings",
-                                          6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 12), 0.5, Angle::FromRadians (PI / 48)));
-
-    InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_Plain", 3.5, 10, 1, 1, 0, 0), true);
-    InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_FilletAndRoundedEdge", 3.5, 10, 1, 1, 0.5, 0.5));
-    InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_MaxFillet", 3.5, 10, 1, 1, 1.0, 0.1));
-    InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_SlopeAndRoundings", 3.5, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
-
-    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape Plain", 3.5, 10, 1, 1, 0.0), true);
-    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape Rounded", 3.5, 10, 1, 1, PI / 18));
-    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape Rounded without girth", 3.5, 10, 0.0, 1, PI / 18));
-    //InsertProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape Plain", 3.5, 10, 1, 1, 0.0));
-
-    InsertProfileGeometry<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Circle", 3.0), true);
-    InsertProfileGeometry<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "HollowCircle", 3.0, 0.5));
-    InsertProfileGeometry<EllipseProfile> (EllipseProfile::CreateParams (GetModel(), "Ellipse_BiggerXRadius", 3.0, 2.0));
-    InsertProfileGeometry<EllipseProfile> (EllipseProfile::CreateParams (GetModel(), "Ellipse_BiggerYRadius", 2.0, 3.0));
-
-    InsertProfileGeometry<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "Rectangle", 6.0, 4.0), true);
-    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle", 4.0, 6.0, 0.5));
-    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 6.0, 4.0, 2.0));
-    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 4.0, 6.0, 2.0));
-
-    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle", 4.0, 6.0, 0.5), true);
-    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_OuterRadius", 4.0, 6.0, 0.5, 0.0, 0.5));
-    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_InnerRadius", 4.0, 6.0, 0.5, 0.5, 0.0));
-    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_bothRadiuses", 4.0, 6.0, 0.5, 0.5, 0.5));
-    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_MaxOuterRadiusAgainstInnerRadius",
-                                                   6.0, 6.0, 0.25, 0.5, 0.25 * (2.0 + std::sqrt (2.0)) + 0.49));
-
-    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium", 4.0, 6.0, 4.0, 1.0), true);
-    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium wider top", 6.0, 4.0, 4.0, 0.0));
-    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium wider top centered", 6.0, 4.0, 4.0, -1.0));
-    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium bigger top offset", 2.0, 4.0, 4.0, 6.0));
-
-    LShapeProfilePtr wideL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 6x3 (for DoubleL)", 6.0, 3.0, 1.0, 0.5), true);
-    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 6x3 LLBB", 0.25, wideL->GetElementId(), DoubleLShapeProfileType::LLBB));
-    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 6x3 SLBB", 0.25, wideL->GetElementId(), DoubleLShapeProfileType::SLBB));
-    LShapeProfilePtr deepL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 3x6 (for DoubleL)", 3.0, 6.0, 1.0, 0.5));
-    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 LLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::LLBB));
-    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 SLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::SLBB));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Setup view related platform structures so physical elements with geometry could be
 * rendered and viewed in applications (e.g. Gist).
 * @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryTestCase::GeometryTestCase()
+    : m_physicalModelPtr (nullptr)
     {
-    m_geometryParams.SetCategoryId (GetCategoryId());
+    // Create a PhysicalModel used for creating PhysicalElements
+    m_physicalModelPtr = InsertDgnModel<PhysicalModel, PhysicalPartition> ("ProfilesTestPartition_Physical");
+    BeAssert (m_physicalModelPtr.IsValid());
+
+    // Create a SpatialCategory used for creating PhysicalElements
+    SpatialCategory category (GetDb().GetDictionaryModel(), "ProfilesTestCategory", DgnCategory::Rank::Application);
+
+    DgnDbStatus status;
+    SpatialCategoryCPtr categoryPtr = category.Insert (DgnSubCategory::Appearance(), &status);
+    BeAssert (status == DgnDbStatus::Success);
+    m_categoryId = categoryPtr->GetCategoryId();
+
+    // Setup view and render related structures
+    m_geometryParams.SetCategoryId (m_categoryId);
     m_geometryParams.SetFillDisplay (Render::FillDisplay::Always);
     m_geometryParams.SetLineColor (ColorDef::White());
     m_geometryParams.SetFillColor (ColorDef::DarkGrey());
@@ -238,4 +175,86 @@ void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, bool placeI
     DgnDbStatus insertStatus;
     physicaleElementPtr->Insert (&insertStatus);
     ASSERT_TRUE (insertStatus == DgnDbStatus::Success);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                                      12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GeometryTestCase, ProfilesGemetry)
+    {
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_Plain", 6, 10, 1, 1, 0, 0));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_MaxFillet", 6, 10, 1, 1, 2.5, 0.1));
+    InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
+
+    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_Plain", 6, 10, 1, 1, 0, 0), true);
+    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5));
+    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_MaxFillet", 6, 10, 1, 1, 2.5 / 2.0, 0.1));
+    InsertProfileGeometry<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "IShape_SlopeAndRoundings", 6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
+
+    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_Plain",
+                                                    4, 6, 10, 0.5, 1, 1), true);
+    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_TopFlangeRoundings",
+                                                    4, 6, 10, 0.5, 1, 1, 0.5, 0.25));
+    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_BottomFlangeRoundings",
+                                                    4, 6, 10, 0.5, 1, 1, 0, 0, Angle::FromRadians (0), 0.5, 0.5));
+    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_MaxFillets",
+                                                    4, 6, 10, 0.5, 1, 1, 0.75, 0.1, Angle::FromRadians (0), 1.25, 0.1, Angle::FromRadians (0)));
+    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_Slopes",
+                                                    4, 6, 10, 0.5, 1, 1, 0, 0, Angle::FromRadians (PI / 18), 0, 0, Angle::FromRadians (PI / 18)));
+    InsertProfileGeometry<AsymmetricIShapeProfile> (AsymmetricIShapeProfile::CreateParams (GetModel(), "AsymmetricI_SlopesAndRoundings",
+                                                    4, 6, 10, 0.5, 1, 1, 0.5, 0.25, Angle::FromRadians (PI / 18), 0.5, 0.5, Angle::FromRadians (PI / 18)));
+
+    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_Plain", 6, 10, 1, 0, 0), true);
+    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_FilletAndRoundedEdge", 6, 10, 1, 0.5, 0.5));
+    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_MaxFillet", 6, 10, 1, 2.5, 0.1));
+    InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_SlopeAndRoundings", 6, 10, 1, 0.5, 0.5, Angle::FromRadians (PI / 32)));
+
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_Plain",
+                                          6, 10, 1, 1, 0, 0, Angle::FromRadians (0), 0, Angle::FromRadians (0)), true);
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_FilletAndRoundedEdge",
+                                          6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (0), 0.5, Angle::FromRadians (0)));
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_MaxFillet",
+                                          6, 10, 1, 1, 2.5 / 2.0, 0.1, Angle::FromRadians (0), 0.1, Angle::FromRadians (0)));
+    InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_SlopeAndRoundings",
+                                          6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 12), 0.5, Angle::FromRadians (PI / 48)));
+
+    InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_Plain", 3.5, 10, 1, 1, 0, 0), true);
+    InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_FilletAndRoundedEdge", 3.5, 10, 1, 1, 0.5, 0.5));
+    InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_MaxFillet", 3.5, 10, 1, 1, 1.0, 0.1));
+    InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_SlopeAndRoundings", 3.5, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
+
+    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape Plain", 3.5, 10, 1, 1, 0.0), true);
+    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape Rounded", 3.5, 10, 1, 1, PI / 18));
+    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape Rounded without girth", 3.5, 10, 0.0, 1, PI / 18));
+    //InsertProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape Plain", 3.5, 10, 1, 1, 0.0));
+
+    InsertProfileGeometry<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Circle", 3.0), true);
+    InsertProfileGeometry<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "HollowCircle", 3.0, 0.5));
+    InsertProfileGeometry<EllipseProfile> (EllipseProfile::CreateParams (GetModel(), "Ellipse_BiggerXRadius", 3.0, 2.0));
+    InsertProfileGeometry<EllipseProfile> (EllipseProfile::CreateParams (GetModel(), "Ellipse_BiggerYRadius", 2.0, 3.0));
+
+    InsertProfileGeometry<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "Rectangle", 6.0, 4.0), true);
+    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle", 4.0, 6.0, 0.5));
+    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 6.0, 4.0, 2.0));
+    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 4.0, 6.0, 2.0));
+
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle", 4.0, 6.0, 0.5), true);
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_OuterRadius", 4.0, 6.0, 0.5, 0.0, 0.5));
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_InnerRadius", 4.0, 6.0, 0.5, 0.5, 0.0));
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_bothRadiuses", 4.0, 6.0, 0.5, 0.5, 0.5));
+    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_MaxOuterRadiusAgainstInnerRadius",
+                                                   6.0, 6.0, 0.25, 0.5, 0.25 * (2.0 + std::sqrt (2.0)) + 0.49));
+
+    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium", 4.0, 6.0, 4.0, 1.0), true);
+    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium wider top", 6.0, 4.0, 4.0, 0.0));
+    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium wider top centered", 6.0, 4.0, 4.0, -1.0));
+    InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium bigger top offset", 2.0, 4.0, 4.0, 6.0));
+
+    LShapeProfilePtr wideL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 6x3 (for DoubleL)", 6.0, 3.0, 1.0, 0.5), true);
+    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 6x3 LLBB", 0.25, wideL->GetElementId(), DoubleLShapeProfileType::LLBB));
+    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 6x3 SLBB", 0.25, wideL->GetElementId(), DoubleLShapeProfileType::SLBB));
+    LShapeProfilePtr deepL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 3x6 (for DoubleL)", 3.0, 6.0, 1.0, 0.5));
+    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 LLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::LLBB));
+    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 SLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::SLBB));
     }
