@@ -15,9 +15,12 @@
 #include <CCApi/CCPublic.h>
 #endif
 #include <ScalableMesh/ScalableMeshAdmin.h>
-#include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh/ScalableMeshLib.h>  
+#if !defined(DGNDB06_API)
 #include <BeHttp/HttpClient.h>
+#endif
 #include <BeXml/BeXml.h>
+
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -178,6 +181,8 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& pro
 #endif
         }
 
+
+#ifndef DGNDB06_API
     // Check if the connect token callback is supplied
     Utf8String token;
     if(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyAuthHeaderValue(token, Utf8String("")))
@@ -202,6 +207,7 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& pro
             timer = std::time(nullptr);
             });
         }
+#endif
 
     }
 
@@ -257,6 +263,30 @@ void ScalableMeshRDSProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
+#ifdef DGNDB06_API
+    WString serverUrl;
+
+	try
+		{
+        CallStatus status = APIERR_SUCCESS;
+        WString buddiUrl;
+        UINT32 bufLen;
+
+        CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+        wchar_t* buffer;
+        status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
+        bufLen++;
+        buffer = (wchar_t*)calloc(1, bufLen * sizeof(wchar_t));
+        status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
+        serverUrl.assign(buffer);
+        CCApi_FreeApi(api);
+        }
+	catch (...)
+		{
+		}
+
+    return Utf8String(serverUrl.c_str());
+#else
     Utf8String serverUrl;
     uint32_t connectRegion = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyRegionID();
     if(connectRegion > 0)
@@ -356,6 +386,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         }
     BeAssert(!serverUrl.empty()); // RDS server URL couldn't be found
     return serverUrl;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

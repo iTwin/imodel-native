@@ -15,10 +15,10 @@
 #include <ScalableMesh/IScalableMeshProgress.h>
 
 
-
+/*
 #if defined(DGNDB06_API)
     #undef 
-#endif
+#endif*/
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

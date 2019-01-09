@@ -66,12 +66,16 @@ CCompOpts + -wd4244
 
 #release builds: error in boost (named_function_params.hpp)
 CCompOpts + -wd4172
+
+CCompOpts + -wd4002
+
+CCompOpts + -wd4091
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -DDGNDB06_API
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -DDGNDB06_API
 CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 %include $(SharedMki)PreCompileHeader.mki
 
@@ -205,7 +209,7 @@ $(o)SMMeshIndex$(oext) : $(stmDir)SMMeshIndex.cpp $(stmDir)SMMeshIndex.hpp $(stm
 
 $(o)SMMemoryPool$(oext) : $(stmDir)SMMemoryPool.cpp $(stmDir)SMMemoryPool.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshCreator$(oext) : $(stmDir)ScalableMeshCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -266,6 +270,10 @@ $(o)ScalableMeshDraping$(oext) : $(stmDir)ScalableMeshDraping.cpp $(PCHHeaderDep
 $(o)DrapeOnGraph$(oext) : $(stmDir)DrapeOnGraph.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshProgressiveQuery$(oext) : $(stmDir)ScalableMeshProgressiveQuery.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshProgressiveQueryPlanner$(oext) : $(stmDir)ScalableMeshProgressiveQueryPlanner.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshProgressiveContourQueryPlanner$(oext) : $(stmDir)ScalableMeshProgressiveContourQueryPlanner.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshVolume$(oext) : $(stmDir)ScalableMeshVolume.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -338,6 +346,8 @@ $(o)TilePublisher$(oext) : $(tilePublisherDir)TilePublisher.cpp $(tilePublisherD
 $(o)SMPublisher$(oext) : $(stmDir)Stores/SMPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)SMCesiumPublisher$(oext) : $(stmDir)Stores/SMCesiumPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshSaveAs$(oext) : $(stmDir)ScalableMeshSaveAs.cpp ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build RDS provider

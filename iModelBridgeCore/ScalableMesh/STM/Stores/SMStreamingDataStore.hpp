@@ -383,10 +383,10 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
         BeFileName tempPath;
-#ifndef VANCOUVER_API
-		if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
-#else
-        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
+		if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+#else        
+        if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
 #endif
             BeAssert(false); // Temp path couldn't be extracted
 

@@ -36,21 +36,6 @@
 #endif
 
 
-        /*
-#ifdef VANCOUVER_API
-    #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
-#else
-    #ifdef DGNDB06_API
-        #define CLIP_VECTOR_NAMESPACE 
-    #else
-        #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
-    #endif
-#endif
-*/
-
-
-
-
 //#include <Bentley/RefCounted.h>
 template<class POINT, class EXTENT> class ISMPointIndexQuery;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

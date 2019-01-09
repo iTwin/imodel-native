@@ -26,15 +26,6 @@
 /*__PUBLISH_SECTION_END__*/
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-/*
-#ifdef VANCOUVER_API
-#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
-#else
-#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
-#endif
-*/
-
-
 class IScalableMeshEdit  : public RefCountedBase
     {
     protected:

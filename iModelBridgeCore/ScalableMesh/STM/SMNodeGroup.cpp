@@ -759,10 +759,10 @@ bool SMNodeGroup::DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, 
                         {
                         // Construct path to tempory folder
                         BeFileName tempPath;
-#ifndef VANCOUVER_API
-						if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
+                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))                        
 #else
-                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+                        if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
 #endif
                             BeAssert(false); // Couldn't retrieve the temporary path
                         tempPath.AppendToPath(L"RealityDataCache");

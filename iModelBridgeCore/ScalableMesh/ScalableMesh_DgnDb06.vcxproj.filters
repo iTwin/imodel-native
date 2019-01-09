@@ -1498,10 +1498,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMesh.mke" />
-    <None Include="ScalableMesh.mki" />
+    <Xml Include="ScalableMesh.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMesh.PartFile.xml" />
+    <None Include="ScalableMesh_DgnDb06.mke" />
+    <None Include="ScalableMesh_DgnDb06.mki" />
   </ItemGroup>
 </Project>

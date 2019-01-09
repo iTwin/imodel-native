@@ -161,7 +161,11 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.length());
         }
   
+#ifdef DGNDB06_API
+    CurlConstructor curlConstructor;
+#else
     RequestConstructor curlConstructor;
+#endif
     //headers = curl_slist_append(headers, ConnectTokenManager::GetInstance().GetToken().c_str());
 
     headers = curl_slist_append(headers, curlConstructor.GetToken().c_str());
@@ -415,12 +419,12 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
     if (pAuth != nullptr)
         {
-#ifndef VANCOUVER_API
-		if (nullptr == pAuth || !pAuth->GetServer().ContainsI("bing"))
-            return false;
-#else
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
 		if (nullptr == pAuth || !pAuth->GetServer().ContainsI(L"bing"))
 			return false;
+#else
+        if (nullptr == pAuth || !pAuth->GetServer().ContainsI("bing"))
+            return false;
 #endif
 
         WString key = L"";
@@ -431,7 +435,7 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
         if (m_bingKey.IsValid() && !m_bingKey.IsExpired())
             key.AssignUtf8(m_bingKey.GetKey().c_str());
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
         pAuth->SetPassword(key);
 #else
 		pAuth->SetPassword(Utf8String(key));
@@ -448,7 +452,7 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
         ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
         if (!proxyInfo.m_serverUrl.empty())
             {
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
             pProxyAuth->SetUser(WString(proxyInfo.m_user.c_str(), true));
             pProxyAuth->SetPassword(WString(proxyInfo.m_password.c_str(), true));
             pProxyAuth->SetServer(WString(proxyInfo.m_serverUrl.c_str(), true));
@@ -567,7 +571,7 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     for (bvector<ObjEntry>::iterator itr = m_hostObj.begin(); itr != m_hostObj.end(); ++itr)
         {
         IHostObject* pValue(itr->GetValue());
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
         TERMINATE_HOST_OBJECT(pValue, onProgramExit);
 #else
 		ON_HOST_TERMINATE(pValue, onProgramExit);
@@ -578,13 +582,14 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     m_hostVar.clear();
 
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
     TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);
 #else
-	ON_HOST_TERMINATE(m_scalableTerrainModelAdmin, onProgramExit);
+    ON_HOST_TERMINATE(m_scalableTerrainModelAdmin, onProgramExit);
 #endif
 
     delete m_smPaths;
+
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
 

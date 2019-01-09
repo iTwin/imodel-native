@@ -1983,7 +1983,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
             const IDTMSource& source = *sourceIt;
             if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE)
                 {  
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
 				HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(source.GetPath()));
 #else
 				HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(Utf8String(source.GetPath())));
@@ -3728,6 +3728,10 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 #else
 template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP targetCS, DgnDbR dgnProject)
     {
+#ifdef DGNDB06_API
+    assert(!"ERROR - BIM0200 code not ported");
+    return BSIERROR;
+#else
     if (this->IsCesium3DTiles() && targetCS == nullptr && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
         {
         // Fall back on the GCS saved in the SM metadata for Cesium tilesets
@@ -3821,6 +3825,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
         }
 
     return _SetReprojection(*targetCS, computedTransform);
+#endif
     }
 #endif
 

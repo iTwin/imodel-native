@@ -24,8 +24,9 @@
 
 
     <Part Name="ScalableMeshRDSDependencies_DgnDb06" >
-        <SubPart PartName="RealityPlatform"                             PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
-        <SubPart PartName="CCApi"                                       PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
+        <SubPart PartName="RealityPlatform"            PartFile="RealityModFramework"       Repository="RealityModFramework"/>
+        <SubPart PartName="CCApi"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient"/>
+        <SubPart PartName="BeXmlDll"                   PartFile="BeLibxml2"                 Repository="libsrc-libxml2" />    
     </Part>
   
 
