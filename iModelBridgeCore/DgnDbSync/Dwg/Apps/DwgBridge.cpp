@@ -109,17 +109,18 @@ BentleyStatus   DwgBridge::GetLogConfigurationFilename(BeFileNameR configFile, W
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgBridge::GetImportConfiguration (BeFileNameR instanceFilePath, BeFileNameCR configurationPath, WCharCP argv0)
     {
-    WString programDir = BeFileName::GetDirectoryName (argv0);
-
     if (!configurationPath.empty())
         {
         instanceFilePath.SetName(configurationPath);
         }
     else
         {
+        WString programDir = BeFileName::GetDirectoryName (argv0);
         instanceFilePath.SetName(programDir.c_str());
+        instanceFilePath.AppendToPath(L"Assets");
         instanceFilePath.AppendToPath(L"ConvertConfig.xml");
         }
+    BeAssert (instanceFilePath.DoesPathExist());
     }
 
 /*---------------------------------------------------------------------------------**//**
