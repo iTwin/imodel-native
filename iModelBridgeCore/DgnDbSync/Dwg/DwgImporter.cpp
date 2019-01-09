@@ -370,7 +370,7 @@ DwgSyncInfo::DwgFileId  DwgImporter::_AddFileInSyncInfo (DwgDbDatabaseR dwg, Sta
     policy = provenance.GetIdPolicy ();
 
     // set file id & policy in DwgDbSummaryInfo
-    dwg.SetFileIdPolicy (fileId.GetValue(), static_cast<uint32_t>(policy));
+    dwg.SetFileIdPolicy (fileId.GetValue(), policy==StableIdPolicy::ById ? 0 : 1);
 
     return  fileId;
     }

@@ -2,10 +2,21 @@
 |
 |     $Source: Dwg/DwgImportInternal.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+// quiet static analysis warnings through toolkit's header files
+#pragma warning(disable:6001)
+#pragma warning(disable:6011)
+#pragma warning(disable:6244)
+#pragma warning(disable:6387)
+
 #include "DwgImportInternal.h"
+
+#pragma warning(default:6001)
+#pragma warning(default:6011)
+#pragma warning(default:6244)
+#pragma warning(default:6387)
 
 USING_NAMESPACE_DWG
 
