@@ -540,10 +540,10 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     DPoint3d const bl_outerBottom     = { -(halfWidth - wallThickness - filletRadius), -halfDepth, 0.0 };
     DPoint3d const br_outerBottom     = { (halfWidth - wallThickness - filletRadius), -halfDepth, 0.0 };
     DPoint3d const br_outerRangeApex  = { halfWidth, -halfDepth, 0.0 };
-    DPoint3d const br_outerRight      = { halfWidth, -(halfDepth - wallThickness - filletRadius), 0.0 };
-    DPoint3d const br_outerRightGirth = { halfWidth, -(halfDepth - wallThickness - filletRadius - girth), 0.0 };
-    DPoint3d const br_innerRightGirth = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius - girth), 0.0 };
-    DPoint3d const br_innerRight      = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d br_outerRight      = { halfWidth, -(halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d br_outerRightGirth = { halfWidth, -(halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d br_innerRightGirth = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d br_innerRight      = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius), 0.0 };
     DPoint3d const br_innerRangeApex  = { halfWidth - wallThickness, -(halfDepth - wallThickness), 0.0 };
     DPoint3d const br_innerBottom     = { (halfWidth - wallThickness - filletRadius), -(halfDepth - wallThickness), 0.0 };
     DPoint3d const bl_innerBottom     = { -(halfWidth - wallThickness - filletRadius), -(halfDepth - wallThickness), 0.0 };
@@ -554,19 +554,32 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     DPoint3d const tl_innerTop        = { -(halfWidth - wallThickness - filletRadius), (halfDepth - wallThickness), 0.0 };
     DPoint3d const tr_innerTop        = { (halfWidth - wallThickness - filletRadius), (halfDepth - wallThickness), 0.0 };
     DPoint3d const tr_innerRangeApex  = { halfWidth - wallThickness, (halfDepth - wallThickness), 0.0 };
-    DPoint3d const tr_innerRight      = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius), 0.0 };
-    DPoint3d const tr_innerRightGirth = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius - girth), 0.0 };
-    DPoint3d const tr_outerRightGirth = { halfWidth, (halfDepth - wallThickness - filletRadius - girth), 0.0 };
-    DPoint3d const tr_outerRight      = { halfWidth, (halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d tr_innerRight      = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d tr_innerRightGirth = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d tr_outerRightGirth = { halfWidth, (halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d tr_outerRight      = { halfWidth, (halfDepth - wallThickness - filletRadius), 0.0 };
     DPoint3d const tr_outerRangeApex  = { halfWidth, halfDepth, 0.0 };
     DPoint3d const tr_outerTop        = { (halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
     DPoint3d const tl_outerTop        = { -(halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
+
+    if (BeNumerical::IsEqualToZero(girth))
+        {
+        br_outerRight = { halfWidth, -(halfDepth - wallThickness), 0.0 };
+        br_outerRightGirth = br_outerRight;
+        br_innerRightGirth = br_innerRangeApex;
+        br_innerRight = br_innerRangeApex;
+
+        tr_innerRight = tr_innerRangeApex;
+        tr_innerRightGirth = tr_innerRangeApex;
+        tr_outerRight = { halfWidth,  halfDepth - wallThickness, 0.0};
+        tr_outerRightGirth = tr_outerRight;
+        }
 
     ICurvePrimitivePtr line2 = ICurvePrimitive::CreateLine (tl_outerLeft, bl_outerLeft);
     ICurvePrimitivePtr line3 = ICurvePrimitive::CreateLine (bl_outerLeft, bl_outerRangeApex);
     ICurvePrimitivePtr line4 = ICurvePrimitive::CreateLine (bl_outerRangeApex, bl_outerBottom);
 
-    if (DBL_EPSILON < filletRadius)
+    if (BeNumerical::IsGreaterThanZero(filletRadius))
         {
         line3 = createArcBetweenLines(line3, line4, filletRadius + wallThickness);
         line4 = nullptr;
@@ -576,7 +589,7 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     ICurvePrimitivePtr  line6 = ICurvePrimitive::CreateLine (br_outerBottom, br_outerRangeApex);
     ICurvePrimitivePtr  line7 = ICurvePrimitive::CreateLine (br_outerRangeApex, br_outerRight);
 
-    if (DBL_EPSILON < filletRadius)
+    if (BeNumerical::IsGreaterThanZero(filletRadius) && BeNumerical::IsGreaterThanZero(girth))
         {
         line6 = createArcBetweenLines(line6, line7, filletRadius + wallThickness);
         line7 = nullptr;
@@ -588,7 +601,7 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     ICurvePrimitivePtr line11 = ICurvePrimitive::CreateLine (br_innerRight, br_innerRangeApex);
     ICurvePrimitivePtr line12 = ICurvePrimitive::CreateLine (br_innerRangeApex, br_innerBottom);
 
-    if (DBL_EPSILON < filletRadius)
+    if (BeNumerical::IsGreaterThanZero(filletRadius))
         {
         line11 = createArcBetweenLines(line11, line12, filletRadius);
         line12 = nullptr;
@@ -598,7 +611,7 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     ICurvePrimitivePtr line14 = ICurvePrimitive::CreateLine (bl_innerBottom, bl_innerRangeApex);
     ICurvePrimitivePtr line15 = ICurvePrimitive::CreateLine (bl_innerRangeApex, bl_innerLeft);
 
-    if (DBL_EPSILON < filletRadius)
+    if (BeNumerical::IsGreaterThanZero(filletRadius))
         {
         line14 = createArcBetweenLines(line14, line15, filletRadius);
         line15 = nullptr;
@@ -608,7 +621,7 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     ICurvePrimitivePtr line17 = ICurvePrimitive::CreateLine (tl_innerLeft, tl_innerRangeApex);
     ICurvePrimitivePtr line18 = ICurvePrimitive::CreateLine (tl_innerRangeApex, tl_innerTop);
 
-    if (DBL_EPSILON < filletRadius)
+    if (BeNumerical::IsGreaterThanZero(filletRadius))
         {
         line17 = createArcBetweenLines(line17, line18, filletRadius);
         line18 = nullptr;
@@ -618,7 +631,7 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     ICurvePrimitivePtr line20 = ICurvePrimitive::CreateLine (tr_innerTop, tr_innerRangeApex);
     ICurvePrimitivePtr line21 = ICurvePrimitive::CreateLine (tr_innerRangeApex, tr_innerRight);
 
-    if (DBL_EPSILON < filletRadius)
+    if (BeNumerical::IsGreaterThanZero(filletRadius) && BeNumerical::IsGreaterThanZero(girth))
         {
         line20 = createArcBetweenLines(line20, line21, filletRadius);
         line21 = nullptr;
@@ -627,10 +640,11 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     ICurvePrimitivePtr line22 = ICurvePrimitive::CreateLine (tr_innerRight, tr_innerRightGirth);
     ICurvePrimitivePtr line23 = ICurvePrimitive::CreateLine (tr_innerRightGirth, tr_outerRightGirth);
     ICurvePrimitivePtr line24 = ICurvePrimitive::CreateLine (tr_outerRightGirth, tr_outerRight);
+
     ICurvePrimitivePtr line25 = ICurvePrimitive::CreateLine (tr_outerRight, tr_outerRangeApex);
     ICurvePrimitivePtr line26 = ICurvePrimitive::CreateLine (tr_outerRangeApex, tr_outerTop);
 
-    if (DBL_EPSILON < filletRadius)
+    if (BeNumerical::IsGreaterThanZero(filletRadius) && BeNumerical::IsGreaterThanZero(girth))
         {
         line25 = createArcBetweenLines(line25, line26, filletRadius + wallThickness);
         line26 = nullptr;
@@ -640,7 +654,7 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
     ICurvePrimitivePtr line28 = ICurvePrimitive::CreateLine (tl_outerTop, tl_outerRangeApex);
     ICurvePrimitivePtr  line1 = ICurvePrimitive::CreateLine (tl_outerRangeApex, tl_outerLeft);
 
-    if (DBL_EPSILON < filletRadius)
+    if (BeNumerical::IsGreaterThanZero(filletRadius))
         {
         line28 = createArcBetweenLines (line28, line1, filletRadius + wallThickness);
         line1 = nullptr;
@@ -648,16 +662,16 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
 
     bvector<ICurvePrimitivePtr> curves =
         {
-        line1, line2, line3,
-        line4,
-        line5, line6,
-        line7, line8, line9,
+        line1,  line2, line3,
+        line4,  line5, line6,
+        line7,  line8, line9,
         line10, line11, line12,
         line13, line14, line15,
         line16, line17, line18, 
         line19, line20, line21, 
         line22, line23, line24,
-        line25, line26, line27, line28,
+        line25, line26, line27, 
+        line28,
         };
 
     return createGeometryFromPrimitiveArray (curves);
