@@ -2334,6 +2334,9 @@ public:
     //! Determine whether the abstract constraint is set in this constraint.
     bool IsAbstractConstraintDefined() const {return nullptr != m_abstractConstraint;}
 
+    //! Remove the abstract constraint
+    void RemoveAbstractConstraint() { m_abstractConstraint = nullptr; }
+
     //! Add the specified entity class to the constraint. 
     //! @param[in] classConstraint  The ECEntityClass to add as a constraint class
     //! @note If the class does not derive from the abstract constraint it will fail to be added and an error will be returned.
