@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/sha1.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // This file was adapted from :
@@ -100,7 +100,7 @@ void SHA1::ProcessBlock(const void* data)
   uint32_t e = m_hash[4];
 
   // data represented as 16x 32-bit words
-  const uint32_t* input = (uint32_t*) data;
+  uint32_t const* input = (uint32_t const*) data;
   // convert to big endian
   uint32_t words[80];
   for (int i = 0; i < 16; i++)

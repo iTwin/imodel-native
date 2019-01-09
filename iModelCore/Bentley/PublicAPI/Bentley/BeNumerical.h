@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeNumerical.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -64,7 +64,24 @@ struct          BeNumerical
              return 0;
         return sv1 < sv2 ? -1 : 1;
         }
+
+    //! Checks if given values are equal to the closest tolerance possible.
+    static bool IsEqual (double value1, double value2) { return (Compare(value1, value2) == 0); }
+
+    //! Checks if value is equal to zero to the closest tolerance possible.
+    static bool IsEqualToZero (double value) { return (Compare(value, 0.0) == 0); }
+
+    //! Checks if value is greater than zero to the closest tolerance possible.
+    static bool IsGreaterThanZero (double value) { return (Compare(value, 0.0) >= 1); }
+
+    //! Checks if value is greater or equal to zero to the closest tolerance possible.
+    static bool IsGreaterOrEqualToZero (double value) { return (Compare(value, 0.0) >= 0); }
+
+    //! Checks if value is less than zero to the closest tolerance possible.
+    static bool IsLessThanZero (double value) { return (Compare(value, 0.0) <= -1); }
+
+    //! Checks if value is less or equal to zero to the closest tolerance possible.
+    static bool IsLessOrEqualToZero (double value) { return (Compare(value, 0.0) <= 0); }
 };
 
 END_BENTLEY_NAMESPACE
-

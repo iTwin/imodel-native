@@ -108,7 +108,7 @@ static BentleyStatus directUtf16ToUtf8(bvector<Byte>& outStringBuff, Byte const*
     // UTF-16 is 2 or 4 bytes per-character; UTF-8 is 1-6... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     outStringBuff.reserve(inStringNumBytes);
     
-    try { utf8::utf16to8((char16_t*)inString, (char16_t*)(inString + inStringNumBytes), std::back_inserter(outStringBuff)); }
+    try { utf8::utf16to8((char16_t const*)inString, (char16_t const*)(inString + inStringNumBytes), std::back_inserter(outStringBuff)); }
     catch(...) { return ERROR; }
     
     return SUCCESS;
@@ -122,7 +122,7 @@ static BentleyStatus directUtf32ToUtf8(bvector<Byte>& outStringBuff, Byte const*
     // UTF-32 is 4 bytes per-character; UTF-8 is 1-6 bytes... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     outStringBuff.reserve(inStringNumBytes / 2);
     
-    try { utf8::utf32to8((char32_t*)inString, (char32_t*)(inString + inStringNumBytes), std::back_inserter(outStringBuff)); }
+    try { utf8::utf32to8((char32_t const*)inString, (char32_t const*)(inString + inStringNumBytes), std::back_inserter(outStringBuff)); }
     catch(...) { return ERROR; }
     
     return SUCCESS;
@@ -368,7 +368,7 @@ BentleyStatus BeStringUtilities::Utf16ToWChar(WStringR outStr, Utf16CP inStr, si
     
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
     outStr.resize(resultBytes.size() / sizeof (uint32_t));
-    memcpy((CharP)outStr.data(), &resultBytes[0], resultBytes.size());
+    memcpy((CharP)const_cast<WCharP>(outStr.data()), &resultBytes[0], resultBytes.size());
 
 #else
 #error unknown runtime
@@ -669,7 +669,7 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar(AStringR outStr, LangCodePage
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
     outStr.resize(resultBytes.size() / sizeof (char));
-    memcpy((CharP)outStr.data(), &resultBytes[0], resultBytes.size());
+    memcpy(const_cast<CharP>(outStr.data()), &resultBytes[0], resultBytes.size());
     
 #else
 #error unknown runtime
@@ -794,7 +794,7 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar(WStringR outStr, CharCP inStr
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
     outStr.resize(resultBytes.size() / sizeof (WChar));
-    memcpy((WCharP)outStr.data(), &resultBytes[0], resultBytes.size());
+    memcpy(const_cast<WCharP>(outStr.data()), &resultBytes[0], resultBytes.size());
     
 #else
 #error unknown runtime
