@@ -27,8 +27,8 @@
 
 FOLLY_NAMESPACE_STD_BEGIN
 
-// WIP_XCODE9
-#if !(defined (__clang__) && defined (__APPLE__) && ((__clang_major__ * 1000 + __clang_minor__ * 10) >= 9000))
+// WIP_XCODE9 and NDK r18
+#if !(defined (__clang__) && defined (__APPLE__) && ((__clang_major__ * 1000 + __clang_minor__ * 10) >= 9000)) && !(defined (__clang__) && defined (ANDROID) && ((__clang_major__ * 1000 + __clang_minor__ * 10) >= 7000))
 
 void __throw_length_error(const char* msg) {
   throw std::length_error(msg);
