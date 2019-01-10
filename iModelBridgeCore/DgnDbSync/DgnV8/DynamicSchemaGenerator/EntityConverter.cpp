@@ -893,7 +893,7 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
     // If we removed any aspect classes as a constraint, then we need to add the base Element class as a constraint.  This is because we are 
     // using the element that owns the aspect as the relationship constraint but we have no way of knowing what class that is.  Therefore, we
     // can only use the most generic class as the constraint.
-    if (constraintsToRemove.size() > 0)
+    if (constraintsToRemove.size() > 0 && firstIsElement)
         {
         constraint.AddClass(*defaultConstraintClass);
         constraint.SetIsPolymorphic(true);
