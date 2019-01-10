@@ -2,10 +2,9 @@
 #
 #     $Source: ORDBridge/ORDBridgeGUI/ORDBridgeGuiExe.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-BUILD_TOOLSET=VS2017
 %include mdl.mki
 %include $(SrcRoot)bsicommon/sharedmki/msBuildSupport.mki
 %include $(SrcRoot)bsicommon/sharedmki/VersionedPartSignatureDefaults.mki

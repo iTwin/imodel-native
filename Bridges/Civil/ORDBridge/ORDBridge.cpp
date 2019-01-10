@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDBridge.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ORDBridgeInternal.h"
@@ -191,7 +191,7 @@ SubjectCPtr ORDBridge::_InitializeJob()
 
         auto physicalPartitionCPtr = subjectCR.GetDgnDb().Elements().Get<PhysicalPartition>(*physicalPartitionIds.begin());
 
-        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR, 
+        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR,
             physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
 
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
@@ -220,8 +220,8 @@ SubjectCPtr ORDBridge::_InitializeJob()
 //---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     {
-    // This if statement's work is also done in _InitializeJob(), but when the bridge goes off for a second time (an update), 
-    // _InitializeJob() is not called. It's possible that this work can (should?) be just done here and NOT in _InitializeJob(), 
+    // This if statement's work is also done in _InitializeJob(), but when the bridge goes off for a second time (an update),
+    // _InitializeJob() is not called. It's possible that this work can (should?) be just done here and NOT in _InitializeJob(),
     // but I'm not sure yet.
     if (!m_converter->IsPhysicalNetworkModelSet())
         {
@@ -341,7 +341,7 @@ void ORDBridge::_OnCloseBim(BentleyStatus, ClosePurpose)
         {
         IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
             {
-            // TODO: Some CIF object smart pointers are blowing up after deleting 
+            // TODO: Some CIF object smart pointers are blowing up after deleting
             // the converter instance.  Look into this!
             //delete m_converter;
             }
@@ -373,7 +373,7 @@ void ORDBridge::_DeleteSyncInfo()
     briefcaseName = briefcaseName.AppendExtension(L"syncinfo");
     if (!briefcaseName.DoesPathExist())
         return;
-    briefcaseName.BeDeleteFile();    
+    briefcaseName.BeDeleteFile();
     }
 
 END_ORDBRIDGE_NAMESPACE
@@ -387,7 +387,7 @@ extern "C" BentleyStatus iModelBridge_releaseInstance(BentleyApi::Dgn::iModelBri
     if (PSolidKernelManager::IsSessionStarted())
         PSolidKernelManager::StopSession();
     #endif
-        
+
     delete bridge;
     return SUCCESS;
     }

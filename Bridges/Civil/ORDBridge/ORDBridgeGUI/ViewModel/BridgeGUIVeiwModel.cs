@@ -181,18 +181,18 @@ namespace ORDBridgeGUI.ViewModel
 #if DEVELOPER
             m_connectEnv = "QA";
 #else
-            //m_connectEnv = "RELEASE";
-            m_connectEnv = "QA";
+            m_connectEnv = "RELEASE";
 #endif
-
             m_dgnInstall = LocateDgnInstall();
-            m_dgnInstall = m_dgnInstall.Substring(0, m_dgnInstall.Length - 1);
+            if ( m_dgnInstall != null )
+                m_dgnInstall = m_dgnInstall.Substring(0, m_dgnInstall.Length - 1);
             m_bridgeDll = LocateBridgeDll();
 
-            string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ConfigurationPath").ToString();
+            string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ConfigurationPath")?.ToString();
             workspacePath = Path.Combine(workspacePath, "Workspaces");
             WorkspaceEntries = GetWorkspaces(workspacePath);
             SelectedWorkspace = WorkspaceEntries[0];
+
 
             string[] rootModels = { "Default", "Active", "Other" };
             RootModelEntries = rootModels;
@@ -209,11 +209,14 @@ namespace ORDBridgeGUI.ViewModel
             var curDirPublisher = String.Format("{0}\\{1}", curDir, "PublishORDToBIM.exe");
             var curDirFramework = String.Format("{0}\\{1}", curDir, "iModelBridgeFwk.exe");
 
-            var publisherPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoads Designer Bridge\{BA04D7DE-6102-4C66-B0C0-7C488B8CDD17}")?.GetValue("InstallDir").ToString();
-            publisherPathFromRegistry = Path.Combine(publisherPathFromRegistry, "PublishORDToBIM.exe");
-            //var frameworkPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("PublishORDToBimExe").ToString();
+            //var publisheFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("PublishORDToBimExe");
+            //string publisherPathFromRegistry = (publisheFromRegistry != null) ? publisheFromRegistry.ToString() : "";
 
-            var frameworkPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("iModelFrameWorkExe").ToString();
+            //var frameworkFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("iModelFrameWorkExe");
+            //string frameworkPathFromRegistry = (frameworkFromRegistry != null) ? frameworkFromRegistry.ToString() : "";
+
+            var publisherPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("PublishORDToBimExe")?.ToString();
+            var frameworkPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("iModelFrameWorkExe")?.ToString();
 
             if ( File.Exists(curDirPublisher) )
                 {
@@ -225,7 +228,7 @@ namespace ORDBridgeGUI.ViewModel
                 }
             else
                 {
-                System.Windows.MessageBox.Show("Please downlaod the Civil iModel Bridge. \"PublishORDToBim.exe\" is missing!");
+                System.Windows.MessageBox.Show("Please download the Civil iModel Bridge. \"PublishORDToBim.exe\" is missing!");
                 m_publisherPath = "";
                 }
 
@@ -239,7 +242,7 @@ namespace ORDBridgeGUI.ViewModel
                 }
             else
                 {
-                System.Windows.MessageBox.Show("Please downlaod the Civil iModel Bridge. \"iModelBridgeFwk.exe\" is missing!");
+                System.Windows.MessageBox.Show("Please download the Civil iModel Bridge. \"iModelBridgeFwk.exe\" is missing!");
                 m_frameworkPath = "";
                 }
             }
@@ -270,7 +273,7 @@ namespace ORDBridgeGUI.ViewModel
             {
             get
                 {
-                return new RelayCommand((obj) => DoSelectOutDirCommand(), (obj) => String.IsNullOrEmpty(Input));
+                return new RelayCommand((obj) => DoSelectOutDirCommand());
                 }
             }
 
@@ -299,7 +302,8 @@ namespace ORDBridgeGUI.ViewModel
 
         private string LocateDgnInstall ()
             {
-            return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ProgramPath").ToString();
+            var dgnInstall = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ProgramPath");
+            return (dgnInstall != null) ? dgnInstall.ToString() : "";
             }
 
         private string[] GetWorkspaces (String dir)
@@ -331,7 +335,12 @@ namespace ORDBridgeGUI.ViewModel
 
         private void DoSelectDgnWorkspaceCommand ()
             {
-            string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ConfigurationPath").ToString();
+            string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ConfigurationPath")?.ToString();
+            if ( workspacePath == null)
+                {
+                System.Windows.MessageBox.Show("Please install Bentley OpenRoads Designer, it is missing!");
+                m_frameworkPath = "";
+                }
             workspacePath = Path.Combine(workspacePath, "Workspaces");
 
             var folderDialog = new FolderBrowserDialog
@@ -358,7 +367,7 @@ namespace ORDBridgeGUI.ViewModel
                 }
             else
                 {
-                return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("BridgeLibraryPath").ToString();
+                return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("BridgeLibraryPath")?.ToString();
                 }
             }
 
@@ -374,6 +383,8 @@ namespace ORDBridgeGUI.ViewModel
             bool shouldRun = Validate(pwBox.Password);
             if ( !shouldRun )
                 return;
+
+            bool runPublisher = SelectedPublisher == PublisherType.Local;
 
             string rootModel;
             if ( SelectedRootModel == "Default" )
@@ -393,14 +404,17 @@ namespace ORDBridgeGUI.ViewModel
                 Input, Output, m_dgnInstall, SelectedWorkspace, rootModel);
 
             m_stagingDir = String.Format("{0}Staging", Path.GetDirectoryName(Input));
-            System.IO.Directory.CreateDirectory(m_stagingDir);
+            if ( !runPublisher )
+                {
+                System.IO.Directory.CreateDirectory(m_stagingDir);
+                }
 
             string frameworkArgs = String.Format("--server-project=\"{0}\" --server-repository=\"{1}\" --server-environment=\"{2}\" --server-user=\"{3}\" --server-password=\"{4}\" " +
                                                  "--fwk-input=\"{5}\" --fwk-staging-dir=\"{6}\" --fwk-bridge-library=\"{7}\" --fwk-skip-assignment-check --DGN-Install=\"{8}\" --DGN-Workspace=\"{9}\" --root-model=\"{10}\"",
                 ConnectProject, ConnectOutput, m_connectEnv, ImsUsername, pwBox.Password, Input, m_stagingDir, m_bridgeDll, m_dgnInstall, SelectedWorkspace, rootModel);
 
-            string exe = (SelectedPublisher == PublisherType.Local) ? m_publisherPath : m_frameworkPath;
-            string args = (SelectedPublisher == PublisherType.Local) ? publisherArgs : frameworkArgs;
+            string exe = runPublisher ? m_publisherPath : m_frameworkPath;
+            string args = runPublisher ? publisherArgs : frameworkArgs;
 
             var proc = new Process
                 {
