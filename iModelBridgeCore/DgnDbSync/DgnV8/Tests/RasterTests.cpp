@@ -1003,8 +1003,10 @@ TEST_F(RasterTests, CRUD)
     time_t mtime;
     popotons.GetFileTime(nullptr, nullptr, &mtime);
     mtime += 1000;
-    popotons.SetFileTime(nullptr, &mtime);
-    DoUpdate(m_dgnDbFileName, m_v8FileName, false, true);
+    BentleyApi::BeFileNameStatus status = popotons.SetFileTime(nullptr, &mtime);
+    EXPECT_TRUE(BentleyApi::BeFileNameStatus::Success == status) << "Failed to set time on raster file: " << (int) status;
+    if (BentleyApi::BeFileNameStatus::Success == status)
+        DoUpdate(m_dgnDbFileName, m_v8FileName, false, true);
 
     // This test only works if either uploading to the reality data server or storing to local server
     Bentley::WString uploadConfigVar;
