@@ -13,7 +13,7 @@
         </Target>
     </ECRelationshipClass>
     
-    <ECEntityClass typeName="SourceElementInfo" >
+    <ECEntityClass typeName="ExternalSourceAspect" >
         <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECNavigationProperty propertyName="Scope" relationshipName="ScopeOfSourceElement" direction="Backward" displayLabel="Scope" description="identifies the element in the iModel (not the source) that corresponds to the scope or container in the source that owns, contains, or qualifies the identity of the source item.">
             <!-- TODO: Must specify that this may not be null

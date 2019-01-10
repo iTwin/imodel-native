@@ -80,7 +80,7 @@ void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, SyncInfo::V
         {
         auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT g.ECInstanceId FROM "
                       BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                      SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo "
+                      XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo "
                       "WHERE (sourceInfo.Element.Id = g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ? )"
                         );
                      
@@ -93,7 +93,7 @@ void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, SyncInfo::V
         {
         auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT COUNT (*) FROM "
                       BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                      SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
+                      XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
                       " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ?)");
         estmt->BindInt64(1, v8ElementId);
         ASSERT_EQ(BE_SQLITE_ROW, estmt->Step());

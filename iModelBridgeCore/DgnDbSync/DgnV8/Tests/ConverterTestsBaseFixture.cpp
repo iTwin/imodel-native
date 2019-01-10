@@ -676,7 +676,7 @@ DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Ap
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                  SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
+                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
                   " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.SourceId AS INT) = ?)");
     estmt.BindInt64(1, eV8Id);
 

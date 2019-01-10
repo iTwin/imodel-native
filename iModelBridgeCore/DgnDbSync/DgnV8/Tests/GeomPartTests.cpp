@@ -29,8 +29,8 @@ static int getGeomPartCount(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int getGeomPartAspectCount(DgnDbR db)
     {
-    auto sel = db.GetPreparedECSqlStatement("SELECT COUNT(*) from " SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " WHERE (Kind=?)");
-    sel->BindText(1, SyncInfo::SyncInfoAspect::KindToString(SyncInfo::SyncInfoAspect::Kind::GeomPart), EC::IECSqlBinder::MakeCopy::No);
+    auto sel = db.GetPreparedECSqlStatement("SELECT COUNT(*) from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind=?)");
+    sel->BindText(1, SyncInfo::ExternalSourceAspect::KindToString(SyncInfo::ExternalSourceAspect::Kind::GeomPart), EC::IECSqlBinder::MakeCopy::No);
     sel->Step();
     return sel->GetValueInt(0);
     }

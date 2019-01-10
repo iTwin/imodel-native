@@ -1642,7 +1642,7 @@ BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
     if (!m_jobEnvArgs.m_wantProvenanceInBim)
         return BSISUCCESS;
 
-    if (m_briefcaseDgnDb->Schemas().ContainsSchema(SOURCEINFO_ECSCHEMA_NAME))
+    if (m_briefcaseDgnDb->Schemas().ContainsSchema(XTRN_SRC_ASPCT_ECSCHEMA_NAME))
         return BSISUCCESS;
 
     BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();

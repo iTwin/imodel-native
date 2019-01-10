@@ -931,9 +931,9 @@ DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
     SyncInfo::GeomPart sigp;
     auto partId = (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
 #ifdef TEST_SYNC_INFO_ASPECT
-    if (_WantModelProvenanceInBim())
+    if (_WantProvenanceInBim())
         {
-        auto partIdFromAspect = SyncInfo::GeomPartSyncInfoAspect::FindElementByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
+        auto partIdFromAspect = SyncInfo::GeomPartExternalSourceAspect::FindElementByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
         BeAssert(partIdFromAspect.IsValid() == partId.IsValid());
         if (partIdFromAspect.IsValid())
             {
@@ -952,12 +952,12 @@ Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
     SyncInfo::GeomPart sigp;
     auto tag = (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
 #ifdef TEST_SYNC_INFO_ASPECT
-    if (_WantModelProvenanceInBim() && partId.IsValid())
+    if (_WantProvenanceInBim() && partId.IsValid())
         {
         auto geomPart = m_dgndb->Elements().Get<DgnGeometryPart>(partId);
         if (geomPart.IsValid())
             {
-            auto aspect = SyncInfo::GeomPartSyncInfoAspect::Get(*geomPart);
+            auto aspect = SyncInfo::GeomPartExternalSourceAspect::Get(*geomPart);
             BeAssert(aspect.IsValid() == !tag.empty());
             if (aspect.IsValid())
                 {
@@ -983,9 +983,9 @@ BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8Stri
     if (BeSQLite::BE_SQLITE_DONE != rc)
         return BSIERROR;
 
-    if (_WantModelProvenanceInBim())
+    if (_WantProvenanceInBim())
         {
-        auto aspect = SyncInfo::GeomPartSyncInfoAspect::Make(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
+        auto aspect = SyncInfo::GeomPartExternalSourceAspect::Make(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
         auto partElem = GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
         aspect.AddTo(*partElem);
         partElem->Update();
