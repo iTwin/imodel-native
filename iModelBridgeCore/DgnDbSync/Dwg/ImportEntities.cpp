@@ -1808,8 +1808,18 @@ bool            SkipBlockChildGeometry (DwgDbEntityCP entity)
     {
     if (nullptr == entity)
         return  true;
-    // if parent is a dimension, verify visibility:
-    return  false;
+
+    // filter out geometries on layer Defpoints if their parent is of a dimension that is not displayed:
+    bool shouldSkip = false;
+    auto dwg = entity->GetDatabase ();
+    bool isOnDefpoints = dwg.IsValid() && entity->GetLayerId() == dwg->GetLayerDefpointsId();
+    if (isOnDefpoints && nullptr != m_entity && m_entity->IsDimension())
+        {
+        DwgDbLayerTableRecordPtr parentLayer(m_entity->GetLayerId(), DwgDbOpenMode::ForRead);
+        shouldSkip = parentLayer.OpenStatus() == DwgDbStatus::Success && (parentLayer->IsOff() || parentLayer->IsFrozen());
+        }
+
+    return  shouldSkip;
     }
 
 /*---------------------------------------------------------------------------------**//**
