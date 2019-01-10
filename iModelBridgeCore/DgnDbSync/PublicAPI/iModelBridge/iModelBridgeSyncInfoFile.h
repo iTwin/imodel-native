@@ -268,8 +268,8 @@ struct iModelExternalSourceAspect
     {
     struct SourceState
         {
-        bvector<unsigned char> m_hash;
-        double m_lastModifiedTime;
+        bvector<unsigned char> m_hash; //!< The cryptographic hash (any algorithm) of source object's content. Must be guaranteed to change when *any* of the source item's content changes.
+        double m_lastModifiedTime; //!< Optional value that represents a timestamp of the last change to source object's content, if available. This value does not have to be a real DateTime. If not zero, this value must be guaranteed to change when *any* of the source item's content changes. If LastModifiedTime is non-zero and if the current value equals the stored value, then a bridge will conclude that the item is unchanged. Otherwise, the bridge will use the hash.
         };
 
     RefCountedPtr<ECN::IECInstance> m_instance;

@@ -1794,10 +1794,9 @@ SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect:
         return V8ElementExternalSourceAspect(nullptr);
 
     iModelExternalSourceAspect::SourceState ss;
-    unsigned arraySize = sizeof(provdata.m_prov.m_hash.m_buffer) / sizeof(unsigned char);
-    ss.m_hash.insert(ss.m_hash.end(), provdata.m_prov.m_hash.m_buffer, &provdata.m_prov.m_hash.m_buffer[arraySize]);
-
+    provdata.m_prov.GetHashAsByteVector(ss.m_hash);
     ss.m_lastModifiedTime = provdata.m_prov.m_lastModified;
+    
     auto instance = MakeInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), FormatSourceId(provdata.m_v8Id), &ss, *aspectClass);
     return V8ElementExternalSourceAspect(instance.get());
     }
@@ -2746,8 +2745,7 @@ BeGuid Converter::GetDocumentGUIDforFile(DgnV8FileCR file)
 void SyncInfo::V8ElementExternalSourceAspect::Update(ElementProvenance const& prov)
     {
     SourceState ss;
-    unsigned arraySize = sizeof(prov.m_hash.m_buffer) / sizeof(unsigned char);
-    ss.m_hash.insert(ss.m_hash.end(), prov.m_hash.m_buffer, &prov.m_hash.m_buffer[arraySize]);
+    prov.GetHashAsByteVector(ss.m_hash);
     ss.m_lastModifiedTime = prov.m_lastModified; 
     SetSourceState(ss); 
     }
