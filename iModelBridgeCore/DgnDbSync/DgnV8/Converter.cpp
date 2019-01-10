@@ -3367,10 +3367,21 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         auto modeledElement = m_dgndb->Elements().GetElement(model->GetModeledElementId())->CopyForEdit();
         auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::Make(v8Model, trans, *this);
         modelAspect.AddTo(*modeledElement);
-        modeledElement->Update();
+        auto updatedModelElement = modeledElement->Update();
+        BeAssert(updatedModelElement.IsValid());
 #ifdef TEST_SYNC_INFO_ASPECT
-        auto storedAspect = SyncInfo::V8ModelExternalSourceAspect::Get(*modeledElement, v8Model.GetModelId());
-        if (!storedAspect.IsValid()) {BeAssert(false);} else {storedAspect.AssertMatch(mapping);}
+        if (updatedModelElement.IsValid())
+            {
+            auto storedAspect = SyncInfo::V8ModelExternalSourceAspect::Get(*updatedModelElement, v8Model.GetModelId());
+            if (!storedAspect.IsValid()) 
+                {
+                BeAssert(false);
+                } 
+            else
+                {
+                storedAspect.AssertMatch(mapping);
+                }
+            }
 #endif
         }
 

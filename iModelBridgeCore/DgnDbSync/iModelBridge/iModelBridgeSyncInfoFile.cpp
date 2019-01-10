@@ -854,7 +854,7 @@ Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bo
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String iModelExternalSourceAspect::FormatForDump(bool includeProperties, bool includeSourceState) const
     {
-    Utf8PrintfString str("%-10.10s %8.0llx %-8.8s", GetKind(), GetScope().GetValue(), GetSourceId());
+    Utf8PrintfString str("%-10.10s %8.0llx %-8.8s", GetKind(), GetScope().GetValueUnchecked(), GetSourceId());
     if (includeSourceState)
         {
         // TBD
@@ -900,6 +900,7 @@ void iModelExternalSourceAspect::Dump(DgnElementCR el, Utf8CP loggingCategory, N
         auto str = aspect.FormatForDump(includeProperties, includeSourceState);
         outDump(logger, sev, str);
         }
+    outDump(logger, sev, "");
     }
 
 /*---------------------------------------------------------------------------------**//**

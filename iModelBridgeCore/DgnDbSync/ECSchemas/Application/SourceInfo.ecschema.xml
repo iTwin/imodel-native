@@ -19,7 +19,8 @@
                 <Indexes>
                     <DbIndex>
                         <Name>ix_ExternalSourceAspect_SKI</Name>
-                        <IsUnique>True</IsUnique>
+                        <!-- Not unique, because the same source item can be mapped to multiple BIS elements. -->
+                        <IsUnique>False</IsUnique>
                         <Properties>
                             <string>Scope.Id</string>
                             <string>Kind</string>
