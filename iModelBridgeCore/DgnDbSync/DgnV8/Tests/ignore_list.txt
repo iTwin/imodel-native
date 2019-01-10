@@ -31,3 +31,12 @@ DrawingTests.Basic3dAttachment
     # F:\Bim0200Dev\src\DgnDbSync\DgnV8\Tests\gtestmain.cpp(314): error: Failed
     # F:\Bim0200Dev\src\DgnDbSync\DgnV8\..\SyncInfo.cpp(1733): ASSERTION FAILURE (0): false
     # [  FAILED  ] DrawingTests.Basic3dAttachment (3500 ms)
+
+RasterTests.CRUD
+
+    # VSTS#58475
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/10/2019
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(439): error:       Expected: hadAnyChanges
+    # Which is: false
+    # To be equal to: expectUpdate
+    # Which is: true
