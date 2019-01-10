@@ -98,7 +98,7 @@ bool AsymmetricIShapeProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr AsymmetricIShapeProfile::_CreateGeometry() const
     {
-    return ProfilesGeomApi::CreateAsymmetricIShape (this);
+    return ProfilesGeometry::CreateAsymmetricIShape (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

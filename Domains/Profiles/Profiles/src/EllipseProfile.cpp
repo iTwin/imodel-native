@@ -62,7 +62,7 @@ bool EllipseProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr EllipseProfile::_CreateGeometry() const
     {
-    return ProfilesGeomApi::CreateEllipse (this);
+    return ProfilesGeometry::CreateEllipse (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

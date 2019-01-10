@@ -15,10 +15,10 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 /*---------------------------------------------------------------------------------**//*
 * @bsiclass                                                                      11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ProfilesGeomApi
+struct ProfilesGeometry
     {
 public:
-    ProfilesGeomApi() = delete;
+    ProfilesGeometry() = delete;
 
     static IGeometryPtr CreateCShape (CShapeProfileCPtr profile);
     static IGeometryPtr CreateIShape (IShapeProfileCPtr profile);

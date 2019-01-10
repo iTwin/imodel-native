@@ -63,7 +63,7 @@ bool HollowCircleProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr HollowCircleProfile::_CreateGeometry() const
     {
-    return ProfilesGeomApi::CreateHollowCircle (this);
+    return ProfilesGeometry::CreateHollowCircle (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

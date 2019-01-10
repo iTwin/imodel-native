@@ -69,7 +69,7 @@ bool TrapeziumProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr TrapeziumProfile::_CreateGeometry() const
     {
-    return ProfilesGeomApi::CreateTrapezium (this);
+    return ProfilesGeometry::CreateTrapezium (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

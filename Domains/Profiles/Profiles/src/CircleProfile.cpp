@@ -58,7 +58,7 @@ bool CircleProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr CircleProfile::_CreateGeometry() const
     {
-    return ProfilesGeomApi::CreateCircle (this);
+    return ProfilesGeometry::CreateCircle (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

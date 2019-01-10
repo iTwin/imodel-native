@@ -80,7 +80,7 @@ bool IShapeProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr IShapeProfile::_CreateGeometry() const
     {
-    return ProfilesGeomApi::CreateIShape (this);
+    return ProfilesGeometry::CreateIShape (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

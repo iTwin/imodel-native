@@ -60,7 +60,7 @@ bool DoubleLShapeProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr DoubleLShapeProfile::_CreateGeometry() const
     {
-    return ProfilesGeomApi::CreateDoubleLShape (this);
+    return ProfilesGeometry::CreateDoubleLShape (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

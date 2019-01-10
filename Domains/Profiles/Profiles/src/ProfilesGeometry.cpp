@@ -102,7 +102,7 @@ static IGeometryPtr createGeometryFromPrimitiveArray (bvector<ICurvePrimitivePtr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateCShape (CShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateCShape (CShapeProfileCPtr profile)
     {
     double const flangeThickness = profile->GetFlangeThickness();
     double const webThickness = profile->GetWebThickness();
@@ -157,7 +157,7 @@ IGeometryPtr ProfilesGeomApi::CreateCShape (CShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateIShape (IShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateIShape (IShapeProfileCPtr profile)
     {
     double const flangeThickness = profile->GetFlangeThickness();
     double const halfWebThickness = profile->GetWebThickness() / 2.0;
@@ -233,7 +233,7 @@ IGeometryPtr ProfilesGeomApi::CreateIShape (IShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateAsymmetricIShape (AsymmetricIShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateAsymmetricIShape (AsymmetricIShapeProfileCPtr profile)
     {
     double const topFlangeThickness = profile->GetTopFlangeThickness();
     double const bottomFlangeThickness = profile->GetBottomFlangeThickness();
@@ -322,7 +322,7 @@ IGeometryPtr ProfilesGeomApi::CreateAsymmetricIShape (AsymmetricIShapeProfileCPt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateLShape (LShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateLShape (LShapeProfileCPtr profile)
     {
     double const halfWidth = profile->GetWidth() / 2.0;
     double const halfDepth = profile->GetDepth() / 2.0;
@@ -374,7 +374,7 @@ IGeometryPtr ProfilesGeomApi::CreateLShape (LShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateTShape (TShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateTShape (TShapeProfileCPtr profile)
     {
     double const flangeThickness = profile->GetFlangeThickness();
     double const halfWebThickness = profile->GetWebThickness() / 2.0;
@@ -454,7 +454,7 @@ IGeometryPtr ProfilesGeomApi::CreateTShape (TShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateZShape (ZShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateZShape (ZShapeProfileCPtr profile)
     {
     double const flangeWidth = profile->GetFlangeWidth();
     double const flangeThickness = profile->GetFlangeThickness();
@@ -511,7 +511,7 @@ IGeometryPtr ProfilesGeomApi::CreateZShape (ZShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateCenterLineLShape(CenterLineLShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfileCPtr profile)
     {
     double const halfWidth = profile->GetWidth() / 2.0;
     double const halfDepth = profile->GetDepth() / 2.0;
@@ -525,7 +525,7 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineLShape(CenterLineLShapeProfileCPtr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfileCPtr profile)
     {
     double const halfWidth = profile->GetFlangeWidth() / 2.0;
     double const halfDepth = profile->GetDepth() / 2.0;
@@ -680,7 +680,7 @@ IGeometryPtr ProfilesGeomApi::CreateCenterLineCShape(CenterLineCShapeProfileCPtr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateCircle (CircleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateCircle (CircleProfileCPtr profile)
     {
     DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius());
 
@@ -693,7 +693,7 @@ IGeometryPtr ProfilesGeomApi::CreateCircle (CircleProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateHollowCircle (HollowCircleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateHollowCircle (HollowCircleProfileCPtr profile)
     {
     DEllipse3d outerEllipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius());
     DEllipse3d innerEllipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius() - profile->GetWallThickness());
@@ -714,7 +714,7 @@ IGeometryPtr ProfilesGeomApi::CreateHollowCircle (HollowCircleProfileCPtr profil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateEllipse (EllipseProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateEllipse (EllipseProfileCPtr profile)
     {
     DEllipse3d ellipse = DEllipse3d::FromPoints (DPoint3d::From (0.0, 0.0), DPoint3d::From (profile->GetXRadius(), 0.0),
         DPoint3d::From (0.0, profile->GetYRadius()), 0.0, PI * 2.0);
@@ -777,7 +777,7 @@ static void appendRectangleToCurveVector (CurveVectorPtr& curveVector, double wi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateRectangle (RectangleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateRectangle (RectangleProfileCPtr profile)
     {
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
     appendRectangleToCurveVector (curveVector, profile->GetWidth(), profile->GetDepth(), 0.0);
@@ -788,7 +788,7 @@ IGeometryPtr ProfilesGeomApi::CreateRectangle (RectangleProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateRoundedRectangle (RoundedRectangleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateRoundedRectangle (RoundedRectangleProfileCPtr profile)
     {
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
     appendRectangleToCurveVector (curveVector, profile->GetWidth(), profile->GetDepth(), profile->GetRoundingRadius());
@@ -799,7 +799,7 @@ IGeometryPtr ProfilesGeomApi::CreateRoundedRectangle (RoundedRectangleProfileCPt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateHollowRectangle (HollowRectangleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateHollowRectangle (HollowRectangleProfileCPtr profile)
     {
     double const width = profile->GetWidth();
     double const depth = profile->GetDepth();
@@ -823,7 +823,7 @@ IGeometryPtr ProfilesGeomApi::CreateHollowRectangle (HollowRectangleProfileCPtr 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateTrapezium (TrapeziumProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateTrapezium (TrapeziumProfileCPtr profile)
     {
     double const topWidth = profile->GetTopWidth();
     double const halfBottomWidth = profile->GetBottomWidth() / 2.0;
@@ -847,7 +847,7 @@ IGeometryPtr ProfilesGeomApi::CreateTrapezium (TrapeziumProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeomApi::CreateDoubleLShape (DoubleLShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateDoubleLShape (DoubleLShapeProfileCPtr profile)
     {
     LShapeProfileCPtr singleProfilePtr = profile->GetSingleProfile();
     if (singleProfilePtr.IsNull())
