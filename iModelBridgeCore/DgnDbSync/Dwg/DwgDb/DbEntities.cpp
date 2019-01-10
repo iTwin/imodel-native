@@ -62,6 +62,8 @@ DWGDB_SURFACE_DEFINE_MEMBERS(SweptSurface)
 
 
 
+bool    DwgDbEntity::IsDimension () const { return nullptr != DWGDB_Type(Dimension)::cast(this); }
+
 DPoint3d    DwgDbLine::GetStartPoint () const { return Util::DPoint3dFrom(T_Super::startPoint()); }
 DPoint3d    DwgDbLine::GetEndPoint () const { return Util::DPoint3dFrom(T_Super::endPoint()); }
 DVec3d      DwgDbLine::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
