@@ -12,6 +12,14 @@
             <IsUserSpecific>False</IsUserSpecific>
         </SupplementalSchemaMetaData>
     </ECCustomAttributes>
+    <ECClass typeName="CustomAttributeContainerDef">
+        <ECCustomAttributes>
+            <!-- BIM02 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
     <ECRelationshipClass typeName="ClassHasBaseClass">
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
