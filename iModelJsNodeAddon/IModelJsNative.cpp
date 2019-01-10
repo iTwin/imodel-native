@@ -705,8 +705,8 @@ static void initializeGcs()
 //=======================================================================================
 struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     {
-    public:
-        static constexpr int ERROR_UsageTrackingFailed = -100;
+public:
+    static constexpr int ERROR_UsageTrackingFailed = -100;
 
     // Cancellation token associated with the currently-open DgnDb.
     // The 'cancelled' flag i set on the main thread when the DgnDb is being closed.
@@ -837,7 +837,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             {
             OnDgnDbOpened(*db);
             if (SUCCESS != UlasClient::Get().TrackUsage(accessToken, appVersion, projectId))
-                return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
+                {
+                // For now we don't yet fail when usage tracking fails as
+                // apps need to switch to OIDC authentication first.
+                JsInterop::GetLogger().warningv("Failed to track usage for opening the iModel of project '%s'.", projectId.c_str());
+                // WIP_FAIL_ON_USAGETRACKING_ERRORS
+                // CloseDgnDb();
+                // return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
+                }
             }
 
         return Napi::Number::New(Env(), (int)status);
@@ -869,8 +876,16 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (db.IsValid())
             {
             OnDgnDbOpened(*db);
+
             if (SUCCESS != UlasClient::Get().TrackUsage(accessToken, appVersion, projectId))
-                return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
+                {
+                // For now we don't yet fail when usage tracking fails as
+                // apps need to switch to OIDC authentication first.
+                JsInterop::GetLogger().warningv("Failed to track usage for creating iModel in project '%s'.", projectId.c_str());
+                // WIP_FAIL_ON_USAGETRACKING_ERRORS
+                // CloseDgnDb();
+                // return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
+                }
             }
 
         return Napi::Number::New(Env(), (int)status);
