@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RenderPrimitives.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -2499,7 +2499,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
                 {
                 rasterImage = glyph->GetRaster() ? &glyph->GetRaster()->m_image : nullptr; // save the raster image to put into texture atlas
                 Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
-                polyface = raster.m_polyface;
+                polyface = raster.m_polyface->Clone();
                 }
             else
                 {
@@ -3509,11 +3509,9 @@ MeshBuilderR MeshBuilderMap::operator[](Key const& key)
     auto found = m_map.find(key);
     if (m_map.end() == found)
         {
-        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar);
+        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar, key.m_nodeIndex);
         found = m_map.Insert(key, builder).first;
         }
 
     return *found->second;
     }
-
-

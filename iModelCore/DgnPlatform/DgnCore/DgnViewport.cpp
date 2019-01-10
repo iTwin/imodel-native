@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnViewport.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -894,29 +894,6 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::OutputFrustumErrorMessage(ViewportStatus errorStatus)
     {
-    DgnCoreL10N::StringId id;
-    switch (errorStatus)
-        {
-        case ViewportStatus::InvalidWindow:
-            id = DgnCoreL10N::VIEWFRUST_Message_InvalidWindow();
-            break;
-        case ViewportStatus::MaxWindow:
-            id = DgnCoreL10N::VIEWFRUST_Message_MaxWindow();
-            break;
-        case ViewportStatus::MinWindow:
-            id = DgnCoreL10N::VIEWFRUST_Message_MinWindow();
-            break;
-        case ViewportStatus::MaxZoom:
-            id = DgnCoreL10N::VIEWFRUST_Message_MaxZoom();
-            break;
-
-        default:
-            return;
-        }
-
-    Utf8String msg = DgnCoreL10N::GetString(id);
-    if (msg.size() > 0)
-        NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Error, msg.c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1161,4 +1138,3 @@ DMap4d Frustum::ToDMap4d() const
     bsiDMap4d_initFromVectorFrustum(&map, &org, &xVec, &yVec, &zVec, GetFraction());
     return map;
     }
-

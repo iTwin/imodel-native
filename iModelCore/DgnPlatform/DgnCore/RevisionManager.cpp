@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RevisionManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1020,7 +1020,7 @@ struct ChangeStreamQueueProducer : ChangeStream
     ChangeStreamQueueProducer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
     DbResult _OutputPage(const void *pData, int nData) override
         {
-        while (!m_q.write((uint8_t*)pData, (uint8_t*)pData + nData))
+        while (!m_q.write((uint8_t*)const_cast<void*>(pData), (uint8_t*)const_cast<void*>(pData) + nData))
             ;   // spin until the queue has room
         return BE_SQLITE_OK;
         }

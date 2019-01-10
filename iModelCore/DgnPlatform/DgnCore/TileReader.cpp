@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileReader.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -712,7 +712,7 @@ BentleyStatus     GltfReader::ReadFeatures(MeshR mesh, Json::Value const& primit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshPtr GltfReader::ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featureTable)
+MeshPtr GltfReader::ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featureTable, size_t nodeIndex)
     {
     Json::Value     materialName = primitiveValue["material"], materialValue;
         
@@ -729,7 +729,7 @@ MeshPtr GltfReader::ReadMeshPrimitive(Json::Value const& primitiveValue, Feature
 
     Mesh::PrimitiveType     primitiveType = (Mesh::PrimitiveType) primitiveValue["type"].asUInt();
     bool                    isPlanar = primitiveValue["isPlanar"].asBool();
-    MeshPtr                 mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d(), isPlanar);
+    MeshPtr                 mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d(), isPlanar, nodeIndex);
     MeshEdgesPtr            meshEdges;
 
     if(SUCCESS != ReadVertices(mesh->VertsR(), primitiveValue))
@@ -787,6 +787,7 @@ ReadStatus  GltfReader::ReadGltf(Render::Primitives::GeometryCollectionR geometr
     if (ReadStatus::Success != status)
         return status;
 
+    size_t      nodeIndex = 0;          // TBD.   Set by traversing nodes.
     for(auto& mesh : meshValues)
         {
         auto& primitives = mesh["primitives"];
@@ -801,7 +802,7 @@ ReadStatus  GltfReader::ReadGltf(Render::Primitives::GeometryCollectionR geometr
             {
             MeshPtr     mesh;
             
-            if ((mesh = ReadMeshPrimitive(primitive, &geometryCollection.Meshes().FeatureTable())).IsValid())
+            if ((mesh = ReadMeshPrimitive(primitive, &geometryCollection.Meshes().FeatureTable(), nodeIndex)).IsValid())
                 geometryCollection.Meshes().push_back(mesh);
             }
         }

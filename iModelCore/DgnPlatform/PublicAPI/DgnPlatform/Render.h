@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -2611,6 +2611,38 @@ struct HiddenLineParams
     BE_JSON_NAME(transThreshold);
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT static HiddenLineParams FromJson(JsonValueCR);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/19
+//=======================================================================================
+struct AmbientOcclusionParams
+{
+    BE_JSON_NAME(bias);
+    BE_JSON_NAME(zLengthCap);
+    BE_JSON_NAME(intensity);
+    BE_JSON_NAME(texelStepSize);
+    BE_JSON_NAME(blurDelta);
+    BE_JSON_NAME(blurSigma);
+    BE_JSON_NAME(blurTexelStepSize);
+
+    double m_bias = 0.25;
+    double m_zLengthCap = 0.0025;
+    double m_intensity = 2.0;
+    double m_texelStepSize = 1.95;
+    double m_blurDelta = 1.0;
+    double m_blurSigma = 2.0;
+    double m_blurTexelStepSize = 1.0;
+
+    bool operator!=(AmbientOcclusionParams const& rhs) { return !(*this == rhs); }
+    bool operator==(AmbientOcclusionParams const& rhs)
+        {
+        return m_bias == rhs.m_bias && m_zLengthCap == rhs.m_zLengthCap && m_intensity == rhs.m_intensity && m_texelStepSize == rhs.m_texelStepSize
+            && m_blurDelta == rhs.m_blurDelta && m_blurSigma == rhs.m_blurSigma && m_blurTexelStepSize == rhs.m_blurTexelStepSize;
+        }
+
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT static AmbientOcclusionParams FromJson(JsonValueCR);
 };
 
 //=======================================================================================

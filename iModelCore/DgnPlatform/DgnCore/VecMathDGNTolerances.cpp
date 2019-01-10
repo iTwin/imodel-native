@@ -153,7 +153,7 @@ void LegacyMath::RMatrix::FromNormalVector (RotMatrixP rotMatrixP, DPoint3dCP no
     DVec3d    world, xNormal, yNormal, zNormal;
 
     world.x = world.y = world.z = 0.0;
-    zNormal = *(DVec3dP)normalP;
+    zNormal = *(DVec3dCP)normalP;
     zNormal.Normalize ();
 
     if ((fabs (zNormal.x) < 0.01) && (fabs (zNormal.y) < 0.01))
@@ -409,7 +409,7 @@ int LegacyMath::RMatrix::FromYVector (RotMatrixP rotMatrixP, DPoint3dCP yNormalP
     DVec3d    world, xNormal, yNormal, zNormal;
 
     world.x = world.y = world.z = 0.0;
-    yNormal = *(DVec3dP)yNormalP;
+    yNormal = *(DVec3dCP)yNormalP;
 
     yNormal.Normalize ();
 
@@ -435,7 +435,7 @@ int LegacyMath::RMatrix::FromXVector (RotMatrixP rotMatrixP, DPoint3dCP xNormalP
     DVec3d    world, xNormal, yNormal, zNormal;
 
     world.x = world.y = world.z = 0.0;
-    xNormal = *(DVec3dP)xNormalP;
+    xNormal = *(DVec3dCP)xNormalP;
 
     xNormal.Normalize ();
 
@@ -754,9 +754,9 @@ DPoint3dCP  pEndVector
     DVec3d crossProduct, unitCrossProduct;
     double cosine, sine, radians;
 
-    unitStartVector.Normalize (*(DVec3d*)pStartVector);
+    unitStartVector.Normalize (*(DVec3dCP)pStartVector);
 
-    unitEndVector.Normalize (*(DVec3d*)pEndVector);
+    unitEndVector.Normalize (*(DVec3dCP)pEndVector);
 
 
     if (LegacyMath::Vec::AreParallel (&unitStartVector, &unitEndVector))

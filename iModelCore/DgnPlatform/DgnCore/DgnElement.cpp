@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElement.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -2209,7 +2209,7 @@ struct MultiAspectMux : DgnElement::AppData
     ECClassCR m_ecclass;
     bvector<RefCountedPtr<DgnElement::MultiAspect>> m_instances;
 
-    static Key& GetKey(ECClassCR cls) {return *(Key*)&cls;}
+    static Key& GetKey(ECClassCR cls) {return *(Key*)const_cast<ECClassP>(&cls);}
     Key& GetKey(DgnDbR db) {return GetKey(m_ecclass);}
 
     static MultiAspectMux* Find(DgnElementCR, ECClassCR);
@@ -2272,7 +2272,7 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, Dg
 DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE ECInstanceId=?", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE ECInstanceId=?", GetFullEcSqlKeyClassName().c_str()).c_str(), writeToken);
     stmt->BindId(1, m_instanceId);
     BeSQLite::DbResult status = stmt->Step();
     return (BeSQLite::BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -2600,7 +2600,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_FederationGuid, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetBinary((Byte*)&el.m_federationGuid, sizeof(el.m_federationGuid));
+            value.SetBinary((Byte*)const_cast<BeGuid*>(&el.m_federationGuid), sizeof(el.m_federationGuid));
             return DgnDbStatus::Success;
             },
 
@@ -2749,8 +2749,8 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-#define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
-#define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
+#define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d const& el = (GeometricElement3d const&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
+#define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d const& el = (GeometricElement3d const&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
 #define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
             {                                                                          \
             if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
@@ -2796,7 +2796,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
     params.RegisterPropertyAccessors(layout, GeometricElement::prop_Category(), 
         [](ECValueR value, DgnElementCR elIn)
             {
-            GeometricElement3d& el = (GeometricElement3d&)elIn;
+            GeometricElement3d const& el = (GeometricElement3d const&)elIn;
             value.SetNavigationInfo(el.GetCategoryId());
             return DgnDbStatus::Success;
             },
@@ -2852,14 +2852,14 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn)\
             {                                                                          \
-            GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
+            GeometricElement2d const& el = (GeometricElement2d const&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetDouble(EXPR);                                                       \
             return DgnDbStatus::Success;                                                 \
             }
 #define GETGEOMPLCPROPPT2(EXPR) [](ECValueR value, DgnElementCR elIn)\
             {                                                                          \
-            GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
+            GeometricElement2d const& el = (GeometricElement2d const&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
@@ -2896,7 +2896,7 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
     params.RegisterPropertyAccessors(layout, GeometricElement::prop_Category(), 
         [](ECValueR value, DgnElementCR elIn)
             {
-            GeometricElement2d& el = (GeometricElement2d&)elIn;
+            GeometricElement2d const& el = (GeometricElement2d const&)elIn;
             value.SetNavigationInfo(el.GetCategoryId());
             return DgnDbStatus::Success;
             },

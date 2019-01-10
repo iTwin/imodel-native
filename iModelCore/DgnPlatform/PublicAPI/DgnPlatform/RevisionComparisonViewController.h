@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RevisionComparisonViewController.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,12 +36,16 @@ DEFINE_REF_COUNTED_PTR(ComparisonData);
 struct State
 {
     DbOpcode    m_opcode;
+    bool        m_hidden;
 
-    explicit State(DbOpcode opcode=DbOpcode::Insert) : m_opcode(opcode) { }
+    explicit State(DbOpcode opcode=DbOpcode::Insert) : m_opcode(opcode), m_hidden(false) { }
 
     bool IsInsertion() const { return DbOpcode::Insert == m_opcode; }
     bool IsDeletion() const { return DbOpcode::Delete == m_opcode; }
     bool IsModified() const { return DbOpcode::Update == m_opcode; }
+    
+    bool IsHidden() const { return m_hidden; }
+    void SetHidden(bool value) { m_hidden = value; }
 };
 
 //=======================================================================================
@@ -60,22 +64,48 @@ struct PersistentState : State
 };
 
 //=======================================================================================
+// @bsistruct                                                   Diego.Pinate    11/18
+//=======================================================================================
+struct TransientGraphic
+{
+    Render::GraphicPtr  m_graphic;
+    double              m_minSize;
+    double              m_maxSize;
+    DgnElementId        m_elementId;
+
+    TransientGraphic() { }
+    TransientGraphic(DgnElementId id, Render::GraphicPtr graphic, DRange1d range) : m_elementId(id), m_graphic(graphic), m_minSize(range.low), m_maxSize(range.high) { }
+
+    bool IsValidForSize(double pixelSize) const;
+    bool IsValid() const { return m_elementId.IsValid(); }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
 struct TransientState : State
 {
     DgnElementCPtr m_element;
-    mutable Render::GraphicPtr m_graphic;
-
-    TransientState() = default;
+    mutable Render::GraphicPtr          m_graphic;
+    mutable bvector<TransientGraphic>   m_graphicCache;
+    mutable bool m_drawn;
+    double m_minSize, m_maxSize; TransientState() = default;
     TransientState(DgnElementCPtr el, DbOpcode opcode) : State(opcode), m_element(el) { }
 
     bool IsValid() const { return m_element.IsValid(); }
 
+    TransientGraphic GetFromCache(double pixelSize) const;
+
     bool operator<(TransientState const& rhs) const { return m_element.get() < rhs.m_element.get(); }
 
+    DRange1d GetRange(double pixelSize, AxisAlignedBox3d const& elementRange) const;
+
+    Render::GraphicP GetGraphic(ViewContextR context, bool wantShowBoth) const;
     Render::GraphicP GetGraphic(ViewContextR context) const;
     DgnElementId GetElementId() const { return m_element.IsValid() ? m_element->GetElementId() : DgnElementId(); }
+
+    bool IsDrawn() const                { return m_drawn; }
+    void SetIsDrawn(bool value) const   { m_drawn = value; }
 };
 
 //=======================================================================================
@@ -88,6 +118,7 @@ private:
     bset<TransientState>    m_transient;
 public:
     DGNPLATFORM_EXPORT PersistentState GetPersistentState(DgnElementId elementId) const;
+    DGNPLATFORM_EXPORT PersistentState GetAnyPersistentState(DgnElementId elementId) const;
     DGNPLATFORM_EXPORT TransientState GetTransientState(DgnElementId elementId) const;
 
     bset<PersistentState> const& GetPersistentStates() const { return m_persistent; }
@@ -97,6 +128,11 @@ public:
     void Add(DgnElementCPtr el, DbOpcode opcode) { m_transient.insert(TransientState(el, opcode)); }
     void Add(DgnElementId id, DbOpcode opcode) { m_persistent.insert(PersistentState(id, opcode)); }
     bool ContainsElement(DgnElementCP element) const;
+
+    void UpdateTransientDisplay(DgnCategoryIdSet const& categories, DgnModelIdSet const& models);
+
+    DGNPLATFORM_EXPORT void HideElement(DgnElementId id, bool transient, bool hidden = true);
+    DGNPLATFORM_EXPORT void ClearHidden();
 
     DGNPLATFORM_EXPORT StatusInt GetDbOpcode(DgnElementId elementId, DbOpcode& opcode);
 };

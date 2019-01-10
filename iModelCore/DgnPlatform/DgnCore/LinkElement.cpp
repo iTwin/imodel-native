@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/LinkElement.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -688,7 +688,7 @@ void dgn_ElementHandler::UrlLinkHandler::_RegisterPropertyAccessors(ECSqlClassIn
     params.RegisterPropertyAccessors(layout, URLLINK_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (UrlLink&) elIn;
+            auto const& el = (UrlLink const&) elIn;
             value.SetUtf8CP(el.GetDescription());
             return DgnDbStatus::Success;
             },
@@ -704,7 +704,7 @@ void dgn_ElementHandler::UrlLinkHandler::_RegisterPropertyAccessors(ECSqlClassIn
     params.RegisterPropertyAccessors(layout, URLLINK_Url,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (UrlLink&) elIn;
+            auto const& el = (UrlLink const&) elIn;
             value.SetUtf8CP(el.GetUrl());
             return DgnDbStatus::Success;
             },
@@ -728,7 +728,7 @@ void dgn_ElementHandler::EmbeddedFileLinkHandler::_RegisterPropertyAccessors(ECS
     params.RegisterPropertyAccessors(layout, EMBEDDEDFILELINK_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (EmbeddedFileLink&) elIn;
+            auto const& el = (EmbeddedFileLink const&) elIn;
             value.SetUtf8CP(el.GetDescription());
             return DgnDbStatus::Success;
             },
@@ -744,7 +744,7 @@ void dgn_ElementHandler::EmbeddedFileLinkHandler::_RegisterPropertyAccessors(ECS
     params.RegisterPropertyAccessors(layout, EMBEDDEDFILELINK_Name,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (EmbeddedFileLink&) elIn;
+            auto const& el = (EmbeddedFileLink const&) elIn;
             value.SetUtf8CP(el.GetName());
             return DgnDbStatus::Success;
             },
@@ -768,7 +768,7 @@ void dgn_ElementHandler::RepositoryLinkHandler::_RegisterPropertyAccessors(ECSql
     params.RegisterPropertyAccessors(layout, REPOLINK_RepositoryGuid,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (RepositoryLink&) elIn;
+            auto const& el = (RepositoryLink const&) elIn;
             auto beguid = el.GetRepositoryGuid();
             value.SetBinary(beguid.m_guid.b, sizeof(BeGuid), true);
             return DgnDbStatus::Success;

@@ -23,12 +23,16 @@
 
     <!-- We need this shim part to avoid pulling all psolid repos just to see their platform dependency. -->
     <Part Name="PsolidShim">
+        <SubPart PartName="PsolidShim_AndroidARM64"/>
         <SubPart PartName="PsolidShim_iOSArm64"/>
         <SubPart PartName="PsolidShim_LinuxX64"/>
         <SubPart PartName="PsolidShim_MacOSx64"/>
         <SubPart PartName="PsolidShim_x64"/>
     </Part>
-    <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64" WipPartEnable="ParasolidIos">
+    <Part Name="PsolidShim_AndroidARM64" OnlyPlatforms="AndroidARM64" WipPartEnable="ParasolidAndroid">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_311_pre2_AndroidARM64"/>
+    </Part>
+    <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
     </Part>
     <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64">
@@ -51,7 +55,7 @@
         <SubPart PartName="ECDbLibrary"         PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
+        <SubPart PartName="ECObjects"     PartFile="ECObjects"    Repository="ecobjects" />
         <SubPart PartName="Freetype2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
@@ -278,6 +282,7 @@
         <SubPart PartName="BuildIModelEvolutionTestsDynamic" />
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <FeatureExclude>GeoCoordAssets</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
+        <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
     </Product>
 
     <Part Name="BuildIModelEvolutionTestsDynamic" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
@@ -576,7 +581,7 @@
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_SHORT_NAME=DgnPlatTst -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewController.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -557,6 +557,9 @@ public:
     //! @param modelId  The model to turn on or off.
     //! @param onOff    If true, elements in the model displayed
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
+
+    //! Synchronize display of background map after viewflags display...
+    DGNPLATFORM_EXPORT void SynchBackgroundMapDisplay();
 
     DgnModelIdSet const& GetViewedModels() const {return GetSpatialViewDefinition().GetModelSelector().GetModels();}
     void SetViewedModels(DgnModelIdSet const& models) { _SetViewedModels(models); }

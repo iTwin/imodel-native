@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewController.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -115,7 +115,7 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
     if (IsPresent(kHiddenEdges)) base.SetShowHiddenEdges(m_values.ShowHiddenEdges());
     if (IsPresent(kShadows)) base.SetShowShadows(m_values.ShowShadows());
     if (IsPresent(kClipVolume)) base.SetShowClipVolume(m_values.ShowClipVolume());
-    if (IsPresent(kBackgroundMap)) base.SetShowClipVolume(m_values.ShowBackgroundMap());
+    if (IsPresent(kBackgroundMap)) base.SetShowBackgroundMap(m_values.ShowBackgroundMap());
     if (IsPresent(kConstructions)) base.SetShowConstructions(m_values.ShowConstructions());
     if (IsPresent(kMonochrome)) base.SetMonochrome(m_values.IsMonochrome());
     if (IsPresent(kGeometryMap)) base.SetIgnoreGeometryMap(m_values.IgnoreGeometryMap());
@@ -276,13 +276,13 @@ StandardView ViewController::IsStandardViewRotation(RotMatrixCR rMatrix, bool ch
             RotMatrix  isoMatrix;
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::Iso));
 
-            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3d*)rMatrix.form3d[0]))) &&
-                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3d*)rMatrix.form3d[1]))))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3dCP)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3dCP)rMatrix.form3d[1]))))
                 return StandardView::Iso;
 
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::RightIso));
-            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3d*)rMatrix.form3d[0]))) &&
-                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3d*)rMatrix.form3d[1]))))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3dCP)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3dCP)rMatrix.form3d[1]))))
                 return StandardView::RightIso;
             }
         }

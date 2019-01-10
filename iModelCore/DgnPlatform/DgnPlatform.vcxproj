@@ -134,6 +134,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\ElementGeometry.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ElementGraphics.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ElementHandler.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\ElementTileTree.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ExportMacros.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\FenceParams.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\FunctionalDomain.h" />
@@ -331,6 +332,7 @@
     <ClCompile Include="DgnCore\ElementDependencyGraph.cpp" />
     <ClCompile Include="DgnCore\ElementGeometry.cpp" />
     <ClCompile Include="DgnCore\ElementGraphics.cpp" />
+    <ClCompile Include="DgnCore\ElementTileTree.cpp" />
     <ClCompile Include="DgnCore\ElementUtil.cpp" />
     <ClCompile Include="DgnCore\ExternalReference.cpp" />
     <ClCompile Include="DgnCore\FacetCount.cpp" />

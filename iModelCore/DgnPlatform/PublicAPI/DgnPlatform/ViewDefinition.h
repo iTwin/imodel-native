@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewDefinition.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -258,6 +258,7 @@ public:
     BE_JSON_NAME(hline)
     BE_JSON_NAME(fstop);
     BE_JSON_NAME(environment);
+    BE_JSON_NAME(ao);
 
     //! Construct a new DisplayStyle3d.
     //! @param[in] model The DefinitionModel to contain the DisplayStyle3d
@@ -280,6 +281,9 @@ public:
 
     Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(json_hline()));}
     void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(json_hline(), params.ToJson());}
+
+    Render::AmbientOcclusionParams GetAmbientOcclusionParams() {return Render::AmbientOcclusionParams::FromJson(GetStyle(json_ao()));}
+    void SetAmbientOcclusionParams(Render::AmbientOcclusionParams const& params) {SetStyle(json_ao(), params.ToJson());}
 
     DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
     DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);

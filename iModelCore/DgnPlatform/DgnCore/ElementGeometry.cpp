@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGeometry.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -503,6 +503,10 @@ bool GeometricPrimitive::IsSameStructureAndGeometry(GeometricPrimitiveCR primiti
 #if defined (BENTLEYCONFIG_PARASOLID)
         case GeometryType::BRepEntity:
             {
+            // Can't ignore body to uor transform...post instancing in V8 converter only compares local range for a match which doesn't account for body transform differences...
+            if (!GetAsIBRepEntity()->GetEntityTransform().IsEqual(primitive.GetAsIBRepEntity()->GetEntityTransform(), tolerance, tolerance))
+                return false;
+
             double      solidTolerance = tolerance;
             PK_BODY_t   bodyTag1 = PSolidUtil::GetEntityTag(*GetAsIBRepEntity());
             PK_BODY_t   bodyTag2 = PSolidUtil::GetEntityTag(*primitive.GetAsIBRepEntity());
@@ -877,7 +881,7 @@ void GeometryStreamIO::Writer::Append(DPoint2dCP pts, size_t nPts, int8_t bounda
     {
     FlatBufferBuilder fbb;
 
-    auto coords = fbb.CreateVectorOfStructs((FB::DPoint2d*) pts, nPts);
+    auto coords = fbb.CreateVectorOfStructs((FB::DPoint2d const*) pts, nPts);
 
     FB::PointPrimitive2dBuilder builder(fbb);
 
@@ -897,7 +901,7 @@ void GeometryStreamIO::Writer::Append(DPoint3dCP pts, size_t nPts, int8_t bounda
     {
     FlatBufferBuilder fbb;
 
-    auto coords = fbb.CreateVectorOfStructs((FB::DPoint3d*) pts, nPts);
+    auto coords = fbb.CreateVectorOfStructs((FB::DPoint3d const*) pts, nPts);
 
     FB::PointPrimitiveBuilder builder(fbb);
 
@@ -917,7 +921,7 @@ void GeometryStreamIO::Writer::Append(DRange3dCR range)
     {
     FlatBufferBuilder fbb;
 
-    auto coords = fbb.CreateVectorOfStructs((FB::DPoint3d*) &range.low, 2);
+    auto coords = fbb.CreateVectorOfStructs((FB::DPoint3d const*) &range.low, 2);
 
     FB::PointPrimitiveBuilder builder(fbb);
 
@@ -936,7 +940,7 @@ void GeometryStreamIO::Writer::Append(DEllipse3dCR arc, int8_t boundary)
     {
     FlatBufferBuilder fbb;
 
-    auto mloc = FB::CreateArcPrimitive(fbb, (FB::DPoint3d*) &arc.center, (FB::DVec3d*) &arc.vector0, (FB::DVec3d*) &arc.vector90, arc.start, arc.sweep, (FB::BoundaryType) boundary);
+    auto mloc = FB::CreateArcPrimitive(fbb, (FB::DPoint3d const*) &arc.center, (FB::DVec3d const*) &arc.vector0, (FB::DVec3d const*) &arc.vector90, arc.start, arc.sweep, (FB::BoundaryType) boundary);
 
     fbb.Finish(mloc);
     Append(Operation(OpCode::ArcPrimitive, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -1527,7 +1531,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
 
         YawPitchRollAngles::TryFromRotMatrix(angles, lsParams->rMatrix);
         auto modifiers = FB::CreateLineStyleModifiers(fbb, lsParams->modifiers, lsParams->scale, lsParams->dashScale, lsParams->gapScale, lsParams->startWidth, lsParams->endWidth, lsParams->distPhase, lsParams->fractPhase,
-                                                      (FB::DPoint3d*)&lsParams->normal, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
+                                                      (FB::DPoint3d const*)&lsParams->normal, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
         fbb.Finish(modifiers);
         Append(Operation(OpCode::LineStyleModifiers, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
@@ -1566,7 +1570,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
                                                                    thematicSettings.GetMarginColor().GetValue(),
                                                                    (uint32_t) thematicSettings.GetMode(),
                                                                    (uint32_t) thematicSettings.GetColorScheme(),
-                                                                   (FB::DRange1d*) &thematicSettings.GetRange());
+                                                                   (FB::DRange1d const*) &thematicSettings.GetRange());
                 }
 
             auto mloc = FB::CreateAreaFill(fbb, (FB::FillDisplay) elParams.GetFillDisplay(),
@@ -1623,10 +1627,10 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
 
         FB::AreaPatternBuilder builder(fbb);
 
-        builder.add_origin((FB::DPoint3d*) &pattern->GetOrigin());
+        builder.add_origin((FB::DPoint3d const*) &pattern->GetOrigin());
 
         if (!pattern->GetOrientation().IsIdentity())
-            builder.add_rotation((FB::RotMatrix*) &pattern->GetOrientation());
+            builder.add_rotation((FB::RotMatrix const*) &pattern->GetOrientation());
 
         if (pattern->GetSymbolId().IsValid())
             {
@@ -2137,13 +2141,13 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     gradientPtr->SetAngle(ppfb->angle());
 
                     uint32_t nColors = ppfb->colors()->Length();
-                    uint32_t* colors = (uint32_t*) ppfb->colors()->Data();
+                    uint32_t const* colors = (uint32_t const*) ppfb->colors()->Data();
                     bvector<ColorDef> keyColors;
 
                     for (uint32_t iColor=0; iColor < nColors; ++iColor)
                         keyColors.push_back(ColorDef(colors[iColor]));
 
-                    gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
+                    gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double const*) ppfb->values()->Data());
 
                     if (0 != ppfb->thematicSettings())
                         {
@@ -2266,7 +2270,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
             styleParams.endWidth = ppfb->endWidth();
             styleParams.distPhase = ppfb->distPhase();
             styleParams.fractPhase = ppfb->fractPhase();
-            styleParams.normal = *(DPoint3d*)ppfb->normal();
+            styleParams.normal = *(DPoint3d const*)ppfb->normal();
             YawPitchRollAngles ypr(AngleInDegrees::FromDegrees(ppfb->yaw()), AngleInDegrees::FromDegrees(ppfb->pitch()), AngleInDegrees::FromDegrees(ppfb->roll()));
             styleParams.rMatrix = ypr.ToRotMatrix();
 
@@ -2500,8 +2504,8 @@ void GeometryStreamIO::Iterator::ToNext()
         return;
         }
 
-    uint32_t        opCode = *((uint32_t *) (m_data));
-    uint32_t        dataSize = *((uint32_t *) (m_data + sizeof (opCode)));
+    uint32_t        opCode = *((uint32_t const*) (m_data));
+    uint32_t        dataSize = *((uint32_t const*) (m_data + sizeof (opCode)));
     uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
     size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
 
@@ -2732,6 +2736,7 @@ static void debugGeomId(GeometryStreamIO::IDebugOutput& output, GeometricPrimiti
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnDbR db, bool isPart)
     {
+// #define DEBUG_POLYFACE_POINT_COUNTS
     Collection  collection(stream.GetData(), stream.GetSize());
     Reader      reader(db);
 
@@ -2975,7 +2980,12 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
             case GeometryStreamIO::OpCode::Polyface:
                 {
+#if defined(DEBUG_POLYFACE_POINT_COUNTS)
+                PolyfaceHeaderPtr mesh = BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(egOp.m_data);
+                output._DoOutputLine(Utf8PrintfString("OpCode::Polyface %u points\n", mesh.IsValid() ? static_cast<uint32_t>(mesh->GetPointCount()) : 0).c_str());
+#else
                 output._DoOutputLine(Utf8PrintfString("OpCode::Polyface\n").c_str());
+#endif
                 break;
                 }
 
@@ -3005,7 +3015,12 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
             case GeometryStreamIO::OpCode::BRepPolyface:
                 {
+#if defined(DEBUG_POLYFACE_POINT_COUNTS)
+                PolyfaceHeaderPtr mesh = BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(egOp.m_data);
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyface %u points\n", mesh.IsValid() ? static_cast<uint32_t>(mesh->GetPointCount()) : 0).c_str());
+#else
                 output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyface\n").c_str());
+#endif
                 break;
                 }
 
@@ -4098,8 +4113,8 @@ void GeometryCollection::Iterator::ToNext()
             m_state->m_geomToSource = Transform::FromIdentity();
             }
 
-        uint32_t        opCode = *((uint32_t *) (m_data));
-        uint32_t        dataSize = *((uint32_t *) (m_data + sizeof (opCode)));
+        uint32_t        opCode = *((uint32_t const*) (m_data));
+        uint32_t        dataSize = *((uint32_t const*) (m_data + sizeof (opCode)));
         uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
         size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
 
@@ -4366,13 +4381,13 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                         gradientPtr->SetAngle(ppfb->angle());
 
                         uint32_t nColors = ppfb->colors()->Length();
-                        uint32_t* colors = (uint32_t*) ppfb->colors()->Data();
+                        uint32_t const* colors = (uint32_t const*) ppfb->colors()->Data();
                         bvector<ColorDef> keyColors;
 
                         for (uint32_t iColor=0; iColor < nColors; ++iColor)
                             keyColors.push_back(ColorDef(colors[iColor]));
 
-                        gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
+                        gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double const*) ppfb->values()->Data());
 
                         if (GradientSymb::Mode::Thematic == gradientPtr->GetMode() && 0 != ppfb->thematicSettings())
                             {
@@ -4587,8 +4602,8 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
 
                     while (nextDataOffset < m_dataSize)
                         {
-                        uint32_t    opCode = *((uint32_t *) (nextData));
-                        uint32_t    dataSize = *((uint32_t *) (nextData + sizeof (opCode)));
+                        uint32_t    opCode = *((uint32_t const*) (nextData));
+                        uint32_t    dataSize = *((uint32_t const*) (nextData + sizeof (opCode)));
                         size_t      egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
 
                         GeometryStreamIO::Operation nextEgOp = GeometryStreamIO::Operation((GeometryStreamIO::OpCode) (opCode)); 

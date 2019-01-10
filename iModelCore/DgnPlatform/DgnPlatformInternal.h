@@ -2,7 +2,7 @@
 |
 |     $Source: DgnPlatformInternal.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __DGNCOREINTERNAL_H__
@@ -63,6 +63,7 @@
 #include <ECObjects/ECSchema.h>
 #include <Units/Units.h>
 #include <Logging/bentleylogging.h>
+
 
 #define DGNCORE_RUNONCE_CHECK(VAR) {if (VAR) return; VAR=true;}
 #define DGNCORELOG NativeLogging::LoggingManager::GetLogger(L"DgnPlatform")
