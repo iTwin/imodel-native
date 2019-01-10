@@ -933,11 +933,11 @@ DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
 #ifdef TEST_SYNC_INFO_ASPECT
     if (_WantModelProvenanceInBim())
         {
-        auto aspect = SyncInfo::GeomPartSyncInfoAspect::GetByTag(*GetJobDefinitionModel()->GetModeledElement(), name);
-        BeAssert(aspect.IsValid() == partId.IsValid());
-        if (aspect.IsValid())
+        auto partIdFromAspect = SyncInfo::GeomPartSyncInfoAspect::FindElementByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
+        BeAssert(partIdFromAspect.IsValid() == partId.IsValid());
+        if (partIdFromAspect.IsValid())
             {
-            BeAssert(partId == aspect.GetScope());
+            BeAssert(partIdFromAspect == partId);
             }
         }
 #endif
@@ -952,13 +952,21 @@ Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
     SyncInfo::GeomPart sigp;
     auto tag = (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
 #ifdef TEST_SYNC_INFO_ASPECT
-    if (_WantModelProvenanceInBim())
+    if (_WantModelProvenanceInBim() && partId.IsValid())
         {
-        auto aspect = SyncInfo::GeomPartSyncInfoAspect::GetByPartId(*GetJobDefinitionModel()->GetModeledElement(), partId);
-        BeAssert(aspect.IsValid() == !tag.empty());
-        if (aspect.IsValid())
+        auto geomPart = m_dgndb->Elements().Get<DgnGeometryPart>(partId);
+        if (geomPart.IsValid())
             {
-            BeAssert(tag == aspect.GetSourceId());
+            auto aspect = SyncInfo::GeomPartSyncInfoAspect::Get(*geomPart);
+            BeAssert(aspect.IsValid() == !tag.empty());
+            if (aspect.IsValid())
+                {
+                BeAssert(tag == aspect.GetSourceId());
+                }
+            }
+        else
+            {
+            BeDataAssert(false && "GeometryPart does not exist?");
             }
         }
 #endif
@@ -972,21 +980,18 @@ BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8Stri
     {
     SyncInfo::GeomPart siTag(partId, partTag);
     auto rc = siTag.Insert(*m_dgndb);
-    if (BeSQLite::BE_SQLITE_DONE == rc)
-        {
-        if (_WantModelProvenanceInBim())
-            {
-            auto aspect = SyncInfo::GeomPartSyncInfoAspect::Make(partTag, partId, GetDgnDb());
-            auto defModelEd = GetDgnDb().Elements().GetForEdit<DgnElement>(GetJobDefinitionModel()->GetModeledElementId());
-            aspect.AddTo(*defModelEd);
-            defModelEd->Update();
-            }
+    if (BeSQLite::BE_SQLITE_DONE != rc)
+        return BSIERROR;
 
-        return BSISUCCESS;
+    if (_WantModelProvenanceInBim())
+        {
+        auto aspect = SyncInfo::GeomPartSyncInfoAspect::Make(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
+        auto partElem = GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
+        aspect.AddTo(*partElem);
+        partElem->Update();
         }
-    LOG.errorv("Insert geompart in sync info (%lld, %s) failed with error %x", partId.GetValue(), partTag.c_str(), rc);
-    BeAssert(false && "Caller must check that geompart tag is unique and not empty");
-    return BSIERROR;
+
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

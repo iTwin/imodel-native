@@ -1882,45 +1882,47 @@ void SyncInfo::V8ModelSyncInfoAspect::AssertMatch(V8ModelMapping const& mapping)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::GeomPartSyncInfoAspect SyncInfo::GeomPartSyncInfoAspect::Make(Utf8StringCR tag, DgnGeometryPartId partId, DgnDbR db)
+SyncInfo::GeomPartSyncInfoAspect SyncInfo::GeomPartSyncInfoAspect::Make(DgnElementId scopeId, Utf8StringCR tag, DgnDbR db)
     {
     auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
         return GeomPartSyncInfoAspect(nullptr);
                 
-    auto instance = iModelSyncInfoAspect::MakeInstance(partId, KindToString(Kind::GeomPart), tag, nullptr, *aspectClass);
+    auto instance = iModelSyncInfoAspect::MakeInstance(scopeId, KindToString(Kind::GeomPart), tag, nullptr, *aspectClass);
     return GeomPartSyncInfoAspect(instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::GeomPartSyncInfoAspect SyncInfo::GeomPartSyncInfoAspect::GetByTag(DgnElementCR el, Utf8StringCR tag)
+DgnElementId SyncInfo::GeomPartSyncInfoAspect::FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag)
     {
-    auto ids = SyncInfo::GetSyncInfoAspectIds(el, SyncInfoAspect::Kind::GeomPart, tag);
-    if (ids.size() == 0)
-        return GeomPartSyncInfoAspect(nullptr);
-    BeAssert(ids.size() == 1 && "Not supporting multiple GeomPart kind aspects on a single bim element for a given tag");
-    return GeomPartSyncInfoAspect(GetAspect(el, ids.front()).m_instance.get());
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id from " SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " WHERE (Kind=? AND Scope=? AND SourceId=?)");
+    sel->BindText(1, SyncInfoAspect::KindToString(SyncInfoAspect::Kind::GeomPart), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sel->BindId(2, scopeId);
+    sel->BindText(3, tag.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != sel->Step())
+        return DgnElementId();
+    return sel->GetValueId<DgnElementId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::GeomPartSyncInfoAspect SyncInfo::GeomPartSyncInfoAspect::GetByPartId(DgnElementCR el, DgnGeometryPartId partId)
+SyncInfo::GeomPartSyncInfoAspect SyncInfo::GeomPartSyncInfoAspect::Get(DgnGeometryPartCR el)
     {
-    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " WHERE (Element.Id=? AND Kind=? AND Scope.Id=?)");
-    sel->BindId(1, el.GetElementId());
-    sel->BindText(2, SyncInfoAspect::KindToString(SyncInfoAspect::Kind::GeomPart), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    sel->BindId(3, partId);
-    if (BE_SQLITE_ROW != sel->Step())
-        return GeomPartSyncInfoAspect(nullptr);
-    
-    auto aspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
-    
-    BeAssert((BE_SQLITE_ROW != sel->Step()) && "Not supporting multiple GeomPart kind aspects on a single bim element for a given partId");
-
-    return GeomPartSyncInfoAspect(GetAspect(el, aspectId).m_instance.get());
+    // There's only one source aspect on a geompart element, so no need for an aspectid
+#ifdef TEST_SYNC_INFO_ASPECT
+        {
+        auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT COUNT(*) from " SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " WHERE (Element.Id=? AND Kind=?)");
+        sel->BindId(1, el.GetElementId());
+        sel->BindText(2, SyncInfoAspect::KindToString(SyncInfoAspect::Kind::GeomPart), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        sel->Step();
+        auto count = sel->GetValueInt(0);
+        BeAssert((0 == count) || (1 == count));
+        }
+#endif
+    return GeomPartSyncInfoAspect(GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**

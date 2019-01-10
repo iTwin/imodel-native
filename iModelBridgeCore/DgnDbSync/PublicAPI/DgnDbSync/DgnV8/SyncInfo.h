@@ -540,12 +540,13 @@ struct SyncInfo
         private:
         GeomPartSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
         public:
-        //! Create a new aspect in memory. partId should identify the GeomPart element in the BIM. It will be the set as the value of the Scope property. Caller must call AddTo. This aspect should be added to the job's definition model element, not the GeomPart element!
-        DGNDBSYNC_EXPORT static GeomPartSyncInfoAspect Make(Utf8StringCR tag, DgnGeometryPartId partId, DgnDbR);
-        //! Look up an existing GeomPart aspect by its tag. el should be the job's definition model element.
-        DGNDBSYNC_EXPORT static GeomPartSyncInfoAspect GetByTag(DgnElementCR el, Utf8StringCR tag);
-        //! Look up an existing GeomPart aspect by its partId. el should be the job's definition model element.
-        DGNDBSYNC_EXPORT static GeomPartSyncInfoAspect GetByPartId(DgnElementCR el, DgnGeometryPartId partId);
+        //! Create a new aspect in memory. scopeId should be the bridge's job definition model. Caller must call AddTo, passing in the DgnGeometryPart element.
+        DGNDBSYNC_EXPORT static GeomPartSyncInfoAspect Make(DgnElementId scopeId, Utf8StringCR tag, DgnDbR);
+        //! Look up the element that has the GeomPart aspect with the specified tag. Note that this is based on the assumption that GeometryPart "tags" are unique within the specified scope!
+        DGNDBSYNC_EXPORT static DgnElementId FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag);
+        //! Get an existing GeomPart aspect from the specified DgnGeometryPart
+        //! Look up anp existing GeomPart aspect by its partId. el should be the job's definition model element.
+        DGNDBSYNC_EXPORT static GeomPartSyncInfoAspect Get(DgnGeometryPartCR el);
         };
 
     //! Identifies the source of an element in an iModel that was created from an element in a V8 model.
