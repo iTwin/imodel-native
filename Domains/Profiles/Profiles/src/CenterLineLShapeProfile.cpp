@@ -25,11 +25,11 @@ CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double girth, double wallThickness, double filletRadius /*= 0.0*/)
+CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double girth, double wallThickness, double filletRadius /*= 0.0*/)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
-    , width (flangeWidth)
+    , width (width)
     , depth (depth)
-    , girth(girth)
+    , girth (girth)
     , wallThickness (wallThickness)
     , filletRadius (filletRadius)
     {}
@@ -61,7 +61,7 @@ bool CenterLineLShapeProfile::_Validate() const
 
     bValid = bValid && std::isfinite(GetWidth()) && (GetWidth() > 0.0);
     bValid = bValid && std::isfinite(GetDepth()) && (GetDepth() > 0.0);
-    bValid = bValid && std::isfinite(GetGirth()) && (GetGirth() > 0.0);
+    bValid = bValid && std::isfinite(GetGirth()) && (GetGirth() >= 0.0);
     bValid = bValid && std::isfinite(GetWallThickness()) && (GetWallThickness() > 0.0);
     bValid = bValid && std::isfinite(GetFilletRadius());
 

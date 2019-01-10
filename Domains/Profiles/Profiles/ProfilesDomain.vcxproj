@@ -143,7 +143,7 @@
   </ImportGroup>
   <PropertyGroup Label="Build commands">
     <NMakeBuildCommandLine>bb re ProfilesDomainDLL -b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb re ProfilesDomainDLL -b</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re ProfilesDomainDLL -b -c &amp;&amp; bb re ProfilesDomainDLL -b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb re ProfilesDomainDLL -b -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Label="Header include paths for IDE intelisense">

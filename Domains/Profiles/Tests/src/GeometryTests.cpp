@@ -227,7 +227,10 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape Plain", 3.5, 10, 1, 1, 0.0), true);
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape Rounded", 3.5, 10, 1, 1, PI / 18));
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape Rounded without girth", 3.5, 10, 0.0, 1, PI / 18));
-    //InsertProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape Plain", 3.5, 10, 1, 1, 0.0));
+    
+    InsertProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape Plain without girth", 3.5, 10.00, 0.0, 1.0, 0.0), true);
+    InsertProfileGeometry<CenterLineLShapeProfile>(CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape Plain", 3.5, 10.00, 2.0, 1.0, 0.0));
+
 
     InsertProfileGeometry<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Circle", 3.0), true);
     InsertProfileGeometry<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "HollowCircle", 3.0, 0.5));
