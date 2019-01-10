@@ -596,12 +596,14 @@ bool StandardValueInfo::Equals(ECEnumerationCP ecEnum) const
     {
     if (m_mustBeFromList == false || m_mustBeFromList != ecEnum->GetIsStrict())
         return false;
-    if ((size_t) (m_valuesMap.nodes()) != ecEnum->GetEnumeratorCount())
+    if ((size_t) (m_valuesMap.size()) != ecEnum->GetEnumeratorCount())
         return false;
     for (auto const& enumerator : ecEnum->GetEnumerators())
         {
         auto it = m_valuesMap.find(enumerator->GetInteger());
-        if (!it->second.Equals(enumerator->GetDisplayLabel()))
+        if (it == m_valuesMap.end())
+            return false;
+        if (0 != BeStringUtilities::Stricmp(it->second.c_str(), enumerator->GetDisplayLabel().c_str()))
             return false;
         }
     return true;
@@ -613,11 +615,14 @@ bool StandardValueInfo::Equals(ECEnumerationCP ecEnum) const
 // Determines if ECEnumeration contains SVI's enumerators without unnecessary conversion
 bool StandardValueInfo::ContainedBy(ECEnumerationCP ecEnum) const
     {
-    if ((size_t) (m_valuesMap.nodes()) > ecEnum->GetEnumeratorCount())
+    if ((size_t) (m_valuesMap.size()) > ecEnum->GetEnumeratorCount())
         return false;
     for (auto const& valuePair : m_valuesMap)
         {
-        if (ecEnum->FindEnumerator(valuePair.first) == nullptr)
+        auto const pair = ecEnum->FindEnumerator(valuePair.first);
+        if (nullptr == pair)
+            return false;
+        if (0 != BeStringUtilities::Stricmp(valuePair.second.c_str(), pair->GetDisplayLabel().c_str()))
             return false;
         }
     return true;
