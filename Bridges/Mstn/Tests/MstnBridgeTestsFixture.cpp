@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/MstnBridgeTestsFixture.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -363,7 +363,7 @@ BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementBy
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(*m_db, "SELECT sourceInfo.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
-                  SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
+                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
                   " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
     estmt.BindInt64(1, srcElementId);
     if (BE_SQLITE_ROW != estmt.Step())
