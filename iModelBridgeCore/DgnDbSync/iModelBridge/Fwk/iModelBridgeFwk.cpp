@@ -1875,7 +1875,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         return BentleyStatus::ERROR;
 
     bool holdsSchemaLock = false;
-
+    bool madeChanges = false;
     if (true)
         {
         iModelBridgeCallTerminate callTerminate(*m_bridge);
@@ -1915,8 +1915,8 @@ int iModelBridgeFwk::UpdateExistingBim()
             GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);                  // === SCHEMA LOCK
             return RETURN_STATUS_LOCAL_ERROR;                                                    // === SCHEMA LOCK
             }                                                                                    // === SCHEMA LOCK
-                                                                                                 // === SCHEMA LOCK
-        if (iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb) || hasChanges) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+        madeChanges = iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb) || hasChanges;          // === SCHEMA LOCK
+        if (madeChanges) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
             {                                                                                    // === SCHEMA LOCK
             if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))                 // === SCHEMA LOCK
                 return RETURN_STATUS_SERVER_ERROR;                                               // === SCHEMA LOCK
@@ -1964,7 +1964,9 @@ int iModelBridgeFwk::UpdateExistingBim()
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
     //This allow SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
-    m_briefcaseDgnDb->ExecuteSql("ANALYZE");
+    madeChanges |= iModelBridge::AnyTxns(*m_briefcaseDgnDb);
+    if (madeChanges)
+        m_briefcaseDgnDb->ExecuteSql("ANALYZE");
     //
     dbres = m_briefcaseDgnDb->SaveChanges();
 
