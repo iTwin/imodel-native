@@ -9,7 +9,7 @@
             <Class class="bis:Element"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is scoped within" polymorphic="true">
-            <Class class="SourceElementInfo"/>
+            <Class class="ExternalSourceAspect"/>
         </Target>
     </ECRelationshipClass>
     
