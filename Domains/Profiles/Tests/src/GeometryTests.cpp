@@ -134,8 +134,8 @@ static DPoint3d offsetProfilePlacement (IGeometryPtr& geometryPtr, bool placeInN
 
     DRange3d range;
     BeAssert (geometryPtr->TryGetRange (range));
-    double const width = range.high.x - range.low.x;
-    double const height = range.high.y - range.low.y;
+    double const width = range.XLength();
+    double const height = range.YLength();
 
     Transform translation = Transform::From (DPoint3d::From (range.low.x * -1.0, range.low.y * -1.0));
     BeAssert (geometryPtr->TryTransformInPlace (translation));
