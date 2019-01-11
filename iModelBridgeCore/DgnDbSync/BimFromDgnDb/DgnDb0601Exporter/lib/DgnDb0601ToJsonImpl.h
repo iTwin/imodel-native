@@ -80,6 +80,8 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         ECN::ECClassCP      m_elementUniqueAspectClass;
         ECN::ECClassCP      m_elementMultiAspectClass;
         ECN::ECClassCP      m_elementClass;
+        ECN::ECClassCP      m_geometric2dClass;
+        ECN::ECClassCP      m_geometric3dClass;
         ECN::ECClassCP      m_pointCloudModelClass;
         ECN::ECClassCP      m_threeMxModelClass;
         ECN::ECClassCP      m_rasterFileModelClass;
@@ -138,6 +140,8 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         BentleyStatus ExportLinkTables(Utf8CP schemaName, Utf8CP className, Utf8CP newClassName = nullptr);
         BentleyStatus ExportPropertyData();
         BentleyStatus ExportEmbeddedFiles();
+        BentleyStatus ExportExtraTables(Utf8CP alias, Utf8CP className);
+
         DgnElementId CreateCodeSpec(uint8_t codeSpecType, Utf8CP name);
         DgnElementId CreateSubjectElement(Utf8CP subjectName);
         DgnElementId CreatePartitionElement(DgnModelCR model, DgnElementId subject);
