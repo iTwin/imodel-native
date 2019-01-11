@@ -49,7 +49,7 @@ bool DoubleLShapeProfile::_Validate() const
         return false;
 
     bool const isSpacingValid = ProfilesProperty::IsGreaterOrEqualToZero (GetSpacing());
-    bool const isSingleProfileValid = ValidateSingleProfile();
+    bool const isSingleProfileValid = GetSingleProfile().IsValid();
     bool const isTypeValid = ValidateType();
 
     return isSpacingValid && isSingleProfileValid && isTypeValid;
@@ -74,15 +74,6 @@ IGeometryPtr DoubleLShapeProfile::_UpdateGeometry (Profile const& relatedProfile
         return nullptr;
 
     return ProfilesGeometry::CreateDoubleLShape (*this, *pSingleProfile);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DoubleLShapeProfile::ValidateSingleProfile() const
-    {
-    LShapeProfileCPtr singleProfilePtr = GetSingleProfile();
-    return singleProfilePtr.IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -58,7 +58,6 @@ protected:
     virtual bool _Validate() const override;
 
 private:
-    bool ValidateSingleProfile() const;
     bool ValidateType() const;
 
     virtual IGeometryPtr _CreateGeometry() const override;

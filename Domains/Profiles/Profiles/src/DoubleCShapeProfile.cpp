@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\DoubleCShapeProfile.h>
+#include <ProfilesInternal\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -33,6 +34,20 @@ DoubleCShapeProfile::DoubleCShapeProfile (CreateParams const& params)
 
     SetSpacing (params.spacing);
     SetSingleProfile (params.singleProfileId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DoubleCShapeProfile::_Validate() const
+    {
+    if (!T_Super::_Validate())
+        return false;
+
+    bool const isSpacingValid = ProfilesProperty::IsGreaterOrEqualToZero (GetSpacing());
+    bool const isSingleProfileValid = GetSingleProfile().IsValid();
+
+    return isSpacingValid && isSingleProfileValid;
     }
 
 /*---------------------------------------------------------------------------------**//**
