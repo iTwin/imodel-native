@@ -235,7 +235,7 @@ void iModelBridgeFwk::InitLogging()
     NativeLogging::LoggingConfig::SetSeverity(L"ECDb", NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnCore", NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnV8Converter", NativeLogging::LOG_TRACE);
-    NativeLogging::LoggingConfig::SetSeverity(L"Changeset", NativeLogging::LOG_TRACE);
+    // NativeLogging::LoggingConfig::SetSeverity(L"Changeset", NativeLogging::LOG_TRACE);
     //NativeLogging::LoggingConfig::SetSeverity(L"BeSQLite", NativeLogging::LOG_TRACE);
     }
 
