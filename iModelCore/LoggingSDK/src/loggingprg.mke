@@ -1,0 +1,51 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: logging/loggingprg.mke $
+#
+#   $Copyright: (c) 2008 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+baseDir             = $(_MakeFilePath)
+
+%if defined (DEBUG)
+    %undef DEBUG
+    always:
+        !~@putenv DEBUG=
+%endif
+%if defined (DEBUG_RUNTIME)
+    %undef DEBUG_RUNTIME
+    always:
+        !~@putenv DEBUG_RUNTIME=
+%endif
+%if defined (DEBUG_HEAP)
+    %undef DEBUG_HEAP
+    always:
+        !~@putenv DEBUG_HEAP=
+%endif
+
+%if defined (DEBUG) | defined(DEBUG_RUNTIME) || defined(DEBUG_HEAP)
+    %error Must not have DEBUG, DEBUG_RUNTIME or DEBUG_HEAP set when building $(_MakeFileSpec)
+%endif
+
+ALWAYS:
+    $(_bmake) $(make_opt) +dsuffix=release $(baseDir)native/native.mke
+    $(_bmake) $(make_opt) +dsuffix=release $(baseDir)managed/managed.mke
+
+
+ALWAYS:
+   ~putenv DEBUG=1
+   $(_bmake) $(make_opt) +dsuffix=debug $(baseDir)native/native.mke
+   $(_bmake) $(make_opt) +dsuffix=debug $(baseDir)managed/managed.mke
+
+ALWAYS:
+   ~putenv DEBUG=1
+   ~putenv DEBUG_RUNTIME=1
+   $(_bmake) $(make_opt) +dsuffix=debugcrt $(baseDir)native/native.mke
+
+ALWAYS:
+   ~putenv DEBUG=1
+   ~putenv DEBUG_RUNTIME=1
+   ~putenv DEBUG_HEAP=1
+   $(_bmake) $(make_opt) +dsuffix=debugheap $(baseDir)native/native.mke
+
