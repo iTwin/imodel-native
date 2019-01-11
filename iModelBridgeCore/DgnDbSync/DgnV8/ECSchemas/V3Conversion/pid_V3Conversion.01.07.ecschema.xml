@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="pid_V3Conversion" nameSpacePrefix="pidv3" version="1.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="AUTO_NOZZLE_CLASS" description="Auto Nozzle Class Name" displayLabel="Auto Nozzle Class Name" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ACTUATOR_CLASS_NAME_LIST" description="Actuator List Class Name" displayLabel="Actuator List Class Name" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASSOCIATED_ITEM_LIST_POINTER" description="Associated Item class list pointer" displayLabel="Associated Item class list pointer" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BROWSE_SOURCE_INSTANCE" description="If this custom attribute is on a class and set to true, search source class relationships for display" displayLabel="Browse Source Instance" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONTROL_VALVE_CLASS_LISTS" description="Control Valve Class Lists" displayLabel="Control Valve Class Lists" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INCREMENT_NUMBER_VALUES" description="Increment Class Name" displayLabel="Increment Class Name" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_LINE_ANNOTATION_CONNECTOR_CLASS" description="Pipe line annotation class for connectors" displayLabel="Pipe line annotation class for connectors" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VESSEL_HEAD_STRUCT" description="Vessel Head Structure" displayLabel="Vessel Head Structure" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VESSEL_HEADS" description="Vessel Heads" displayLabel="Vessel Heads" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW_ARROW_DIRECTION" description="Flow Arrow Direction" displayLabel="Flow Arrow Direction" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
+</ECSchema>
+

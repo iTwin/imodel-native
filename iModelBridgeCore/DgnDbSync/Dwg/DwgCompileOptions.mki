@@ -1,0 +1,87 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Dwg/DwgCompileOptions.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if !defined (__mdlMKI__)
+    %include mdl.mki
+%endif
+
+%if $(DWGTOOLKIT) == "OpenDwg"
+
+    ## Toolkit dirs
+    ToolkitRoot     = $(BuildContext)VendorAPI/Teigha/
+    ToolkitCoreInc  = $(ToolkitRoot)Kernel/Include/
+    ToolkitDrawInc  = $(ToolkitRoot)Drawing/Include/
+    ToolkitSub1Inc  = $(ToolkitRoot)Architecture/
+    ToolkitSub2Inc  = $(ToolkitRoot)Kernel/Extensions/ExServices/
+    ToolkitLibs     = $(BuildContext)SubParts/Libs/Teigha/
+
+    ## Output dir & DwgDb .lib
+    ContextDeliveryDir  = $(BuildContext)Delivery/OpenDwgImporter/
+    DwgDbLib            = $(ContextSubpartsLibs)OpenDwgDbExchange$(libext)
+
+    %if $(TARGET_PLATFORM)=="Windows"
+    ToolkitSub3Inc  = $(ToolkitRoot)Drawing/Extensions/win/Crypt/
+    CCompOpts       + -D_TOOLKIT_IN_DLL_
+    %endif
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+
+    ## versioned RealDwg namespace
+    RealDwgVersion = RealDwg$(VendorVersion)
+
+    ## Toolkit dirs
+    ToolkitRoot     = $(BuildContext)VendorAPI/$(RealDwgVersion)/
+    ToolkitCoreInc  = $(ToolkitRoot)
+    ToolkitLibs     = $(BuildContext)SubParts/Libs/$(RealDwgVersion)/
+
+    ## Output dir & DwgDb .lib
+    ContextDeliveryDir  = $(BuildContext)Delivery/$(RealDwgVersion)Importer/
+    DwgDbLib            = $(ContextSubpartsLibs)$(RealDwgVersion)/RealDwgDbExchange$(libext)
+
+    ### a hack to bypass the line #pragma comment(lib, "acpal.lib") in PAL\api\def.h!  Remove it when RealDWG2018 has it fixed!
+    CCompOpts       + -D_ADESK_STATIC_LINKING_
+
+%else
+    %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
+%endif  # DWGTOOLKIT
+
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -D__DWGIMPORTER_BUILD__
+
+%if defined (DLM_API_NUMBER)
+    CCompOpts + -DDLM_API_NUMBER=\"$(DLM_API_NUMBER)\"
+%endif
+
+%if defined(DEBUG) && !defined(NDEBUG)
+    CCompOpts + -DDEBUG
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Include search path
+#----------------------------------------------------------------------------------------
+###  Need to build source from \Core\Extensions\ExServices\
+%if defined(ToolkitCoreInc)
+    cIncs + -I$(ToolkitCoreInc)
+%endif
+%if defined(ToolkitDrawInc)
+    cIncs + -I$(ToolkitDrawInc)
+%endif
+%if defined(ToolkitSub2Inc)
+    cIncs + -I$(ToolkitSub2Inc)
+%endif
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+%if defined(DEBUG) && !defined(NDEBUG)
+always:
+        |  -------- -------- --------- -------- -------- ---------
+        |  Compiler options: $(cDefs) $(CCompOpts) $(cIncs)
+        |  -------- -------- --------- -------- -------- ---------
+%endif
+
+
+

@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="OpenPlant_3D_DgnDbSync" nameSpacePrefix="op3dv3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="DgnDbSyncV8" version="01.00" prefix="syncv8" />
+    <ECClass typeName="ADJUSTABLE_ELBOW_SUPPORT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ANGLE_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ANGLE_CONTROL_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BALL_CONTROL_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BALL_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BAR_HANDLE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BLIND_FLANGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BOLT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUTTERFLY_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUTTWELD" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CHECK_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONCENTRIC_PIPE_REDUCER" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONE_OPERATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONTROL_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CUBE_OPERATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CYLINDER_OPERATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIAPHRAGM_ACTUATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIAPHRAGM_GEAR_OPERATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIAPHRAGM_OPERATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIRECTIONAL_PIPE_ANCHOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIRECTIONAL_PIPE_GUIDE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECCENTRIC_PIPE_REDUCER" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELBOLET" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELBOW_SUPPORT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRIC_VALVE_ACTUATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EQUAL_PIPE_TEE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOOR_OPENING" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW_ARROW" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW_METER" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW_ORIFICE_PLATE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FUSION_WELD" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GASKET" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GATE_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GAUGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GEARBOX_OPERATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GENERIC_INSTRUMENT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GENERIC_PIPING_COMPONENT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GLOBE_CONTROL_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GLOBE_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HALF_PIPE_COUPLING" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HAND_WHEEL" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HEAT_EXCHANGER" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INSTR_NOTE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LAP_JOINT_FLANGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LATROLET" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LONG_RADIUS_45_DEGREE_PIPE_ELBOW" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LONG_RADIUS_90_DEGREE_PIPE_ELBOW" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MANUAL_ACTUATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MECHANICAL_JOINT_KIT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NIPOLET" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NOTE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NOZZLE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NOZZLE_AXIAL" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NOZZLE_ON_EQUIPMENT_RADIAL" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NOZZLE_RADIAL_MANWAY" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ORIFICE_FLANGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_BEND" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_CAP" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_COUPLING" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_CROSS" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_LATERAL_TEE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_ELBOW_90_DEGREE_SHORT_RADIUS" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_ELBOW_REDUCING_90_DEGREE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_NIPPLE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_NOZZLE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_PLUG" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_RETURN" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_STUB" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_UNION" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPING_FASTNER_BOLT_WAFER" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPING_FASTNER_OLET_WELD" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPING_FASTNER_SOCKET_WELD" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPING_NETWORK_SEGMENT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PNEUMATIC_VALVE_ACTUATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PRESSURE_GAUGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PUMP" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="REDUCING_PIPE_TEE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RELIEF_OPERATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RELIEF_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RING_SPACER" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SIMPLE_ELBOW_SUPPORT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SLIP_ON_FLANGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SOCKET_WELDED_FLANGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SOCKOLET" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECTACLE_BLIND_NORMALLY_CLOSED" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECTACLE_BLIND_NORMALLY_OPEN" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPRING_RETURN_ACTUATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STEAM_TRAP" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SUPPORT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SWEEPOLET" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TANK" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TEE_SHOE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TOWER" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THREADED_FASTENER" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THREADED_FLANGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THREADOLET" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THREE_WAY_CONTROL_VALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="UBOLT_ANCHOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VALVE_ACTUATOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VALVE_WRENCH" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WALL_PENETRATION" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WELD" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WELD_NECK_FLANGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WELDOFLANGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WELDOLET" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Y_STRAINER" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+

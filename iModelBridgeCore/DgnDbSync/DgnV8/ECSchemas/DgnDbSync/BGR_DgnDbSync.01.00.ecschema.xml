@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="BGR_DgnDbSync" nameSpacePrefix="bgrdgndb" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="DgnDbSyncV8" version="01.00" prefix="syncv8" />
+    <ECClass typeName="EQUIP" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+
