@@ -895,7 +895,7 @@ BentleyStatus JsInterop::GetGeoCoordsFromIModelCoords (JsonValueR results, DgnDb
 
     // get the GCS
     DgnGCSCPtr  iModelGcs = dgnDb.GeoLocation().GetDgnGCS();
-    if (iModelGcs->IsValid() && !targetDatumNameUtf8.empty()) 
+    if (iModelGcs.IsValid() && iModelGcs->IsValid() && !targetDatumNameUtf8.empty()) 
         {
         WCharCP     iModelDatumName = iModelGcs->GetDatumName();
         WString     targetDatumName(targetDatumNameUtf8.c_str(), true);
@@ -912,7 +912,7 @@ BentleyStatus JsInterop::GetGeoCoordsFromIModelCoords (JsonValueR results, DgnDb
     auto outputStatus = statusList.begin();
     for (auto input = iModelPoints.begin(), output = geoPoints.begin(); input != iModelPoints.end(); input++, output++, outputStatus++ )
         {
-        if (iModelGcs.IsValid())
+        if (iModelGcs.IsValid()  && iModelGcs->IsValid())
             {
             GeoPoint tempPoint;
             *outputStatus = iModelGcs->LatLongFromUors(tempPoint, *input);
@@ -969,7 +969,7 @@ BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDb
     Utf8String                   sourceDatumNameUtf8 = props[json_sourceDatum()].ToString();
     sourceDatumNameUtf8.DropQuotes();
 
-    if (iModelGcs->IsValid() && !sourceDatumNameUtf8.empty()) 
+    if (iModelGcs.IsValid() && iModelGcs->IsValid() && !sourceDatumNameUtf8.empty()) 
         {
         WCharCP     iModelDatumName = iModelGcs->GetDatumName();
         WString     sourceDatumName(sourceDatumNameUtf8.c_str(), true);
@@ -986,7 +986,7 @@ BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDb
     auto outputStatus = statusList.begin();
     for (auto input = geoPoints.begin(), output = iModelPoints.begin(); input != geoPoints.end(); input++, output++, outputStatus++ )
         {
-        if (iModelGcs.IsValid())
+        if (iModelGcs.IsValid() && iModelGcs->IsValid())
             {
             GeoPoint tempPoint;
             // get point into the correct Datum.
