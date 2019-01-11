@@ -476,15 +476,6 @@ bool DgnDb0601ToJsonImpl::ExportDgnDb()
     if (SUCCESS != (stat = ExportExtraTables("rv", "VisualizationRuleSet")))
         return false;
 
-    //if (SUCCESS != (stat = ExportLinkTables(tableData, "Planning", "PlanContainsTimelines", "PlanOwnsBaselines")))
-    //    return false;
-    //if (SUCCESS != (stat = ExportLinkTables(tableData, "Planning", "WorkBreakdownHasTimeSpans", "WorkBreakdownOwnsTimeSpans")))
-    //    return false;
-    //if (SUCCESS != (stat = ExportLinkTables(tableData, "Planning", "ActivityHasTimeSpans", "ActivityOwnsTimeSpans")))
-    //    return false;
-    //if (SUCCESS != (stat = ExportLinkTables(tableData, "Planning", "CameraAnimationContainsKeyFrames", "CameraAnimationOwnsKeyFrames")))
-    //    return false;
-
     timer.Start();
     if (SUCCESS != (stat = ExportElements()))
         return false;
@@ -514,6 +505,19 @@ bool DgnDb0601ToJsonImpl::ExportDgnDb()
     timer.Start();
     if (SUCCESS != (stat = ExportLinkTables("generic", "ElementRefersToElement")))
         return false;
+
+    if (m_dgndb->Schemas().ContainsECSchema("Planning"))
+        {
+        if (SUCCESS != (stat = ExportLinkTables("Planning", "ActivityAffectsElements")))
+            return false;
+        if (SUCCESS != (stat = ExportLinkTables("Planning", "ActivityHasConstraint")))
+            return false;
+        if (SUCCESS != (stat = ExportLinkTables("Planning", "WorkBreakdownHasTimeSpans", "WorkBreakdownOwnsTimeSpans")))
+            return false;
+        if (SUCCESS != (stat = ExportLinkTables("Planning", "ActivityHasTimeSpans", "ActivityOwnsTimeSpans")))
+            return false;
+        }
+
     LogPerformanceMessage(timer, "Export EC Relationships");
 
     ExportPropertyData();
