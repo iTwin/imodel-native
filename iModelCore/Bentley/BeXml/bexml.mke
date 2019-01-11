@@ -1,0 +1,48 @@
+#--------------------------------------------------------------------------------------
+#     $Source: BeXml/bexml.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+AppName = BeXml
+o = $(PartBuildDir)/
+
+nameToDefine = __BEXMLDLL_BUILD__
+%include cdefapnd.mki
+
+# Define this because we include xmllib header files
+%if defined (CREATE_STATIC_LIBRARIES)
+    nameToDefine = LIBXML_STATIC
+    %include cdefapnd.mki
+%endif
+
+#----------------------------------------------------------------------
+always:
+   ~linkdir "$(BuildContext)PublicAPI/BeXml=$(_MakeFilePath)PublicApi/BeXml/"
+
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+$(o)BeXml$(oext) : $(_MakeFilePath)BeXml.cpp $(_MakeFilePath)PublicApi/BeXml/BeXml.h
+
+objs + $(o)BeXml$(oext)
+
+#----------------------------------------------------------------------
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)BeIcu4c$(libext)
+
+%include $(sharedMki)linkLibrary.mki
