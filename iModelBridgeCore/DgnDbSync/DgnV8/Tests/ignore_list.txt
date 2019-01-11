@@ -9,15 +9,3 @@ NamedGroupTests.NamedGroupOf2dElement
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
 
-TransformTests.Test1
-
-    # VSTS#58833
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/11/2019
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(439): error:       Expected: hadAnyChanges
-    # Which is: true
-    # To be equal to: expectUpdate
-    # Which is: false
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1239): error:       Expected: 0
-    # To be equal to: m_count
-    # Which is: 2
-
