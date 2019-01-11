@@ -272,8 +272,8 @@ double const*   pSweep
         }
     else
         {
-        vec0  = *(DVec3d*) pDirectionX;
-        vec90 = *(DVec3d*) pDirectionY;
+        vec0  = *pDirectionX;
+        vec90 = *pDirectionY;
         }
 
     pEllipse->center = *pCenter;

@@ -2122,4 +2122,67 @@ TEST_F(PropertyCopyTest, NavigationPropertyWithRelationshipInSameSchemaWithoutCo
     EXPECT_STREQ(m_schema0->GetName().c_str(), destNavProp->GetRelationshipClass()->GetSchema().GetName().c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Gintaras.Volkvicius 11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(PropertyCopyTest, SimpleCase_CopiedPropertyIsSameProperty)
+    {
+    PrimitiveECPropertyP primProp;
+    EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop"));
+    
+    m_prop0 = primProp;
+    CopyProperty(true);
+    EXPECT_TRUE(m_prop0->IsSame(*m_prop1));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Gintaras.Volkvicius 11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(PropertyCopyTest, PriorityExplicitlySet_CopiedPropertyIsSameProperty)
+    {
+    PrimitiveECPropertyP primProp;
+    EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop"));
+    primProp->SetPriority(33);
+
+    m_prop0 = primProp;
+    CopyProperty(true);
+    EXPECT_TRUE(m_prop0->IsSame(*m_prop1));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Gintaras.Volkvicius 11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(PropertyCopyTest, PropertyHasBasePropertyWithNoPriority_CopiedPropertyIsSameProperty)
+    {
+    PrimitiveECPropertyP baseProp;
+    EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(baseProp, "BaseProp"));
+
+    PrimitiveECPropertyP primProp;
+    EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop"));
+    primProp->SetBaseProperty(baseProp);
+
+    m_prop0 = primProp;
+    CopyProperty(true);
+    EXPECT_TRUE(m_prop0->IsSame(*m_prop1));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Gintaras.Volkvicius 11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(PropertyCopyTest, PropertyHasBasePropertyWithPriorityExcplicitlySet_CopiedPropertyIsSameProperty)
+    {
+    PrimitiveECPropertyP baseProp;
+    EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(baseProp, "BaseProp"));
+    baseProp->SetPriority(31);
+
+    PrimitiveECPropertyP primProp;
+    EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop"));
+    primProp->SetBaseProperty(baseProp);
+
+    m_prop0 = primProp;
+    CopyProperty(true);
+    EXPECT_TRUE(m_prop0->IsSame(*m_prop1));
+    }
+
+
 END_BENTLEY_ECN_TEST_NAMESPACE

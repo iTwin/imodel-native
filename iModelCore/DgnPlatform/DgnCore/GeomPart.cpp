@@ -229,7 +229,7 @@ void dgn_ElementHandler::GeometryPart::_RegisterPropertyAccessors(ECSqlClassInfo
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-#define GETBBOXPROP(EXPR) [](ECValueR value, DgnElementCR elIn)      {auto& el = (DgnGeometryPart&)elIn; ElementAlignedBox3dCR bbox = el.GetBoundingBox(); EXPR; return DgnDbStatus::Success;}
+#define GETBBOXPROP(EXPR) [](ECValueR value, DgnElementCR elIn)      {auto const& el = (DgnGeometryPart const&)elIn; ElementAlignedBox3dCR bbox = el.GetBoundingBox(); EXPR; return DgnDbStatus::Success;}
 #define SETBBOXPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value) \
     {                                                                \
     if (value.IsNull() || !value.IsPoint3d())                        \

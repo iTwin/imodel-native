@@ -331,7 +331,7 @@ static int registerEncryptedDbVfs(Utf8CP vfsName)
     encryptedDbVfs->xOpen  = encryptedDbVfs_xOpen;
     encryptedDbVfs->szOsFile = rootVfs->szOsFile + sizeof(EncryptedDbVfsFile); // see note about SQLite subclassing at toRootVfsFile
     encryptedDbVfs->zName = (char*) &encryptedDbVfs[1]; // to save a malloc
-    memcpy ((char*) encryptedDbVfs->zName, vfsName, vfsNameLength);
+    memcpy (const_cast<char*>(encryptedDbVfs->zName), vfsName, vfsNameLength);
     encryptedDbVfs->pAppData = nullptr;
     encryptedDbVfs->iVersion = rootVfs->iVersion;
     encryptedDbVfs->mxPathname = rootVfs->mxPathname;

@@ -1268,7 +1268,7 @@ void CheckPrimitive (ICurvePrimitiveCR primitive, bool doPartial = false)
         {
         double a = 0.10;
         double b = 0.20;
-        auto child = ICurvePrimitive::CreatePartialCurve ((ICurvePrimitive*)&primitive, a, b);
+        auto child = ICurvePrimitive::CreatePartialCurve (const_cast<ICurvePrimitiveP>(&primitive), a, b);
         CheckPrimitive_go (*child);
         }
     }    

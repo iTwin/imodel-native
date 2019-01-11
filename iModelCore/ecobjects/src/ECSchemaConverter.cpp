@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchemaConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -590,6 +590,45 @@ bool StandardValueInfo::Equals(const StandardValueInfo& sd) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Aurora.Lane                    01/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+bool StandardValueInfo::Equals(ECEnumerationCP ecEnum) const
+    {
+    if (m_mustBeFromList == false || m_mustBeFromList != ecEnum->GetIsStrict())
+        return false;
+    if ((size_t) (m_valuesMap.size()) != ecEnum->GetEnumeratorCount())
+        return false;
+    for (auto const& enumerator : ecEnum->GetEnumerators())
+        {
+        auto it = m_valuesMap.find(enumerator->GetInteger());
+        if (it == m_valuesMap.end())
+            return false;
+        if (0 != BeStringUtilities::Stricmp(it->second.c_str(), enumerator->GetDisplayLabel().c_str()))
+            return false;
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Aurora.Lane                    01/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+// Determines if ECEnumeration contains SVI's enumerators without unnecessary conversion
+bool StandardValueInfo::ContainedBy(ECEnumerationCP ecEnum) const
+    {
+    if ((size_t) (m_valuesMap.size()) > ecEnum->GetEnumeratorCount())
+        return false;
+    for (auto const& valuePair : m_valuesMap)
+        {
+        auto const pair = ecEnum->FindEnumerator(valuePair.first);
+        if (nullptr == pair)
+            return false;
+        if (0 != BeStringUtilities::Stricmp(valuePair.second.c_str(), pair->GetDisplayLabel().c_str()))
+            return false;
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                   09/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 bool StandardValueInfo::Contains(const StandardValueInfo& sd) const
@@ -842,14 +881,12 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
     ECEnumerationCP existingEnum = (nullptr == primArrProp) ? primProp->GetEnumeration() : primArrProp->GetEnumeration();
     if (nullptr != existingEnum)
         {
-        StandardValueInfo existingEnumSdInfo(*existingEnum);
-        if ((sdInfo.m_mustBeFromList && sdInfo.Equals(existingEnumSdInfo))
-            || (existingEnumSdInfo.Contains(sdInfo)))
+        if (sdInfo.Equals(existingEnum) || sdInfo.ContainedBy(existingEnum))
             {
             // Already successfully converted
             prop->RemoveCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
             prop->RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
-            return ECObjectsStatus::Success; 
+            return ECObjectsStatus::Success;
             }
         }
     
@@ -954,9 +991,7 @@ ECObjectsStatus StandardValuesConverter::FindEnumeration(ECSchemaR schema, ECEnu
             || (sdInfo.m_mustBeFromList != ecEnum->GetIsStrict()))
             continue;
 
-        StandardValueInfo enumSdInfo(ecEnum);
-        if ((sdInfo.m_mustBeFromList && sdInfo.Equals(enumSdInfo))
-            || (enumSdInfo.Contains(sdInfo)))
+        if (sdInfo.Equals(ecEnum) || (sdInfo.ContainedBy(ecEnum)))
             {
             enumeration = ecEnum;
             return ECObjectsStatus::Success;

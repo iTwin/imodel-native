@@ -2406,8 +2406,8 @@ const void    *pElem1,
 const void    *pElem2
 )
     {
-    DPoint2d *pA = (DPoint2d*) pElem1;
-    DPoint2d *pB= (DPoint2d*) pElem2;
+    DPoint2dCP pA = (DPoint2dCP) pElem1;
+    DPoint2dCP pB= (DPoint2dCP) pElem2;
     if (pA->x < pB->x)
         return -1;
     if (pA->x > pB->x)
@@ -3036,7 +3036,7 @@ const DPoint3d      *pPoints,
 int                 numPts
 )
     {
-    double      *pArray;        /* TREAT DPOINT3D AS ARRAY OF 3 DOUBLES*/
+    double const*pArray;        /* TREAT DPOINT3D AS ARRAY OF 3 DOUBLES*/
     double      aMin[3];
     double      aMax[3];
     double      a;
@@ -3051,7 +3051,7 @@ int                 numPts
         return false;
 
     /* Find extrema on each axis, keeping track of their indices in the array.*/
-    pArray = (double *)pPoints;
+    pArray = (double const*)pPoints;
     for (k = 0; k < 3; k++)         /* init min/max vals/indices w/ 1st pt */
         {
         aMin[k] = aMax[k] = pArray[k];
@@ -3059,7 +3059,7 @@ int                 numPts
         }
     for (i = 1; i < numPts; i++)    /* compare min/max vals/indices w/ other pts */
         {
-        pArray = (double *)(pPoints + i);
+        pArray = (double const*)(pPoints + i);
         for (k = 0; k < 3; k++)
             {
             a = pArray[k];

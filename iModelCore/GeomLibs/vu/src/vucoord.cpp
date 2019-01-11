@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/vucoord.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -2750,7 +2750,7 @@ void VuNode::ToggleMask(VuMask mask)
         vu_setMask(this, mask);
     }
 
-bool VuNode::HasMask(VuMask mask) const { return 0 != vu_getMask((VuP)this, mask);}
+bool VuNode::HasMask(VuMask mask) const { return 0 != vu_getMask(const_cast<VuP>(this), mask);}
 
 void VuNode::SetMaskAroundEdge(VuMask mask)
     {
@@ -2896,38 +2896,38 @@ void VuNode::SetUserDataAsIntAroundFace (int value)
 int VuNode::CountMaskAroundVertex(VuMask mask) const
     {
     int n = 0;
-    VU_VERTEX_LOOP(node, (VuP)this)
+    VU_VERTEX_LOOP(node, const_cast<VuP>(this))
         {
         if (node->HasMask (mask))
             n++;
         }
-    END_VU_VERTEX_LOOP(node,(VuP) this)
+    END_VU_VERTEX_LOOP(node,const_cast<VuP>(this))
     return n;
     }
 
 int VuNode::CountMaskAroundFace (VuMask mask) const
     {
     int n = 0;
-    VU_FACE_LOOP(node, (VuP)this)
+    VU_FACE_LOOP(node, const_cast<VuP>(this))
         {
         if (node->HasMask(mask))
             n++;
         }
-    END_VU_FACE_LOOP(node, (VuP)this)
+    END_VU_FACE_LOOP(node, const_cast<VuP>(this))
     return n;
     }
 
 
 int VuNode::GetId () const { return id; }
 
-ptrdiff_t VuNode::GetUserData1 () const {return vu_getUserData1 ((VuP)this);}
+ptrdiff_t VuNode::GetUserData1 () const {return vu_getUserData1 (const_cast<VuP>(this));}
 ptrdiff_t VuNode::SetUserData1 (ptrdiff_t value)
     {
     ptrdiff_t oldValue = GetUserData1 ();
     vu_setUserData1 (this, value);
     return oldValue;
     }
-int       VuNode::GetUserDataAsInt () const {return vu_getUserDataPAsInt ((VuP)this);}
+int       VuNode::GetUserDataAsInt () const {return vu_getUserDataPAsInt (const_cast<VuP>(this));}
 int       VuNode::SetUserDataAsInt(int value)
     {
     int oldValue = GetUserDataAsInt();
@@ -2935,12 +2935,12 @@ int       VuNode::SetUserDataAsInt(int value)
     return oldValue;
     }
 
-VuP VuNode::FSucc () const {return vu_fsucc ((VuP)this);}
-VuP VuNode::VSucc () const {return vu_vsucc ((VuP)this);}
-VuP VuNode::FPred () const {return vu_fpred ((VuP)this);}
-VuP VuNode::VPred () const {return vu_vpred ((VuP)this);}
+VuP VuNode::FSucc () const {return vu_fsucc (const_cast<VuP>(this));}
+VuP VuNode::VSucc () const {return vu_vsucc (const_cast<VuP>(this));}
+VuP VuNode::FPred () const {return vu_fpred (const_cast<VuP>(this));}
+VuP VuNode::VPred () const {return vu_vpred (const_cast<VuP>(this));}
 
-VuP VuNode::EdgeMate () const {return vu_edgeMate ((VuP)this);}
+VuP VuNode::EdgeMate () const {return vu_edgeMate (const_cast<VuP>(this));}
 
 /*---------------------------------------------------------------------------------**//**
 @description  Collect xyz coordinates around a face.

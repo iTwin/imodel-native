@@ -652,7 +652,10 @@ size_t MTGGraph::WriteToBinaryStream(void*& serialized)
     serialized = malloc(count);
     size_t offset = sizeof(int);
     ((int*)serialized)[0] = (int)m_nodeData.size()*sizeof(MTG_Node);
-    memcpy((char*)serialized+offset, m_nodeData.data(), m_nodeData.size()*sizeof(MTG_Node));
+
+    if (m_nodeData.size() > 0)
+        memcpy((char*)serialized+offset, m_nodeData.data(), m_nodeData.size()*sizeof(MTG_Node));
+
     offset += m_nodeData.size()*sizeof(MTG_Node);
     (*(int*)((char*)serialized + offset)) = (int)m_nodeLabels.size()*(2 * sizeof(int) + sizeof(MTGLabelMask));
     offset += sizeof(int);

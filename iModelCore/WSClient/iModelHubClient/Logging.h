@@ -8,16 +8,18 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include <WebServices/iModelHub/Common.h>
+#include <WebServices/Client/WSRepositoryClient.h>
 #include <Logging/bentleylogging.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_LOGGING
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 struct LogHelper
 {
 private:
     static NativeLogging::ILogger* logger;
-    static void LogInternal(SEVERITY severity, Utf8String const methodName, float timeSpent, Utf8CP messageFormat, va_list args);
+    static void LogInternal(SEVERITY severity, Utf8String const methodName, float timeSpent, IWSRepositoryClient::RequestOptionsPtr requestOptions, Utf8CP messageFormat, va_list args);
 public:
     //=======================================================================================
     //@param  severity       The severity level of the log message
@@ -33,6 +35,26 @@ public:
     //@bsimethod                                      Vytautas.Strimaitis           08/2016
     //=======================================================================================
     static void Log(SEVERITY severity, Utf8String const methodName, Utf8CP message, ...);
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                      Algirdas.Mikoliunas           12/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void Log(SEVERITY severity, Utf8String const methodName, float timeSpent, IWSRepositoryClient::RequestOptionsPtr requestOptions, Utf8CP messageFormat, ...);
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                      Algirdas.Mikoliunas           12/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void Log(SEVERITY severity, Utf8String const methodName, IWSRepositoryClient::RequestOptionsPtr requestOptions, Utf8CP message, ...);
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                      Algirdas.Mikoliunas           12/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static IWSRepositoryClient::RequestOptionsPtr CreateiModelHubRequestOptions();
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                      Algirdas.Mikoliunas           12/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FilliModelHubRequestOptions(IWSRepositoryClient::RequestOptionsPtr requestOptions);
 };
 
 //---------------------------------------------------------------------------------------

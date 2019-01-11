@@ -193,7 +193,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
         {
         if (m_schemaContext.GetPreserveXmlComments())
             {
-            if (classNode->type == BEXMLNODE_Comment)
+            if ((BeXmlNodeType)classNode->type == BEXMLNODE_Comment)
                 {
                 Utf8String comment;
                 if (classNode->GetContent(comment) == BeXmlStatus::BEXML_Success)
@@ -202,7 +202,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
                     }
                 }
             }
-        if (classNode->type != BEXMLNODE_Element)
+        if ((BeXmlNodeType)classNode->type != BEXMLNODE_Element)
             continue;
 
         ECClassP ecClass = nullptr;

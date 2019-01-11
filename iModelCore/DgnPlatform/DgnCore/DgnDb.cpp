@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDb.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -185,7 +185,7 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     {
-    SchemaUpgradeOptions const& schemaUpgradeOptions = ((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions();
+    SchemaUpgradeOptions const& schemaUpgradeOptions = ((DgnDb::OpenParams const&) params).GetSchemaUpgradeOptions();
     
     SchemaStatus status = Domains().InitializeSchemas(schemaUpgradeOptions);
     if (status == SchemaStatus::SchemaTooNew || status == SchemaStatus::SchemaTooOld)
@@ -238,7 +238,7 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::ProcessRevisions(Db::OpenParams const& params)
     {
-    SchemaUpgradeOptions schemaUpgradeOptions = (((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions());
+    SchemaUpgradeOptions schemaUpgradeOptions = (((DgnDb::OpenParams const&) params).GetSchemaUpgradeOptions());
     bvector<DgnRevisionCP> revisions = schemaUpgradeOptions.GetRevisions();
     if (revisions.empty())
         return BE_SQLITE_OK;
@@ -999,6 +999,7 @@ struct RangeWithoutOutlierCalculator
     double              m_maxDiagonal = 0.0;
     BeInt64Id           m_maxId;
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1060,6 +1061,7 @@ DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double 
     return range;
     }
 };  //  RangeWithoutOutlierCalculator.
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2018

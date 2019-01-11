@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElement.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1002,7 +1002,7 @@ public:
     {
         DEFINE_T_SUPER(Aspect)
     protected:
-        static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)&cls;}
+        static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)const_cast<ECN::ECClassP>(&cls);}
         Key& GetKey(DgnDbR db) {return GetKey(*GetKeyECClass(db));}
         static UniqueAspect* Find(DgnElementCR, ECN::ECClassCR);
         static RefCountedPtr<DgnElement::UniqueAspect> Load0(DgnElementCR, DgnClassId); // Loads *but does not call AddAppData*

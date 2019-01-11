@@ -155,10 +155,10 @@ ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass(ECClassId 
     if (ecSchema.IsNull())
         return nullptr;
 
-    if (ECObjectsStatus::Success != ecSchema->AddReferencedSchema((ECSchemaR) parentClass->GetSchema()))
+    if (ECObjectsStatus::Success != ecSchema->AddReferencedSchema(const_cast<ECSchemaR>(parentClass->GetSchema())))
         return nullptr;
 
-    auto status = ecSchema->AddReferencedSchema((ECSchemaR) childClass->GetSchema());
+    auto status = ecSchema->AddReferencedSchema(const_cast<ECSchemaR>(childClass->GetSchema()));
     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
         return nullptr;
 

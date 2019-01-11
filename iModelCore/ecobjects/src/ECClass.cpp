@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECClass.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -777,31 +777,36 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         }
     else if (sourceProperty->GetIsNavigation())
         {
-        NavigationECPropertyP destNav;
+        NavigationECPropertyP destNav = new NavigationECProperty(*this);
         NavigationECPropertyCP sourceNav = sourceProperty->GetAsNavigationProperty();
-        destNav = new NavigationECProperty(*this);
 
-        ECRelationshipClassCP sourceRelClass = sourceNav->GetRelationshipClass();
-        if (sourceRelClass->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+        ECRelationshipClassCP relationshipClass = sourceNav->GetRelationshipClass();
+        ECClassCP const targetRelationshipClass = this->GetSchemaR().GetClassCP(relationshipClass->GetName().c_str());
+
+        if (nullptr == targetRelationshipClass)
             {
-            ECClassP destClass = this->GetSchemaR().GetClassP(sourceRelClass->GetName().c_str());
-            if (nullptr == destClass && copyReferences)
+            ECObjectsStatus status;
+            if (relationshipClass->GetSchema().GetSchemaKey().Matches(sourceProperty->GetClass().GetSchema().GetSchemaKey(), SchemaMatchType::Exact))
                 {
-                auto status = this->GetSchemaR().CopyClass(destClass, *sourceRelClass, sourceRelClass->GetName(), copyReferences);
-                if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                if (copyReferences)
+                    {
+                    ECClassP ecClass;
+                    if (ECObjectsStatus::Success != (status = this->GetSchemaR().CopyClass(ecClass, *relationshipClass, relationshipClass->GetName(), copyReferences)))
+                        return status;
+                    relationshipClass = ecClass->GetRelationshipClassCP();
+                    }
+                else if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), relationshipClass->GetSchema())
+                    && ECObjectsStatus::Success != (status = GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(relationshipClass->GetSchema()))))
+                        return status;
+                }
+            else if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), relationshipClass->GetSchema())
+                && ECObjectsStatus::Success != (status = GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(relationshipClass->GetSchema()))))
                     return status;
-                destNav->SetRelationshipClass(*destClass->GetRelationshipClassCP(), sourceNav->GetDirection());
-                }
-            else
-                {
-                if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), sourceNav->GetClass().GetSchema()))
-                    GetContainerSchema()->AddReferencedSchema(const_cast<ECRelationshipClassP>(sourceRelClass)->GetSchemaR());
-                destNav->SetRelationshipClass(*sourceRelClass, sourceNav->GetDirection());
-                }
             }
         else
-            destNav->SetRelationshipClass(*sourceRelClass, sourceNav->GetDirection());
+            relationshipClass = targetRelationshipClass->GetRelationshipClassCP();
 
+        destNav->SetRelationshipClass(*relationshipClass, sourceNav->GetDirection());
         destProperty = destNav;
         }
 
@@ -810,7 +815,12 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         destProperty->SetDisplayLabel(sourceProperty->GetInvariantDisplayLabel());
     destProperty->SetName(sourceProperty->GetName());
     destProperty->SetIsReadOnly(sourceProperty->IsReadOnlyFlagSet());
-    destProperty->SetPriority(sourceProperty->GetPriority());
+    if (sourceProperty->IsPriorityLocallyDefined())
+        destProperty->SetPriority(sourceProperty->GetPriority());
+
+    // This is needed so that roundtrip – deserialize schema -> copy schema -> serialize schema – would preserve unrecognized typeNames
+    if (!sourceProperty->m_originalTypeName.empty())
+        destProperty->m_originalTypeName = sourceProperty->m_originalTypeName;
 
     if (sourceProperty->IsCategoryDefinedLocally())
         {
@@ -851,7 +861,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
                 {
                 if (copyReferences)
                     {
-                    auto status = this->GetSchemaR().CopyKindOfQuantity(destKoq, *sourceKoq);
+                    auto status = this->GetSchemaR().CopyKindOfQuantity(destKoq, *sourceKoq, copyReferences);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
                         return status;
                     destProperty->SetKindOfQuantity(destKoq);
@@ -871,7 +881,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         }
 
     if (copyCustomAttributes)
-        sourceProperty->CopyCustomAttributesTo(*destProperty);
+        sourceProperty->CopyCustomAttributesTo(*destProperty, copyReferences);
 
     ECObjectsStatus status = ECObjectsStatus::Success;
     if (andAddProperty)
@@ -991,7 +1001,7 @@ void ECClass::OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP
 // @bsimethod                                   Caleb.Shafer                    12/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses)
+bool ECClass::ConvertPropertyToPrimitiveArray(ECClassP ecClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses)
     {
     if (includeDerivedClasses && ecClass->HasDerivedClasses())
         {
@@ -1000,7 +1010,7 @@ bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startin
             if (ECClass::ClassesAreEqualByName(derivedClass, startingClass))
                 continue;
 
-            if (!ConvertPropertyToPrimitveArray(derivedClass, ecClass, propName, includeDerivedClasses))
+            if (!ConvertPropertyToPrimitiveArray(derivedClass, ecClass, propName, includeDerivedClasses))
                 return false;
             }
         }
@@ -1012,7 +1022,7 @@ bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startin
             if (ECClass::ClassesAreEqualByName(baseClass, startingClass))
                 continue;
 
-            if (!ConvertPropertyToPrimitveArray(baseClass, ecClass, propName))
+            if (!ConvertPropertyToPrimitiveArray(baseClass, ecClass, propName))
                 return false;
             }
         }
@@ -1051,7 +1061,8 @@ bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startin
         newProperty->SetDisplayLabel(primProp->GetInvariantDisplayLabel());
     newProperty->SetIsReadOnly(primProp->IsReadOnlyFlagSet());
 
-    ECObjectsStatus status = primProp->CopyCustomAttributesTo(*newProperty);
+    // doesn't matter if we pass true or false for copyReferences param, because we are copying to the same class
+    ECObjectsStatus status = primProp->CopyCustomAttributesTo(*newProperty, false);
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv("Failed to convert the property, %s.%s, to a primitive array property because could not copy all original custom attributes.", 
@@ -1093,7 +1104,7 @@ bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startin
     delete primProp;
 
     for (ECClassP derivedClass : ecClass->GetDerivedClasses())
-        ConvertPropertyToPrimitveArray(derivedClass, ecClass, propName, true);
+        ConvertPropertyToPrimitiveArray(derivedClass, ecClass, propName, true);
 
     return true;
     }
@@ -1128,7 +1139,7 @@ ECObjectsStatus ECClass::FixArrayPropertyOverrides()
 
             if (ecProp->GetIsPrimitive() != baseProperty->GetIsPrimitive() || ecProp->GetIsPrimitiveArray() != baseProperty->GetIsPrimitiveArray())
                 {
-                if (!ConvertPropertyToPrimitveArray(this, this, propName))
+                if (!ConvertPropertyToPrimitiveArray(this, this, propName))
                     return ECObjectsStatus::Error;
                 break;
                 }
@@ -1332,7 +1343,7 @@ void ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
 
     for (derivedClassIterator = m_derivedClasses.begin(); derivedClassIterator != m_derivedClasses.end(); derivedClassIterator++)
         {
-        if (*derivedClassIterator == (ECClassP)&derivedClass)
+        if (*derivedClassIterator == (ECClassCP)&derivedClass)
             {
             m_derivedClasses.erase(derivedClassIterator);
             return;
@@ -1428,7 +1439,7 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
     ECBaseClassesList::const_iterator baseClassIterator;
     for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
-        if (*baseClassIterator == (ECClassP) &baseClass)
+        if (*baseClassIterator == (ECClassCP) &baseClass)
             {
             LOG.infov("Cannot add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.GetFullName(), GetFullName());
             return ECObjectsStatus::NamedItemAlreadyExists;
@@ -1494,9 +1505,9 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
     // NEEDSWORK - what if the base class being set is just a stub and does not contain 
     // any properties.  How do we handle property overrides?
     if (!insertAtBeginning)
-        m_baseClasses.push_back((ECClassP) &baseClass);
+        m_baseClasses.push_back(const_cast<ECClassP>(&baseClass));
     else
-        m_baseClasses.insert(m_baseClasses.begin(), (ECClassP) &baseClass);
+        m_baseClasses.insert(m_baseClasses.begin(), const_cast<ECClassP>(&baseClass));
 
     InvalidateDefaultStandaloneEnabler();
 
@@ -1554,7 +1565,7 @@ ECObjectsStatus ECClass::_RemoveBaseClass(ECClassCR baseClass)
     ECBaseClassesList::iterator baseClassIterator;
     for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
-        if (*baseClassIterator == (ECClassP)&baseClass)
+        if (*baseClassIterator == (ECClassCP)&baseClass)
             {
             m_baseClasses.erase(baseClassIterator);
             baseClassRemoved = true;
@@ -1803,7 +1814,7 @@ void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>&
     {
     BeXmlNodeP currentNode = &childNode;
     currentNode = currentNode->GetNextSibling(BEXMLNODE_Any);
-    if (nullptr != currentNode && currentNode->type == BEXMLNODE_Comment)
+    if (nullptr != currentNode && (BeXmlNodeType)currentNode->type == BEXMLNODE_Comment)
         {
         Utf8String comment;
         currentNode->GetContent(comment);
@@ -1825,7 +1836,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         {
         if (context.GetPreserveXmlComments())
             {
-            if (childNode->type == BEXMLNODE_Comment)
+            if ((BeXmlNodeType)childNode->type == BEXMLNODE_Comment)
                 {
                 Utf8String comment;
                 childNode->GetContent(comment);
@@ -1833,7 +1844,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 }
              }
 
-        if (childNode->type != BEXMLNODE_Element)
+        if ((BeXmlNodeType)childNode->type != BEXMLNODE_Element)
             continue;
 
         Utf8CP childNodeName = childNode->GetName ();
@@ -3947,7 +3958,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
             return status;
         }
 
-    return CopyCustomAttributesTo(toRelationshipConstraint);
+    return CopyCustomAttributesTo(toRelationshipConstraint, copyReferences);
     }
 
 /*---------------------------------------------------------------------------------**//**

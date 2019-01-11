@@ -785,7 +785,7 @@ void PolyfaceHeader::CopyFrom (PolyfaceQueryCR source)
     CopyAndActivate <DVec3d>        (m_normal,      source.GetNormalCP (),              source.GetNormalCount ());
     CopyAndActivate <DPoint2d>      (m_param,       source.GetParamCP (),               source.GetParamCount ());
     CopyAndActivate <FacetFaceData> (m_faceData,    source.GetFaceDataCP (),            source.GetFaceCount ());
-    CopyAndActivate <uint32_t>      (m_intColor,    (uint32_t*)source.GetIntColorCP (), source.GetColorCount ());
+    CopyAndActivate <uint32_t>      (m_intColor,    (uint32_t const*)source.GetIntColorCP (), source.GetColorCount ());
 
     CopyAndActivate <int>(m_pointIndex,     source.GetPointIndexCP (),  source.GetPointIndexCount ());
     CopyAndActivate <int>(m_normalIndex,    source.GetNormalIndexCP (), source.GetPointIndexCount ());

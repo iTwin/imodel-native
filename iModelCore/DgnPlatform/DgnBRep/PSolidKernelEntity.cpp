@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidKernelEntity.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -495,7 +495,6 @@ int                 transmitVersion         // => version of parasolid schema to
     PK_PART_transmit_o_m (transmitOptions);
     transmitOptions.transmit_format  = PK_transmit_format_binary_c;
     transmitOptions.transmit_version = transmitVersion;
-
     PK_ERROR_code_t result = PK_PART_transmit_b(1, &entityTagIn, &transmitOptions, pBuffer);
     if (PK_ERROR_no_errors != result)
         {
@@ -567,7 +566,7 @@ IBRepEntityCR   entity
         SUCCESS != pki_combine_memory_blocks(block))
         return ERROR;
 
-    *ppBuffer  = (uint8_t*) block->bytes;
+    *ppBuffer  = const_cast<uint8_t*>((uint8_t const*)block->bytes);
     bufferSize = block->n_bytes;
 
     return SUCCESS;

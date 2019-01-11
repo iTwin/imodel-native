@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "LRPJobBackdoorAPI.h"
 #include "../../../iModelHubClient/Utils.h"
+#include "../Helpers/iModelHubHelpers.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -25,7 +26,7 @@ namespace LRPJobBackdoorAPI
         properties[BackdoorAPISchema::Property::LRPiModelId] = iModelId;
         return lrpJobInstanceJson;
         }
-
+    
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                             Robertas.Maleckas      11/17
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -33,7 +34,8 @@ namespace LRPJobBackdoorAPI
         {
         Json::Value lrpJobInstanceJson = CreateLRPJobJson(jobId, iModelId);
 
-        auto result = projectConnection->SendCreateObjectRequest(lrpJobInstanceJson, BeFileName (), nullptr, nullptr)->GetResult();
+        auto requestOptions = iModelHubHelpers::CreateiModelHubRequestOptions();
+        auto result = projectConnection->SendCreateObjectRequestWithOptions(lrpJobInstanceJson, BeFileName (), nullptr, requestOptions, nullptr)->GetResult();
 
         EXPECT_SUCCESS(result);
 
@@ -51,7 +53,8 @@ namespace LRPJobBackdoorAPI
         {
         ObjectId lrpJobRecordObjectId(ServerSchema::Schema::Project, BackdoorAPISchema::Class::LRPJob, lrpJobRecordId);
 
-        auto result = projectConnection->SendGetObjectRequest(lrpJobRecordObjectId, nullptr, nullptr)->GetResult ();
+        auto requestOptions = iModelHubHelpers::CreateiModelHubRequestOptions();
+        auto result = projectConnection->SendGetObjectRequestWithOptions(lrpJobRecordObjectId, nullptr, requestOptions, nullptr)->GetResult ();
         EXPECT_SUCCESS (result);
         
         RapidJsonValueCR properties = (*result.GetValue().GetInstances().begin()).GetProperties();

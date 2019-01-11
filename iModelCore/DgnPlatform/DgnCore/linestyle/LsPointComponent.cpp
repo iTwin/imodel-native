@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsPointComponent.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -200,7 +200,7 @@ bool LsPointComponent::_ProcessSymbol(LineStyleContextR context, Centerline cons
     DPoint3d    segOrg, segEnd, segDir, symOrg;
     bool        checkOrigin = !symRef->GetDgnDb();
 
-    switch (symRef->GetJustification())
+    switch ((LineCodeMod)symRef->GetJustification())
         {
         case LCPOINT_ORIGIN:
             if (checkOrigin && (*firstLen > 0))
@@ -560,7 +560,7 @@ LsOkayForTextureGeneration LsPointComponent::VerifySymbol(double& adjustment, do
     double xOrigin = 0;
     double outStrokeLen = pStroke->GetLength();
 
-    switch (symRef->GetJustification())
+    switch ((LineCodeMod)symRef->GetJustification())
         {
         case LCPOINT_ORIGIN:
             xOrigin = startOfStroke + symRef->m_offset.x;

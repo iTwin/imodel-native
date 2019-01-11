@@ -602,7 +602,7 @@ LsRasterImageComponentP      LsCompoundComponent::_GetRasterImageComponent ()
         {
         LsComponentCP comp = GetComponentCP (compNum);
         if (comp->GetComponentType () == LsComponentType::RasterImage)
-            return (LsRasterImageComponentP)comp;
+            return (LsRasterImageComponentP)const_cast<LsComponentP>(comp);
         }
         
     return nullptr;

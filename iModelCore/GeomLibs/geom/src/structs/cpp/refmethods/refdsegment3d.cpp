@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdsegment3d.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -80,9 +80,9 @@ DPoint3dCP pVec1
     if (result)
         {
         if (pPoint0)
-            *pPoint0 = (*pStart0) + (*(DVec3d*)pVec0) * param0;//            bsiDPoint3d_addScaledDPoint3d (pPoint0, pStart0, pVec0, param0);
+            *pPoint0 = (*pStart0) + (*(DVec3d const*)pVec0) * param0;//            bsiDPoint3d_addScaledDPoint3d (pPoint0, pStart0, pVec0, param0);
         if (pPoint1)
-            *pPoint1 = (*pStart1) + (*(DVec3d*)pVec1) * param1;//            bsiDPoint3d_addScaledDPoint3d (pPoint1, pStart1, pVec1, param1);
+            *pPoint1 = (*pStart1) + (*(DVec3d const*)pVec1) * param1;//            bsiDPoint3d_addScaledDPoint3d (pPoint1, pStart1, pVec1, param1);
         if (pParam0)
             *pParam0 = param0;
         if (pParam1)

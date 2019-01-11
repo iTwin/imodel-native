@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/WebMercator.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -245,4 +245,3 @@ void    HereImageryProvider::_ToJson(Json::Value& value) const
     // the only thing currently stored in the HereImageryProvider Json is the MapType.
     value[WebMercatorModel::json_mapType()] = (int)m_mapType;
     }
-

@@ -59,7 +59,7 @@ public class TestActivity extends Activity implements SurfaceHolder.Callback
         lock.disableKeyguard ();
         
         PowerManager pm = (PowerManager) getSystemService (POWER_SERVICE);
-        m_wakeLock = pm.newWakeLock (PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "TestActivity.m_wakeLock");
+        m_wakeLock = pm.newWakeLock (PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "TestActivity:m_wakeLock");
         m_wakeLock.acquire();
         
         SurfaceView   view   = (SurfaceView) findViewById (R.id.surfaceView);

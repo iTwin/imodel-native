@@ -2,12 +2,13 @@
 |
 |     $Source: test/Published/SchemaCopyTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include "BeXml/BeXml.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -63,6 +64,8 @@ struct SchemaCopyTest : CopyTestFixture
 
         void CopySchema() { CopySchema(m_targetSchema); }
         void CopySchema(ECSchemaPtr& targetSchema);
+
+        void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root);
     };
 
 //=======================================================================================
@@ -103,6 +106,27 @@ void SchemaCopyTest::CopySchema(ECSchemaPtr& targetSchema)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                             Gintaras.Volkvicius    01/2019
+//---------------------------------------------------------------------------------------
+void SchemaCopyTest::ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root)
+    {
+    BeXmlNodeP currentNode = root->GetFirstChild();
+    for(auto expectedTypeName : expectedTypeNames)
+        {
+        if(currentNode == nullptr)
+            {
+            FAIL() << "Expected end of document, Node '" << expectedTypeName << "' expected.";
+            }
+
+        Utf8String nodeTypeName;
+        EXPECT_EQ(BeXmlStatus::BEXML_Success, currentNode->GetAttributeStringValue(nodeTypeName, "typeName"));
+        EXPECT_EQ(expectedTypeName, nodeTypeName);
+
+        currentNode = currentNode->GetNextSibling();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, Schema_Success)
@@ -131,21 +155,31 @@ TEST_F(SchemaCopyTest, Schema_Success)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Kyle.Abramowitz    02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaCopyTest, CopiedSchemaShouldAlwaysHaveOriginalXmlVersionSetToLatest)
+TEST_F(SchemaCopyTest, CopiedSchemaDoesNotPersistOriginalSchemaXMLVersion)
     {
-    uint32_t latestMajor;
-    uint32_t latestMinor;
-
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::Latest));
+    EXPECT_EQ(3, m_sourceSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_sourceSchema->GetOriginalECXmlVersionMinor());
+
     CopySchema();
-    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::V3_1);
-    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
-    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+    EXPECT_EQ(3, m_targetSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_targetSchema->GetOriginalECXmlVersionMinor());
 
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::V2_0));
+    EXPECT_EQ(3, m_sourceSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_sourceSchema->GetOriginalECXmlVersionMinor());
+
     CopySchema();
-    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
-    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+    EXPECT_EQ(3, m_targetSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_targetSchema->GetOriginalECXmlVersionMinor());
+
+    m_sourceSchema->SetOriginalECXmlVersion(2, 0);
+    EXPECT_EQ(2, m_sourceSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(0, m_sourceSchema->GetOriginalECXmlVersionMinor());
+
+    CopySchema();
+    EXPECT_EQ(3, m_targetSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, m_targetSchema->GetOriginalECXmlVersionMinor());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -795,6 +829,37 @@ TEST_F(SchemaCopyTest, CopyInvertedUnit_AllReferencesInSchema)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Gintaras.Volkvicius 11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, CopyInvertedUnit_CopySchemaSucceedsWhenInvertedUnitIsCopiedAfterItsParentUnit)
+    {
+    CreateTestSchema();
+    ECUnitP unit;
+    ECUnitP invUnit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "A_SYSTEM"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "A_PHENOM", "A"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "A", "A", *phenom, *system));
+    // This will be added after parent unit because A < INVERSE_A
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateInvertedUnit(invUnit, *unit, "INVERSE_A", *system));
+
+    CopySchema();
+
+    EXPECT_EQ(2, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetInvertedUnitCP("INVERSE_A");
+    ASSERT_TRUE(nullptr != targetUnit);
+    ASSERT_TRUE(targetUnit->IsInvertedUnit());
+    ASSERT_TRUE(targetUnit->HasUnitSystem());
+    EXPECT_STRCASEEQ("A", targetUnit->GetInvertingUnit()->GetName().c_str());
+    EXPECT_STREQ("INVERSE_A", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("", targetUnit->GetDescription().c_str());
+    EXPECT_STREQ("A_PHENOM", targetUnit->GetPhenomenon()->GetName().c_str());
+    EXPECT_STREQ("A_SYSTEM", targetUnit->GetUnitSystem()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                          Kyle.Abramowitz                           03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopyInvertedUnit_AllReferencesInRefSchema)
@@ -1024,6 +1089,132 @@ TEST_F(SchemaCopyTest, CopyKindOfQuantity_PresentationFormatDefinedInSchema)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                            Gintaras.Volkvicius    12/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, CopyKindOfQuantityIncludingReferences)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <Unit typeName="Unit" phenomenon="u:LENGTH" unitSystem="u:SI" definition="M"/>
+            <KindOfQuantity typeName="KindOfQuantity" persistenceUnit="Unit" relativeError=".5"/>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"));
+    ASSERT_NE(nullptr, schemaCopyFrom->GetUnitCP("Unit"));
+    ASSERT_EQ(schemaCopyFrom->GetUnitCP("Unit"), schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity")->GetPersistenceUnit());
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+    SchemaKey key("Units", 1, 0, 0);
+    schemaCopyTo->AddReferencedSchema(*schemaContext->LocateSchema(key, SchemaMatchType::Exact));
+
+    KindOfQuantityP koq;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyKindOfQuantity(koq, *schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"), true));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity"));
+    EXPECT_NE(schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"), schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetUnitCP("Unit"));
+    EXPECT_NE(schemaCopyFrom->GetUnitCP("Unit"), schemaCopyTo->GetUnitCP("Unit"));
+
+    EXPECT_EQ(schemaCopyTo->GetUnitCP("Unit"), schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity")->GetPersistenceUnit());
+
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Gintaras.Volkvicius    12/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, CopyKindOfQuantityWithReferencedPresentationUnitSchema)
+    {
+    Utf8CP referenceSchemaString = R"(
+        <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <Unit typeName="Unit" phenomenon="u:LENGTH" unitSystem="u:SI" definition="M"/>
+        </ECSchema>
+        )";
+
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="referenceSchema" version="01.00.00" alias="rs"/>
+            <KindOfQuantity typeName="KindOfQuantity" persistenceUnit="rs:Unit" relativeError=".5"/>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr referenceSchema;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(referenceSchema, referenceSchemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, referenceSchema->GetUnitCP("Unit"));
+
+    ECSchemaPtr schemaCopyFrom;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"));
+    ASSERT_EQ(referenceSchema->GetUnitCP("Unit"), schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity")->GetPersistenceUnit());
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+    SchemaKey key("Units", 1, 0, 0);
+    schemaCopyTo->AddReferencedSchema(*schemaContext->LocateSchema(key, SchemaMatchType::Exact));
+
+    KindOfQuantityP koq;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyKindOfQuantity(koq, *schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"), true));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity"));
+    EXPECT_NE(schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"), schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetUnitCP("Unit"));
+
+    EXPECT_EQ(referenceSchema->GetUnitCP("Unit"), schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity")->GetPersistenceUnit());
+
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *referenceSchema));
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Gintaras.Volkvicius    12/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, CopyKindOfQuantityWithReferencedSourceSchema)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <Unit typeName="Unit" phenomenon="u:LENGTH" unitSystem="u:SI" definition="M"/>
+            <KindOfQuantity typeName="KindOfQuantity" persistenceUnit="Unit" relativeError=".5"/>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"));
+    ASSERT_NE(nullptr, schemaCopyFrom->GetUnitCP("Unit"));
+    ASSERT_EQ(schemaCopyFrom->GetUnitCP("Unit"), schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity")->GetPersistenceUnit());
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+    SchemaKey key("Units", 1, 0, 0);
+    schemaCopyTo->AddReferencedSchema(*schemaContext->LocateSchema(key, SchemaMatchType::Exact));
+
+    KindOfQuantityP koq;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyKindOfQuantity(koq, *schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"), false));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity"));
+    EXPECT_NE(schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"), schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetUnitCP("Unit"));
+
+    EXPECT_EQ(schemaCopyFrom->GetUnitCP("Unit"), schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity")->GetPersistenceUnit());
+
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                          Kyle.Abramowitz                           03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopyStandardUnitsSchema)
@@ -1093,6 +1284,370 @@ TEST_F(SchemaCopyTest, CopyStandardFormatsSchema)
     EXPECT_EQ(refAmerFIComp->GetMinorUnit(), amerFiComp->GetMinorUnit());
     EXPECT_STRCASEEQ(refAmerFIComp->GetSubLabel().c_str(), amerFiComp->GetSubLabel().c_str());
     EXPECT_EQ(refAmerFIComp->GetSubUnit(), amerFiComp->GetSubUnit());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, SuccessfullyCopiesSchemaWithCustomAttributesInSchemaAndClassesAndProperties)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="aCustomClass" appliesTo="Any"/>
+            <ECEntityClass typeName="aEntityClass">
+                <ECCustomAttributes>
+                    <bCustomClass xmlns="testSchema.01.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="bEntityClass">
+                <ECCustomAttributes>
+                    <aCustomClass xmlns="testSchema.01.00.00"/>
+                </ECCustomAttributes>
+                <ECProperty propertyName="bProperty" typeName="aEntityClass">
+                    <ECCustomAttributes>
+                        <cCustomClass xmlns="testSchema.01.00.00"/>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECEntityClass>
+            <ECCustomAttributeClass typeName="bCustomClass" appliesTo="Any"/>
+            <ECCustomAttributeClass typeName="cCustomClass" appliesTo="Any"/>
+            <ECCustomAttributes>
+                <aCustomClass xmlns="testSchema.01.00.00"/>
+                <cCustomClass xmlns="testSchema.01.00.00"/>
+            </ECCustomAttributes>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr originalSchema;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *schemaContext));
+
+    ASSERT_TRUE(originalSchema->GetClassCP("aEntityClass")->GetCustomAttribute("testSchema", "bCustomClass").IsValid());
+    ASSERT_TRUE(originalSchema->GetClassCP("bEntityClass")->GetCustomAttribute("testSchema", "aCustomClass").IsValid());
+    ASSERT_TRUE(originalSchema->GetClassCP("bEntityClass")->GetPropertyP("bProperty")->GetCustomAttribute("testSchema", "cCustomClass").IsValid());
+    ASSERT_TRUE(originalSchema->GetPrimaryCustomAttribute("testSchema", "aCustomClass").IsValid());
+    ASSERT_TRUE(originalSchema->GetPrimaryCustomAttribute("testSchema", "cCustomClass").IsValid());
+
+    ECSchemaPtr copiedSchema;
+    EC_ASSERT_SUCCESS(originalSchema->CopySchema(copiedSchema));
+
+    EXPECT_TRUE(copiedSchema->GetClassCP("aEntityClass")->GetCustomAttribute("testSchema", "bCustomClass").IsValid());
+    EXPECT_TRUE(copiedSchema->GetClassCP("bEntityClass")->GetCustomAttribute("testSchema", "aCustomClass").IsValid());
+    EXPECT_TRUE(copiedSchema->GetClassCP("bEntityClass")->GetPropertyP("bProperty")->GetCustomAttribute("testSchema", "cCustomClass").IsValid());
+    EXPECT_TRUE(copiedSchema->GetPrimaryCustomAttribute("testSchema", "aCustomClass").IsValid());
+    EXPECT_TRUE(copiedSchema->GetPrimaryCustomAttribute("testSchema", "cCustomClass").IsValid());
+
+    EXPECT_EQ(copiedSchema.get(), &(copiedSchema->GetClassCP("aEntityClass")->GetCustomAttribute("testSchema", "bCustomClass")->GetClass().GetSchema()));
+    EXPECT_EQ(copiedSchema.get(), &(copiedSchema->GetClassCP("bEntityClass")->GetCustomAttribute("testSchema", "aCustomClass")->GetClass().GetSchema()));
+    EXPECT_EQ(copiedSchema.get(), &(copiedSchema->GetClassCP("bEntityClass")->GetPropertyP("bProperty")->GetCustomAttribute("testSchema", "cCustomClass")->GetClass().GetSchema()));
+    EXPECT_EQ(copiedSchema.get(), &(copiedSchema->GetPrimaryCustomAttribute("testSchema", "aCustomClass")->GetClass().GetSchema()));
+    EXPECT_EQ(copiedSchema.get(), &(copiedSchema->GetPrimaryCustomAttribute("testSchema", "cCustomClass")->GetClass().GetSchema()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, OriginalAndCopiedSchemasSerializedXMLValuesMatches)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="aCustomClass" appliesTo="Any"/>
+            <ECCustomAttributeClass typeName="bCustomClass" appliesTo="Any"/>
+            <ECCustomAttributeClass typeName="cCustomClass" appliesTo="Any"/>
+            <ECCustomAttributeClass typeName="dCustomClass" appliesTo="Any"/>
+            <ECCustomAttributes>
+                <aCustomClass xmlns="testSchema.01.00.00"/>
+                <bCustomClass xmlns="testSchema.01.00.00"/>
+                <cCustomClass xmlns="testSchema.01.00.00"/>
+                <dCustomClass xmlns="testSchema.01.00.00"/>
+            </ECCustomAttributes>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr originalSchema;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *schemaContext));
+
+    ECSchemaPtr copiedSchema, copiedSchema2;
+    EC_ASSERT_SUCCESS(originalSchema->CopySchema(copiedSchema));
+    EC_ASSERT_SUCCESS(copiedSchema->CopySchema(copiedSchema2));
+
+    Utf8String originalSchemaXml;
+    ASSERT_EQ(SchemaWriteStatus::Success, originalSchema->WriteToXmlString(originalSchemaXml));
+
+    Utf8String copiedSchemaXml;
+    ASSERT_EQ(SchemaWriteStatus::Success, copiedSchema->WriteToXmlString(copiedSchemaXml));
+
+    Utf8String copiedSchema2Xml;
+    ASSERT_EQ(SchemaWriteStatus::Success, copiedSchema2->WriteToXmlString(copiedSchema2Xml));
+
+    EXPECT_STREQ(originalSchemaXml.c_str(), copiedSchemaXml.c_str());
+    EXPECT_STREQ(copiedSchemaXml.c_str(), copiedSchema2Xml.c_str());
+    EXPECT_STREQ(originalSchemaXml.c_str(), copiedSchema2Xml.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, SuccessfullCopiesKindOfQuantityPropertyWithPersistenceUnit)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
+            <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+            <KindOfQuantity typeName="TestKindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"/>
+            <ECEntityClass typeName="TestClass">
+                <ECProperty propertyName="TestProperty" typeName="double" kindOfQuantity="TestKindOfQuantity"/>
+            </ECEntityClass>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr originalSchema;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *schemaContext));
+    
+    ASSERT_NE(nullptr, originalSchema->GetUnitCP("TestUnit"));
+    ASSERT_NE(nullptr, originalSchema->GetKindOfQuantityCP("TestKindOfQuantity"));
+
+    ASSERT_EQ(originalSchema.get(), &(originalSchema->GetUnitCP("TestUnit")->GetSchema()));
+    ASSERT_EQ(originalSchema.get(), &(originalSchema->GetKindOfQuantityCP("TestKindOfQuantity")->GetSchema()));
+    ASSERT_EQ(originalSchema->GetUnitCP("TestUnit"), originalSchema->GetKindOfQuantityCP("TestKindOfQuantity")->GetPersistenceUnit());
+
+    ECSchemaPtr copiedSchema;
+    EC_ASSERT_SUCCESS(originalSchema->CopySchema(copiedSchema));
+
+    EXPECT_NE(nullptr, copiedSchema->GetUnitCP("TestUnit"));
+    EXPECT_NE(nullptr, copiedSchema->GetKindOfQuantityCP("TestKindOfQuantity"));
+
+    EXPECT_EQ(copiedSchema.get(), &(copiedSchema->GetUnitCP("TestUnit")->GetSchema()));
+    EXPECT_EQ(copiedSchema.get(), &(copiedSchema->GetKindOfQuantityCP("TestKindOfQuantity")->GetSchema()));
+    EXPECT_EQ(copiedSchema->GetUnitCP("TestUnit"), copiedSchema->GetKindOfQuantityCP("TestKindOfQuantity")->GetPersistenceUnit());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyPropertyCopiesOriginalTypeNameInfo)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass">
+                <ECProperty propertyName="TestProperty" typeName="notDouble"/>
+                <ECArrayProperty propertyName="TestArrayProperty" typeName="notInt" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    Utf8String ecSchemaXml;
+    SchemaWriteStatus writeStatus = schemaCopyFrom->WriteToXmlString(ecSchemaXml);
+    ASSERT_EQ(SchemaWriteStatus::Success, writeStatus);
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("TestClass"), "TestClass", false));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("TestClass"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestArrayProperty"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestArrayProperty")->GetAsArrayProperty());
+
+    writeStatus = schemaCopyTo->WriteToXmlString(ecSchemaXml);
+    EXPECT_EQ(SchemaWriteStatus::Success, writeStatus);
+
+    EXPECT_NE(Utf8String::npos, ecSchemaXml.find("typeName=\"notDouble\""));
+    EXPECT_NE(Utf8String::npos, ecSchemaXml.find("typeName=\"notInt\""));
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, CopyCustomAttributeEC2)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" nameSpacePrefix="ts" version="01.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="CustomClass" isCustomAttributeClass="True"/>
+            <ECCustomAttributes>
+                <CustomClass xmlns="testSchema.01.02"/>
+            </ECCustomAttributes>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr originalSchema;
+    auto&& schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *schemaContext));
+    
+    ECSchemaPtr copySchema;
+    EC_EXPECT_SUCCESS(originalSchema->CopySchema(copySchema));
+
+    EXPECT_TRUE(copySchema->GetCustomAttribute("testSchema", "CustomClass").IsValid());
+    EXPECT_STREQ("testSchema.01.02", copySchema->GetCustomAttribute("testSchema", "CustomClass")->GetClass().GetSchema().GetLegacyFullSchemaName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, CopyCustomAttributeEC3)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
+            <ECCustomAttributes>
+                <CustomClass xmlns="testSchema.01.02.03"/>
+            </ECCustomAttributes>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr originalSchema;
+    auto&& schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *schemaContext));
+
+    ECSchemaPtr copySchema;
+    EC_EXPECT_SUCCESS(originalSchema->CopySchema(copySchema));
+
+    EXPECT_TRUE(copySchema->GetCustomAttribute("testSchema", "CustomClass").IsValid());
+    EXPECT_STREQ("testSchema.01.02.03", copySchema->GetCustomAttribute("testSchema", "CustomClass")->GetClass().GetSchema().GetFullSchemaName().c_str());
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Gintaras.Volkvicius   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, RoundtripCopiedEC2SchemaDropsMinMaxValue)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" nameSpacePrefix="ts" version="01.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" isDomainClass="true">
+                <ECProperty propertyName="TestProperty" typeName="double" MinimumValue="3.0" MaximumValue="42"/>
+            </ECClass>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr originalSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, schemaString, *ECSchemaReadContext::CreateContext()));
+
+    ECSchemaPtr copiedSchema;
+    EC_ASSERT_SUCCESS(originalSchema->CopySchema(copiedSchema));
+
+    ASSERT_NE(nullptr, copiedSchema->GetClassCP("TestClass"));
+    ASSERT_NE(nullptr, copiedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
+
+    ECValue minValue;
+    ECValue maxValue;
+    EC_ASSERT_SUCCESS(copiedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty")->GetMinimumValue(minValue));
+    EC_ASSERT_SUCCESS(copiedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty")->GetMaximumValue(maxValue));
+    ASSERT_FALSE(minValue.IsNull());
+    ASSERT_FALSE(maxValue.IsNull());
+    ASSERT_EQ( 3, minValue.GetDouble());
+    ASSERT_EQ(42, maxValue.GetDouble());
+
+    Utf8String serializedSchema;
+    ASSERT_EQ(SchemaWriteStatus::Success, copiedSchema->WriteToXmlString(serializedSchema, ECVersion::V2_0));
+
+    ECSchemaPtr roundTrippedSchema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(roundTrippedSchema, serializedSchema.c_str(), *ECSchemaReadContext::CreateContext()));
+
+    EXPECT_NE(nullptr, roundTrippedSchema->GetClassCP("TestClass"));
+    EXPECT_NE(nullptr, roundTrippedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
+
+    EXPECT_FALSE(roundTrippedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty")->IsMinimumValueDefined());
+    EXPECT_FALSE(roundTrippedSchema->GetClassCP("TestClass")->GetPropertyP("TestProperty")->IsMaximumValueDefined());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Gintaras.Volkvicius    01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, TestCopySchemaNotPreserveElementOrder)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetPreserveElementOrder(true);
+
+    Utf8CP schemaXML = R"(
+        <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+            <ECEntityClass typeName="GHI" description="Project ECClass" displayLabel="Class GHI" />
+            <ECEntityClass typeName="ABC" description="Project ECClass" displayLabel="Class ABC" />
+            <ECEnumeration typeName="DEF" displayLabel="Enumeration DEF" backingTypeName="int" />
+        </ECSchema>
+        )";
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+   
+    ECSchemaPtr copySchema;
+    EC_EXPECT_SUCCESS(schema->CopySchema(copySchema));
+
+    WString ecSchemaXmlString;
+    ASSERT_EQ(SchemaWriteStatus::Success, copySchema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+
+    // Enumerations(DEF) are serialized first, then classes(ABC, GHI)
+    bvector<Utf8String> typeNames = {"DEF", "ABC", "GHI"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Gintaras.Volkvicius    01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, TestCopySchemaNotPreserveOrderWithBaseClassAndRelationships)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetPreserveElementOrder(true);
+    
+    Utf8CP schemaXML = R"*(
+        <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+            <ECEntityClass typeName="GHI" description="Project ECClass" displayLabel="Class GHI" />
+            <ECEntityClass typeName="ABC" description="Project ECClass" displayLabel="Class ABC">
+                <BaseClass>MNO</BaseClass>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="DEF" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0, 1)" polymorphic="True">
+                  <Class class="MNO" />
+              </Source>
+              <Target cardinality="(0, 1)" polymorphic="True">
+                  <Class class="JKL">
+                      <Key>
+                          <Property name="Property1" />
+                          <Property name="Property2" />
+                      </Key>
+                  </Class>
+              </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="MNO" description="Project ECClass" displayLabel="Class MNO" />
+            <ECEntityClass typeName="JKL" description="Project ECClass" displayLabel="Class JKL">
+                <ECProperty propertyName="Property1" typeName="string" />
+                <ECProperty propertyName="Property2" typeName="string" />
+            </ECEntityClass>
+            <ECEnumeration typeName="PQR" displayLabel="Enumeration PQR" backingTypeName="int" />
+        </ECSchema>
+        )*";
+    ECSchemaPtr schema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+
+    ECSchemaPtr copySchema;
+    EC_EXPECT_SUCCESS(schema->CopySchema(copySchema));
+
+    WString ecSchemaXmlString;
+    EXPECT_EQ(SchemaWriteStatus::Success, copySchema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    // First Enumeration(PQR), then classes alphabetically(ABC, DEF, GHI). As MNO is the base class of ABC and
+    // JKL has a constraint in DEF, those two classes are written before the class they depend in.
+    bvector<Utf8String> typeNames = {"PQR", "MNO", "ABC", "JKL", "DEF", "GHI"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
     }
 
 //=======================================================================================
@@ -1206,6 +1761,296 @@ TEST_F(ClassCopyTest, RelationshipClassWithAbstractContraintWithoutCopyingType)
     EXPECT_STREQ(m_sourceSchema->GetName().c_str(), destTargetClass->GetSchema().GetName().c_str());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*m_targetSchema, *m_sourceSchema));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Gintaras.Volkvicius                   12/2018
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyCustomAttributesIncludingReferences)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
+            <ECEntityClass typeName="EntityClass">
+                <ECCustomAttributes>
+                    <CustomClass xmlns="testSchema.01.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, schemaCopyFrom->GetClassCP("EntityClass"));
+    ASSERT_NE(nullptr, schemaCopyFrom->GetClassCP("CustomClass"));
+    ASSERT_TRUE(schemaCopyFrom->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("testSchema", "CustomClass").IsValid());
+    ASSERT_EQ(schemaCopyFrom->GetClassCP("CustomClass"), &schemaCopyFrom->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("testSchema", "CustomClass")->GetClass());
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+
+    ASSERT_EQ(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
+    ASSERT_EQ(nullptr, schemaCopyTo->GetClassCP("CustomClass"));
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("EntityClass"), "EntityClass", true));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("EntityClass"), schemaCopyTo->GetClassCP("EntityClass"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("CustomClass"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("CustomClass"), schemaCopyTo->GetClassCP("CustomClass"));
+
+    EXPECT_TRUE(schemaCopyTo->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("testSchema", "CustomClass").IsValid());
+    EXPECT_EQ(schemaCopyTo->GetClassCP("CustomClass"), &schemaCopyTo->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("testSchema", "CustomClass")->GetClass());
+
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Gintaras.Volkvicius                   12/2018
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedCAClass)
+    {
+    Utf8CP referenceSchemaString = R"(
+        <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
+        </ECSchema>
+        )";
+
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="referenceSchema" version="01.00.00" alias="rs"/>
+            <ECEntityClass typeName="EntityClass">
+                <ECCustomAttributes>
+                    <CustomClass xmlns="referenceSchema.01.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr referenceSchema;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(referenceSchema, referenceSchemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, referenceSchema->GetClassCP("CustomClass"));
+
+    ECSchemaPtr schemaCopyFrom;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, schemaCopyFrom->GetClassCP("EntityClass"));
+    ASSERT_TRUE(schemaCopyFrom->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("referenceSchema", "CustomClass").IsValid());
+    ASSERT_EQ(referenceSchema->GetClassCP("CustomClass"), &schemaCopyFrom->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("referenceSchema", "CustomClass")->GetClass());
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+
+    ASSERT_EQ(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("EntityClass"), "EntityClass", true));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("EntityClass"), schemaCopyTo->GetClassCP("EntityClass"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("CustomClass"));
+
+    EXPECT_TRUE(schemaCopyTo->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("referenceSchema", "CustomClass").IsValid());
+    EXPECT_EQ(referenceSchema->GetClassCP("CustomClass"), &schemaCopyTo->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("referenceSchema", "CustomClass")->GetClass());
+
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *referenceSchema));
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Gintaras.Volkvicius                   12/2018
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchema)
+    {
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
+            <ECEntityClass typeName="EntityClass">
+                <ECCustomAttributes>
+                    <CustomClass xmlns="testSchema.01.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, schemaCopyFrom->GetClassCP("EntityClass"));
+    ASSERT_NE(nullptr, schemaCopyFrom->GetClassCP("CustomClass"));
+    ASSERT_TRUE(schemaCopyFrom->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("testSchema", "CustomClass").IsValid());
+    ASSERT_EQ(schemaCopyFrom->GetClassCP("CustomClass"), &schemaCopyFrom->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("testSchema", "CustomClass")->GetClass());
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+
+    ASSERT_EQ(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
+    ASSERT_EQ(nullptr, schemaCopyTo->GetClassCP("CustomClass"));
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("EntityClass"), "EntityClass", false));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("EntityClass"), schemaCopyTo->GetClassCP("EntityClass"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("CustomClass"));
+
+    EXPECT_TRUE(schemaCopyTo->GetClassCP("EntityClass")->GetPrimaryCustomAttribute("testSchema", "CustomClass").IsValid());
+
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Gintaras.Volkvicius                   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyNavigationPropertyIncludingReferences)
+    {
+    Utf8CP schemaString = R"**(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="House" polymorphic="False">
+                    <Class class="House"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Room" polymorphic="False">
+                    <Class class="Room"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="House"/>
+            <ECEntityClass typeName="Room">
+                <ECNavigationProperty propertyName="NavigationPropertyToHouse" relationshipName="HouseHasRooms" direction="Backward"/>
+            </ECEntityClass>
+        </ECSchema>
+        )**";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), "Room", true));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("Room"), schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("HouseHasRooms"), schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("House"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("House"), schemaCopyTo->GetClassCP("House"));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty());
+    EXPECT_EQ(schemaCopyTo->GetClassCP("HouseHasRooms")->GetRelationshipClassCP(), schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty()->GetRelationshipClass());
+
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Gintaras.Volkvicius                   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyNavigationPropertyOnlyInlcudingRelationshipClass)
+    {
+    Utf8CP referenceSchemaString = R"(
+        <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="House"/>
+        </ECSchema>
+        )";
+
+    Utf8CP schemaString = R"**(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="referenceSchema" version="01.00.00" alias="rs"/>
+            <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="House" polymorphic="False">
+                    <Class class="rs:House"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Room" polymorphic="False">
+                    <Class class="Room"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="Room">
+                <ECNavigationProperty propertyName="NavigationPropertyToHouse" relationshipName="HouseHasRooms" direction="Backward"/>
+            </ECEntityClass>
+        </ECSchema>
+        )**";
+
+    ECSchemaPtr referenceSchema;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(referenceSchema, referenceSchemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, referenceSchema->GetClassCP("House"));
+
+    ECSchemaPtr schemaCopyFrom;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+    schemaCopyTo->AddReferencedSchema(*referenceSchema);
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), "Room", true));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("Room"), schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("HouseHasRooms"), schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("House"));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty());
+    EXPECT_EQ(schemaCopyTo->GetClassCP("HouseHasRooms")->GetRelationshipClassCP(), schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty()->GetRelationshipClass());
+    ASSERT_EQ(referenceSchema->GetClassCP("House"), schemaCopyTo->GetClassCP("HouseHasRooms")->GetRelationshipClassCP()->GetSource().GetConstraintClasses()[0]);
+
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Gintaras.Volkvicius                   01/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyNavigationPropertyWithReferencedSourceSchema)
+    {
+    Utf8CP schemaString = R"**(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="House" polymorphic="False">
+                    <Class class="House"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Room" polymorphic="False">
+                    <Class class="Room"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="House"/>
+            <ECEntityClass typeName="Room">
+                <ECNavigationProperty propertyName="NavigationPropertyToHouse" relationshipName="HouseHasRooms" direction="Backward"/>
+            </ECEntityClass>
+        </ECSchema>
+        )**";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), "Room", false));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("Room"), schemaCopyTo->GetClassCP("Room"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("HouseHasRooms"));
+    EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("House"));
+
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse"));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty());
+    EXPECT_EQ(schemaCopyFrom->GetClassCP("HouseHasRooms")->GetRelationshipClassCP(), schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty()->GetRelationshipClass());
+
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

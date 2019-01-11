@@ -316,7 +316,7 @@ MSBsplineCurve  *pCurve,                /* <= curve structure to be initialized 
 const DEllipse3d    *pEllipse           /* => ellipse */
 )
     {
-    return pCurve->InitFromDEllipse3d ((DEllipse3dR) *pEllipse);
+    return pCurve->InitFromDEllipse3d ((DEllipse3dCR) *pEllipse);
     }
 
 static ICurvePrimitivePtr bspconv_appendOffsetEllipseSegmentToCurveChain
