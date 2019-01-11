@@ -493,3 +493,28 @@ TEST_F (LShapeProfileTestCase, Delete_ExistingDoubleLInstances_FailedDelete)
     ASSERT_EQ (DgnDbStatus::Success, secondDoubleProfilePtr->Delete());
     ASSERT_EQ (DgnDbStatus::Success, singleProfilePtr->Delete());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (LShapeProfileTestCase, Update_ExistingDoubleLInstances_UpdatedDoubleLShape)
+    {
+    LShapeProfilePtr singleProfilePtr = InsertElement<LShapeProfile> (CreateParams (GetModel(), "L", 6.0, 10.0, 1.0));
+
+    DoubleLShapeProfile::CreateParams doubleLParams (GetModel(), "DL", 1.0, singleProfilePtr->GetElementId());
+    DoubleLShapeProfileCPtr doubleProfilePtr = InsertElement<DoubleLShapeProfile> (doubleLParams);
+
+    DRange3d range;
+    ASSERT_TRUE (doubleProfilePtr->GetShape()->TryGetRange (range));
+    EXPECT_EQ (6.0 * 2.0 + 1.0, range.XLength()) << "DoubleLShapeProfile width should be SingleProfile.Width * 2 + Spacing";
+
+    singleProfilePtr->SetWidth (10.0);
+
+    DgnDbStatus status;
+    singleProfilePtr->Update (&status);
+    ASSERT_EQ (DgnDbStatus::Success, status);
+
+    DoubleLShapeProfileCPtr updateDoubleProfilePtr = DoubleLShapeProfile::Get (GetDb(), doubleProfilePtr->GetElementId());
+    ASSERT_TRUE (updateDoubleProfilePtr->GetShape()->TryGetRange (range));
+    EXPECT_EQ (10.0 * 2.0 + 1.0, range.XLength()) << "DoubleLShapeProfile width should be SingleProfile.Width * 2 + Spacing";
+    }
