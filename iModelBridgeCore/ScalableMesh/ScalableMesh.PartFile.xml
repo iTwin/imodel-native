@@ -80,7 +80,7 @@
         <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
         <SubPart PartName="Core_DgnDb06"    PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
         <SubPart PartName="Formats_DgnDb06" PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
-        <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
+        <SubPart PartName="AutomaticGroundDetection_DgnDb06" PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
         <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
         <SubPart PartName="CloudDataSource_DgnDb06" PartFile="CloudDataSource" Repository="ScalableMesh" />
         <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />

@@ -478,7 +478,7 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetInvertClip(bool invertClips);
 
-        void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
+        BENTLEY_SM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
 
         BENTLEY_SM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
 
@@ -499,9 +499,9 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT int                    SaveAs(const WString& destination, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr);
 
-                          void                   ImportTerrainSM(WString terrainPath);
+        BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
 
-                          IScalableMeshPtr       GetTerrainSM();
+        BENTLEY_SM_EXPORT IScalableMeshPtr       GetTerrainSM();
 
         BENTLEY_SM_EXPORT SMStatus          DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr destinationGcs = nullptr, bool limitResolutions = false);
 
