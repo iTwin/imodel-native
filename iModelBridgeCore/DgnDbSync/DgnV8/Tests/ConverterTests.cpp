@@ -264,7 +264,7 @@ TEST_F(LightTests, CreatePointLightWithECInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);

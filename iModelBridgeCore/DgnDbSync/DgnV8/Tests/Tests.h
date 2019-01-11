@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/Tests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,8 +36,9 @@ struct SyncInfoReader
     {
     DgnDbPtr m_dgndb;
     BentleyApi::BeSQLite::Db m_syncInfo;
+    Converter::Params* m_params;
 
-    SyncInfoReader();
+    SyncInfoReader(Converter::Params&);
     void AttachToDgnDb(BentleyApi::BeFileNameCR);
     void MustFindFileByName(SyncInfo::V8FileSyncInfoId&, BentleyApi::BeFileNameCR v8FileName, int expectedCount=1);
     void MustFindModelByV8ModelId(SyncInfo::V8ModelSyncInfoId&, SyncInfo::V8FileSyncInfoId, DgnV8Api::ModelId, int expectedCount=1);

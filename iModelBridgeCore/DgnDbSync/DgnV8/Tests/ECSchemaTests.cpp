@@ -680,7 +680,7 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
@@ -736,7 +736,7 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
     DoUpdate(m_dgnDbFileName, m_v8FileName, false);
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
@@ -1101,7 +1101,7 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
 
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
