@@ -172,7 +172,7 @@ DPoint3dCP pNormal
                     s = ((Xorg - Xstart) dot N )/ (T dot N)
     */
     dot2 = pLineTangent->DotProduct (*pNormal);// bsiDPoint3d_dotProduct (pLineTangent, (DVec3d const*) pNormal);
-    dot1 = pOrigin->DotDifference (*pLineStart, *(DVec3d*)pNormal);// bsiDPoint3d_dotDifference (pOrigin,  pLineStart, (DVec3d const*) pNormal);
+    dot1 = pOrigin->DotDifference (*pLineStart, *(DVec3d const*)pNormal);// bsiDPoint3d_dotDifference (pOrigin,  pLineStart, (DVec3d const*) pNormal);
 
     if (fabs(dot1) < maxFactor * fabs(dot2))
         {

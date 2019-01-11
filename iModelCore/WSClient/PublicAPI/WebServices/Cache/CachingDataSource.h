@@ -28,7 +28,7 @@ typedef std::shared_ptr<struct CachingDataSource> CachingDataSourcePtr;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma   01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CachingDataSource :
+struct EXPORT_VTABLE_ATTRIBUTE CachingDataSource :
     public ICachingDataSource,
     public std::enable_shared_from_this<CachingDataSource>
     {

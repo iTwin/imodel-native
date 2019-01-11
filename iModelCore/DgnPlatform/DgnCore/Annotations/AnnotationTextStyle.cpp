@@ -143,7 +143,7 @@ void dgn_ElementHandler::AnnotationTextStyleHandler::_RegisterPropertyAccessors(
     params.RegisterPropertyAccessors(layout, PROP_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            AnnotationTextStyle& el = (AnnotationTextStyle&) elIn;
+            AnnotationTextStyle const& el = (AnnotationTextStyle const&) elIn;
             value.SetUtf8CP(el.GetDescription().c_str());
             return DgnDbStatus::Success;
             },

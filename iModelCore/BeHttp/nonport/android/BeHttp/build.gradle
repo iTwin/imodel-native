@@ -1,33 +1,37 @@
-apply plugin: 'com.android.library'
-apply plugin: 'maven'
+// See https://developer.android.com/studio/build/ for seed file.
+
+plugins {
+    id 'com.android.library'
+
+    // BSI - https://github.com/wupdigital/android-maven-publish
+    // Modification of the standard Maven Publish plugin to be compatible with android-library projects (aar).
+    id 'digital.wup.android-maven-publish' version '3.6.2'
+}
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "21.1.2"
+    compileSdkVersion 28
+
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 19
+        minSdkVersion 21
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
     }
+}
 
-    lintOptions {
-        abortOnError false
+publishing {
+    publications {
+        mavenAar(MavenPublication) {
+            groupId = 'com.bentley.android'
+            artifactId = 'BeHttp'
+            version = '1.0.0'
+            from components.android
+        }
     }
-}
 
-dependencies {
-    compile 'com.google.android.gms:play-services:5.0.89'
-    compile 'com.android.support:support-v4:19.1.0'
-}
-
-uploadArchives {
-    repositories.mavenDeployer {
-        repository(url: "file://$project.buildDir.absolutePath/MavenArchive/")
-        pom.project {
-            groupId 'com.bentley.android'
-            artifactId 'BeHttp'
-            version "1.0.0"
+    repositories {
+        maven {
+            url = "$buildDir/MavenArchive"
         }
     }
 }

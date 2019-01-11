@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLite.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
@@ -1047,7 +1047,7 @@ DbResult DbFile::SaveProperty(PropertySpecCR spec, Utf8CP stringData, void const
 
     if (spec.IsCached())
         {
-        GetCachedProperty(spec, id, subId).ChangeValue(stringData, size, (Byte*)value, true, spec.IsCompress());
+        GetCachedProperty(spec, id, subId).ChangeValue(stringData, size, const_cast<Byte*>((Byte const*)value), true, spec.IsCompress());
         return  BE_SQLITE_OK;
         }
 
@@ -3200,7 +3200,7 @@ ZipErrors SnappyFromBlob::Init(DbCR db, Utf8CP tableName, Utf8CP column, int64_t
             return  ZIP_ERROR_BLOB_READ_ERROR;
             }
         }
-    else if (BE_SQLITE_OK != m_blobIO.Open((DbR) db, tableName, column, rowId, 0))
+    else if (BE_SQLITE_OK != m_blobIO.Open(const_cast<DbR>(db), tableName, column, rowId, 0))
         {
         m_blobBytesLeft = 0;
         LOG.errorv("sqlite3_open_blob failed: %s", db.GetLastError(nullptr).c_str());
@@ -3522,7 +3522,7 @@ CachedStatement::CachedStatement(Utf8CP sql, StatementCache const& myCache) : m_
     {
     size_t len = strlen(sql) + 1;
     m_sql = (Utf8P) sqlite3_malloc((int)len);
-    memcpy((char*)m_sql, sql, len);
+    memcpy(const_cast<char*>(m_sql), sql, len);
     }
 
 CachedStatement::~CachedStatement() {sqlite3_free((void*)m_sql);}
@@ -4152,7 +4152,7 @@ static DbResult embedFileImageWithoutCompressing(Db& db, void const*data, uint64
         if (rc != BE_SQLITE_OK)
             return  rc;
 
-        data  = (char*) data + thisSize;
+        data  = const_cast<char*>((char const*)data) + thisSize;
         }
 
     return BE_SQLITE_OK;
@@ -4735,14 +4735,14 @@ static int zfsZlibBound(void *pCtx, int nByte){return compressBound(nByte);}
 static int zfsZlibCompress(void *pCtx, char *aDest, int *pnDest, const char *aSrc, int nSrc)
     {
     uLongf n = *pnDest;
-    int rc = compress((Bytef*)aDest, &n,(Bytef*)aSrc, nSrc);
+    int rc = compress((Bytef*)aDest, &n,(Bytef const*)aSrc, nSrc);
     *pnDest = n;
     return (rc==Z_OK ? SQLITE_OK : SQLITE_ERROR);
     }
 static int zfsZlibUncompress(void *pCtx, char *aDest, int *pnDest, const char *aSrc, int nSrc)
     {
     uLongf n = *pnDest;
-    int rc = uncompress((Bytef*)aDest, &n, (Bytef*)aSrc, nSrc);
+    int rc = uncompress((Bytef*)aDest, &n, (Bytef const*)aSrc, nSrc);
     *pnDest = n;
     return (rc==Z_OK ? SQLITE_OK : SQLITE_ERROR);
     }

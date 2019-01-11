@@ -63,19 +63,20 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "ThumbnailsManager::GetAllThumbnailsIds";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     WSQuery thumbnailsQuery(ServerSchema::Schema::iModel, Thumbnail::GetClassName(size));
 
     return ExecuteWithRetry<bvector<Utf8String>>([=]()
         {
-        return m_wsRepositoryClient->SendQueryRequest(thumbnailsQuery, nullptr, nullptr, cancellationToken)
+        return m_wsRepositoryClient->SendQueryRequestWithOptions(thumbnailsQuery, nullptr, nullptr, requestOptions, cancellationToken)
             ->Then<ThumbnailsIdsResult>([=](const WSObjectsResult& result)
             {
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
                 return ThumbnailsIdsResult::Error(result.GetError());
                 }
 
@@ -86,7 +87,7 @@ ICancellationTokenPtr cancellationToken
                 }
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
             return ThumbnailsIdsResult::Success(ids);
             });
         });
@@ -102,16 +103,17 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "ThumbnailsManager::GetThumbnailByIdInternal";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     HttpByteStreamBodyPtr responseBody = HttpByteStreamBody::Create();
-    return m_wsRepositoryClient->SendGetFileRequest(thumbnail, responseBody, nullptr, nullptr, cancellationToken)
+    return m_wsRepositoryClient->SendGetFileRequestWithOptions(thumbnail, responseBody, nullptr, nullptr, requestOptions, cancellationToken)
         ->Then<ThumbnailImageResult>([=](const WSResult& streamResult)
         {
         if (!streamResult.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, streamResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, streamResult.GetError().GetMessage().c_str());
             return ThumbnailImageResult::Error(streamResult.GetError());
             }
 
@@ -119,7 +121,7 @@ ICancellationTokenPtr cancellationToken
         Render::Image image = Render::Image::FromPng(byteStream.GetData(), byteStream.GetSize());
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), requestOptions, "");
         return ThumbnailImageResult::Success(image);
         });
     }
@@ -157,7 +159,8 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "ThumbnailsManager::GetThumbnailByVersionId";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     //double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     WSQuery query(ServerSchema::Schema::iModel, Thumbnail::GetClassName(size));
@@ -169,12 +172,12 @@ ICancellationTokenPtr cancellationToken
     return ExecuteWithRetry<Render::Image>([=]()
         {
         ThumbnailImageResultPtr finalResult = std::make_shared<ThumbnailImageResult>();
-        return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
+        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)
             ->Then([=](const WSObjectsResult& result)
             {
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, result.GetError().GetMessage().c_str());
                 finalResult->SetError(result.GetError());
                 return;
                 }

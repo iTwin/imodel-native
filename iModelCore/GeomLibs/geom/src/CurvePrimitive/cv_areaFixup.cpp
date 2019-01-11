@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cv_areaFixup.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -213,7 +213,7 @@ bool CurveVector::FixupXYOuterInner (bool fullGeometryCheck)
         // highest level struture of union never changes.
         for (size_t i = 0, n = size (); i < n; i++)
             {
-            CurveVectorP childVector = (CurveVectorP)at(i)->GetChildCurveVectorCP ();
+            CurveVectorP childVector = const_cast<CurveVectorP>(at(i)->GetChildCurveVectorCP ());
             if (childVector == NULL)
                 return false;
             if (!childVector->FixupXYOuterInner (fullGeometryCheck))

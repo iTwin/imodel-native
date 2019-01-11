@@ -13,7 +13,6 @@
 #include <ECObjects/ECExpressions.h>
 #include <ECObjects/ECExpressionNode.h>
 #include <ECObjects/SystemSymbolProvider.h>
-#include <regex>
 #include "ECSchemaHelper.h"
 #include "CustomFunctions.h"
 #include "NavNodesCache.h"

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/Polynomials.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -214,8 +214,8 @@ void Bezier::Order6::AddProduct (Bezier::Order3 const &f, Bezier::Order4 const &
     double product[6];
     bsiBezier_univariateProduct (
             product, 0, 1,
-            (double*) f.coffs, 3, 0, 1,
-            (double*) g.coffs, 4, 0, 1);
+            const_cast<double*>(f.coffs), 3, 0, 1,
+            const_cast<double*>(g.coffs), 4, 0, 1);
     for (int i = 0; i < 6; i++)
         coffs[i] += a * product[i];
     }

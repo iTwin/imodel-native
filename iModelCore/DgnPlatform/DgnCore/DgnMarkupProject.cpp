@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnMarkupProject.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -1004,7 +1004,7 @@ void dgn_ElementHandler::MarkupExternalLinkHandler::_RegisterPropertyAccessors(E
     params.RegisterPropertyAccessors(layout, MARKUPEXTERNALLINK_LinkedElementId, 
         [](ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (MarkupExternalLink&)elIn;
+            auto const& el = (MarkupExternalLink const&)elIn;
             value.SetNavigationInfo(el.GetLinkedElementId());
             return DgnDbStatus::Success;
             },

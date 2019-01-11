@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnModel.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1625,7 +1625,7 @@ AxisAlignedBox3d GeometricModel3d::_QueryElementsRange() const
         }
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
-    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
+    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) const_cast<void*>(stmt.GetValueBlob(0)) : AxisAlignedBox3d(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1659,7 +1659,7 @@ AxisAlignedBox3d GeometricModel2d::_QueryElementsRange() const
         }
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
-    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
+    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) const_cast<void*>(stmt.GetValueBlob(0)) : AxisAlignedBox3d(); 
     }
 
 /*---------------------------------------------------------------------------------**//**

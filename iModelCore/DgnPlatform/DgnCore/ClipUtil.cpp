@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ClipUtil.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -28,7 +28,7 @@ void ClipUtil::GetBoundaryLoops(int *nLoops, int nLoopPoints[], DPoint2d *loopPo
         *nLoops = 1;
 
         if (loopPoints)
-            loopPoints[0] = (DPoint2d *) points;
+            loopPoints[0] = const_cast<DPoint2d*>(points);
 
         for (ptr=points, i=0; i<nPoints; i++, ptr++)
             {
@@ -46,7 +46,7 @@ void ClipUtil::GetBoundaryLoops(int *nLoops, int nLoopPoints[], DPoint2d *loopPo
                     nLoopPoints[*nLoops - 1] = 0;
 
                 if (loopPoints)
-                    loopPoints[*nLoops - 1] = (DPoint2d *) ptr+1;
+                    loopPoints[*nLoops - 1] = const_cast<DPoint2d*>(ptr+1);
                 }
             else
                 {

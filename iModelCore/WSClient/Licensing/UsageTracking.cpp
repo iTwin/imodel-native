@@ -144,7 +144,7 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String ToHexString(const void *data, size_t dataSize)
     {
-    const Byte* dataBytes = (Byte*) data;
+    Byte const* dataBytes = (Byte const*) data;
     Utf8String hexString;
     hexString.reserve(dataSize * 2);
     char buf[3];

@@ -31,7 +31,7 @@ bool CurveVector::SetChildBoundaryType (size_t index, CurveVector::BoundaryType 
     if (index >= n)
         return false;
     ICurvePrimitivePtr childPrimitive = at(index);
-    CurveVectorP childVector = (CurveVectorP)childPrimitive->GetChildCurveVectorCP ();
+    CurveVectorP childVector = const_cast<CurveVectorP>(childPrimitive->GetChildCurveVectorCP ());
     if (NULL != childVector)
         {
         childVector->SetBoundaryType (boundaryType);
@@ -1188,7 +1188,7 @@ CurveVectorPtr CurveVector::FindParentOfPrimitive (ICurvePrimitiveCP primitive) 
         {
         ICurvePrimitivePtr const& pathMember = at (iEntry);
         if (pathMember.get () == primitive)
-            return CurveVectorPtr ((CurveVector*)this);
+            return CurveVectorPtr (const_cast<CurveVectorP>(this));
         CurveVectorPtr childCV = pathMember->GetChildCurveVectorP ();
         if (childCV.IsValid ())
             {

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnViewport.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -1138,4 +1138,3 @@ DMap4d Frustum::ToDMap4d() const
     bsiDMap4d_initFromVectorFrustum(&map, &org, &xVec, &yVec, &zVec, GetFraction());
     return map;
     }
-

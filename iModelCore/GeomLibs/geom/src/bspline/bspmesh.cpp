@@ -4884,7 +4884,7 @@ TransformP                                  toleranceTransformP,        /* IN   
 DPoint3dP                                   toleranceCameraP,           /* IN      tolerance camera position */
 double                                      toleranceFocalLength,       /* IN      tolerance focal length */
 DPoint2dP                                   parameterScale,             /* IN      parameter scale */
-MSBsplineSurface*                           surfaceP,                   /* IN      surface to mesh */
+MSBsplineSurface const*                     surfaceP,                   /* IN      surface to mesh */
 bool                                        normalsRequired,            /* IN      true to return normals */
 bool                                        parametersRequired,         /* IN      true to return parameters */
 bool                                        reverse,                    /* IN      true to reverse order */
@@ -4903,7 +4903,7 @@ CallbackArgP                                userDataP                   /* IN   
                 toleranceFocalLength,
                 0.0,
                 parameterScale,
-                surfaceP,
+                const_cast<MSBsplineSurface*>(surfaceP),
                 normalsRequired,
                 parametersRequired,
                 reverse,
@@ -5346,7 +5346,7 @@ bool MSBsplineSurface::ComputeSecondMomentAreaProducts (DMatrix4dR products, dou
             NULL,
             0.0,
             NULL,
-            (MSBsplineSurface*)this,
+            (MSBsplineSurfaceCP)this,
             false,
             true,
             false,

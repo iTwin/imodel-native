@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RangeIndex.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -137,7 +137,7 @@ struct Tree
     public:
         Node(NodeType type, bool is3d) : m_type(type), m_is3d(is3d), m_parent(nullptr) {ClearRange();}
         void SetParent(InternalNode* parent) {m_parent = parent;}
-        LeafNode* ToLeaf() const {return m_type != NodeType::Internal ? (LeafNode*) this : nullptr;}
+        LeafNode* ToLeaf() const {return m_type != NodeType::Internal ? (LeafNode*)const_cast<Node*>(this) : nullptr;}
         bool IsLeaf() const {return nullptr != ToLeaf();}
         void ClearRange() {m_nodeRange.Invalidate();}
         FBoxCR GetRange() {return m_nodeRange;}

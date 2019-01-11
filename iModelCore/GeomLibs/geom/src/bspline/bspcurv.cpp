@@ -1202,7 +1202,7 @@ MSBsplineCurve  *inCurve
 Public GEOMDLLIMPEXP int      bspcurv_closeCurve
 (
 MSBsplineCurve  *outCurve,
-MSBsplineCurve  *inCurve
+MSBsplineCurve  const*inCurve
 )
     {
     int             status, numPoles;
@@ -1405,7 +1405,7 @@ wrapup:
 +----------------------------------------------------------------------*/
 Public GEOMDLLIMPEXP int      bspcurv_reverseCurve
 (
-MSBsplineCurve  *inCurve,
+MSBsplineCurve  const*inCurve,
 MSBsplineCurve  *outCurve
 )
     {
@@ -2268,8 +2268,8 @@ MSBsplineCurveCP curve2
 Public GEOMDLLIMPEXP int      bspcurv_appendCurves
 (
 MSBsplineCurve  *combinedCurve,
-MSBsplineCurve  *inCurve1,
-MSBsplineCurve  *inCurve2,
+MSBsplineCurve  const*inCurve1,
+MSBsplineCurve  const*inCurve2,
 bool            forceContinuity,
 bool            reparam,
 void         *pHeapDescr
@@ -2631,8 +2631,8 @@ MSBsplineCurveCP inCurveP
     int         i, nKnots, numDistinct, *knotMultiplicityP;
     double      *distinctKnotP, leftValue, rightValue, start, end;
     DPoint3d    leftTangent, rightTangent;
-    MSBsplineCurveP curveP = (MSBsplineCurveP)inCurveP; // const
-    mdlBspline_normalizeCurveKnots (&start, &end, curveP);
+    MSBsplineCurveCP curveP = (MSBsplineCurveCP)inCurveP; // const
+    mdlBspline_normalizeCurveKnots (&start, &end, const_cast<MSBsplineCurveP>(curveP));
     nKnots = bspknot_numberKnots (curveP->params.numPoles,
                                   curveP->params.order, curveP->params.closed);
 
@@ -2658,8 +2658,8 @@ MSBsplineCurveCP inCurveP
                 rightValue = distinctKnotP[i] + KNOT_TOLERANCE_BASIS;
                 if (leftValue  < 0.0) leftValue  += 1.0;
                 if (rightValue > 1.0) rightValue -= 1.0;
-                bspcurv_getTangent (&leftTangent,  leftValue, curveP, false);
-                bspcurv_getTangent (&rightTangent, rightValue, curveP, true);
+                bspcurv_getTangent (&leftTangent,  leftValue, const_cast<MSBsplineCurveP>(curveP), false);
+                bspcurv_getTangent (&rightTangent, rightValue, const_cast<MSBsplineCurveP>(curveP), true);
 
                 if (leftTangent.Normalize () < 1.0 ||
                     rightTangent.Normalize () < 1.0 ||
@@ -2670,7 +2670,7 @@ MSBsplineCurveCP inCurveP
     msbspline_free (distinctKnotP);
     msbspline_free (knotMultiplicityP);
 
-    mdlBspline_unNormalizeCurveKnots (curveP, start, end);
+    mdlBspline_unNormalizeCurveKnots (const_cast<MSBsplineCurveP>(curveP), start, end);
     return SUCCESS;
     }
 

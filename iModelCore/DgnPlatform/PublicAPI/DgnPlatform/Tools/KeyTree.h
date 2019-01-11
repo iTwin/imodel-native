@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Tools/KeyTree.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -223,7 +223,7 @@ KeyRangeNode(T_IParent* parent)
     void                SetParent(T_IParent*  newParent) {m_parent = newParent;}
     T_IParent const*    GetParent () const               {return m_parent;}
     bool                IsSloppy() const                 {return m_isSloppy;}
-    void                CheckSloppy() const              {if (IsSloppy()){((KeyRangeNode*)this)->CalculateNodeRange();}}
+    void                CheckSloppy() const              {if (IsSloppy()){const_cast<KeyRangeNode*>(this)->CalculateNodeRange();}}
     bool                ContainsKey (KTYPE key) const    {CheckSloppy(); return m_range.Contains(key);}
     int                 GetCount () const                {return m_nEntries;}
 
@@ -462,7 +462,7 @@ void RemoveEntry (int index, ETYPE* copyOfEntry)
     KTYPE   key = entry->GetKey ();
 
     if (index < --m_nEntries)
-        memmove ((void*) entry, entry+1, (m_nEntries-index) * sizeof(ETYPE));
+        memmove ((void*)const_cast<ETYPE*>(entry), entry+1, (m_nEntries-index) * sizeof(ETYPE));
 
     m_isSloppy = true;
 
@@ -1354,7 +1354,7 @@ struct MSWCharIKey
 
 public:
     MSWCharIKey ()                   {m_key = NULL;}
-    MSWCharIKey (WChar const* key) {m_key = (WChar*) key;}
+    MSWCharIKey (WChar const* key) {m_key = const_cast<WChar*>(key);}
     WChar const* GetValue () const {return m_key;}
 
     inline int compare (MSWCharIKey other) const
@@ -1392,7 +1392,7 @@ struct MSWCharKey
 
 public:
     MSWCharKey ()                   {m_key = NULL;}
-    MSWCharKey (WChar const* key) {m_key = (WChar*) key;}
+    MSWCharKey (WChar const* key) {m_key = const_cast<WChar*>(key);}
     WChar const* GetValue () const {return m_key;}
 
     inline int compare (MSWCharKey other) const
@@ -1432,7 +1432,7 @@ struct MSCharIKey
 
 public:
     MSCharIKey ()                   {m_key = NULL;}
-    MSCharIKey (char const* key) {m_key = (char*) key;}
+    MSCharIKey (char const* key) {m_key = const_cast<char*>(key);}
     char const* GetValue () const {return m_key;}
 
     inline int compare (MSCharIKey other) const

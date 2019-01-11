@@ -744,7 +744,7 @@ bvector<PartialCurveDetail> &intersections     //!< intersections.
             }
         // The planeCuts array does NOT have all 0,1 points ... need to force both end intervals ..
         double f1, f0 = 0.0;
-        ICurvePrimitiveP curve = (ICurvePrimitiveP)planeCuts[i0].curve;
+        ICurvePrimitiveP curve = const_cast<ICurvePrimitiveP>(planeCuts[i0].curve);
         for (size_t i = i0; i < i1; i++)
             {
             f1 = planeCuts[i].fraction;

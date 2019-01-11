@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/md5.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // This file was adapted from :
@@ -103,7 +103,7 @@ void MD5::ProcessBlock(const void* data)
   uint32_t d = m_hash[3];
 
   // data represented as 16x 32-bit words
-  const uint32_t* words = (uint32_t*) data;
+  uint32_t const* words = (uint32_t const*) data;
 
   // computations are little endian, swap data if necessary
 #if defined(__BYTE_ORDER) && (__BYTE_ORDER != 0) && (__BYTE_ORDER == __BIG_ENDIAN)

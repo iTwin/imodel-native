@@ -230,7 +230,7 @@ double              sweep           /* => Sweep angle */
     if (SUCCESS != (status = bspsurf_allocateSurface (surface)))
         return status;
 
-    rotMatrix_orthogonalFromZRow (&rotMatrix, (DVec3d*)axis);
+    rotMatrix_orthogonalFromZRow (&rotMatrix, (DVec3d const*)axis);
     tempMatrix = rotMatrix;
     rotMatrix.TransposeOf (tempMatrix);
     for (i=0; i < curve->params.numPoles; i++)

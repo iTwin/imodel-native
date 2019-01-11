@@ -204,6 +204,12 @@ struct iModelHubProperties
     static iModelHubSpec iModelId() { return iModelHubSpec(Db::Properties::iModelId); }
     };
 
+
+struct ServerProperties
+    {
+    static BeVersion ServiceVersion() { return BeVersion(1, 1); }
+    };
+
 bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR iModelId);
 bool GetLockFromServerJson (RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR iModelId);
 bool AddLockInfoToListFromErrorJson(DgnLockInfoSet& lockInfos, RapidJsonValueCR serverJson);

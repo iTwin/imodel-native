@@ -92,7 +92,7 @@ StatusInt LsSymbolReference::Output(LineStyleContextR lineStyleContext, LineStyl
     planeByRows.GetRows(xVector, yVector, zVector);
 
     DVec3d uVector, vVector, wVector;
-    uVector = *(DVec3d*)dir;
+    uVector = *(DVec3dCP)dir;
     wVector = zVector;
     vVector.NormalizedCrossProduct(wVector, uVector);
     transform.InitFromOriginAndVectors(*org, uVector, vVector, wVector);

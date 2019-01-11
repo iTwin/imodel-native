@@ -2,7 +2,7 @@
 #
 #     $Source: Android/BuildApk.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #
@@ -23,8 +23,8 @@ outputDir           = $(OutputRootDir)build/$(TEST_COLLECTION_PRODUCT)/
 mainDir             = $(outputDir)project/app/src/main/
 libsDir             = $(outputDir)project/app/libs/
 androidTestDir      = $(outputDir)project/app/src/androidTest/
-testApk             = $(outputDir)project/app/build/outputs/apk/Test-debug.apk
-testRunner          = $(outputDir)project/app/build/outputs/apk/Test-debug-androidTest-unaligned.apk
+testApk             = $(outputDir)project/app/build/outputs/apk/debug/Test-debug.apk
+testRunner          = $(outputDir)project/app/build/outputs/apk/androidTest/debug/Test-debug-androidTest.apk
 
 adbCmd              = ${ANDROID_SDK_ROOT}/platform-tools/adb
 

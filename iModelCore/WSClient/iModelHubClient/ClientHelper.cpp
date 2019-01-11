@@ -155,7 +155,7 @@ ClientPtr ClientHelper::SignInWithManager(IConnectSignInManagerPtr managerPtr)
     {
     m_signinMgr = managerPtr;
 
-    AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(GetUrl());
+    AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(GetUrl(), s_instance->m_customHandler);
     ClientPtr client = Client::Create(m_clientInfo, authHandler, GetUrl().c_str());
 
     return client;

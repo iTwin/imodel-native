@@ -70,6 +70,11 @@ always:
                                                          --nativeSourceFile $(baseDir)js/BeJavaScriptJs.cpp \
                                                          --outputPath $(o)BeJavaScriptJs.cpp
 
+# websocketpp triggers this warning in a system header in Android NDK r18b
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG")
+    ClangCommonCompOpts + -Wno-unused-function
+%endif
+
 #--------------------------------------------------------------------------------------
 #   Compile source
 #--------------------------------------------------------------------------------------

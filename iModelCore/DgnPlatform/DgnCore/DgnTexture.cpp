@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnTexture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -192,7 +192,7 @@ void dgn_ElementHandler::Texture::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, PROP_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (DgnTexture&) elIn;
+            auto const& el = (DgnTexture const&) elIn;
             value.SetUtf8CP(el.GetDescription().c_str());
             return DgnDbStatus::Success;
             },

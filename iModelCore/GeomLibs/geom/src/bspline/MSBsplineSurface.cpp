@@ -290,7 +290,7 @@ MSBsplineStatus MSBsplineSurface::AllocateVKnots ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineSurface::CopyFrom (MSBsplineSurfaceCR input)
     {
-    return bspsurf_copySurface (this, (MSBsplineSurfaceP)&input);
+    return bspsurf_copySurface (this, (MSBsplineSurfaceCP)&input);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2021,7 +2021,7 @@ MSBsplineStatus MSBsplineSurface::InitFromPointsAndOrder (int uOrder, int vOrder
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineSurface::CopyClosed (MSBsplineSurfaceCR source, int edge)
     {
-    return bsprsurf_closeSurface (this, (MSBsplineSurfaceP)&source, edge);
+    return bsprsurf_closeSurface (this, (MSBsplineSurfaceCP)&source, edge);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2029,7 +2029,7 @@ MSBsplineStatus MSBsplineSurface::CopyClosed (MSBsplineSurfaceCR source, int edg
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineSurface::CopyOpen (MSBsplineSurfaceCR source, double unnormalizedKnot, int edge)
     {
-    return bsprsurf_openSurface (this, (MSBsplineSurfaceP)&source, source.KnotToFraction (unnormalizedKnot, edge), edge);
+    return bsprsurf_openSurface (this, (MSBsplineSurfaceCP)&source, source.KnotToFraction (unnormalizedKnot, edge), edge);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2037,7 +2037,7 @@ MSBsplineStatus MSBsplineSurface::CopyOpen (MSBsplineSurfaceCR source, double un
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineSurface::CopyReversed (MSBsplineSurfaceCR source, int edge)
     {
-    return bspsurf_reverseSurface (this, (MSBsplineSurfaceP)&source, edge);
+    return bspsurf_reverseSurface (this, (MSBsplineSurfaceCP)&source, edge);
     }
 
 /*---------------------------------------------------------------------------------**//**

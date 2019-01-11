@@ -1088,7 +1088,7 @@ ISelectProviderCR selectProvider
     bvector<ECClassP> classesToSelect;
     for (auto iter : ecClassToRemoteIdsMap)
         {
-        classesToSelect.push_back((ECClassP) GetState().GetECDbAdapter().GetECClass(iter.first));
+        classesToSelect.push_back(const_cast<ECClassP>(GetState().GetECDbAdapter().GetECClass(iter.first)));
         }
 
     CacheQueryHelper helper(selectProvider);

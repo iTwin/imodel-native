@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeConversionsTest.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1145,7 +1145,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionSu
         "           </ECCustomAttributes>";
 
     //C and B are parent of A
-    //covers combination of having same CA for two but differnet for the third i.e C, B have instance1 and A instance2
+    //covers combination of having same CA for two but different for the third i.e C, B have instance1 and A instance2
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     Utf8PrintfString schema1Xml(schemaXml, instance1Xml, instance1Xml, instance2Xml);

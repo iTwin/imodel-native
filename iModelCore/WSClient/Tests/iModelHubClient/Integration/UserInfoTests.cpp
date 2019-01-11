@@ -11,6 +11,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeThread.h>
 #include "../Helpers/MockHttpHandler.h"
+#include "../../../iModelHubClient/Utils.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -179,7 +180,7 @@ TEST_F(UserInfoTests, QueryUsersInfoByTwoIdsSeparately_OneAddedLater)
 
     // Set other wsclient
     WebServices::ClientInfoPtr clientInfo = IntegrationTestsSettings::Instance().GetClientInfo();
-    auto newClient = WSRepositoryClient::Create(s_info->GetServerURL(), s_info->GetWSRepositoryName(), clientInfo, nullptr, mockHandler);
+    auto newClient = WSRepositoryClient::Create(s_info->GetServerURL(), ServerProperties::ServiceVersion(), s_info->GetWSRepositoryName(), clientInfo, nullptr, mockHandler);
     s_connection->SetRepositoryClient(newClient);
 
     // Should not succeed when user does not exist
@@ -268,7 +269,7 @@ TEST_F(UserInfoTests, QueryUsersInfoByTwoIdsTogether_OneAddedLater)
 
     // Set other wsclient
     WebServices::ClientInfoPtr clientInfo = IntegrationTestsSettings::Instance().GetClientInfo();
-    auto newClient = WSRepositoryClient::Create(s_info->GetServerURL(), s_info->GetWSRepositoryName(), clientInfo, nullptr, mockHandler);
+    auto newClient = WSRepositoryClient::Create(s_info->GetServerURL(), ServerProperties::ServiceVersion(), s_info->GetWSRepositoryName(), clientInfo, nullptr, mockHandler);
     s_connection->SetRepositoryClient(newClient);
 
     // Mock Handler should return only user1 when querying first time

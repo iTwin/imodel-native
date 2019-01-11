@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnMaterial.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -125,7 +125,7 @@ public:
 
     //! Get the rendering asset.
     RenderingAssetCR GetRenderingAsset() const {return (RenderingAssetCR) GetAsset(json_renderMaterial());}
-    RenderingAssetR GetRenderingAssetR() {return (RenderingAssetR) GetAsset(json_renderMaterial());}
+    RenderingAssetR GetRenderingAssetR() {return (RenderingAssetR) GetAssetR(json_renderMaterial());}
 
     void SetRenderingAsset(JsonValueCR val) {GetAssetR(json_renderMaterial()) = val;}
 

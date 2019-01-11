@@ -206,7 +206,7 @@ BentleyStatus CurveTopologyId::Init (void const* pData, size_t dataBytes)
 
             m_ids.resize (count);
 
-            uint16_t*     pValue = (uint16_t*) data;
+            uint16_t const*     pValue = (uint16_t const*) data;
             for (size_t i=0; i<count; i++)
                 m_ids[i] = *pValue++;
 
@@ -219,7 +219,7 @@ BentleyStatus CurveTopologyId::Init (void const* pData, size_t dataBytes)
 
             m_ids.resize (count);
 
-            uint32_t*     pValue = (uint32_t*) data;
+            uint32_t const*     pValue = (uint32_t const*) data;
             for (size_t i=0; i<count; i++)
                 m_ids[i] = *pValue++;
 

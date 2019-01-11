@@ -17,8 +17,8 @@ Utf8String SchemaResourceKeyHelper::ComputeHash(Utf8CP str)
         return "";
 
     size_t len = strlen(str) * sizeof(Utf8Char);
-    unsigned char *bp = (unsigned char *) str;   /* start of buffer */
-    unsigned char *be = bp + len;        /* beyond end of buffer */
+    unsigned char const*bp = (unsigned char const*) str;   /* start of buffer */
+    unsigned char const*be = bp + len;        /* beyond end of buffer */
 
     uint32_t hashValue = 0;
     while (bp < be)

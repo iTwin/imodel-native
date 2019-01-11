@@ -309,7 +309,7 @@ ZipErrors MemoryLzmaInStream::_Read(void* data, uint32_t size, uint32_t& actuall
     if (m_headerData)
         {
         readFromHeader = std::min(m_headerSize - m_headerOffset, size);
-        memcpy(data, (Byte*) m_headerData + m_headerOffset, readFromHeader);
+        memcpy(data, (Byte const*) m_headerData + m_headerOffset, readFromHeader);
         if ((m_headerOffset += readFromHeader) >= m_headerSize)
             m_headerData = nullptr; //  don't use it again
         BeAssert(size >= readFromHeader);
@@ -319,7 +319,7 @@ ZipErrors MemoryLzmaInStream::_Read(void* data, uint32_t size, uint32_t& actuall
 
     actuallyRead = std::min(size, m_size - m_offset);
 
-    memcpy(data, (Byte*) m_data + m_offset, actuallyRead);
+    memcpy(data, (Byte const*) m_data + m_offset, actuallyRead);
     m_offset += actuallyRead;
 
     actuallyRead += readFromHeader;

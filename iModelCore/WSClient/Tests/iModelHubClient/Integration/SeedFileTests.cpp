@@ -311,7 +311,8 @@ void CreateFileInstance(iModelConnectionPtr connection)
     createFileJson["instance"]["properties"]["FileId"] = BeSQLite::BeGuid(true).ToString();
     createFileJson["instance"]["properties"]["MergedChangeSetId"] = "";
     auto wsRepositoryClient = connection->GetRepositoryClient();
-    ASSERT_SUCCESS(wsRepositoryClient->SendCreateObjectRequest(createFileJson)->GetResult());
+    auto requestOptions = iModelHubHelpers::CreateiModelHubRequestOptions();
+    ASSERT_SUCCESS(wsRepositoryClient->SendCreateObjectRequestWithOptions(createFileJson, BeFileName(), nullptr, requestOptions)->GetResult());
     }
 
 //---------------------------------------------------------------------------------------

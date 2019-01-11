@@ -2,7 +2,7 @@
 |
 |     $Source: iModelConsole/Command.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
@@ -699,7 +699,8 @@ Utf8String ChangeCommand::_GetUsage() const
            "         attachcache [cache path] attaches (and creates if necessary) the Change Cache file.\r\n"
            "         detachcache            Detaches the Change Cache file, if it was attached.\r\n"
            "         extractsummary [changeset file] if a changeset file is specified, a change summary is created from it.\r\n"
-           "                                Otherwise a revision from the current local changes is created and the summary extracted from it.\r\n";
+           "                                Otherwise a revision from the current local changes is created and the summary extracted from it.\r\n"
+           "         logchangeset changeset file    Logs the contents of the changeset file (to iModelConsole logs under category: 'Changeset').\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -856,6 +857,33 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         if (trackingWasOn)
             tracker->EnableTracking(true);
 
+        return;
+        }
+
+    if (args[0].EqualsIAscii("logchangeset"))
+        {
+        if (args.size() < 2)
+            {
+            IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        BeFileName changesetFilePath(args[1].c_str(), true);
+        if (!changesetFilePath.DoesPathExist())
+            {
+            IModelConsole::WriteErrorLine("Failed to log changeset content. ChangeSet file %s does not exist.", changesetFilePath.GetNameUtf8().c_str());
+            return;
+            }
+
+        if (session.GetFile().GetType() != SessionFile::Type::IModel)
+            {
+            IModelConsole::WriteErrorLine("No iModel open. Logging the content if a changeset file is not supported for ECDb files.");
+            return;
+            }
+
+        Dgn::RevisionChangesFileReader changeStream(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
+        changeStream.Dump(Utf8String(changesetFilePath.GetFileNameWithoutExtension().c_str()).c_str(), session.GetFile().GetAs<IModelFile>().GetHandle());
+        IModelConsole::WriteLine("Successfully logged the content of the changeset file. See logging category 'Changeset' in the iModelConsole logs.");
         return;
         }
 

@@ -1684,7 +1684,7 @@ BentleyStatus   PSolidGeom::BodyFromCone (PK_BODY_t& bodyTag, RotMatrixCR rMatri
         {
         MSBsplineSurface  surface;
 
-        if (SUCCESS != bspconv_coneToSurface (&surface, topRadius, bottomRadius, &rMatrix, (DPoint3dP) &topCenter, (DPoint3dP) &bottomCenter))
+        if (SUCCESS != bspconv_coneToSurface (&surface, topRadius, bottomRadius, &rMatrix, const_cast<DPoint3dP>(&topCenter), const_cast<DPoint3dP>(&bottomCenter)))
             return ERROR;
 
         StatusInt   status;
@@ -2659,6 +2659,7 @@ static void makeProfilesWithUniformVertexCount(PK_BODY_t const* bodies, size_t n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+PUSH_MSVC_IGNORE(6385) // static analysis thinks we can go off the end of profileBodies
 BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, bool periodic, uint32_t nodeId)
     {
     // NOTE: Parity/Union regions not currently supported...
@@ -2729,6 +2730,7 @@ BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* prof
 
     return status;
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12

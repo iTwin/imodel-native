@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCategory.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -783,7 +783,7 @@ void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& pa
     params.RegisterPropertyAccessors(layout, DgnCategory::prop_Description(),
         [] (ECValueR value, DgnElementCR elIn)
             {
-            DgnCategory& el = (DgnCategory&) elIn;
+            DgnCategory const& el = (DgnCategory const&) elIn;
             value.SetUtf8CP(el.GetDescription());
             return DgnDbStatus::Success;
             },
@@ -799,7 +799,7 @@ void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& pa
     params.RegisterPropertyAccessors(layout, DgnCategory::prop_Rank(), 
         [] (ECValueR value, DgnElementCR elIn)
             {
-            DgnCategory& el = (DgnCategory&) elIn;
+            DgnCategory const& el = (DgnCategory const&) elIn;
             value.SetInteger(static_cast<int32_t>(el.GetRank()));
             return DgnDbStatus::Success;
             },
@@ -823,7 +823,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
     params.RegisterPropertyAccessors(layout, DgnSubCategory::prop_Description(),
         [] (ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (DgnSubCategory&) elIn;
+            auto const& el = (DgnSubCategory const&) elIn;
             value.SetUtf8CP(el.GetDescription());
             return DgnDbStatus::Success;
             },
@@ -841,7 +841,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
     params.RegisterPropertyAccessors(layout, DgnSubCategory::prop_Properties(), 
         [] (ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (DgnSubCategory&) elIn;
+            auto const& el = (DgnSubCategory const&) elIn;
             value.SetUtf8CP(el.m_data.m_appearance.ToJson().ToString().c_str());
             return DgnDbStatus::Success;
             },

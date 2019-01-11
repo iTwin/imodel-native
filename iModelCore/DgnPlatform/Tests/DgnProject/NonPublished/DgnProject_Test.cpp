@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnProject_Test.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -70,10 +70,10 @@ TEST_F(DgnDbTest, CheckStandardProperties)
     PhysicalModelPtr defaultModel = GetDefaultPhysicalModel();
 
     // Use ModelInfo as an alt. way to get at some of the same property data
-    GeometricModel::Formatter const& displayInfo = defaultModel->GetFormatter();
+    GeometricModel::Formatter const &displayInfo = defaultModel->GetFormatter();
     ASSERT_TRUE(displayInfo.GetMasterUnits().GetBase() == UnitBase::Meter);
     ASSERT_TRUE(displayInfo.GetSubUnits().GetBase() == UnitBase::Meter);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/18
@@ -109,50 +109,50 @@ TEST_F(DgnDbTest, ConnectedContextId)
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, ProjectProfileVersions)
-    {
+{
     SetupSeedProject();
     DgnDbP project = m_db.get();
-    ASSERT_TRUE( project != NULL);
+    ASSERT_TRUE(project != NULL);
 
     // Get Schema version details
     DgnDbProfileVersion profileVer = project->GetProfileVersion();
-    ASSERT_EQ (DGNDB_CURRENT_VERSION_Major, profileVer.GetMajor()) << "The Schema Major Version is: " << profileVer.GetMajor();
-    ASSERT_EQ (DGNDB_CURRENT_VERSION_Minor, profileVer.GetMinor()) << "The Schema Minor Version is: " << profileVer.GetMinor();
-    ASSERT_EQ (DGNDB_CURRENT_VERSION_Sub1, profileVer.GetSub1()) << "The Schema Sub1 Version is: " << profileVer.GetSub1();
-    ASSERT_EQ (DGNDB_CURRENT_VERSION_Sub2, profileVer.GetSub2()) << "The Schema Sub2 Version is: " << profileVer.GetSub2();
-    }
+    ASSERT_EQ(DGNDB_CURRENT_VERSION_Major, profileVer.GetMajor()) << "The Schema Major Version is: " << profileVer.GetMajor();
+    ASSERT_EQ(DGNDB_CURRENT_VERSION_Minor, profileVer.GetMinor()) << "The Schema Minor Version is: " << profileVer.GetMinor();
+    ASSERT_EQ(DGNDB_CURRENT_VERSION_Sub1, profileVer.GetSub1()) << "The Schema Sub1 Version is: " << profileVer.GetSub1();
+    ASSERT_EQ(DGNDB_CURRENT_VERSION_Sub2, profileVer.GetSub2()) << "The Schema Sub2 Version is: " << profileVer.GetSub2();
+}
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
 struct CategoryTestData
-    {
+{
     DgnDbR m_db;
     DgnCategoryId m_category1;
     DgnCategoryId m_category2;
     CategoryTestData(DgnDbR db, DgnCategoryId category1, DgnCategoryId category2) : m_db(db), m_category1(category1), m_category2(category2) {}
-    };
+};
 
 static DgnSubCategoryId facetId1, facetId2;
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * Creating a project with Duplicate name
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, ProjectWithDuplicateName)
-    {
+{
     CreateDgnDbParams params(TEST_NAME);
     DbResult status, status2;
     DgnDbPtr project, project2;
-    
+
     //Deleting the project file if it exists already
     BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"));
 
     //Create and Verify that project was created
     project = DgnDb::CreateDgnDb(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
-    ASSERT_TRUE (project != NULL);
-    ASSERT_EQ (BE_SQLITE_OK, status) << "Status returned is:" << status;
-    
+    ASSERT_TRUE(project != NULL);
+    ASSERT_EQ(BE_SQLITE_OK, status) << "Status returned is:" << status;
+
     // Close the original project (otherwise, we'll get a sharing violation, rather than a dup name error).
     project = nullptr;
 

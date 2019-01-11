@@ -317,7 +317,7 @@ const DMatrix3d   *pB
 #define DIM33WORKSPACE 18
     double coffC[DIM33WORKSPACE];
     static int indices[3] = {0, 1, 2};
-    const double *pAA = (double *)pA, *pBB = (double *)pB;
+    const double *pAA = (double const*)pA, *pBB = (double const*)pB;
     double ratio;
     int i = 0;
     for (i = 0; i < 9; i++)
@@ -354,7 +354,7 @@ const DMatrix4d   *pB
 #define DIM44WORKSPACE 32
     double coffC[DIM44WORKSPACE];
     static int indices[4] = {0, 1, 2, 3};
-    const double *pAA = (double *)pA, *pBB = (double *)pB;
+    const double *pAA = (double const*)pA, *pBB = (double const*)pB;
     double ratio;
     int i = 0;
     for (i = 0; i < 16; i++)
@@ -1122,7 +1122,7 @@ if (s_favorB)
             if (extendConic || bsiDConic4d_angleInSweep (pConic, theta))
                 {
                 if (pPointA)
-                    bsiBezier_evaluate ((double *)&pPointA[numOut], (double *)pA, orderA, 4, curveParam);
+                    bsiBezier_evaluate ((double *)&pPointA[numOut], const_cast<double*>((double const*)pA), orderA, 4, curveParam);
                 if (pParamA)
                     pParamA[numOut] = curveParam;
                 if (pPointConic)

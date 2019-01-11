@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/BaseManagedGCS.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
@@ -1976,6 +1976,7 @@ public ref class     LibrarySearcher
 {
 private:
 SCG::List<BaseGCS^>^    m_allCoordinateSystems;
+bool m_currentlyDestroying = false;
 
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -2007,6 +2008,11 @@ System::Object^             progressArg
             SCG::IEnumerator<BaseGCS^>^ memberEnumerator = gcnew GCSMemberEnumerator (library);
             while (memberEnumerator->MoveNext())
                 {
+                // Sometimes the searcher is being destroyed while search is in process ... during this
+                // m_allCoordinateSystems must not be modified. We return immediately.
+                if (m_currentlyDestroying)
+                    return nullptr;
+
                 m_allCoordinateSystems->Add (memberEnumerator->Current);
                 if ( (nullptr != progressIndicator) && (0 == (csIndex % interval)) )
                     {
@@ -2035,6 +2041,8 @@ System::Object^             progressArg
 (
 )
     {
+    // Indicates the searcher is being destroyed.
+    m_currentlyDestroying = true;
     FreeAllCoordinateSystems();
     }
 
