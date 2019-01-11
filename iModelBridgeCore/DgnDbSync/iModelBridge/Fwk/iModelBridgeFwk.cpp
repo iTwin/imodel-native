@@ -1882,6 +1882,8 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         GetLogger().infov("bridge:%s iModel:%s - Opening briefcase II.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
+        ReportFeatureFlags();
+
         // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
         bool madeSchemaChanges = false;
         m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
@@ -2063,7 +2065,7 @@ void iModelBridgeFwk::LogStderr()
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::iModelBridgeFwk()
-:m_logProvider(NULL), m_dmsSupport(NULL)
+:m_logProvider(nullptr), m_dmsSupport(nullptr), m_bridge(nullptr)
     {
     m_client = nullptr;
     m_bcMgrForBridges = new IBriefcaseManagerForBridges(*this);
@@ -2112,6 +2114,18 @@ void iModelBridgeFwk::ReportIssue(WStringCR msg)
         return;
         }
     tf->PutLine(msg.c_str(), true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::ReportFeatureFlags()
+    {
+    if (m_bridge != nullptr)
+        {
+        if (m_bridge->_GetParams().GetWantProvenanceInBim())
+            GetLogger().info("FeatureFlag.WantProvenanceInBim = 1");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
