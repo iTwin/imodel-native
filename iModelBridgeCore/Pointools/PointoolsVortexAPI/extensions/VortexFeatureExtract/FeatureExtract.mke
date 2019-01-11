@@ -1,0 +1,136 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: extensions/VortexFeatureExtract/FeatureExtract.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+
+%include $(SrcRoot)Pointools/PointoolsVortexAPI/mki/FeatureExtractPolicy.mki
+%include mdl.mki
+
+# TARGET_PROCESSOR_ARCHITECTURE is not defined before including mdl.mki
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+    CCompOpts + -D"NOMINMAX"
+    CCompOpts + -D"_CRT_SECURE_NO_WARNINGS"
+    CCompOpts + -D"FLANN_STATIC"
+%endif
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/FeatureExtractPolicy.mki
+%include $(CompileOptionsMki)
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc              = $(_MakeFilePath)
+#appPublicApi        = $(appSrc)PublicAPI/$(appName)/
+#MultiCompileDepends = $(_MakeFileSpec) $(appSrc)/Include/PointoolsVortexAPIInternal.h
+MultiCompileDepends = $(_MakeFileSpec)
+
+always:
+    !~@mkdir $(o)
+
+# Wire in my own vendor header files.
+VendorAPIDir    = $(BuildContext)VendorAPI/PointoolsVortexAPI_FeatureExtract_DLL
+
+always:
+    @CreateSymLinks.py   -f"$(VendorAPIDir)\GeomTypes.h=${SrcRoot}\Pointools\PointoolsVortexAPI\extensions\VortexFeatureExtract\GeomTypes.h"
+    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexFeatureExtract.h=${SrcRoot}\Pointools\PointoolsVortexAPI\extensions\VortexFeatureExtract\VortexFeatureExtract.h"
+    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexFeatureExtractAPI.h=${SrcRoot}\Pointools\PointoolsVortexAPI\extensions\VortexFeatureExtract\VortexFeatureExtractAPI.h"
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+headerDependencies = \
+    $(basedir)\Includes.h\
+    $(basedir)\VortexFeatureExtract.h\
+    $(basedir)\VortexFeatureExtractAPI.h\
+    $(basedir)\GeomTypes.h\
+    $(basedir)\QueryBuffer.h\
+    $(basedir)\ClusterAnalyser.h\
+    $(basedir)\Sites.h
+
+%include MultiCppCompileRule.mki
+
+$(o)VortexFeatureExtract$(oext) : $(basedir)\VortexFeatureExtract.cpp $(basedir)\Plane.h $(headerDependencies) ${MultiCompileDepends}
+
+$(o)ClusterAnalyser$(oext) : $(basedir)\ClusterAnalyser.cpp $(headerDependencies) ${MultiCompileDepends}
+
+$(o)QueryBuffer$(oext) : $(basedir)\QueryBuffer.cpp $(headerDependencies) ${MultiCompileDepends}
+
+$(o)LoadVortex$(oext) : $(basedir)\LoadVortex.cpp $(headerDependencies) ${MultiCompileDepends}
+
+$(o)VortexInitialize$(oext) : $(basedir)\VortexInitialize.cpp $(headerDependencies) ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList) 
+DLM_OBJECT_DEST             = $(o)
+#DLM_OBJECT_PCH              = $(o)FeatureExtractInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+#DLM_SPECIAL_LINKOPT     + -LIBPATH:$(BuildContextLibPath)
+
+#ASSEMBLY_NAME           = $(appName)
+#ASSEMBLY_TITLE          = $(appName)
+#ASSEMBLY_DESCRIPTION	= $(appName)
+
+LINKER_LIBRARIES = \
+    kernel32.lib\
+    user32.lib\
+    gdi32.lib\
+    winspool.lib\
+    comdlg32.lib\
+    advapi32.lib\
+    shell32.lib\
+    ole32.lib\
+    oleaut32.lib\
+    uuid.lib\
+    odbc32.lib\
+    odbccp32.lib\
+    opengl32.lib\
+    glu32.lib\
+    shlwapi.lib\
+    wsock32.lib\
+    Ws2_32.lib\
+    $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext)
+
+%if defined(HAVE_WILDMAGIC)
+    LINKER_LIBRARIES + \
+    %if $(BUILD_TOOLSET) == "VC8"
+        $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC8$(stlibext)
+    %elif $(BUILD_TOOLSET) == "VS2012"
+        $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC11$(stlibext)
+    %elif $(BUILD_TOOLSET) == "VS2013"
+        $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC12$(stlibext)
+    %elif $(BUILD_TOOLSET) == "VC13"
+        $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC13$(stlibext)
+    %else
+        $(ContextSubpartsLibs)$(stlibprefix)wildmagic$(stlibext)
+    %endif
+%endif
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BentleyGeom$(stlibext)
+
+%include $(PointoolsVortexAPI)mki\PointoolsVortexAPI_Version.mki
+
+%include $(sharedMki)linkLibrary.mki
