@@ -35,7 +35,7 @@ public:
     static IGeometryPtr CreateRoundedRectangle (RoundedRectangleProfileCPtr profile);
     static IGeometryPtr CreateHollowRectangle (HollowRectangleProfileCPtr profile);
     static IGeometryPtr CreateTrapezium (TrapeziumProfileCPtr profile);
-    static IGeometryPtr CreateDoubleLShape (DoubleLShapeProfileCPtr profile);
+    static IGeometryPtr CreateDoubleLShape (DoubleLShapeProfile const& doubleProfile, LShapeProfile const& singleProfile);
 
     };
 

@@ -962,22 +962,18 @@ IGeometryPtr ProfilesGeometry::CreateTrapezium (TrapeziumProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateDoubleLShape (DoubleLShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateDoubleLShape (DoubleLShapeProfile const& doubleProfile, LShapeProfile const& singleProfile)
     {
-    LShapeProfileCPtr singleProfilePtr = profile->GetSingleProfile();
-    if (singleProfilePtr.IsNull())
-        return nullptr;
-
-    IGeometryPtr singleProfileGeometryPtr = singleProfilePtr->GetShape();
+    IGeometryPtr singleProfileGeometryPtr = singleProfile.GetShape();
     if (singleProfileGeometryPtr.IsNull())
         return nullptr;
 
-    double const width = singleProfilePtr->GetWidth();
-    double const depth = singleProfilePtr->GetDepth();
+    double const width = singleProfile.GetWidth();
+    double const depth = singleProfile.GetDepth();
 
-    bool const needsRotation = depth > width && profile->GetType() == DoubleLShapeProfileType::SLBB ||
-                               width > depth && profile->GetType() == DoubleLShapeProfileType::LLBB;
-    double const singleSideOffset = profile->GetSpacing() / 2.0 + (needsRotation ? depth : width) / 2.0;
+    bool const needsRotation = depth > width && doubleProfile.GetType() == DoubleLShapeProfileType::SLBB ||
+                               width > depth && doubleProfile.GetType() == DoubleLShapeProfileType::LLBB;
+    double const singleSideOffset = doubleProfile.GetSpacing() / 2.0 + (needsRotation ? depth : width) / 2.0;
 
     DMatrix4d rightSideMatrix, leftSideMatrix;
     if (needsRotation)
