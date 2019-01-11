@@ -814,6 +814,23 @@ ECN::ECClassCP iModelExternalSourceAspect::GetAspectClass(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId)
+    {
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND SourceId=?)");
+    sel->BindId(1, scopeId);
+    sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    ElementAndAspectId res;
+    if (BE_SQLITE_ROW != sel->Step())
+        return res;
+    res.elementId = sel->GetValueId<DgnElementId>(0);
+    res.aspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(1);
+    return res;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
 bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAll(DgnElementCR el, ECN::ECClassCP aspectClass)
     {
     bvector<iModelExternalSourceAspect> aspects;
@@ -823,6 +840,28 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAll(DgnElemen
         return aspects;
     auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=?)");
     sel->BindId(1, el.GetElementId());
+    while (BE_SQLITE_ROW == sel->Step())
+        {
+        auto aspectid = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+        auto aspect = GetAspect(el, aspectid);
+        aspects.push_back(aspect);
+        }
+    return aspects;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(DgnElementCR el, Utf8CP kind, ECN::ECClassCP aspectClass)
+    {
+    bvector<iModelExternalSourceAspect> aspects;
+    if (!aspectClass)
+        aspectClass = GetAspectClass(el.GetDgnDb());
+    if (nullptr == aspectClass)
+        return aspects;
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=?)");
+    sel->BindId(1, el.GetElementId());
+    sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     while (BE_SQLITE_ROW == sel->Step())
         {
         auto aspectid = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
@@ -933,6 +972,23 @@ iModelExternalSourceAspect iModelExternalSourceAspect::GetAspect(DgnElementR el,
     return iModelExternalSourceAspect(instance);
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelExternalSourceAspect iModelExternalSourceAspect::GetAspectBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId)
+    {
+    auto found = FindElementBySourceId(db, scopeId, kind, sourceId);
+    if (!found.elementId.IsValid())
+        return iModelExternalSourceAspect();
+
+    auto el = db.Elements().GetElement(found.elementId);
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        return iModelExternalSourceAspect();
+        }
+    return GetAspect(*el, found.aspectId, nullptr);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18

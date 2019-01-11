@@ -501,10 +501,13 @@ struct SyncInfo
       protected:
         friend struct SyncInfo;
         ExternalSourceAspect(ECN::IECInstance* i) : iModelExternalSourceAspect(i) {}
+
+        DGNDBSYNC_EXPORT static DgnGeometryPartId FindElementByScopeAndSourceId(DgnDbR db, DgnElementId scopeId, Utf8StringCR srcId);
+
       public:
         enum Kind
             {
-            Element, Model, DrawingGraphic, Level, GeomPart
+            Element, Model, DrawingGraphic, Level, GeomPart, ViewDefinition
             };
 
         static Utf8CP KindToString(Kind kind)
@@ -516,6 +519,7 @@ struct SyncInfo
                 case Kind::DrawingGraphic: return "DrawingGraphic";
                 case Kind::Level: return "Level";
                 case Kind::GeomPart: return "GeomPart";
+                case Kind::ViewDefinition: return "ViewDefinition";
                 }
             BeAssert(false);
             return "Element";
@@ -528,11 +532,26 @@ struct SyncInfo
             if (0==strcmp(str,"DrawingGraphic")) return Kind::DrawingGraphic;
             if (0==strcmp(str,"Level")) return Kind::Level;
             if (0==strcmp(str,"GeomPart")) return Kind::GeomPart;
+            if (0==strcmp(str,"ViewDefinition")) return Kind::ViewDefinition;
             BeAssert(false);
             return Kind::Element;
             }
 
         DGNDBSYNC_EXPORT ExternalSourceAspect::Kind GetKind() const;
+        };
+
+    //! Identifies the source of a ViewDefinition
+    struct ViewDefinitionExternalSourceAspect : ExternalSourceAspect
+        {
+        private:
+        ViewDefinitionExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        public:
+        //! Create a new aspect in memory. scopeId should be the RepositoryLink element that stands for the source file. Caller must call AddTo, passing in the ViewDefinition element.
+        DGNDBSYNC_EXPORT static ViewDefinitionExternalSourceAspect Make(DgnElementId scopeId, Utf8StringCR name, double lmt, DgnDbR);
+        //! Look up the element that has the ViewDefinition aspect with the specified tag. Note that this is based on the assumption that DgnViewDefinition names are unique within the specified scope (file).
+        static DgnViewId FindElementByViewName(DgnDbR db, DgnElementId scopeId, Utf8StringCR name) {return DgnViewId(FindElementBySourceId(db, scopeId, KindToString(Kind::ViewDefinition), name).elementId.GetValueUnchecked());}
+        //! Get an existing ViewDefinition aspect from the specified DgnViewDefinition
+        DGNDBSYNC_EXPORT static ViewDefinitionExternalSourceAspect Get(ViewDefinitionCR el);
         };
 
     //! A GeomPart mapping
@@ -544,9 +563,8 @@ struct SyncInfo
         //! Create a new aspect in memory. scopeId should be the bridge's job definition model. Caller must call AddTo, passing in the DgnGeometryPart element.
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect Make(DgnElementId scopeId, Utf8StringCR tag, DgnDbR);
         //! Look up the element that has the GeomPart aspect with the specified tag. Note that this is based on the assumption that GeometryPart "tags" are unique within the specified scope!
-        DGNDBSYNC_EXPORT static DgnGeometryPartId FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag);
+        static DgnGeometryPartId FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag) {return DgnGeometryPartId(FindElementBySourceId(db, scopeId, KindToString(Kind::GeomPart), tag).elementId.GetValueUnchecked());}
         //! Get an existing GeomPart aspect from the specified DgnGeometryPart
-        //! Look up anp existing GeomPart aspect by its partId. el should be the job's definition model element.
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect Get(DgnGeometryPartCR el);
         };
 
@@ -574,7 +592,7 @@ struct SyncInfo
 
         DGNDBSYNC_EXPORT DgnV8Api::ElementId GetV8ElementId() const;
 
-        #ifdef TEST_SYNC_INFO_ASPECT
+        #ifdef TEST_EXTERNAL_SOURCE_ASPECT
         void AssertMatch(DgnElementCR, DgnV8Api::ElementId, ElementProvenance const&);
         #endif
         };
@@ -603,7 +621,7 @@ struct SyncInfo
         DGNDBSYNC_EXPORT Utf8String GetV8ModelName() const;
 
 
-        #ifdef TEST_SYNC_INFO_ASPECT
+        #ifdef TEST_EXTERNAL_SOURCE_ASPECT
         void AssertMatch(V8ModelMapping const&);
         #endif
         };
@@ -898,7 +916,7 @@ public:
     //! @return true if the element was found in the discard table
     DGNDBSYNC_EXPORT bool WasElementDiscarded (uint64_t v8id, V8ModelSyncInfoId modelsiid);
 
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
     void AssertAspectMatchesSyncInfo(V8ElementMapping const&);
 #endif
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Updater.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -100,7 +100,7 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
             ++found;
         }
 
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
     {
     // TODO - must filter on scope
     // auto findAspect = converter.GetDgnDb().GetPreparedECSqlStatement("Select * from SourceInfo.SourceElementInfo where (SourceId=? and Kind='Element')");
@@ -121,7 +121,7 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
         res.m_v8ElementMapping = found.GetV8ElementMapping();
         res.m_changeType = found.GetProvenance().IsSame(res.m_currentElementProvenance)? ChangeType::None: ChangeType::Update;
 
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
         converter.GetSyncInfo().AssertAspectMatchesSyncInfo(res.m_v8ElementMapping);
 #endif
         if (v8mm.GetDgnModel().IsSpatialModel() && converter.HasRootTransChanged())

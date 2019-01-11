@@ -1686,9 +1686,12 @@ static BentleyStatus   importElementAspectSchema(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
 void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
     {
+    if (!m_converter._WantProvenanceInBim())
+        return;
+
     auto el = m_converter.GetDgnDb().Elements().GetElement(mapping.GetElementId());
     if (!el.IsValid())
         return;
@@ -1707,7 +1710,7 @@ void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
 void SyncInfo::V8ElementExternalSourceAspect::AssertMatch(DgnElementCR el, DgnV8Api::ElementId v8Id, ElementProvenance const& elprov)
     {
     BeAssert(GetV8ElementId() == v8Id);
@@ -1867,7 +1870,7 @@ DgnV8Api::ModelId SyncInfo::V8ModelExternalSourceAspect::GetV8ModelId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
 void SyncInfo::V8ModelExternalSourceAspect::AssertMatch(V8ModelMapping const& mapping)
     {
     // BeAssert(GetScope().GetValue() == ... TODO: must be a repository link element
@@ -1894,34 +1897,46 @@ SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::M
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeometryPartId SyncInfo::GeomPartExternalSourceAspect::FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag)
+SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::Get(DgnGeometryPartCR el)
     {
-    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND SourceId=?)");
-    sel->BindId(1, scopeId);
-    sel->BindText(2, ExternalSourceAspect::KindToString(ExternalSourceAspect::Kind::GeomPart), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    sel->BindText(3, tag.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != sel->Step())
-        return DgnGeometryPartId();
-    return sel->GetValueId<DgnGeometryPartId>(0);
+    // There's only one source aspect on a geompart element, so no need for an aspectid
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
+        {
+        auto count = GetAllByKind(el, KindToString(Kind::GeomPart)).size();
+        BeAssert((0 == count) || (1 == count));
+        }
+#endif
+    return GeomPartExternalSourceAspect(GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::Get(DgnGeometryPartCR el)
+SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::Make(DgnElementId scopeId, Utf8StringCR name, double lmt, DgnDbR db)
     {
-    // There's only one source aspect on a geompart element, so no need for an aspectid
-#ifdef TEST_SYNC_INFO_ASPECT
-        {
-        auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT COUNT(*) from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=?)");
-        sel->BindId(1, el.GetElementId());
-        sel->BindText(2, ExternalSourceAspect::KindToString(ExternalSourceAspect::Kind::GeomPart), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-        sel->Step();
-        auto count = sel->GetValueInt(0);
+    auto aspectClass = GetAspectClass(db);
+    if (nullptr == aspectClass)
+        return ViewDefinitionExternalSourceAspect(nullptr);
+                
+    SourceState ss;
+    ss.m_lastModifiedTime = lmt;
+    auto instance = iModelExternalSourceAspect::MakeInstance(scopeId, KindToString(Kind::ViewDefinition), name, &ss, *aspectClass);
+    return ViewDefinitionExternalSourceAspect(instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::Get(ViewDefinitionCR el)
+    {
+    // There's only one source aspect on a ViewDefinition element, so no need for an aspectid
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
+        {        
+        auto count = GetAllByKind(el, KindToString(Kind::ViewDefinition)).size();
         BeAssert((0 == count) || (1 == count));
         }
 #endif
-    return GeomPartExternalSourceAspect(GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
+    return ViewDefinitionExternalSourceAspect(GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**

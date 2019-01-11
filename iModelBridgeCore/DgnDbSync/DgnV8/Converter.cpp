@@ -2548,7 +2548,7 @@ void Converter::RecordConversionResultsInSyncInfo(ElementConversionResults& resu
         m_syncInfo.UpdateElement(results.m_mapping);
         }
 
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
     GetSyncInfo().AssertAspectMatchesSyncInfo(results.m_mapping);
 #endif
 
@@ -3369,7 +3369,7 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         modelAspect.AddTo(*modeledElement);
         auto updatedModelElement = modeledElement->Update();
         BeAssert(updatedModelElement.IsValid());
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
         if (updatedModelElement.IsValid())
             {
             auto storedAspect = SyncInfo::V8ModelExternalSourceAspect::Get(*updatedModelElement, v8Model.GetModelId());

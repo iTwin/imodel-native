@@ -301,13 +301,31 @@ struct iModelExternalSourceAspect
     //! Get an existing syncinfo aspect from the specified element
     IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspect(DgnElementR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
 
+    //! Look up an aspect by Scope, Kind, and SourceId
+    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspectBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR tag);
+
     //! Create a new ECInstance of the specified provenance aspect class
     //! Bridges will probably want factory methods with signatures that are customized to the bridge.
     IMODEL_BRIDGE_EXPORT static ECN::IECInstancePtr MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const*, ECN::ECClassCR aspectClass);
 
+    //! Set the SourceState of this aspect in memory
     IMODEL_BRIDGE_EXPORT static void SetSourceState(ECN::IECInstanceR, SourceState const&);
 
+    struct ElementAndAspectId
+        {
+        DgnElementId elementId;
+        BeSQLite::EC::ECInstanceId aspectId;
+        };
+
+    //! Look up the ElementId of the element that contains an aspect with the specified Scope, Kind, and SourceId. Also returns the aspect's instanceid.
+    IMODEL_BRIDGE_EXPORT static ElementAndAspectId FindElementBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
+
+    //! Look up all aspects on the specified element
     IMODEL_BRIDGE_EXPORT static bvector<iModelExternalSourceAspect> GetAll(DgnElementCR, ECN::ECClassCP aspectClass = nullptr);
+
+    //! Look up all aspects on the specified element by Kind
+    IMODEL_BRIDGE_EXPORT static bvector<iModelExternalSourceAspect> GetAllByKind(DgnElementCR, Utf8CP kind, ECN::ECClassCP aspectClass = nullptr);
+
     IMODEL_BRIDGE_EXPORT Utf8String FormatForDump(bool includeProperties, bool includeSourceState) const;
     IMODEL_BRIDGE_EXPORT static Utf8String GetDumpHeaders(bool includeProperties, bool includeSourceState);
     IMODEL_BRIDGE_EXPORT static void Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY, bool includeProperties = true, bool includeSourceState = false);
