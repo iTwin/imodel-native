@@ -261,7 +261,7 @@ BentleyStatus ElementReader::RemapParentId(Json::Value& element)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ElementReader::RemapCategoryId(Json::Value& element)
     {
-    if (!element.isMember("Category"))
+    if (!element.isMember("Category") || !element["Category"].isMember("id"))
         return SUCCESS;
 
     Utf8String catId = element["Category"][ECJsonUtilities::json_navId()].asString();
@@ -405,7 +405,11 @@ BentleyStatus ElementAspectReader::_Read(Json::Value& aspect)
         return ERROR;
         }
 
-    stat = DgnElement::GenericMultiAspect::AddAspect(*element, *ecInstance);
+    if (m_isUnique)
+        stat = DgnElement::GenericUniqueAspect::SetAspect(*element, *ecInstance);
+    else
+        stat = DgnElement::GenericMultiAspect::AddAspect(*element, *ecInstance);
+
     if (DgnDbStatus::Success != stat)
         {
         GetLogger().errorv("Failed to add ElementAspect to Element");
@@ -2589,16 +2593,6 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaReader::ImportSchema(ECN::ECSchemaP schema)
-    {
-    ECSchemaCache toInsert;
-
-    toInsert.AddSchema(*schema);
-    return (SchemaStatus::Success == GetDgnDb()->ImportV8LegacySchemas(toInsert.GetSchemas())) ? SUCCESS : ERROR;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------

@@ -42,7 +42,8 @@ static Utf8CP const JSON_TYPE_DictionaryModel = "DictionaryModel";
 static Utf8CP const JSON_TYPE_CodeSpec = "CodeSpec";
 static Utf8CP const JSON_TYPE_Schema = "Schema";
 static Utf8CP const JSON_TYPE_Element = "Element";
-static Utf8CP const JSON_TYPE_ElementAspect = "ElementAspect";
+static Utf8CP const JSON_TYPE_ElementMultiAspect = "ElementMultiAspect";
+static Utf8CP const JSON_TYPE_ElementUniqueAspect = "ElementUniqueAspect";
 static Utf8CP const JSON_TYPE_GeometricElement2d = "GeometricElement2d";
 static Utf8CP const JSON_TYPE_GeometricElement3d = "GeometricElement3d";
 static Utf8CP const JSON_TYPE_GeometryPart = "GeometryPart";
@@ -2249,7 +2250,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
     JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
     jsonAdapter.SetStructArrayAsString(true);
     jsonAdapter.SetPreferNativeDgnTypes(true);
-    Utf8CP typeKey = JSON_TYPE_ElementAspect;
+    Utf8CP typeKey = ecClass->Is(m_elementMultiAspectClass) ? JSON_TYPE_ElementMultiAspect : JSON_TYPE_ElementUniqueAspect;
 
     while (BE_SQLITE_ROW == statement->Step())
         {
