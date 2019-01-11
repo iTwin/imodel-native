@@ -38,13 +38,21 @@ protected:
     explicit Profile (CreateParams const& params);
 
     virtual bool _Validate() const;
-    virtual IGeometryPtr _CreateGeometry() const;
 
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
+
+public:
+    //! @private
+    Dgn::DgnDbStatus UpdateGeometry (Profile const& relatedProfile);
 
 private:
-    Dgn::DgnDbStatus ValidateAndCreateGeometry();
+    bool CreateGeometry();
+
+    virtual IGeometryPtr _CreateGeometry() const { return nullptr; }
+    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const { return nullptr; }
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (Profile)
@@ -52,14 +60,16 @@ public:
 
     PROFILES_EXPORT Dgn::DgnDbStatus Validate() const;
 
-public:
     PROFILES_EXPORT Utf8String GetName() const;
     PROFILES_EXPORT void SetName (Utf8String val);
 
     PROFILES_EXPORT IGeometryPtr GetShape() const;
 
 private:
-    void SetShape (IGeometryPtr val);
+    void SetShape (IGeometry const& val);
+
+private:
+    bool m_geometryUpdated;
 
     }; // Profile
 

@@ -60,7 +60,20 @@ bool DoubleLShapeProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr DoubleLShapeProfile::_CreateGeometry() const
     {
-    return ProfilesGeometry::CreateDoubleLShape (this);
+    return ProfilesGeometry::CreateDoubleLShape (*this, *GetSingleProfile());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr DoubleLShapeProfile::_UpdateGeometry (Profile const& relatedProfile) const
+    {
+    // TODO Karolis: Investigate check by typeid instead of a dynamic cast.
+    LShapeProfile const* pSingleProfile = dynamic_cast<LShapeProfile const*> (&relatedProfile);
+    if (pSingleProfile == nullptr)
+        return nullptr;
+
+    return ProfilesGeometry::CreateDoubleLShape (*this, *pSingleProfile);
     }
 
 /*---------------------------------------------------------------------------------**//**

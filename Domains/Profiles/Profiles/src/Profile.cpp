@@ -27,6 +27,7 @@ Profile::CreateParams::CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId
 +---------------+---------------+---------------+---------------+---------------+------*/
 Profile::Profile (CreateParams const& params)
     : T_Super (params)
+    , m_geometryUpdated (false)
     {
     if (params.m_isLoadingElement)
         return;
@@ -47,21 +48,16 @@ bool Profile::_Validate() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr Profile::_CreateGeometry() const
-    {
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_OnInsert()
     {
-    DgnDbStatus status = ValidateAndCreateGeometry();
-    if (status != DgnDbStatus::Success)
-        return status;
+    BeAssert (!m_geometryUpdated && "New profile doesn't have a geometry yet");
+    if (!_Validate())
+        return DgnDbStatus::ValidationFailed;
+
+    if (!CreateGeometry())
+        return DgnDbStatus::NoGeometry;
 
     return T_Super::_OnInsert();
     }
@@ -71,26 +67,77 @@ DgnDbStatus Profile::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
     {
-    DgnDbStatus status = ValidateAndCreateGeometry();
-    if (status != DgnDbStatus::Success)
-        return status;
+    if (!_Validate())
+        return DgnDbStatus::ValidationFailed;
+
+    if (!CreateGeometry())
+        return DgnDbStatus::NoGeometry;
 
     return T_Super::_OnUpdate (original);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
+* Profiles should override this method to update geometry of profiles that reference/
+* depend on it. See to Profile::UpdateGeometry.
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Profile::ValidateAndCreateGeometry()
+DgnDbStatus Profile::_UpdateInDb()
     {
-    if (!_Validate())
-        return DgnDbStatus::ValidationFailed;
+    // TODO Karolis: Update geometry for Profiles that are referencing this profile:
+    // DerivedProfile, ArbitraryCompositeProfile
+
+    m_geometryUpdated = true;
+    return T_Super::_UpdateInDb();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::_OnDelete() const
+    {
+    // TODO Karolis: Prohibit deletion of this profile if it is being referenced by profiles:
+    // DerivedProfile, ArbitraryCompositeProfile
+
+    return T_Super::_OnDelete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Create and set geometry. Regular geometry creation is skipped if profiles geometry
+* was updated via a call to Profile::UpdateGeometry.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Profile::CreateGeometry()
+    {
+    if (m_geometryUpdated)
+        return true;
 
     IGeometryPtr geometryPtr = _CreateGeometry();
     if (geometryPtr.IsNull())
+        return false;
+    SetShape (*geometryPtr);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Public, non exported method for internal use only. Used to update geometry of profiles
+* that reference/depend on 'relatedProfile'. This method should be called in
+* _UpdateInDb() passing 'this' as a parameter to profiles that need the geometry update
+* e.g. LShapeProfile should call doubleLShapeProfile->UpdateGeometry (this); folowed
+* by a doubleLShapeProfile->Update() to save geometry changes.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::UpdateGeometry (Profile const& relatedProfile)
+    {
+    BeAssert (!m_geometryUpdated && "UpdateGeometry should only be called once before an Update to the element");
+
+    IGeometryPtr geometryPtr = _UpdateGeometry (relatedProfile);
+    if (geometryPtr.IsNull())
         return DgnDbStatus::NoGeometry;
 
-    SetShape (geometryPtr);
+    SetShape (*geometryPtr);
+    m_geometryUpdated = true;
+
     return DgnDbStatus::Success;
     }
 
@@ -131,10 +178,10 @@ IGeometryPtr Profile::GetShape() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Profile::SetShape (IGeometryPtr val)
+void Profile::SetShape (IGeometry const& val)
     {
     ECN::ECValue ecValue;
-    ecValue.SetIGeometry (*val);
+    ecValue.SetIGeometry (val);
     SetPropertyValue (PRF_PROP_Profile_Shape, ecValue);
     }
 

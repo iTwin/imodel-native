@@ -56,11 +56,13 @@ protected:
     explicit DoubleLShapeProfile (CreateParams const& params);
 
     virtual bool _Validate() const override;
-    virtual IGeometryPtr _CreateGeometry() const override;
 
 private:
     bool ValidateSingleProfile() const;
     bool ValidateType() const;
+
+    virtual IGeometryPtr _CreateGeometry() const override;
+    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleLShapeProfile)

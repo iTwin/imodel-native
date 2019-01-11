@@ -116,7 +116,7 @@ DgnDbStatus LShapeProfile::_OnDelete() const
 * Update all DoubleLShapeProfiles that are referencing this profile.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LShapeProfile::_OnUpdate (DgnElement const& original)
+DgnDbStatus LShapeProfile::_UpdateInDb()
     {
     ECSqlStatement sqlStatement;
     Utf8CP pSqlString = "SELECT ECInstanceId FROM " PRF_SCHEMA (PRF_CLASS_DoubleLShapeProfile)
@@ -141,12 +141,16 @@ DgnDbStatus LShapeProfile::_OnUpdate (DgnElement const& original)
             }
 
         DgnDbStatus status;
+        status = doubleProfilePtr->UpdateGeometry (*this);
+        if (status != DgnDbStatus::Success)
+            return status;
+
         doubleProfilePtr->Update (&status);
         if (status != DgnDbStatus::Success)
             return status;
         }
 
-    return T_Super::_OnUpdate (original);
+    return T_Super::_UpdateInDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
