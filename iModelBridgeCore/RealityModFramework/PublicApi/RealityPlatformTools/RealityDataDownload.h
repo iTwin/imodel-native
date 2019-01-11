@@ -235,6 +235,7 @@ public:
 
         REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report)
             {
+#ifndef __APPLE__
             BeXmlWriterPtr writer = BeXmlWriter::Create();
             BeAssert(writer.IsValid());
             writer->SetIndentation(2);
@@ -271,6 +272,9 @@ public:
                 }
                 writer->WriteElementEnd();
                 writer->ToString(report);
+#else
+                assert(!"Not compiling on iOS");
+#endif
             }
         };
 

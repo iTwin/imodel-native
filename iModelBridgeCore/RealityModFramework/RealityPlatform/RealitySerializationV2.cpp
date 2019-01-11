@@ -5,10 +5,6 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#if !defined(ANDROID)
-    #pragma once
-#endif
-
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/RealityDataPackage.h>
 #include <RealityPlatform/SpatialEntity.h>
