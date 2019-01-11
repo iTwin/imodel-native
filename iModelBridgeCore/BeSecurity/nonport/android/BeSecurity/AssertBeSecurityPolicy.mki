@@ -1,0 +1,16 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: nonport/android/BeSecurity/AssertBeSecurityPolicy.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#
+#   This is included at the begining of mdl.mki to change things for internal
+#   use.  It is not to be shipped to customers.
+#
+#----------------------------------------------------------------------------
+SystemPolicyMki=$(SrcRoot)bsicommon/sharedmki/InternalSystemPolicy.mki
+FoundationPolicyMki=$(SrcRoot)Bentley/BentleyPolicy.mki
+DerivativePolicyMki=$(SrcRoot)Bentley/BentleyPolicy.mki
+
