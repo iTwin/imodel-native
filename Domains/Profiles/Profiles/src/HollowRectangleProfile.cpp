@@ -73,7 +73,7 @@ bool HollowRectangleProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr HollowRectangleProfile::_CreateGeometry() const
     {
-    return ProfilesGeometry::CreateHollowRectangle (this);
+    return ProfilesGeometry::CreateHollowRectangle (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

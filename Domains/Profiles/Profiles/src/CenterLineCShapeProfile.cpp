@@ -86,7 +86,7 @@ bool CenterLineCShapeProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr CenterLineCShapeProfile::_CreateGeometry() const
     {
-    return ProfilesGeometry::CreateCenterLineCShape (this);
+    return ProfilesGeometry::CreateCenterLineCShape (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

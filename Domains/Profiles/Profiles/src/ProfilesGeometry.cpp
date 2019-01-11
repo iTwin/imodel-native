@@ -102,15 +102,15 @@ static IGeometryPtr createGeometryFromPrimitiveArray (bvector<ICurvePrimitivePtr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateCShape (CShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateCShape (CShapeProfile const& profile)
     {
-    double const flangeThickness = profile->GetFlangeThickness();
-    double const webThickness = profile->GetWebThickness();
-    double const filletRadius = profile->GetFilletRadius();
-    double const flangeEdgeRadius = profile->GetFlangeEdgeRadius();
-    double const halfWidth = profile->GetFlangeWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const slopeHeight = profile->GetFlangeSlopeHeight();
+    double const flangeThickness = profile.GetFlangeThickness();
+    double const webThickness = profile.GetWebThickness();
+    double const filletRadius = profile.GetFilletRadius();
+    double const flangeEdgeRadius = profile.GetFlangeEdgeRadius();
+    double const halfWidth = profile.GetFlangeWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const slopeHeight = profile.GetFlangeSlopeHeight();
 
     DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
     DPoint3d const topRight = { halfWidth, halfDepth, 0.0 };
@@ -134,13 +134,13 @@ IGeometryPtr ProfilesGeometry::CreateCShape (CShapeProfileCPtr profile)
     ICurvePrimitivePtr bottomInnerCornerArc = nullptr;
     ICurvePrimitivePtr topInnerCornerArc = nullptr;
 
-    if (profile->GetFlangeEdgeRadius() > 0.0)
+    if (profile.GetFlangeEdgeRadius() > 0.0)
         {
         topFlangeEdgeArc = createArcBetweenLines (topFlangeEdgeLine, topFlangeSlopeLine, flangeEdgeRadius);
         bottomFlangeEdgeArc = createArcBetweenLines (bottomFlangeSlopeLine, bottomFlangeEdgeLine, flangeEdgeRadius);
         }
 
-    if (profile->GetFilletRadius() > 0.0)
+    if (profile.GetFilletRadius() > 0.0)
         {
         topInnerCornerArc = createArcBetweenLines (topFlangeSlopeLine, innerWebLine, filletRadius);
         bottomInnerCornerArc = createArcBetweenLines (innerWebLine, bottomFlangeSlopeLine, filletRadius);
@@ -157,15 +157,15 @@ IGeometryPtr ProfilesGeometry::CreateCShape (CShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateIShape (IShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateIShape (IShapeProfile const& profile)
     {
-    double const flangeThickness = profile->GetFlangeThickness();
-    double const halfWebThickness = profile->GetWebThickness() / 2.0;
-    double const filletRadius = profile->GetFilletRadius();
-    double const flangeEdgeRadius = profile->GetFlangeEdgeRadius();
-    double const halfWidth = profile->GetFlangeWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const slopeHeight = profile->GetFlangeSlopeHeight();
+    double const flangeThickness = profile.GetFlangeThickness();
+    double const halfWebThickness = profile.GetWebThickness() / 2.0;
+    double const filletRadius = profile.GetFilletRadius();
+    double const flangeEdgeRadius = profile.GetFlangeEdgeRadius();
+    double const halfWidth = profile.GetFlangeWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const slopeHeight = profile.GetFlangeSlopeHeight();
 
     DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
     DPoint3d const topMiddle = { 0.0, halfDepth, 0.0 };
@@ -204,7 +204,7 @@ IGeometryPtr ProfilesGeometry::CreateIShape (IShapeProfileCPtr profile)
     ICurvePrimitivePtr topLeftFlangeEdgeArc = nullptr;
     ICurvePrimitivePtr topLeftFlangeEdgeLine = ICurvePrimitive::CreateLine (topLeftFlangeEdge, topLeft);
 
-    if (profile->GetFlangeEdgeRadius() > 0.0)
+    if (profile.GetFlangeEdgeRadius() > 0.0)
         {
         topRightFlangeEdgeArc = createArcBetweenLines (topRightFlangeEdgeLine, topRightFlangeSlopeLine, flangeEdgeRadius);
         bottomRightFlangeEdgeArc = createArcBetweenLines (bottomRightFlangeSlopeLine, bottomRightFlangeEdgeLine, flangeEdgeRadius);
@@ -212,7 +212,7 @@ IGeometryPtr ProfilesGeometry::CreateIShape (IShapeProfileCPtr profile)
         topLeftFlangeEdgeArc = createArcBetweenLines (topLeftFlangeSlopeLine, topLeftFlangeEdgeLine, flangeEdgeRadius);
         }
 
-    if (profile->GetFilletRadius() > 0.0)
+    if (profile.GetFilletRadius() > 0.0)
         {
         topRightInnerCornerArc = createArcBetweenLines (topRightFlangeSlopeLine, innerRightWebLine, filletRadius);
         bottomRightInnerCornerArc = createArcBetweenLines (innerRightWebLine, bottomRightFlangeSlopeLine, filletRadius);
@@ -233,20 +233,20 @@ IGeometryPtr ProfilesGeometry::CreateIShape (IShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateAsymmetricIShape (AsymmetricIShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateAsymmetricIShape (AsymmetricIShapeProfile const& profile)
     {
-    double const topFlangeThickness = profile->GetTopFlangeThickness();
-    double const bottomFlangeThickness = profile->GetBottomFlangeThickness();
-    double const topFlangeFilletRadius = profile->GetTopFlangeFilletRadius();
-    double const bottomFlangeFilletRadius = profile->GetBottomFlangeFilletRadius();
-    double const topFlangeEdgeRadius = profile->GetTopFlangeEdgeRadius();
-    double const bottomFlangeEdgeRadius = profile->GetBottomFlangeEdgeRadius();
-    double const halfWebThickness = profile->GetWebThickness() / 2.0;
-    double const halfTopWidth = profile->GetTopFlangeWidth() / 2.0;
-    double const halfBottomWidth = profile->GetBottomFlangeWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const topFlangeSlopeHeight = profile->GetTopFlangeSlopeHeight();
-    double const bottomFlangeSlopeHeight = profile->GetTopFlangeSlopeHeight();
+    double const topFlangeThickness = profile.GetTopFlangeThickness();
+    double const bottomFlangeThickness = profile.GetBottomFlangeThickness();
+    double const topFlangeFilletRadius = profile.GetTopFlangeFilletRadius();
+    double const bottomFlangeFilletRadius = profile.GetBottomFlangeFilletRadius();
+    double const topFlangeEdgeRadius = profile.GetTopFlangeEdgeRadius();
+    double const bottomFlangeEdgeRadius = profile.GetBottomFlangeEdgeRadius();
+    double const halfWebThickness = profile.GetWebThickness() / 2.0;
+    double const halfTopWidth = profile.GetTopFlangeWidth() / 2.0;
+    double const halfBottomWidth = profile.GetBottomFlangeWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const topFlangeSlopeHeight = profile.GetTopFlangeSlopeHeight();
+    double const bottomFlangeSlopeHeight = profile.GetTopFlangeSlopeHeight();
 
     DPoint3d const topLeft = { -halfTopWidth, halfDepth, 0.0 };
     DPoint3d const topMiddle = { 0.0, halfDepth, 0.0 };
@@ -322,15 +322,15 @@ IGeometryPtr ProfilesGeometry::CreateAsymmetricIShape (AsymmetricIShapeProfileCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateLShape (LShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateLShape (LShapeProfile const& profile)
     {
-    double const halfWidth = profile->GetWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const thickness = profile->GetThickness();
-    double const filletRadius = profile->GetFilletRadius();
-    double const edgeRadius = profile->GetEdgeRadius();
-    double const flangeSlopeHeight = profile->GetHorizontalLegSlopeHeight();
-    double const webSlopeHeight = profile->GetVerticalLegSlopeHeight();
+    double const halfWidth = profile.GetWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const thickness = profile.GetThickness();
+    double const filletRadius = profile.GetFilletRadius();
+    double const edgeRadius = profile.GetEdgeRadius();
+    double const flangeSlopeHeight = profile.GetHorizontalLegSlopeHeight();
+    double const webSlopeHeight = profile.GetVerticalLegSlopeHeight();
 
     DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
     DPoint3d const topRight = { -halfWidth + thickness, halfDepth, 0.0 };
@@ -374,17 +374,17 @@ IGeometryPtr ProfilesGeometry::CreateLShape (LShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateTShape (TShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateTShape (TShapeProfile const& profile)
     {
-    double const flangeThickness = profile->GetFlangeThickness();
-    double const halfWebThickness = profile->GetWebThickness() / 2.0;
-    double const filletRadius = profile->GetFilletRadius();
-    double const flangeEdgeRadius = profile->GetFlangeEdgeRadius();
-    double const webEdgeRadius = profile->GetWebEdgeRadius();
-    double const halfWidth = profile->GetFlangeWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const flangeSlopeHeight = profile->GetFlangeSlopeHeight();
-    double const webSlopeHeight = profile->GetWebSlopeHeight();
+    double const flangeThickness = profile.GetFlangeThickness();
+    double const halfWebThickness = profile.GetWebThickness() / 2.0;
+    double const filletRadius = profile.GetFilletRadius();
+    double const flangeEdgeRadius = profile.GetFlangeEdgeRadius();
+    double const webEdgeRadius = profile.GetWebEdgeRadius();
+    double const halfWidth = profile.GetFlangeWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const flangeSlopeHeight = profile.GetFlangeSlopeHeight();
+    double const webSlopeHeight = profile.GetWebSlopeHeight();
 
     DPoint3d const topLeft = { -halfWidth, halfDepth, 0.0 };
     DPoint3d const topMiddle = { 0.0, halfDepth, 0.0 };
@@ -454,16 +454,16 @@ IGeometryPtr ProfilesGeometry::CreateTShape (TShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateZShape (ZShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateZShape (ZShapeProfile const& profile)
     {
-    double const flangeWidth = profile->GetFlangeWidth();
-    double const flangeThickness = profile->GetFlangeThickness();
-    double const filletRadius = profile->GetFilletRadius();
-    double const flangeEdgeRadius = profile->GetFlangeEdgeRadius();
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const webThickness = profile->GetWebThickness();
+    double const flangeWidth = profile.GetFlangeWidth();
+    double const flangeThickness = profile.GetFlangeThickness();
+    double const filletRadius = profile.GetFilletRadius();
+    double const flangeEdgeRadius = profile.GetFlangeEdgeRadius();
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const webThickness = profile.GetWebThickness();
     double const halfWebThickness = webThickness / 2.0;
-    double const slopeHeight = profile->GetFlangeSlopeHeight();
+    double const slopeHeight = profile.GetFlangeSlopeHeight();
 
     DPoint3d const topLeft = { -flangeWidth + halfWebThickness, halfDepth, 0.0 };
     DPoint3d const topRight = { 0.0 + halfWebThickness, halfDepth, 0.0 };
@@ -488,13 +488,13 @@ IGeometryPtr ProfilesGeometry::CreateZShape (ZShapeProfileCPtr profile)
     ICurvePrimitivePtr topFlangeEdgeArc = nullptr;
     ICurvePrimitivePtr topLeftFlangeEdgeLine = ICurvePrimitive::CreateLine (topFlangeEdge, topLeft);
 
-    if (profile->GetFlangeEdgeRadius() > 0.0)
+    if (profile.GetFlangeEdgeRadius() > 0.0)
         {
         bottomFlangeEdgeArc = createArcBetweenLines (bottomFlangeSlopeLine, bottomFlangeEdgeLine, flangeEdgeRadius);
         topFlangeEdgeArc = createArcBetweenLines (topFlangeSlopeLine, topLeftFlangeEdgeLine, flangeEdgeRadius);
         }
 
-    if (profile->GetFilletRadius() > 0.0)
+    if (profile.GetFilletRadius() > 0.0)
         {
         bottomInnerCornerArc = createArcBetweenLines (rightWebLine, bottomFlangeSlopeLine, filletRadius);
         topInnerCornerArc = createArcBetweenLines (leftWebLine, topFlangeSlopeLine, filletRadius);
@@ -511,13 +511,13 @@ IGeometryPtr ProfilesGeometry::CreateZShape (ZShapeProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile const& profile)
     {
-    double const halfWidth = profile->GetWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const wallThickness = profile->GetWallThickness();
-    double const filletRadius = profile->GetFilletRadius();
-    double const girth = profile->GetGirth();
+    double const halfWidth = profile.GetWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const wallThickness = profile.GetWallThickness();
+    double const filletRadius = profile.GetFilletRadius();
+    double const girth = profile.GetGirth();
 
     DPoint3d       tl_outerGirthEnd   = { -(halfWidth - girth), halfDepth, 0.0 };
     DPoint3d       tl_outerGirthStart = { -(halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
@@ -640,13 +640,13 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfileCPt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile const& profile)
     {
-    double const halfWidth = profile->GetFlangeWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const wallThickness = profile->GetWallThickness();
-    double const filletRadius = profile->GetFilletRadius();
-    double const girth = profile->GetGirth();
+    double const halfWidth = profile.GetFlangeWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const wallThickness = profile.GetWallThickness();
+    double const filletRadius = profile.GetFilletRadius();
+    double const girth = profile.GetGirth();
 
     DPoint3d const tl_outerRangeApex  = { -halfWidth, halfDepth, 0.0 };
     DPoint3d const tl_outerLeft       = { -halfWidth, halfDepth - wallThickness - filletRadius, 0.0 };
@@ -795,9 +795,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfileCPt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateCircle (CircleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateCircle (CircleProfile const& profile)
     {
-    DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius());
+    DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile.GetRadius());
 
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Inner);
     curveVector->Add (ICurvePrimitive::CreateArc (ellipse));
@@ -808,10 +808,10 @@ IGeometryPtr ProfilesGeometry::CreateCircle (CircleProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateHollowCircle (HollowCircleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateHollowCircle (HollowCircleProfile const& profile)
     {
-    DEllipse3d outerEllipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius());
-    DEllipse3d innerEllipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile->GetRadius() - profile->GetWallThickness());
+    DEllipse3d outerEllipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile.GetRadius());
+    DEllipse3d innerEllipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0.0, 0.0), profile.GetRadius() - profile.GetWallThickness());
 
     CurveVectorPtr outerCurveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
     outerCurveVector->Add (ICurvePrimitive::CreateArc (outerEllipse));
@@ -829,10 +829,10 @@ IGeometryPtr ProfilesGeometry::CreateHollowCircle (HollowCircleProfileCPtr profi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateEllipse (EllipseProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateEllipse (EllipseProfile const& profile)
     {
-    DEllipse3d ellipse = DEllipse3d::FromPoints (DPoint3d::From (0.0, 0.0), DPoint3d::From (profile->GetXRadius(), 0.0),
-        DPoint3d::From (0.0, profile->GetYRadius()), 0.0, PI * 2.0);
+    DEllipse3d ellipse = DEllipse3d::FromPoints (DPoint3d::From (0.0, 0.0), DPoint3d::From (profile.GetXRadius(), 0.0),
+        DPoint3d::From (0.0, profile.GetYRadius()), 0.0, PI * 2.0);
 
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Inner);
     curveVector->Add (ICurvePrimitive::CreateArc (ellipse));
@@ -892,10 +892,10 @@ static void appendRectangleToCurveVector (CurveVectorPtr& curveVector, double wi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateRectangle (RectangleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateRectangle (RectangleProfile const& profile)
     {
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
-    appendRectangleToCurveVector (curveVector, profile->GetWidth(), profile->GetDepth(), 0.0);
+    appendRectangleToCurveVector (curveVector, profile.GetWidth(), profile.GetDepth(), 0.0);
 
     return IGeometry::Create (curveVector);
     }
@@ -903,10 +903,10 @@ IGeometryPtr ProfilesGeometry::CreateRectangle (RectangleProfileCPtr profile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateRoundedRectangle (RoundedRectangleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateRoundedRectangle (RoundedRectangleProfile const& profile)
     {
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
-    appendRectangleToCurveVector (curveVector, profile->GetWidth(), profile->GetDepth(), profile->GetRoundingRadius());
+    appendRectangleToCurveVector (curveVector, profile.GetWidth(), profile.GetDepth(), profile.GetRoundingRadius());
 
     return IGeometry::Create (curveVector);
     }
@@ -914,13 +914,13 @@ IGeometryPtr ProfilesGeometry::CreateRoundedRectangle (RoundedRectangleProfileCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateHollowRectangle (HollowRectangleProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateHollowRectangle (HollowRectangleProfile const& profile)
     {
-    double const width = profile->GetWidth();
-    double const depth = profile->GetDepth();
-    double const doubleThickness = profile->GetWallThickness() * 2.0;
-    double const outerRadius = profile->GetOuterFilletRadius();
-    double const innerRadius = profile->GetInnerFilletRadius();
+    double const width = profile.GetWidth();
+    double const depth = profile.GetDepth();
+    double const doubleThickness = profile.GetWallThickness() * 2.0;
+    double const outerRadius = profile.GetOuterFilletRadius();
+    double const innerRadius = profile.GetInnerFilletRadius();
 
     CurveVectorPtr outerCurveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
     appendRectangleToCurveVector (outerCurveVector, width, depth, outerRadius);
@@ -938,12 +938,12 @@ IGeometryPtr ProfilesGeometry::CreateHollowRectangle (HollowRectangleProfileCPtr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateTrapezium (TrapeziumProfileCPtr profile)
+IGeometryPtr ProfilesGeometry::CreateTrapezium (TrapeziumProfile const& profile)
     {
-    double const topWidth = profile->GetTopWidth();
-    double const halfBottomWidth = profile->GetBottomWidth() / 2.0;
-    double const halfDepth = profile->GetDepth() / 2.0;
-    double const topOffset = profile->GetTopOffset();
+    double const topWidth = profile.GetTopWidth();
+    double const halfBottomWidth = profile.GetBottomWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const topOffset = profile.GetTopOffset();
 
     DPoint3d const topLeft = { -halfBottomWidth + topOffset, halfDepth, 0.0 };
     DPoint3d const topRight = { -halfBottomWidth + topOffset + topWidth, halfDepth, 0.0 };

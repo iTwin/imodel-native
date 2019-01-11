@@ -77,7 +77,7 @@ bool LShapeProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr LShapeProfile::_CreateGeometry() const
     {
-    return ProfilesGeometry::CreateLShape (this);
+    return ProfilesGeometry::CreateLShape (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

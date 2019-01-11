@@ -63,7 +63,7 @@ bool RectangleProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr RectangleProfile::_CreateGeometry() const
     {
-    return ProfilesGeometry::CreateRectangle (this);
+    return ProfilesGeometry::CreateRectangle (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
