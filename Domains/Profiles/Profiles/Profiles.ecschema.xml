@@ -455,11 +455,11 @@
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
         <ECProperty propertyName="Spacing" typeName="double" />
+        <ECNavigationProperty propertyName="SingleProfile" relationshipName="DoubleCShapeProfileRefersToCShapeProfile" direction="Forward" description="" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="DoubleCShapeProfileRefersToCShapeProfile" modifier="Sealed" strength="referencing">
-    <BaseClass>bis:ElementGroupsMembers</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
+        <Source multiplicity="(0..*)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleCShapeProfile" />
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="false">
