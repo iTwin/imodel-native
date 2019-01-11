@@ -547,7 +547,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     //  Count the models
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         SyncInfo::ModelIterator models(*syncInfo.m_dgndb, nullptr);
         int count = 0;
@@ -563,7 +563,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     if (true)
         {
         //  Verify that Updater found the new element
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
 
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, editV8FileName);
@@ -608,7 +608,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     if (true)
         {
         //  Verify that the DgnDb element was updated as expected
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
 
         DgnElementId dgnDbElementAfter;
@@ -645,7 +645,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     if (true)
         {
         //  Verify that the DgnDb element was deleted from both the db and syncinfo
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
 
         DgnElementId dgnDbElementAfter;

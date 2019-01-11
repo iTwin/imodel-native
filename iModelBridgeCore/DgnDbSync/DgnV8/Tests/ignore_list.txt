@@ -20,3 +20,4 @@ TransformTests.Test1
     # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1239): error:       Expected: 0
     # To be equal to: m_count
     # Which is: 2
+
