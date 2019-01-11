@@ -138,7 +138,7 @@ void DoubleLShapeProfile::SetType (DoubleLShapeProfileType value)
 LShapeProfilePtr DoubleLShapeProfile::GetSingleProfile() const
     {
     DgnElementId singleProfileId = GetPropertyValueId<DgnElementId> (PRF_PROP_DoubleLShapeProfile_SingleProfile);
-    return GetDgnDb().Elements().GetForEdit<LShapeProfile> (singleProfileId);
+    return LShapeProfile::GetForEdit (m_dgndb, singleProfileId);
     }
 
 /*---------------------------------------------------------------------------------**//**

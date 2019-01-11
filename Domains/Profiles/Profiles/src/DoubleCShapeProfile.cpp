@@ -8,16 +8,31 @@
 #include "ProfilesInternal.h"
 #include <Profiles\DoubleCShapeProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (DoubleCShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DoubleCShapeProfilePtr DoubleCShapeProfile::Create (/*TODO: args*/)
+DoubleCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, DgnElementId const& singleProfileId)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , spacing (spacing)
+    , singleProfileId (singleProfileId)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DoubleCShapeProfile::DoubleCShapeProfile (CreateParams const& params)
+    : T_Super (params)
     {
-    return nullptr; // TODO: Not Implemented
+    if (params.m_isLoadingElement)
+        return;
+
+    SetSpacing (params.spacing);
+    SetSingleProfile (params.singleProfileId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -34,6 +49,23 @@ double DoubleCShapeProfile::GetSpacing() const
 void DoubleCShapeProfile::SetSpacing (double value)
     {
     SetPropertyValue (PRF_PROP_DoubleCShapeProfile_Spacing, ECN::ECValue (value));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CShapeProfilePtr DoubleCShapeProfile::GetSingleProfile() const
+    {
+    DgnElementId singleProfileId = GetPropertyValueId<DgnElementId> (PRF_PROP_DoubleCShapeProfile_SingleProfile);
+    return CShapeProfile::GetForEdit (m_dgndb, singleProfileId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DoubleCShapeProfile::SetSingleProfile (DgnElementId const& singleProfileId)
+    {
+    SetPropertyValue (PRF_PROP_DoubleCShapeProfile_SingleProfile, singleProfileId);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

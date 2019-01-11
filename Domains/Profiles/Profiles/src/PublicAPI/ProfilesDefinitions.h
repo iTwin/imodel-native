@@ -125,6 +125,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_DerivedProfile_Rotation                                         "Rotation"
 #define PRF_PROP_DerivedProfile_Scale                                            "Scale"
 #define PRF_PROP_DoubleCShapeProfile_Spacing                                     "Spacing"
+#define PRF_PROP_DoubleCShapeProfile_SingleProfile                               "SingleProfile"
 #define PRF_PROP_DoubleLShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Type                                        "Type"
 #define PRF_PROP_DoubleLShapeProfile_SingleProfile                               "SingleProfile"

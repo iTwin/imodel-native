@@ -9,6 +9,7 @@
 
 #include "ProfilesDefinitions.h"
 #include "CompositeProfile.h"
+#include "CShapeProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -21,18 +22,37 @@ struct DoubleCShapeProfile : CompositeProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_DoubleCShapeProfile, CompositeProfile);
     friend struct DoubleCShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(DoubleCShapeProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing,
+                                               Dgn::DgnElementId const& singleProfileId = Dgn::DgnElementId());
+
+    public:
+        //! Required properties
+        double spacing = 0.0;
+        Dgn::DgnElementId singleProfileId = Dgn::DgnElementId();
+        };
+
 protected:
-    explicit DoubleCShapeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit DoubleCShapeProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleCShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (DoubleCShapeProfile)
 
-    PROFILES_EXPORT static DoubleCShapeProfilePtr Create (/*TODO: args*/);
+    PROFILES_EXPORT static DoubleCShapeProfilePtr Create (CreateParams const& params) { return new DoubleCShapeProfile (params); }
 
 public:
     PROFILES_EXPORT double GetSpacing() const;
     PROFILES_EXPORT void SetSpacing (double value);
+
+    PROFILES_EXPORT CShapeProfilePtr GetSingleProfile() const;
+    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId);
 
     }; // DoubleCShapeProfile
 
