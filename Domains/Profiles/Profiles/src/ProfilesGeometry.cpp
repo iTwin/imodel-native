@@ -1002,4 +1002,29 @@ IGeometryPtr ProfilesGeometry::CreateDoubleLShape (DoubleLShapeProfile const& do
     return IGeometry::Create (curveVector);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateDoubleCShape (DoubleCShapeProfile const& doubleProfile, CShapeProfile const& singleProfile)
+    {
+    IGeometryPtr singleProfileGeometryPtr = singleProfile.GetShape();
+    if (singleProfileGeometryPtr.IsNull())
+        return nullptr;
+
+    double const singleSideOffset = doubleProfile.GetSpacing() / 2.0 + singleProfile.GetFlangeWidth() / 2.0;
+
+    DMatrix4d rightSideMatrix = DMatrix4d::FromTranslation (singleSideOffset, 0.0, 0.0);
+    DMatrix4d leftSideMatrix = DMatrix4d::FromScaleAndTranslation (DPoint3d::From (-1.0, 1.0, 1.0), DPoint3d::From (-singleSideOffset, 0.0, 0.0));
+
+    Transform rightSideTransform, leftSideTransform;
+    BeAssert (rightSideTransform.InitFrom (rightSideMatrix));
+    BeAssert (leftSideTransform.InitFrom (leftSideMatrix));
+
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+    curveVector->Add (singleProfileGeometryPtr->Clone (rightSideTransform)->GetAsCurveVector());
+    curveVector->Add (singleProfileGeometryPtr->Clone (leftSideTransform)->GetAsCurveVector());
+
+    return IGeometry::Create (curveVector);
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE

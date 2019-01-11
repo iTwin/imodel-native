@@ -43,6 +43,9 @@ protected:
 
     virtual bool _Validate() const override;
 
+private:
+    virtual IGeometryPtr _CreateGeometry() const override;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleCShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (DoubleCShapeProfile)

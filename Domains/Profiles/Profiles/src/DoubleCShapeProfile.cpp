@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\DoubleCShapeProfile.h>
+#include <ProfilesInternal\ProfilesGeometry.h>
 #include <ProfilesInternal\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -48,6 +49,14 @@ bool DoubleCShapeProfile::_Validate() const
     bool const isSingleProfileValid = GetSingleProfile().IsValid();
 
     return isSpacingValid && isSingleProfileValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr DoubleCShapeProfile::_CreateGeometry() const
+    {
+    return ProfilesGeometry::CreateDoubleCShape (*this, *GetSingleProfile());
     }
 
 /*---------------------------------------------------------------------------------**//**
