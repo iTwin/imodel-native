@@ -42,7 +42,7 @@
   </ImportGroup>
   <PropertyGroup>
     <NMakeBuildCommandLine>bb re ProfilesTests -b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb re ProfilesTests -b</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re ProfilesDomainDLL -b -c &amp;&amp; bb re ProfilesDomainDLL -b &amp;&amp; bb re ProfilesTests -b -c &amp;&amp; bb re ProfilesTests -b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb re ProfilesTests -b -c</NMakeCleanCommandLine>
     <IncludePath>$(SRCROOT)DgnDomains\Profiles;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PublicAPI;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\VendorAPI;$(IncludePath)</IncludePath>
     <LocalDebuggerCommand>$(OUTROOT)Winx64\Product\ProfilesDomainTested\ProfilesTests.exe</LocalDebuggerCommand>
