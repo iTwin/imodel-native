@@ -262,4 +262,9 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     LShapeProfilePtr deepL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 3x6 (for DoubleL)", 3.0, 6.0, 1.0, 0.5));
     InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 LLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::LLBB));
     InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 SLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::SLBB));
+    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 SLBB (0 spacing)", 0.0, deepL->GetElementId(), DoubleLShapeProfileType::SLBB));
+
+    CShapeProfilePtr cShape = InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "C (for DoubleL)", 3.0, 6.0, 0.5, 0.5, 0.25), true);
+    InsertProfileGeometry<DoubleCShapeProfile> (DoubleCShapeProfile::CreateParams (GetModel(), "DoubleC", 0.25, cShape->GetElementId()));
+    InsertProfileGeometry<DoubleCShapeProfile> (DoubleCShapeProfile::CreateParams (GetModel(), "DoubleC (0 spacing)", 0.0, cShape->GetElementId()));
     }
