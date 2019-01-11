@@ -672,10 +672,21 @@ DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db, Utf
     BeAssert(db != nullptr);
 
     BeAssert(db->IsBriefcase());
-    bool expectedResult = m_expect.front();
-    m_expect.pop_front();
+    bool expectedResult = false;
+    if (!m_expect.empty())
+        {
+        expectedResult = m_expect.front();
+        m_expect.pop_front();
+        }
+    else
+        {
+        fprintf(stderr, "m_expect is empty. Push comment = \"%s\"", comment);
+        BeAssert(false && "m_expect is empty");
+        }
 
     BeAssert(expectedResult == anyTxnsInFile(*db));
+
+    // printf("*** %s : %d\n", comment, anyTxnsInFile(*db));
 
     if (!anyTxnsInFile(*db))
         return nullptr;
@@ -844,9 +855,10 @@ TEST_F(iModelBridgeTests, Test1)
 
         // and run an update
         // This time, we expect to find the repo and briefcase already there.
-        testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
-        testIModelHubClientForBridges.m_expect.push_back(true);// This will be set since we import the aspect schema.
-        //testIModelHubClientForBridges.m_expect.push_back(false);//Make definition changes
+        testIModelHubClientForBridges.m_expect.push_back(false);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) -  : 0
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - dynamic schemas : 1
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - definitions : 1
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - comment in quotes : 1
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
