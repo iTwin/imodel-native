@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/LicensingCore.mki $
+#
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+DEBUG_POLICY = 1
+PolicyFile = $(SrcRoot)licensingcrossplatform/mki/AssertLicensingCorePolicy.mki
+%include mdl.mki
+
+
+%if !defined(SUBNET_PRG)
+    CommonMSBuildOpts + -p:DEV_BUILD=1
+%endif
