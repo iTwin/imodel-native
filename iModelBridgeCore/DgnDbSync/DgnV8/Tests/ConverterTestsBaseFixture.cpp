@@ -78,7 +78,7 @@ void ConverterTestBaseFixture::SetUp()
     m_params.SetConfigFile(configFileName);
     m_params.SetSkipUnchangedFiles(false);  // file time granularity is 1 second. That's too long for an automated test.
     m_params.SetWantThumbnails(false); // It takes too long, and most tests do not look at them
-    m_params.SetWantProvenanceInBim(true);
+    m_params.SetWantProvenanceInBim(iModelBridge::TestFeatureFlag(IModelBridgeFeatureFlag::WantProvenanceInBim));
     m_count = 0;
     m_opts.m_useTiledConverter = false;
     BentleyApi::BeFileName::CreateNewDirectory(GetOutputDir());
@@ -383,7 +383,6 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
     RootModelConverter::RootModelSpatialParams params(m_params);
     params.SetKeepHostAlive(true);
     params.SetInputFileName(input);
-    params.SetWantProvenanceInBim(true);
     auto db = OpenExistingDgnDb(output);
     ASSERT_TRUE(db.IsValid());
     bool hadAnyChanges = false;
@@ -676,7 +675,7 @@ DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Ap
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                  SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
+                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
                   " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.SourceId AS INT) = ?)");
     estmt.BindInt64(1, eV8Id);
 

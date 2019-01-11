@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridge.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridge.h>
@@ -1061,4 +1061,35 @@ bool iModelBridge::HoldsSchemaLock(DgnDbR db)
     {
     LockableId schemasLock(db.Schemas());
     return db.BriefcaseManager().QueryLockLevel(schemasLock) == LockLevel::Exclusive;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isEnvVarSet(Utf8CP envname)
+    {
+    auto val = getenv(envname);
+    if (nullptr == val)
+        return false;
+    return *val == '1';
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::TestFeatureFlag(IModelBridgeFeatureFlag ff)
+    {
+    if (IModelBridgeFeatureFlag::WantProvenanceInBim == ff)
+        {
+        return isEnvVarSet("IMODEL_BRIDGE_WANT_PROVENANCE_IN_BIM");
+        }
+
+#ifdef WIP_IModelBridgeFeatureFlag
+    switch (ff)
+        {
+        case IModelBridgeFeatureFlag::...
+        }
+#endif
+    BeAssert(false && "Unrecognized feature flag");
+    return false;
     }

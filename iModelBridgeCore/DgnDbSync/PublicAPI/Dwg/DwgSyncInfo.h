@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Dwg/DwgSyncInfo.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -298,7 +298,7 @@ struct DwgSyncInfo
     //! ImportJob record
     struct ImportJob
         {
-        //!< The type of converter used to create the ibim. NB This is persistent data. Do not change.
+        //!< The type of converter used to create the bim. NB This is persistent data. Do not change.
         enum class Type
             {
             RootModels,

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/RulesetEmbedderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -71,7 +71,7 @@ struct RulesetEmbedderTests : public ConverterTestBaseFixture
 void RulesetEmbedderTests::SetUp()
     {
     T_Super::SetUp();
-    LineUpFiles(L"Design3dSelfReference.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Design3dSelfReference.bim", L"Test3d.dgn", false);
 
     m_db = OpenExistingDgnDb(m_dgnDbFileName);
     BentleyApi::ECPresentation::IECPresentationManager::SetLocalizationProvider(new BentleyApi::ECPresentation::SQLangLocalizationProvider());

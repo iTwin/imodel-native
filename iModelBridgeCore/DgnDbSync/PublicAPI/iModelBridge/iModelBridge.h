@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridge.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,14 +40,16 @@
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
-#define SOURCEINFO_ECSCHEMA_NAME            "SourceInfo"
-#define SOURCEINFO_CLASS_SoureElementInfo   "SourceElementInfo"
-#define SOURCEINFO_Scope                    "Scope"
-#define SOURCEINFO_SourceId                 "SourceId"
-#define SOURCEINFO_Kind                     "Kind"
-#define SOURCEINFO_LastModifiedTime         "LastModifiedTime"
-#define SOURCEINFO_Hash                     "Hash"
-#define SOURCEINFO_Properties               "Properties"
+#define XTRN_SRC_ASPCT_ECSCHEMA_NAME            "SourceInfo"
+#define XTRN_SRC_ASPCT_SCHEMA(name)             XTRN_SRC_ASPCT_ECSCHEMA_NAME "." name
+#define XTRN_SRC_ASPCT_CLASS                    "ExternalSourceAspect"
+#define XTRN_SRC_ASPCT_FULLCLASSNAME            XTRN_SRC_ASPCT_SCHEMA(XTRN_SRC_ASPCT_CLASS)
+#define XTRN_SRC_ASPCT_Scope                    "Scope"
+#define XTRN_SRC_ASPCT_SourceId                 "SourceId"
+#define XTRN_SRC_ASPCT_Kind                     "Kind"
+#define XTRN_SRC_ASPCT_LastModifiedTime         "LastModifiedTime"
+#define XTRN_SRC_ASPCT_Hash                     "Hash"
+#define XTRN_SRC_ASPCT_Properties               "Properties"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -1028,7 +1030,13 @@ public:
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
 
+    //! @name Feature Flags
+    //! @{
+
+    IMODEL_BRIDGE_EXPORT static bool TestFeatureFlag(IModelBridgeFeatureFlag);
+
     IMODEL_BRIDGE_EXPORT static bool WantModelProvenanceInBim(DgnDbR db);
+    //! @}
     };
 
 //=======================================================================================

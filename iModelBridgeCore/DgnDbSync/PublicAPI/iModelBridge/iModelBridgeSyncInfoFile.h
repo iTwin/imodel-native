@@ -245,7 +245,7 @@ method and not in its _ConvertToBim method.
 * @bsiclass                                    BentleySystems 
 */
 
-//! iModelSyncInfoAspect holds information that identifies a piece of data in a source repository. It is part of a mapping of that data to an element in an iModel. It also
+//! iModelExternalSourceAspect holds information that identifies a piece of data in a source repository. It is part of a mapping of that data to an element in an iModel. It also
 //! contains enough information to enable a bridge to detect changes in the source data and to update the related element.
 //! The "kind" property is used by source-specific bridges to distinguish different kinds of data. The meaning of this property is known only to the bridge.
 //! The "sourceId" property is source-specific bridges to identify items uniquely in the source repository. The information required to form an identifier is bridge-specific.
@@ -264,27 +264,26 @@ method and not in its _ConvertToBim method.
 //! The "properties" property is for the private use of the bridge to store additional qualifying data on a mapping. This can be used, for example to capture a transform in the 
 //! case where a single item in the source is intstanced multiple times in the iModel, each instance being transformed in some way. It is recommended that the bridge store auxilliary properties
 //! in JSON format, but that is up to the bridge.
-struct iModelSyncInfoAspect
+struct iModelExternalSourceAspect
     {
     struct SourceState
         {
-        bvector<unsigned char> m_hash;
-        double m_lastModifiedTime;
+        bvector<unsigned char> m_hash; //!< The cryptographic hash (any algorithm) of source object's content. Must be guaranteed to change when *any* of the source item's content changes.
+        double m_lastModifiedTime; //!< Optional value that represents a timestamp of the last change to source object's content, if available. This value does not have to be a real DateTime. If not zero, this value must be guaranteed to change when *any* of the source item's content changes. If LastModifiedTime is non-zero and if the current value equals the stored value, then a bridge will conclude that the item is unchanged. Otherwise, the bridge will use the hash.
         };
 
     RefCountedPtr<ECN::IECInstance> m_instance;
 
     public:
 
-    iModelSyncInfoAspect(ECN::IECInstance* i = nullptr) : m_instance(i) {}
-    iModelSyncInfoAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
+    iModelExternalSourceAspect(ECN::IECInstance* i = nullptr) : m_instance(i) {}
+    iModelExternalSourceAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
  
     bool IsValid() const {return m_instance.IsValid();}
 
     IMODEL_BRIDGE_EXPORT Utf8CP GetKind() const;
     IMODEL_BRIDGE_EXPORT DgnElementId GetScope() const;
     IMODEL_BRIDGE_EXPORT Utf8CP GetSourceId() const;
-    IMODEL_BRIDGE_EXPORT Utf8CP GetAspectKind() const;
     IMODEL_BRIDGE_EXPORT BentleyStatus GetSourceState(SourceState&) const;
     IMODEL_BRIDGE_EXPORT rapidjson::Document GetProperties() const;
 
@@ -298,9 +297,9 @@ struct iModelSyncInfoAspect
     IMODEL_BRIDGE_EXPORT static ECN::ECClassCP GetAspectClass(DgnDbR);
 
     //! Get an existing syncinfo aspect from the specified element
-    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass = nullptr);
+    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspect(DgnElementCR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
     //! Get an existing syncinfo aspect from the specified element
-    IMODEL_BRIDGE_EXPORT static iModelSyncInfoAspect GetAspect(DgnElementR el, ECN::ECClassCP aspectClass = nullptr);
+    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspect(DgnElementR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
 
     //! Create a new ECInstance of the specified provenance aspect class
     //! Bridges will probably want factory methods with signatures that are customized to the bridge.
@@ -308,6 +307,10 @@ struct iModelSyncInfoAspect
 
     IMODEL_BRIDGE_EXPORT static void SetSourceState(ECN::IECInstanceR, SourceState const&);
 
+    IMODEL_BRIDGE_EXPORT static bvector<iModelExternalSourceAspect> GetAll(DgnElementCR, ECN::ECClassCP aspectClass = nullptr);
+    IMODEL_BRIDGE_EXPORT Utf8String FormatForDump(bool includeProperties, bool includeSourceState) const;
+    IMODEL_BRIDGE_EXPORT static Utf8String GetDumpHeaders(bool includeProperties, bool includeSourceState);
+    IMODEL_BRIDGE_EXPORT static void Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY, bool includeProperties = true, bool includeSourceState = false);
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
@@ -391,7 +394,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! The cryptographic hash of the contents of the source item. The definition and method of computing this value is known only to source repository.
         Utf8StringCR GetHash() const  {return m_hash;}
 
-        iModelSyncInfoAspect::SourceState GetAspectState() const;
+        iModelExternalSourceAspect::SourceState GetAspectState() const;
         };
 
     //=======================================================================================

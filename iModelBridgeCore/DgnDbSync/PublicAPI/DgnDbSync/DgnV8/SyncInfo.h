@@ -370,16 +370,17 @@ struct SyncInfo
         ElementProvenance(DgnV8EhCR, SyncInfo&, StableIdPolicy);
         ElementProvenance() {}
         bool IsSame(ElementProvenance const& other){return (m_idPolicy==StableIdPolicy::ByHash || m_lastModified==other.m_lastModified) && m_hash.IsSame(other.m_hash);}
+        void GetHashAsByteVector(bvector<unsigned char>& v) const {v.assign(m_hash.m_buffer, &m_hash.m_buffer[_countof(m_hash.m_buffer)]);}
     };
 
-    //! Data that uniquely identifies a V8 *element*. This data is used as part of the input when constructing a SyncInfoAspect.
+    //! Data that uniquely identifies a V8 *element*. This data is used as part of the input when constructing a ExternalSourceAspect.
     //! This corresponds to V8ElementSource, which it will someday replace.
-    struct V8ElementSyncInfoAspectData
+    struct V8ElementExternalSourceAspectData
         {
         DgnModelId m_scope;         // The model that was created (earlier) in the iModel from the V8 model that contains this V8 element.
         DgnV8Api::ElementId m_v8Id; // The V8 element's ID
         ElementProvenance m_prov;   // The V8 element's state
-        V8ElementSyncInfoAspectData(DgnModelId scope, DgnV8Api::ElementId v8Id, ElementProvenance const& prov) : m_scope(scope), m_v8Id(v8Id), m_prov(prov) {}
+        V8ElementExternalSourceAspectData(DgnModelId scope, DgnV8Api::ElementId v8Id, ElementProvenance const& prov) : m_scope(scope), m_v8Id(v8Id), m_prov(prov) {}
         };
     
     //! Uniquely identifies a V8 element
@@ -495,15 +496,15 @@ struct SyncInfo
     };
 
     //! The V8 provenance of an element in an iModel. May refer to an element, model, or other object in the v8 source files.
-    struct SyncInfoAspect : iModelSyncInfoAspect
+    struct ExternalSourceAspect : iModelExternalSourceAspect
         {
       protected:
         friend struct SyncInfo;
-        SyncInfoAspect(ECN::IECInstance* i) : iModelSyncInfoAspect(i) {}
+        ExternalSourceAspect(ECN::IECInstance* i) : iModelExternalSourceAspect(i) {}
       public:
         enum Kind
             {
-            Element, Model, DrawingGraphic, Level
+            Element, Model, DrawingGraphic, Level, GeomPart
             };
 
         static Utf8CP KindToString(Kind kind)
@@ -514,6 +515,7 @@ struct SyncInfo
                 case Kind::Model: return "Model";
                 case Kind::DrawingGraphic: return "DrawingGraphic";
                 case Kind::Level: return "Level";
+                case Kind::GeomPart: return "GeomPart";
                 }
             BeAssert(false);
             return "Element";
@@ -525,29 +527,48 @@ struct SyncInfo
             if (0==strcmp(str,"Model")) return Kind::Model;
             if (0==strcmp(str,"DrawingGraphic")) return Kind::DrawingGraphic;
             if (0==strcmp(str,"Level")) return Kind::Level;
+            if (0==strcmp(str,"GeomPart")) return Kind::GeomPart;
             BeAssert(false);
             return Kind::Element;
             }
 
-        DGNDBSYNC_EXPORT SyncInfoAspect::Kind GetKind() const;
+        DGNDBSYNC_EXPORT ExternalSourceAspect::Kind GetKind() const;
+        };
+
+    //! A GeomPart mapping
+    struct GeomPartExternalSourceAspect : ExternalSourceAspect
+        {
+        private:
+        GeomPartExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        public:
+        //! Create a new aspect in memory. scopeId should be the bridge's job definition model. Caller must call AddTo, passing in the DgnGeometryPart element.
+        DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect Make(DgnElementId scopeId, Utf8StringCR tag, DgnDbR);
+        //! Look up the element that has the GeomPart aspect with the specified tag. Note that this is based on the assumption that GeometryPart "tags" are unique within the specified scope!
+        DGNDBSYNC_EXPORT static DgnGeometryPartId FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag);
+        //! Get an existing GeomPart aspect from the specified DgnGeometryPart
+        //! Look up anp existing GeomPart aspect by its partId. el should be the job's definition model element.
+        DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect Get(DgnGeometryPartCR el);
         };
 
     //! Identifies the source of an element in an iModel that was created from an element in a V8 model.
     //! Replacement for V8ElementMapping
-    struct V8ElementSyncInfoAspect : SyncInfoAspect
+    struct V8ElementExternalSourceAspect : ExternalSourceAspect
         {
       private:
-        V8ElementSyncInfoAspect(iModelSyncInfoAspect const&);
-        V8ElementSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
-
+        V8ElementExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
       public:
+        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return Utf8PrintfString("%lld", v8Id);}
+        static Utf8String FormatSourceId(DgnV8EhCR el) {return FormatSourceId(el.GetElementId());}
+
         //! Create a new aspect in memory. Caller must call AddTo.
-        DGNDBSYNC_EXPORT static V8ElementSyncInfoAspect Make(V8ElementSyncInfoAspectData const&, DgnDbR);
+        DGNDBSYNC_EXPORT static V8ElementExternalSourceAspect Make(V8ElementExternalSourceAspectData const&, DgnDbR);
         
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
-        static V8ElementSyncInfoAspect Get(DgnElementR el) {return V8ElementSyncInfoAspect(V8ElementSyncInfoAspect::GetAspect(el));}
+        //! Use this method only in the case where the element is known to have only a single element kind aspect.
+        static V8ElementExternalSourceAspect Get(DgnElementR, DgnV8Api::ElementId);
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
-        static V8ElementSyncInfoAspect Get(DgnElementCR el) {return V8ElementSyncInfoAspect(V8ElementSyncInfoAspect::GetAspect(el));}
+        //! Use this method only in the case where the element is known to have only a single element kind aspect.
+        static V8ElementExternalSourceAspect Get(DgnElementCR, DgnV8Api::ElementId);
 
         DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov); 
 
@@ -559,22 +580,23 @@ struct SyncInfo
         };
 
     //! Replacement for V8ModelMapping
-    struct V8ModelSyncInfoAspect : SyncInfoAspect
+    struct V8ModelExternalSourceAspect : ExternalSourceAspect
         {
       private:
-        V8ModelSyncInfoAspect(iModelSyncInfoAspect const&);
-        V8ModelSyncInfoAspect(ECN::IECInstance* i) : SyncInfoAspect(i) {}
-
+        V8ModelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
       public:
+        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return Utf8PrintfString("%lld", v8Id);}
+        static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}
+
         //! Create a new aspect in memory. Caller must call AddTo.
-        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Make(DgnV8ModelCR, TransformCR, Converter&);
+        DGNDBSYNC_EXPORT static V8ModelExternalSourceAspect Make(DgnV8ModelCR, TransformCR, Converter&);
         
         //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
-        static V8ModelSyncInfoAspect Get(DgnElementR el) {return V8ModelSyncInfoAspect(V8ModelSyncInfoAspect::GetAspect(el));}
-        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnModelR);
+        //! Use this method only in the case where the element is known to have only a single model kind aspect.
+        DGNDBSYNC_EXPORT static V8ModelExternalSourceAspect Get(DgnElementR, DgnV8Api::ModelId);
         //! Get an existing syncinfo aspect from the specified Model in the case where we know that it was derived from a V8 *Model*.
-        static V8ModelSyncInfoAspect Get(DgnElementCR el) {return V8ModelSyncInfoAspect(V8ModelSyncInfoAspect::GetAspect(el));}
-        DGNDBSYNC_EXPORT static V8ModelSyncInfoAspect Get(DgnModelCR);
+        //! Use this method only in the case where the element is known to have only a single model kind aspect.
+        DGNDBSYNC_EXPORT static V8ModelExternalSourceAspect Get(DgnElementCR, DgnV8Api::ModelId);
 
         DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8ModelId() const;
         DGNDBSYNC_EXPORT Transform GetTransform() const;
@@ -597,7 +619,7 @@ struct SyncInfo
     //! Import "job" definition
     struct ImportJob
         {
-        //!< The type of converter used to create the ibim. NB This is persistent data. Do not change.
+        //!< The type of converter used to create the bim. NB This is persistent data. Do not change.
         enum class Type {RootModels, TiledFile}; 
 
         private:
@@ -765,6 +787,8 @@ protected:
     BentleyStatus PerformVersionChecks();
 
 public:
+    static bvector<BeSQLite::EC::ECInstanceId> GetExternalSourceAspectIds(DgnElementCR el, ExternalSourceAspect::Kind, Utf8StringCR sourceId);
+
     BentleyStatus CreateTables();
     BentleyStatus CreateNamedGroupTable(bool createIndex);
     void CreateECTables();

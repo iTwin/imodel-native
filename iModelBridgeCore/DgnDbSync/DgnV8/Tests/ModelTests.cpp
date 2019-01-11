@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ModelTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -78,7 +78,7 @@ void ModelTests::TearDown()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, Design3dReferenceSameFile)
     {
-    LineUpFiles(L"Design3dReferenceSameFile.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Design3dReferenceSameFile.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -113,7 +113,7 @@ TEST_F(ModelTests, Design3dReferenceSameFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, Design3dSelfReference)
     {
-    LineUpFiles(L"Design3dSelfReference.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Design3dSelfReference.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -166,7 +166,7 @@ TEST_F(ModelTests, Design3dSelfReference)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, Design3dReference2DSameFile)
     {
-    LineUpFiles(L"Design3d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Design3d.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -200,7 +200,7 @@ TEST_F(ModelTests, Design3dReference2DSameFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, DrawingModelUnicodeName)
     {
-    LineUpFiles(L"DrawingModelUnicodeName.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"DrawingModelUnicodeName.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -224,7 +224,7 @@ TEST_F(ModelTests, DrawingModelUnicodeName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, NoDefaultRoot)
     {
-    LineUpFiles(L"NoDefaultRoot.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"NoDefaultRoot.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -252,7 +252,7 @@ TEST_F(ModelTests, NoDefaultRoot)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, Design2D)
     {
-    LineUpFiles(L"Design3d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Design3d.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -275,7 +275,7 @@ TEST_F(ModelTests, Design2D)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, Design3D)
     {
-    LineUpFiles(L"Design3d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Design3d.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -301,7 +301,7 @@ TEST_F(ModelTests, Design3D)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, Design2dAsDefault)
     {
-    LineUpFiles(L"design2dasdefault.ibim", L"Test2d.dgn", false);
+    LineUpFiles(L"design2dasdefault.bim", L"Test2d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -334,7 +334,7 @@ TEST_F(ModelTests, Design2dAsDefault)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, Design3dAsDefault)
     {
-    LineUpFiles(L"design2dasdefault.ibim", L"Test2d.dgn", false);
+    LineUpFiles(L"design2dasdefault.bim", L"Test2d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -371,7 +371,7 @@ TEST_F(ModelTests, Design3dAsDefault)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, ConvertDesign2dRootModelTo3d)
     {
-    LineUpFiles(L"design2drootmodelto3d.ibim", L"Test2d.dgn", false);
+    LineUpFiles(L"design2drootmodelto3d.bim", L"Test2d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -409,7 +409,7 @@ TEST_F(ModelTests, ConvertDesign2dRootModelTo3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, DrawingModel2D)
     {
-    LineUpFiles(L"drawingmodel2d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"drawingmodel2d.bim", L"Test3d.dgn", false);
 
         {
         V8FileEditor v8editor;
@@ -440,7 +440,7 @@ TEST_F(ModelTests, DrawingModel2D)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, DrawingModel_Only2d)
     {
-    LineUpFiles(L"DrawingModel_Only2d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"DrawingModel_Only2d.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -469,7 +469,7 @@ TEST_F(ModelTests, DrawingModel_Only2d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, DrawingModelAsDefault)
     {
-    LineUpFiles(L"drawingmodelasdefault.ibim", L"Test2d.dgn", false);
+    LineUpFiles(L"drawingmodelasdefault.bim", L"Test2d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -502,7 +502,7 @@ TEST_F(ModelTests, DrawingModelAsDefault)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, SheetModel2D)
     {
-    LineUpFiles(L"sheetmodel3d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"sheetmodel3d.bim", L"Test3d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -526,7 +526,7 @@ TEST_F(ModelTests, SheetModel2D)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, SheetModel3D)
     {
-    LineUpFiles(L"SheetModel3d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SheetModel3d.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -552,7 +552,7 @@ TEST_F(ModelTests, SheetModel3D)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, SheetModelAsDefault)
     {
-    LineUpFiles(L"sheetmodelasdefault.ibim", L"Test2d.dgn", false);
+    LineUpFiles(L"sheetmodelasdefault.bim", L"Test2d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -586,7 +586,7 @@ TEST_F(ModelTests, SheetModelAsDefault)
 // only 2d Design and Drawing models can be promoted to 3d
 TEST_F(ModelTests, ConvertSheet2dRootModelTo3d)
     {
-    LineUpFiles(L"convertsheetrootmodelto3d.ibim", L"Test2d.dgn", false);
+    LineUpFiles(L"convertsheetrootmodelto3d.bim", L"Test2d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -623,7 +623,7 @@ TEST_F(ModelTests, ConvertSheet2dRootModelTo3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, SpecifyRootModel_ByName)
     {
-    LineUpFiles(L"drawingmodel2d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"drawingmodel2d.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -654,7 +654,7 @@ TEST_F(ModelTests, SpecifyRootModel_ByName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, SpecifyRootModel_ById)
     {
-    LineUpFiles(L"drawingmodel2d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"drawingmodel2d.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -685,7 +685,7 @@ TEST_F(ModelTests, SpecifyRootModel_ById)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, SpecifyRootModel_UseDefaultModel)
     {
-    LineUpFiles(L"drawingmodel2d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"drawingmodel2d.bim", L"Test3d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -729,7 +729,7 @@ TEST_F(ModelTests, SpecifyRootModel_UseDefaultModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, SpecifyRootModel_FromActiveViewGroup)
     {
-    LineUpFiles(L"drawingmodel2d.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"drawingmodel2d.bim", L"Test3d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -832,7 +832,7 @@ TEST_F(ModelTests, MultipleRootFiles)
     {
     // Preconditions: We must have 2 "root" or "master" files
 
-    LineUpFiles(L"DeletedModelDetectionWithMultipleRoots.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"DeletedModelDetectionWithMultipleRoots.bim", L"Test3d.dgn", false);
     BentleyApi::BeFileName root1(m_v8FileName);
 
     BentleyApi::BeFileName root2(root1.GetDirectoryName());

@@ -233,14 +233,17 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::UpdateResultsInBIM(Convers
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus     iModelBridgeSyncInfoFile::ChangeDetector::AddProvenanceAspect(iModelBridgeSyncInfoFile::Record const& syncInfoRecord, DgnElementR element)
     {
-    ECN::ECClassCP aspectClass = iModelSyncInfoAspect::GetAspectClass(element.GetDgnDb());
+    ECN::ECClassCP aspectClass = iModelExternalSourceAspect::GetAspectClass(element.GetDgnDb());
     if (NULL == aspectClass)
         return DgnDbStatus::MissingDomain;
 
-    iModelSyncInfoAspect::SourceState state = syncInfoRecord.GetSourceState().GetAspectState();
-    ECN::IECInstancePtr instance = iModelSyncInfoAspect::MakeInstance(element.GetElementId(), syncInfoRecord.GetSourceIdentity().GetKind().c_str(),
+    iModelExternalSourceAspect::SourceState state = syncInfoRecord.GetSourceState().GetAspectState();
+    // *** NEEDS WORK Abeesh: The "Scope" property must be the DgnElementId of the element in the *iModel* that corresponds to 
+    // *** whatever is identified by syncInfoRecord.GetSourceIdentity().GetScopeROWID(). For most non-Dgn converters, the scope
+    // *** is the source file, and so the Scope property should be the DgnElementId of the corresponding RepositoryLink element.
+    ECN::IECInstancePtr instance = iModelExternalSourceAspect::MakeInstance(element.GetElementId(), syncInfoRecord.GetSourceIdentity().GetKind().c_str(),
                                                                       syncInfoRecord.GetSourceIdentity().GetId().c_str(), &state, *aspectClass);
-    iModelSyncInfoAspect aspect = iModelSyncInfoAspect(instance.get());
+    iModelExternalSourceAspect aspect = iModelExternalSourceAspect(instance.get());
     return aspect.AddTo(element);
     }
 
@@ -284,11 +287,11 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
             }
         else
             {
-            ECN::ECClassCP aspectClass = iModelSyncInfoAspect::GetAspectClass(conversionResults.m_element->GetDgnDb());
+            ECN::ECClassCP aspectClass = iModelExternalSourceAspect::GetAspectClass(conversionResults.m_element->GetDgnDb());
 
             if (nullptr != aspectClass)
                 {
-                iModelSyncInfoAspect aspect = iModelSyncInfoAspect::GetAspect(*conversionResults.m_element, aspectClass);
+                iModelExternalSourceAspect aspect = iModelExternalSourceAspect::GetAspect(*conversionResults.m_element, BeSQLite::EC::ECInstanceId(), aspectClass); // NEEDS WORK: This valid only if you know that element will have just one aspect
                 if (aspect.IsValid())
                     aspect.SetSourceState(changeDetectorResults.GetSyncInfoRecord().GetSourceState().GetAspectState());
                 else

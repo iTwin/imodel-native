@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ImportConfigTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -88,7 +88,7 @@ Utf8CP TestSchema = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImportConfigTests, FileLink)
     {
-    LineUpFiles(L"FileLink.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"FileLink.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
 
     BentleyApi::BeFileName linkFile;
@@ -115,7 +115,7 @@ TEST_F(ImportConfigTests, FileLink)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImportConfigTests, FileLink_NoEmbed)
     {
-    LineUpFiles(L"FileLink_NoEmbed.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"FileLink_NoEmbed.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
 
     BentleyApi::BeFileName linkFile;
@@ -147,7 +147,7 @@ TEST_F(ImportConfigTests, FileLink_NoEmbed)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImportConfigTests, FileLinkNonDgn)
     {
-    LineUpFiles(L"FileLinkNonDgn.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"FileLinkNonDgn.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
 
     BentleyApi::BeFileName linkFile;
@@ -174,7 +174,7 @@ TEST_F(ImportConfigTests, FileLinkNonDgn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImportConfigTests, embedConfigFile)
     {
-    LineUpFiles(L"embedConfigFile.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"embedConfigFile.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     // Change configuration
     ImportConfigEditor config;
@@ -198,7 +198,7 @@ TEST_F(ImportConfigTests, embedConfigFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImportConfigTests, FontImport)
     {
-    LineUpFiles(L"FontImport.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"FontImport.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -250,7 +250,7 @@ TEST_F(ImportConfigTests, FontImport)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImportConfigTests, FontImport_Always)
     {
-    LineUpFiles(L"FontImport_Always.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"FontImport_Always.bim", L"Test3d.dgn", false);
 
     // Change configuration
     BentleyApi::BeFileName linkFile;
@@ -284,7 +284,7 @@ TEST_F(ImportConfigTests, FontImport_Always)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImportConfigTests, CreateANDVerifyECClassViews)
     {
-    LineUpFiles(L"CreateANDVerifyECClassViews.ibim", L"Test3d.dgn", false); 
+    LineUpFiles(L"CreateANDVerifyECClassViews.bim", L"Test3d.dgn", false); 
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     m_wantCleanUp = false;
     V8FileEditor v8editor;

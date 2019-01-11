@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/TagTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -106,7 +106,7 @@ BentleyStatus TagTests::AddTagElement(V8FileEditor& v8editor, DgnV8Api::ITagCrea
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TagTests, Basic)
     {
-    LineUpFiles(L"TagTests_Basic.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"TagTests_Basic.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -153,7 +153,7 @@ TEST_F(TagTests, Basic)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TagTests, TagVisibility)
     {
-    LineUpFiles(L"TagTests_Basic.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"TagTests_Basic.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -191,7 +191,7 @@ TEST_F(TagTests, TagVisibility)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TagTests, Empty)
     {
-    LineUpFiles(L"TagTests_Basic.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"TagTests_Basic.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);

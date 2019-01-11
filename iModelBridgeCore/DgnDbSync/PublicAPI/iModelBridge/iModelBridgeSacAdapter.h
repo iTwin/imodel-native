@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeSacAdapter.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -175,7 +175,7 @@ public:
 
     //! @private
     //! Make sure bparams.m_briefcaseName is a fully qualified file name. If the input was a directory name,
-    //! then the input file's basename is used. The file extension is defaulted to iModelBridge::str_BriefcaseIExt().
+    //! then the input file's basename is used. The file extension is defaulted to iModelBridge::str_BriefcaseExt().
     BentleyStatus static FixBriefcaseName(iModelBridge::Params& bparams);
 
     public:
