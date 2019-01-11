@@ -565,7 +565,7 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
        auto elementCP = model->FindElementById(DgnElementId((uint64_t)(val["elementId"].asInt64())));
         if (elementCP == nullptr) continue;
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
         DgnPlatformLib::AdoptHost(libHost);
 #else
         assert(!"No AdoptHost on BIM0200 - Untested behavior");
