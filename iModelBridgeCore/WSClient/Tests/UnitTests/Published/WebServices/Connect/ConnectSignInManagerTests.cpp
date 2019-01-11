@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectSignInManagerTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectSignInManagerTests.h"
@@ -24,7 +24,7 @@ void ConnectSignInManagerTests::SetUp()
     m_imsClient = std::make_shared<StubImsClient>();
     m_buddiClient = std::make_shared<StubBuddiClient>();
     m_secureStore = std::make_shared<StubSecureStore>();
-    m_localState = StubLocalState();
+    m_localState = RuntimeJsonLocalState();
 
     ConnectAuthenticationPersistence::CustomInitialize(&m_localState, m_secureStore);
     StubUrlProviderEnvironment(UrlProvider::Environment::Dev);

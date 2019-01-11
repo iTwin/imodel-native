@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectSignInManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -27,6 +27,7 @@
 #endif
 
 USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SECURITY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -39,9 +40,10 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore, IConnectionClientInterfacePtr connectionClient) :
+IConnectSignInManager(std::make_shared<SecureLocalState>(localState, secureStore)),
 m_client(client),
 m_localState(*localState),
-m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(m_localState)),
+m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(*localState)),
 m_publicIdentityTokenProvider(std::make_shared<WrapperTokenProvider>(m_mutex, m_auth.tokenProvider)),
 m_connectionClient(connectionClient)
     {
@@ -132,7 +134,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
         m_auth.persistence->SetToken(token);
 
         CheckUserChange();
-        _StoreSignedInUser();
+        StoreSignedInUser();
 
         LOG.infov("ConnectSignIn: renewed token lifetime %d minutes", token->GetLifetime());
         return SignInResult::Success();
@@ -164,7 +166,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
         m_auth.persistence->SetCredentials(credentials);
 
         CheckUserChange();
-        _StoreSignedInUser();
+        StoreSignedInUser();
 
         LOG.infov("ConnectSignIn: token lifetime %d minutes", token->GetLifetime());
         return SignInResult::Success();
@@ -250,14 +252,6 @@ ConnectSignInManager::UserInfo ConnectSignInManager::ReadUserInfo(SamlTokenCR to
     return info;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                           Andrius.Paulauskas     06/2016
-//--------------------------------------------------------------------------------------
-Utf8String ConnectSignInManager::_GetLastUsername() const
-    {
-    return m_secureStore->Decrypt(m_localState.GetJsonValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser).asString().c_str());
-    }
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -306,7 +300,12 @@ IConnectTokenProviderPtr ConnectSignInManager::_GetTokenProvider(Utf8StringCR rp
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::AuthenticationType ConnectSignInManager::ReadAuthenticationType() const
     {
-    return static_cast<AuthenticationType>(m_localState.GetJsonValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType).asInt());
+    int type = 0;
+    auto typeString = m_secureLocalState->GetValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType);
+    if (!typeString.empty())
+        type = std::stoi(typeString.c_str());
+
+    return static_cast<AuthenticationType>(type);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -314,7 +313,11 @@ ConnectSignInManager::AuthenticationType ConnectSignInManager::ReadAuthenticatio
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::StoreAuthenticationType(AuthenticationType type)
     {
-    m_localState.SaveJsonValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType, static_cast<int>(type));
+    Utf8String str;
+    str.reserve(10); //max length in hex format for an UInt64 (incl. trailing \0)
+    BeStringUtilities::FormatUInt64((Utf8P)str.data(), static_cast<int>(type));
+
+    m_secureLocalState->SaveValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType, str.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -322,7 +325,12 @@ void ConnectSignInManager::StoreAuthenticationType(AuthenticationType type)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UrlProvider::Environment ConnectSignInManager::ReadConnectEnvironment()
     {
-    return (UrlProvider::Environment) m_localState.GetJsonValue(LOCALSTATE_Namespace, LOCALSTATE_ConnectEnvironment).asInt();
+    auto type = "0";
+    auto typeString = m_secureLocalState->GetValue(LOCALSTATE_Namespace, LOCALSTATE_ConnectEnvironment);
+    if (!typeString.empty())
+        type = typeString.c_str();
+
+    return (UrlProvider::Environment) (std::stoi(type));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -331,7 +339,11 @@ UrlProvider::Environment ConnectSignInManager::ReadConnectEnvironment()
 void ConnectSignInManager::StoreConnectEnvironment()
     {
     auto env = UrlProvider::GetEnvironment();
-    m_localState.SaveJsonValue(LOCALSTATE_Namespace, LOCALSTATE_ConnectEnvironment, env);
+    Utf8String str;
+    str.reserve(10); //max length in hex format for an UInt64 (incl. trailing \0)
+    BeStringUtilities::FormatUInt64((Utf8P)str.data(), static_cast<int>(UrlProvider::GetEnvironment()));
+
+    m_secureLocalState->SaveValue(LOCALSTATE_Namespace, LOCALSTATE_ConnectEnvironment, str.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -406,16 +418,6 @@ void ConnectSignInManager::Configure(Authentication& auth) const
 void ConnectSignInManager::Configure(DelegationTokenProvider& provider) const
     {
     provider.Configure(m_config.delegationTokenLifetime, m_config.delegationTokenExpirationThreshold);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::_StoreSignedInUser()
-    {
-    UserInfo info = _GetUserInfo();
-    BeAssert(!info.username.empty());
-    m_localState.SaveJsonValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser, m_secureStore->Encrypt(info.username.c_str()));
     }
 
 /*--------------------------------------------------------------------------------------+

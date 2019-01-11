@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/StubLocalState.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -26,7 +26,7 @@ struct StubLocalState : public IJsonLocalState
             {
             Utf8PrintfString identifier ("%s/%s", nameSpace, key);
 
-            if (value=="null")
+            if (value=="null" || value.empty())
                 {
                 m_map.removeMember (identifier);
                 }
@@ -39,6 +39,6 @@ struct StubLocalState : public IJsonLocalState
         Utf8String _GetValue (Utf8CP nameSpace, Utf8CP key) const override
             {
             Utf8PrintfString identifier ("%s/%s", nameSpace, key);
-            return m_map.isMember(identifier) ? m_map[identifier].asCString() : "null";
+            return m_map.isMember(identifier) ? m_map[identifier].asCString() : "";
             };
     };
