@@ -3926,9 +3926,7 @@ bool Converter::ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Mo
 //---------------+---------------+---------------+---------------+---------------+-------
 bool            Converter::IsTransformEqualWithTolerance(TransformCR lhs, TransformCR rhs)
     {
-    auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(rhs.ColumnXMagnitude());
-    return lhs.IsEqual(rhs, matrixTolerance, pointTolerance);
+    return iModelBridge::AreTransformsEqual(lhs, rhs);
     }
 
 //---------------------------------------------------------------------------------------

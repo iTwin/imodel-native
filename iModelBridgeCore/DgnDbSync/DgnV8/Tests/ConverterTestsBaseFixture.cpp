@@ -671,17 +671,20 @@ DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Ap
     if (element.IsNull())
         return nullptr;
 
-    //Find the element id from aspect.
-    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
-    estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
-                  BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.SourceId AS INT) = ?)");
-    estmt.BindInt64(1, eV8Id);
+    if (m_params.GetWantProvenanceInBim())
+        {
+        //Find the element id from aspect.
+        BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+        estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
+                      BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
+                      XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.SourceId AS INT) = ?)");
+        estmt.BindInt64(1, eV8Id);
 
-    DbResult status = estmt.Step();
-    BeAssert(BE_SQLITE_ROW == status);
-    BeAssert(element->GetElementId() == estmt.GetValueId<DgnElementId>(0));
+        DbResult status = estmt.Step();
+        BeAssert(BE_SQLITE_ROW == status);
+        BeAssert(element->GetElementId() == estmt.GetValueId<DgnElementId>(0));
+        }
 
     return element;
     }

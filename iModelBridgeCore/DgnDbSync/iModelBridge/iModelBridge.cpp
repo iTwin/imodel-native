@@ -839,6 +839,24 @@ DgnDbStatus iModelBridge::InsertLinkTableRelationship(DgnDbR db, Utf8CP relClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::AreTransformsEqual(Transform const& t1, Transform const& t2)
+    {
+    auto matrixTolerance = Angle::TinyAngle();
+
+    DPoint3d x1, x2;
+    t1.GetTranslation(x1);
+    t2.GetTranslation(x2);
+
+    double maxCoord = std::max<double>(x1.MaxAbs(), x2.MaxAbs());
+
+    auto xlatTolerance = std::max<double>(1.0e-15, BentleyApi::BeNumerical::NextafterDelta(maxCoord));
+
+    return t1.IsEqual(t2, matrixTolerance, xlatTolerance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR jobSubject)
     {
     Transform jobTrans = params.GetSpatialDataTransform();
@@ -848,9 +866,7 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
     // the property on the JobSubject, so that the user and apps can see what the 
     // bridge configuration transform is.
     Transform jobSubjectTransform;
-    auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(jobTrans.ColumnXMagnitude());
-    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !jobSubjectTransform.IsEqual(jobTrans, matrixTolerance, pointTolerance))
+    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !AreTransformsEqual(jobSubjectTransform, jobTrans))
         {
         auto jobSubjectED = jobSubject.MakeCopy<Subject>();
         JobSubjectUtils::SetTransform(*jobSubjectED, jobTrans);

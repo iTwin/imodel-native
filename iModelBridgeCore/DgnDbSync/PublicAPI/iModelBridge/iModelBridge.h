@@ -881,7 +881,7 @@ public:
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
 
-    //! Get the transform, if any, that the bridge should pre-multiply to the normal transform that it computes and applied to all converted spatial data.
+    //! Get the transform, if any, that the bridge should pre-multiply to the normal transform that it computes and applies to all converted spatial data.
     //! The job's spatial data transform can come from a command-line parameter or from a property of the job subject element in the iModel. In case both are specified,
     //! the transform specified on the command line is pre-multiplied to the transform specified by the job subject.
     //! @param[in] params The bridge's parameters
@@ -891,6 +891,8 @@ public:
 
     Transform GetSpatialDataTransform(SubjectCR jobSubject) {return GetSpatialDataTransform(_GetParams(), jobSubject);}
 
+    //! Test two transforms for equality, using the minimum tolerance possible
+    IMODEL_BRIDGE_EXPORT static bool AreTransformsEqual(Transform const& t1, Transform const& t2);
 
     //! @name Font Resolution
     //! @{
