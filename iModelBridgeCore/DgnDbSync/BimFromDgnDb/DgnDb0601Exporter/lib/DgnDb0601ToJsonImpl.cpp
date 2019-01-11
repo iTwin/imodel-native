@@ -372,6 +372,8 @@ bool DgnDb0601ToJsonImpl::OpenDgnDb()
     m_nextAvailableId.UseNext(*m_dgndb);
 
     m_elementClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element);
+    m_geometric2dClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricElement2d);
+    m_geometric3dClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricElement3d);
     m_elementAspectClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementAspect);
     m_elementUniqueAspectClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ElementUniqueAspect");
     m_elementMultiAspectClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementMultiAspect);
@@ -469,6 +471,10 @@ bool DgnDb0601ToJsonImpl::ExportDgnDb()
         if (SUCCESS != (stat = ExportTimelines()))
             return false;
         }
+
+    if (SUCCESS != (stat = ExportExtraTables("rv", "VisualizationRuleSet")))
+        return false;
+
     //if (SUCCESS != (stat = ExportLinkTables(tableData, "Planning", "PlanContainsTimelines", "PlanOwnsBaselines")))
     //    return false;
     //if (SUCCESS != (stat = ExportLinkTables(tableData, "Planning", "WorkBreakdownHasTimeSpans", "WorkBreakdownOwnsTimeSpans")))
@@ -1358,10 +1364,13 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportSchemas() const
                     if (prop->IsCalculated())
                         prop->SetIsReadOnly(false);
                     // BisCore renames several properties on core classes.  This could cause a conflict with an inherited class's property, so we need to rename it
-                    if (prop->GetName().EqualsIAscii("Model") || prop->GetName().EqualsIAscii("Parent") || prop->GetName().EqualsIAscii("Category") || prop->GetName().EqualsIAscii("ID"))
+                    if (prop->GetName().EqualsIAscii("Model") || prop->GetName().EqualsIAscii("Parent") || prop->GetName().EqualsIAscii("ID"))
                         {
                         nonConstClass->RenameConflictProperty(prop, true);
                         }
+                    if (prop->GetName().EqualsIAscii("Category") && (ecClass->Is(m_geometric2dClass) || ecClass->Is(m_geometric3dClass)))
+                        nonConstClass->RenameConflictProperty(prop, true);
+
                     prop->RemoveCustomAttribute("PropertyMap");
                     if (prop->GetCustomAttributeLocal("EditorCustomAttributes", "StandardValues").IsValid())
                         {
@@ -2124,6 +2133,65 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportTimelines()
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DgnDb0601ToJsonImpl::ExportExtraTables(Utf8CP alias, Utf8CP className)
+    {
+    Utf8PrintfString tableName("%s_%s", alias, className);
+    if (!m_dgndb->TableExists(tableName.c_str()))
+        return SUCCESS;
+
+    Utf8PrintfString ecSql("SELECT ECInstanceId, * FROM ONLY [%s].[%s]", alias, className);
+    CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement(ecSql.c_str());
+    if (!statement.IsValid())
+        {
+        Utf8PrintfString error("DgnDb0601ToJson: (Export Extra Tables) Unable to get cached statement ptr for \"%s\".", ecSql.c_str());
+        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, error.c_str());
+        return ERROR;
+        }
+
+    JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    jsonAdapter.SetStructArrayAsString(true);
+    jsonAdapter.SetPreferNativeDgnTypes(true);
+
+    while (BE_SQLITE_ROW == statement->Step())
+        {
+        ECInstanceId actualElementId = statement->GetValueId<ECInstanceId>(0);
+
+        auto entry = Json::Value(Json::ValueType::objectValue);
+        entry[JSON_TYPE_KEY] = JSON_TYPE_Element;
+        entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
+        entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
+        Json::Value obj = Json::Value(Json::ValueType::objectValue);
+        obj.clear();
+        jsonAdapter.GetRowInstance(obj);
+
+        obj[JSON_INSTANCE_ID] = IdToString(obj["$ECInstanceId"].asString().c_str()).c_str();
+        obj.removeMember("$ECInstanceId");
+
+        if (obj.isMember("$ECClassKey") && !obj.isMember(JSON_CLASSNAME))
+            {
+            Utf8String tmp = obj["$ECClassKey"].asString();
+            obj[JSON_CLASSNAME] = tmp.c_str();
+            }
+
+        obj.removeMember("$ECClassKey");
+        obj.removeMember("$ECClassId");
+        obj.removeMember("$ECClassLabel");
+        obj.removeMember("$ECInstanceLabel");
+
+        MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
+        MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeSpec, "1");
+        MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeScope, m_jobDefinitionModelId);
+
+        entry[JSON_OBJECT_KEY] = obj;
+        (QueueJson) (entry.toStyledString().c_str());
+
+        }
+    return SUCCESS;
+
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
