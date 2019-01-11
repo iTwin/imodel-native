@@ -1,0 +1,88 @@
+/*-------------------------------------------------------------------------------------+
+|
+|     $Source: js/jsmetasrc/jsVector3.master $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+export class DVector3d
+{
+/// <summary>
+/// x,y,z components of a vector.
+/// </summary>
+
+
+<def name=SEPARATEDFIELDS>
+        x$(SEPARATOR)
+        y$(SEPARATOR)
+        z</def>
+<def name=SEPARATEDFIELDSUFFIXES>
+        x$(SEPARATOR)
+        y$(SEPARATOR)
+        z</def>
+
+<def name=ThisType>DVector3d</def>
+<def name=ThisShortType>V</def>
+<def name=VectorType>DVector3d</def>
+<def name=PointType>DVector3d</def>
+<def name=SubtractionResultType>DVector3d</def>
+<expandFile>@getenv{JSMETASRCPATH}/jsLinearOps.in</expandFile>
+<expandFile>@getenv{JSMETASRCPATH}/jsEqualsOps.in</expandFile>
+<expandFile>@getenv{JSMETASRCPATH}/jsMaxAbs.in</expandFile>
+
+<expandFile>@getenv{JSMETASRCPATH}/jsVectorOps.in</expandFile>
+
+
+
+[Description("Return the cross product with the other vector")]
+INSTANCEMETHOD(public, $(ThisType), CrossProduct)
+(
+INPUT_STRUCT($(ThisType), other, "second vector for cross product")
+)
+    {
+    return NEW_BY_ALL_FIELDS
+        (
+        this.y * other.z - this.z * other.y,
+        this.z * other.x - this.x * other.z(3DONLY ,
+        this.x * other.y - this.y * other.x)
+        );
+    }
+ENDMETHOD
+
+[Description("Return the cross product with the other vector")]
+INSTANCEMETHOD(public, $(ThisType), CrossProductMagnitude)
+(
+INPUT_STRUCT($(ThisType), other, "second vector for cross product")
+)
+    {
+    return Geometry.Hypotenuse (this.y * other.z - this.z * other.y, this.z * other.x - this.x * other.z, this.x * other.y - this.y * other.x);
+    }
+ENDMETHOD
+
+[Description("Return the cross product with the other vector")]
+INSTANCEMETHOD(public, $(ThisType), CrossProductMagnitudeSquared)
+(
+INPUT_STRUCT($(ThisType), other, "second vector for cross product")
+)
+    {
+    return Geometry.HypotenuseSquared (this.y * other.z - this.z * other.y, this.z * other.x - this.x * other.z, this.x * other.y - this.y * other.x);
+    }
+ENDMETHOD
+
+
+[Description("Return the triple product with the two other vectors")]
+INSTANCEMETHOD(public, double, TripleProduct)
+(
+INPUT_STRUCT($(ThisType), vectorV, "second vector for cross product")
+INPUT_STRUCT($(ThisType), vectorW, "third vector for cross product")
+)
+    {
+    return
+          this.x * ( vectorV.y * vectorW.z - vectorV.z * vectorW.y)
+        + this.y * ( vectorV.z * vectorW.x - vectorV.x * vectorW.z)
+        + this.z * ( vectorV.x * vectorW.y - vectorV.y * vectorW.x)
+        ;
+    }
+ENDMETHOD
+}
