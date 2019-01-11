@@ -1,0 +1,1957 @@
+#include <stdint.h>
+typedef uint8_t byte;
+using namespace std;
+
+class SMNodeGroup;
+class SMNodeGroupMasterHeader;
+
+#include <Bentley\Bentley.h>
+#include <ImagePP/h/ImageppAPI.h>
+#include <TerrainModel/Core/bcdtmClass.h>
+#include <ScalableMesh\IScalableMesh.h>
+#include <ScalableMesh\IScalableMeshNodeCreator.h>
+#include <ScalableMesh\ScalableMeshLib.h>
+/*#undef static_assert
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
+#include <ImagePP\all\h\HCDPacket.h>
+#include <ImagePP\all\h\HCDCodecZlib.h>
+#include "..\STM\ScalableMeshQuery.h"
+#undef static_assert*/
+#include <iostream>
+#include <TerrainModel/Core/DTMIterators.h>
+#include "..\STM\LogUtils.h"
+#include <random>
+#include <queue>
+#include "..\STM\ScalableMesh\ScalableMeshGraph.h"
+#include "..\STM\Edits\ClipUtilities.h"
+#include <json/json.h>
+#undef static_assert
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnPlatformLib.h>
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
+#include <DgnPlatform/TileTree.h>
+#include <DgnPlatform/MeshTile.h>
+#include <ScalableMeshSchema/ScalableMeshHandler.h>
+#include <ScalableMeshSchema\ScalableMeshDomain.h>
+//#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <ImagePP/h/HStlStuff.h>
+#include <ImagePP/h/HTraits.h>
+#include <ImagePP/h/HIterators.h>
+#include <ImagePP/h/HNumeric.h>
+#include <ImagePP/h/ImageppAPI.h>
+#include <ImagePP/all/h/HVEShape.h>
+#include <ImagePP/all/h/HVE2DShape.h>
+#include <ImagePP/all/h/HVE2DRectangle.h>
+#include <ImagePP/all/h/HVE2DHoledShape.h>
+#include <ImagePP/all/h/HVE2DComplexShape.h>
+#include <ImagePP/all/h/HVE2DVoidShape.h>
+#include "..\STM\VuPolygonClassifier.h"
+
+using namespace BENTLEY_NAMESPACE_NAME::ImagePP;
+
+//TEMP copied because geomlibs lkg was not up to date
+static double s_defaultRelTol = 1.0e-12;
+static double s_defaultAbsTol = 1.0e-14;
+#if 0
+/*--------------------------------------------------------------------------------**//**
+                                                                                     * @bsimethod                                                    EarlinLutz      04/2012
+                                                                                     +--------------------------------------------------------------------------------------*/
+template<typename T>
+static bool sort_zyx
+(
+T xA,
+T yA,
+T zA,
+T xB,
+T yB,
+T zB,
+double absTol = s_defaultAbsTol,
+double relTol = s_defaultRelTol
+)
+    {
+    double tol = absTol;
+
+    if (0.0 != relTol)
+        tol += relTol *
+        (fabs(xA) + fabs(xB)
+        + fabs(yA) + fabs(yB)
+        + fabs(zA) + fabs(zB));
+
+    double ntol = -tol;
+
+    T dz = zB - zA;
+
+    if (dz > tol)
+        return false;
+    if (dz < ntol)
+        return true;
+
+    T dy = yB - yA;
+
+    if (dy > tol)
+        return false;
+    if (dy < ntol)
+        return true;
+
+    T dx = xB - xA;
+
+    if (dx > tol)
+        return false;
+    if (dx < ntol)
+        return true;
+
+    return false;
+    }
+
+
+
+/*--------------------------------------------------------------------------------**//**
+                                                                                     * @bsimethod                                                    EarlinLutz      04/2012
+                                                                                     +--------------------------------------------------------------------------------------*/
+DPoint3dZYXTolerancedSortComparison::DPoint3dZYXTolerancedSortComparison(double absTol, double relTol)
+    : m_absTol(absTol), m_relTol(relTol)
+    {}
+
+
+/*--------------------------------------------------------------------------------**//**
+                                                                                     * @bsimethod                                                    EarlinLutz      04/2012
+                                                                                     +--------------------------------------------------------------------------------------*/
+bool DPoint3dZYXTolerancedSortComparison::operator() (const DPoint3d& pointA, const DPoint3d &pointB) const
+    {
+    return sort_zyx<double>(pointA.x, pointA.y, pointA.z, pointB.x, pointB.y, pointB.z, m_absTol, m_relTol);
+    }
+
+
+
+/*--------------------------------------------------------------------------------**//**
+                                                                                     * @bsimethod                                                    EarlinLutz      04/2012
+                                                                                     +--------------------------------------------------------------------------------------*/
+bool DVec3dZYXSortComparison::operator () (const DVec3d& vecA, const DVec3d &vecB) const
+    {
+    return sort_zyx<double>(vecA.x, vecA.y, vecA.z, vecB.x, vecB.y, vecB.z);
+    }
+#endif
+
+void SortPoints(bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
+    {
+    std::map<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
+    bvector<DPoint3d> sortedVerts = allVerts;
+    std::sort(sortedVerts.begin(), sortedVerts.end(), [] (const DPoint3d&a, const DPoint3d&b)
+        {
+        if (a.x < b.x) return true;
+        else if (a.x > b.x) return false;
+        else if (a.y < b.y) return true;
+        else if (a.y > b.y) return false;
+        else return a.z < b.z;
+        });
+    for (auto& v : sortedVerts) mapOfPoints[v] = (int)(&v - &sortedVerts.front());
+    for (auto& idx : allIndices) idx = mapOfPoints[allVerts[idx - 1]] + 1;
+    allVerts = sortedVerts;
+    }
+
+void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
+    {
+    BC_DTM_OBJ* bcDtmP = 0;
+    int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
+    if (dtmCreateStatus == 0)
+        {
+        dtmP = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
+        }
+    else return;
+    DPoint3d triangle[4];
+
+    bvector<int> indices;
+    for (unsigned int t = 0; t < allIndices.size(); t += 3)
+        {
+        for (int i = 0; i < 3; i++)
+            triangle[i] = allVerts[allIndices[i + t] - 1];
+
+        triangle[3] = triangle[0];
+
+        int32_t myIndices[3] = { allIndices[t] - 1, allIndices[t + 1] - 1, allIndices[t + 2] - 1 };
+        //colinearity test
+        if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
+        DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
+        double param;
+        DPoint3d closestPt;
+        triSeg.ProjectPointXY(closestPt, param, triangle[2]);
+        if (closestPt.AlmostEqualXY(triangle[2])) continue;
+        indices.push_back(allIndices[t] - 1);
+        if (bsiGeom_getXYPolygonArea(&triangle[0], 3) < 0)
+            {
+            indices.push_back(allIndices[t + 2] - 1);
+            indices.push_back(allIndices[t + 1] - 1);
+            }
+        else
+            {
+            indices.push_back(allIndices[t + 1] - 1);
+            indices.push_back(allIndices[t + 2] - 1);
+            }
+        }
+    int status = bcdtmObject_storeTrianglesInDtmObject(dtmP->GetTinHandle(), DTMFeatureType::GraphicBreak, &allVerts[0], (int)allVerts.size(), &indices[0], (int)indices.size() / 3);
+
+    assert(status == SUCCESS);
+        {
+        WString str(L"e:\\makeTM\\newcliptm");
+        str.append(L".bcdtm");
+        bcdtmWrite_toFileDtmObject(dtmP->GetTinHandle(), str.c_str());
+        }
+    //int status = bcdtmObject_triangulateStmTrianglesDtmObjectOld(bcdtm->GetTinHandle(), m_points, (int)m_nbPoints, m_faceIndexes, (int)m_nbFaceIndexes);
+    status = bcdtmObject_triangulateStmTrianglesDtmObject(dtmP->GetTinHandle());
+    assert(status == SUCCESS);
+        {
+        WString str(L"e:\\makeTM\\newcliptm");
+        str.append(L".tin");
+        bcdtmWrite_toFileDtmObject(dtmP->GetTinHandle(), str.c_str());
+        }
+
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmP);
+    en->SetMaxTriangles(2000000);
+    bvector<DPoint3d> newVertices;
+    bvector<int32_t> newIndices;
+    std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
+    for (PolyfaceQueryP pf : *en)
+        {
+        PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+        vec->CopyFrom(*pf);
+        for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+            {
+            DPoint3d face[3];
+            int32_t idx[3] = { -1, -1, -1 };
+            for (size_t i = 0; i < 3; ++i)
+                {
+                face[i] = addedFacets->GetPointCP()[i];
+                idx[i] = mapOfPoints.count(face[i]) != 0 ? mapOfPoints[face[i]] : -1;
+                }
+            for (size_t i = 0; i < 3; ++i)
+                {
+                if (idx[i] == -1)
+                    {
+                    newVertices.push_back(face[i]);
+                    idx[i] = (int)newVertices.size();
+                    mapOfPoints[face[i]] = idx[i] - 1;
+                    }
+                else idx[i]++;
+                }
+            newIndices.push_back(idx[0]);
+            newIndices.push_back(idx[1]);
+            newIndices.push_back(idx[2]);
+            }
+        }
+    WString name = L"E:\\makeTM\\test.m";
+    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
+    /*bvector<DTMFeatureId> listIds;
+    DTMFeatureCallback browseVoids = [] (DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg) ->int
+        {
+        if (dtmFeatureType == DTMFeatureType::Void && numPoints <= 4)
+            {
+            ((bvector<DTMFeatureId>*)userArg)->push_back(featureId);
+            }
+        return 0;
+        };
+
+    dtmP->BrowseFeatures(DTMFeatureType::Void, 20, &listIds, browseVoids);
+    for (auto& id : listIds) dtmP->DeleteFeatureById(id);*/
+    }
+
+
+void PolyfaceTag(PolyfaceHeaderPtr& poly, TerrainModel::BcDTMPtr& dtmPtr)
+    {
+    vector<int32_t> indices(poly->GetPointIndexCount());
+    memcpy(&indices[0], poly->GetPointIndexCP(), poly->GetPointIndexCount()*sizeof(int32_t));
+    bmap<int32_t, int32_t> allPts;
+    for (size_t i = 0; i < poly->GetPointIndexCount(); ++i)
+        {
+        DPoint3d pt;
+        dtmPtr->GetBcDTM()->GetPoint(poly->GetPointIndexCP()[i], pt);
+        if (allPts.count(poly->GetPointIndexCP()[i]) == 0)
+            {
+            allPts[poly->GetPointIndexCP()[i]] = (int)poly->Point().size();
+            poly->Point().push_back(pt);
+            }
+        }
+
+    poly->PointIndex().clear();
+    for (size_t i = 0; i < indices.size(); i += 3)
+        {
+
+       
+        poly->PointIndex().push_back(allPts[indices[i]] + 1);
+        poly->PointIndex().push_back(allPts[indices[i + 1]] + 1);
+        poly->PointIndex().push_back(allPts[indices[i + 2]] + 1);
+      
+        }
+    }
+
+int loadFunc(DTMFeatureType dtmFeatureType, int numTriangles, int numMeshPts, DPoint3d *meshPtsP, DPoint3d *meshVectorsP, int numMeshFaces, long *meshFacesP, void *userP)
+    {
+    size_t nNotContained = 0;
+    for (size_t idx = 0; idx < numMeshFaces; idx += 3)
+        {
+        DPoint3d currentTri[3];
+        currentTri[0] = (meshPtsP)[meshFacesP[idx] - 1];
+        currentTri[1] = (meshPtsP)[meshFacesP[idx + 1] - 1];
+        currentTri[2] = (meshPtsP)[meshFacesP[idx + 2] - 1];
+
+        bvector<DPoint3d>* polyDefs = (bvector<DPoint3d>*) userP;
+        DRange3d range = DRange3d::From(&polyDefs->front(), (int)polyDefs->size());
+        if (!range.IsContainedXY(currentTri[0]) || !range.IsContainedXY(currentTri[1]) || !range.IsContainedXY(currentTri[2]))
+            nNotContained++;
+        }
+    std::cout << (nNotContained > 0 ? " FAIL " : " PASS ") << std::endl;
+    std::cout << nNotContained << " NOT CONTAINED " << std::endl;
+    return SUCCESS;
+    }
+
+void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
+    {
+    s += tag;
+    s += " : ARRAY " + std::to_string((long long)polySize) + " POINTS \n";
+    for (int i = 0; i < polySize; i++)
+        {
+        s += "POINT (" + std::to_string(polyArray[i].x) + "," + std::to_string(polyArray[i].y) + "," + std::to_string(polyArray[i].z) + ")\n";
+        }
+    }
+
+void RunDTMClipTest()
+    {
+    WString pathMeshes = L"E:\\makeTM\\85\\meshes\\";
+    WString pathPolys = L"E:\\makeTM\\85\\polys\\";
+    bvector<int> meshes(1);
+    meshes[0] = 0;
+    bvector<int> polys(4);
+   // for (size_t polyn = 0; polyn < 11; polyn++)
+   //     polys[polyn] = (int)polyn;
+    polys[0] = 1;
+    polys[1] = 2;
+    polys[2] = 3;
+    polys[3] = 4;
+   // polys[2] = 2;
+
+    bvector<bvector<DPoint3d>> polyDefs(polys.size());
+    vector<TerrainModel::BcDTMPtr> meshDefs(meshes.size());
+
+    for (size_t i = 0; i < meshes.size(); ++i)
+        {
+        WString path = pathMeshes + WString(std::to_wstring(meshes[i]).c_str()) + WString(L".m");
+        FILE* mesh = _wfopen(path.c_str(), L"rb");
+        size_t nVerts = 0;
+        size_t nIndices = 0;
+        fread(&nVerts, sizeof(size_t), 1, mesh);
+        bvector<DPoint3d> allVerts(nVerts);
+        fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
+        fread(&nIndices, sizeof(size_t), 1, mesh);
+        bvector<int32_t> allIndices(nIndices);
+        fread(&allIndices[0], sizeof(int32_t), nIndices, mesh);
+        MakeDTM(meshDefs[i], allVerts, allIndices);
+        }
+    for (size_t i = 0; i < polys.size(); ++i)
+        {
+        WString path = pathPolys + WString(std::to_wstring(polys[i]).c_str()) + WString(L".p");
+        FILE* mesh = _wfopen(path.c_str(), L"rb");
+        size_t nVerts = 0;
+        fread(&nVerts, sizeof(size_t), 1, mesh);
+        polyDefs[i].resize(nVerts);
+        fread(&polyDefs[i][0], sizeof(DPoint3d), nVerts, mesh);
+        }
+
+    size_t nNotContained = 0;
+    for (auto& mesh : meshDefs)
+        {
+        DTMUserTag    userTag = 0;
+        DTMFeatureId* textureRegionIdsP = 0;
+        long          numRegionTextureIds = 0;
+        bvector<DTMFeatureId> featureIds(polys.size());
+        for (auto& poly : polyDefs)
+            {
+            bcdtmInsert_internalDtmFeatureMrDtmObject(mesh->GetBcDTM()->GetTinHandle(),
+                                                      DTMFeatureType::Region,
+                                                      1,
+                                                      2,
+                                                      userTag,
+                                                      &textureRegionIdsP,
+                                                      &numRegionTextureIds,
+                                                      &poly[0],
+                                                      (long)poly.size(),
+                                                      nullptr);
+
+            featureIds[userTag] = textureRegionIdsP[0];
+            /*for (size_t regionId = 0; regionId < numRegionTextureIds; regionId++)
+            {
+            static long maxTriangles = 65000;  // Maximum Triangles To Pass Back
+            static long vectorOption = 2;  // Averaged Triangle Surface Normals
+            static double zAxisFactor = 1.0;  // Am\ount To Exaggerate Z Axis
+            static long regionOption = 1;  // Include Internal Regions Until Fully Tested
+            static long indexOption = 2;  // Use Feature Id
+            bcdtmLoad_triangleShadeMeshForRegionDtmObject((BC_DTM_OBJ*)mesh->GetBcDTM()->GetTinHandle(),
+            maxTriangles,
+            vectorOption,
+            zAxisFactor,
+            regionOption,
+            indexOption,
+            textureRegionIdsP[regionId],
+            &loadFunc,
+            &poly
+            );
+            }*/
+            userTag++;
+            }
+
+                    {
+                    WString str(L"e:\\makeTM\\endtm");
+                    str.append(L".bcdtm");
+                    bcdtmWrite_toFileDtmObject(mesh->GetBcDTM()->GetTinHandle(), str.c_str());
+                        }
+
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*mesh->GetBcDTM());
+        //en->SetUseRealPointIndexes(true);
+        en->SetExcludeAllRegions();
+        en->SetMaxTriangles(2000000);
+        bmap<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
+        std::ofstream stats;
+        stats.open("E:\\makeTM\\stats.txt", std::ios_base::trunc);
+        for (size_t i = 0; i < (size_t)mesh->GetBcDTM()->GetPointCount(); ++i)
+            {
+            DPoint3d pt;
+            mesh->GetBcDTM()->GetPoint((int)i, pt);
+            mapOfPoints[pt] = (int)i;
+
+            stats << "INDEX " + std::to_string(i) + " IS VERTEX: ";
+            std::string s;
+            //print_polygonarray(s, "", &pt, 1);
+            stats << s;
+            }
+        stats.close();
+
+        bvector<DPoint3d> newVertices;
+        bvector<int32_t> newIndices;
+        std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints2(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
+        for (PolyfaceQueryP pf : *en)
+            {
+            PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+            vec->CopyFrom(*pf);
+            for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+                {
+                DPoint3d face[3];
+                int32_t idx[3] = { -1, -1, -1 };
+                for (size_t i = 0; i < 3; ++i)
+                    {
+                    face[i] = addedFacets->GetPointCP()[i];
+                    idx[i] = mapOfPoints2.count(face[i]) != 0 ? mapOfPoints2[face[i]] : -1;
+                    }
+                for (size_t i = 0; i < 3; ++i)
+                    {
+                    if (idx[i] == -1)
+                        {
+                        newVertices.push_back(face[i]);
+                        idx[i] = (int)newVertices.size();
+                        mapOfPoints2[face[i]] = idx[i] - 1;
+                        }
+                    else idx[i]++;
+                    }
+                newIndices.push_back(idx[0]);
+                newIndices.push_back(idx[1]);
+                newIndices.push_back(idx[2]);
+                }
+            }
+        WString name = L"E:\\makeTM\\testClipOut.m";
+        LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
+        for (size_t j = 0; j < polys.size(); ++j)
+            {
+            en->Reset();
+            en->SetFilterRegionByUserTag(j);
+            for (PolyfaceQueryP pf : *en)
+                {
+                PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+                vec->CopyFrom(*pf);
+                newVertices.clear();
+                newIndices.clear();
+                mapOfPoints2.clear();
+                for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+                    {
+                    DPoint3d face[3];
+                    int32_t idx[3] = { -1, -1, -1 };
+                    for (size_t i = 0; i < 3; ++i)
+                        {
+                        face[i] = addedFacets->GetPointCP()[i];
+                        idx[i] = mapOfPoints2.count(face[i]) != 0 ? mapOfPoints2[face[i]] : -1;
+                        }
+                    for (size_t i = 0; i < 3; ++i)
+                        {
+                        if (idx[i] == -1)
+                            {
+                            newVertices.push_back(face[i]);
+                            idx[i] = (int)newVertices.size();
+                            mapOfPoints2[face[i]] = idx[i] - 1;
+                            }
+                        else idx[i]++;
+                        }
+                    newIndices.push_back(idx[0]);
+                    newIndices.push_back(idx[1]);
+                    newIndices.push_back(idx[2]);
+                    }
+            WString name = L"E:\\makeTM\\testClipOut";
+            name.append(std::to_wstring(j).c_str());
+            name.append(L".m");
+            LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
+                //PolyfaceTag(vec, mesh);
+                for (size_t idx = 0; idx < vec->GetPointIndexCount(); idx += 3)
+                    {
+                    DPoint3d currentTri[3];
+                    currentTri[0] = (vec->GetPointCP())[vec->GetPointIndexCP()[idx] - 1];
+                    currentTri[1] = (vec->GetPointCP())[vec->GetPointIndexCP()[idx + 1] - 1];
+                    currentTri[2] = (vec->GetPointCP())[vec->GetPointIndexCP()[idx + 2] - 1];
+
+                    DRange3d range = DRange3d::From(&polyDefs[j][0], (int)polyDefs[j].size());
+                    if (!range.IsContainedXY(currentTri[0]) || !range.IsContainedXY(currentTri[1]) || !range.IsContainedXY(currentTri[2]))
+                        {
+                        std::cout << " TRIANGLE FAIL " << mapOfPoints[currentTri[0]] << "," << mapOfPoints[currentTri[1]] << "," << mapOfPoints[currentTri[2]] << std::endl;
+                        nNotContained++;
+                        }
+                    }
+                }
+            /*static long maxTriangles = 65000;  // Maximum Triangles To Pass Back
+            static long vectorOption = 2;  // Averaged Triangle Surface Normals
+            static double zAxisFactor = 1.0;  // Am\ount To Exaggerate Z Axis
+            static long regionOption = 1;  // Include Internal Regions Until Fully Tested
+            static long indexOption = 2;  // Use Feature Id
+            bcdtmLoad_triangleShadeMeshForRegionDtmObject((BC_DTM_OBJ*)mesh->GetBcDTM()->GetTinHandle(),
+            maxTriangles,
+            vectorOption,
+            zAxisFactor,
+            regionOption,
+            indexOption,
+            featureIds[j],
+            &loadFunc,
+            &polyDefs[j]
+            );*/
+
+            }
+        }
+    std::cout << (nNotContained > 0 ? " FAIL " : " PASS ") << std::endl;
+    std::cout << nNotContained << " NOT CONTAINED " << std::endl;
+    }
+
+    bvector<DPoint3d> ReadPts(WCharCP filename)
+        {
+        FILE* fp = bcdtmFile_open(filename, L"rb");
+        size_t numPts = 0;
+        bcdtmFread(&numPts, sizeof(numPts), 1, fp);
+
+        bvector<DPoint3d> pts;
+        pts.resize(numPts);
+        bcdtmFread(pts.data(), sizeof(pts[0]), numPts, fp);
+
+        bcdtmFile_close(fp);
+        return pts;
+        }
+
+    void DarylsTestFunction()
+        {
+        BC_DTM_OBJ *dtmP = NULL;
+        const wchar_t* fileName = L"e:\\makeTM\\newcliptm.tin";
+
+        //fileName = L"D:\\data\\elenie\\clipIssue.bcdtm";
+        if (bcdtmRead_fromFileDtmObject(&dtmP, fileName))
+            return;
+
+        bvector<DPoint3d> pts;
+        DTMFeatureId* featureIdP = nullptr;
+        long numFeatureIds;
+        pts = ReadPts(L"e:\\makeTM\\polys\\7.p");
+        bcdtmInsert_internalDtmFeatureMrDtmObject(dtmP, DTMFeatureType::Region, 1, 2, 0, &featureIdP, &numFeatureIds, pts.data(), (long)pts.size(), nullptr);
+
+        pts = ReadPts(L"e:\\makeTM\\polys\\9.p");
+        bcdtmInsert_internalDtmFeatureMrDtmObject(dtmP, DTMFeatureType::Region, 1, 2, 0, &featureIdP, &numFeatureIds, pts.data(), (long)pts.size(), nullptr);
+
+        bcdtmWrite_toFileDtmObject(dtmP, L"e:\\makeTM\\darylstest.bcdtm");
+
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr mesh2 = BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM::CreateFromDtmHandle(*dtmP);
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*mesh2->GetBcDTM());
+        en->SetExcludeAllRegions();
+        en->SetMaxTriangles(2000000);
+        bvector<DPoint3d> newVertices;
+        bvector<int32_t> newIndices;
+        std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints2(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
+        for (PolyfaceQueryP pf : *en)
+            {
+            PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+            vec->CopyFrom(*pf);
+            for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+                {
+                DPoint3d face[3];
+                int32_t idx[3] = { -1, -1, -1 };
+                for (size_t i = 0; i < 3; ++i)
+                    {
+                    face[i] = addedFacets->GetPointCP()[i];
+                    idx[i] = mapOfPoints2.count(face[i]) != 0 ? mapOfPoints2[face[i]] : -1;
+                    }
+                for (size_t i = 0; i < 3; ++i)
+                    {
+                    if (idx[i] == -1)
+                        {
+                        newVertices.push_back(face[i]);
+                        idx[i] = (int)newVertices.size();
+                        mapOfPoints2[face[i]] = idx[i] - 1;
+                        }
+                    else idx[i]++;
+                    }
+                newIndices.push_back(idx[0]);
+                newIndices.push_back(idx[1]);
+                newIndices.push_back(idx[2]);
+                }
+            }
+                {
+                WString name = L"E:\\makeTM\\testClip.m";
+                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
+                    }
+        }
+
+
+
+void RunPrecisionTest(WString& stmFileName)
+    {
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    auto draping = meshP->GetDTMInterface()->GetDTMDraping();
+    int drapeType;
+    DRange3d range;
+
+    meshP->GetRange(range);
+   // range.low.x += (range.XLength() / 2);
+   // range.low.y += (range.YLength() / 2);
+    range.ScaleAboutCenter(range, 0.5);
+    std::random_device rd;
+
+    std::default_random_engine e1(rd());
+    std::uniform_real_distribution<double> val_x(range.low.x, range.high.x);
+    std::uniform_real_distribution<double> val_y(range.low.y, range.high.y);
+
+    DPoint3d corners[8];
+    range.Get8Corners(corners);
+    size_t nbResolutions = meshP->GetNbResolutions();
+    bvector<double> precisionVals(nbResolutions, 0.0);
+    bvector<size_t> nVals(nbResolutions, 0);
+    bvector<DPoint3d> allTestPts;
+    for (size_t i = 0; i < 1000; i++)
+        {
+        DPoint3d tmpPoint;
+        tmpPoint.x = val_x(e1);
+        tmpPoint.y = val_y(e1);
+        draping->DrapePoint(&tmpPoint.z, NULL, NULL, NULL, drapeType, tmpPoint);
+        if(tmpPoint.z != DBL_MAX) allTestPts.push_back(tmpPoint);
+        }
+    for (size_t i = 0; i < nbResolutions - 1; ++i)
+        {
+        bvector<ScalableMesh::IScalableMeshNodePtr> returnedNodes;
+        ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+        params->SetLevel(i);
+        meshQueryInterface->Query(returnedNodes, corners, 8, params);
+
+        for (auto& node : returnedNodes)
+            {
+            for (auto& tmpPoint : allTestPts)
+                {
+                if (node->GetNodeExtent().IsContainedXY(tmpPoint))
+                    {
+                    double z = tmpPoint.z;
+                    auto dtm = node->GetBcDTM();
+                    if (dtm.get() != nullptr)
+                        {
+                        node->GetBcDTM()->DrapePoint(&z, NULL, NULL, NULL, drapeType, tmpPoint);
+                        if (z != DBL_MAX)
+                            {
+                            precisionVals[i] += fabs(z - tmpPoint.z);
+                            nVals[i]++;
+                            }
+                        }
+                    break;
+                    }
+                }
+            }
+
+        }
+
+    for (size_t i = 0; i < nbResolutions - 1; ++i)
+        {
+        std::cout << " at resolution " << i << " precision is " << precisionVals[i] / nVals[i] << " m" << std::endl;
+        }
+
+    }
+
+void RunIntersectRay()
+    {
+    DPoint3d testPt = DPoint3d::From(303665.63996983197,256052.27654610365,11299.552886447620);
+    DPoint3d endPt = DPoint3d::From(303665.65128480532,256052.54358510373,11298.589267153598);
+
+    TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromTinFile(L"E:\\makeTM\\ptPick.tin");
+    DPoint3d ptOut;
+    dtm->IntersectVector(ptOut, testPt, endPt);
+
+    DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(303780.30394857755, 259172.41251152655, 52.999999999999993),
+                                           DPoint3d::From(303810.29302139767, 259171.62779438784, 49.999999999999993),
+                                           DPoint3d::From(303809.50776461099, 259141.63913370154, 53.999999999999993));
+    DRay3d ray = DRay3d::FromOriginAndVector(testPt, DVec3d::FromStartEnd(testPt, endPt));
+    double param;
+    DPoint3d rayOut;
+    ray.Intersect(rayOut, param, plane);
+    }
+
+void RunEnumerateTest()
+{
+
+	BC_DTM_OBJ* bcDtmP = 0;
+
+	bcdtmRead_fromFileDtmObject(&bcDtmP, L"C:\\work\\2017q3\\tmp\\testm.tin");
+	TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
+	BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtm);
+	//en->SetUseRealPointIndexes(true);
+	en->SetExcludeAllRegions();
+	en->SetMaxTriangles(2000000);
+	bmap<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
+	/*std::ofstream stats;
+	stats.open("E:\\makeTM\\stats.txt", std::ios_base::trunc);
+	for (size_t i = 0; i < (size_t)mesh->GetBcDTM()->GetPointCount(); ++i)
+	{
+		DPoint3d pt;
+		mesh->GetBcDTM()->GetPoint((int)i, pt);
+		mapOfPoints[pt] = (int)i;
+
+		stats << "INDEX " + std::to_string(i) + " IS VERTEX: ";
+		std::string s;
+		print_polygonarray(s, "", &pt, 1);
+		stats << s;
+	}
+	stats.close();*/
+
+	bvector<DPoint3d> newVertices;
+	bvector<int32_t> newIndices;
+	std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints2(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
+	for (PolyfaceQueryP pf : *en)
+	{
+		PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+		vec->CopyFrom(*pf);
+		for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+		{
+			DPoint3d face[3];
+			int32_t idx[3] = { -1, -1, -1 };
+			for (size_t i = 0; i < 3; ++i)
+			{
+				face[i] = addedFacets->GetPointCP()[i];
+				idx[i] = mapOfPoints2.count(face[i]) != 0 ? mapOfPoints2[face[i]] : -1;
+			}
+			for (size_t i = 0; i < 3; ++i)
+			{
+				if (idx[i] == -1)
+				{
+					newVertices.push_back(face[i]);
+					idx[i] = (int)newVertices.size();
+					mapOfPoints2[face[i]] = idx[i] - 1;
+				}
+				else idx[i]++;
+			}
+			newIndices.push_back(idx[0]);
+			newIndices.push_back(idx[1]);
+			newIndices.push_back(idx[2]);
+		}
+	}
+}
+
+void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
+    {
+ /*   LOG_SET_PATH_W("E:\\output\\scmesh\\2016-04-15\\")
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+    wchar_t *end;
+    int nodeID = wcstol(tileID, &end, 10);
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    size_t nbResolutions = meshP->GetNbResolutions();
+    for (size_t i = 0; i < nbResolutions; ++i)
+        {
+        bvector<ScalableMesh::IScalableMeshNodePtr> returnedNodes;
+        ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+        params->SetLevel(i);
+        meshQueryInterface->Query(returnedNodes, nullptr, 0, params);
+
+        for (auto& node : returnedNodes)
+            {
+            if (node->GetNodeId() == nodeID)
+                {
+                ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
+                bvector<bool> clips;
+                auto meshPtr = node->GetMesh(flags, clips);
+                WString name = LOG_PATH_STR_W + L"mesh_";
+                name.append(std::to_wstring(nodeID).c_str());
+                    name.append(L".m");
+                    ScalableMesh::ScalableMeshMesh * meshP = dynamic_cast<ScalableMesh::ScalableMeshMesh*>(meshPtr.get());
+                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, meshP->GetNbPoints(), meshP->GetNbFaceIndexes(), meshP->GetPoints(), (int32_t*)meshP->GetFaceIndexes())
+                    break;
+                }
+            }
+        }*/
+    }
+
+void RunDTMTriangulateTest()
+    {
+    //while (true)
+      //  {
+        WString pathMeshes = L"E:\\makeTM\\mesh";
+       // bvector<DPoint3d> allPts;
+       // for (size_t i = 0; i < 4; ++i)
+       //     {
+            WString path = pathMeshes +  WString(L".pts");
+            FILE* mesh = _wfopen(path.c_str(), L"rb");
+            size_t nVerts = 0;
+            fread(&nVerts, sizeof(size_t), 1, mesh);
+            bvector<DPoint3d> allVerts(nVerts);
+            fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
+            fclose(mesh);
+            
+          //  size_t offset = allPts.size();
+            //allPts.resize(allPts.size() + nVerts);
+//
+            for (auto&pt : allVerts) pt.z = 0;
+            bvector<double> distances;
+            for (size_t i = 1; i < allVerts.size(); ++i)
+                distances.push_back(allVerts[i].Distance(allVerts[i - 1]));
+
+            std::sort(allVerts.begin(), allVerts.end(), [] (const DPoint3d& a, const DPoint3d&b) { return a.x < b.x; });
+
+      /*      std::random_shuffle(allVerts.begin(), allVerts.end());
+
+            size_t count = (allVerts.size() / 4) + 1;
+
+            memcpy(&allPts[offset], &allVerts[0], sizeof(DPoint3d)*std::min(count, allVerts.size()));
+            }*/
+        TerrainModel::DTMPtr dtmPtr;
+        BC_DTM_OBJ* bcDtmP = 0;
+        int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
+        if (dtmCreateStatus == 0)
+            {
+            TerrainModel::BcDTMPtr bcDtmObjPtr;
+            bcDtmObjPtr = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
+            dtmPtr = bcDtmObjPtr.get();
+            }
+        bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP, DTMFeatureType::RandomSpots, bcDtmP->nullUserTag, 1, &bcDtmP->nullFeatureId, &allVerts[0], (long)allVerts.size());
+        int status = bcdtmObject_triangulateDtmObject(bcDtmP);
+        if (status != SUCCESS)
+            {
+            std::cout << "ERROR!" << std::endl;
+            WString str(L"e:\\newcliptm");
+            str.append(L".dtm");
+            bcdtmWrite_toFileDtmObject(bcDtmP, str.c_str());
+            }
+       // }
+    }
+
+
+void RunDrapeLinearTinTest()
+{
+	BC_DTM_OBJ* bcDtmP = 0;
+
+	bcdtmRead_fromFileDtmObject(&bcDtmP, L"E:\\Elenie\\beforeAfterTin\\meshtile_2_5_118.tin");
+	TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
+	bvector<DPoint3d> listOfPts;
+
+		WString path = L"E:\\Elenie\\beforeAfterTin\\poly2.p";
+		FILE* mesh = _wfopen(path.c_str(), L"rb");
+		size_t nVerts = 0;
+		fread(&nVerts, sizeof(size_t), 1, mesh);
+		listOfPts.resize(nVerts);
+		fread(&listOfPts[0], sizeof(DPoint3d), nVerts, mesh);
+		TerrainModel::DTMDrapedLinePtr test;
+	dtm->GetBcDTM()->DrapeLinear(test, listOfPts.data(), (int)listOfPts.size());
+}
+
+void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
+{
+
+	/*if (shape->IsComplex())
+	{
+		for (auto& elem : shape->GetShapeList())
+		{
+			AddLoopsFromShape(polygons, elem, afterPolygonAdded);
+		}
+	}
+	else if (!shape->IsEmpty())
+	{
+		HGF2DPositionCollection thePoints;
+		shape->Drop(&thePoints, shape->GetTolerance());
+
+		bvector<DPoint3d> vec(thePoints.size());
+
+		for (size_t idx = 0; idx < thePoints.size(); idx++)
+		{
+			vec[idx].x = thePoints[idx].GetX();
+			vec[idx].y = thePoints[idx].GetY();
+			vec[idx].z = 0; // As mentionned below the Z is disregarded
+		}
+
+		polygons.push_back(vec);
+		afterPolygonAdded(vec);
+	}*/
+}
+
+
+void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
+{
+#if 0
+	bvector<bvector<DPoint3d>> newUnifiedPoly;
+	HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
+	HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
+	bvector<bool> used(polygons.size(), false);
+
+	bvector<bool> available(polygons.size(), false);
+	for (auto& poly : polygons)
+	{
+		available[&poly - &polygons.front()] = choosePolygonInSet(&poly - &polygons.front(), poly);
+	}
+
+	//Apparently, intersection on a single vertex, even though it has no bearing on the "inside" section of voids, trips up the Civil triangulation.
+	//So we find out and disconnect single vertex intersections first, since they cannot be unified.
+	for (auto& poly : polygons)
+	{
+		if (!available[&poly - &polygons.front()]) continue;
+		DRange3d range = DRange3d::From(poly);
+		if (poly.empty()) continue;
+		bvector<DPoint3d> poly_2d = poly;
+		for (auto&pt : poly_2d) pt.z = 0;
+		for (auto& poly2 : polygons)
+		{
+			if (!available[&poly2 - &polygons.front()]) continue;
+			if (&poly == &poly2) continue;
+			if (poly2.empty()) continue;
+			if (!DRange3d::From(poly2).IntersectsWith(range)) continue;
+			bvector<DPoint3d> poly2_2d = poly2;
+			for (auto&pt : poly2_2d) pt.z = 0;
+			VuPolygonClassifier vu(1e-8, 0);
+
+			//There are cases where the clash functions on non-coplanar 3d polygons says 2 polygons which share a vertex don't clash.
+			if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size()) ||
+				bsiDPoint3dArray_polygonClashXYZ(&poly_2d.front(), (int)poly_2d.size(), &poly2_2d.front(), (int)poly2_2d.size()))
+			{
+				vu.ClassifyAUnionB(poly, poly2);
+				bvector<DPoint3d> xyz;
+				bvector<bvector<DPoint3d>> faces;
+				for (; vu.GetFace(xyz);)
+				{
+					if (bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size()) < 0) continue;
+					else
+					{
+						//  postFeatureBoundary.push_back(xyz);
+						faces.push_back(xyz);
+
+					}
+
+				}
+				if (faces.size() == 1)
+					continue;
+				//compute intersects on single vertices
+				bmap<DPoint3d, size_t, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+				bvector<DPoint3d> intersectingVertices;
+				bvector<bpair<bpair<DSegment3d,DSegment3d>, bpair<DSegment3d,DSegment3d>>> intersectingContext;
+				int minConsecutiveIntersectingVertices = INT_MAX;
+				int consecutiveIntersectingVertices = 0;
+				int nPtsSeen = 0;
+				int loopNPts = 0;
+				for (auto pt : poly)
+				{
+					pt.z = 0;
+					setOfPts.insert(make_bpair(pt, &pt -&poly[0]));
+				}
+				for (auto& pt : poly2)
+				{
+					++nPtsSeen;
+					DPoint3d pt2d = pt;
+					pt2d.z = 0;
+					if (setOfPts.count(pt2d))
+					{
+						DSegment3d lastSegOn1, nextSegOn1, lastSegOn2, nextSegOn2;
+						lastSegOn1 = DSegment3d::From(setOfPts[pt2d] == 0 ? poly[poly.size() - 2] : poly[setOfPts[pt2d] - 1], poly[setOfPts[pt2d]]);
+						nextSegOn1 = DSegment3d::From(poly[setOfPts[pt2d]], setOfPts[pt2d] == poly.size()-1 ? poly[1] : poly[setOfPts[pt2d] + 1]);
+						lastSegOn2 = DSegment3d::From(nPtsSeen == 1 ? poly2[poly2.size() - 2] : poly2[nPtsSeen - 2], poly2[nPtsSeen-1]);
+						nextSegOn2 = DSegment3d::From(poly2[nPtsSeen-1], nPtsSeen == poly2.size() ? poly2[1] : poly2[nPtsSeen]);
+
+						intersectingVertices.push_back(pt);
+						intersectingContext.push_back(make_bpair(make_bpair(lastSegOn1, nextSegOn1), make_bpair(lastSegOn2, nextSegOn2)));
+						consecutiveIntersectingVertices++;
+					}
+					else
+					{
+						if (nPtsSeen == 2)
+						{
+							loopNPts = consecutiveIntersectingVertices;
+						}
+						else if (nPtsSeen != 2 && consecutiveIntersectingVertices > 0)
+							minConsecutiveIntersectingVertices = std::min(consecutiveIntersectingVertices, minConsecutiveIntersectingVertices);
+						if (consecutiveIntersectingVertices > 1)
+						{
+							intersectingVertices.resize(intersectingVertices.size() - consecutiveIntersectingVertices);
+							intersectingContext.resize(intersectingVertices.size() - consecutiveIntersectingVertices);
+						}
+						consecutiveIntersectingVertices = 0;
+					}
+				}
+
+				if (loopNPts != 0)
+				{
+					consecutiveIntersectingVertices += loopNPts - 1;
+					if (consecutiveIntersectingVertices > 0)
+						minConsecutiveIntersectingVertices = std::min(consecutiveIntersectingVertices, minConsecutiveIntersectingVertices);
+					consecutiveIntersectingVertices = 0;
+				}
+			
+
+				//No single vertex intersection
+				if (minConsecutiveIntersectingVertices > 1) continue;
+				if (!intersectingVertices.empty())
+				{
+					size_t nColinear = 0;
+					for (size_t i = 0; i < intersectingVertices.size(); ++i)
+					{
+						std::vector<DPoint3d> pts = { intersectingContext[i].first.first.point[0],intersectingContext[i].first.first.point[1], intersectingContext[i].second.first.point[0] };
+						if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+						{
+							nColinear++;
+							continue;
+						}
+						pts = { intersectingContext[i].first.first.point[0],intersectingContext[i].first.first.point[1], intersectingContext[i].second.second.point[1] };
+						if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+						{
+							nColinear++;
+							continue;
+						}
+						pts = { intersectingContext[i].first.second.point[0],intersectingContext[i].first.second.point[1], intersectingContext[i].second.first.point[0] };
+						if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+						{
+							nColinear++;
+							continue;
+						}
+						pts = { intersectingContext[i].first.second.point[0],intersectingContext[i].first.second.point[1], intersectingContext[i].second.second.point[1] };
+						if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+						{
+							nColinear++;
+							continue;
+						}
+
+					}
+					if (nColinear == intersectingVertices.size())
+						continue;
+					bvector<DPoint3d> withoutIntersect;
+					if (poly.size() < poly2.size())
+					{
+						for (auto& pt : poly)
+						{
+							bool insert = true;
+							for (auto& ptB : intersectingVertices)
+								if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+							if (insert) withoutIntersect.push_back(pt);
+						}
+					}
+					else
+					{
+						for (auto& pt : poly2)
+						{
+							bool insert = true;
+							for (auto& ptB : intersectingVertices)
+								if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+							if (insert) withoutIntersect.push_back(pt);
+						}
+					}
+					if (poly.size() < poly2.size())
+					{
+						poly = poly2;
+						poly_2d = poly2_2d;
+						range = DRange3d::From(poly);
+					}
+					if (!withoutIntersect.empty() && !bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+					if (withoutIntersect.size() > 4)
+					{
+						poly2 = withoutIntersect;
+					}
+					else poly2.clear();
+
+				}
+			}
+		}
+	}
+
+	for (auto& poly : polygons)
+	{
+		if (!available[&poly - &polygons.front()]) continue;
+		if (used[&poly - &polygons[0]]) continue;
+		if (poly.empty()) continue;
+		bvector<DPoint3d> poly_2d = poly;
+		for (auto&pt : poly_2d) pt.z = 0;
+
+		//pre-compute the union of polys with this function because apparently sometimes Unify hangs
+		for (auto& poly2 : polygons)
+		{
+			if (!available[&poly2 - &polygons.front()]) continue;
+			if (&poly == &poly2) continue;
+			if (poly2.empty()) continue;
+			if (used[&poly2 - &polygons[0]]) continue;
+			VuPolygonClassifier vu(1e-8, 0);
+
+			bvector<DPoint3d> poly2_2d = poly2;
+			for (auto&pt : poly2_2d) pt.z = 0;
+
+			if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size())
+				|| bsiDPoint3dArray_polygonClashXYZ(&poly_2d.front(), (int)poly_2d.size(), &poly2_2d.front(), (int)poly2_2d.size()))
+			{
+				vu.ClassifyAUnionB(poly, poly2);
+				bvector<DPoint3d> xyz;
+				bvector<bvector<DPoint3d>> faces;
+				for (; vu.GetFace(xyz);)
+				{
+					if (bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size()) < 0) continue;
+					else
+					{
+						//  postFeatureBoundary.push_back(xyz);
+						faces.push_back(xyz);
+
+					}
+
+				}
+				if (faces.size() == 1)
+				{
+					poly = faces.front();
+					used[&poly2 - &polygons[0]] = true;
+				}
+			}
+
+		}
+	}
+
+	for (auto& poly : polygons)
+	{
+		if (!available[&poly - &polygons.front()]) continue;
+		if (used[&poly - &polygons[0]]) continue;
+		if (poly.empty()) continue;
+
+		//UntieLoopsFromPolygon(poly);
+		HArrayAutoPtr<double> tempBuffer(new double[poly.size() * 2]);
+
+		int bufferInd = 0;
+
+		for (size_t pointInd = 0; pointInd < poly.size(); pointInd++)
+		{
+			tempBuffer[bufferInd * 2] = poly[pointInd].x;
+			tempBuffer[bufferInd * 2 + 1] = poly[pointInd].y;
+			bufferInd++;
+		}
+		HVE2DPolygonOfSegments polygon(poly.size() * 2, tempBuffer, coordSysPtr);
+
+		HFCPtr<HVEShape> subShapePtr = new HVEShape(polygon);
+		allPolyShape->Unify(*subShapePtr);
+	}
+
+	AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape(), afterPolygonAdded);
+	polygons = newUnifiedPoly;
+#endif
+}
+
+void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons)
+{
+	return MergePolygonSets(polygons, [](const size_t i, const bvector<DPoint3d>& element)
+	{
+		return true;
+	}, [](const bvector<DPoint3d>&element) {});
+}
+
+void RunMergePolygons()
+{
+	WString pathPolys = L"c:\\work\\tmp\\test\\pre_";
+
+	bvector<int> polys(4);
+
+	polys[0] = 0;
+	polys[1] = 1;
+	polys[2] = 2;
+	polys[3] = 3;
+
+
+	bvector<bvector<DPoint3d>> polyDefs(polys.size());
+
+
+
+	for (size_t i = 0; i < polys.size(); ++i)
+	{
+		WString path = pathPolys + WString(std::to_wstring(polys[i]).c_str()) + WString(L".p");
+		FILE* mesh = _wfopen(path.c_str(), L"rb");
+		size_t nVerts = 0;
+		fread(&nVerts, sizeof(size_t), 1, mesh);
+		polyDefs[i].resize(nVerts);
+		fread(&polyDefs[i][0], sizeof(DPoint3d), nVerts, mesh);
+	}
+
+	for (size_t i = polyDefs.size()-1; i > 0; i--)
+	{
+		bvector<bvector<DPoint3d>> defs;
+		defs.push_back(polyDefs[i]);
+		defs.push_back(polyDefs[i - 1]);
+		MergePolygonSets(defs);
+		polyDefs[i - 1] = defs[0];
+		if (defs.size() > 1)
+			polyDefs[i] = defs[1];
+		else polyDefs[i].clear();
+	}
+	
+}
+
+void RunDTMTriangulateTest2()
+{
+
+	BC_DTM_OBJ* bcDtmP = 0;
+
+	bcdtmRead_fromFileDtmObject(&bcDtmP, L"C:\\work\\2018q2\\CS\\test.tin");
+	bcdtmObject_triangulateDtmObject(bcDtmP);
+	TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
+	bvector<DPoint3d> bound;
+	dtm->GetBoundary(bound);
+	/*
+	WString path = WString(L"C:\\work\\repro3.p");
+	FILE* mesh = _wfopen(path.c_str(), L"rb");
+	size_t nVerts = 0;
+	fread(&nVerts, sizeof(size_t), 1, mesh);
+	bvector<DPoint3d> poly;
+	poly.resize(nVerts);
+	fread(&poly[0], sizeof(DPoint3d), nVerts, mesh);
+	fclose(mesh);
+
+	bvector<DPoint3d> toAddPts;
+	size_t nPts = 0;
+	auto curvePtr = ICurvePrimitive::CreateLineString(poly);
+	auto curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+	for(size_t i =0; i < bcDtmP->numPoints; ++i)
+		{
+		if (curveVectorPtr->PointInOnOutXY((*bcDtmP->pointsPP)[i]) != CurveVector::InOutClassification::INOUT_Out)
+			{
+			nPts++;
+			toAddPts.push_back((*bcDtmP->pointsPP)[i]);
+		    }
+	    }
+
+	BC_DTM_OBJ* bcDtmP2 = 0;
+	int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP2);
+	TerrainModel::BcDTMPtr dtmP;
+	if (dtmCreateStatus == 0)
+	{
+		dtmP = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP2);
+	}
+	bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP2, DTMFeatureType::RandomSpots, bcDtmP2->nullUserTag, 1, &bcDtmP2->nullFeatureId, (DPoint3d*)&(toAddPts[0]), (long)toAddPts.size());
+	bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP2, DTMFeatureType::Hull, bcDtmP2->nullUserTag, 1, &bcDtmP2->nullFeatureId, (DPoint3d*)&(poly[0]), (long)poly.size());
+	bcdtmObject_triangulateDtmObject(bcDtmP2);
+	dtmP->GetBoundary(bound);*/
+}
+
+void RunCompareLineTest()
+{
+	WString path = WString(L"c:\\work\\line1.p");
+	FILE* mesh = _wfopen(path.c_str(), L"rb");
+	size_t nVerts = 0;
+	fread(&nVerts, sizeof(size_t), 1, mesh);
+	bvector<DPoint3d> poly;
+	poly.resize(nVerts);
+	fread(&poly[0], sizeof(DPoint3d), nVerts, mesh);
+	fclose(mesh);
+	path = WString(L"c:\\work\\line2.p");
+	mesh = _wfopen(path.c_str(), L"rb");
+	size_t nVerts2 = 0;
+	fread(&nVerts2, sizeof(size_t), 1, mesh);
+	bvector<DPoint3d> poly2;
+	poly2.resize(nVerts2);
+	fread(&poly2[0], sizeof(DPoint3d), nVerts2, mesh);
+	fclose(mesh);
+}
+
+void RunDTMSTMTriangulateTest()
+    {
+    WString pathMeshes = L"E:\\makeTM\\newcliptm";
+    WString path = pathMeshes + WString(L".m");
+    FILE* mesh = _wfopen(path.c_str(), L"rb");
+    size_t nVerts = 0;
+    size_t nIndices = 0;
+    fread(&nVerts, sizeof(size_t), 1, mesh);
+    bvector<DPoint3d> allVerts(nVerts);
+    fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
+    fread(&nIndices, sizeof(size_t), 1, mesh);
+    bvector<int32_t> allIndices(nIndices);
+    fread(&allIndices[0], sizeof(int32_t), nIndices, mesh);
+    TerrainModel::BcDTMPtr bcdtm;
+    //SortPoints(allVerts, allIndices);
+    for (size_t i = 5065; i < 10000; i++)
+        {
+        bvector<int32_t> indicesList;
+        indicesList.insert(indicesList.end(), allIndices.begin(), allIndices.end());
+        for (size_t j = 0; j < i; ++j)
+            {
+            indicesList.push_back(allIndices[allIndices.size() - 3]);
+            indicesList.push_back(allIndices[allIndices.size() - 2]);
+            indicesList.push_back(allIndices[allIndices.size() - 1]);
+            }
+
+        MakeDTM(bcdtm, allVerts, indicesList);
+        }
+    }
+
+void LoadMesh(bvector<DPoint3d>& vertices, bvector<int>& indices, WString& path)
+    {
+    FILE* mesh = _wfopen(path.c_str(), L"rb");
+    size_t nVerts = 0;
+    size_t nIndices = 0;
+    fread(&nVerts, sizeof(size_t), 1, mesh);
+    vertices.resize(nVerts);
+    fread(&vertices[0], sizeof(DPoint3d), nVerts, mesh);
+    fread(&nIndices, sizeof(size_t), 1, mesh);
+    indices.resize(nIndices);
+    fread(&indices[0], sizeof(int32_t), nIndices, mesh);
+    fclose(mesh);
+    }
+
+struct compare3D
+    {
+    bool operator()(const DPoint3d& a, const DPoint3d& b) const
+        {
+        if (a.x < b.x) return true;
+        if (a.x > b.x) return false;
+        if (a.y < b.y) return true;
+        if (a.y > b.y) return false;
+        if (a.z < b.z) return true;
+        return false;
+        }
+    };
+
+void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle)
+    {
+    double det = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, 1, triangle[1].x, triangle[1].y, 1, triangle[2].x, triangle[2].y, 1).Determinant();
+    double vals[3] = { (triangle[0].x * triangle[0].x + triangle[0].y * triangle[0].y),
+        (triangle[1].x * triangle[1].x + triangle[1].y * triangle[1].y),
+        (triangle[2].x * triangle[2].x + triangle[2].y * triangle[2].y) };
+    double det1 = -(RotMatrix::FromRowValues(vals[0], triangle[0].y, 1, vals[1], triangle[1].y, 1, vals[2], triangle[2].y, 1).Determinant());
+    double det2 = RotMatrix::FromRowValues(vals[0], triangle[0].x, 1, vals[1], triangle[1].x, 1, vals[2], triangle[2].x, 1).Determinant();
+    center.x = -det1 / (2 * det);
+    center.y = -det2 / (2 * det);
+    double detR = RotMatrix::FromRowValues(vals[0], triangle[0].x, triangle[0].y, vals[1], triangle[1].x, triangle[1].y, vals[2], triangle[2].x, triangle[2].y).Determinant();
+    radius = sqrt(det1*det1 + det2*det2 - 4 * det*detR) / (2 * abs(det));
+    }
+
+void circumcircle2(DPoint3d& center, double& radius, const DPoint3d* triangle)
+    {
+    double det = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, 1, triangle[1].x, triangle[1].y, 1, triangle[2].x, triangle[2].y, 1).Determinant();
+    double mags[3] = { triangle[0].MagnitudeSquaredXY(),
+        triangle[1].MagnitudeSquaredXY(),
+        triangle[2].MagnitudeSquaredXY() };
+    double det1 = 0.5*(RotMatrix::FromRowValues(mags[0], triangle[0].y, 1, mags[1], triangle[1].y, 1, mags[2], triangle[2].y, 1).Determinant());
+    double det2 = 0.5*RotMatrix::FromRowValues(triangle[0].x, mags[0], 1, triangle[1].x, mags[1], 1, triangle[2].x, mags[2], 1).Determinant();
+    center.x = det1 /  det;
+    center.y = det2 / det;
+    double detR = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, mags[0], triangle[1].x, triangle[1].y, mags[1], triangle[2].x, triangle[2].y, mags[2]).Determinant();
+    radius = sqrt(detR/det + DPoint3d::From(det1, det2, 0).MagnitudeSquaredXY()/(det*det));
+    }
+
+void SelectPointsToStitch(bvector<DPoint3d>& stitchedPoints, MTGGraph* meshGraph, DRange3d& neighborExt, bvector<DPoint3d>& pts)
+    {
+    DRange3d nodeExt = DRange3d::From(pts);
+    std::queue<MTGNodeId> bounds;
+    MTGARRAY_SET_LOOP(edgeID, meshGraph)
+        {
+        int vtx = -1;
+        meshGraph->TryGetLabel(edgeID, 0, vtx);
+        if (meshGraph->GetMaskAt(edgeID, MTG_BOUNDARY_MASK))
+            {
+            bounds.push(edgeID);
+            }
+        }
+    MTGARRAY_END_SET_LOOP(edgeID, meshGraph)
+        //get face of current edge
+
+        MTGNodeId face[3];
+    MTGNodeId mate[3];
+    DPoint3d facePoints[3];
+    int faceIdx[3];
+    MTGMask visitedMask = meshGraph->GrabMask();
+    std::set<DPoint3d, compare3D> hasBeenAdded;
+    while (bounds.size() > 0)
+        {
+        MTGNodeId currentID = bounds.front();
+        bounds.pop();
+        if (!meshGraph->GetMaskAt(currentID, MTG_BOUNDARY_MASK) || meshGraph->GetMaskAt(currentID, visitedMask))
+            {
+            if (meshGraph->GetMaskAt(currentID, MTG_EXTERIOR_MASK) && !meshGraph->GetMaskAt(currentID, visitedMask) && !meshGraph->GetMaskAt(meshGraph->EdgeMate(currentID), visitedMask)) bounds.push(meshGraph->EdgeMate(currentID));
+            meshGraph->SetMaskAt(currentID, visitedMask);
+            continue;
+            }
+        meshGraph->SetMaskAt(currentID, visitedMask);
+        int edgeAroundFace = 0, vIndex;
+
+        MTGARRAY_FACE_LOOP(aroundFaceIndex, meshGraph, currentID)
+            {
+            if (edgeAroundFace < 3)
+                {
+                face[edgeAroundFace] = aroundFaceIndex;
+                mate[edgeAroundFace] = meshGraph->EdgeMate(aroundFaceIndex);
+                meshGraph->TryGetLabel(aroundFaceIndex, 0, vIndex);
+                assert(vIndex > 0);
+                if (vIndex <= 0)break;
+                faceIdx[edgeAroundFace] = vIndex;
+
+                DPoint3d pt = pts[vIndex - 1];
+                facePoints[edgeAroundFace] = DPoint3d::FromXYZ(pt.x, pt.y, pt.z);
+                }
+            edgeAroundFace++;
+            if (edgeAroundFace > 3)break;
+            }
+
+        MTGARRAY_END_FACE_LOOP(aroundFaceIndex, meshGraph, currentID)
+            if (edgeAroundFace < 3) continue;
+        if (edgeAroundFace > 3)
+            {
+            bounds.push(meshGraph->EdgeMate(currentID));
+            continue;
+            }
+        for (size_t i = 0; i < 3; ++i) facePoints[i].DifferenceOf(facePoints[i], nodeExt.low);
+        DPoint3d center = DPoint3d::From(0, 0, 0);
+        double radius = 0;
+        circumcircle(center, radius, facePoints);
+        for (size_t i = 0; i < 3; ++i) facePoints[i].SumOf(facePoints[i], nodeExt.low);
+        center.SumOf(center, nodeExt.low);
+        if (DRange3d::From(center.x - radius, center.y - radius,
+            center.z, center.x + radius,
+            center.y + radius, center.z).IntersectsWith(neighborExt, 2))
+            {
+            for (int i = 0; i < 3; i++)
+                {
+                meshGraph->TryGetLabel(face[i], 0, vIndex);
+                assert(vIndex > 0);
+                if (hasBeenAdded.count(facePoints[i]) == 0)
+                    {
+                    stitchedPoints.push_back(facePoints[i]);
+                    hasBeenAdded.insert(facePoints[i]);
+                    }
+            
+                if (!meshGraph->GetMaskAt(mate[i], MTG_EXTERIOR_MASK))
+                    {
+                    meshGraph->SetMaskAt(mate[i], MTG_BOUNDARY_MASK);
+                    // meshGraph->SetMaskAt(meshGraph->EdgeMate(face[i]), visitedMask);
+                    bounds.push(mate[i]);
+                    meshGraph->ClearMaskAt(face[i], MTG_BOUNDARY_MASK);
+                    meshGraph->SetMaskAt(face[i], MTG_EXTERIOR_MASK);
+                    }
+                else
+                    {
+                    meshGraph->DropEdge(face[i]);
+                    }
+                }
+            }
+        else
+            {
+            for (int i = 0; i < 3; i++)
+                {
+                meshGraph->TryGetLabel(face[i], 0, vIndex);
+                assert(vIndex > 0);
+                if (hasBeenAdded.count(facePoints[i]) == 0)
+                    {
+                    stitchedPoints.push_back(facePoints[i]);
+                    hasBeenAdded.insert(facePoints[i]);
+                    }
+               
+                }
+            // if (!meshGraph->GetMaskAt(meshGraph->FSucc(currentID), visitedMask)) bounds.push(meshGraph->FSucc(currentID));
+            if (meshGraph->GetMaskAt(meshGraph->FSucc(meshGraph->EdgeMate(currentID)), MTG_EXTERIOR_MASK) && !meshGraph->GetMaskAt(meshGraph->FSucc(meshGraph->EdgeMate(currentID)), visitedMask)) bounds.push(meshGraph->FSucc(meshGraph->EdgeMate(currentID)));
+            if (bounds.size() == 0)
+                {
+                MTGARRAY_SET_LOOP(edgeID, meshGraph)
+                    {
+                    if (!meshGraph->GetMaskAt(edgeID, visitedMask) && meshGraph->GetMaskAt(edgeID, MTG_BOUNDARY_MASK) && !meshGraph->GetMaskAt(edgeID, MTG_EXTERIOR_MASK))
+                        {
+                        bounds.push(edgeID);
+                        break;
+                        }
+                    }
+                MTGARRAY_END_SET_LOOP(boundaryEdgeID, meshGraph)
+                }
+            }
+        }
+    meshGraph->ClearMask(visitedMask);
+    meshGraph->DropMask(visitedMask);
+    }
+
+void RunSelectPointsTest()
+    {
+    WString pathMeshes = L"E:\\makeTM\\select";
+    WString path = pathMeshes + WString(L".m");
+    bvector<DPoint3d> allVerts1;
+    bvector<int32_t> allIndices1;
+    LoadMesh(allVerts1, allIndices1, path);
+    WString path2 = pathMeshes + WString(L"2.m");
+    bvector<DPoint3d> allVerts2;
+    bvector<int32_t> allIndices2;
+    LoadMesh(allVerts2, allIndices2, path);
+
+    DRange3d range2 = DRange3d::From(allVerts2);
+    MTGGraph g;
+    bvector<int> componentPointsId;
+    ScalableMesh::CreateGraphFromIndexBuffer(&g, (const long*)&allIndices1[0], (int)allIndices1.size(), (int)allVerts1.size(), componentPointsId, &allVerts1[0]);
+
+    bvector<DPoint3d> stitchedPts;
+    SelectPointsToStitch(stitchedPts,&g, range2, allVerts1);
+    }
+
+void ParseNodeInfo(ScalableMesh::IScalableMeshNodePtr& node, bvector<size_t>& ptsAtLevel, bvector<size_t>& nodesAtLevel)
+    {
+
+
+    ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
+    flags->SetLoadGraph(false);
+    ScalableMesh::IScalableMeshMeshPtr mesh = node->GetMesh(flags);
+    size_t ptCount = 0;
+    if (mesh.get() == nullptr)
+        {
+        //std::cout << " NO MESH FOR NODE " << node->GetNodeId() << std::endl;
+        }
+    else
+        {
+       // std::cout << " NODE " << node->GetNodeId() << " HAS " << mesh->GetNbFaces() << " FACES " << std::endl;
+        ptCount = mesh->GetNbPoints();
+        }
+    nodesAtLevel[node->GetLevel()]++;
+    ptsAtLevel[node->GetLevel()] += ptCount;
+
+
+    if (ptCount > 65000)
+        std::cout << " NODE " << node->GetNodeId() << " HAS " << ptCount << " POINTS AT LEVEL " << node->GetLevel() << std::endl;
+
+    bvector<ScalableMesh::IScalableMeshNodePtr> childrenNodes = node->GetChildrenNodes();
+    if (mesh.get() == nullptr && childrenNodes.size() > 0 && childrenNodes.front()->GetPointCount() > 0)
+        {
+        std::cout << " NODE " << node->GetNodeId() << " HAS " << ptCount << " POINTS AT LEVEL " << node->GetLevel() << std::endl;
+        std::cout << " NODE " << node->GetNodeId() << " HAS " << childrenNodes.size() << " CHILDREN " << std::endl;
+        std::cout << " NODE " << childrenNodes.front()->GetNodeId() << " HAS " << childrenNodes.front()->GetPointCount() << " POINTS AT LEVEL " << childrenNodes.front()->GetLevel() << std::endl;
+        }
+    //std::cout << " NODE " << node->GetNodeId() << " HAS " << childrenNodes.size() << " CHILDREN " << std::endl;
+    for (auto child : childrenNodes)
+        {
+        ParseNodeInfo(child, ptsAtLevel, nodesAtLevel);
+        }
+    }
+
+void RunParseTree(WString& stmFileName)
+    {
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+    bvector<size_t> nPointsAtLevel((size_t)meshP->GetNbResolutions());
+    bvector<size_t> nNodesAtLevel((size_t)meshP->GetNbResolutions());
+    ScalableMesh::IScalableMeshNodePtr root = meshP->GetRootNode();
+
+
+    ParseNodeInfo(root, nPointsAtLevel, nNodesAtLevel);
+
+    for (size_t i = 0; i < (size_t)meshP->GetNbResolutions(); ++i)
+        {
+        std::cout << " AT LEVEL " << i << " WE HAVE " << nPointsAtLevel[i] << " POINTS AND " << nNodesAtLevel[i] << " NODES " << std::endl;
+        }
+
+
+    }
+/*
+void RunIntersectRayMetadata(WString& stmFileName)
+    {
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+
+    DPoint3d tmpPoint = DPoint3d::From(19068292.12, 7531835.83, 3000000);
+
+    DVec3d direction = DVec3d::From(0,0,-1);
+    DRay3d ray = DRay3d::FromOriginAndVector(tmpPoint, direction);
+    DPoint3d intersectPoint_l;
+
+    //ScalableMesh::IScalableMeshNodeQueryParamsPtr params = ScalableMesh::IScalableMeshNodeQueryParams::CreateParams();
+    //ScalableMesh::IScalableMeshNodeRayQueryPtr query = meshP->GetNodeQueryInterface();
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(meshP->GetTerrainDepth());
+    bvector<ScalableMesh::IScalableMeshNodePtr> nodes;
+   // params->SetDirection(direction);
+    meshQueryInterface->Query(nodes, NULL, 0, params);
+    Json::Value val;
+    double minParam = DBL_MAX;
+    int64_t elementId;
+    for (auto& node : nodes)
+        {
+        DSegment3d clipped;
+        DRange1d fraction;
+        if (!ray.ClipToRange(node->GetContentExtent(), clipped, fraction)) continue;
+        if (node->IntersectRay(intersectPoint_l, ray, val))
+            {
+            double param;
+            DPoint3d pPt;
+            if (ray.ProjectPointUnbounded(pPt, param, intersectPoint_l) && param < minParam)
+                {
+                minParam = param;
+                elementId = val["elementId"].asInt64();
+                }
+            }
+        }
+    //std::cout << elementId << std::endl;
+    }
+    */
+void RunGetMeshParts(WString& stmFileName)
+    {
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(meshP->GetTerrainDepth());
+    bvector<ScalableMesh::IScalableMeshNodePtr> nodes;
+  
+    meshQueryInterface->Query(nodes, NULL, 0, params);
+    for (auto& node : nodes)
+        {
+       /* bvector<bvector<uint8_t>> tex;
+        bvector<Utf8String> metadata;
+        bvector<ScalableMesh::IScalableMeshMeshPtr> meshes;
+        node->GetMeshParts(meshes, metadata, tex);*/        
+        }
+    //std::cout << elementId << std::endl;
+    }
+
+void RunClipPlaneTest()
+    {
+    DPoint3d testPt = DPoint3d::From(401357.37026739196, 3978759.3097642004, 971.63836336049553);
+
+    DPoint3d myPolygon[15] =
+        {
+        DPoint3d::From(401352.08799481287, 3978777.1878598798, /*976.16990622549156*/0),
+        DPoint3d::From(401367.07224009151, 3978776.4430046352, /*970.72344083023313*/0),
+        DPoint3d::From(401382.04878398468, 3978775.4459871412, /*963.48191443208316*/0),
+        DPoint3d::From(401397.09393071051, 3978776.6951946248, /*961.80136028673155*/0),
+        DPoint3d::From(401412.08347109711, 3978776.1237141979, /*957.90659148364830*/0),
+        DPoint3d::From(401425.65381660056, 3978779.9811449745, /*959.84740683554378*/0),
+        DPoint3d::From(401439.13497333368, 3978780.9183166870, /*959.64631968194533*/0),
+        DPoint3d::From(401438.26734308718, 3978752.5099747493, /*943.79473151595050*/0),
+        DPoint3d::From(401424.82198353310, 3978752.7448904603, /*945.16845261366780*/0),
+        DPoint3d::From(401411.36129374051, 3978752.4778565667, /*946.81970827335090*/0),
+        DPoint3d::From(401396.45092918904, 3978755.6417479948, /*953.30809686616419*/0),
+        DPoint3d::From(401381.52978812746, 3978758.4527900596, /*960.59357494588266*/0),
+        DPoint3d::From(401366.60116284026, 3978761.0187802203, /*967.86202441546243*/0),
+        DPoint3d::From(401351.61073459924, 3978761.5611901158, /*973.10595006502376*/0),
+        DPoint3d::From(401352.08799481287, 3978777.1878598798, /*976.16990622549156*/0)
+        };
+    bvector<DPoint3d> clip;
+    clip.insert(clip.end(), myPolygon, myPolygon + 15);
+    ClipVectorPtr cp;
+
+    CurveVectorPtr curvePtr = CurveVector::CreateLinear(clip, CurveVector::BOUNDARY_TYPE_Outer);
+    cp = ClipVector::CreateFromCurveVector(*curvePtr, 1e-8, 1e-8);
+
+    std::cout << "POINT INSIDE " << std::string(cp->PointInside(testPt, 1e-8) ? "TRUE" : "FALSE") << std::endl;
+    }
+
+void RunClipMeshTest()
+    {
+    WString path = WString(L"E:\\output\\scmesh\\2016-09-07\\clippoly.p");
+    FILE* mesh = _wfopen(path.c_str(), L"rb");
+    size_t nVerts = 0;
+    fread(&nVerts, sizeof(size_t), 1, mesh);
+    bvector<DPoint3d> poly;
+    poly.resize(nVerts);
+    fread(&poly[0], sizeof(DPoint3d), nVerts, mesh);
+    fclose(mesh);
+    for (auto& pt : poly) pt.z = 0;
+
+    FILE* mesh2 = _wfopen(L"E:\\output\\scmesh\\2016-09-07\\clipmesh.m", L"rb");
+
+    size_t nIndices = 0;
+
+    fread(&nVerts, sizeof(size_t), 1, mesh2);
+    std::vector<DPoint3d> allVerts(nVerts);
+    fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh2);
+    fread(&nIndices, sizeof(size_t), 1, mesh);
+    std::vector<int32_t> allIndices(nIndices);
+    fread(&allIndices[0], sizeof(int32_t), nIndices, mesh2);
+    fclose(mesh);
+
+    bvector<bvector<PolyfaceHeaderPtr>> outMeshes;
+    bvector<bvector<DPoint3d>> inPolys;
+    inPolys.push_back(poly);
+
+    PolyfaceQueryCarrier* meshP = new PolyfaceQueryCarrier(3, false, nIndices, nVerts, &allVerts[0], &allIndices[0]);
+    ScalableMesh::GetRegionsFromClipPolys3D(outMeshes, inPolys, meshP);
+
+    for (auto& vec: outMeshes)
+    for (auto& meshPtr : vec)
+        {
+        if (meshPtr.IsValid())
+            {
+            WString name = WString(L"E:\\makeTM\\outmeshclip_") + WString(std::to_wstring(&vec - &outMeshes[0]).c_str()) + WString(L".m");
+            FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
+            size_t ptCount = meshPtr->GetPointCount();
+            size_t faceCount = meshPtr->GetPointIndexCount();
+            fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(meshPtr->GetPointCP(), sizeof(DPoint3d), ptCount, meshAfterClip);
+            fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(meshPtr->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
+            fclose(meshAfterClip);
+            }
+        }
+    }
+
+void RunUpdateTest(WString& stmFileName)
+    {
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+    }
+
+int wmain(int argc, wchar_t* argv[])
+{
+_set_error_mode(_OUT_TO_MSGBOX);
+/*
+struct  SMHost : ScalableMesh::ScalableMeshLib::Host
+    {
+
+    SMHost()
+        {}
+    ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
+        {
+        return *new ScalableMesh::ScalableMeshAdmin();
+        };
+    };
+
+struct Host : Dgn::DgnPlatformLib::Host
+    {
+    private:
+        virtual void _SupplyProductName(Utf8StringR name) override { name.assign("TilePublisher"); }
+        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); }
+        virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
+            {
+            BeFileName sqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+            sqlang.AppendToPath(L"sqlang/DgnPlatform_en.sqlang.db3");
+            return BeSQLite::L10N::SqlangFiles(sqlang);
+            }
+
+        static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
+            {
+            printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
+            }
+    public:
+        Host() { BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert); }
+    };
+
+Host host;
+Dgn::DgnPlatformLib::Initialize(host, false);
+    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
+    BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
+    GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
+    DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain());*/
+#if 0
+    if(argc < 2) 
+        {
+        std::cout << "Please input name of Scalable mesh file as first argument" << std::endl;
+        return 0;
+        }
+
+    BC_DTM_OBJ* bcDtmP = 0;
+    bcdtmRead_fromFileDtmObject(&bcDtmP, argv[1]);
+    FILE* mesh = _wfopen(argv[2], L"rb");
+    std::vector<std::vector<DPoint3d>> polys;
+    while (!feof(mesh))
+        {
+        size_t nVerts = 0;
+        fread(&nVerts, sizeof(size_t), 1, mesh);
+        std::vector<DPoint3d> polyPts(nVerts);
+        size_t nRead = 0;
+        nRead = fread(&polyPts[0], sizeof(DPoint3d), nVerts, mesh);
+        polys.push_back(polyPts);
+        }
+    DTMUserTag    userTag = 0;
+    DTMFeatureId* textureRegionIdsP = 0;
+    long          numRegionTextureIds = 0;
+    for (auto& polyPts : polys)
+        {
+        int stat = DTM_SUCCESS;
+        if(polyPts.size() > 0) stat = bcdtmInsert_internalDtmFeatureMrDtmObject(bcDtmP,
+                                                             DTMFeatureType::Region,
+                                                             1,
+                                                             2,
+                                                             userTag,
+                                                             &textureRegionIdsP,
+                                                             &numRegionTextureIds,
+                                                             &polyPts[0],
+                                                             (long)polyPts.size(),
+                                                             [] (int newPtNum, DPoint3dCR pt, double&elevation, bool onEdge, const int pts[])
+            {
+            std::cout << "ADDING " << newPtNum << " ON " << (onEdge ? "EDGE " : "FACET ") << pts[0] << " " << pts[1];
+            if (!onEdge) std::cout << " " << pts[2];
+            std::cout << std::endl;
+            });
+        if (stat != DTM_SUCCESS) std::cout << "ERROR" << std::endl;
+        userTag++;
+        }
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtmP = BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmP);
+    en->SetExcludeAllRegions();
+    en->SetMaxTriangles(2000000);
+    for (PolyfaceQueryP pf : *en)
+        {
+        PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+        vec->CopyFrom(*pf);
+
+            WString name = WString(argv[1]) + WString(L"_mesh.m");
+            FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
+            size_t ptCount = vec->GetPointCount();
+            size_t faceCount = vec->GetPointIndexCount();
+            fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(vec->GetPointCP(), sizeof(DPoint3d), ptCount, meshAfterClip);
+            fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
+            fclose(meshAfterClip);
+            
+        }
+
+    if(argc < 3) 
+        {
+        std::cout << "Please input name of output dir as second argument" << std::endl;
+        return 0;
+        }
+    WString stmFileName(argv[1]);
+
+    WString outDir(argv[2]);
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(),true,true, status);
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    for(size_t n = 0; n < (size_t)meshP->GetNbResolutions(); ++n)
+        {
+        bvector<ScalableMesh::IScalableMeshNodePtr> returnedNodes;
+        ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+        params->SetDepth(n);
+        meshQueryInterface->Query(returnedNodes, NULL, 0, params);
+        size_t nAnomalies = 0;
+        for(auto& node: returnedNodes)
+            {
+            TerrainModel::BcDTMPtr dtmP;
+            bvector<bool> clips;
+            auto meshP = node->GetMesh(false, clips);
+            if (meshP == nullptr) continue;
+            DTMStatusInt ret = DTM_SUCCESS;
+            try
+                {
+                ret = meshP->GetAsBcDTM(dtmP);
+                }
+            catch (...) {
+                ret = DTM_ERROR;
+                }
+            if(DTM_SUCCESS != ret)
+                {
+                ++nAnomalies;
+                WString path = outDir + std::to_wstring(node->GetNodeId()).c_str();
+                path+= L"_node.m";
+                const PolyfaceQuery* polyface = meshP->GetPolyfaceQuery();
+                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(path,(size_t)polyface->GetPointCount(),(size_t)polyface->GetPointIndexCount(),polyface->GetPointCP(),polyface->GetPointIndexCP())
+                }
+            }
+        std::cout << returnedNodes.size() << " RETURNED NODES "<< nAnomalies<< " ERRORS " << std::endl;
+        }
+
+    FILE* mesh = _wfopen(stmFileName.c_str(), L"rb");
+        size_t nVerts = 0;
+        size_t nIndices = 0;
+
+        fread(&nVerts, sizeof(size_t), 1, mesh);
+        std::vector<DPoint3d> allVerts (nVerts);
+        fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
+        fread(&nIndices, sizeof(size_t), 1, mesh);
+        std::vector<int32_t> allIndices(nIndices);
+        fread(&allIndices[0], sizeof(int32_t), nIndices, mesh);
+        fclose(mesh);
+        TerrainModel::BcDTMPtr bcdtm;
+            BC_DTM_OBJ* bcDtmP = 0;
+    int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
+    if (dtmCreateStatus == 0)
+        {
+        bcdtm = TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
+        }
+    else return 1;
+    DPoint3d triangle[4];
+
+    for (unsigned int t = 0; t < nIndices; t += 3)
+        {
+        for (int i = 0; i < 3; i++)
+            triangle[i] = allVerts[allIndices[i + t] - 1];
+
+        triangle[3] = triangle[0];
+
+        std::swap(triangle[1], triangle[2]);
+        //apparently the below colinearity test requires at least first and last point to be distinct
+        if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
+        DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
+        double param;
+        DPoint3d closestPt;
+        triSeg.ProjectPointXY(closestPt, param, triangle[2]);
+        if (closestPt.AlmostEqualXY(triangle[2])) continue;
+        //DTM doesn't like colinear triangles
+        //if (bsiGeom_isDPoint3dArrayColinear(triangle, 3, 1e-6)) continue;
+        if (fabs(triangle[0].y - triangle[1].y) < 1e-4 && fabs(triangle[2].y - triangle[1].y) < 1e-4 && fabs(triangle[0].y - triangle[2].y) < 1e-4)
+            std::cout << " ERROR COLINEAR TRIANGLE" << std::endl;
+        bcdtmObject_storeDtmFeatureInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, bcdtm->GetTinHandle()->nullUserTag, 1, &bcdtm->GetTinHandle()->nullFeatureId, &triangle[0], 4);
+        }
+    bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
+#endif
+
+   /* WString stmFileName(argv[1]);
+    RunPrecisionTest(stmFileName);*/
+
+    //DarylsTestFunction();
+   // RunDTMClipTest();
+    RunDTMTriangulateTest2();
+	//RunCompareLineTest();
+	//RunEnumerateTest();
+	//RunMergePolygons();
+   //RunDTMSTMTriangulateTest();
+   // RunSelectPointsTest();
+    //RunIntersectRay();
+    //WString stmFileName(argv[1]);
+   // RunParseTree(stmFileName);
+   // RunIntersectRayMetadata(stmFileName);
+    /*WString stmFileName(argv[1]);
+    RunWriteTileTest(stmFileName, argv[2]);*/
+
+	RunDrapeLinearTinTest();
+
+    /*BeFileName name("E:\\SMTest.bim");
+    BeSQLite::DbResult status;
+    CreateDgnDbParams params("SM_Test");
+
+    DgnDbPtr myDgnDb = DgnDb::CreateDgnDb(&status, name, params);
+
+    BeFileName schemaRootDir = host.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemaRootDir.AppendToPath(L"ECSchemas/Domain/");
+
+    BeFileName schemaFileName = schemaRootDir;
+    schemaFileName.AppendToPath(L"ScalableMesh.01.00.ecschema.xml");
+    ScalableMeshSchema::ScalableMeshDomain::GetDomain().ImportSchema(*myDgnDb, schemaFileName);
+
+    Utf8String modelName("terrain");
+    BeFileName smName = BeFileName(Utf8String("E:\\data\\CCScalableMeshColoradoSprings\\output_SCM\\root.stm"));
+    ScalableMeshSchema::IMeshSpatialModelP meshSpatialModelP = ScalableMeshSchema::ScalableMeshModelHandler::AttachTerrainModel(*myDgnDb, modelName,smName);*/
+
+    std::cout << "THE END" << std::endl;
+    return 0;
+}
