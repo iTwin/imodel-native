@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PullNugets.py $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 import sys
@@ -122,15 +122,20 @@ def main():
     imodel02MinimumNugetVersion = "2018.11.14.1"
     imodel02IgnoreNugetVersions = {}
 
+    ec33MinimumNugetVersion = "2019.1.11.1"
+    ec33IgnoreNugetVersions = {}
+
     # Test runners are downloaded into src as pulling them in with every TMR might take too long
     # They are symlinked into the out dir afterwards
     pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim0200dev_x64", bim02devMinimumNugetVersion, bim02devIgnoreNugetVersions)
     pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_imodel02_x64", imodel02MinimumNugetVersion, imodel02IgnoreNugetVersions)
+    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_ec33_x64", ec33MinimumNugetVersion, ec33IgnoreNugetVersions)
     unzipNugets(nugetPathInSrc)
     # Test files can be downloaded in out folder directly
     testFileNugetPath = os.path.join(nugetPath, "testfiles")
     pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200dev_x64", bim02devMinimumNugetVersion, bim02devIgnoreNugetVersions)
     pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_imodel02_x64", imodel02MinimumNugetVersion, imodel02IgnoreNugetVersions)
+    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_ec33_x64", ec33MinimumNugetVersion, ec33IgnoreNugetVersions)
     unzipNugets(testFileNugetPath)
     # Copy test files from all nugets into a single central folder
     targetDir = os.path.join(artefactsPath, "TestFiles")
