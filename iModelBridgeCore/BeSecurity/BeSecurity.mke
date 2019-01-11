@@ -2,7 +2,7 @@
 #
 #     $Source: BeSecurity.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 CompileOptionsMki = $(SrcRoot)BeSecurity/BeSecurityCompileOptions.mki
@@ -23,6 +23,7 @@ BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
 BeSecurityHeaders           = $(BeSecurityPublicApiDir)SecureStore.h
 BeSecurityHeaders           + $(BeSecuritySourceDir)BEKeychainItem.h
 BeSecurityHeaders           + $(BeSecuritySourceDir)libsrc/KeychainItemWrapper/KeychainItemWrapper.h
+BeSecurityHeaders           + $(BeSecurityPublicApiDir)SecureLocalState.h
 
 o = $(PartBuildDir)
 always:
