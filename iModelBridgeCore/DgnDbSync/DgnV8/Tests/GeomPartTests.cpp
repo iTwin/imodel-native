@@ -40,10 +40,11 @@ static int getGeomPartAspectCount(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeomPartTests, NormalCells)
     {
+    const     bool useAspects = m_params.GetWantProvenanceInBim();
     constexpr int expectedGeomPartCount = 16;
-    constexpr int expectedGeomPartAspectCount = 16;
+    const     int expectedGeomPartAspectCount = useAspects? 16: 0;
     constexpr int expectedRefGeomPartCount = 13;
-    constexpr int expectedRefGeomPartAspectCount = 3; // of the 13, only 3 are (shared) cells. The rest are LineStyles. We don't (yet) create aspects for them.
+    const     int expectedRefGeomPartAspectCount = useAspects? 3: 0; // of the 13, only 3 are (shared) cells. The rest are LineStyles. We don't (yet) create aspects for them.
 
     LineUpFiles(L"chair_array.bim", L"chair_array.dgn", true);
     
@@ -96,8 +97,9 @@ TEST_F(GeomPartTests, NormalCells)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeomPartTests, SharedCells)
     {
+    const     bool useAspects = m_params.GetWantProvenanceInBim();
     constexpr int expectedGeomPartCount = 13;
-    constexpr int expectedGeomPartAspectCount = 3; // of the 13, only 3 are (shared) cells. The rest are LineStyles. We don't (yet) create aspects for them.
+    const     int expectedGeomPartAspectCount = useAspects? 3: 0; // of the 13, only 3 are (shared) cells. The rest are LineStyles. We don't (yet) create aspects for them.
 
     LineUpFiles(L"HalfScaleSCOverride1.bim", L"HalfScaleSCOverride1.dgn", true);
 

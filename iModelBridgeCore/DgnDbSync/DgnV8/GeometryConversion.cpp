@@ -928,20 +928,13 @@ void ProcessSymbol(DgnV8Api::IDisplaySymbol& symbol, DgnV8ModelR model) {DgnV8Ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
     {
-    SyncInfo::GeomPart sigp;
-    auto partId = (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
-#ifdef TEST_SYNC_INFO_ASPECT
-    if (_WantProvenanceInBim())
+    if (!_WantProvenanceInBim())
         {
-        auto partIdFromAspect = SyncInfo::GeomPartExternalSourceAspect::FindElementByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
-        BeAssert(partIdFromAspect.IsValid() == partId.IsValid());
-        if (partIdFromAspect.IsValid())
-            {
-            BeAssert(partIdFromAspect == partId);
-            }
+        SyncInfo::GeomPart sigp;
+        return (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
         }
-#endif
-    return partId;
+
+    return SyncInfo::GeomPartExternalSourceAspect::FindElementByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -949,28 +942,20 @@ DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
     {
-    SyncInfo::GeomPart sigp;
-    auto tag = (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
-#ifdef TEST_SYNC_INFO_ASPECT
-    if (_WantProvenanceInBim() && partId.IsValid())
+    if (!_WantProvenanceInBim())
         {
-        auto geomPart = m_dgndb->Elements().Get<DgnGeometryPart>(partId);
-        if (geomPart.IsValid())
-            {
-            auto aspect = SyncInfo::GeomPartExternalSourceAspect::Get(*geomPart);
-            BeAssert(aspect.IsValid() == !tag.empty());
-            if (aspect.IsValid())
-                {
-                BeAssert(tag == aspect.GetSourceId());
-                }
-            }
-        else
-            {
-            BeDataAssert(false && "GeometryPart does not exist?");
-            }
+        SyncInfo::GeomPart sigp;
+        return (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
         }
-#endif
-    return tag;
+
+    auto geomPart = m_dgndb->Elements().Get<DgnGeometryPart>(partId);
+    if (!geomPart.IsValid())
+        {
+        BeAssert(false);
+        return "";
+        }
+    auto aspect = SyncInfo::GeomPartExternalSourceAspect::Get(*geomPart);
+    return aspect.IsValid()? aspect.GetSourceId(): "";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -978,20 +963,19 @@ Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8StringCR partTag)
     {
-    SyncInfo::GeomPart siTag(partId, partTag);
-    auto rc = siTag.Insert(*m_dgndb);
-    if (BeSQLite::BE_SQLITE_DONE != rc)
-        return BSIERROR;
-
-    if (_WantProvenanceInBim())
+    if (!_WantProvenanceInBim())
         {
-        auto aspect = SyncInfo::GeomPartExternalSourceAspect::Make(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
-        auto partElem = GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
-        aspect.AddTo(*partElem);
-        partElem->Update();
+        SyncInfo::GeomPart siTag(partId, partTag);
+        auto rc = siTag.Insert(*m_dgndb);
+        if (BeSQLite::BE_SQLITE_DONE != rc)
+            return BSIERROR;
+        return BSISUCCESS;
         }
 
-    return BSISUCCESS;
+    auto aspect = SyncInfo::GeomPartExternalSourceAspect::Make(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
+    auto partElem = GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
+    aspect.AddTo(*partElem);
+    return partElem->Update().IsValid()? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

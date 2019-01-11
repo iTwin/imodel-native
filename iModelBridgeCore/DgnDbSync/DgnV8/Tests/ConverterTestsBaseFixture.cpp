@@ -78,7 +78,7 @@ void ConverterTestBaseFixture::SetUp()
     m_params.SetConfigFile(configFileName);
     m_params.SetSkipUnchangedFiles(false);  // file time granularity is 1 second. That's too long for an automated test.
     m_params.SetWantThumbnails(false); // It takes too long, and most tests do not look at them
-    m_params.SetWantProvenanceInBim(true);
+    m_params.SetWantProvenanceInBim(iModelBridge::TestFeatureFlag(IModelBridgeFeatureFlag::WantProvenanceInBim));
     m_count = 0;
     m_opts.m_useTiledConverter = false;
     BentleyApi::BeFileName::CreateNewDirectory(GetOutputDir());
@@ -383,7 +383,6 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
     RootModelConverter::RootModelSpatialParams params(m_params);
     params.SetKeepHostAlive(true);
     params.SetInputFileName(input);
-    params.SetWantProvenanceInBim(true);
     auto db = OpenExistingDgnDb(output);
     ASSERT_TRUE(db.IsValid());
     bool hadAnyChanges = false;

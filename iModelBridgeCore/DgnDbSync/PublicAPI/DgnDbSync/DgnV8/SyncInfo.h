@@ -544,7 +544,7 @@ struct SyncInfo
         //! Create a new aspect in memory. scopeId should be the bridge's job definition model. Caller must call AddTo, passing in the DgnGeometryPart element.
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect Make(DgnElementId scopeId, Utf8StringCR tag, DgnDbR);
         //! Look up the element that has the GeomPart aspect with the specified tag. Note that this is based on the assumption that GeometryPart "tags" are unique within the specified scope!
-        DGNDBSYNC_EXPORT static DgnElementId FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag);
+        DGNDBSYNC_EXPORT static DgnGeometryPartId FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag);
         //! Get an existing GeomPart aspect from the specified DgnGeometryPart
         //! Look up anp existing GeomPart aspect by its partId. el should be the job's definition model element.
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect Get(DgnGeometryPartCR el);

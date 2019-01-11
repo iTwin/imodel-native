@@ -1894,15 +1894,15 @@ SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::M
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId SyncInfo::GeomPartExternalSourceAspect::FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag)
+DgnGeometryPartId SyncInfo::GeomPartExternalSourceAspect::FindElementByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag)
     {
     auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND SourceId=?)");
     sel->BindId(1, scopeId);
     sel->BindText(2, ExternalSourceAspect::KindToString(ExternalSourceAspect::Kind::GeomPart), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, tag.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW != sel->Step())
-        return DgnElementId();
-    return sel->GetValueId<DgnElementId>(0);
+        return DgnGeometryPartId();
+    return sel->GetValueId<DgnGeometryPartId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**

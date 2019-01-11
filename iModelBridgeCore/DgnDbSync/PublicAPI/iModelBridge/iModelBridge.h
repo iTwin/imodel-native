@@ -1030,7 +1030,13 @@ public:
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
 
+    //! @name Feature Flags
+    //! @{
+
+    IMODEL_BRIDGE_EXPORT static bool TestFeatureFlag(IModelBridgeFeatureFlag);
+
     IMODEL_BRIDGE_EXPORT static bool WantModelProvenanceInBim(DgnDbR db);
+    //! @}
     };
 
 //=======================================================================================

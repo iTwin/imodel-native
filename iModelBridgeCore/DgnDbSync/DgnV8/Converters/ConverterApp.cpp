@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converters/ConverterApp.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -631,7 +631,7 @@ BentleyStatus ConverterApp::Run(int argc, WCharCP argv[])
     {
     iModelBridgeSacAdapter::InitCrt(false);
 
-    _GetConverterParams().SetWantProvenanceInBim(true); // this is set ONLY for stand-alone converters
+    _GetConverterParams().SetWantProvenanceInBim(iModelBridge::TestFeatureFlag(IModelBridgeFeatureFlag::WantProvenanceInBim));
 
     iModelBridgeSacAdapter::Params saparams;
     if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*this, saparams, argc, argv))
