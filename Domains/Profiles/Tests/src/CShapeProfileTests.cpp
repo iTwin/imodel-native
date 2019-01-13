@@ -447,3 +447,46 @@ TEST_F (CShapeProfileTestCase, Insert_FlangeSlopeOf90Degrees_FailedInsert)
     params.flangeSlope = Angle::FromRadians (PI / 2.0 - PI / 10000);
     EXPECT_SUCCESS_Insert (params) << "Flange slope should be less than 90 degrees.";
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CShapeProfileTestCase, Delete_ExistingDoubleCInstances_FailedDelete)
+    {
+    CShapeProfilePtr singleProfilePtr = InsertElement<CShapeProfile> (CreateParams (GetModel(), "L", 6.0, 10.0, 1.0, 1.0));
+
+    DoubleCShapeProfile::CreateParams doubleLParams (GetModel(), "DC", 1.0, singleProfilePtr->GetElementId());
+    DoubleCShapeProfilePtr firstDoubleProfilePtr = InsertElement<DoubleCShapeProfile> (doubleLParams);
+    DoubleCShapeProfilePtr secondDoubleProfilePtr = InsertElement<DoubleCShapeProfile> (doubleLParams);
+
+    ASSERT_EQ (DgnDbStatus::DeletionProhibited, singleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::Success, firstDoubleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::DeletionProhibited, singleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::Success, secondDoubleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::Success, singleProfilePtr->Delete());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CShapeProfileTestCase, Update_ExistingDoubleCInstances_UpdatedDoubleCShape)
+    {
+    CShapeProfilePtr singleProfilePtr = InsertElement<CShapeProfile> (CreateParams (GetModel(), "C", 6.0, 10.0, 1.0, 1.0));
+
+    DoubleCShapeProfile::CreateParams doubleLParams (GetModel(), "DC", 1.0, singleProfilePtr->GetElementId());
+    DoubleCShapeProfileCPtr doubleProfilePtr = InsertElement<DoubleCShapeProfile> (doubleLParams);
+
+    DRange3d range;
+    ASSERT_TRUE (doubleProfilePtr->GetShape()->TryGetRange (range));
+    EXPECT_EQ (6.0 * 2.0 + 1.0, range.XLength()) << "DoubleCShapeProfile width should be SingleProfile.Width * 2 + Spacing";
+
+    singleProfilePtr->SetFlangeWidth (10.0);
+
+    DgnDbStatus status;
+    singleProfilePtr->Update (&status);
+    ASSERT_EQ (DgnDbStatus::Success, status);
+
+    DoubleCShapeProfileCPtr updateDoubleProfilePtr = DoubleCShapeProfile::Get (GetDb(), doubleProfilePtr->GetElementId());
+    ASSERT_TRUE (updateDoubleProfilePtr->GetShape()->TryGetRange (range));
+    EXPECT_EQ (10.0 * 2.0 + 1.0, range.XLength()) << "DoubleCShapeProfile width should be SingleProfile.Width * 2 + Spacing";
+    }
