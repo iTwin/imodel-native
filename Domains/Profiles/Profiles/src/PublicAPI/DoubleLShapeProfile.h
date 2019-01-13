@@ -77,6 +77,7 @@ public:
     PROFILES_EXPORT void SetType (DoubleLShapeProfileType value);
 
     PROFILES_EXPORT LShapeProfilePtr GetSingleProfile() const;
+    PROFILES_EXPORT void SetSingleProfile (LShapeProfile const& singleProfile);
     PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId);
 
     }; // DoubleLShapeProfile

@@ -135,6 +135,14 @@ LShapeProfilePtr DoubleLShapeProfile::GetSingleProfile() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DoubleLShapeProfile::SetSingleProfile (LShapeProfile const& singleProfile)
+    {
+    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_SingleProfile, singleProfile.GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 void DoubleLShapeProfile::SetSingleProfile (DgnElementId const& singleProfileId)
     {
     SetPropertyValue (PRF_PROP_DoubleLShapeProfile_SingleProfile, singleProfileId);

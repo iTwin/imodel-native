@@ -58,6 +58,7 @@ public:
     PROFILES_EXPORT void SetSpacing (double value);
 
     PROFILES_EXPORT CShapeProfilePtr GetSingleProfile() const;
+    PROFILES_EXPORT void SetSingleProfile (CShapeProfile const& singleProfile);
     PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId);
 
     }; // DoubleCShapeProfile

@@ -100,6 +100,14 @@ CShapeProfilePtr DoubleCShapeProfile::GetSingleProfile() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DoubleCShapeProfile::SetSingleProfile (CShapeProfile const& singleProfile)
+    {
+    SetPropertyValue (PRF_PROP_DoubleCShapeProfile_SingleProfile, singleProfile.GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 void DoubleCShapeProfile::SetSingleProfile (DgnElementId const& singleProfileId)
     {
     SetPropertyValue (PRF_PROP_DoubleCShapeProfile_SingleProfile, singleProfileId);
