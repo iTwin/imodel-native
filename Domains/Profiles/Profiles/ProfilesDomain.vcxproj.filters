@@ -64,6 +64,9 @@
     <Filter Include="Src\Aspects">
       <UniqueIdentifier>{409ec9ce-42eb-491b-aa22-c908826ff77a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\PrivateAPI">
+      <UniqueIdentifier>{cbb8ca08-5bdd-4bbe-a4df-ba775fe41629}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Profiles.mke">
@@ -193,17 +196,20 @@
     <ClCompile Include="src\CustomCardinalPointsAspect.cpp">
       <Filter>Src\Aspects</Filter>
     </ClCompile>
-    <ClCompile Include="src\ProfilesGeometry.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ProfilesProperty.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="src\MaterialProfile.cpp">
       <Filter>Src\MaterialProfiles</Filter>
     </ClCompile>
     <ClCompile Include="src\MaterialProfileDefinition.cpp">
       <Filter>Src\MaterialProfiles</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ProfilesGeometry.cpp">
+      <Filter>Src\PrivateAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ProfilesProperty.cpp">
+      <Filter>Src\PrivateAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ProfilesQuery.cpp">
+      <Filter>Src\PrivateAPI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -338,6 +344,9 @@
     </ClInclude>
     <ClInclude Include="src\PublicAPI\MaterialProfileDefinition.h">
       <Filter>PublicAPI\MaterialProfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PrivateAPI\ProfilesQuery.h">
+      <Filter>PrivateAPI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

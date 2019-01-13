@@ -50,6 +50,8 @@ $(o)ProfilesGeometry$(oext) : $(appSrc)ProfilesGeometry.cpp ${MultiCompileDepend
 
 $(o)ProfilesProperty$(oext) : $(appSrc)ProfilesProperty.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesProperty.h
 
+$(o)ProfilesQuery$(oext) : $(appSrc)ProfilesQuery.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesQuery.h
+
 $(o)AsymmetricIShapeProfile$(oext) : $(appSrc)AsymmetricIShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)AsymmetricIShapeProfile.h
 
 $(o)BentPlateProfile$(oext) : $(appSrc)BentPlateProfile.cpp ${MultiCompileDepends} $(appPublicApi)BentPlateProfile.h

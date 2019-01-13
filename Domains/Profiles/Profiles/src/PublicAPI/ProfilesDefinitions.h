@@ -223,8 +223,8 @@ static ECN::ECClassCP QueryClass (Dgn::DgnDbCR db) { return (db.Schemas().GetCla
 // Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
 //-----------------------------------------------------------------------------------------
 #define DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(__name__) \
-PROFILES_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ > (id); } \
-PROFILES_EXPORT static __name__##Ptr  GetForEdit (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ > (id); }
+PROFILES_EXPORT static __name__##CPtr Get       (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ > (id); } \
+PROFILES_EXPORT static __name__##Ptr  GetForEdit (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ > (id); }
 
 #define DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS(__name__) \
 DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (__name__) \

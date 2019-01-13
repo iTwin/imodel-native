@@ -10,3 +10,4 @@
 #include "ProfilesLogging.h"
 #include "ProfilesGeometry.h"
 #include "ProfilesProperty.h"
+#include "ProfilesQuery.h"

@@ -62,6 +62,7 @@
     <ClCompile Include="src\ProfilesGeometry.cpp" />
     <ClCompile Include="src\ProfilesInternal.cpp" />
     <ClCompile Include="src\ProfilesProperty.cpp" />
+    <ClCompile Include="src\ProfilesQuery.cpp" />
     <ClCompile Include="src\RectangleProfile.cpp" />
     <ClCompile Include="src\RegularPolygonProfile.cpp" />
     <ClCompile Include="src\RoundedRectangleProfile.cpp" />
@@ -76,6 +77,7 @@
   <ItemGroup>
     <ClInclude Include="src\PrivateAPI\ProfilesLogging.h" />
     <ClInclude Include="src\PrivateAPI\ProfilesPrivateApi.h" />
+    <ClInclude Include="src\PrivateAPI\ProfilesQuery.h" />
     <ClInclude Include="src\ProfilesInternal.h" />
     <ClInclude Include="src\PrivateAPI\ProfilesGeometry.h" />
     <ClInclude Include="src\PrivateAPI\ProfilesProperty.h" />
