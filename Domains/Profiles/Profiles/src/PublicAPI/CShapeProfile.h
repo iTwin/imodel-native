@@ -52,6 +52,9 @@ protected:
     virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateGeometry() const override;
 
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override;
+
 private:
     bool ValidateFlangeThickness() const;
     bool ValidateWebThickness() const;

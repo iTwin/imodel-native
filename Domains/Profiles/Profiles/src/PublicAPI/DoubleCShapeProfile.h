@@ -45,6 +45,7 @@ protected:
 
 private:
     virtual IGeometryPtr _CreateGeometry() const override;
+    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleCShapeProfile)

@@ -6,11 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
+#include <ProfilesInternal\ProfilesPrivateApi.h>
 #include <Profiles\CShapeProfile.h>
-#include <ProfilesInternal\ProfilesGeometry.h>
-#include <ProfilesInternal\ProfilesProperty.h>
 
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (CShapeProfileHandler)
@@ -81,6 +82,58 @@ bool CShapeProfile::_Validate() const
 IGeometryPtr CShapeProfile::_CreateGeometry() const
     {
     return ProfilesGeometry::CreateCShape (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Prohibit deletion of this profile if it is referenced by any DoubleCShapeProfile.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CShapeProfile::_OnDelete() const
+    {
+    DgnDbStatus dbStatus;
+    DgnElementId doubleProfileId = ProfilesQuery::SelectFirstByNavigationProperty (m_dgndb, m_elementId,
+        PRF_CLASS_DoubleCShapeProfile, PRF_PROP_DoubleCShapeProfile_SingleProfile, &dbStatus);
+    if (dbStatus != DgnDbStatus::Success)
+        return dbStatus;
+
+    if (doubleProfileId.IsValid())
+        {
+        Utf8Char singleProfileIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH], doubleProfileIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH];
+        m_elementId.ToString (singleProfileIdBuffer, BeInt64Id::UseHex::Yes);
+        doubleProfileId.ToString (doubleProfileIdBuffer, BeInt64Id::UseHex::Yes);
+
+        PROFILES_LOG.errorv ("Failed to delete CShapeProfile instance (id: %s), because it is being referenced by DoubleCShapeProfile instance (id: %s).",
+                             singleProfileIdBuffer, doubleProfileIdBuffer);
+        return DgnDbStatus::DeletionProhibited;
+        }
+
+    return T_Super::_OnDelete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Update all DoubleCShapeProfiles that are referencing this profile.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CShapeProfile::_UpdateInDb()
+    {
+    DgnDbStatus dbStatus;
+    bvector<DoubleCShapeProfilePtr> doubleProfiles = ProfilesQuery::SelectByNavigationProperty<DoubleCShapeProfile> (m_dgndb, m_elementId,
+        PRF_CLASS_DoubleCShapeProfile, PRF_PROP_DoubleCShapeProfile_SingleProfile, &dbStatus);
+    if (dbStatus != DgnDbStatus::Success)
+        return dbStatus;
+
+    for (auto const& doubleProfilePtr : doubleProfiles)
+        {
+        dbStatus = doubleProfilePtr->UpdateGeometry (*this);
+        if (dbStatus != DgnDbStatus::Success)
+            return dbStatus;
+
+        doubleProfilePtr->Update (&dbStatus);
+        if (dbStatus != DgnDbStatus::Success)
+            return dbStatus;
+        }
+
+    return T_Super::_UpdateInDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
