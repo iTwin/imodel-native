@@ -11,6 +11,7 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//*
+* Helper class used to perform common ECSql queries on Profiles.
 * @bsiclass                                                                      01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ProfilesQuery

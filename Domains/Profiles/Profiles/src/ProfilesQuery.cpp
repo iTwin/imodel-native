@@ -21,8 +21,11 @@ template bvector<DoubleCShapeProfilePtr> ProfilesQuery::SelectByNavigationProper
 template bvector<DoubleLShapeProfilePtr> ProfilesQuery::SelectByNavigationProperty (DgnDb const&, DgnElementId const&, Utf8CP, Utf8CP, DgnDbStatus*);
 
 /*---------------------------------------------------------------------------------**//**
-* Perform EcSql SELECT to query first Profile that has a navigation property referencing
+* Perform ECSql SELECT to query first Profile that has a navigation property referencing
 * 'referencedProfileId', returns invalid DgnElementId if no one is referencing the profile.
+* @param referencedProfileId - id of profile to search for in navigation properties.
+* @param pClassName - name of ECEntityClass to perform the query on.
+* @param pNavigationPropertyName - name of ECNavigationProperty to perform the query on.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId ProfilesQuery::SelectFirstByNavigationProperty (DgnDb const& db, DgnElementId const& referencedProfileId,
@@ -62,6 +65,9 @@ DgnElementId ProfilesQuery::SelectFirstByNavigationProperty (DgnDb const& db, Dg
 /*---------------------------------------------------------------------------------**//**
 * Perform EcSql SELECT to query all Profiles that have a navigation property referencing
 * 'referencedProfileId'.
+* @param referencedProfileId - id of profile to search for in navigation properties.
+* @param pClassName - name of ECEntityClass to perform the query on.
+* @param pNavigationPropertyName - name of ECNavigationProperty to perform the query on.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>

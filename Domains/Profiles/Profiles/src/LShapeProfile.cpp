@@ -94,12 +94,7 @@ DgnDbStatus LShapeProfile::_OnDelete() const
 
     if (doubleProfileId.IsValid())
         {
-        Utf8Char singleProfileIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH], doubleProfileIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH];
-        m_elementId.ToString (singleProfileIdBuffer, BeInt64Id::UseHex::Yes);
-        doubleProfileId.ToString (doubleProfileIdBuffer, BeInt64Id::UseHex::Yes);
-
-        PROFILES_LOG.errorv ("Failed to delete LShapeProfile instance (id: %s), because it is being referenced by DoubleLShapeProfile instance (id: %s).",
-                             singleProfileIdBuffer, doubleProfileIdBuffer);
+        ProfilesLog::FailedDelete_ProfileHasReference (PRF_CLASS_LShapeProfile, m_elementId, PRF_CLASS_DoubleLShapeProfile, doubleProfileId);
         return DgnDbStatus::DeletionProhibited;
         }
 

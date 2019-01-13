@@ -98,12 +98,7 @@ DgnDbStatus CShapeProfile::_OnDelete() const
 
     if (doubleProfileId.IsValid())
         {
-        Utf8Char singleProfileIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH], doubleProfileIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH];
-        m_elementId.ToString (singleProfileIdBuffer, BeInt64Id::UseHex::Yes);
-        doubleProfileId.ToString (doubleProfileIdBuffer, BeInt64Id::UseHex::Yes);
-
-        PROFILES_LOG.errorv ("Failed to delete CShapeProfile instance (id: %s), because it is being referenced by DoubleCShapeProfile instance (id: %s).",
-                             singleProfileIdBuffer, doubleProfileIdBuffer);
+        ProfilesLog::FailedDelete_ProfileHasReference (PRF_CLASS_CShapeProfile, m_elementId, PRF_CLASS_DoubleCShapeProfile, doubleProfileId);
         return DgnDbStatus::DeletionProhibited;
         }
 
