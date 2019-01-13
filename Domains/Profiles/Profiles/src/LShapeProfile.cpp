@@ -86,26 +86,20 @@ IGeometryPtr LShapeProfile::_CreateGeometry() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus LShapeProfile::_OnDelete() const
     {
-    ECSqlStatement sqlStatement;
-    Utf8CP pSqlString = "SELECT ECInstanceId FROM " PRF_SCHEMA (PRF_CLASS_DoubleLShapeProfile)
-                        " WHERE " PRF_PROP_DoubleLShapeProfile_SingleProfile ".Id=? LIMIT 1";
+    DgnDbStatus dbStatus;
+    DgnElementId doubleProfileId = ProfilesQuery::SelectFirstByNavigationProperty (m_dgndb, m_elementId,
+        PRF_CLASS_DoubleLShapeProfile, PRF_PROP_DoubleLShapeProfile_SingleProfile, &dbStatus);
+    if (dbStatus != DgnDbStatus::Success)
+        return dbStatus;
 
-    ECSqlStatus status = sqlStatement.Prepare (GetDgnDb(), pSqlString);
-    if (status != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-
-    status = sqlStatement.BindId (1, GetElementId());
-    if (status != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-
-    if (sqlStatement.Step() == DbResult::BE_SQLITE_ROW)
+    if (doubleProfileId.IsValid())
         {
-        Utf8Char thisIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH], otherIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH];
-        GetElementId().ToString (thisIdBuffer, BeInt64Id::UseHex::Yes);
-        sqlStatement.GetValueId<DgnElementId> (0).ToString (otherIdBuffer, BeInt64Id::UseHex::Yes);
+        Utf8Char singleProfileIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH], doubleProfileIdBuffer[DgnElementId::ID_STRINGBUFFER_LENGTH];
+        m_elementId.ToString (singleProfileIdBuffer, BeInt64Id::UseHex::Yes);
+        doubleProfileId.ToString (doubleProfileIdBuffer, BeInt64Id::UseHex::Yes);
 
-        PROFILES_LOG.errorv ("Failed to delete LShapeProfile instance (id: %s), because it is being referenced by DoubleLShapeProfile instance (id: %#010x).",
-                             thisIdBuffer, otherIdBuffer);
+        PROFILES_LOG.errorv ("Failed to delete LShapeProfile instance (id: %s), because it is being referenced by DoubleLShapeProfile instance (id: %s).",
+                             singleProfileIdBuffer, doubleProfileIdBuffer);
         return DgnDbStatus::DeletionProhibited;
         }
 
@@ -118,36 +112,21 @@ DgnDbStatus LShapeProfile::_OnDelete() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus LShapeProfile::_UpdateInDb()
     {
-    ECSqlStatement sqlStatement;
-    Utf8CP pSqlString = "SELECT ECInstanceId FROM " PRF_SCHEMA (PRF_CLASS_DoubleLShapeProfile)
-                        " WHERE " PRF_PROP_DoubleLShapeProfile_SingleProfile ".Id=?";
+    DgnDbStatus dbStatus;
+    bvector<DoubleLShapeProfilePtr> doubleProfiles = ProfilesQuery::SelectByNavigationProperty<DoubleLShapeProfile> (m_dgndb, m_elementId,
+        PRF_CLASS_DoubleLShapeProfile, PRF_PROP_DoubleLShapeProfile_SingleProfile, &dbStatus);
+    if (dbStatus != DgnDbStatus::Success)
+        return dbStatus;
 
-    ECSqlStatus status = sqlStatement.Prepare (GetDgnDb(), pSqlString);
-    if (status != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-
-    status = sqlStatement.BindId (1, GetElementId());
-    if (status != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-
-    while (sqlStatement.Step() == DbResult::BE_SQLITE_ROW)
+    for (auto const& doubleProfilePtr : doubleProfiles)
         {
-        DgnElementId doubleProfileId = sqlStatement.GetValueId<DgnElementId> (0);
-        DoubleLShapeProfilePtr doubleProfilePtr = m_dgndb.Elements().GetForEdit<DoubleLShapeProfile> (doubleProfileId);
-        if (doubleProfilePtr.IsNull())
-            {
-            BeAssert (false && "Failed to get element");
-            return DgnDbStatus::BadElement;
-            }
+        dbStatus = doubleProfilePtr->UpdateGeometry (*this);
+        if (dbStatus != DgnDbStatus::Success)
+            return dbStatus;
 
-        DgnDbStatus status;
-        status = doubleProfilePtr->UpdateGeometry (*this);
-        if (status != DgnDbStatus::Success)
-            return status;
-
-        doubleProfilePtr->Update (&status);
-        if (status != DgnDbStatus::Success)
-            return status;
+        doubleProfilePtr->Update (&dbStatus);
+        if (dbStatus != DgnDbStatus::Success)
+            return dbStatus;
         }
 
     return T_Super::_UpdateInDb();
