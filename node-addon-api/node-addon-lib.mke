@@ -48,7 +48,7 @@ ContextDeliveryDir = $(BuildContext)Delivery/Node/
 DLM_NO_IMPLIB = 1
 
 cDefs = $(cDefsSave)
-cdefs  + -DBUILD_FOR_NODE=1
+cdefs  + -DBUILD_FOR_NODE
 o = $(OutputRootDir)build/NapiLib/Node/
 
 $(o)napi_stub$(oext)  : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
@@ -58,7 +58,7 @@ objs = $(o)napi_stub$(oext)
 
 ContextDeliveryDir = $(BuildContext)Delivery/Electron/
 cDefs = $(cDefsSave)
-cDefs  + -DBUILD_FOR_ELECTRON=1
+cdefs  + -DBUILD_FOR_ELECTRON
 o = $(OutputRootDir)build/NapiLib/Electron/
 
 $(o)napi_stub$(oext) : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
