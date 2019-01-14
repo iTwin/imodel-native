@@ -1027,4 +1027,36 @@ IGeometryPtr ProfilesGeometry::CreateDoubleCShape (DoubleCShapeProfile const& do
     return IGeometry::Create (curveVector);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateArbitraryCompositeShape (ArbitraryCompositeProfile const& profile)
+    {
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+
+    bvector<CompositeProfileComponent> components = profile.GetComponents();
+    for (auto const& component : components)
+        {
+        if (component.singleProfilePtr.IsNull())
+            return nullptr;
+
+        DPoint3d scale = DPoint3d::From (1.0, component.mirrorAboutYAxis ? -1.0 : 1.0, 1.0);
+        DPoint3d translation = DPoint3d::From (component.offset);
+
+        DMatrix4d transformMatrix = DMatrix4d::FromScaleAndTranslation (scale, translation);
+        if (!BeNumerical::IsEqualToZero (component.rotation.Radians()))
+            {
+            DMatrix4d rotationMatrix = DMatrix4d::From (RotMatrix::FromVectorAndRotationAngle (DVec3d::From (0.0, 0.0, 1.0), component.rotation.Radians()));
+            transformMatrix = transformMatrix * rotationMatrix;
+            }
+
+        Transform transform;
+        BeAssert (transform.InitFrom (transformMatrix));
+
+        curveVector->Add (component.singleProfilePtr->GetShape()->Clone (transform)->GetAsCurveVector());
+        }
+
+    return IGeometry::Create (curveVector);
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE
