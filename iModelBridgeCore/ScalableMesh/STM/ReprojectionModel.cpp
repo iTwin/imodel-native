@@ -12,8 +12,8 @@
 #include <ImagePP/all/h/HGF2DDisplacement.h>
 #include <ImagePP/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
-#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
-#include <ImagePP/all/h/HCPGCoordLatLongModel.h>
+#ifndef VANCOUVER_API
+#include <Imagepp/all/h/HCPGCoordLatLongModel.h>
 #endif
 #include <ImagePP/all/h/HVE2DShape.h>
 #include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
@@ -523,7 +523,7 @@ StatusInt ReprojectionModel::ComputeDomain() const
     {
     StatusInt status = SUCCESS;
 
-#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
+#ifndef VANCOUVER_API
     if (!m_domainComputed)
         {
         // Domain not computed ... we first obtain the geographic domain from both GCS

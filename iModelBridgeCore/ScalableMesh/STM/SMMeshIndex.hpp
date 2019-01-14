@@ -560,10 +560,13 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
                 auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
                 IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
                 bvector<Byte> cesiumData;
-#if NEED_SAVE_AS_IN_IMPORT_DLL
+#if defined(NEED_SAVE_AS_IN_IMPORT_DLL) && !defined(DGNDB06_API)
                 IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
                 cesiumPublisher->Publish(nodeP, (hasMSClips ? clips : nullptr), coverageID, isClipBoundary, sourceGCS, destinationGCS, cesiumData, outputTexture);
+#else
+                assert(!"Not yet implemented on this code base");
 #endif
+
 
                 convertTime += clock() - t;
 

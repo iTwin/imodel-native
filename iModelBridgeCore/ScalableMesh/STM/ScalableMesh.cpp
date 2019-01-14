@@ -3279,7 +3279,7 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 +----------------------------------------------------------------------------*/
 template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress)
     {
-#if NEED_SAVE_AS_IN_IMPORT_DLL
+#if defined(NEED_SAVE_AS_IN_IMPORT_DLL) && !defined(DGNDB06_API)
     // Create Scalable Mesh at output path
     StatusInt status;
     IScalableMeshNodeCreatorPtr scMeshDestination = IScalableMeshNodeCreator::GetFor(destination.c_str(), status);
@@ -3333,6 +3333,8 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& des
         if (SUCCESS != destMeshSourceEdit->SaveToFile())
             return ERROR;
         }
+#else
+    assert(!"_SaveAs not yet implemented on this code base");
 #endif
     return SUCCESS;
     }
@@ -3343,7 +3345,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& des
 template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId) const
     {
 
-#if NEED_SAVE_AS_IN_IMPORT_DLL
+#if defined(NEED_SAVE_AS_IN_IMPORT_DLL) && !defined(DGNDB06_API)
     if (m_scmIndexPtr == nullptr) return ERROR;
 
     StatusInt status;
@@ -3472,6 +3474,8 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     // Force save of root tileset and take into account coverages
     rootTileset->Close<Extent3dType>();
     return status;
+#else
+    assert(!"_Generate3DTiles not yet implemented on this code base");
 #endif
 
     return SUCCESS;
@@ -3521,7 +3525,9 @@ template <class POINT>  SMStatus                      ScalableMesh<POINT>::_Dete
 */
 
         StatusInt openStatus;
-        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(terrainAbsName, false, openStatus));
+                                                                       
+        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(WString(terrainAbsName.c_str()), false, openStatus));
+
         if (openStatus && smSQLiteFile != nullptr)
             {
  /*           m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
@@ -3532,6 +3538,8 @@ template <class POINT>  SMStatus                      ScalableMesh<POINT>::_Dete
 
 
     createdTerrain = terrainAbsName;
+#else
+    assert(!"_DetectGroundForRegion not yet implemented on this code base");
 #endif
 	return SMStatus::S_SUCCESS;
     }
