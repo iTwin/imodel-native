@@ -504,22 +504,22 @@ namespace ORDBridgeGUI.ViewModel
             switch ( exitCode )
                 {
                 case 0:
-                    System.Windows.MessageBox.Show("INFO: The conversion completed successfully.", "Pass");
+                    MessageBox.Show("The conversion completed successfully.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 case 1:
-                    System.Windows.MessageBox.Show("ERROR: Entered parameters are incorrect", "Failure");
+                    MessageBox.Show("Entered parameters are incorrect", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 2:
-                    System.Windows.MessageBox.Show("ERROR: A converter error has occurred.", "Failure");
+                    MessageBox.Show("A converter error has occurred.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 3:
-                    System.Windows.MessageBox.Show("ERROR: A server error has occurred.", "Failure");
+                    MessageBox.Show("A server error has occurred.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 4:
-                    System.Windows.MessageBox.Show("ERROR: A local error has occurred.", "Failure");
+                    MessageBox.Show("A local error has occurred.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 default:
-                    System.Windows.MessageBox.Show("ERROR: An unknown error has occurred.", "Failure");
+                    MessageBox.Show("An unknown error has occurred.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 }
             }
@@ -529,28 +529,28 @@ namespace ORDBridgeGUI.ViewModel
             switch ( exitCode )
                 {
                 case 0:
-                    System.Windows.MessageBox.Show("INFO: The conversion completed successfully.", "Pass");
+                    MessageBox.Show("The conversion completed successfully.", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 case 1:
-                    System.Windows.MessageBox.Show("INFO: This file has an Affinity Level of \"None.\"", "Affinity Check Failure");
+                    MessageBox.Show("This file has an Affinity Level of \"None\".", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
                 case 2:
-                    System.Windows.MessageBox.Show("INFO: This file has an Affinity Level of \"Low.\"", "Affinity Check Failure");
+                    MessageBox.Show("This file has an Affinity Level of \"Low\".", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
-                case 3:
-                    System.Windows.MessageBox.Show("INFO: This file has an Affinity Level of \"Medium.\"", "Affinity Check Failure");
+                case 3: // Not sure how this will be possible. Bridge will either determine if model has High affinity or none/low
+                    MessageBox.Show("This file has an Affinity Level of \"Medium\".", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
-                case 4:
-                    System.Windows.MessageBox.Show("INFO: This file has an Affinity Level of \"High.\"", "Affinity Check Failure");
+                case 4: // I wouldn't think this would be an error but its one of the erro codes listed in DgnDbSync platform bridge code. Eitherway should never get hit
+                    MessageBox.Show("This file has an Affinity Level of \"High\".", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
                 case 4097:
-                    System.Windows.MessageBox.Show("ERROR: Failed to parse command line arguments.", "Failure");
+                    MessageBox.Show("Failed to parse arguments.", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 4098:
-                    System.Windows.MessageBox.Show("ERROR: Failed to initialize the iModel Bridge.", "Failure");
+                    MessageBox.Show("Failed to initialize the iModel Bridge.", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 32768:
-                    System.Windows.MessageBox.Show("ERROR: General failure.", "Failure");
+                    MessageBox.Show("General failure.", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 }
             }
@@ -559,7 +559,7 @@ namespace ORDBridgeGUI.ViewModel
             {
             if ( String.IsNullOrEmpty(Input) )
                 {
-                System.Windows.MessageBox.Show("Input cannot be empty");
+                MessageBox.Show("Input cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
                 }
 
@@ -567,7 +567,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 if ( String.IsNullOrEmpty(Output) )
                     {
-                    System.Windows.MessageBox.Show("Local Ouptut cannot be empty");
+                    MessageBox.Show("Local Ouptut cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 }
@@ -575,22 +575,22 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 if ( String.IsNullOrEmpty(ConnectProject) )
                     {
-                    System.Windows.MessageBox.Show("CONNECT Project ID cannot be empty");
+                    MessageBox.Show("CONNECT Project ID cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 else if ( String.IsNullOrEmpty(ConnectOutput) )
                     {
-                    System.Windows.MessageBox.Show("iModel Name cannot be empty");
+                    MessageBox.Show("iModel Name cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 else if ( String.IsNullOrEmpty(ImsUsername) )
                     {
-                    System.Windows.MessageBox.Show("IMS Username cannot be empty");
+                    MessageBox.Show("IMS Username cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 else if ( String.IsNullOrEmpty(imsPw) )
                     {
-                    System.Windows.MessageBox.Show("IMS Passwod cannot be empty");
+                    MessageBox.Show("IMS Passwod cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 }

@@ -10,7 +10,10 @@
         xmlns:p = "clr-namespace:ORDBridgeGUI.Properties"
         mc:Ignorable="d"
         Icon="pack://application:,,,/Images/civil_review.ico"
-        Title="Civil iModel Bridge Publisher" Height="500" Width="800" ResizeMode="NoResize">
+        Title="Civil iModel Bridge Publisher" Height="500" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Visibility="Visible">
+    <Window.Background>
+        <SolidColorBrush Color="White" Opacity="1"/>
+    </Window.Background>
 
     <Grid>
         <Grid.Resources>
