@@ -561,9 +561,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile co
     ICurvePrimitivePtr line2  = ICurvePrimitive::CreateLine (tl_outerGirthStart, tl_outerRangeApex);
     ICurvePrimitivePtr line3  = ICurvePrimitive::CreateLine (tl_outerRangeApex, tl_outerLeft);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius) && BeNumerical::IsGreaterThanZero(girth))
+    if (BeNumerical::IsGreaterThanZero (filletRadius) && BeNumerical::IsGreaterThanZero(girth))
         {
-        line2 = createArcBetweenLines(line2, line3, filletRadius + wallThickness);
+        line2 = createArcBetweenLines (line2, line3, filletRadius + wallThickness);
         line3 = nullptr;
         }
 
@@ -571,9 +571,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile co
     ICurvePrimitivePtr line5  = ICurvePrimitive::CreateLine (bl_outerLeft, bl_outerRangeApex);
     ICurvePrimitivePtr line6  = ICurvePrimitive::CreateLine (bl_outerRangeApex, bl_outerBottom);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius))
+    if (BeNumerical::IsGreaterThanZero (filletRadius))
         {
-        line5 = createArcBetweenLines(line5, line6, filletRadius + wallThickness);
+        line5 = createArcBetweenLines (line5, line6, filletRadius + wallThickness);
         line6 = nullptr;
         }
 
@@ -581,7 +581,7 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile co
     ICurvePrimitivePtr line8  = ICurvePrimitive::CreateLine (br_outerBottom, br_outerRangeApex);
     ICurvePrimitivePtr line9  = ICurvePrimitive::CreateLine (br_outerRangeApex, br_outerGirthStart);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius) && BeNumerical::IsGreaterThanZero(girth))
+    if (BeNumerical::IsGreaterThanZero (filletRadius) && BeNumerical::IsGreaterThanZero (girth))
         {
         line8 = createArcBetweenLines(line8, line9, filletRadius + wallThickness);
         line9 = nullptr;
@@ -593,9 +593,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile co
     ICurvePrimitivePtr line13 = ICurvePrimitive::CreateLine (br_innerGirthStart, br_innerRangeApex);
     ICurvePrimitivePtr line14 = ICurvePrimitive::CreateLine (br_innerRangeApex, br_innerBottom);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius))
+    if (BeNumerical::IsGreaterThanZero (filletRadius))
         {
-        line13 = createArcBetweenLines(line13, line14, filletRadius);
+        line13 = createArcBetweenLines (line13, line14, filletRadius);
         line14 = nullptr;
         }
     
@@ -603,9 +603,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile co
     ICurvePrimitivePtr line16 = ICurvePrimitive::CreateLine (bl_innerBottom, bl_innerRangeApex);
     ICurvePrimitivePtr line17 = ICurvePrimitive::CreateLine (bl_innerRangeApex, bl_innerLeft);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius))
+    if (BeNumerical::IsGreaterThanZero (filletRadius))
         {
-        line16 = createArcBetweenLines(line16, line17, filletRadius);
+        line16 = createArcBetweenLines (line16, line17, filletRadius);
         line17 = nullptr;
         }
    
@@ -613,7 +613,7 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile co
     ICurvePrimitivePtr line19 = ICurvePrimitive::CreateLine (tl_innerLeft, tl_innerRangeApex);
     ICurvePrimitivePtr line20 = ICurvePrimitive::CreateLine (tl_innerRangeApex, tl_innerGirthStart);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius) && BeNumerical::IsGreaterThanZero(girth))
+    if (BeNumerical::IsGreaterThanZero (filletRadius) && BeNumerical::IsGreaterThanZero (girth))
         {
         line19 = createArcBetweenLines(line19, line20, filletRadius);
         line20 = nullptr;
@@ -634,7 +634,7 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile co
         line22,
         };
 
-    return createGeometryFromPrimitiveArray(curves);
+    return createGeometryFromPrimitiveArray (curves);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -656,8 +656,8 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     DPoint3d const br_outerBottom     = { (halfWidth - wallThickness - filletRadius), -halfDepth, 0.0 };
     DPoint3d const br_outerRangeApex  = { halfWidth, -halfDepth, 0.0 };
     DPoint3d br_outerRight      = { halfWidth, -(halfDepth - wallThickness - filletRadius), 0.0 };
-    DPoint3d br_outerRightGirth = { halfWidth, -(halfDepth - wallThickness - filletRadius - girth), 0.0 };
-    DPoint3d br_innerRightGirth = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d br_outerRightGirth = { halfWidth, -(halfDepth - girth), 0.0 };
+    DPoint3d br_innerRightGirth = { halfWidth - wallThickness, -(halfDepth - girth), 0.0 };
     DPoint3d br_innerRight      = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius), 0.0 };
     DPoint3d const br_innerRangeApex  = { halfWidth - wallThickness, -(halfDepth - wallThickness), 0.0 };
     DPoint3d const br_innerBottom     = { (halfWidth - wallThickness - filletRadius), -(halfDepth - wallThickness), 0.0 };
@@ -670,14 +670,14 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     DPoint3d const tr_innerTop        = { (halfWidth - wallThickness - filletRadius), (halfDepth - wallThickness), 0.0 };
     DPoint3d const tr_innerRangeApex  = { halfWidth - wallThickness, (halfDepth - wallThickness), 0.0 };
     DPoint3d tr_innerRight      = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius), 0.0 };
-    DPoint3d tr_innerRightGirth = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius - girth), 0.0 };
-    DPoint3d tr_outerRightGirth = { halfWidth, (halfDepth - wallThickness - filletRadius - girth), 0.0 };
+    DPoint3d tr_innerRightGirth = { halfWidth - wallThickness, (halfDepth - girth), 0.0 };
+    DPoint3d tr_outerRightGirth = { halfWidth, (halfDepth - girth), 0.0 };
     DPoint3d tr_outerRight      = { halfWidth, (halfDepth - wallThickness - filletRadius), 0.0 };
     DPoint3d const tr_outerRangeApex  = { halfWidth, halfDepth, 0.0 };
     DPoint3d const tr_outerTop        = { (halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
     DPoint3d const tl_outerTop        = { -(halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
 
-    if (BeNumerical::IsEqualToZero(girth))
+    if (BeNumerical::IsEqualToZero (girth))
         {
         br_outerRight = { halfWidth, -(halfDepth - wallThickness), 0.0 };
         br_outerRightGirth = br_outerRight;
@@ -694,9 +694,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line3 = ICurvePrimitive::CreateLine (bl_outerLeft, bl_outerRangeApex);
     ICurvePrimitivePtr line4 = ICurvePrimitive::CreateLine (bl_outerRangeApex, bl_outerBottom);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius))
+    if (BeNumerical::IsGreaterThanZero (filletRadius))
         {
-        line3 = createArcBetweenLines(line3, line4, filletRadius + wallThickness);
+        line3 = createArcBetweenLines (line3, line4, filletRadius + wallThickness);
         line4 = nullptr;
         }
 
@@ -704,7 +704,7 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr  line6 = ICurvePrimitive::CreateLine (br_outerBottom, br_outerRangeApex);
     ICurvePrimitivePtr  line7 = ICurvePrimitive::CreateLine (br_outerRangeApex, br_outerRight);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius) && BeNumerical::IsGreaterThanZero(girth))
+    if (BeNumerical::IsGreaterThanZero (filletRadius) && BeNumerical::IsGreaterThanZero (girth))
         {
         line6 = createArcBetweenLines(line6, line7, filletRadius + wallThickness);
         line7 = nullptr;
@@ -716,9 +716,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line11 = ICurvePrimitive::CreateLine (br_innerRight, br_innerRangeApex);
     ICurvePrimitivePtr line12 = ICurvePrimitive::CreateLine (br_innerRangeApex, br_innerBottom);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius))
+    if (BeNumerical::IsGreaterThanZero (filletRadius))
         {
-        line11 = createArcBetweenLines(line11, line12, filletRadius);
+        line11 = createArcBetweenLines (line11, line12, filletRadius);
         line12 = nullptr;
         }
 
@@ -726,7 +726,7 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line14 = ICurvePrimitive::CreateLine (bl_innerBottom, bl_innerRangeApex);
     ICurvePrimitivePtr line15 = ICurvePrimitive::CreateLine (bl_innerRangeApex, bl_innerLeft);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius))
+    if (BeNumerical::IsGreaterThanZero (filletRadius))
         {
         line14 = createArcBetweenLines(line14, line15, filletRadius);
         line15 = nullptr;
@@ -736,9 +736,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line17 = ICurvePrimitive::CreateLine (tl_innerLeft, tl_innerRangeApex);
     ICurvePrimitivePtr line18 = ICurvePrimitive::CreateLine (tl_innerRangeApex, tl_innerTop);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius))
+    if (BeNumerical::IsGreaterThanZero (filletRadius))
         {
-        line17 = createArcBetweenLines(line17, line18, filletRadius);
+        line17 = createArcBetweenLines (line17, line18, filletRadius);
         line18 = nullptr;
         }
 
@@ -746,9 +746,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line20 = ICurvePrimitive::CreateLine (tr_innerTop, tr_innerRangeApex);
     ICurvePrimitivePtr line21 = ICurvePrimitive::CreateLine (tr_innerRangeApex, tr_innerRight);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius) && BeNumerical::IsGreaterThanZero(girth))
+    if (BeNumerical::IsGreaterThanZero (filletRadius) && BeNumerical::IsGreaterThanZero (girth))
         {
-        line20 = createArcBetweenLines(line20, line21, filletRadius);
+        line20 = createArcBetweenLines (line20, line21, filletRadius);
         line21 = nullptr;
         }
 
@@ -759,9 +759,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line25 = ICurvePrimitive::CreateLine (tr_outerRight, tr_outerRangeApex);
     ICurvePrimitivePtr line26 = ICurvePrimitive::CreateLine (tr_outerRangeApex, tr_outerTop);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius) && BeNumerical::IsGreaterThanZero(girth))
+    if (BeNumerical::IsGreaterThanZero (filletRadius) && BeNumerical::IsGreaterThanZero (girth))
         {
-        line25 = createArcBetweenLines(line25, line26, filletRadius + wallThickness);
+        line25 = createArcBetweenLines (line25, line26, filletRadius + wallThickness);
         line26 = nullptr;
         }
 
@@ -769,7 +769,7 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line28 = ICurvePrimitive::CreateLine (tl_outerTop, tl_outerRangeApex);
     ICurvePrimitivePtr  line1 = ICurvePrimitive::CreateLine (tl_outerRangeApex, tl_outerLeft);
 
-    if (BeNumerical::IsGreaterThanZero(filletRadius))
+    if (BeNumerical::IsGreaterThanZero (filletRadius))
         {
         line28 = createArcBetweenLines (line28, line1, filletRadius + wallThickness);
         line1 = nullptr;

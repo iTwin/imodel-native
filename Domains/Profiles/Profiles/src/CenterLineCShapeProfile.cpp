@@ -59,23 +59,36 @@ bool CenterLineCShapeProfile::_Validate() const
     {
     bool bValid(T_Super::_Validate());
 
-    bValid = bValid && std::isfinite(GetFlangeWidth()) && (GetFlangeWidth() > 0.0);
-    bValid = bValid && std::isfinite(GetDepth()) && (GetDepth() > 0.0);
-    bValid = bValid && std::isfinite(GetGirth()) && (GetGirth() >= 0.0);
-    bValid = bValid && std::isfinite(GetWallThickness()) && (GetWallThickness() > 0.0);
-    bValid = bValid && std::isfinite(GetFilletRadius()) && (GetFilletRadius() >= 0.0);
+    double const flangeWidth = GetFlangeWidth();
+    double const filletRadius = GetFilletRadius();
+    double const depth = GetDepth();
+    double const girth = GetGirth();
+    double const wallThickness = GetWallThickness();
 
-    bValid = bValid && (GetWallThickness() < GetFlangeWidth() / 2.0) && (GetWallThickness() < GetDepth() / 2.0);
+    bValid = bValid && std::isfinite(flangeWidth) && (flangeWidth > 0.0);
+    bValid = bValid && std::isfinite(depth) && (depth > 0.0);
+    bValid = bValid && std::isfinite(girth) && (girth >= 0.0);
+    bValid = bValid && std::isfinite(wallThickness) && (wallThickness > 0.0);
+    bValid = bValid && std::isfinite(filletRadius) && (filletRadius >= 0.0);
 
-    if (GetGirth() > 0.0)
+    if (BeNumerical::IsGreaterThanZero(girth))
         {
-        bValid = bValid && (GetGirth() < (GetDepth() / 2.0));
+        bValid = bValid && (1 == BeNumerical::Compare(girth, wallThickness + filletRadius) || BeNumerical::IsEqual(girth, wallThickness + filletRadius));
         }
 
-    if (GetFilletRadius() > 0.0)
+    bValid = bValid && (-1 == BeNumerical::Compare(wallThickness, flangeWidth / 2.0)) && (-1 == BeNumerical::Compare(wallThickness, depth / 2.0));
+
+    if (bValid && BeNumerical::IsGreaterThanZero (girth))
         {
-        bValid = bValid && (GetFilletRadius() <= (GetFlangeWidth() / 2.0 - GetWallThickness())) &&
-            (GetFilletRadius() <= (GetDepth() / 2.0 - GetWallThickness()));
+        bValid = bValid && (-1 == BeNumerical::Compare (girth, depth / 2.0));
+        }
+
+    if (bValid && BeNumerical::IsGreaterThanZero (filletRadius))
+        {
+        bValid = bValid && 
+            ((-1 == BeNumerical::Compare(filletRadius, flangeWidth / 2.0 - wallThickness) || BeNumerical::IsEqual(filletRadius, flangeWidth / 2.0 - wallThickness)) &&
+             (-1 == BeNumerical::Compare(filletRadius, depth / 2.0 - wallThickness) || BeNumerical::IsEqual(filletRadius, depth / 2.0 - wallThickness))
+            );
         }
 
     return bValid;

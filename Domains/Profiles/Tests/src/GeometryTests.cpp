@@ -224,10 +224,13 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_MaxFillet", 3.5, 10, 1, 1, 1.0, 0.1));
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_SlopeAndRoundings", 3.5, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
 
-    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape not rounded, with girth", 3.5, 10.0, 1.0, 1.0, 0.0), true);
+    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape not rounded, with girth", 3.5, 10.0, 1.3, 1.0, 0.0), true);
+    InsertProfileGeometry<CenterLineCShapeProfile>(CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape not rounded, with max girth", 3.5, 10.0, 10.0 / 2 - 0.01, 1.0, 0.0));
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape not rounded, without girth", 3.5, 10.0, 0.0, 1.0, 0.0));
-    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape rounded, with girth", 3.5, 10.0, 1.0, 1.0, PI / 18));
+    InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape rounded, with min girth", 3.5, 10.0, 1.0 + PI / 18, 1.0, PI / 18));
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape rounded, without girth", 3.5, 10.0, 0.0, 1.0, PI / 18));
+    InsertProfileGeometry<CenterLineCShapeProfile>(CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape rounded, with max girth", 3.5, 10.0, 10.0 / 2 - 0.01, 1.0, PI / 18));
+    InsertProfileGeometry<CenterLineCShapeProfile>(CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape rounded, without girth", 3.5, 10.0, 3.5, 1.0, PI / 18));
     
     InsertProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape not rounded, without girth", 3.5, 10.00, 0.0, 1.0, 0.0), true);
     InsertProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape not rounded, with girth", 3.5, 10.00, 2.0, 1.0, 0.0));
