@@ -18,7 +18,16 @@ HANDLER_DEFINE_MEMBERS (DoubleCShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DoubleCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, DgnElementId const& singleProfileId)
+DoubleCShapeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, double spacing, CShapeProfile const& singleProfile)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , spacing (spacing)
+    , singleProfileId (singleProfile.GetElementId())
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DoubleCShapeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, double spacing, DgnElementId const& singleProfileId)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , spacing (spacing)
     , singleProfileId (singleProfileId)

@@ -41,8 +41,9 @@ public:
         explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
 
     public:
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing,
-                                               Dgn::DgnElementId const& singleProfileId = Dgn::DgnElementId(),
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, LShapeProfile const& singleProfile,
+                                               DoubleLShapeProfileType type = DoubleLShapeProfileType::LLBB);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, Dgn::DgnElementId const& singleProfileId,
                                                DoubleLShapeProfileType type = DoubleLShapeProfileType::LLBB);
 
     public:
