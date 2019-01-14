@@ -12,10 +12,10 @@
 
 #include "IImsClient.h"
 #include "SamlToken.h"
-#include "../../PublicAPI/Licensing/Utils/ApplicationInfo.h"
+#include "../Utils/ApplicationInfo.h"
 #include <BeHttp/Credentials.h>
 #include <BeHttp/HttpClient.h>
-#include <json\json.h>
+#include <json/json.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 

@@ -104,7 +104,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Product Name="LicenseClientCrossPLatform" PrgOutputDir="LicenseClientCrossPlatform" SaveProduct="true" SaveTranskit="true">
+    <Product Name="LicenseClientCrossPlatform" PrgOutputDir="LicenseClientCrossPlatform" SaveProduct="true" SaveTranskit="true">
         <SubPart PartName="Licensing"/>
         <Directories DirectoryListName="LicenseClientCrossPlatform"/>
 
