@@ -75,11 +75,16 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_ZShapeProfile                                      "ZShapeProfile"
 #define PRF_CLASS_MaterialProfileDefinition                          "MaterialProfileDefinition"
 #define PRF_CLASS_MaterialProfile                                    "MaterialProfile"
+
 // Aspects
 #define PRF_CLASS_StandardProfileAspect                              "StandardProfileAspect"
 #define PRF_CLASS_CustomCardinalPointsAspect                         "CustomCardinalPointsAspect"
 
 // Relationships
+#define PRF_REL_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles        "ArbitraryCompositeProfileRefersToSinglePerimeterProfiles"
+#define PRF_REL_DoubleLShapeProfileRefersToLShapeProfile                        "DoubleLShapeProfileRefersToLShapeProfile"
+#define PRF_REL_DoubleCShapeProfileRefersToCShapeProfile                        "DoubleCShapeProfileRefersToCShapeProfile"
+#define PRF_REL_MaterialProfileRefersToProfile                                  "MaterialProfileRefersToProfile"
 
 // Properties
 #define PRF_PROP_AsymmetricIShapeProfile_TopFlangeWidth                          "TopFlangeWidth"
@@ -214,47 +219,48 @@ END_BENTLEY_PROFILES_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
-#define DECLARE_PROFILES_QUERYCLASS_METHODS(__name__) \
-static Dgn::DgnClassId QueryClassId (Dgn::DgnDbCR db) { return Dgn::DgnClassId (db.Schemas().GetClassId (PRF_SCHEMA_NAME, PRF_CLASS_##__name__)); } \
-static ECN::ECClassCP QueryClass (Dgn::DgnDbCR db) { return (db.Schemas().GetClass (PRF_SCHEMA_NAME, PRF_CLASS_##__name__)); }
-
+#define DECLARE_PROFILES_QUERYCLASS_METHODS(_name_)                                             \
+    static Dgn::DgnClassId QueryClassId (Dgn::DgnDb const& db, Utf8CP pClassName = PRF_CLASS_##_name_) \
+        { return Dgn::DgnClassId (db.Schemas().GetClassId (PRF_SCHEMA_NAME, pClassName)); }            \
+    static ECN::ECClassCP QueryClass (Dgn::DgnDb const& db, Utf8CP pClassName = PRF_CLASS_##_name_)    \
+        { return (db.Schemas().GetClass (PRF_SCHEMA_NAME, pClassName)); }
 
 //-----------------------------------------------------------------------------------------
 // Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
 //-----------------------------------------------------------------------------------------
-#define DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(__name__) \
-PROFILES_EXPORT static __name__##CPtr Get       (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ > (id); } \
-PROFILES_EXPORT static __name__##Ptr  GetForEdit (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ > (id); }
+#define DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(_name_)                                                                                   \
+    PROFILES_EXPORT static _name_##CPtr Get       (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().Get< _name_ > (id); } \
+    PROFILES_EXPORT static _name_##Ptr  GetForEdit (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< _name_ > (id); }
 
-#define DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS(__name__) \
-DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (__name__) \
-PROFILES_EXPORT        __name__##CPtr Update (Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Update< __name__ > (*this, stat); }
+#define DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS(_name_) \
+    DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (_name_)           \
+    PROFILES_EXPORT        _name_##CPtr Update (Dgn::DgnDbStatus* pStatus = nullptr) { return GetDgnDb().Elements().Update< _name_ > (*this, pStatus); }
 
-#define DECLARE_PROFILES_ELEMENT_BASE_METHODS(__name__) \
-DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS (__name__) \
-PROFILES_EXPORT        __name__##CPtr Insert (Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Insert< __name__ > (*this, stat); }
+#define DECLARE_PROFILES_ELEMENT_BASE_METHODS(_name_)         \
+    DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS (_name_) \
+    PROFILES_EXPORT        _name_##CPtr Insert (Dgn::DgnDbStatus* pStatus = nullptr) { return GetDgnDb().Elements().Insert< _name_ > (*this, pStatus); }
 
 
 //-----------------------------------------------------------------------------------------
 // Define standard typedefs (P, CP, R, CR) in the Profiles namespace
 //-----------------------------------------------------------------------------------------
 #define PROFILES_TYPEDEFS(_name_) \
-BEGIN_BENTLEY_PROFILES_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS (_name_) END_BENTLEY_PROFILES_NAMESPACE
+    BEGIN_BENTLEY_PROFILES_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS (_name_) END_BENTLEY_PROFILES_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
 // Define RefCountedPtr and CPtr types
 //-----------------------------------------------------------------------------------------
 #define PROFILES_REFCOUNTED_PTR(_name_) \
-BEGIN_BENTLEY_PROFILES_NAMESPACE struct _name_; DEFINE_REF_COUNTED_PTR (_name_) END_BENTLEY_PROFILES_NAMESPACE
+    BEGIN_BENTLEY_PROFILES_NAMESPACE struct _name_; DEFINE_REF_COUNTED_PTR (_name_) END_BENTLEY_PROFILES_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
 //-----------------------------------------------------------------------------------------
 #define PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(_name_) \
-BEGIN_BENTLEY_PROFILES_NAMESPACE \
-    DEFINE_POINTER_SUFFIX_TYPEDEFS (_name_) \
-    DEFINE_REF_COUNTED_PTR (_name_) \
-END_BENTLEY_PROFILES_NAMESPACE
+    BEGIN_BENTLEY_PROFILES_NAMESPACE                 \
+        DEFINE_POINTER_SUFFIX_TYPEDEFS (_name_)      \
+        DEFINE_REF_COUNTED_PTR (_name_)              \
+    END_BENTLEY_PROFILES_NAMESPACE
 
 
 //-----------------------------------------------------------------------------------------
