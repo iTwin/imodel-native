@@ -2162,7 +2162,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportExtraTables(Utf8CP alias, Utf8CP classN
 
     while (BE_SQLITE_ROW == statement->Step())
         {
-        ECInstanceId actualElementId = statement->GetValueId<ECInstanceId>(0);
+        //ECInstanceId actualElementId = statement->GetValueId<ECInstanceId>(0);
 
         auto entry = Json::Value(Json::ValueType::objectValue);
         entry[JSON_TYPE_KEY] = JSON_TYPE_Element;
