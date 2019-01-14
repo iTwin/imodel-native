@@ -10,6 +10,12 @@
 #include <DgnPlatform/TileIO.h>
 #include <DgnPlatform/TileWriter.h>
 
+/* ###TODO Currently we do not use the "distance" attribute associated with polylines.
+ * Ray suggests in the future, we may introduce non-cosmetic line styles, which would make use of this attribute.
+ * Until then, we avoid including them in the tile content by omitting this #define
+ * #define INCLUDE_POLYLINE_DISTANCE
+ */
+
 USING_NAMESPACE_TILE_IO
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
@@ -1243,10 +1249,12 @@ void IModelTileWriter::AddPolyline(Json::Value& json, TesselatedPolyline const& 
     AddVertexIndices(json, polyline.m_prevIndex, idStr, "prevIndices");
     AddVertexIndices(json, polyline.m_nextIndexAndParam, idStr, "nextIndicesAndParams");
 
+#if defined(INCLUDE_POLYLINE_DISTANCE)
     Utf8String bvId("bvDistance");
     bvId.append(idStr);
     AddBufferView(bvId.c_str(), polyline.m_distance);
     json["distances"] = bvId;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
