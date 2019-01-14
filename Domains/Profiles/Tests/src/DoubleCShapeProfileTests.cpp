@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/src/DoubleLShapeProfileTests.cpp $
+|     $Source: Tests/src/DoubleCShapeProfileTests.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,16 +13,16 @@ USING_NAMESPACE_BENTLEY_PROFILES
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                                      01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DoubleLShapeProfileTestCase : ProfileValidationTestCase<DoubleLShapeProfile>
+struct DoubleCShapeProfileTestCase : ProfileValidationTestCase<DoubleCShapeProfile>
     {
 public:
-    typedef DoubleLShapeProfile::CreateParams CreateParams;
+    typedef DoubleCShapeProfile::CreateParams CreateParams;
 
 protected:
-    LShapeProfileCPtr InsertLShapeProfile()
+    CShapeProfileCPtr InsertCShapeProfile()
         {
-        LShapeProfile::CreateParams params (GetModel(), "L", 10.0, 6.0, 1.0);
-        LShapeProfilePtr profilePtr = LShapeProfile::Create (params);
+        CShapeProfile::CreateParams params (GetModel(), "C", 10.0, 6.0, 1.0, 1.0);
+        CShapeProfilePtr profilePtr = CShapeProfile::Create (params);
 
         DgnDbStatus status;
         profilePtr->Insert (&status);
@@ -35,82 +35,83 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, Create_ValidLShapeProfile_ValidInstance)
+TEST_F (DoubleCShapeProfileTestCase, Create_ValidCShapeProfile_ValidInstance)
     {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
-    CreateParams params (GetModel(), "DoubleL", 1.0, singleProfilePtr->GetElementId());
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
+    CreateParams params (GetModel(), "DoubleC", 1.0, *singleProfilePtr);
 
-    DoubleLShapeProfilePtr profilePtr = CreateProfile (params);
+    DoubleCShapeProfilePtr profilePtr = CreateProfile (params);
     EXPECT_TRUE (profilePtr.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, Insert_ValidLShapeProfile_SuccessfulInsert)
+TEST_F (DoubleCShapeProfileTestCase, Insert_ValidCShapeProfile_SuccessfulInsert)
     {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
 
-    CreateParams requiredParams (GetModel(), "DoubleL", 1.0, *singleProfilePtr);
+    CreateParams requiredParams (GetModel(), "DoubleC", 1.0, *singleProfilePtr);
     EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, Insert_ValidLShapeProfileId_SuccessfulInsert)
+TEST_F (DoubleCShapeProfileTestCase, Insert_ValidCShapeProfileId_SuccessfulInsert)
     {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
 
-    CreateParams requiredParams (GetModel(), "DoubleL", 1.0, singleProfilePtr->GetElementId());
+    CreateParams requiredParams (GetModel(), "DoubleC", 1.0, singleProfilePtr->GetElementId());
     EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
+TEST_F (DoubleCShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
     {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
-    CreateParams params (GetModel(), "DoubleL", 1.0, singleProfilePtr->GetElementId(), DoubleLShapeProfileType::SLBB);
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
+    CreateParams params (GetModel(), "DoubleC", 1.0, singleProfilePtr->GetElementId());
 
-    DoubleLShapeProfilePtr profilePtr = CreateProfile (params);
+    DoubleCShapeProfilePtr profilePtr = CreateProfile (params);
     ASSERT_TRUE (profilePtr.IsValid());
 
-    EXPECT_EQ ("DoubleL", profilePtr->GetName());
+    EXPECT_EQ ("DoubleC", profilePtr->GetName());
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetSpacing());
     EXPECT_EQ (singleProfilePtr->GetElementId(), profilePtr->GetSingleProfile()->GetElementId());
-    EXPECT_EQ (DoubleLShapeProfileType::SLBB, profilePtr->GetType());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
+TEST_F (DoubleCShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
-    CreateParams params (GetModel(), "DoubleL", 1.0, DgnElementId ((uint64_t)0), DoubleLShapeProfileType::LLBB);
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
+    CreateParams params (GetModel(), "DoubleC", 1.0, DgnElementId ((uint64_t)0));
 
-    DoubleLShapeProfilePtr profilePtr = CreateProfile (params);
+    DoubleCShapeProfilePtr profilePtr = CreateProfile (params);
     ASSERT_TRUE (profilePtr.IsValid());
 
-    profilePtr->SetName ("DoubleL");
+    profilePtr->SetName ("DoubleC");
     profilePtr->SetSpacing (1.0);
     profilePtr->SetSingleProfile (singleProfilePtr->GetElementId());
-    profilePtr->SetType (DoubleLShapeProfileType::SLBB);
 
-    EXPECT_EQ ("DoubleL", profilePtr->GetName());
+    EXPECT_EQ ("DoubleC", profilePtr->GetName());
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetSpacing());
     EXPECT_EQ (singleProfilePtr->GetElementId(), profilePtr->GetSingleProfile()->GetElementId());
-    EXPECT_EQ (DoubleLShapeProfileType::SLBB, profilePtr->GetType());
+
+    CShapeProfileCPtr otherSingleProfilePtr = InsertCShapeProfile();
+    profilePtr->SetSingleProfile (*otherSingleProfilePtr);
+    EXPECT_EQ (otherSingleProfilePtr->GetElementId(), profilePtr->GetSingleProfile()->GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, Insert_InvalidProfileName_FailedInsert)
+TEST_F (DoubleCShapeProfileTestCase, Insert_InvalidProfileName_FailedInsert)
     {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
     CreateParams params (GetModel(), nullptr, 1.0, singleProfilePtr->GetElementId());
 
     params.name = nullptr;
@@ -123,22 +124,22 @@ TEST_F (DoubleLShapeProfileTestCase, Insert_InvalidProfileName_FailedInsert)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, Insert_ValidProfileName_SuccessfulInsert)
+TEST_F (DoubleCShapeProfileTestCase, Insert_ValidProfileName_SuccessfulInsert)
     {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
     CreateParams params (GetModel(), nullptr, 1.0, singleProfilePtr->GetElementId());
 
-    params.name = "DoubleL";
+    params.name = "DoubleC";
     EXPECT_SUCCESS_Insert (params) << "Profile name should be non empty.";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, Insert_InvalidSpacing_FailedInsert)
+TEST_F (DoubleCShapeProfileTestCase, Insert_InvalidSpacing_FailedInsert)
     {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
-    CreateParams params (GetModel(), "DoubleL", INFINITY, singleProfilePtr->GetElementId());
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
+    CreateParams params (GetModel(), "DoubleC", INFINITY, singleProfilePtr->GetElementId());
 
     TestParameterToBeFiniteAndPositive (params, params.spacing, "Spacing", true);
     }
@@ -146,38 +147,8 @@ TEST_F (DoubleLShapeProfileTestCase, Insert_InvalidSpacing_FailedInsert)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, Insert_InvalidType_FailedInsert)
+TEST_F (DoubleCShapeProfileTestCase, Insert_InvalidSingleProfileId_FailedInsert)
     {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
-    CreateParams params (GetModel(), "DoubleL", 1.0, singleProfilePtr->GetElementId());
-
-    params.type = (DoubleLShapeProfileType)-1;
-    EXPECT_FAIL_Insert (params);
-
-    params.type = (DoubleLShapeProfileType)((int)DoubleLShapeProfileType::SLBB + 1);
-    EXPECT_FAIL_Insert (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, Insert_ValidType_SuccessfulInsert)
-    {
-    LShapeProfileCPtr singleProfilePtr = InsertLShapeProfile();
-    CreateParams params (GetModel(), "DoubleL", 1.0, singleProfilePtr->GetElementId());
-
-    params.type = DoubleLShapeProfileType::LLBB;
-    EXPECT_SUCCESS_Insert (params);
-
-    params.type = DoubleLShapeProfileType::SLBB;
-    EXPECT_SUCCESS_Insert (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleLShapeProfileTestCase, Insert_InvalidSingleProfileId_FailedInsert)
-    {
-    CreateParams params (GetModel(), "DoubleL", 1.0, DgnElementId());
+    CreateParams params (GetModel(), "DoubleC", 1.0, DgnElementId());
     EXPECT_FAIL_Insert (params) << "Profile should fail with invalid SinglieProfile id.";
     }
