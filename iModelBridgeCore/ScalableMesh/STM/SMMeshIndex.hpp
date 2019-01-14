@@ -5275,10 +5275,16 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
         DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeHeader.m_contentExtent),
             ExtentOp<EXTENT>::GetXMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeHeader.m_contentExtent));
         bvector<DPoint3d> clipData;
-        GetClipRegistry()->GetClip(clipId, clipData);
+        SMClipGeometryType geom;
+        SMNonDestructiveClipType type;
+        bool isActive;
+
+        GetClipRegistry()->GetClipWithParameters(clipId, clipData, geom, type, isActive);
         DRange3d clipExtent = DRange3d::From(&clipData[0], (int)clipData.size());
 
-        if (!clipExtent.IntersectsWith(nodeRange))
+		//Do 2D intersection for unbounded volume like those for road clipping     
+        if ((geom != SMClipGeometryType::BoundedVolume && !clipExtent.IntersectsWith(nodeRange, 2)) || 
+            (geom == SMClipGeometryType::BoundedVolume && !clipExtent.IntersectsWith(nodeRange)))
             DeleteClip(clipId, isVisible, setToggledWhenIdIsOn);
   /*      //force commit
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, this->GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)this->m_SMIndex);
