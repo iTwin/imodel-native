@@ -313,11 +313,10 @@ ConnectSignInManager::AuthenticationType ConnectSignInManager::ReadAuthenticatio
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::StoreAuthenticationType(AuthenticationType type)
     {
-    Utf8String str;
-    str.reserve(10); //max length in hex format for an UInt64 (incl. trailing \0)
-    BeStringUtilities::FormatUInt64((Utf8P)str.data(), static_cast<int>(type));
+    char str[20];
+    BeStringUtilities::FormatUInt64(str, static_cast<int>(type));
 
-    m_secureLocalState->SaveValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType, str.c_str());
+    m_secureLocalState->SaveValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType, str);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -338,12 +337,10 @@ UrlProvider::Environment ConnectSignInManager::ReadConnectEnvironment()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::StoreConnectEnvironment()
     {
-    auto env = UrlProvider::GetEnvironment();
-    Utf8String str;
-    str.reserve(10); //max length in hex format for an UInt64 (incl. trailing \0)
-    BeStringUtilities::FormatUInt64((Utf8P)str.data(), static_cast<int>(UrlProvider::GetEnvironment()));
+    char str[20];
+    BeStringUtilities::FormatUInt64(str, static_cast<int>(UrlProvider::GetEnvironment()));
 
-    m_secureLocalState->SaveValue(LOCALSTATE_Namespace, LOCALSTATE_ConnectEnvironment, str.c_str());
+    m_secureLocalState->SaveValue(LOCALSTATE_Namespace, LOCALSTATE_ConnectEnvironment, str);
     }
 
 /*--------------------------------------------------------------------------------------+
