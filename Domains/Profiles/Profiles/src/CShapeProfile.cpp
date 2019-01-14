@@ -99,7 +99,7 @@ DgnDbStatus CShapeProfile::_OnDelete() const
     if (doubleProfileId.IsValid())
         {
         ProfilesLog::FailedDelete_ProfileHasReference (PRF_CLASS_CShapeProfile, m_elementId, PRF_CLASS_DoubleCShapeProfile, doubleProfileId);
-        return DgnDbStatus::DeletionProhibited;
+        return DgnDbStatus::ForeignKeyConstraint;
         }
 
     return T_Super::_OnDelete();
