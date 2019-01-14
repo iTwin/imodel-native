@@ -292,6 +292,7 @@
         <SubPart PartName="BuildIModelEvolutionTestsDynamic" />
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <FeatureExclude>GeoCoordAssets</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
+        <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
     </Product>
 
     <Part Name="BuildIModelEvolutionTestsDynamic" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
@@ -590,7 +591,7 @@
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_SHORT_NAME=DgnPlatTst -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
