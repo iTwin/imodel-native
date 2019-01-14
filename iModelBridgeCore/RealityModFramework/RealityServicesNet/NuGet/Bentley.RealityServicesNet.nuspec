@@ -8,7 +8,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>RealityServicesNet assemblies. This package contains .NET class for creation Context Services package files (Context file location and description content for potential download or streaming of context data in applications.</description>
     <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
-    <releaseNotes>This is the initial version of the package.</copyright>
+    <releaseNotes>This is the initial version of the package.</releaseNotes>
     <language>en-US</language>
     <dependencies>
     </dependencies>
