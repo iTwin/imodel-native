@@ -809,10 +809,70 @@ DSpiral2dBaseCR spiral,
 TransformCR frame,
 double fractionA,
 double fractionB,
-double minimumStrokeDistance
+double maxStrokeLength
 )
     {
-    return CREATE_SPIRAL_CURVE (spiral, frame, fractionA, fractionB, minimumStrokeDistance);
+    int type = spiral.GetTransitionTypeCode ();
+    if (type >= DSpiral2dBase::TransitionType_FirstDirectEvaluate)
+        {
+        // ASSUME specific primary data  . . 
+        // DEMAND frame is xy plane except for origin and possible z rotation ...
+        // DEMAND fractions are simple 0..1
+        double radius0 = DoubleOps::ValidatedDivideDistance (1.0, spiral.mCurvature0);
+        double radius1 = DoubleOps::ValidatedDivideDistance (1.0, spiral.mCurvature1);
+
+        double radians;
+        DPoint3d origin;
+        double scale;
+        RotMatrix axes;
+        if (frame.IsTranslateScaleRotateAroundZ (origin, axes, scale, radians)
+//            && DoubleOps::AlmostEqual (fractionA, 0.0)
+//            && DoubleOps::AlmostEqual (fractionB, 1.0)
+            )
+            {
+            // the given system has (big) axes.  Use unit axes, but scale all distances
+            radius0 *= scale;
+            radius1 *= scale;
+            double length = spiral.mLength * scale;
+            return ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (
+                    type,
+                    origin,
+                    spiral.mTheta0 + radians,
+                    radius0,
+                    length,
+                    radius1,
+                    fractionA,
+                    fractionB
+                    );
+            }
+
+        Transform frame1 = frame;
+        frame1.ScaleMatrixColumns (1, -1, -1);
+        if (frame1.IsTranslateScaleRotateAroundZ (origin, axes, scale, radians)
+//            && DoubleOps::AlmostEqual (fractionA, 0.0)
+//            && DoubleOps::AlmostEqual (fractionB, 1.0)
+            )
+            {
+            // the given system has (big) axes.  Use unit axes, but scale all distances
+            radius0 *= -scale;
+            radius1 *= -scale;
+            double length = spiral.mLength * scale;
+            return ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (
+                    type,
+                    origin,
+                    radians - spiral.mTheta0,
+                    radius0,
+                    length,
+                    radius1,
+                    fractionA,
+                    fractionB
+                    );
+            }
+        
+        return nullptr;
+        }
+
+    return CREATE_SPIRAL_CURVE (spiral, frame, fractionA, fractionB, maxStrokeLength);
     }
 
 /*--------------------------------------------------------------------------------**//**

@@ -5,8 +5,25 @@
 #include <Bentley/BeNumerical.h>
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
-// TFS#885940
-#if !defined(BENTLEYCONFIG_OS_APPLE_IOS)
+void ShowFrame (DPoint3dCR origin, double bearingRadians, double sizeX, double sizeY)
+    {
+    if (sizeY != 0.0)
+        {
+        auto xPoint = origin + DVec3d::FromXYAngleAndMagnitude (bearingRadians, sizeX);
+        auto xPoint1 = origin - DVec3d::FromXYAngleAndMagnitude (bearingRadians, sizeX);
+        auto yPoint = origin + DVec3d::FromXYAngleAndMagnitude (bearingRadians + Angle::PiOver2 (), sizeY);
+        Check::SaveTransformed (bvector<DPoint3d> {yPoint, origin, xPoint, xPoint1});
+        }
+    else
+        {
+        auto xPoint = origin + DVec3d::FromXYAngleAndMagnitude (bearingRadians, sizeX);
+        auto xPoint1 = origin - DVec3d::FromXYAngleAndMagnitude (bearingRadians, sizeX);
+        auto yPoint = origin + DVec3d::FromXYAngleAndMagnitude (bearingRadians + Angle::PiOver2 (), sizeX);
+        auto yPoint1 = origin - DVec3d::FromXYAngleAndMagnitude (bearingRadians + Angle::PiOver2 (), sizeX);
+        Check::SaveTransformed (bvector<DPoint3d> {yPoint, yPoint1, origin, xPoint, xPoint1});
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -138,6 +155,7 @@ TEST(PseudoSpiral,ExerciseDistances)
                 DSpiral2dBase::TransitionType_ChineseCubic
                 })
         {
+        Check::StartScope ("ExerciseDistance", (size_t)spiralType);
         Check::SetTransform (Transform::FromIdentity ());
         double xShift = 1500.0;
         SaveAndRestoreCheckTransform typeShift (xShift, 0, 0);
@@ -180,6 +198,7 @@ TEST(PseudoSpiral,ExerciseDistances)
                                 if (Check::True (spiral->Length (totalDistance)))
                                     {
                                     double f0 = 0.0;
+                                    double maxDiff = 0;
                                     for (auto f1 : breakFractions)
                                         {
                                         double d01;
@@ -189,12 +208,15 @@ TEST(PseudoSpiral,ExerciseDistances)
                                             CurveLocationDetail detail;
                                             if (Check::True (spiral->PointAtSignedDistanceFromFraction (f0, d01, true, detail)))
                                                 {
-                                                Check::Near (f1, detail.fraction, "Signed distance inversion");
+                                                maxDiff = DoubleOps::Max (maxDiff, fabs (f1 - detail.fraction));
                                                 }
                                             }
                                         f0 = f1;
                                         }
-                                    Check::Near (totalDistance, accumulatedDistance, "Confirm split distance sum");
+                                    static double s_fractionErrorTol = 1.0e-6;       // allow fluffy distances
+                                    static double s_distanceFactor = 1.0e-6;
+                                    Check::LessThanOrEqual (maxDiff, s_fractionErrorTol, "Signed distance inversion");
+                                    Check::LessThanOrEqual (fabs (totalDistance - accumulatedDistance), s_distanceFactor * totalDistance, "Confirm split distance sum");
                                     }
                                 }
                             }
@@ -208,10 +230,10 @@ TEST(PseudoSpiral,ExerciseDistances)
         // add 1000 to ensure alphabetic sort maintains numeric order
         sprintf (fileName, "Spiral.Exercise.%d%s", 1000+(int)spiralType, typeName.c_str());
         Check::ClearGeometry (fileName);
+        Check::EndScope();
         }
     }
 
-#endif
 
    
 /*---------------------------------------------------------------------------------**//**
@@ -241,6 +263,7 @@ TEST(Spiral,TwoRadiusConstruction)
 
             auto spiralAB = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (typeCode,
                 DPoint3d::From (0, yShiftA, 0), bearing0Radians, radiusA, lengthAB, radiusB);
+
             Check::SaveTransformed (*spiral0B);
             Check::SaveTransformed (*spiralAB);
             }
@@ -248,24 +271,125 @@ TEST(Spiral,TwoRadiusConstruction)
     Check::ClearGeometry ("Spiral.TwoRadiusConstruction");
     }
 
-void ShowFrame (DPoint3dCR origin, double bearingRadians, double sizeX, double sizeY)
+void SaveSpiralAndStrokes (ICurvePrimitiveCR primitive, double dy)
     {
-    if (sizeY != 0.0)
+    bvector<DPoint3d> strokes;
+    auto options = IFacetOptions::CreateForCurves ();
+
+    Check::SaveTransformed (primitive);
+    Check::Shift (0, dy, 0);
+    primitive.AddStrokes (strokes, *options);
+    Check::SaveTransformed (strokes);
+    Check::Shift (0, dy, 0);
+    auto bcurve = primitive.GetProxyBsplineCurvePtr ();
+    if (bcurve.IsValid ())
         {
-        auto xPoint = origin + DVec3d::FromXYAngleAndMagnitude (bearingRadians, sizeX);
-        auto xPoint1 = origin - DVec3d::FromXYAngleAndMagnitude (bearingRadians, sizeX);
-        auto yPoint = origin + DVec3d::FromXYAngleAndMagnitude (bearingRadians + Angle::PiOver2 (), sizeY);
-        Check::SaveTransformed (bvector<DPoint3d> {yPoint, origin, xPoint, xPoint1});
-        }
-    else
-        {
-        auto xPoint = origin + DVec3d::FromXYAngleAndMagnitude (bearingRadians, sizeX);
-        auto xPoint1 = origin - DVec3d::FromXYAngleAndMagnitude (bearingRadians, sizeX);
-        auto yPoint = origin + DVec3d::FromXYAngleAndMagnitude (bearingRadians + Angle::PiOver2 (), sizeX);
-        auto yPoint1 = origin - DVec3d::FromXYAngleAndMagnitude (bearingRadians + Angle::PiOver2 (), sizeX);
-        Check::SaveTransformed (bvector<DPoint3d> {yPoint, yPoint1, origin, xPoint, xPoint1});
+        auto bprim = ICurvePrimitive::CreateBsplineCurve (bcurve);
+        Check::SaveTransformed (*bprim);
         }
     }
+TEST (Spiral, ConstructPseudoSpiralViaSimpleCreate)
+    {
+    double lengthAB = 100.0;
+    int typeCode = DSpiral2dBase::TransitionType_WesternAustralian;
+    double yShiftB = 45.0;
+    //double yShiftA = 5.0;
+    double yShift = 1.0;
+    double zShift = 0.0;
+    double bearing0Degrees = 0.0;
+    auto bearing0Radians = Angle::DegreesToRadians (bearing0Degrees);
+    for (double radiusA : {0.0, 1000.0})
+        {
+        SaveAndRestoreCheckTransform shifter (2.0 * lengthAB, 0, 0);
+        for (double radiusB : {1000.0, 0.0})
+            {
+            SaveAndRestoreCheckTransform shifter (0, yShiftB, 0);
+            if (radiusA != radiusB)
+                {
+                double curvatureA = DoubleOps::ValidatedDivideDistance (1.0, radiusA);
+                double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
+                DSpiral2dBaseP baseSpiral = DSpiral2dBase::CreateBearingCurvatureLengthCurvature (typeCode,
+                            bearing0Radians, curvatureA, lengthAB, curvatureB);
+                auto frame = Transform::FromIdentity ();
+                DPoint3d originZ = DPoint3d::From (0,yShift,zShift);
+                auto spiralX = ICurvePrimitive::CreateSpiral (*baseSpiral, frame, 0.0, 1.0);
+                auto spiralZ = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (typeCode,
+                    originZ, bearing0Radians, radiusA, lengthAB, radiusB);
+                SaveSpiralAndStrokes (*spiralX, 1);
+                Check::Shift (0,10,0);
+                SaveSpiralAndStrokes (*spiralZ, 1);
+
+
+                }
+            }
+        }
+    Check::ClearGeometry ("Spiral.ConstructPseudoSpiralViaSimpleCreate");
+    }
+
+
+
+TEST(Spiral,StrokeA)
+    {
+    //double radiusB = 1000.0;
+    double radiusB = -2000.0;
+    double length0B = 200.0;
+    int typeCode = DSpiral2dBase::TransitionType_WesternAustralian;
+    double yShiftB = 45.0;
+    double yShiftA = 5.0;
+    for (double bearing0Degrees : {0.0, 10.0})
+        {
+        auto bearing0Radians = Angle::DegreesToRadians (bearing0Degrees);
+        SaveAndRestoreCheckTransform shifter (2.0 * length0B, 0,0);
+        for (double fraction : {0.0, 0.25, 0.5, 0.75})
+            {
+            SaveAndRestoreCheckTransform shifter (0, yShiftB, 0);
+
+            double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
+            double curvatureA = fraction * curvatureB;
+            double radiusA = DoubleOps::ValidatedDivideDistance (1.0, curvatureA);
+            double lengthAB = (1.0 - fraction) * length0B;
+            auto spiral0B = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (typeCode,
+                DPoint3d::From (0, 0, 0), bearing0Radians, 0.0, lengthAB, radiusB);
+
+            auto spiralAB = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (typeCode,
+                DPoint3d::From (0, yShiftA, 0), bearing0Radians, radiusA, lengthAB, radiusB);
+            Check::SaveTransformed (*spiral0B);
+            Check::SaveTransformed (*spiralAB);
+
+            IFacetOptionsPtr opt = IFacetOptions::CreateForCurves();
+            auto maxChord = 0.01;
+            opt->SetChordTolerance(maxChord);
+            bvector <DPoint3d> points;
+            if (spiralAB->AddStrokes(points, *opt, true, 0.0, 1.0))
+                {
+                Check::Shift (0, yShiftA * 0.1, 0);
+                Check::SaveTransformed (points);
+                }
+            }
+        }
+    Check::ClearGeometry ("Spiral.StrokeA");
+    }
+
+TEST(Spiral,ConstructionCrash)
+    {
+    double radiusA = 0.0;
+    double radiusB = 121.752286;
+    double radiansA = Angle::Pi ();
+    double length0B = 100.0;
+    int typeCode = DSpiral2dBase::TransitionType_AustralianRailCorp;
+    double yShiftB = -6.0;
+    for (double radiusBFraction : {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.925, 0.950, 0.975, 1.0})
+        {
+        SaveAndRestoreCheckTransform shifter (0, yShiftB, 0);
+        auto spiral0B = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (typeCode,
+            DPoint3d::From (0, 0, 0), radiansA, radiusA, length0B, radiusB / radiusBFraction);
+        Check::SaveTransformed (*spiral0B);
+        }
+    Check::ClearGeometry ("Spiral.ConstructionCrash");
+    }
+
+
+
 
 void testRadiusCombinations (bvector<double> radiiA, bvector<double> radiiB)
     {
@@ -452,6 +576,60 @@ double L1;
 uint32_t stepCount;
 RadiusAndCount (double radius1, double length1, uint32_t count) : R1(radius1), L1(length1), stepCount (count) {}
 };
+bool DerivativesToFrenetFrame(DPoint3dCR point, DVec3dCR deriv1, DVec3dCR deriv2, DVec3dCR deriv3,
+TransformR frame, double &curvature, double &torsion)
+    {
+    curvature = torsion = 0.0;
+    
+    RotMatrix rMatrix1, rMatrix2;
+    rMatrix1.InitFrom2Vectors (deriv1, deriv2);
+    rMatrix2.SquareAndNormalizeColumns (rMatrix1, 0, 1);
+    frame.InitFrom (rMatrix2, point);
+    double a = deriv1.Magnitude ();
+    double a3 = a * a * a;
+    DVec3d cross12 = DVec3d::FromCrossProduct (deriv1, deriv2);
+    double tripleProduct = cross12.DotProduct (deriv3);
+    double crossmag2 = cross12.MagnitudeSquared ();
+    double crossmag  = sqrt (crossmag2);
+    DoubleOps::SafeDivide (curvature, crossmag, a3, 0.0);
+    DoubleOps::SafeDivide (torsion, tripleProduct, crossmag2, 0.0);
+    return true;
+    }
+void CheckDerivatives (ICurvePrimitivePtr curve, double f, double tolFactor = 1.0)
+    {
+    static double df = 1.0e-8;
+    double fA = f - df;
+    double fB = f + df;
+    double   gg[3];
+    DPoint3d X[3];
+    DVec3d   dX[3];
+    DVec3d   ddX[3];
+    int i = 0;
+    for (double g : {fA, f, fB})
+        {
+        gg[i] = g;
+        curve->FractionToPoint (g, X[i], dX[i], ddX[i]);
+        i++;
+        }
+    DVec3d dY = (X[2] - X[0]) / (2.0 * df);
+    DVec3d dYA = (X[1] - X[0]) / df;
+    DVec3d dYB = (X[2] - X[1]) / df;
+    DVec3d ddYAB = (dYB - dYA) / df;
+    DVec3d ddZ = (dX[2] - dX[0]) / (2.0 * df);
+    double toleranceScale1 = 1.0e7 * tolFactor;
+    double toleranceScale2 = 1.0e7 * tolFactor;
+    Check::Near (dX[1], dY, "approx dY", toleranceScale1);
+    //Check::Near (ddX[1], ddYAB, "approx ddYAB", toleranceScale2);
+    Check::Near (ddX[1], ddZ, "approx ddZ", toleranceScale2);
+    Transform frame1, frame2, frame3;
+    double curvature1, curvature2, curvature3;
+    double torsion1, torsion2, torsion3;
+    DVec3d dddX = DVec3d::From (0,0,0);
+    DerivativesToFrenetFrame (X[1], dX[1], ddX[1], dddX, frame1, curvature1, torsion1);
+    DerivativesToFrenetFrame (X[1], dY, ddZ, dddX, frame2, curvature2, torsion2);
+    curve->FractionToFrenetFrame (f, frame3, curvature3, torsion3);
+    curve->FractionToFrenetFrame (f, frame3, curvature3, torsion3);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -515,12 +693,25 @@ TEST(Spiral,DocCheck)
             DVec3d   tangent;
             printf ("\n\n **** SPIRAL TYPE %d (%s) *********\n", spiralType, typeName.c_str ());
             bvector<DPoint3d> strokes;
+            double c0, c1;
+            DoubleOps::SafeDivide (c0, 1.0, R0, 0.0);
+            DoubleOps::SafeDivide (c1, 1.0, R1, 0.0);
+            double tolFactor = 1.0;
+            if (spiralType == DSpiral2dBase::TransitionType_AustralianRailCorp)
+                tolFactor = 1.0e5;  // horrible things happen numerically in ARC
             for (double stationDistance = 0.0; stationDistance < 1.001 * L; stationDistance += stationStep)
                 {
                 double f = stationDistance / L;
                 curve1->FractionToPoint (f, xyz, tangent);
+                if (spiralType != DSpiral2dBase::TransitionType_AustralianRailCorp)
+                    CheckDerivatives (curve1, f, tolFactor);
+                Transform frame;
+                double curvature, torsion;
+                curve1->FractionToFrenetFrame (f, frame, curvature, torsion);
                 strokes.push_back (xyz);
-                printf ("    %10.4lf     %20.4f   %20.4lf    %20.5lf\n", stationDistance, xyz.x, xyz.y,
+                printf ("    %10.4lf   (kFraction %10.2le)  %20.4f   %20.4lf    %20.5lf\n", stationDistance,
+                    (curvature - c0) / (c1 - c0),
+                    xyz.x, xyz.y,
                     Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x)));
                 }
              Check::SaveTransformed (strokes);
@@ -583,6 +774,7 @@ TEST(Spiral,AustralianReversal)
     {
     double R1 = 0.0;
     double L = 20.0;
+    double tolFactor = 1000.0;      // aussRail is painfully grainy & does not match derivatives.
     for (double R0 : {-350.0, -200.0, -100.0, 100.0, 200.0, 350.0})
         {
         SaveAndRestoreCheckTransform shifter (0, 10.0 * L,0);
@@ -602,9 +794,26 @@ TEST(Spiral,AustralianReversal)
             auto arc = DEllipse3d::FromStartTangentNormalRadiusSweep (origin, startTangent,
                         DVec3d::From (0,0,1), -R0, 0.5);
 
+
+            for (double f: {0.3, 0.6, 0.99})
+                {
+                CheckDerivatives (curve1, f, tolFactor);
+                }
+
+
             Check::SaveTransformed (*curve1);
             Check::SaveTransformed (arc);
             }
+        }
+    double radius = 25.0;
+    auto arc = ICurvePrimitive::CreateArc (
+                        DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,1,0), radius));
+    for (double f: {0.3, 0.6, 0.99})
+        {
+        CheckDerivatives (arc, f, tolFactor);
+        double curvature, torsion;
+        Transform frame;
+        arc->FractionToFrenetFrame(f, frame, curvature, torsion);
         }
     Check::ClearGeometry ("Spiral.AustralianReversal");
     }
@@ -953,4 +1162,59 @@ TEST(Spiral,WesternAustralianDistanceErrors)
         }
     Check::EndScope ();
     Check::ClearGeometry ("Spiral.WesternAustralianDistanceErrors");
+    }
+
+void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startRadius, double endRadius)
+    {
+    const double length = 100;
+    double startAngle = 0;
+    DPoint3d  startPoint = DPoint3d::From (0,0,0);
+    Transform frame = Transform::FromIdentity ();
+    ICurvePrimitivePtr spiral  = nullptr;
+    if (ctorSelect == 1)
+        spiral = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(type, startPoint, startAngle, startRadius, length, endRadius);
+    else 
+        spiral = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius(type,
+         startAngle, startRadius, length, endRadius, frame, 0, 1);
+    Check::SaveTransformed (*spiral);
+    CurveLocationDetail sLocDetail;
+    for (double distanceAlong : {10, 20, 30, 40, 50, 60, 70, 80, 90})
+        {
+        spiral->PointAtSignedDistanceFromFraction(0, distanceAlong, true, sLocDetail);
+        double curvature, torsion;
+        Transform frame;
+        spiral->FractionToFrenetFrame(sLocDetail.fraction, frame, curvature, torsion);
+        DPoint3d origin = frame * DPoint3d::From (0,0,0);
+        Check::SaveTransformedMarker (origin, -0.1);
+        if (fabs (curvature) > 1.0e-5)
+            {
+            DPoint3d center = frame * DPoint3d::From (0,1/curvature,0);
+            Check::SaveTransformed (DSegment3d::From (origin, center));
+            }
+        }    
+    static double tolerance = 0.001;
+    IFacetOptionsPtr opt = IFacetOptions::CreateForCurves();
+    opt->SetChordTolerance(tolerance);
+    DPoint3dDoubleUVCurveArrays strokes;
+
+    spiral->AddStrokes(strokes, *opt, 0, 1);
+    double dy = 20;
+    Check::Shift (0, -dy,0);
+    Check::SaveTransformed(strokes.m_xyz);
+    
+    Check::Shift (200,dy,0);
+    }
+TEST(Spiral,IntermdediateCurvature)
+    {
+    for (int type :{DSpiral2dBase::TransitionType_AustralianRailCorp})
+        {
+        for (int select : {1})
+            {
+            SaveAndRestoreCheckTransform shifter (1000,0,0);
+            Claude_DoCubicParabolaSpiralCheck (type, select, 500, 0);
+            Claude_DoCubicParabolaSpiralCheck (type, select, 400, 0);
+            Claude_DoCubicParabolaSpiralCheck (type, select, 0, 500);
+            }
+        }
+    Check::ClearGeometry ("Spiral.IntermdediateCurvature");
     }
