@@ -607,7 +607,7 @@ namespace ORDBridgeGUI.ViewModel
             {
             m_openRoadsInstall = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENROADS)?.GetValue("ProgramPath")?.ToString();
             m_openRailInstall = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENRAIL)?.GetValue("ProgramPath")?.ToString();
-            m_openBridgeInstall = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENBRIDGE)?.GetValue("ProgramPath")?.ToString();
+            //m_openBridgeInstall = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENBRIDGE)?.GetValue("ProgramPath")?.ToString();
 
             ArrayList dgnInstallList = new ArrayList {"None"};
 
@@ -627,13 +627,13 @@ namespace ORDBridgeGUI.ViewModel
                 m_defaultRailWorkspacePath = Path.Combine(workspacePath, "Workspaces");
                 }
 
-            if ( m_openBridgeInstall != null )
-                {
-                m_openBridgeInstall = m_openBridgeInstall.Substring(0, m_openBridgeInstall.Length - 1);
-                dgnInstallList.Add("OpenBridge Modeler");
-                string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENBRIDGE)?.GetValue("ConfigurationPath")?.ToString();
-                m_defaultBridgeWorkspacePath = Path.Combine(workspacePath, "Workspaces");
-                }
+            //if ( m_openBridgeInstall != null )
+            //    {
+            //    m_openBridgeInstall = m_openBridgeInstall.Substring(0, m_openBridgeInstall.Length - 1);
+            //    dgnInstallList.Add("OpenBridge Modeler");
+            //    string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENBRIDGE)?.GetValue("ConfigurationPath")?.ToString();
+            //    m_defaultBridgeWorkspacePath = Path.Combine(workspacePath, "Workspaces");
+            //    }
 
             return dgnInstallList.ToArray(typeof(string)) as string[];
             }
