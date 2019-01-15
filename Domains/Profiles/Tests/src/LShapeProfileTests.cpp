@@ -487,9 +487,9 @@ TEST_F (LShapeProfileTestCase, Delete_ExistingDoubleLInstances_FailedDelete)
     DoubleLShapeProfilePtr firstDoubleProfilePtr = InsertElement<DoubleLShapeProfile> (doubleLParams);
     DoubleLShapeProfilePtr secondDoubleProfilePtr = InsertElement<DoubleLShapeProfile> (doubleLParams);
 
-    ASSERT_EQ (DgnDbStatus::DeletionProhibited, singleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::ForeignKeyConstraint, singleProfilePtr->Delete());
     ASSERT_EQ (DgnDbStatus::Success, firstDoubleProfilePtr->Delete());
-    ASSERT_EQ (DgnDbStatus::DeletionProhibited, singleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::ForeignKeyConstraint, singleProfilePtr->Delete());
     ASSERT_EQ (DgnDbStatus::Success, secondDoubleProfilePtr->Delete());
     ASSERT_EQ (DgnDbStatus::Success, singleProfilePtr->Delete());
     }

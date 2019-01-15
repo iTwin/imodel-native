@@ -459,9 +459,9 @@ TEST_F (CShapeProfileTestCase, Delete_ExistingDoubleCInstances_FailedDelete)
     DoubleCShapeProfilePtr firstDoubleProfilePtr = InsertElement<DoubleCShapeProfile> (doubleLParams);
     DoubleCShapeProfilePtr secondDoubleProfilePtr = InsertElement<DoubleCShapeProfile> (doubleLParams);
 
-    ASSERT_EQ (DgnDbStatus::DeletionProhibited, singleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::ForeignKeyConstraint, singleProfilePtr->Delete());
     ASSERT_EQ (DgnDbStatus::Success, firstDoubleProfilePtr->Delete());
-    ASSERT_EQ (DgnDbStatus::DeletionProhibited, singleProfilePtr->Delete());
+    ASSERT_EQ (DgnDbStatus::ForeignKeyConstraint, singleProfilePtr->Delete());
     ASSERT_EQ (DgnDbStatus::Success, secondDoubleProfilePtr->Delete());
     ASSERT_EQ (DgnDbStatus::Success, singleProfilePtr->Delete());
     }
