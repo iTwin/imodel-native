@@ -25,12 +25,12 @@ CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double girth, double wallThickness, double filletRadius /*= 0.0*/)
+CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double wallThickness, double girth,  double filletRadius /*= 0.0*/)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , width (width)
     , depth (depth)
-    , girth (girth)
     , wallThickness (wallThickness)
+    , girth (girth)
     , filletRadius (filletRadius)
     {}
 
@@ -57,15 +57,28 @@ CenterLineLShapeProfile::CenterLineLShapeProfile(CreateParams const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CenterLineLShapeProfile::_Validate() const
     {
-    bool bValid(T_Super::_Validate());
+    bool isValid (T_Super::_Validate());
 
-    bValid = bValid && std::isfinite(GetWidth()) && (GetWidth() > 0.0);
-    bValid = bValid && std::isfinite(GetDepth()) && (GetDepth() > 0.0);
-    bValid = bValid && std::isfinite(GetGirth()) && (GetGirth() >= 0.0);
-    bValid = bValid && std::isfinite(GetWallThickness()) && (GetWallThickness() > 0.0);
-    bValid = bValid && std::isfinite(GetFilletRadius());
+    double const width = GetWidth();
+    double const depth = GetDepth();
+    double const wallThickness = GetWallThickness();
+    double const girth = GetGirth();
+    double const filletRadius = GetFilletRadius();
 
-    return bValid;
+    isValid = isValid && BeNumerical::BeFinite (width) && BeNumerical::IsGreaterThanZero (width);
+    isValid = isValid && BeNumerical::BeFinite (depth) && BeNumerical::IsGreaterThanZero (depth);
+    isValid = isValid && BeNumerical::BeFinite (girth) && BeNumerical::IsGreaterOrEqualToZero (girth);
+    isValid = isValid && BeNumerical::BeFinite (wallThickness) && BeNumerical::IsGreaterThanZero (wallThickness);
+    isValid = isValid && BeNumerical::BeFinite (filletRadius) && BeNumerical::IsGreaterOrEqualToZero(filletRadius);
+
+    if (isValid && BeNumerical::IsGreaterThanZero (girth))
+        {
+        isValid = isValid &&  (-1 == BeNumerical::Compare (girth, depth - wallThickness));
+        }
+
+    isValid = isValid && (-1 == BeNumerical::Compare (wallThickness, width / 2.0)) && (-1 == BeNumerical::Compare (wallThickness, depth / 2.0));
+
+    return isValid;
     }
 
 /*---------------------------------------------------------------------------------**//**

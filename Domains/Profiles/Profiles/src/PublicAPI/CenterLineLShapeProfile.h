@@ -30,7 +30,7 @@ public:
 
     public:
         PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName);
-        PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double girth, double wallThickness, double filletRadius = 0.0);
+        PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double wallThickness, double girth = 0.0, double filletRadius = 0.0);
 
     public:
         //! Required properties

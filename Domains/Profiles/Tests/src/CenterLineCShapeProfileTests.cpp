@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/src/CenterLineCShapeProfileTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfileValidationTestCase.h"
@@ -39,7 +39,7 @@ TEST_F (CenterLineCShapeProfileTestCase, Insert_ValidCreateParams_SuccessfulInse
     CreateParams requiredParams (GetModel(), "CenterLineCShape", 10, 10, 1, 1);
     EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
 
-    CreateParams fullParams (GetModel(), "CenterLineCShape", 10, 10, 1, 1, PI / 18);
+    CreateParams fullParams (GetModel(), "CenterLineCShape", 10, 10, 1, 1.20, 0.17);
     EXPECT_SUCCESS_Insert (fullParams) << "Profile should succeed to insert with valid full create parameters.";
     }
 
@@ -63,8 +63,8 @@ TEST_F (CenterLineCShapeProfileTestCase, GetProperties_ProfileInstance_ValidProp
     EXPECT_EQ ("CenterLineCShape", profilePtr->GetName());
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeWidth());
     EXPECT_DOUBLE_EQ (2.0, profilePtr->GetDepth());
-    EXPECT_DOUBLE_EQ (3.0, profilePtr->GetGirth());
-    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetWallThickness());
+    EXPECT_DOUBLE_EQ (3.0, profilePtr->GetWallThickness());
+    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetGirth());
     EXPECT_DOUBLE_EQ (5.0, profilePtr->GetFilletRadius());
     }
 

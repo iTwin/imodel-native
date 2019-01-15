@@ -646,16 +646,17 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     double const halfDepth = profile.GetDepth() / 2.0;
     double const wallThickness = profile.GetWallThickness();
     double const filletRadius = profile.GetFilletRadius();
+    double const outerFilletRadius = filletRadius + wallThickness;
     double const girth = profile.GetGirth();
 
     DPoint3d const tl_outerRangeApex  = { -halfWidth, halfDepth, 0.0 };
-    DPoint3d const tl_outerLeft       = { -halfWidth, halfDepth - wallThickness - filletRadius, 0.0 };
-    DPoint3d const bl_outerLeft       = { -halfWidth, -(halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d const tl_outerLeft       = { -halfWidth, halfDepth - outerFilletRadius, 0.0 };
+    DPoint3d const bl_outerLeft       = { -halfWidth, -(halfDepth - outerFilletRadius), 0.0 };
     DPoint3d const bl_outerRangeApex  = { -halfWidth, -halfDepth, 0.0 };
-    DPoint3d const bl_outerBottom     = { -(halfWidth - wallThickness - filletRadius), -halfDepth, 0.0 };
-    DPoint3d const br_outerBottom     = { (halfWidth - wallThickness - filletRadius), -halfDepth, 0.0 };
+    DPoint3d const bl_outerBottom     = { -(halfWidth - outerFilletRadius), -halfDepth, 0.0 };
+    DPoint3d const br_outerBottom     = { halfWidth - outerFilletRadius, -halfDepth, 0.0 };
     DPoint3d const br_outerRangeApex  = { halfWidth, -halfDepth, 0.0 };
-    DPoint3d br_outerRight      = { halfWidth, -(halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d br_outerRight      = { halfWidth, -(halfDepth - outerFilletRadius), 0.0 };
     DPoint3d br_outerRightGirth = { halfWidth, -(halfDepth - girth), 0.0 };
     DPoint3d br_innerRightGirth = { halfWidth - wallThickness, -(halfDepth - girth), 0.0 };
     DPoint3d br_innerRight      = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius), 0.0 };
@@ -672,10 +673,10 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     DPoint3d tr_innerRight      = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius), 0.0 };
     DPoint3d tr_innerRightGirth = { halfWidth - wallThickness, (halfDepth - girth), 0.0 };
     DPoint3d tr_outerRightGirth = { halfWidth, (halfDepth - girth), 0.0 };
-    DPoint3d tr_outerRight      = { halfWidth, (halfDepth - wallThickness - filletRadius), 0.0 };
+    DPoint3d tr_outerRight      = { halfWidth, (halfDepth - outerFilletRadius), 0.0 };
     DPoint3d const tr_outerRangeApex  = { halfWidth, halfDepth, 0.0 };
-    DPoint3d const tr_outerTop        = { (halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
-    DPoint3d const tl_outerTop        = { -(halfWidth - wallThickness - filletRadius), halfDepth, 0.0 };
+    DPoint3d const tr_outerTop        = { (halfWidth - outerFilletRadius), halfDepth, 0.0 };
+    DPoint3d const tl_outerTop        = { -(halfWidth - outerFilletRadius), halfDepth, 0.0 };
 
     if (BeNumerical::IsEqualToZero (girth))
         {
@@ -694,9 +695,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line3 = ICurvePrimitive::CreateLine (bl_outerLeft, bl_outerRangeApex);
     ICurvePrimitivePtr line4 = ICurvePrimitive::CreateLine (bl_outerRangeApex, bl_outerBottom);
 
-    if (BeNumerical::IsGreaterThanZero (filletRadius))
+    if (BeNumerical::IsGreaterThanZero (outerFilletRadius))
         {
-        line3 = createArcBetweenLines (line3, line4, filletRadius + wallThickness);
+        line3 = createArcBetweenLines (line3, line4, outerFilletRadius);
         line4 = nullptr;
         }
 
@@ -704,9 +705,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr  line6 = ICurvePrimitive::CreateLine (br_outerBottom, br_outerRangeApex);
     ICurvePrimitivePtr  line7 = ICurvePrimitive::CreateLine (br_outerRangeApex, br_outerRight);
 
-    if (BeNumerical::IsGreaterThanZero (filletRadius) && BeNumerical::IsGreaterThanZero (girth))
+    if (BeNumerical::IsGreaterThanZero (outerFilletRadius) && BeNumerical::IsGreaterThanZero (girth))
         {
-        line6 = createArcBetweenLines(line6, line7, filletRadius + wallThickness);
+        line6 = createArcBetweenLines (line6, line7, outerFilletRadius);
         line7 = nullptr;
         }
    
@@ -759,9 +760,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line25 = ICurvePrimitive::CreateLine (tr_outerRight, tr_outerRangeApex);
     ICurvePrimitivePtr line26 = ICurvePrimitive::CreateLine (tr_outerRangeApex, tr_outerTop);
 
-    if (BeNumerical::IsGreaterThanZero (filletRadius) && BeNumerical::IsGreaterThanZero (girth))
+    if (BeNumerical::IsGreaterThanZero (outerFilletRadius) && BeNumerical::IsGreaterThanZero (girth))
         {
-        line25 = createArcBetweenLines (line25, line26, filletRadius + wallThickness);
+        line25 = createArcBetweenLines (line25, line26, outerFilletRadius);
         line26 = nullptr;
         }
 
@@ -769,9 +770,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     ICurvePrimitivePtr line28 = ICurvePrimitive::CreateLine (tl_outerTop, tl_outerRangeApex);
     ICurvePrimitivePtr  line1 = ICurvePrimitive::CreateLine (tl_outerRangeApex, tl_outerLeft);
 
-    if (BeNumerical::IsGreaterThanZero (filletRadius))
+    if (BeNumerical::IsGreaterThanZero (outerFilletRadius))
         {
-        line28 = createArcBetweenLines (line28, line1, filletRadius + wallThickness);
+        line28 = createArcBetweenLines (line28, line1, outerFilletRadius);
         line1 = nullptr;
         }
 
