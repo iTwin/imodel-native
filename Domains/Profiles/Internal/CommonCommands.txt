@@ -2,7 +2,7 @@
 |
 |     $Source: Internal/CommonCommands.txt $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,6 +16,14 @@ Gist is not included in our buildstrategy/partfile, pull & build it with:
 [RUN TESTS]
 To run only certain tests add a filter option: "-dGTEST_FILTER=--gtest_filter=[YourFilter]" to bmake command:
     bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=CShapeProfile*
+
+[DEBUG TESTS]
+To run/debug tests from Visual Studio:
+    Right-click on 'ProfilesDomainTests' project and click 'Set as StartUp Project'.
+    If you haven't built the tests or have updated the code: run the build command from shell (or hit 'Build'->'Build ProfilesDomainTests' from IDE menu).
+    Pressing F5 should run the exe and attach the debugger.
+    To run specific tests: 'ProfilesDomainTests'->'Properties'->'Debugging'->'Command Arguments' and add "--gtest_filter=[YourDesiredFilter]".
+    NOTE: Make sure you run VisualStudio from shell.
 
 [UI TESTS]
 Run geometry generation test:
