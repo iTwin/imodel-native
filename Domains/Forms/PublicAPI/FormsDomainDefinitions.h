@@ -58,6 +58,8 @@
 #define FORMS_CLASS_CurvedProfiledExtrusionHasStartProfile  "CurvedProfiledExtrusionHasStartProfile"
 #define FORMS_CLASS_CurvedProfiledExtrusionHasEndProfile    "CurvedProfiledExtrusionHasEndProfile"
 
+BEGIN_BENTLEY_FORMS_NAMESPACE
+
 BEBRIEFCASEBASED_ID_SUBCLASS(ProfileId, Dgn::DgnElementId)
 BEBRIEFCASEBASED_ID_SUBCLASS(StartProfileId, Dgn::DgnElementId)
 BEBRIEFCASEBASED_ID_SUBCLASS(EndProfileId, Dgn::DgnElementId)
@@ -65,6 +67,8 @@ BEBRIEFCASEBASED_ID_SUBCLASS(EndProfileId, Dgn::DgnElementId)
 typedef BeSQLite::IdSet<ProfileId> ProfileIdSet;               //!< IdSet with ClassificationId members.
 typedef BeSQLite::IdSet<StartProfileId> StartProfileIdSet;     //!< IdSet with StartProfileId members.
 typedef BeSQLite::IdSet<EndProfileId> EndProfileIdSet;         //!< IdSet with EndProfileId members.
+
+END_BENTLEY_FORMS_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations
@@ -75,5 +79,6 @@ FORMS_POINTER_TYPEDEFS(CurvedExtrusion)
 FORMS_POINTER_TYPEDEFS(StraightExtrusion)
 FORMS_POINTER_TYPEDEFS(CurvedProfiledExtrusion)
 FORMS_POINTER_TYPEDEFS(StraightProfiledExtrusion)
+
 
 #endif
