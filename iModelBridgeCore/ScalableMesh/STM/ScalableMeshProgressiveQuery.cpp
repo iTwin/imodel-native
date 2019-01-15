@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1157,7 +1157,7 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                     }
 
                     if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr->get(), m_newQuery->m_loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate)
-                        || ((*scalableMeshPtr)->ShouldInvertClips() !=  meshNodePtr->HasInvertedClips()))
+                        )
                         {  
                         DRange3d range3d = meshNodePtr->GetNodeExtent();          
                         FindOverview(m_lowerResOverviewNodes[threadId], collectedClips, range3d, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
@@ -1177,8 +1177,7 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd], scalableMeshPtr->get()));
                 
                 bset<uint64_t> collectedClips;
-                if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr->get(), m_newQuery->m_loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate)
-                    || ((*scalableMeshPtr)->ShouldInvertClips() != meshNodePtr->HasInvertedClips()))
+                if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr->get(), m_newQuery->m_loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {        
                     DRange3d range3d = meshNodePtr->GetNodeExtent();          
                     FindOverview(m_lowerResOverviewNodes[threadId], collectedClips, range3d, m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
