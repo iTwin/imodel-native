@@ -784,7 +784,7 @@ bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus iModelExternalSourceAspect::AddTo(DgnElementR el)
+DgnDbStatus iModelExternalSourceAspect::AddAspect(DgnElementR el)
     {
     return DgnElement::GenericMultiAspect::AddAspect(el, *m_instance);
     }
@@ -792,7 +792,7 @@ DgnDbStatus iModelExternalSourceAspect::AddTo(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstancePtr iModelExternalSourceAspect::MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const* ss, ECN::ECClassCR aspectClass) 
+ECN::IECInstancePtr iModelExternalSourceAspect::CreateInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const* ss, ECN::ECClassCR aspectClass) 
     {
     auto instance = aspectClass.GetDefaultStandaloneEnabler()->CreateInstance();
     instance->SetValue(XTRN_SRC_ASPCT_Scope, ECN::ECValue(scope));
@@ -1023,21 +1023,24 @@ Utf8CP iModelExternalSourceAspect::GetKind() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelExternalSourceAspect::GetSourceState(SourceState& ss) const
+iModelExternalSourceAspect::SourceState iModelExternalSourceAspect::GetSourceState() const
     {
-    ECN::ECValue v;
-    m_instance->GetValue(v, XTRN_SRC_ASPCT_Hash);
-    if (v.IsNull())
-        return BSIERROR;
-    size_t sz;
-    auto b = v.GetBinary(sz);
-    unsigned arraySize = sz / sizeof(unsigned char);
-    ss.m_hash.insert(ss.m_hash.end(), b, &b[arraySize]);
-    
-    m_instance->GetValue(v, XTRN_SRC_ASPCT_LastModifiedTime);
-    ss.m_lastModifiedTime = v.GetDouble();
+    SourceState ss;
 
-    return BSISUCCESS;
+    ECN::ECValue v;
+    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_Hash)) && !v.IsNull())
+        {
+        size_t sz;
+        auto b = v.GetBinary(sz);
+        ss.m_hash.assign(b, b + sz);
+        }
+
+    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_LastModifiedTime)) && !v.IsNull())
+        {
+        ss.m_lastModifiedTime = v.GetDouble();
+        }
+
+    return ss;
     }
 
 /*---------------------------------------------------------------------------------**//**

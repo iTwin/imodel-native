@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConvertView.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -721,10 +721,24 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     DgnViewId existingViewId;
     Utf8String v8ViewName;
+    DgnElementId externalSourceAspectScope = GetRepositoryLinkFromAppData(*viewInfo.GetRootDgnFileP());
     if (IsUpdating())
         {
         double lastModified;
-        GetSyncInfo().TryFindView(existingViewId, lastModified, v8ViewName, viewInfo);
+        if (_WantProvenanceInBim())
+            {
+            SyncInfo::ViewDefinitionExternalSourceAspect aspect(nullptr);
+            std::tie(aspect, existingViewId) = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(externalSourceAspectScope, viewInfo, GetDgnDb());
+            if (existingViewId.IsValid())
+                {
+                v8ViewName = aspect.GetV8ViewName();
+                lastModified = aspect.GetSourceState().m_lastModifiedTime;
+                }
+            }
+        else
+            {
+            GetSyncInfo().TryFindView(existingViewId, lastModified, v8ViewName, viewInfo);
+            }
         if (!existingViewId.IsValid())
             existingViewId = ViewDefinition::QueryViewId(*definitionModel, name);
         }
@@ -865,6 +879,12 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         {
         if (!view->EqualState(*existingDef) || view->GetName() != existingDef->GetName())
             {
+            if (_WantProvenanceInBim())
+                {
+                auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspect(*view);
+                aspect.Update(viewInfo, defaultName.c_str());
+                }
+
             if (!view->Update().IsValid())
                 {
                 ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
@@ -874,6 +894,12 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         }
     else
         {
+        if (_WantProvenanceInBim())
+            {
+            auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, name, viewInfo, GetDgnDb());
+            aspect.AddAspect(*view);
+            }
+
         if (!view->Insert().IsValid())
             {
             // this sometimes happens when a corrupt DgnV8 file has more than one viewgroup with the same name (which is an error).

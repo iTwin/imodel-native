@@ -934,7 +934,7 @@ DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
         return (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
         }
 
-    return SyncInfo::GeomPartExternalSourceAspect::FindElementByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
+    return SyncInfo::GeomPartExternalSourceAspect::GetAspectByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -954,7 +954,7 @@ Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
         BeAssert(false);
         return "";
         }
-    auto aspect = SyncInfo::GeomPartExternalSourceAspect::Get(*geomPart);
+    auto aspect = SyncInfo::GeomPartExternalSourceAspect::GetAspect(*geomPart);
     return aspect.IsValid()? aspect.GetSourceId(): "";
     }
 
@@ -972,9 +972,9 @@ BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8Stri
         return BSISUCCESS;
         }
 
-    auto aspect = SyncInfo::GeomPartExternalSourceAspect::Make(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
+    auto aspect = SyncInfo::GeomPartExternalSourceAspect::CreateAspect(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
     auto partElem = GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
-    aspect.AddTo(*partElem);
+    aspect.AddAspect(*partElem);
     return partElem->Update().IsValid()? BSISUCCESS: BSIERROR;
     }
 

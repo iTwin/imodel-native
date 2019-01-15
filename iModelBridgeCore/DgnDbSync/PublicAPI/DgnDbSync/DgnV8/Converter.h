@@ -1267,6 +1267,8 @@ public:
     virtual bool _FilterOutView(DgnV8ViewInfoCR v8View) {return false;}
     virtual Utf8String _ComputeViewName(Utf8StringCR defaultName, DgnV8ViewInfoCR) {return defaultName;}
 
+    void DeleteView(DgnViewId, SyncInfo&);
+
     void HandleLevelAppearanceInconsistency(ViewDefinitionR, DgnAttachmentCR, DgnV8Api::LevelId, DgnCategoryId, DgnSubCategoryId, bool isV8LevelOn);
     //! Interpret the level mask from a V8 view for the specified attachment. The result will be to add the corresponding categories to \a viewDef that are on in the V8 view.
     //! This function may also create a new SubCategory and add an override for it to the view if the on/off status or symbology of the level was modified by the attachment.

@@ -276,7 +276,7 @@ struct iModelExternalSourceAspect
 
     public:
 
-    iModelExternalSourceAspect(ECN::IECInstance* i = nullptr) : m_instance(i) {}
+    iModelExternalSourceAspect(ECN::IECInstance* i = nullptr) :m_instance(i) {}
     iModelExternalSourceAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
  
     bool IsValid() const {return m_instance.IsValid();}
@@ -284,29 +284,29 @@ struct iModelExternalSourceAspect
     IMODEL_BRIDGE_EXPORT Utf8CP GetKind() const;
     IMODEL_BRIDGE_EXPORT DgnElementId GetScope() const;
     IMODEL_BRIDGE_EXPORT Utf8CP GetSourceId() const;
-    IMODEL_BRIDGE_EXPORT BentleyStatus GetSourceState(SourceState&) const;
+    IMODEL_BRIDGE_EXPORT SourceState GetSourceState() const;
     IMODEL_BRIDGE_EXPORT rapidjson::Document GetProperties() const;
 
     IMODEL_BRIDGE_EXPORT void SetProperties(rapidjson::Document const&); //!< Update the custom properties
     IMODEL_BRIDGE_EXPORT void SetSourceState(SourceState const& ss) {SetSourceState(*m_instance, ss);} //!< Update the state-tracking properties of the ECInstance
     
     //! Add this aspect to the specified element. (Caller must then call element's Insert or Update method.)
-    IMODEL_BRIDGE_EXPORT DgnDbStatus AddTo(DgnElementR);
+    IMODEL_BRIDGE_EXPORT DgnDbStatus AddAspect(DgnElementR);
 
-    //! Get the base provenance aspect ECClass
+    //! Get the ExternalSourceAspect ECClass
     IMODEL_BRIDGE_EXPORT static ECN::ECClassCP GetAspectClass(DgnDbR);
 
-    //! Get an existing syncinfo aspect from the specified element
+    //! Get an existing ExternalSourceAspect from the specified element in order to view the aspect
     IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspect(DgnElementCR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
-    //! Get an existing syncinfo aspect from the specified element
+    //! Get an existing ExternalSourceAspect from the specified element in order to update the aspect (and then the element)
     IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspect(DgnElementR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
 
     //! Look up an aspect by Scope, Kind, and SourceId
-    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspectBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR tag);
+    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspectBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
 
     //! Create a new ECInstance of the specified provenance aspect class
     //! Bridges will probably want factory methods with signatures that are customized to the bridge.
-    IMODEL_BRIDGE_EXPORT static ECN::IECInstancePtr MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const*, ECN::ECClassCR aspectClass);
+    IMODEL_BRIDGE_EXPORT static ECN::IECInstancePtr CreateInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const*, ECN::ECClassCR aspectClass);
 
     //! Set the SourceState of this aspect in memory
     IMODEL_BRIDGE_EXPORT static void SetSourceState(ECN::IECInstanceR, SourceState const&);
