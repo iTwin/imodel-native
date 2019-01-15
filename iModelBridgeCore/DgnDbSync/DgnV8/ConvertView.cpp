@@ -882,7 +882,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
             if (_WantProvenanceInBim())
                 {
                 auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspect(*view);
-                aspect.Update(viewInfo, defaultName.c_str());
+                if (aspect.IsValid())
+                    aspect.Update(viewInfo, defaultName.c_str());
                 }
 
             if (!view->Update().IsValid())
@@ -896,8 +897,12 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         {
         if (_WantProvenanceInBim())
             {
-            auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, name, viewInfo, GetDgnDb());
-            aspect.AddAspect(*view);
+            if (nullptr != viewInfo.GetElementRef()) // we run into cases where the ViewInfo does not correspond to a V8 element. We can't track that.
+                {
+                auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, name, viewInfo, GetDgnDb());
+                if (aspect.IsValid())
+                    aspect.AddAspect(*view);
+                }
             }
 
         if (!view->Insert().IsValid())

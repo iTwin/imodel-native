@@ -1925,6 +1925,12 @@ SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::G
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(DgnElementId scopeId, Utf8StringCR viewName, DgnV8ViewInfoCR viewInfo, DgnDbR db)
     {
+    if (nullptr == viewInfo.GetElementRef())
+        {
+        BeAssert(false);
+        return ViewDefinitionExternalSourceAspect(nullptr);
+        }
+
     auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
         return ViewDefinitionExternalSourceAspect(nullptr);

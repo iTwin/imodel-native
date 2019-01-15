@@ -786,6 +786,7 @@ bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR n
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus iModelExternalSourceAspect::AddAspect(DgnElementR el)
     {
+    BeAssert(m_instance.IsValid());
     return DgnElement::GenericMultiAspect::AddAspect(el, *m_instance);
     }
 
