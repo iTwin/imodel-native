@@ -69,9 +69,9 @@ Utf8String IScalableMeshRDSProvider::GetProjectID()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-IScalableMeshRDSProviderPtr IScalableMeshRDSProvider::Create(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid)
+IScalableMeshRDSProviderPtr IScalableMeshRDSProvider::Create(const Utf8String& serverUrl, const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid)
     {
-    return new ScalableMeshRDSProvider(projectGuid, pwcsMeshGuid);
+    return new ScalableMeshRDSProvider(serverUrl, projectGuid, pwcsMeshGuid);
     }
 
 /*----------------------------------------------------------------------------+
@@ -81,8 +81,8 @@ IScalableMeshRDSProviderPtr IScalableMeshRDSProvider::Create(const Utf8String& p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScalableMeshRDSProvider::ScalableMeshRDSProvider(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid)
-    : m_ProjectGuid(projectGuid), m_PWCSMeshGuid(pwcsMeshGuid)
+ScalableMeshRDSProvider::ScalableMeshRDSProvider(const Utf8String& serverUrl, const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid)
+    : m_ServerUrl(serverUrl), m_ProjectGuid(projectGuid), m_PWCSMeshGuid(pwcsMeshGuid)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -109,7 +109,7 @@ Utf8String ScalableMeshRDSProvider::_GetAzureURLAddress()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::_GetRDSURLAddress()
     {
-    ScalableMeshRDSProvider::InitializeRealityDataService(this->m_ProjectGuid);
+    ScalableMeshRDSProvider::InitializeRealityDataService(this->m_ServerUrl, this->m_ProjectGuid);
 
     bool serverStartsWithHTTPS = RealityDataService::GetServerName().StartsWith("https://");
 
@@ -152,11 +152,14 @@ Utf8String ScalableMeshRDSProvider::_GetProjectID()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& projectID)
+void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& serverUrl, const Utf8String& projectID)
     {
-    //if (RealityDataService::AreParametersSet()) return SUCCESS;
+    if (RealityDataService::AreParametersSet()) return;
+    auto buddiUrl = GetBuddiUrl();
+    if(!serverUrl.empty() && buddiUrl != serverUrl)
+        buddiUrl = serverUrl;
 
-    RealityDataService::SetServerComponents(GetBuddiUrl(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), RealityDataService::GetSchemaName());
+    RealityDataService::SetServerComponents(buddiUrl, RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), RealityDataService::GetSchemaName());
     RealityDataService::SetProjectId(projectID);
 
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
@@ -221,7 +224,7 @@ bool ScalableMeshRDSProvider::IsTokenExpired()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshRDSProvider::UpdateToken()
     {
-    ScalableMeshRDSProvider::InitializeRealityDataService(this->m_ProjectGuid);
+    ScalableMeshRDSProvider::InitializeRealityDataService(this->m_ServerUrl, this->m_ProjectGuid);
 
     // Make sure the server names matches
     if (nullptr != m_AzureConnection.m_handshake && !m_AzureConnection.m_handshake->GetServerName().Equals(RealityDataService::GetServerName()))
@@ -361,9 +364,9 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScalableMeshRDSProvider::IsHostedByRDS(const Utf8String& projectGuid, const Utf8String& meshGuid)
+bool ScalableMeshRDSProvider::IsHostedByRDS(const Utf8String& serverUrl, const Utf8String& projectGuid, const Utf8String& meshGuid)
     {
-    ScalableMeshRDSProvider::InitializeRealityDataService(projectGuid);
+    ScalableMeshRDSProvider::InitializeRealityDataService(serverUrl, projectGuid);
 
     AzureHandshake handshake(meshGuid, false /*writeable*/);
 

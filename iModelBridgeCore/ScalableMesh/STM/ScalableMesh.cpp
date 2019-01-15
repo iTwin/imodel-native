@@ -1244,7 +1244,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             if (!m_streamingSettings->IsValid())
                 return ERROR;
             if (m_streamingSettings->IsDataFromRDS())
-                m_smRDSProvider = IScalableMeshRDSProvider::Create(m_streamingSettings->GetUtf8ProjectID(), m_streamingSettings->GetUtf8GUID());
+                m_smRDSProvider = IScalableMeshRDSProvider::Create("https://" + m_streamingSettings->GetUtf8ServerID() + ".bentley.com/", m_streamingSettings->GetUtf8ProjectID(), m_streamingSettings->GetUtf8GUID());
             m_isCesium3DTiles = m_streamingSettings->IsCesium3DTiles();
             m_isFromStubFile = m_streamingSettings->IsStubFile();
 

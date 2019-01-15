@@ -106,8 +106,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         this->m_guid = Utf8String(url.substr(guidPos, guidLength));
         auto projectIDStartPos = url.find(L"S3MXECPlugin--") + 14;
         auto projectIDEndPos = url.find_first_of(L"/", projectIDStartPos);
-        auto projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
-        //BeAssert(projectID.Equals(this->m_projectID.c_str()));
+        this->m_projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
         }
     else if (url.ContainsI(L"blob.core.windows.net"))
         { // Direct link to Azure
@@ -144,7 +143,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
             // NEEDS_WORK_SM_STREAMING : handle Azure token properly
             }
 #ifndef LINUX_SCALABLEMESH_BUILD
-        if (ScalableMeshRDSProvider::IsHostedByRDS(this->m_projectID, this->m_guid))
+        if (ScalableMeshRDSProvider::IsHostedByRDS(this->m_serverID, this->m_projectID, this->m_guid))
             {
             // Forward to RDS to properly handle SAS tokens
             this->m_location = ServerLocation::RDS;
