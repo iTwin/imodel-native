@@ -28,6 +28,9 @@ struct OidcSignInManager : WebServices::IConnectSignInManager
         Tasks::AsyncTaskPtr<WebServices::WSConnectVoidResult> _SignOut() override;
         bool _IsSignedIn() const override;
         UserInfo _GetUserInfo() const override;
+        Utf8String _GetLastUsername() const override;
+        void _StoreSignedInUser() override;
+
         WebServices::IConnectTokenProviderPtr _GetTokenProvider(Utf8StringCR rpUri) const override;
 
         WebServices::AuthenticationHandlerPtr _GetAuthenticationHandler

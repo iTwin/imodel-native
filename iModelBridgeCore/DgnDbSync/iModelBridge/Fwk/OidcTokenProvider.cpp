@@ -30,15 +30,11 @@ OidcTokenProvider::OidcTokenProvider(Utf8StringCR callBackUrl)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> OidcTokenProvider::UpdateToken()
     {
-    NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv("OidcTokenProvider::UpdateToken(0)");
-
     Http::Request request = m_client.CreateGetJsonRequest(m_callBackUrl);
     return request.PerformAsync()->Then <WebServices::ISecurityTokenPtr>([this](Http::Response& httpResponse)
         {
         if (!httpResponse.IsSuccess())
             {
-            NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv("OidcTokenProvider::UpdateToken(1)");
-
             return m_token;
             }
         rapidjson::Document document;
@@ -51,15 +47,12 @@ Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> OidcTokenProvider::UpdateTok
         Utf8String bearerString("Bearer ");
         bearerString.append(tokenJson.GetString());
 
-        NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv("OidcTokenProvider::UpdateToken(2) bearerString = %s", bearerString.c_str());
-
+        NativeLogging::LoggingManager::GetLogger("iModelBridge")->infov("OidcTokenProvider::UpdateToken(2) bearerString = %s", bearerString.c_str());
 
         m_token = std::make_shared<OidcToken>(tokenJson.GetString());
         
         m_tokenValidUntil = BeTimePoint::FromNow(BeDuration::FromSeconds(timeJson.GetInt() - 10));//Reduce the expiration by 10 s.
         
-        NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv("OidcTokenProvider::UpdateToken(3)");
-
         return m_token;
     });
     }
@@ -69,13 +62,9 @@ Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> OidcTokenProvider::UpdateTok
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebServices::ISecurityTokenPtr OidcTokenProvider::GetToken()
     {
-    NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv("OidcTokenProvider::GetToken(0)");
-
     if (m_tokenValidUntil.IsInPast()) {
-        NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv("OidcTokenProvider::GetToken(1)");
         m_token = nullptr;   
     }
 
-    NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv("OidcTokenProvider::GetToken(2)");
     return m_token;
     }
