@@ -51,22 +51,6 @@ WebServices::IConnectSignInManager::UserInfo OidcSignInManager::_GetUserInfo() c
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsiclass                                     John.Majerle                    01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String OidcSignInManager::_GetLastUsername() const
-    {
-    return IConnectSignInManager::GetLastUsername();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                     John.Majerle                    01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OidcSignInManager::_StoreSignedInUser() 
-    {
-    // IConnectSignInManager::StoreSignedInUser();
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebServices::IConnectTokenProviderPtr OidcSignInManager::_GetTokenProvider(Utf8StringCR rpUri) const
@@ -96,14 +80,10 @@ WebServices::AuthenticationHandlerPtr OidcSignInManager::_GetAuthenticationHandl
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 OidcSignInManager::OidcSignInManager(Utf8StringCR callBackUrl)
-    : IConnectSignInManager()
+    : IConnectSignInManager(std::make_shared<RuntimeLocalState>())
     {
     m_tokenProvider = std::make_shared< OidcTokenProvider>(OidcTokenProvider(callBackUrl));
     }
 
 
-// OidcSignInManager::OidcSignInManager(Utf8StringCR callBackUrl)
-//     : IConnectSignInManager(std::make_shared<RuntimeLocalState>())
-//     {
-//     m_tokenProvider = std::make_shared< OidcTokenProvider>(OidcTokenProvider(callBackUrl));
-//     }
+
