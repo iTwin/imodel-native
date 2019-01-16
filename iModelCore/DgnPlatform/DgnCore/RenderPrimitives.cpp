@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RenderPrimitives.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -2896,6 +2896,9 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
     for (uint32_t i = 0; i < 4; ++i)
         vertex[i] = QPoint3d(pts[i], rasterTile.m_pointParams);
 
+    Transform tf = Transform::From(rasterTile.m_pointParams.origin);
+    rasterTile.m_pointParams.origin.Zero();
+
     rasterTile.m_points = vertex;
     rasterTile.m_numPoints = 4;
 
@@ -2916,7 +2919,10 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
     rasterTile.m_material = params.GetMaterial(); // not likely...
     rasterTile.m_isPlanar = true;
 
-    return _CreateTriMesh(rasterTile, db);
+    auto triMesh = _CreateTriMesh(rasterTile, db);
+    GraphicBranch branch;
+    branch.Add(*triMesh);
+    return _CreateBranch(std::move(branch), db, tf, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
