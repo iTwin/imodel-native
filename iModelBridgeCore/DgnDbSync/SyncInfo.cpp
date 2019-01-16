@@ -1448,6 +1448,7 @@ DbResult SyncInfo::Level::Insert(Db& db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCategoryId& subCatId, DgnV8ModelCR v8Model, uint32_t levelId, Level::Type ltype, Converter& converter)
     {
+    converter.WriteRepositoryLink(*v8Model.GetDgnFileP());  // Must ensure that we have a RepositoryLink. Level conversion happens very early, before model conversion, and so the file may not have been registered yet.
     DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
     BeAssert(repositoryLinkId.IsValid());
     Utf8String v8LevelId = FormatSourceId(levelId);
@@ -1547,6 +1548,7 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateA
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Converter& converter)
     {
+    converter.WriteRepositoryLink(*v8Model.GetDgnFileP());  // Must ensure that we have a RepositoryLink. Level conversion happens very early, before model conversion, and so the file may not have been registered yet.
     return CreateAspect(converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()), vlevel, v8Model, converter);
     }
 
