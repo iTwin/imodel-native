@@ -2883,7 +2883,7 @@ bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, bvector<PolyfaceHea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR db, GraphicParamsCR params) const
+GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR db, GraphicParamsCR params, bool transformToCenter) const
     {
     TriMeshArgs rasterTile;
 
@@ -2896,8 +2896,12 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
     for (uint32_t i = 0; i < 4; ++i)
         vertex[i] = QPoint3d(pts[i], rasterTile.m_pointParams);
 
-    Transform tf = Transform::From(rasterTile.m_pointParams.origin);
-    rasterTile.m_pointParams.origin.Zero();
+    Transform tf;
+    if (transformToCenter)
+        {
+        tf = Transform::From(rasterTile.m_pointParams.origin);
+        rasterTile.m_pointParams.origin.Zero();
+        }
 
     rasterTile.m_points = vertex;
     rasterTile.m_numPoints = 4;
@@ -2920,6 +2924,9 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
     rasterTile.m_isPlanar = true;
 
     auto triMesh = _CreateTriMesh(rasterTile, db);
+    if (!transformToCenter || triMesh.IsNull())
+        return triMesh;
+
     GraphicBranch branch;
     branch.Add(*triMesh);
     return _CreateBranch(std::move(branch), db, tf, nullptr);

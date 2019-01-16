@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/WebMercator.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -174,7 +174,7 @@ BentleyStatus MapTile::Loader::_LoadTile()
     m_tileBytes = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
     GraphicParams gfParams = GraphicParams::FromSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
-    tile.m_graphic = GetRenderSystem()->_CreateTile(*texture, tile.m_corners, mapRoot.GetDgnDb(), gfParams);
+    tile.m_graphic = GetRenderSystem()->_CreateTile(*texture, tile.m_corners, mapRoot.GetDgnDb(), gfParams, true);
 
     BeAssert(tile.m_graphic.IsValid());
 

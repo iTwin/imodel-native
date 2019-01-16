@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -3496,7 +3496,7 @@ struct System
     DGNPLATFORM_EXPORT bvector<GraphicPtr> _CreateSheetTile(TextureCR tile, bvector<PolyfaceHeaderPtr>& polys, DgnDbR dgndb, GraphicParamsCR params) const;
 
     //! Create a tile primitive
-    DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;
+    DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params, bool transformToCenter=false) const;
 
     //! Create a Graphic consisting of a list of Graphics
     virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const = 0;
