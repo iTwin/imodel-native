@@ -876,6 +876,11 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
                 JsonValueCR instanceKeysEntry = instanceKeysJson[i];
                 BeAssert(instanceKeysEntry.isArray() && 2 == instanceKeysEntry.size());
                 ECClassCP ecClass = GetClassFromFullName(connection, instanceKeysEntry[0].asCString());
+                if (nullptr == ecClass)
+                    {
+                    BeAssert(false);
+                    continue;
+                    }
 
                 JsonValueCR instanceIdsJson = instanceKeysEntry[1];
                 BeAssert(instanceIdsJson.isArray());
