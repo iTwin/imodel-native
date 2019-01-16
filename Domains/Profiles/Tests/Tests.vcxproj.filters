@@ -18,7 +18,7 @@
     <None Include="CodeCoverage.mke">
       <Filter>Mke</Filter>
     </None>
-    <None Include="_Tests.mke">
+    <None Include="Tests.mke">
       <Filter>Mke</Filter>
     </None>
   </ItemGroup>

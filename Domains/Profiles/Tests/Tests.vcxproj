@@ -51,7 +51,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="CodeCoverage.mke" />
-    <None Include="_Tests.mke" />
+    <None Include="Tests.mke" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ArbitraryCompositeProfileTests.cpp" />
