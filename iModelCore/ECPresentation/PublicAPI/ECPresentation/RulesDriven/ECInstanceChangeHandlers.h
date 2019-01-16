@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/ECInstanceChangeHandlers.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
 //__PUBLISH_SECTION_START__
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/Content.h>
+#include <ECPresentation/Localization.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -23,6 +24,9 @@ USING_NAMESPACE_BENTLEY_EC
 struct IECInstanceChangeHandler : RefCountedBase
 {
     static const int PRIORITY_DEFAULT = 1000;
+    
+private:
+    ILocalizationProvider const* m_provider = nullptr;
 
 protected:
     virtual int _GetPriority() const {return PRIORITY_DEFAULT;}
@@ -36,6 +40,8 @@ public:
         {
         return _Change(connection, changeInfo, propertyAccessor, value);
         }
+    void SetLocalizationProvider(ILocalizationProvider const* provider) { m_provider = provider; }
+    ILocalizationProvider const* GetLocalizationProvider() const { return m_provider; }
 };
 typedef RefCountedPtr<IECInstanceChangeHandler> IECInstanceChangeHandlerPtr;
 
