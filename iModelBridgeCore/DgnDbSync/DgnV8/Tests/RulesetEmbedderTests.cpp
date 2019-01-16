@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/RulesetEmbedderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -16,6 +16,8 @@ struct RulesetEmbedderTests : public ConverterTestBaseFixture
     DEFINE_T_SUPER(ConverterTestBaseFixture);
 
     DgnDbPtr m_db;
+    BentleyApi::ECPresentation::ConnectionManager m_connections;
+    BentleyApi::ECPresentation::RulesDrivenECPresentationManager* m_presentationManager;
     BentleyApi::Utf8CP RuleSetJsonString1 = R"(
         {
             "id" : "default",
@@ -68,13 +70,25 @@ struct RulesetEmbedderTests : public ConverterTestBaseFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas                12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::ECPresentation::RulesDrivenECPresentationManager::Paths GetPaths(BentleyApi::BeTest::Host& host)
+    {
+    BentleyApi::BeFileName assetsDirectory, temporaryDirectory;
+    host.GetDgnPlatformAssetsDirectory(assetsDirectory);
+    host.GetTempDir(temporaryDirectory);
+    return BentleyApi::ECPresentation::RulesDrivenECPresentationManager::Paths(assetsDirectory, temporaryDirectory);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas                12/18
++---------------+---------------+---------------+---------------+---------------+------*/
 void RulesetEmbedderTests::SetUp()
     {
     T_Super::SetUp();
     LineUpFiles(L"Design3dSelfReference.ibim", L"Test3d.dgn", false);
 
     m_db = OpenExistingDgnDb(m_dgnDbFileName);
-    BentleyApi::ECPresentation::IECPresentationManager::SetLocalizationProvider(new BentleyApi::ECPresentation::SQLangLocalizationProvider());
+    m_presentationManager = new BentleyApi::ECPresentation::RulesDrivenECPresentationManager(m_connections, GetPaths(BentleyApi::BeTest::GetHost()));
+    m_presentationManager->SetLocalizationProvider(new BentleyApi::ECPresentation::SQLangLocalizationProvider());
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE(m_db->IsDbOpen());
     }
@@ -84,20 +98,10 @@ void RulesetEmbedderTests::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesetEmbedderTests::TearDown()
     {
+    FREE_AND_CLEAR(m_presentationManager);
     m_db->AbandonChanges();
     m_db->CloseDb();
     T_Super::TearDown();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Haroldas.Vitunskas                12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyApi::ECPresentation::RulesDrivenECPresentationManager::Paths GetPaths(BentleyApi::BeTest::Host& host)
-    {
-    BentleyApi::BeFileName assetsDirectory, temporaryDirectory;
-    host.GetDgnPlatformAssetsDirectory(assetsDirectory);
-    host.GetTempDir(temporaryDirectory);
-    return BentleyApi::ECPresentation::RulesDrivenECPresentationManager::Paths(assetsDirectory, temporaryDirectory);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,11 +131,9 @@ TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocated)
 TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocatedFromPresentationManager)
     {
     RulesetEmbedder embedder = RulesetEmbedder(*m_db);
-
-    BentleyApi::ECPresentation::ConnectionManager connections;
-    BentleyApi::ECPresentation::RulesDrivenECPresentationManager presentationManager(connections, GetPaths(BentleyApi::BeTest::GetHost()));
-    BentleyApi::ECPresentation::IConnectionPtr connection = presentationManager.Connections().CreateConnection(*m_db);
-    BentleyApi::bvector<BentleyApi::ECPresentation::PresentationRuleSetPtr> rulesets = presentationManager.GetLocaters().LocateRuleSets(*connection, nullptr);
+    
+    BentleyApi::ECPresentation::IConnectionPtr connection = m_presentationManager->Connections().CreateConnection(*m_db);
+    BentleyApi::bvector<BentleyApi::ECPresentation::PresentationRuleSetPtr> rulesets = m_presentationManager->GetLocaters().LocateRuleSets(*connection, nullptr);
     int countBefore = rulesets.size();
 
     BentleyApi::ECPresentation::PresentationRuleSetPtr ruleset = BentleyApi::ECPresentation::PresentationRuleSet::ReadFromJsonString(RuleSetJsonString1);
@@ -140,7 +142,7 @@ TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocatedFromPresentationManager)
     DgnElementId rulesetId = embedder.InsertRuleset(*ruleset);
     ASSERT_TRUE(rulesetId.IsValid());
 
-    rulesets = presentationManager.GetLocaters().LocateRuleSets(*connection, nullptr);
+    rulesets = m_presentationManager->GetLocaters().LocateRuleSets(*connection, nullptr);
     ASSERT_TRUE(1 == rulesets.size() - countBefore);
     }
 
