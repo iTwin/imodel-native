@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/DbEntities.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -61,6 +61,8 @@ DWGDB_SURFACE_DEFINE_MEMBERS(RevolvedSurface)
 DWGDB_SURFACE_DEFINE_MEMBERS(SweptSurface)
 
 
+
+bool    DwgDbEntity::IsDimension () const { return nullptr != DWGDB_Type(Dimension)::cast(this); }
 
 DPoint3d    DwgDbLine::GetStartPoint () const { return Util::DPoint3dFrom(T_Super::startPoint()); }
 DPoint3d    DwgDbLine::GetEndPoint () const { return Util::DPoint3dFrom(T_Super::endPoint()); }
@@ -1316,7 +1318,7 @@ DwgDbStatus     DwgDbViewport::SetAnnotationScale (double scale)
     // database residency a prerequisite
     DWGDB_TypeP(Database) dwg = T_Super::database ();
     if (nullptr == dwg)
-        DwgDbStatus::NotPersistentObject;
+        return DwgDbStatus::NotPersistentObject;
 
     DwgDbStatus status = DwgDbStatus::UnknownError;
     DWGDB_TypeP(ObjectContextManager) contextManager = dwg->objectContextManager ();

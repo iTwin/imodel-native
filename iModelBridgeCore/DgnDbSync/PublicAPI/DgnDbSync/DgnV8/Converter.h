@@ -1044,7 +1044,7 @@ public:
     //! @}
 
     //!Allows a bridge to store element provenance in an iModel
-    BentleyStatus  WriteProvenanceAspect(DgnElementR, SyncInfo::V8ElementSyncInfoAspectData const&);
+    BentleyStatus  WriteV8ElementExternalSourceAspect(DgnElementR, SyncInfo::V8ElementExternalSourceAspectData const&);
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 
@@ -1266,6 +1266,8 @@ public:
     //! @return true if the view should be ignored and not converted.
     virtual bool _FilterOutView(DgnV8ViewInfoCR v8View) {return false;}
     virtual Utf8String _ComputeViewName(Utf8StringCR defaultName, DgnV8ViewInfoCR) {return defaultName;}
+
+    void DeleteView(DgnViewId, SyncInfo&);
 
     void HandleLevelAppearanceInconsistency(ViewDefinitionR, DgnAttachmentCR, DgnV8Api::LevelId, DgnCategoryId, DgnSubCategoryId, bool isV8LevelOn);
     //! Interpret the level mask from a V8 view for the specified attachment. The result will be to add the corresponding categories to \a viewDef that are on in the V8 view.
@@ -1777,10 +1779,10 @@ public:
     DGNDBSYNC_EXPORT virtual void _OnElementConverted(DgnElementId elementId, DgnV8EhCP v8eh, ChangeOperation changeOperation);
     DGNDBSYNC_EXPORT virtual void _OnElementBeforeDelete(DgnElementId elementId);
 
-    DgnDbStatus InsertResults(ElementConversionResults&, SyncInfo::V8ElementSyncInfoAspectData const&);
-    DgnDbStatus UpdateResultsForOneElement(ElementConversionResults&, DgnElementId existingElementId, SyncInfo::V8ElementSyncInfoAspectData const&);
-    DgnDbStatus UpdateResultsForChildren(ElementConversionResults&, SyncInfo::V8ElementSyncInfoAspectData const&);
-    DgnDbStatus UpdateResults(ElementConversionResults&, DgnElementId existingElementId, SyncInfo::V8ElementSyncInfoAspectData const&);
+    DgnDbStatus InsertResults(ElementConversionResults&, SyncInfo::V8ElementExternalSourceAspectData const&);
+    DgnDbStatus UpdateResultsForOneElement(ElementConversionResults&, DgnElementId existingElementId, SyncInfo::V8ElementExternalSourceAspectData const&);
+    DgnDbStatus UpdateResultsForChildren(ElementConversionResults&, SyncInfo::V8ElementExternalSourceAspectData const&);
+    DgnDbStatus UpdateResults(ElementConversionResults&, DgnElementId existingElementId, SyncInfo::V8ElementExternalSourceAspectData const&);
     //! Writes to the DgnDb and to SyncInfo, as specified by the change type in \a searchResults. The following cases are handled:
     //! -- \a conversionResults.m_element is invalid => records a discard in SyncInfo and sets \a conversionResults.m_wasDiscarded.
     //! -- IChangeDetector::ChangeType::Insert - the (non-persistent!) element in \a conversionResults is inserted into the BIM, and a mapping is 

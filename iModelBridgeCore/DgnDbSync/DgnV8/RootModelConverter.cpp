@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/RootModelConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -1472,8 +1472,6 @@ void RootModelConverter::_FinishConversion()
 
     EmbedSpecifiedFiles();
 
-    CreatePresentationRulesWithExceptionHandling();
-
     for (auto f : m_finishers)
         {
         f->_OnFinishConversion(*this);
@@ -1644,6 +1642,7 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
     // That means I can assume that all current state, including the existing ChangeDetector, m_newlyDiscoveredModels, 
     // etc. will be carried over to ConvertData.
 
+    CreatePresentationRulesWithExceptionHandling();
     return BSISUCCESS;
     }
 

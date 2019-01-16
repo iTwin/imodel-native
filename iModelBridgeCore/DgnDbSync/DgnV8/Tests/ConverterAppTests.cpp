@@ -2,7 +2,7 @@
 |
 |  $Source: DgnV8/Tests/ConverterAppTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterAppTestsBaseFixture.h"
@@ -43,6 +43,7 @@ TEST_F(ConverterAppTests, VerifyConversionApp_CreateBim)
     AddOutputFile(GetOutRoot());
 
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
+    wprintf(L"%ls\n", m_command.c_str());
     BentleyApi::BeFileName outFile = GetBimFileName(inFile);
     ASSERT_PRESENT(outFile.c_str());
     }

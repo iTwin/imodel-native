@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/NamedGroupTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "GeomTestHelper.h"
@@ -106,7 +106,7 @@ DgnElementIdSet NamedGroupTests::GetMembers(DgnElementCR group, bool groupOwnsMe
 //---------------+---------------+---------------+---------------+---------------+-------
 void NamedGroupTests::RemoveMember(bool groupOwnsMembers, bool dropTable)
     {
-    LineUpFiles(L"Update.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Update.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     ECObjectsV8::ECSchemaP schema = nullptr;
@@ -180,7 +180,7 @@ void NamedGroupTests::RemoveMember(bool groupOwnsMembers, bool dropTable)
 //---------------+---------------+---------------+---------------+---------------+-------
 void NamedGroupTests::DeleteMember(bool groupOwnsMembers, bool dropTable)
     {
-    LineUpFiles(L"Update.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Update.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     ECObjectsV8::ECSchemaP schema = nullptr;
@@ -252,7 +252,7 @@ void NamedGroupTests::DeleteMember(bool groupOwnsMembers, bool dropTable)
 //---------------+---------------+---------------+---------------+---------------+-------
 void NamedGroupTests::DeleteGroup(bool groupOwnsMembers, bool dropTable)
     {
-    LineUpFiles(L"Update.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Update.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     ECObjectsV8::ECSchemaP schema = nullptr;
@@ -333,7 +333,7 @@ void NamedGroupTests::DeleteGroup(bool groupOwnsMembers, bool dropTable)
 //---------------+---------------+---------------+---------------+---------------+-------
 void NamedGroupTests::Update(bool groupOwnsMembers, bool dropTable)
     {
-    LineUpFiles(L"Update.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Update.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     ECObjectsV8::ECSchemaP schema = nullptr;
@@ -432,7 +432,7 @@ void NamedGroupTests::Update(bool groupOwnsMembers, bool dropTable)
 //---------------+---------------+---------------+---------------+---------------+-------
 void NamedGroupTests::CreateGroupInDictionary(bool groupOwnsMembers)
     {
-    LineUpFiles(L"Dictionary.ibim", L"Test3d.dgn", false); 
+    LineUpFiles(L"Dictionary.bim", L"Test3d.dgn", false); 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     ECObjectsV8::ECSchemaP schema = nullptr;
@@ -494,7 +494,7 @@ void NamedGroupTests::CreateGroupInDictionary(bool groupOwnsMembers)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NamedGroupTests, Basic)
     {
-    LineUpFiles(L"NamedGroup.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"NamedGroup.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -535,7 +535,7 @@ TEST_F(NamedGroupTests, Basic)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NamedGroupTests, NamedGroupOf2dElement)
     {
-    LineUpFiles(L"NamedGroup.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"NamedGroup.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -581,7 +581,7 @@ TEST_F(NamedGroupTests, NamedGroupOf2dElement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NamedGroupTests, NestedNamedGroup)
     {
-    LineUpFiles(L"NamedGroup.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"NamedGroup.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -636,7 +636,7 @@ TEST_F(NamedGroupTests, NestedNamedGroup)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NamedGroupTests, NamedGroupInReferenceModel)
     {
-    LineUpFiles(L"NamedGroupInReferenceModel.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"NamedGroupInReferenceModel.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     DgnV8Api::ElementId ng1id=0, ng2id=0;
         {
@@ -703,7 +703,7 @@ TEST_F(NamedGroupTests, NamedGroupInReferenceModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NamedGroupTests, NamedGroupAcrossReference)
     {
-    LineUpFiles(L"NamedGroupAcrossReference.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"NamedGroupAcrossReference.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     DgnV8Api::ElementId ng1id = 0;
         {

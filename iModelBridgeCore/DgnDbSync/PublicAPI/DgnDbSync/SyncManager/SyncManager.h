@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/SyncManager/SyncManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -134,7 +134,7 @@ public:
 };
 
 //=======================================================================================
-//! Base class for converters from Dgn/Dwgn format to IModel/ibim format
+//! Base class for converters from Dgn/Dwgn format to IModel/bim format
 //=======================================================================================
 struct DgnDwgConverterBase : IConverter
 {

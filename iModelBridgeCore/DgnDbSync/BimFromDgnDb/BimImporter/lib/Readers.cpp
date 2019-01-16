@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/Readers.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -261,7 +261,7 @@ BentleyStatus ElementReader::RemapParentId(Json::Value& element)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ElementReader::RemapCategoryId(Json::Value& element)
     {
-    if (!element.isMember("Category"))
+    if (!element.isMember("Category") || !element["Category"].isMember("id"))
         return SUCCESS;
 
     Utf8String catId = element["Category"][ECJsonUtilities::json_navId()].asString();
@@ -378,7 +378,7 @@ DgnCode ElementReader::CreateCodeFromJson(Json::Value& element)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus GenericElementAspectReader::_Read(Json::Value& aspect)
+BentleyStatus ElementAspectReader::_Read(Json::Value& aspect)
     {
     DgnElementId instanceId = ECJsonUtilities::JsonToId<DgnElementId>(aspect[ECJsonSystemNames::Id()]);
     if (!instanceId.IsValid())
@@ -390,14 +390,7 @@ BentleyStatus GenericElementAspectReader::_Read(Json::Value& aspect)
 
     aspect.removeMember("Element");
 
-    IECInstancePtr ecInstance = _CreateInstance(aspect);
-    if (!ecInstance.IsValid())
-        {
-        GetLogger().errorv("Failed to create IECInstance for elementaspect\n");
-        return ERROR;
-        }
-
-    DgnDbStatus stat;
+    DgnDbStatus stat = DgnDbStatus::Success;
     DgnElementPtr element = GetDgnDb()->Elements().GetForEdit<DgnElement>(elementId);
 
     if (!element.IsValid())
@@ -405,7 +398,18 @@ BentleyStatus GenericElementAspectReader::_Read(Json::Value& aspect)
         GetLogger().errorv("Unable to get associated Element for ElementAspect.");
         return ERROR;
         }
-    stat = DgnElement::GenericMultiAspect::AddAspect(*element, *ecInstance);
+    IECInstancePtr ecInstance = _CreateInstance(aspect);
+    if (!ecInstance.IsValid())
+        {
+        GetLogger().errorv("Failed to create IECInstance for elementaspect\n");
+        return ERROR;
+        }
+
+    if (m_isUnique)
+        stat = DgnElement::GenericUniqueAspect::SetAspect(*element, *ecInstance);
+    else
+        stat = DgnElement::GenericMultiAspect::AddAspect(*element, *ecInstance);
+
     if (DgnDbStatus::Success != stat)
         {
         GetLogger().errorv("Failed to add ElementAspect to Element");
@@ -2589,16 +2593,6 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaReader::ImportSchema(ECN::ECSchemaP schema)
-    {
-    ECSchemaCache toInsert;
-
-    toInsert.AddSchema(*schema);
-    return (SchemaStatus::Success == GetDgnDb()->ImportV8LegacySchemas(toInsert.GetSchemas())) ? SUCCESS : ERROR;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------

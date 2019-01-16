@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/OidcSignInManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/WebServices.h>
@@ -53,24 +53,9 @@ WebServices::IConnectSignInManager::UserInfo OidcSignInManager::_GetUserInfo() c
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String OidcSignInManager::_GetLastUsername() const
-    {
-    return "";
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                     Algirdas.Mikoliunas             08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 WebServices::IConnectTokenProviderPtr OidcSignInManager::_GetTokenProvider(Utf8StringCR rpUri) const
     {
     return m_tokenProvider;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                     Algirdas.Mikoliunas             08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OidcSignInManager::_StoreSignedInUser()
-    {
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -95,6 +80,10 @@ WebServices::AuthenticationHandlerPtr OidcSignInManager::_GetAuthenticationHandl
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 OidcSignInManager::OidcSignInManager(Utf8StringCR callBackUrl)
+    : IConnectSignInManager(std::make_shared<RuntimeLocalState>())
     {
     m_tokenProvider = std::make_shared< OidcTokenProvider>(OidcTokenProvider(callBackUrl));
     }
+
+
+

@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/DgnDb0601Exporter/lib/DgnDb0601ToJsonImpl.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -77,7 +77,11 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         ECN::ECClassCP      m_timeSpanClass;
         ECN::ECClassCP      m_cameraKeyFrameClass;
         ECN::ECClassCP      m_elementAspectClass;
+        ECN::ECClassCP      m_elementUniqueAspectClass;
+        ECN::ECClassCP      m_elementMultiAspectClass;
         ECN::ECClassCP      m_elementClass;
+        ECN::ECClassCP      m_geometric2dClass;
+        ECN::ECClassCP      m_geometric3dClass;
         ECN::ECClassCP      m_pointCloudModelClass;
         ECN::ECClassCP      m_threeMxModelClass;
         ECN::ECClassCP      m_rasterFileModelClass;
@@ -127,6 +131,7 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         BentleyStatus ExportElements(DgnModelId parentModel);
         BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true, bool allowDuplicates = false);
         BentleyStatus ExportElementAspects();
+        BentleyStatus ExportElementAspects(ECN::ECClassId classId);
         BentleyStatus ExportElementAspects(ECN::ECClassId classId, BentleyApi::BeSQLite::EC::ECInstanceId aspectId);
         BentleyStatus ExportTextAnnotationData();
         BentleyStatus ExportNamedGroups();
@@ -135,6 +140,8 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         BentleyStatus ExportLinkTables(Utf8CP schemaName, Utf8CP className, Utf8CP newClassName = nullptr);
         BentleyStatus ExportPropertyData();
         BentleyStatus ExportEmbeddedFiles();
+        BentleyStatus ExportExtraTables(Utf8CP alias, Utf8CP className);
+
         DgnElementId CreateCodeSpec(uint8_t codeSpecType, Utf8CP name);
         DgnElementId CreateSubjectElement(Utf8CP subjectName);
         DgnElementId CreatePartitionElement(DgnModelCR model, DgnElementId subject);

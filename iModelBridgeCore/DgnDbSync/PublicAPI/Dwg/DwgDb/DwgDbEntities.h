@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Dwg/DwgDb/DwgDbEntities.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -144,6 +144,8 @@ class DwgDbEntity : public DWGDB_EXTENDCLASS(Entity)
 public:
     DWGDB_DECLARE_BASECLASS_MEMBERS(Entity)
     DWGDB_DECLARE_ENTITY_MEMBERS()
+    //! Is this a dimension entity?
+    DWGDB_EXPORT bool   IsDimension () const;
     };  // DwgDbEntity
 DWGDB_DEFINE_OBJECTPTR (Entity)
 

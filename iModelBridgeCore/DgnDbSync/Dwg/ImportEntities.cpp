@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportEntities.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -1624,23 +1624,23 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgS
     // draw underlines and overlines decorated by the escape codes:
     for (auto const& underline : underlines)
         {
-        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLine (underline);
-        if (primitive.IsValid())
-            this->AppendGeometry (*primitive.get());
+        ICurvePrimitivePtr  line = ICurvePrimitive::CreateLine (underline);
+        if (line.IsValid())
+            this->AppendGeometry (*line.get());
         }
     for (auto const& overline : overlines)
         {
-        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLine (overline);
-        if (primitive.IsValid())
-            this->AppendGeometry (*primitive.get());
+        ICurvePrimitivePtr  line = ICurvePrimitive::CreateLine (overline);
+        if (line.IsValid())
+            this->AppendGeometry (*line.get());
         }
 
     // now draw strike through
     if (giStyle.IsStrikethrough())
         {
-        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLine (strikeThrough);
-        if (primitive.IsValid())
-            this->AppendGeometry (*primitive.get());
+        ICurvePrimitivePtr  line = ICurvePrimitive::CreateLine (strikeThrough);
+        if (line.IsValid())
+            this->AppendGeometry (*line.get());
         }
     }
 
@@ -1661,6 +1661,7 @@ virtual void    _Xline (DPoint3dCR point1, DPoint3dCR point2) override
 
     // shooting the vector from point1 to a far distance
     DSegment3d  line;
+    line.InitZero ();
     line.point[1].SumOf (point1, vector, length);
 
     // shooting the inverted vector to a far distance
@@ -1758,6 +1759,9 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
         // trivial reject the entity if it is clipped away as a whole
         if (nullptr != m_spatialFilter && m_spatialFilter->IsEntityFilteredOut(*child.get()))
             return;
+        // skip this entity if it should not be drawn
+        if (this->SkipBlockChildGeometry(child.get()))
+            return;
 
         // give protocal extensions a chance to create their own geometry:
         if (this->CreateBlockChildGeometry(child.get()) == BSISUCCESS)
@@ -1795,6 +1799,27 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
 
         m_drawParams.CopyFrom (savedParams);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            SkipBlockChildGeometry (DwgDbEntityCP entity)
+    {
+    if (nullptr == entity)
+        return  true;
+
+    // filter out geometries on layer Defpoints if their parent is of a dimension that is not displayed:
+    bool shouldSkip = false;
+    auto dwg = entity->GetDatabase ();
+    bool isOnDefpoints = dwg.IsValid() && entity->GetLayerId() == dwg->GetLayerDefpointsId();
+    if (isOnDefpoints && nullptr != m_entity && m_entity->IsDimension())
+        {
+        DwgDbLayerTableRecordPtr parentLayer(m_entity->GetLayerId(), DwgDbOpenMode::ForRead);
+        shouldSkip = parentLayer.OpenStatus() == DwgDbStatus::Success && (parentLayer->IsOff() || parentLayer->IsFrozen());
+        }
+
+    return  shouldSkip;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2841,7 +2866,7 @@ bool            DwgImporter::_SkipEmptyElement (DwgDbEntityCP entity)
     if (nullptr != blockRef)
         {
         DwgDbObjectIteratorPtr  attrIter = blockRef->GetAttributeIterator ();
-        if (attrIter->IsValid() && attrIter->IsValid())
+        if (attrIter.IsValid() && attrIter->IsValid())
             {
             attrIter->Start ();
             if (!attrIter->Done())

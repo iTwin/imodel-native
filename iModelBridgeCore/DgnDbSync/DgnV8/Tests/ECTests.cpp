@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ECTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -394,7 +394,7 @@ void ECConversionTests::VerifyECXAttributes(BentleyApi::Dgn::DgnElementCPtr bime
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECConversionTests, VerifyLimitsForArrayPropertyAfterConversion)
     {
-    LineUpFiles(L"VerifyLimitsForArrayPropertyAfterConversion.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"VerifyLimitsForArrayPropertyAfterConversion.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -438,7 +438,7 @@ TEST_F(ECConversionTests, VerifyLimitsForArrayPropertyAfterConversion)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, ECXAdata)
     {
-    LineUpFiles(L"ECXAdata.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ECXAdata.bim", L"Test3d.dgn", false);
     DgnV8Api::DgnModelStatus modelStatus;
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -512,7 +512,7 @@ TEST_F(ECConversionTests, ECXAdata)
 //--------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, ECXA2d)
     {
-    LineUpFiles(L"ECXA2d.ibim", L"Test2d.dgn", false);
+    LineUpFiles(L"ECXA2d.bim", L"Test2d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -547,7 +547,7 @@ TEST_F(ECConversionTests, ECXA2d)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithChangedSchema)
     {
-    LineUpFiles(L"UpdateWithChangedSchema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithChangedSchema.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -581,7 +581,7 @@ TEST_F(ECConversionTests, UpdateWithChangedSchema)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithChangedSchema_VersionUpdate)
     {
-    LineUpFiles(L"UpdateWithChangedSchema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithChangedSchema.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -622,7 +622,7 @@ TEST_F(ECConversionTests, UpdateWithChangedSchema_VersionUpdate)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithNewSchema)
     {
-    LineUpFiles(L"UpdateWithNewSchema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithNewSchema.bim", L"Test3d.dgn", false);
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
@@ -651,7 +651,7 @@ TEST_F(ECConversionTests, UpdateWithNewSchema)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingOldSchemas)
     {
-    LineUpFiles(L"UpdateWithNewSchemaReferencingOldSchemas.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithNewSchemaReferencingOldSchemas.bim", L"Test3d.dgn", false);
     Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="Foo" isDomainClass="True">
@@ -700,7 +700,7 @@ TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingOldSchemas)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingNewSchemas)
     {
-    LineUpFiles(L"UpdateWithNewSchemaReferencingNewSchemas.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithNewSchemaReferencingNewSchemas.bim", L"Test3d.dgn", false);
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -753,7 +753,7 @@ TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingNewSchemas)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithNewSchemaAndChangedOldSchemas)
     {
-    LineUpFiles(L"UpdateWithNewSchemaAndChangedOldSchemas.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithNewSchemaAndChangedOldSchemas.bim", L"Test3d.dgn", false);
     Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="Foo" isDomainClass="True">
@@ -825,7 +825,7 @@ TEST_F(ECConversionTests, UpdateWithNewSchemaAndChangedOldSchemas)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithNewElementWithInstance)
     {
-    LineUpFiles(L"UpdateWithNewElement.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithNewElement.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -863,7 +863,7 @@ TEST_F(ECConversionTests, UpdateWithNewElementWithInstance)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithNewElementAndNoPreviousECData)
     {
-    LineUpFiles(L"UpdateWithNewElement.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithNewElement.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -895,7 +895,7 @@ TEST_F(ECConversionTests, UpdateWithNewElementAndNoPreviousECData)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateExistingWithNewInstance)
     {
-    LineUpFiles(L"UpdateExistingWithNewInstance.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateExistingWithNewInstance.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -939,7 +939,7 @@ TEST_F(ECConversionTests, UpdateExistingWithNewInstance)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithSecondaryInstances)
     {
-    LineUpFiles(L"UpdateUsingSecondary.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateUsingSecondary.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1045,7 +1045,7 @@ TEST_F(ECConversionTests, CreateSecondaryInstanceWithProperties)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdatePropertyValueOnExistingInstance)
     {
-    LineUpFiles(L"UpdateExistingWithNewInstance.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateExistingWithNewInstance.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1101,7 +1101,7 @@ TEST_F(ECConversionTests, UpdatePropertyValueOnExistingInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
@@ -1129,7 +1129,7 @@ TEST_F(ECConversionTests, UpdatePropertyValueOnExistingInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECConversionTests, CellWithInstance)
     {
-    LineUpFiles(L"Cell.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Cell.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1170,7 +1170,7 @@ TEST_F(ECConversionTests, CellWithInstance)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
     {
-    LineUpFiles(L"Calculated.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Calculated.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1286,7 +1286,7 @@ TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpecUsingRelated)
     {
-    LineUpFiles(L"CalculatedRelated.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"CalculatedRelated.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1491,7 +1491,7 @@ TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpecUsingRelated)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, IGeometryValue)
     {
-    LineUpFiles(L"IGeometryValue.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"IGeometryValue.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1545,7 +1545,7 @@ TEST_F(ECConversionTests, IGeometryValue)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, CreateOnType66)
     {
-    LineUpFiles(L"Type66.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Type66.bim", L"Test3d.dgn", false);
     DgnV8Api::DgnModelStatus modelStatus;
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;

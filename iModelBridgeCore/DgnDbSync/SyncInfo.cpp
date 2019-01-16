@@ -1651,7 +1651,7 @@ BentleyStatus SyncInfo::AttachToProject(DgnDb& targetProject, BeFileNameCR dbNam
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus   importElementAspectSchema(DgnDbR db)
     {
-    if (db.Schemas().ContainsSchema(SOURCEINFO_ECSCHEMA_NAME))
+    if (db.Schemas().ContainsSchema(XTRN_SRC_ASPCT_ECSCHEMA_NAME))
         return BSISUCCESS;
 
     BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
@@ -1686,14 +1686,17 @@ static BentleyStatus   importElementAspectSchema(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
 void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
     {
+    if (!m_converter._WantProvenanceInBim())
+        return;
+
     auto el = m_converter.GetDgnDb().Elements().GetElement(mapping.GetElementId());
     if (!el.IsValid())
         return;
 
-    auto props = V8ElementSyncInfoAspect::Get(*el);
+    auto props = V8ElementExternalSourceAspect::GetAspect(*el, mapping.m_v8ElementId);
     if (!props.IsValid())
         {
         // BeAssert(!m_converter._GetParams().GetWantProvenanceInBim());    Can't assert this until I convert all of the places that create syncinfo records to also create aspects
@@ -1707,16 +1710,16 @@ void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_SYNC_INFO_ASPECT
-void SyncInfo::V8ElementSyncInfoAspect::AssertMatch(DgnElementCR el, DgnV8Api::ElementId v8Id, ElementProvenance const& elprov)
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
+void SyncInfo::V8ElementExternalSourceAspect::AssertMatch(DgnElementCR el, DgnV8Api::ElementId v8Id, ElementProvenance const& elprov)
     {
     BeAssert(GetV8ElementId() == v8Id);
     // TODO: Get and check the aspect corresponding to the original v8 model
     // BeAssert(GetScope().GetValue() == el.GetModelId().GetValue()); -- No. scope identifies the model in the bim that represents the v8 element's model. The v8 element itself might not have been added to that bim model. For example, when we encounter a NamedGroup definiton element in a model, we typically write it to the bim dictionary model.
-    BeAssert(GetKind() == SyncInfoAspect::Kind::Element);
-    iModelSyncInfoAspect::SourceState ss;
-    BeAssert(GetSourceState(ss) == BSISUCCESS);
-    BeAssert(0==memcmp(&ss.m_hash[0], elprov.m_hash.m_buffer, sizeof(elprov.m_hash.m_buffer)));
+    BeAssert(GetKind() == ExternalSourceAspect::Kind::Element);
+    auto ss = GetSourceState();
+    BeAssert(ss.m_hash.size() == sizeof(elprov.m_hash.m_buffer));
+    BeAssert(std::equal(ss.m_hash.begin(), ss.m_hash.end(), elprov.m_hash.m_buffer));
     BeAssert(ss.m_lastModifiedTime == elprov.m_lastModified);
     }
 #endif
@@ -1724,39 +1727,98 @@ void SyncInfo::V8ElementSyncInfoAspect::AssertMatch(DgnElementCR el, DgnV8Api::E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementSyncInfoAspect::V8ElementSyncInfoAspect(iModelSyncInfoAspect const& aspect) : SyncInfoAspect(aspect.m_instance.get())
+bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetExternalSourceAspectIds(DgnElementCR el, ExternalSourceAspect::Kind kind, Utf8StringCR sourceId)
     {
-    if (!IsValid())
-        return;
-    if (GetKind() != Kind::Element)
-        {
-        BeAssert(false);
-        m_instance = nullptr;
-        }
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=? AND SourceId=?)");
+    sel->BindId(1, el.GetElementId());
+    sel->BindText(2, ExternalSourceAspect::KindToString(kind), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    bvector<BeSQLite::EC::ECInstanceId> ids;
+    while (BE_SQLITE_ROW == sel->Step())
+        ids.push_back(sel->GetValueId<BeSQLite::EC::ECInstanceId>(0));
+    return ids;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementSyncInfoAspect SyncInfo::V8ElementSyncInfoAspect::Make(V8ElementSyncInfoAspectData const& provdata, DgnDbR db) 
+SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::GetAspect(DgnElementR el, DgnV8Api::ElementId v8Id)
+    {
+    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Element, FormatSourceId(v8Id));
+    if (ids.size() == 0)
+        return V8ElementExternalSourceAspect(nullptr);
+    BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
+    return V8ElementExternalSourceAspect(ExternalSourceAspect::GetAspect(el, ids.front()).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::GetAspect(DgnElementCR el, DgnV8Api::ElementId v8Id)
+    {
+    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Element, FormatSourceId(v8Id));
+    if (ids.size() == 0)
+        return V8ElementExternalSourceAspect(nullptr);
+    BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
+    return V8ElementExternalSourceAspect(ExternalSourceAspect::GetAspect(el, ids.front()).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::GetAspect(DgnElementR el, DgnV8Api::ModelId v8Id)
+    {
+    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Model, FormatSourceId(v8Id));
+    if (ids.size() == 0)
+        return V8ModelExternalSourceAspect(nullptr);
+    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element from a given sourceId");
+    return V8ModelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, ids.front()).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::GetAspect(DgnElementCR el, DgnV8Api::ModelId v8Id)
+    {
+    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Model, FormatSourceId(v8Id));
+    if (ids.size() == 0)
+        return V8ModelExternalSourceAspect(nullptr);
+    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element from a given sourceId");
+    return V8ModelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, ids.front()).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::CreateAspect(V8ElementExternalSourceAspectData const& provdata, DgnDbR db) 
     {
     auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
-        return V8ElementSyncInfoAspect(nullptr);
+        return V8ElementExternalSourceAspect(nullptr);
 
-    iModelSyncInfoAspect::SourceState ss;
-    unsigned arraySize = sizeof(provdata.m_prov.m_hash.m_buffer) / sizeof(unsigned char);
-    ss.m_hash.insert(ss.m_hash.end(), provdata.m_prov.m_hash.m_buffer, &provdata.m_prov.m_hash.m_buffer[arraySize]);
+    auto instance = CreateInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), FormatSourceId(provdata.m_v8Id), nullptr, *aspectClass);
+    auto aspect = V8ElementExternalSourceAspect(instance.get());
 
-    ss.m_lastModifiedTime = provdata.m_prov.m_lastModified;
-    auto instance = MakeInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), Utf8PrintfString("%lld", provdata.m_v8Id), &ss, *aspectClass);
-    return V8ElementSyncInfoAspect(instance.get());
+    aspect.Update(provdata.m_prov);
+
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::V8ElementExternalSourceAspect::Update(ElementProvenance const& prov)
+    {
+    SourceState ss;
+    prov.GetHashAsByteVector(ss.m_hash);
+    ss.m_lastModifiedTime = prov.m_lastModified; 
+    SetSourceState(ss); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8Api::ElementId SyncInfo::V8ElementSyncInfoAspect::GetV8ElementId() const
+DgnV8Api::ElementId SyncInfo::V8ElementExternalSourceAspect::GetV8ElementId() const
     {
     int64_t id = 0;
     sscanf(GetSourceId(), "%lld", &id);
@@ -1766,30 +1828,16 @@ DgnV8Api::ElementId SyncInfo::V8ElementSyncInfoAspect::GetV8ElementId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelSyncInfoAspect::V8ModelSyncInfoAspect(iModelSyncInfoAspect const& aspect) : SyncInfoAspect(aspect.m_instance.get())
-    {
-    if (!IsValid())
-        return;
-    if (GetKind() != Kind::Model)
-        {
-        BeAssert(false);
-        m_instance = nullptr;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Make(DgnV8ModelCR v8Model, TransformCR transform, Converter& converter) 
+SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::CreateAspect(DgnV8ModelCR v8Model, TransformCR transform, Converter& converter) 
     {
     auto aspectClass = GetAspectClass(converter.GetDgnDb());
     if (nullptr == aspectClass)
-        return V8ModelSyncInfoAspect(nullptr);
+        return V8ModelExternalSourceAspect(nullptr);
     
     DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
-    auto instance = MakeInstance(repositoryLinkId, KindToString(Kind::Model), Utf8PrintfString("%d", v8Model.GetModelId()), nullptr, *aspectClass);
+    auto instance = CreateInstance(repositoryLinkId, KindToString(Kind::Model), FormatSourceId(v8Model), nullptr, *aspectClass);
     
-    V8ModelSyncInfoAspect aspect(instance.get());
+    V8ModelExternalSourceAspect aspect(instance.get());
     
     Utf8String v8ModelName(v8Model.GetModelName());
 
@@ -1805,7 +1853,7 @@ SyncInfo::V8ModelSyncInfoAspect SyncInfo::V8ModelSyncInfoAspect::Make(DgnV8Model
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform SyncInfo::V8ModelSyncInfoAspect::GetTransform() const
+Transform SyncInfo::V8ModelExternalSourceAspect::GetTransform() const
     {
     auto json = GetProperties();
     Transform transform;
@@ -1816,7 +1864,7 @@ Transform SyncInfo::V8ModelSyncInfoAspect::GetTransform() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SyncInfo::V8ModelSyncInfoAspect::GetV8ModelName() const
+Utf8String SyncInfo::V8ModelExternalSourceAspect::GetV8ModelName() const
     {
     auto json = GetProperties();
     return json["v8ModelName"].GetString();
@@ -1825,7 +1873,7 @@ Utf8String SyncInfo::V8ModelSyncInfoAspect::GetV8ModelName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8Api::ModelId SyncInfo::V8ModelSyncInfoAspect::GetV8ModelId() const
+DgnV8Api::ModelId SyncInfo::V8ModelExternalSourceAspect::GetV8ModelId() const
     {
     return atoi(GetSourceId());
     }
@@ -1833,23 +1881,168 @@ DgnV8Api::ModelId SyncInfo::V8ModelSyncInfoAspect::GetV8ModelId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_SYNC_INFO_ASPECT
-void SyncInfo::V8ModelSyncInfoAspect::AssertMatch(V8ModelMapping const& mapping)
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
+void SyncInfo::V8ModelExternalSourceAspect::AssertMatch(V8ModelMapping const& mapping)
     {
     // BeAssert(GetScope().GetValue() == ... TODO: must be a repository link element
     BeAssert(GetV8ModelId() == mapping.GetV8ModelId().GetValue());
-    BeAssert(GetKind() == SyncInfoAspect::Kind::Model);
+    BeAssert(GetKind() == ExternalSourceAspect::Kind::Model);
     BeAssert(GetTransform().IsEqual(mapping.GetTransform(), Angle::SmallAngle(), 1.0e-5));
     BeAssert(GetV8ModelName().Equals(mapping.GetV8Name()));
     }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::CreateAspect(DgnElementId scopeId, Utf8StringCR tag, DgnDbR db)
+    {
+    auto aspectClass = GetAspectClass(db);
+    if (nullptr == aspectClass)
+        return GeomPartExternalSourceAspect(nullptr);
+                
+    auto instance = iModelExternalSourceAspect::CreateInstance(scopeId, KindToString(Kind::GeomPart), tag, nullptr, *aspectClass);
+    return GeomPartExternalSourceAspect(instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::GetAspect(DgnGeometryPartCR el)
+    {
+    // There's only one source aspect on a geompart element, so no need for an aspectid
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
+        {
+        auto count = GetAllByKind(el, KindToString(Kind::GeomPart)).size();
+        BeAssert((0 == count) || (1 == count));
+        }
+#endif
+    return GeomPartExternalSourceAspect(ExternalSourceAspect::GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(DgnElementId scopeId, Utf8StringCR viewName, DgnV8ViewInfoCR viewInfo, DgnDbR db)
+    {
+    if (nullptr == viewInfo.GetElementRef())
+        {
+        BeAssert(false);
+        return ViewDefinitionExternalSourceAspect(nullptr);
+        }
+
+    auto aspectClass = GetAspectClass(db);
+    if (nullptr == aspectClass)
+        return ViewDefinitionExternalSourceAspect(nullptr);
+
+    auto instance = iModelExternalSourceAspect::CreateInstance(scopeId, KindToString(Kind::ViewDefinition), FormatSourceId(viewInfo.GetElementId()), nullptr, *aspectClass);
+    auto aspect = ViewDefinitionExternalSourceAspect(instance.get());
+
+    aspect.Update(viewInfo, viewName);
+
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::ViewDefinitionExternalSourceAspect::Update(DgnV8ViewInfoCR viewInfo, Utf8StringCR viewName)
+    {
+    ElementRefP viewElemRef = viewInfo.GetElementRef();
+    if (nullptr == viewElemRef)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    iModelExternalSourceAspect::SourceState ss;
+    ss.m_lastModifiedTime = viewInfo.GetElementRef()->GetLastModified();
+    SetSourceState(ss);
+
+    rapidjson::Document json(rapidjson::kObjectType);
+    auto& allocator = json.GetAllocator();
+    if (!json.HasMember(json_v8ViewName))
+        json.AddMember("v8ViewName", rapidjson::Value(viewName.c_str(), allocator), allocator);
+    else
+        json[json_v8ViewName] = rapidjson::Value(viewName.c_str(), allocator);
+
+    SetProperties(json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::SyncInfoAspect::Kind SyncInfo::SyncInfoAspect::GetKind() const 
+Utf8String SyncInfo::ViewDefinitionExternalSourceAspect::GetV8ViewName() const
     {
-    return ParseKind(iModelSyncInfoAspect::GetKind());
+    auto json = GetProperties();
+    return json[json_v8ViewName].GetString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::GetAspect(ViewDefinitionCR el)
+    {
+    // There's only one source aspect on a ViewDefinition element, so no need for an aspectid
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
+        {        
+        auto count = GetAllByKind(el, KindToString(Kind::ViewDefinition)).size();
+        BeAssert((0 == count) || (1 == count));
+        }
+#endif
+    return ViewDefinitionExternalSourceAspect(ExternalSourceAspect::GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::GetAspect(ViewDefinitionR el)    // non-const version, used for editing
+    {
+    // There's only one source aspect on a ViewDefinition element, so no need for an aspectid
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
+        {        
+        auto count = GetAllByKind(el, KindToString(Kind::ViewDefinition)).size();
+        BeAssert((0 == count) || (1 == count));
+        }
+#endif
+    return ViewDefinitionExternalSourceAspect(ExternalSourceAspect::GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+std::tuple<SyncInfo::ViewDefinitionExternalSourceAspect,DgnViewId> SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(DgnElementId scopeId, DgnV8ViewInfoCR viewInfo, DgnDbR db)
+    {
+    DgnElementId elId = FindElementBySourceId(db, scopeId, KindToString(Kind::ViewDefinition), FormatSourceId(viewInfo.GetElementId())).elementId;
+    if (!elId.IsValid())
+        return std::make_tuple(ViewDefinitionExternalSourceAspect(nullptr), DgnViewId());
+
+    auto el = db.Elements().Get<ViewDefinition>(elId);
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        return std::make_tuple(ViewDefinitionExternalSourceAspect(nullptr), DgnViewId());
+        }
+    return std::make_tuple(GetAspect(*el), DgnViewId(elId.GetValue()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::CachedECSqlStatementPtr SyncInfo::ViewDefinitionExternalSourceAspect::GetIteratorForScope(DgnDbR db, DgnElementId scope)
+    {
+    auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=?)");
+    stmt->BindId(1, scope);
+    stmt->BindText(2, KindToString(Kind::ViewDefinition), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    return stmt;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::ExternalSourceAspect::Kind SyncInfo::ExternalSourceAspect::GetKind() const 
+    {
+    return ParseKind(iModelExternalSourceAspect::GetKind());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2659,15 +2852,4 @@ BeGuid Converter::GetDocumentGUIDforFile(DgnV8FileCR file)
     return BeGuid();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::V8ElementSyncInfoAspect::Update(ElementProvenance const& prov)
-    {
-    SourceState ss;
-    unsigned arraySize = sizeof(prov.m_hash.m_buffer) / sizeof(unsigned char);
-    ss.m_hash.insert(ss.m_hash.end(), prov.m_hash.m_buffer, &prov.m_hash.m_buffer[arraySize]);
-    ss.m_lastModifiedTime = prov.m_lastModified; 
-    SetSourceState(ss); 
-    }
 END_DGNDBSYNC_DGNV8_NAMESPACE

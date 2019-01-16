@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgDb/DwgDbCompileOptions.mki $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #
@@ -126,11 +126,6 @@ ToolkitRoot         = $(BuildContext)VendorAPI/Realdwg$(VendorVersion)/
 ToolkitCoreInc      = $(ToolkitRoot)
 ToolkitBaseInc      = $(ToolkitCoreInc)RealDwg/Base/
 ToolkitLibs         = $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/
-
-%if defined(MSVC_VERSION)
-    # adding -Ignore:4099 in link opts does not stop treating warning as error!
-    NOSTRICT        = 1
-%endif
 
 %else
 

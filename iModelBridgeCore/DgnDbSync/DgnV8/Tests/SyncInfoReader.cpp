@@ -10,7 +10,7 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
 //---------------------------------------------------------------------------------------
-SyncInfoReader::SyncInfoReader()
+SyncInfoReader::SyncInfoReader(Converter::Params& p) : m_params(&p)
     {
     }
 
@@ -57,6 +57,11 @@ void SyncInfoReader::MustFindModelByV8ModelId(SyncInfo::V8ModelSyncInfoId& fmid,
         ++count;
         }
     ASSERT_EQ( expectedCount, count );
+
+    if (m_params->GetWantProvenanceInBim())
+        {
+        // *** TODO: Use the aspect to look up model by v8id
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -76,28 +81,31 @@ void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, SyncInfo::V
         }
     ASSERT_EQ(expectedCount, count);
 
-    if (1 == count)
+    if (m_params->GetWantProvenanceInBim())
         {
-        auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT g.ECInstanceId FROM "
-                      BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                      SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo "
-                      "WHERE (sourceInfo.Element.Id = g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ? )"
-                        );
+        if (1 == count)
+            {
+            auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT g.ECInstanceId FROM "
+                          BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
+                          XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo "
+                          "WHERE (sourceInfo.Element.Id = g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ? )"
+                            );
                      
-        estmt->BindInt64 (1, v8ElementId);
-        ASSERT_EQ(BE_SQLITE_ROW, estmt->Step());
-        DgnElementId aspectId = estmt->GetValueId<DgnElementId>(0);
-        ASSERT_EQ(eid , aspectId);
-        }
-    else 
-        {
-        auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT COUNT (*) FROM "
-                      BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                      SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
-                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ?)");
-        estmt->BindInt64(1, v8ElementId);
-        ASSERT_EQ(BE_SQLITE_ROW, estmt->Step());
-        int aspectCount = estmt->GetValueId<int>(0);
-        ASSERT_EQ(expectedCount, aspectCount);
+            estmt->BindInt64 (1, v8ElementId);
+            ASSERT_EQ(BE_SQLITE_ROW, estmt->Step());
+            DgnElementId aspectId = estmt->GetValueId<DgnElementId>(0);
+            ASSERT_EQ(eid , aspectId);
+            }
+        else 
+            {
+            auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT COUNT (*) FROM "
+                          BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
+                          XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+                          " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ?)");
+            estmt->BindInt64(1, v8ElementId);
+            ASSERT_EQ(BE_SQLITE_ROW, estmt->Step());
+            int aspectCount = estmt->GetValueId<int>(0);
+            ASSERT_EQ(expectedCount, aspectCount);
+            }
         }
     }

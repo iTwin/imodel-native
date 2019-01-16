@@ -84,7 +84,7 @@ BentleyApi::ECPresentation::RulesDrivenECPresentationManager::Paths GetPaths(Ben
 void RulesetEmbedderTests::SetUp()
     {
     T_Super::SetUp();
-    LineUpFiles(L"Design3dSelfReference.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Design3dSelfReference.bim", L"Test3d.dgn", false);
 
     m_db = OpenExistingDgnDb(m_dgnDbFileName);
     m_presentationManager = new BentleyApi::ECPresentation::RulesDrivenECPresentationManager(m_connections, GetPaths(BentleyApi::BeTest::GetHost()));

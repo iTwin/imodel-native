@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/ToolkitHost.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -368,7 +368,7 @@ DwgDbStatus     DwgToolkitHost::DownloadOrGetCachedFile (WStringR local, WString
         if (winError == ERROR_INSUFFICIENT_BUFFER)
             {
             INTERNET_CACHE_ENTRY_INFO* cacheEntry = (INTERNET_CACHE_ENTRY_INFO*)::malloc(size);
-            if (::GetUrlCacheEntryInfo(url.c_str(), cacheEntry, &size))
+            if (nullptr != cacheEntry && ::GetUrlCacheEntryInfo(url.c_str(), cacheEntry, &size))
                 {
                 // cacheEntry->lpszLocalFileName might be a .htm file telling us that the file has been moved!
                 bool isMoved = false;
@@ -401,10 +401,10 @@ DwgDbStatus     DwgToolkitHost::DownloadOrGetCachedFile (WStringR local, WString
     if (winError == ERROR_FILE_NOT_FOUND)
         {
         // download and cache the URL file
-        static DWORD    localSize = 2048;
-        LPTSTR  localFile = static_cast<LPTSTR> (::calloc(1, localSize));
+        static DWORD    s_localSize = 2048;
+        LPTSTR  localFile = new wchar_t[s_localSize];
 
-        HRESULT result = ::URLDownloadToCacheFile (nullptr, url.c_str(), localFile, localSize, 0, nullptr);
+        HRESULT result = ::URLDownloadToCacheFile (nullptr, url.c_str(), localFile, s_localSize, 0, nullptr);
 
         if (SUCCEEDED(result))
             {
@@ -413,7 +413,7 @@ DwgDbStatus     DwgToolkitHost::DownloadOrGetCachedFile (WStringR local, WString
             // save the cache file for future lookup:
             m_localToUrlMap.Insert (local, url);
             }
-        ::free (localFile);
+        delete[] localFile;
 
         if (SUCCEEDED(result))
             return  DwgDbStatus::Success;

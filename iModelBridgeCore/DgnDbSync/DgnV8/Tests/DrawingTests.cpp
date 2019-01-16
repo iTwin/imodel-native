@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/DrawingTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -44,7 +44,7 @@ DgnElementId FindElementByCodeValue(DgnDbR db, Utf8CP className , Utf8CP codeVal
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, Basic3dAttachment)
     {
-    LineUpFiles(L"Basic3dAttachment.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Basic3dAttachment.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
 
     DgnV8Api::ElementId lineElementId;
@@ -78,7 +78,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         //  Drawing1
         }
 
-    DoConvert(m_dgnDbFileName, m_v8FileName); // creates Basic3dAttachment.ibim from Test3d.dgn
+    DoConvert(m_dgnDbFileName, m_v8FileName); // creates Basic3dAttachment.bim from Test3d.dgn
     if (true)
         {
         //  Results of conversion:
@@ -220,7 +220,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, Sheet_SheetAttachment)
     {
-    LineUpFiles(L"Sheet_SheetAttachment.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Sheet_SheetAttachment.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
     if (true)
         {
@@ -256,7 +256,7 @@ TEST_F(DrawingTests, Sheet_SheetAttachment)
         v8editor.Save();
         }
 
-    DoConvert(m_dgnDbFileName, m_v8FileName); // creates Sheet_SheetAttachment.ibim from Test3d.dgn
+    DoConvert(m_dgnDbFileName, m_v8FileName); // creates Sheet_SheetAttachment.bim from Test3d.dgn
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
@@ -295,7 +295,7 @@ TEST_F(DrawingTests, Sheet_SheetAttachment)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, SheetProperties)
     {
-    LineUpFiles(L"SheetProperties.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"SheetProperties.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
     if (true)
         {
@@ -335,7 +335,7 @@ TEST_F(DrawingTests, SheetProperties)
         v8editor.Save();
         }
 
-    DoConvert(m_dgnDbFileName, m_v8FileName); // creates SheetProperties.ibim from Test3d.dgn
+    DoConvert(m_dgnDbFileName, m_v8FileName); // creates SheetProperties.bim from Test3d.dgn
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
@@ -364,7 +364,7 @@ TEST_F(DrawingTests, SheetProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
     {
-    LineUpFiles(L"SheetScale.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"SheetScale.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
     DgnV8Api::ElementId eid;
     if (true)
@@ -433,7 +433,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
         v8editor.Save();
         }
 
-    DoConvert(m_dgnDbFileName, m_v8FileName); // creates SheetProperties.ibim from Test3d.dgn
+    DoConvert(m_dgnDbFileName, m_v8FileName); // creates SheetProperties.bim from Test3d.dgn
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
@@ -462,7 +462,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
     {
-    LineUpFiles(L"SheetScale.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"SheetScale.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
     DgnV8Api::ElementId eid;
     if (true)
@@ -587,7 +587,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         v8editor.Save();
         }
 
-    DoConvert(m_dgnDbFileName, m_v8FileName); // creates SheetProperties.ibim from Test3d.dgn
+    DoConvert(m_dgnDbFileName, m_v8FileName); // creates SheetProperties.bim from Test3d.dgn
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
@@ -632,7 +632,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, Attach3dmodeltoSheet)
     {
-    LineUpFiles(L"Attach3dmodeltoSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Attach3dmodeltoSheet.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     DgnV8Api::ElementId eid;
     if (true)
@@ -686,7 +686,7 @@ TEST_F(DrawingTests, Attach3dmodeltoSheet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, BorderAttachmenttoSheet)
     {
-    LineUpFiles(L"BorderAttachmenttoSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"BorderAttachmenttoSheet.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     DgnV8Api::ElementId eid;
     m_wantCleanUp = false;
@@ -784,7 +784,7 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, AttachDwg)
     {
-    LineUpFiles(L"Dwg.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Dwg.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
     DgnV8Api::ElementId eid;
     if (true)
@@ -857,7 +857,7 @@ TEST_F(DrawingTests, AttachDwg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, AttachNameViewtoSheet)
     {
-    LineUpFiles(L"Attach3dmodeltoSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Attach3dmodeltoSheet.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     DgnV8Api::ElementId eid;
     if (true)
@@ -929,7 +929,7 @@ TEST_F(DrawingTests, AttachNameViewtoSheet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, MultipleSheets_WithNoAttachedModels)
     {
-    LineUpFiles(L"MultipleSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"MultipleSheet.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     DgnV8Api::ElementId eid;
     if (true)
@@ -962,7 +962,7 @@ TEST_F(DrawingTests, MultipleSheets_WithNoAttachedModels)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, Attachments_With2dRootModel)
     {
-    LineUpFiles(L"Attachments_With2dRootModel.ibim", L"Test2d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Attachments_With2dRootModel.bim", L"Test2d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     m_wantCleanUp = false;
     DgnV8Api::ElementId eid;
@@ -1029,7 +1029,7 @@ TEST_F(DrawingTests, Attachments_With2dRootModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, Cyclic2dModels)
     {
-    LineUpFiles(L"cyclic2dModels.ibim", L"Test2d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"cyclic2dModels.bim", L"Test2d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     m_wantCleanUp = false;
     DgnV8Api::ElementId eid;
@@ -1072,7 +1072,7 @@ TEST_F(DrawingTests, Cyclic2dModels)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
     {
-    LineUpFiles(L"Cyclic2dModels_AttachToSheet.ibim", L"Test2d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Cyclic2dModels_AttachToSheet.bim", L"Test2d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     DgnV8Api::ElementId eid;
     if (true)
@@ -1172,7 +1172,7 @@ struct SheetCompositionTests : public ConverterTestBaseFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SheetCompositionTests, SheetNameTest)
     {
-    LineUpFiles (L"SheetNameTest.ibim", L"DVTest_Case1.dgn", true);
+    LineUpFiles (L"SheetNameTest.bim", L"DVTest_Case1.dgn", true);
     m_wantCleanUp = true;
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, "Section_Case1");
@@ -1186,7 +1186,7 @@ TEST_F (SheetCompositionTests, SheetNameTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SheetCompositionTests, SheetSizeTest)
     {
-    LineUpFiles (L"SheetSizeTest.ibim", L"DVTest_Case1.dgn", true);
+    LineUpFiles (L"SheetSizeTest.bim", L"DVTest_Case1.dgn", true);
     m_wantCleanUp = true;
 
     Bentley::SheetDefCP v8SheetDef = GetV8SheetDef(L"Section_Case1");
@@ -1210,7 +1210,7 @@ TEST_F (SheetCompositionTests, SheetSizeTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SheetCompositionTests, HasDgnAttachment)
     {
-    LineUpFiles (L"HasDgnAttachment.ibim", L"DVTest_Case1.dgn", true);
+    LineUpFiles (L"HasDgnAttachment.bim", L"DVTest_Case1.dgn", true);
     m_wantCleanUp = true;
     DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
     BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, "Section_Case1");
@@ -1224,7 +1224,7 @@ TEST_F (SheetCompositionTests, HasDgnAttachment)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SheetCompositionTests, HasDrawingBoundary)
     {
-    LineUpFiles (L"HasDrawingBoundary.ibim", L"DVTest_Case1.dgn", true);
+    LineUpFiles (L"HasDrawingBoundary.bim", L"DVTest_Case1.dgn", true);
     m_wantCleanUp = true;
     DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
     

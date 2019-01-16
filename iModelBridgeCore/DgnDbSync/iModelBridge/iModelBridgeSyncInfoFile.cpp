@@ -784,20 +784,21 @@ bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus iModelSyncInfoAspect::AddTo(DgnElementR el)
+DgnDbStatus iModelExternalSourceAspect::AddAspect(DgnElementR el)
     {
+    BeAssert(m_instance.IsValid());
     return DgnElement::GenericMultiAspect::AddAspect(el, *m_instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstancePtr iModelSyncInfoAspect::MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const* ss, ECN::ECClassCR aspectClass) 
+ECN::IECInstancePtr iModelExternalSourceAspect::CreateInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const* ss, ECN::ECClassCR aspectClass) 
     {
     auto instance = aspectClass.GetDefaultStandaloneEnabler()->CreateInstance();
-    instance->SetValue(SOURCEINFO_Scope, ECN::ECValue(scope));
-    instance->SetValue(SOURCEINFO_SourceId, ECN::ECValue(sourceId.c_str()));
-    instance->SetValue(SOURCEINFO_Kind, ECN::ECValue(kind));
+    instance->SetValue(XTRN_SRC_ASPCT_Scope, ECN::ECValue(scope));
+    instance->SetValue(XTRN_SRC_ASPCT_SourceId, ECN::ECValue(sourceId.c_str()));
+    instance->SetValue(XTRN_SRC_ASPCT_Kind, ECN::ECValue(kind));
     if (ss)
         SetSourceState(*instance, *ss);
     return instance;
@@ -806,113 +807,264 @@ ECN::IECInstancePtr iModelSyncInfoAspect::MakeInstance(DgnElementId scope, Utf8C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::ECClassCP iModelSyncInfoAspect::GetAspectClass(DgnDbR db)
+ECN::ECClassCP iModelExternalSourceAspect::GetAspectClass(DgnDbR db)
     {
-    return db.Schemas().GetClass(SOURCEINFO_ECSCHEMA_NAME, SOURCEINFO_CLASS_SoureElementInfo);
+    return db.Schemas().GetClass(XTRN_SRC_ASPCT_ECSCHEMA_NAME, XTRN_SRC_ASPCT_CLASS);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId)
+    {
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND SourceId=?)");
+    sel->BindId(1, scopeId);
+    sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    ElementAndAspectId res;
+    if (BE_SQLITE_ROW != sel->Step())
+        return res;
+    res.elementId = sel->GetValueId<DgnElementId>(0);
+    res.aspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(1);
+    return res;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAll(DgnElementCR el, ECN::ECClassCP aspectClass)
+    {
+    bvector<iModelExternalSourceAspect> aspects;
+    if (!aspectClass)
+        aspectClass = GetAspectClass(el.GetDgnDb());
+    if (nullptr == aspectClass)
+        return aspects;
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=?)");
+    sel->BindId(1, el.GetElementId());
+    while (BE_SQLITE_ROW == sel->Step())
+        {
+        auto aspectid = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+        auto aspect = GetAspect(el, aspectid);
+        aspects.push_back(aspect);
+        }
+    return aspects;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(DgnElementCR el, Utf8CP kind, ECN::ECClassCP aspectClass)
+    {
+    bvector<iModelExternalSourceAspect> aspects;
+    if (!aspectClass)
+        aspectClass = GetAspectClass(el.GetDgnDb());
+    if (nullptr == aspectClass)
+        return aspects;
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=?)");
+    sel->BindId(1, el.GetElementId());
+    sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    while (BE_SQLITE_ROW == sel->Step())
+        {
+        auto aspectid = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+        auto aspect = GetAspect(el, aspectid);
+        aspects.push_back(aspect);
+        }
+    return aspects;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bool includeSourceState)
+    {
+    Utf8PrintfString str("%-10.10s %8.8s %-8.8s", "Kind", "Scope", "SourceId");
+    if (includeSourceState)
+        {
+        // TBD
+        }
+    if (includeProperties)
+        {
+        str.append("\tProperties");
+        }
+    return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String iModelExternalSourceAspect::FormatForDump(bool includeProperties, bool includeSourceState) const
+    {
+    Utf8PrintfString str("%-10.10s %8.0llx %-8.8s", GetKind(), GetScope().GetValueUnchecked(), GetSourceId());
+    if (includeSourceState)
+        {
+        // TBD
+        }
+    if (includeProperties)
+        {
+        ECN::ECValue props;
+        if (ECN::ECObjectsStatus::Success == m_instance->GetValue(props, XTRN_SRC_ASPCT_Properties) && !props.IsNull() && props.IsString())
+            str.append("\t").append(props.GetUtf8CP());
+        }
+    return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void outDump(ILogger* logger, NativeLogging::SEVERITY sev, Utf8StringCR msg)
+    {
+    if (nullptr == logger)
+        {
+        printf("%s\n", msg.c_str());
+        return;
+        }
+    logger->message(sev, msg.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelExternalSourceAspect::Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY sev, bool includeProperties, bool includeSourceState)
+    {
+    auto aspects = GetAll(el, nullptr);
+    if (aspects.empty())
+        return;
+
+    ILogger* logger = loggingCategory? LoggingManager::GetLogger(loggingCategory): nullptr;
+
+    outDump(logger, sev, Utf8PrintfString("Element %llx (%s)", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName()));
+
+    outDump(logger, sev, GetDumpHeaders(includeProperties, includeSourceState));
+    for (auto const& aspect : aspects)
+        {
+        auto str = aspect.FormatForDump(includeProperties, includeSourceState);
+        outDump(logger, sev, str);
+        }
+    outDump(logger, sev, "");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementCR el, ECN::ECClassCP aspectClass)
+iModelExternalSourceAspect iModelExternalSourceAspect::GetAspect(DgnElementCR el, BeSQLite::EC::ECInstanceId aspectid, ECN::ECClassCP aspectClass)
     {
     if (!aspectClass)
         aspectClass = GetAspectClass(el.GetDgnDb());
     if (nullptr == aspectClass)
-        return iModelSyncInfoAspect();
-    auto instance = DgnElement::GenericMultiAspect::GetAspect (el, *aspectClass, BeSQLite::EC::ECInstanceId()); // Get read-only copy of the aspect.
+        return iModelExternalSourceAspect();
+    auto instance = DgnElement::GenericMultiAspect::GetAspect (el, *aspectClass, aspectid); // Get read-only copy of the aspect.
     if (nullptr == instance)
-        return iModelSyncInfoAspect();
-    return iModelSyncInfoAspect(instance);
+        return iModelExternalSourceAspect();
+    return iModelExternalSourceAspect(instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelSyncInfoAspect iModelSyncInfoAspect::GetAspect(DgnElementR el, ECN::ECClassCP aspectClass)
+iModelExternalSourceAspect iModelExternalSourceAspect::GetAspect(DgnElementR el, BeSQLite::EC::ECInstanceId aspectid, ECN::ECClassCP aspectClass)
     {
     if (!aspectClass)
         aspectClass = GetAspectClass(el.GetDgnDb());
     if (nullptr == aspectClass)
-        return iModelSyncInfoAspect();
-    auto instance = DgnElement::GenericMultiAspect::GetAspectP(el, *aspectClass, BeSQLite::EC::ECInstanceId());    // NB: Call GetAspectP, not GetAspect! GetAspectP sets the aspect's dirty flag, which tells its _OnUpdate method to write out changes.
+        return iModelExternalSourceAspect();
+    auto instance = DgnElement::GenericMultiAspect::GetAspectP(el, *aspectClass, aspectid);    // NB: Call GetAspectP, not GetAspect! GetAspectP sets the aspect's dirty flag, which tells its _OnUpdate method to write out changes.
     if (nullptr == instance)
-        return iModelSyncInfoAspect();
-    return iModelSyncInfoAspect(instance);
+        return iModelExternalSourceAspect();
+    return iModelExternalSourceAspect(instance);
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelExternalSourceAspect iModelExternalSourceAspect::GetAspectBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId)
+    {
+    auto found = FindElementBySourceId(db, scopeId, kind, sourceId);
+    if (!found.elementId.IsValid())
+        return iModelExternalSourceAspect();
+
+    auto el = db.Elements().GetElement(found.elementId);
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        return iModelExternalSourceAspect();
+        }
+    return GetAspect(*el, found.aspectId, nullptr);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId iModelSyncInfoAspect::GetScope() const
+DgnElementId iModelExternalSourceAspect::GetScope() const
     {
     ECN::ECValue v;
-    m_instance->GetValue(v, SOURCEINFO_Scope);
+    m_instance->GetValue(v, XTRN_SRC_ASPCT_Scope);
     return v.GetNavigationInfo().GetId<DgnElementId>();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP iModelSyncInfoAspect::GetSourceId() const
+Utf8CP iModelExternalSourceAspect::GetSourceId() const
     {
     ECN::ECValue v;
-    m_instance->GetValue(v, SOURCEINFO_SourceId);
+    m_instance->GetValue(v, XTRN_SRC_ASPCT_SourceId);
     return v.GetUtf8CP();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP iModelSyncInfoAspect::GetKind() const 
+Utf8CP iModelExternalSourceAspect::GetKind() const 
     {
     ECN::ECValue v;
-    m_instance->GetValue(v, SOURCEINFO_Kind);
+    m_instance->GetValue(v, XTRN_SRC_ASPCT_Kind);
     return v.GetUtf8CP();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelSyncInfoAspect::GetSourceState(SourceState& ss) const
+iModelExternalSourceAspect::SourceState iModelExternalSourceAspect::GetSourceState() const
     {
-    ECN::ECValue v;
-    m_instance->GetValue(v, SOURCEINFO_Hash);
-    if (v.IsNull())
-        return BSIERROR;
-    size_t sz;
-    auto b = v.GetBinary(sz);
-    unsigned arraySize = sz / sizeof(unsigned char);
-    ss.m_hash.insert(ss.m_hash.end(), b, &b[arraySize]);
-    
-    m_instance->GetValue(v, SOURCEINFO_LastModifiedTime);
-    ss.m_lastModifiedTime = v.GetDouble();
+    SourceState ss;
 
-    return BSISUCCESS;
+    ECN::ECValue v;
+    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_Hash)) && !v.IsNull())
+        {
+        size_t sz;
+        auto b = v.GetBinary(sz);
+        ss.m_hash.assign(b, b + sz);
+        }
+
+    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_LastModifiedTime)) && !v.IsNull())
+        {
+        ss.m_lastModifiedTime = v.GetDouble();
+        }
+
+    return ss;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelSyncInfoAspect::SetProperties(rapidjson::Document const& json)
+void iModelExternalSourceAspect::SetProperties(rapidjson::Document const& json)
     {
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     json.Accept(writer);
 
     ECN::ECValue props(buffer.GetString());
-    m_instance->SetValue(SOURCEINFO_Properties, props);
+    m_instance->SetValue(XTRN_SRC_ASPCT_Properties, props);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document iModelSyncInfoAspect::GetProperties() const
+rapidjson::Document iModelExternalSourceAspect::GetProperties() const
     {
     rapidjson::Document json;
     ECN::ECValue props;
-    if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, SOURCEINFO_Properties) || !props.IsString())
+    if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, XTRN_SRC_ASPCT_Properties) || !props.IsString())
         return json;
     json.Parse(props.GetUtf8CP());
     return json;
@@ -921,10 +1073,10 @@ rapidjson::Document iModelSyncInfoAspect::GetProperties() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelSyncInfoAspect::SetSourceState(ECN::IECInstanceR instance, SourceState const& ss)
+void iModelExternalSourceAspect::SetSourceState(ECN::IECInstanceR instance, SourceState const& ss)
     {
-    instance.SetValue(SOURCEINFO_Hash, ECN::ECValue(&ss.m_hash[0], ss.m_hash.size()* sizeof(ss.m_hash[0])));
-    instance.SetValue(SOURCEINFO_LastModifiedTime, ECN::ECValue(ss.m_lastModifiedTime));
+    instance.SetValue(XTRN_SRC_ASPCT_Hash, ECN::ECValue(&ss.m_hash[0], ss.m_hash.size()* sizeof(ss.m_hash[0])));
+    instance.SetValue(XTRN_SRC_ASPCT_LastModifiedTime, ECN::ECValue(ss.m_lastModifiedTime));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -949,9 +1101,9 @@ int char2int(char input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelSyncInfoAspect::SourceState iModelBridgeSyncInfoFile::SourceState::GetAspectState() const
+iModelExternalSourceAspect::SourceState iModelBridgeSyncInfoFile::SourceState::GetAspectState() const
     {
-    iModelSyncInfoAspect::SourceState state;
+    iModelExternalSourceAspect::SourceState state;
     state.m_lastModifiedTime = m_lmt;
     
     for (int index = 0; index < m_hash.size(); index = index + 2)

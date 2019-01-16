@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ECSchemaTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -281,7 +281,7 @@ void ECSchemaTests::VerifyElement(DgnDbR db, DgnV8Api::ElementId& eid, Utf8CP cl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, Schema_UnUsed)
     {
-    LineUpFiles(L"Schema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Schema.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -305,7 +305,7 @@ TEST_F(ECSchemaTests, Schema_UnUsed)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, Schema_Used)
     {
-    LineUpFiles(L"Schema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Schema.bim", L"Test3d.dgn", false);
 
     DgnV8Api::ElementId eid;
     ImportSchemaAndAddInstance(m_v8FileName, eid, TestSchema);
@@ -323,7 +323,7 @@ TEST_F(ECSchemaTests, Schema_Used)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, SchemasWithDifferentVersion)
     {
-    LineUpFiles(L"SchemaVersionMismatch.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SchemaVersionMismatch.bim", L"Test3d.dgn", false);
     DgnV8Api::ElementId eid, eid2;
     {
     BentleyApi::BeFileName refV8File1;
@@ -359,7 +359,7 @@ TEST_F(ECSchemaTests, SchemasWithDifferentVersion)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, DuplicateSchemas_AddNewProperty)
     {
-    LineUpFiles(L"SchemaMismatch.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SchemaMismatch.bim", L"Test3d.dgn", false);
     DgnV8Api::ElementId eid, eid2;
     {
     BentleyApi::BeFileName refV8File1;
@@ -391,7 +391,7 @@ TEST_F(ECSchemaTests, DuplicateSchemas_AddNewProperty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, DuplicateSchemas_AddNewClass)
     {
-    LineUpFiles(L"SchemaMismatch_AddNewClass.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SchemaMismatch_AddNewClass.bim", L"Test3d.dgn", false);
     DgnV8Api::ElementId eid, eid2;
     {
     BentleyApi::BeFileName refV8File1;
@@ -422,7 +422,7 @@ TEST_F(ECSchemaTests, DuplicateSchemas_AddNewClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, DuplicateSchemas_DeleteClass)
     {
-    LineUpFiles(L"SchemaMismatch_DeleteClass.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SchemaMismatch_DeleteClass.bim", L"Test3d.dgn", false);
     DgnV8Api::ElementId eid, eid2;
     {
     ECObjectsV8::ECSchemaPtr schema;
@@ -454,7 +454,7 @@ TEST_F(ECSchemaTests, DuplicateSchemas_DeleteClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, ReferenceSchema)
     {
-    LineUpFiles(L"SchemaMismatch.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SchemaMismatch.bim", L"Test3d.dgn", false);
 
     DgnV8Api::ElementId eid;
     {
@@ -499,7 +499,7 @@ ECObjectsV8::ECSchemaPtr RegisteExternalSchema(WString ecSchemaXmlFile, Bentley:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, ExternalSchema)
     {
-    LineUpFiles(L"ExternalSchema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ExternalSchema.bim", L"Test3d.dgn", false);
 
     ScopedExternalSchemaLocator locator(GetOutputDir().c_str());
     ASSERT_TRUE(SUCCESS == locator.Status());
@@ -577,7 +577,7 @@ TEST_F(ECSchemaTests, ConvertSchemaWithCaseSensitiveIssues)
         "    </ECClass>"
         "</ECSchema>";
 
-    LineUpFiles(L"schemawithcasesensitiveissues.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"schemawithcasesensitiveissues.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaPtr schema=ImportSchema(m_v8FileName, schemaXml);
         {
@@ -635,7 +635,7 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
         "    </ECClass>"
         "</ECSchema>";
 
-    LineUpFiles(L"RemapSerializedInstance.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"RemapSerializedInstance.bim", L"Test3d.dgn", false);
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
 
@@ -680,7 +680,7 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
@@ -736,7 +736,7 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
     DoUpdate(m_dgnDbFileName, m_v8FileName, false);
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
@@ -765,7 +765,7 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECSchemaTests, ExternalSchemaRemoved)
     {
-    LineUpFiles(L"ExternalSchemaMissing.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ExternalSchemaMissing.bim", L"Test3d.dgn", false);
 
     ScopedExternalSchemaLocator locator(GetOutputDir().c_str());
     ASSERT_TRUE(SUCCESS == locator.Status());
@@ -815,7 +815,7 @@ TEST_F(ECSchemaTests, IdSpecificationCASkipIndex)
         "    </ECClass>"
         "</ECSchema>";
 
-    LineUpFiles(L"unsupportedcaonproperty.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"unsupportedcaonproperty.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, SchemaXML);
         {
@@ -845,7 +845,7 @@ TEST_F(ECSchemaTests, IdSpecificationCASkipIndex)
 // Strength, StrengthDirection, SourceClassMultiplicity, TargetClassMultiplicity of the converted relationship must match the BIS base relationship.
 TEST_F(ECSchemaTests, DerivedRelationshipAttributes)
     {
-    LineUpFiles(L"unsupportedcaonproperty.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"unsupportedcaonproperty.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, SchemaVersionA);
         {
@@ -912,7 +912,7 @@ TEST_F(ECSchemaTests, RelsWithAnyClassConstraint)
         "   </ECRelationshipClass>"
         "</ECSchema>";
 
-    LineUpFiles(L"relswithanyclassasconstraint.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"relswithanyclassasconstraint.bim", L"Test3d.dgn", false);
     m_wantCleanUp = false;
 
     ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, xmlRelsWithAnyClass);
@@ -994,7 +994,7 @@ TEST_F(ECSchemaTests, Mixinify)
 		"    </ECClass>"
 		"</ECSchema>";
 
-	LineUpFiles(L"mixinify.ibim", L"Test3d.dgn", false);
+	LineUpFiles(L"mixinify.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, schemaMixinTest);
         {
@@ -1052,7 +1052,7 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
             </ECClass>
         </ECSchema>)xml";
 
-    LineUpFiles(L"RemapReservedPropertyNames.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"RemapReservedPropertyNames.bim", L"Test3d.dgn", false);
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
 
@@ -1101,7 +1101,7 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
 
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
@@ -1152,7 +1152,7 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
     //---------------+---------------+---------------+---------------+---------------+-------
     TEST_F(ECSchemaTests, SchemaWithMultiInheritance)
         {
-        LineUpFiles(L"SkipSchemaWithVerifier.ibim", L"Test3d.dgn", false);
+        LineUpFiles(L"SkipSchemaWithVerifier.bim", L"Test3d.dgn", false);
         V8FileEditor v8editor;
         v8editor.Open(m_v8FileName);
 
@@ -1266,7 +1266,7 @@ struct SkipSchemaImportTests : public ConverterTestBaseFixture
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SkipSchemaImportTests, WithInstances)
     {
-    LineUpFiles(L"SkipSchema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SkipSchema.bim", L"Test3d.dgn", false);
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
 
@@ -1333,7 +1333,7 @@ struct TestVerifier : ISChemaImportVerifier
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECSchemaTests, SkipSchemaUsingVerifier)
     {
-    LineUpFiles(L"SkipSchemaWithVerifier.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SkipSchemaWithVerifier.bim", L"Test3d.dgn", false);
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/OidcSignInManager.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,10 +28,7 @@ struct OidcSignInManager : WebServices::IConnectSignInManager
         Tasks::AsyncTaskPtr<WebServices::WSConnectVoidResult> _SignOut() override;
         bool _IsSignedIn() const override;
         UserInfo _GetUserInfo() const override;
-        Utf8String _GetLastUsername() const override;
         WebServices::IConnectTokenProviderPtr _GetTokenProvider(Utf8StringCR rpUri) const override;
-        //! Will be called by CheckUserChange
-        void _StoreSignedInUser() override;
 
         WebServices::AuthenticationHandlerPtr _GetAuthenticationHandler
             (

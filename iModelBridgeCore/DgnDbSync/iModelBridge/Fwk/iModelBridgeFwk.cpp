@@ -235,6 +235,7 @@ void iModelBridgeFwk::InitLogging()
     NativeLogging::LoggingConfig::SetSeverity(L"ECDb", NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnCore", NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnV8Converter", NativeLogging::LOG_TRACE);
+    // NativeLogging::LoggingConfig::SetSeverity(L"Changeset", NativeLogging::LOG_TRACE);
     //NativeLogging::LoggingConfig::SetSeverity(L"BeSQLite", NativeLogging::LOG_TRACE);
     }
 
@@ -1090,7 +1091,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
-    params.SetWantProvenanceInBim(m_jobEnvArgs.m_wantProvenanceInBim);
+    params.SetWantProvenanceInBim(m_jobEnvArgs.m_wantProvenanceInBim || iModelBridge::TestFeatureFlag(IModelBridgeFeatureFlag::WantProvenanceInBim));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1641,7 +1642,7 @@ BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
     if (!m_jobEnvArgs.m_wantProvenanceInBim)
         return BSISUCCESS;
 
-    if (m_briefcaseDgnDb->Schemas().ContainsSchema(SOURCEINFO_ECSCHEMA_NAME))
+    if (m_briefcaseDgnDb->Schemas().ContainsSchema(XTRN_SRC_ASPCT_ECSCHEMA_NAME))
         return BSISUCCESS;
 
     BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
@@ -1874,12 +1875,14 @@ int iModelBridgeFwk::UpdateExistingBim()
         return BentleyStatus::ERROR;
 
     bool holdsSchemaLock = false;
-
+    bool madeChanges = false;
     if (true)
         {
         iModelBridgeCallTerminate callTerminate(*m_bridge);
 
         GetLogger().infov("bridge:%s iModel:%s - Opening briefcase II.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+
+        ReportFeatureFlags();
 
         // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
         bool madeSchemaChanges = false;
@@ -1914,8 +1917,8 @@ int iModelBridgeFwk::UpdateExistingBim()
             GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);                  // === SCHEMA LOCK
             return RETURN_STATUS_LOCAL_ERROR;                                                    // === SCHEMA LOCK
             }                                                                                    // === SCHEMA LOCK
-                                                                                                 // === SCHEMA LOCK
-        if (iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb) || hasChanges) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+        madeChanges = iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb) || hasChanges;          // === SCHEMA LOCK
+        if (madeChanges) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
             {                                                                                    // === SCHEMA LOCK
             if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))                 // === SCHEMA LOCK
                 return RETURN_STATUS_SERVER_ERROR;                                               // === SCHEMA LOCK
@@ -1962,7 +1965,11 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
-
+    //This allow SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
+    madeChanges |= iModelBridge::AnyTxns(*m_briefcaseDgnDb);
+    if (madeChanges)
+        m_briefcaseDgnDb->ExecuteSql("ANALYZE");
+    //
     dbres = m_briefcaseDgnDb->SaveChanges();
 
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
@@ -2058,7 +2065,7 @@ void iModelBridgeFwk::LogStderr()
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::iModelBridgeFwk()
-:m_logProvider(NULL), m_dmsSupport(NULL)
+:m_logProvider(nullptr), m_dmsSupport(nullptr), m_bridge(nullptr)
     {
     m_client = nullptr;
     m_bcMgrForBridges = new IBriefcaseManagerForBridges(*this);
@@ -2107,6 +2114,18 @@ void iModelBridgeFwk::ReportIssue(WStringCR msg)
         return;
         }
     tf->PutLine(msg.c_str(), true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::ReportFeatureFlags()
+    {
+    if (m_bridge != nullptr)
+        {
+        if (m_bridge->_GetParams().GetWantProvenanceInBim())
+            GetLogger().info("FeatureFlag.WantProvenanceInBim = 1");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

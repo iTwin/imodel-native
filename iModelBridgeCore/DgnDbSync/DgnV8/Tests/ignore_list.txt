@@ -9,25 +9,3 @@ NamedGroupTests.NamedGroupOf2dElement
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
 
-
-TransformTests.Test1
-
-    # VSTS#50113
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/07/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(437): error:       Expected: hadAnyChanges
-    # Which is: true
-    # To be equal to: expectUpdate
-    # Which is: false
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1239): error:       Expected: 0
-    # To be equal to: m_count
-    # Which is: 2
-
-DrawingTests.Basic3dAttachment
-    # Abeesh: We should add this test to ignore_list for now. Needs to review what we are doing with sheets.
-    # x64, DEBUG
-    # [ RUN      ] DrawingTests.Basic3dAttachment
-    # F:\Bim0200Dev\src\DgnDbSync\DgnV8\Tests\gtestmain.cpp(314): error: Failed
-    # F:\Bim0200Dev\src\DgnDbSync\DgnV8\..\SyncInfo.cpp(1733): ASSERTION FAILURE (0): false
-    # F:\Bim0200Dev\src\DgnDbSync\DgnV8\Tests\gtestmain.cpp(314): error: Failed
-    # F:\Bim0200Dev\src\DgnDbSync\DgnV8\..\SyncInfo.cpp(1733): ASSERTION FAILURE (0): false
-    # [  FAILED  ] DrawingTests.Basic3dAttachment (3500 ms)

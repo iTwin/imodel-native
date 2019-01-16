@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/BimFromJsonImpl.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -272,8 +272,10 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
         reader = new PropertyDataReader(this);
     else if (objectType.Equals(JSON_TYPE_EmbeddedFile))
         reader = new EmbeddedFileReader(this);
-    else if (objectType.Equals(JSON_TYPE_GenericElementAspect))
-        reader = new GenericElementAspectReader(this);
+    else if (objectType.Equals(JSON_TYPE_ElementMultiAspect))
+        reader = new ElementAspectReader(this, false);
+    else if (objectType.Equals(JSON_TYPE_ElementUniqueAspect))
+        reader = new ElementAspectReader(this, true);
     else if (objectType.Equals(JSON_TYPE_TextAnnotationData))
         reader = new TextAnnotationDataReader(this);
     else if (objectType.Equals(JSON_TYPE_PointCloudModel))

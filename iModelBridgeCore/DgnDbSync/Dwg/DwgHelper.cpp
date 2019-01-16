@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgHelper.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -1774,7 +1774,7 @@ uint32_t    DwgHelper::GetDwgImporterVersion ()
     uint32_t    toolkitVersion = 0, importerVersion = 0;
 #ifdef DLM_API_NUMBER
     // parse the DLL suffix "####b#"
-    BeAssert (::sscanf(DLM_API_NUMBER, "%db%d", &toolkitVersion, &importerVersion) == 2);
+    BeAssert (::sscanf(DLM_API_NUMBER, "%ub%u", &toolkitVersion, &importerVersion) == 2);
 #else
     BeAssert (false && "DLM_API_NUMBER should be passed through the makefile!");
 #endif

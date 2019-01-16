@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridge.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,14 +40,16 @@
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
-#define SOURCEINFO_ECSCHEMA_NAME            "SourceInfo"
-#define SOURCEINFO_CLASS_SoureElementInfo   "SourceElementInfo"
-#define SOURCEINFO_Scope                    "Scope"
-#define SOURCEINFO_SourceId                 "SourceId"
-#define SOURCEINFO_Kind                     "Kind"
-#define SOURCEINFO_LastModifiedTime         "LastModifiedTime"
-#define SOURCEINFO_Hash                     "Hash"
-#define SOURCEINFO_Properties               "Properties"
+#define XTRN_SRC_ASPCT_ECSCHEMA_NAME            "SourceInfo"
+#define XTRN_SRC_ASPCT_SCHEMA(name)             XTRN_SRC_ASPCT_ECSCHEMA_NAME "." name
+#define XTRN_SRC_ASPCT_CLASS                    "ExternalSourceAspect"
+#define XTRN_SRC_ASPCT_FULLCLASSNAME            XTRN_SRC_ASPCT_SCHEMA(XTRN_SRC_ASPCT_CLASS)
+#define XTRN_SRC_ASPCT_Scope                    "Scope"
+#define XTRN_SRC_ASPCT_SourceId                 "SourceId"
+#define XTRN_SRC_ASPCT_Kind                     "Kind"
+#define XTRN_SRC_ASPCT_LastModifiedTime         "LastModifiedTime"
+#define XTRN_SRC_ASPCT_Hash                     "Hash"
+#define XTRN_SRC_ASPCT_Properties               "Properties"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -879,7 +881,7 @@ public:
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
 
-    //! Get the transform, if any, that the bridge should pre-multiply to the normal transform that it computes and applied to all converted spatial data.
+    //! Get the transform, if any, that the bridge should pre-multiply to the normal transform that it computes and applies to all converted spatial data.
     //! The job's spatial data transform can come from a command-line parameter or from a property of the job subject element in the iModel. In case both are specified,
     //! the transform specified on the command line is pre-multiplied to the transform specified by the job subject.
     //! @param[in] params The bridge's parameters
@@ -889,6 +891,8 @@ public:
 
     Transform GetSpatialDataTransform(SubjectCR jobSubject) {return GetSpatialDataTransform(_GetParams(), jobSubject);}
 
+    //! Test two transforms for equality, using the minimum tolerance possible
+    IMODEL_BRIDGE_EXPORT static bool AreTransformsEqual(Transform const& t1, Transform const& t2);
 
     //! @name Font Resolution
     //! @{
@@ -1028,7 +1032,13 @@ public:
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
 
+    //! @name Feature Flags
+    //! @{
+
+    IMODEL_BRIDGE_EXPORT static bool TestFeatureFlag(IModelBridgeFeatureFlag);
+
     IMODEL_BRIDGE_EXPORT static bool WantModelProvenanceInBim(DgnDbR db);
+    //! @}
     };
 
 //=======================================================================================
