@@ -79,6 +79,8 @@ $(o)DoubleLShapeProfileTests.obj        : $(BEGTEST_INPUT)DoubleLShapeProfileTes
 
 $(o)DoubleCShapeProfileTests.obj        : $(BEGTEST_INPUT)DoubleCShapeProfileTests.cpp ${MultiCompileDepends}
 
+$(o)ArbitraryCompositeProfileTests.obj  : $(BEGTEST_INPUT)ArbitraryCompositeProfileTests.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts
