@@ -257,7 +257,10 @@ struct IModelJsFs : Napi::ObjectWrap<IModelJsFs>
     static Napi::Value ReaddirSync(const Napi::CallbackInfo& info)
         {
         BeFileName topDir(info[0].ToString().Utf8Value().c_str(), true);
-
+        if (!topDir.DoesPathExist()) {
+            return info.Env().Undefined();
+        }
+            
         bvector<Utf8String> files;
         BeFileName entryName;
         bool        isDir;
@@ -281,14 +284,11 @@ struct IModelJsFs : Napi::ObjectWrap<IModelJsFs>
         BeFileName fn(info[0].ToString().Utf8Value().c_str(), true);
 
         auto stats = Napi::Object::New(env);
-        if (!fn.DoesPathExist())
-            return env.Undefined();
-
         auto isDir = fn.IsDirectory();
-        stats.Set("IsDirectory", Napi::Boolean::New(env, isDir));
-        stats.Set("IsFile", Napi::Boolean::New(env, !isDir));
-        stats.Set("IsSymbolicLink", Napi::Boolean::New(env, fn.IsSymbolicLink()));
-        stats.Set("IsSocket", Napi::Boolean::New(env, false));
+        stats.Set("isDirectory", Napi::Boolean::New(env, isDir));
+        stats.Set("isFile", Napi::Boolean::New(env, !isDir));
+        stats.Set("isSymbolicLink", Napi::Boolean::New(env, fn.IsSymbolicLink()));
+        stats.Set("isSocket", Napi::Boolean::New(env, false));
         time_t ctime, mtime, atime;
         fn.GetFileTime(&ctime, &atime, &mtime);
         stats.Set("birthTimeMs", Napi::Number::New(env, (double)ctime/1000));
@@ -629,8 +629,8 @@ void Host::SetupJsRuntime()
 
         env.Global().Set("imodeljsMobile", imodeljsMobile);
 
-        IModelJsTimer::Init(env, env.Global());
-        IModelJsFs::Init(env, env.Global());
+        //IModelJsTimer::Init(env, env.Global());
+        // IModelJsFs::Init(env, env.Global());
 
         auto initScriptEvaluation = runtime.EvaluateScript(InitScript());
         BeAssert(initScriptEvaluation.status == Js::EvaluateStatus::Success);

@@ -17,44 +17,158 @@
 		26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 26E6C0BF2076B63F0031769D /* LaunchScreen.storyboard */; };
 		26E6C0C42076B63F0031769D /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0C32076B63F0031769D /* main.m */; };
 		26E6C0CC2076B8200031769D /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E6C0CB2076B8200031769D /* WebKit.framework */; };
-		41412606218895B800E09671 /* jsc in Resources */ = {isa = PBXBuildFile; fileRef = 41412605218895B800E09671 /* jsc */; };
-		4153DBBB2138250200F4A0D2 /* WindowTimers.m in Sources */ = {isa = PBXBuildFile; fileRef = 4153DBBA2138250200F4A0D2 /* WindowTimers.m */; };
-		41999A86211CB34000489006 /* XMLHTTPRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 41999A84211CB34000489006 /* XMLHTTPRequest.m */; };
-		41999A89211CD90500489006 /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41999A88211CD90400489006 /* Utilities.cpp */; };
-		41EB139A217E68AC001A7A2A /* libBentleyGeom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1379217E68AA001A7A2A /* libBentleyGeom.a */; };
-		41EB139B217E68AC001A7A2A /* libBeHttp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB137A217E68AA001A7A2A /* libBeHttp.a */; };
-		41EB139C217E68AC001A7A2A /* libBentleyGeomSerialization.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB137B217E68AA001A7A2A /* libBentleyGeomSerialization.a */; };
-		41EB139D217E68AC001A7A2A /* libBaseGeoCoord.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB137C217E68AA001A7A2A /* libBaseGeoCoord.a */; };
-		41EB139E217E68AC001A7A2A /* libBeOpenSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB137D217E68AB001A7A2A /* libBeOpenSSL.a */; };
-		41EB139F217E68AC001A7A2A /* libiModelJs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB137E217E68AB001A7A2A /* libiModelJs.a */; };
-		41EB13A0217E68AC001A7A2A /* libBeFolly.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB137F217E68AB001A7A2A /* libBeFolly.a */; };
-		41EB13A1217E68AC001A7A2A /* libUnits.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1380217E68AB001A7A2A /* libUnits.a */; };
-		41EB13A2217E68AC001A7A2A /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1381217E68AB001A7A2A /* liblzma.a */; };
-		41EB13A3217E68AC001A7A2A /* libBeCsmapStatic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1382217E68AB001A7A2A /* libBeCsmapStatic.a */; };
-		41EB13A4217E68AC001A7A2A /* libBeSQLite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1383217E68AB001A7A2A /* libBeSQLite.a */; };
-		41EB13A5217E68AC001A7A2A /* libBeJpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1384217E68AB001A7A2A /* libBeJpeg.a */; };
-		41EB13A6217E68AC001A7A2A /* libBePng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1385217E68AB001A7A2A /* libBePng.a */; };
-		41EB13A7217E68AC001A7A2A /* libBeZlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1386217E68AB001A7A2A /* libBeZlib.a */; };
-		41EB13A8217E68AC001A7A2A /* libBeIcu4c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1387217E68AB001A7A2A /* libBeIcu4c.a */; };
-		41EB13A9217E68AC001A7A2A /* libBeSQLiteEC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1388217E68AB001A7A2A /* libBeSQLiteEC.a */; };
-		41EB13AA217E68AC001A7A2A /* liblibexpat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1389217E68AB001A7A2A /* liblibexpat.a */; };
-		41EB13AB217E68AC001A7A2A /* libBeLibxml2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB138A217E68AB001A7A2A /* libBeLibxml2.a */; };
-		41EB13AC217E68AC001A7A2A /* libBeJsonCpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB138B217E68AB001A7A2A /* libBeJsonCpp.a */; };
-		41EB13AD217E68AC001A7A2A /* libuv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB138C217E68AB001A7A2A /* libuv.a */; };
-		41EB13AE217E68AC001A7A2A /* libBeXml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB138D217E68AB001A7A2A /* libBeXml.a */; };
-		41EB13AF217E68AC001A7A2A /* liblibapr.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB138E217E68AB001A7A2A /* liblibapr.a */; };
-		41EB13B0217E68AC001A7A2A /* libBeLibJpegTurbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB138F217E68AB001A7A2A /* libBeLibJpegTurbo.a */; };
-		41EB13B1217E68AC001A7A2A /* libECObjects.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1390217E68AC001A7A2A /* libECObjects.a */; };
-		41EB13B2217E68AC001A7A2A /* libfreetype2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1391217E68AC001A7A2A /* libfreetype2.a */; };
-		41EB13B3217E68AC001A7A2A /* libsnappy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1392217E68AC001A7A2A /* libsnappy.a */; };
-		41EB13B4217E68AC001A7A2A /* libbentleylog4cxx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1393217E68AC001A7A2A /* libbentleylog4cxx.a */; };
-		41EB13B5217E68AC001A7A2A /* libECPresentation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1394217E68AC001A7A2A /* libECPresentation.a */; };
-		41EB13B6217E68AC001A7A2A /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1395217E68AC001A7A2A /* libDgnPlatform.a */; };
-		41EB13B7217E68AC001A7A2A /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1396217E68AC001A7A2A /* libBentley.a */; };
-		41EB13B8217E68AC001A7A2A /* libBeCurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1397217E68AC001A7A2A /* libBeCurl.a */; };
-		41EB13B9217E68AC001A7A2A /* libliblog4cxx010.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1398217E68AC001A7A2A /* libliblog4cxx010.a */; };
-		41EB13BA217E68AC001A7A2A /* liblibaprutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41EB1399217E68AC001A7A2A /* liblibaprutil.a */; };
+		4122C1BD21ED209E0073674D /* libiModelJsHost.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4122C1BC21ED209E0073674D /* libiModelJsHost.a */; };
+		41876CBB21CBEDBF00A62096 /* AssetHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 41876CBA21CBEDBF00A62096 /* AssetHandler.m */; };
+		41B023E021CD8F16009FF9CB /* AppAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B023CF21CD8EFF009FF9CB /* AppAuth.framework */; };
+		41B023E221DD080B009FF9CB /* AppAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B023CF21CD8EFF009FF9CB /* AppAuth.framework */; };
+		41B023E321DD080B009FF9CB /* AppAuth.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 41B023CF21CD8EFF009FF9CB /* AppAuth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		41B023E721DD0818009FF9CB /* AppAuthCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B023DD21CD8EFF009FF9CB /* AppAuthCore.framework */; };
+		41B023E821DD0818009FF9CB /* AppAuthCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 41B023DD21CD8EFF009FF9CB /* AppAuthCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		41B023C021CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 340E737C1C5D819B0076B1F6;
+			remoteInfo = "AppAuth-iOS";
+		};
+		41B023C221CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 341741F01C5D8283000EF209;
+			remoteInfo = "AppAuth-iOSTests";
+		};
+		41B023C421CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 340DAE4E1D58216A00EC285B;
+			remoteInfo = "AppAuth-macOS";
+		};
+		41B023C621CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 341AA4CE1E7F392C00FCA5C6;
+			remoteInfo = "AppAuth-macOSTests";
+		};
+		41B023C821CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 341E707E1DE18744004353C1;
+			remoteInfo = "AppAuth-tvOS";
+		};
+		41B023CA21CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 341AA4ED1E7F39F100FCA5C6;
+			remoteInfo = "AppAuth-tvOSTests";
+		};
+		41B023CC21CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 347423F61E7F4B5600D3E6D6;
+			remoteInfo = "AppAuth-watchOS";
+		};
+		41B023CE21CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 343AAA541E83463400F9D36E;
+			remoteInfo = AppAuth_iOS;
+		};
+		41B023D021CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 343AAA5C1E83463400F9D36E;
+			remoteInfo = AppAuth_iOSTests;
+		};
+		41B023D221CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 343AAA991E83487200F9D36E;
+			remoteInfo = AppAuth_watchOS;
+		};
+		41B023D421CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 343AAAA61E83489A00F9D36E;
+			remoteInfo = AppAuth_tvOS;
+		};
+		41B023D621CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 343AAAAE1E83489A00F9D36E;
+			remoteInfo = AppAuth_tvOSTests;
+		};
+		41B023D821CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 343AAAC21E8348A900F9D36E;
+			remoteInfo = AppAuth_macOS;
+		};
+		41B023DA21CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 343AAACA1E8348AA00F9D36E;
+			remoteInfo = AppAuth_macOSTests;
+		};
+		41B023DC21CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 342F42C32177B1FC00574F24;
+			remoteInfo = AppAuthCore;
+		};
+		41B023DE21CD8EFF009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 348970972177B3B000ABEED4;
+			remoteInfo = AppAuthCoreTests;
+		};
+		41B023E421DD080B009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 343AAA531E83463400F9D36E;
+			remoteInfo = AppAuth_iOS;
+		};
+		41B023E921DD0818009FF9CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 342F42842177B1FC00574F24;
+			remoteInfo = AppAuthCore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		41B023E621DD080B009FF9CB /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				41B023E321DD080B009FF9CB /* AppAuth.framework in Embed Frameworks */,
+				41B023E821DD0818009FF9CB /* AppAuthCore.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2699BBA120779DAF00F763EE /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
@@ -71,77 +185,50 @@
 		26E6C0C22076B63F0031769D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		26E6C0C32076B63F0031769D /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		26E6C0CB2076B8200031769D /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
-		3B3F6FD1208FBF4A00F27DF1 /* JsInterop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInterop.cpp; path = ../../../../iModelJsNodeAddon/JsInterop.cpp; sourceTree = "<group>"; };
-		41412605218895B800E09671 /* jsc */ = {isa = PBXFileReference; lastKnownFileType = folder; name = jsc; path = ../../jsc; sourceTree = "<group>"; };
-		4153DBB92138250200F4A0D2 /* WindowTimers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WindowTimers.h; sourceTree = "<group>"; };
-		4153DBBA2138250200F4A0D2 /* WindowTimers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WindowTimers.m; sourceTree = "<group>"; };
-		4161BC1020FE83D4001830CF /* ServicesTierHost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierHost.cpp; path = ../../ServicesTierHost.cpp; sourceTree = "<group>"; };
-		4161BC1120FE83D4001830CF /* ServicesTierNodeHost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierNodeHost.cpp; path = ../../ServicesTierNodeHost.cpp; sourceTree = "<group>"; };
-		4161BC1220FE83D4001830CF /* ServicesTierEnvironment.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierEnvironment.cpp; path = ../../ServicesTierEnvironment.cpp; sourceTree = "<group>"; };
-		4161BC1320FE83D4001830CF /* ServicesTierUvHost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUvHost.cpp; path = ../../ServicesTierUvHost.cpp; sourceTree = "<group>"; };
-		4161BC1420FE83D4001830CF /* ServicesTierScripts.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierScripts.cpp; path = ../../ServicesTierScripts.cpp; sourceTree = "<group>"; };
-		4161BC1520FE83D4001830CF /* ServicesTierUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ServicesTierUtilities.h; path = ../../ServicesTierUtilities.h; sourceTree = "<group>"; };
-		4161BC1620FE83D4001830CF /* ServicesTierUtilities.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUtilities.cpp; path = ../../ServicesTierUtilities.cpp; sourceTree = "<group>"; };
-		4161BC1720FE83D5001830CF /* ServicesTierExtension.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierExtension.cpp; path = ../../ServicesTierExtension.cpp; sourceTree = "<group>"; };
-		4161BC1920FE935D001830CF /* BeJavaScript.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = BeJavaScript.cpp; path = ../../jsc/BeJavaScript.cpp; sourceTree = "<group>"; };
-		4161BC1A20FE935D001830CF /* BeJavaScript.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BeJavaScript.h; path = ../../jsc/BeJavaScript.h; sourceTree = "<group>"; };
-		4161BC1B20FE935E001830CF /* node_api.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = node_api.cc; path = ../../jsc/node_api.cc; sourceTree = "<group>"; };
-		4161BC1C21026FAF001830CF /* ECPresentationUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ECPresentationUtils.h; path = ../../../iModelJsNodeAddon/ECPresentationUtils.h; sourceTree = "<group>"; };
-		4161BC1D21026FAF001830CF /* IModelJsNative.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = IModelJsNative.cpp; path = ../../../iModelJsNodeAddon/IModelJsNative.cpp; sourceTree = "<group>"; };
-		4161BC1E21026FB0001830CF /* JsInteropTiles.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropTiles.cpp; path = ../../../iModelJsNodeAddon/JsInteropTiles.cpp; sourceTree = "<group>"; };
-		4161BC1F21026FB0001830CF /* ECSchemaXmlContextUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ECSchemaXmlContextUtils.h; path = ../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.h; sourceTree = "<group>"; };
-		4161BC2021026FB0001830CF /* JsInteropDgnDb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropDgnDb.cpp; path = ../../../iModelJsNodeAddon/JsInteropDgnDb.cpp; sourceTree = "<group>"; };
-		4161BC2121026FB0001830CF /* IModelJsNative.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = IModelJsNative.h; path = ../../../iModelJsNodeAddon/IModelJsNative.h; sourceTree = "<group>"; };
-		4161BC2221026FB0001830CF /* ECPresentationUtils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ECPresentationUtils.cpp; path = ../../../iModelJsNodeAddon/ECPresentationUtils.cpp; sourceTree = "<group>"; };
-		4161BC2321026FB0001830CF /* ECSchemaXmlContextUtils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ECSchemaXmlContextUtils.cpp; path = ../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.cpp; sourceTree = "<group>"; };
-		4161BC2421026FB0001830CF /* JsInteropBriefcaseManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropBriefcaseManager.cpp; path = ../../../iModelJsNodeAddon/JsInteropBriefcaseManager.cpp; sourceTree = "<group>"; };
-		4161BC69210A117D001830CF /* iModelJs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJs.h; path = ../../PublicAPI/iModelJs/iModelJs.h; sourceTree = "<group>"; };
-		4161BC6A210A117E001830CF /* iModelJsServicesTier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsServicesTier.h; path = ../../PublicAPI/iModelJs/iModelJsServicesTier.h; sourceTree = "<group>"; };
-		4161BC6B210A117E001830CF /* iModelJsUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsUtilities.h; path = ../../PublicAPI/iModelJs/iModelJsUtilities.h; sourceTree = "<group>"; };
-		4161BC6C210A117E001830CF /* iModelJsApp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsApp.h; path = ../../PublicAPI/iModelJs/iModelJsApp.h; sourceTree = "<group>"; };
-		4161BC70210A6B60001830CF /* getaddrinfo.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = getaddrinfo.c; path = ../../../thirdparty/libuv/src/win/getaddrinfo.c; sourceTree = "<group>"; };
-		41999A83211CB34000489006 /* XMLHTTPRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XMLHTTPRequest.h; sourceTree = "<group>"; };
-		41999A84211CB34000489006 /* XMLHTTPRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XMLHTTPRequest.m; sourceTree = "<group>"; };
-		41999A87211CC44300489006 /* iModelJsInternal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsInternal.h; path = ../../iModelJsInternal.h; sourceTree = "<group>"; };
-		41999A88211CD90400489006 /* Utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Utilities.cpp; path = ../../Utilities.cpp; sourceTree = "<group>"; };
+		4122C1B721E7EA1E0073674D /* IModelJsHost.mke */ = {isa = PBXFileReference; lastKnownFileType = text; name = IModelJsHost.mke; path = ../Native/IModelJsHost.mke; sourceTree = "<group>"; };
+		4122C1B821E7EA1E0073674D /* IModelJsHost.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = IModelJsHost.mm; path = ../Native/IModelJsHost.mm; sourceTree = "<group>"; };
+		4122C1B921E7EA1E0073674D /* Bindings */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Bindings; path = ../Native/Bindings; sourceTree = "<group>"; };
+		4122C1BA21E7EA1E0073674D /* system */ = {isa = PBXFileReference; lastKnownFileType = folder; name = system; path = ../Native/system; sourceTree = "<group>"; };
+		4122C1BB21E7EA1E0073674D /* PublicAPI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PublicAPI; path = ../Native/PublicAPI; sourceTree = "<group>"; };
+		4122C1BC21ED209E0073674D /* libiModelJsHost.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiModelJsHost.a; path = ../../../../../out/release/iOSARM64/static/build/iModelJsHost/libiModelJsHost.a; sourceTree = "<group>"; };
+		41876CB921CBEDBF00A62096 /* AssetHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AssetHandler.h; sourceTree = "<group>"; };
+		41876CBA21CBEDBF00A62096 /* AssetHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AssetHandler.m; sourceTree = "<group>"; };
 		41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iModelJsApp.xcconfig; sourceTree = "<group>"; };
-		41E94100210B76500089D2A6 /* libuv */ = {isa = PBXFileReference; lastKnownFileType = folder; name = libuv; path = ../../../thirdparty/libuv; sourceTree = "<group>"; };
-		41E94101210B766A0089D2A6 /* websocketpp */ = {isa = PBXFileReference; lastKnownFileType = folder; name = websocketpp; path = ../../../libsrc/websocketpp; sourceTree = "<group>"; };
-		41E94102210B76880089D2A6 /* iModelJsNodeAddon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = iModelJsNodeAddon; path = ../../../iModelJsNodeAddon; sourceTree = "<group>"; };
-		41E94103210FAC8A0089D2A6 /* PublicAPI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PublicAPI; path = ../../PublicAPI; sourceTree = "<group>"; };
-		41EB1379217E68AA001A7A2A /* libBentleyGeom.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeom.a; path = ../../../../out/debug/iOSARM64/static/build/geomlibs/delivery/basegeom/bin/libBentleyGeom.a; sourceTree = "<group>"; };
-		41EB137A217E68AA001A7A2A /* libBeHttp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeHttp.a; path = ../../../../out/debug/iOSARM64/static/build/BeHttp/BeHttpLibrary/libBeHttp.a; sourceTree = "<group>"; };
-		41EB137B217E68AA001A7A2A /* libBentleyGeomSerialization.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeomSerialization.a; path = ../../../../out/debug/iOSARM64/static/build/geomlibs/GeomlibsSerialization/libBentleyGeomSerialization.a; sourceTree = "<group>"; };
-		41EB137C217E68AA001A7A2A /* libBaseGeoCoord.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBaseGeoCoord.a; path = ../../../../out/debug/iOSARM64/static/build/BaseGeoCoord/libBaseGeoCoord.a; sourceTree = "<group>"; };
-		41EB137D217E68AB001A7A2A /* libBeOpenSSL.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeOpenSSL.a; path = ../../../nuget/OpenSslNuget_iosarm64.2.0.2.29/native/lib/static/libBeOpenSSL.a; sourceTree = "<group>"; };
-		41EB137E217E68AB001A7A2A /* libiModelJs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiModelJs.a; path = ../../../../out/debug/iOSARM64/static/build/iModelJs/libiModelJs.a; sourceTree = "<group>"; };
-		41EB137F217E68AB001A7A2A /* libBeFolly.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeFolly.a; path = ../../../../out/debug/iOSARM64/static/build/Folly/libBeFolly.a; sourceTree = "<group>"; };
-		41EB1380217E68AB001A7A2A /* libUnits.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libUnits.a; path = ../../../../out/debug/iOSARM64/static/build/Units/UnitsNative/libUnits.a; sourceTree = "<group>"; };
-		41EB1381217E68AB001A7A2A /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblzma.a; path = ../../../nuget/CompressNuget_iosarm64.2.0.2.29/native/lib/static/liblzma.a; sourceTree = "<group>"; };
-		41EB1382217E68AB001A7A2A /* libBeCsmapStatic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCsmapStatic.a; path = ../../../../out/debug/iOSARM64/static/build/csmap/libBeCsmapStatic.a; sourceTree = "<group>"; };
-		41EB1383217E68AB001A7A2A /* libBeSQLite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLite.a; path = ../../../../out/debug/iOSARM64/static/build/BeSQLite/BeSQLite/libBeSQLite.a; sourceTree = "<group>"; };
-		41EB1384217E68AB001A7A2A /* libBeJpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJpeg.a; path = ../../../../out/debug/iOSARM64/static/build/Bentley/BeJpeg/libBeJpeg.a; sourceTree = "<group>"; };
-		41EB1385217E68AB001A7A2A /* libBePng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBePng.a; path = ../../../nuget/PngNuget_iosarm64.2.0.2.29/native/lib/static/libBePng.a; sourceTree = "<group>"; };
-		41EB1386217E68AB001A7A2A /* libBeZlib.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeZlib.a; path = ../../../nuget/CompressNuget_iosarm64.2.0.2.29/native/lib/static/libBeZlib.a; sourceTree = "<group>"; };
-		41EB1387217E68AB001A7A2A /* libBeIcu4c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeIcu4c.a; path = ../../../nuget/IcuNuget_iosarm64.2.0.2.29/native/lib/static/libBeIcu4c.a; sourceTree = "<group>"; };
-		41EB1388217E68AB001A7A2A /* libBeSQLiteEC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLiteEC.a; path = ../../../../out/debug/iOSARM64/static/build/ECDb/ECDbLibrary/libBeSQLiteEC.a; sourceTree = "<group>"; };
-		41EB1389217E68AB001A7A2A /* liblibexpat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibexpat.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.29/native/lib/static/liblibexpat.a; sourceTree = "<group>"; };
-		41EB138A217E68AB001A7A2A /* libBeLibxml2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibxml2.a; path = ../../../nuget/LibXml2Nuget_iosarm64.2.0.2.29/native/lib/static/libBeLibxml2.a; sourceTree = "<group>"; };
-		41EB138B217E68AB001A7A2A /* libBeJsonCpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJsonCpp.a; path = ../../../../out/debug/iOSARM64/static/build/BeJsonCpp/libBeJsonCpp.a; sourceTree = "<group>"; };
-		41EB138C217E68AB001A7A2A /* libuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libuv.a; path = ../../../../out/debug/iOSARM64/static/build/libuv/libuv.a; sourceTree = "<group>"; };
-		41EB138D217E68AB001A7A2A /* libBeXml.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeXml.a; path = ../../../../out/debug/iOSARM64/static/build/Bentley/BeXml/libBeXml.a; sourceTree = "<group>"; };
-		41EB138E217E68AB001A7A2A /* liblibapr.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibapr.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.29/native/lib/static/liblibapr.a; sourceTree = "<group>"; };
-		41EB138F217E68AB001A7A2A /* libBeLibJpegTurbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibJpegTurbo.a; path = ../../../nuget/JpegTurboNuget_iosarm64.2.0.2.29/native/lib/static/libBeLibJpegTurbo.a; sourceTree = "<group>"; };
-		41EB1390217E68AC001A7A2A /* libECObjects.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECObjects.a; path = ../../../../out/debug/iOSARM64/static/build/ECObjects/ECObjectsNative/libECObjects.a; sourceTree = "<group>"; };
-		41EB1391217E68AC001A7A2A /* libfreetype2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype2.a; path = ../../../nuget/Freetype2Nuget_iosarm64.2.0.2.29/native/lib/static/libfreetype2.a; sourceTree = "<group>"; };
-		41EB1392217E68AC001A7A2A /* libsnappy.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsnappy.a; path = ../../../nuget/CompressNuget_iosarm64.2.0.2.29/native/lib/static/libsnappy.a; sourceTree = "<group>"; };
-		41EB1393217E68AC001A7A2A /* libbentleylog4cxx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbentleylog4cxx.a; path = ../../../../out/debug/iOSARM64/static/build/LoggingSDK/LoggingNativeLog4cxx/libbentleylog4cxx.a; sourceTree = "<group>"; };
-		41EB1394217E68AC001A7A2A /* libECPresentation.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECPresentation.a; path = "../../../../out/debug/iOSARM64/static/build/ECPresentation/ECPresentation-Library/libECPresentation.a"; sourceTree = "<group>"; };
-		41EB1395217E68AC001A7A2A /* libDgnPlatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libDgnPlatform.a; path = ../../../../out/debug/iOSARM64/static/build/DgnPlatform/DgnPlatformDLL/DgnPlatform/libDgnPlatform.a; sourceTree = "<group>"; };
-		41EB1396217E68AC001A7A2A /* libBentley.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentley.a; path = ../../../../out/debug/iOSARM64/static/build/Bentley/BentleyDll/libBentley.a; sourceTree = "<group>"; };
-		41EB1397217E68AC001A7A2A /* libBeCurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCurl.a; path = ../../../nuget/CurlNuget_iosarm64.2.0.2.29/native/lib/static/libBeCurl.a; sourceTree = "<group>"; };
-		41EB1398217E68AC001A7A2A /* libliblog4cxx010.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libliblog4cxx010.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.29/native/lib/static/libliblog4cxx010.a; sourceTree = "<group>"; };
-		41EB1399217E68AC001A7A2A /* liblibaprutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibaprutil.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.29/native/lib/static/liblibaprutil.a; sourceTree = "<group>"; };
+		41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = AppAuth.xcodeproj; path = "iModelJsApp/ThirdParty/AppAuth-iOS/AppAuth.xcodeproj"; sourceTree = "<group>"; };
+		41D9B59021E7978700EE4E3A /* jsc */ = {isa = PBXFileReference; lastKnownFileType = folder; name = jsc; path = ../../jsc; sourceTree = "<group>"; };
+		41D9B59121E7978700EE4E3A /* ServicesTierUvHost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUvHost.cpp; path = ../../ServicesTierUvHost.cpp; sourceTree = "<group>"; };
+		41D9B59221E7978800EE4E3A /* ServicesTierScripts.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierScripts.cpp; path = ../../ServicesTierScripts.cpp; sourceTree = "<group>"; };
+		41D9B59321E7978800EE4E3A /* ServicesTierUtilities.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUtilities.cpp; path = ../../ServicesTierUtilities.cpp; sourceTree = "<group>"; };
+		41D9B59421E7978800EE4E3A /* ServicesTierHost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierHost.cpp; path = ../../ServicesTierHost.cpp; sourceTree = "<group>"; };
+		41D9B59521E7978800EE4E3A /* PublicAPI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PublicAPI; path = ../../PublicAPI; sourceTree = "<group>"; };
+		41D9B59621E7978800EE4E3A /* ServicesTierNodeHost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierNodeHost.cpp; path = ../../ServicesTierNodeHost.cpp; sourceTree = "<group>"; };
+		41D9B59721E7978800EE4E3A /* node_api_portable.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = node_api_portable.cc; path = ../../node_api_portable.cc; sourceTree = "<group>"; };
+		41D9B59821E7978800EE4E3A /* ServicesTierUtilities.d.ts */ = {isa = PBXFileReference; lastKnownFileType = text; name = ServicesTierUtilities.d.ts; path = ../../ServicesTierUtilities.d.ts; sourceTree = "<group>"; };
+		41D9B59921E7978800EE4E3A /* iModelJsInternal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsInternal.h; path = ../../iModelJsInternal.h; sourceTree = "<group>"; };
+		41D9B59A21E7978800EE4E3A /* ServicesTierEnvironment.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierEnvironment.cpp; path = ../../ServicesTierEnvironment.cpp; sourceTree = "<group>"; };
+		41D9B59B21E7978800EE4E3A /* ServicesTierUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ServicesTierUtilities.h; path = ../../ServicesTierUtilities.h; sourceTree = "<group>"; };
+		41D9B59C21E7978800EE4E3A /* Utilities.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Utilities.cpp; path = ../../Utilities.cpp; sourceTree = "<group>"; };
+		41D9B59D21E7978800EE4E3A /* node_internals.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = node_internals.cc; path = ../../node_internals.cc; sourceTree = "<group>"; };
+		41D9B59E21E7978900EE4E3A /* node_internals.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = node_internals.h; path = ../../node_internals.h; sourceTree = "<group>"; };
+		41D9B59F21E7978900EE4E3A /* ServicesTierExtension.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierExtension.cpp; path = ../../ServicesTierExtension.cpp; sourceTree = "<group>"; };
+		41D9B5A121E797CD00EE4E3A /* TestUtils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = TestUtils.cpp; path = ../../../iModelJsNodeAddon/TestUtils.cpp; sourceTree = "<group>"; };
+		41D9B5A221E797CE00EE4E3A /* UlasClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = UlasClient.h; path = ../../../iModelJsNodeAddon/UlasClient.h; sourceTree = "<group>"; };
+		41D9B5A321E797CE00EE4E3A /* ECPresentationUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ECPresentationUtils.h; path = ../../../iModelJsNodeAddon/ECPresentationUtils.h; sourceTree = "<group>"; };
+		41D9B5A421E797CE00EE4E3A /* JsInteropBriefcaseManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropBriefcaseManager.cpp; path = ../../../iModelJsNodeAddon/JsInteropBriefcaseManager.cpp; sourceTree = "<group>"; };
+		41D9B5A521E797CE00EE4E3A /* suppress_warnings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = suppress_warnings.h; path = ../../../iModelJsNodeAddon/suppress_warnings.h; sourceTree = "<group>"; };
+		41D9B5A621E797CE00EE4E3A /* ECSchemaXmlContextUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ECSchemaXmlContextUtils.h; path = ../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.h; sourceTree = "<group>"; };
+		41D9B5A721E797CE00EE4E3A /* UlasClient.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = UlasClient.cpp; path = ../../../iModelJsNodeAddon/UlasClient.cpp; sourceTree = "<group>"; };
+		41D9B5A821E797CE00EE4E3A /* ECSchemaXmlContextUtils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ECSchemaXmlContextUtils.cpp; path = ../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.cpp; sourceTree = "<group>"; };
+		41D9B5A921E797CE00EE4E3A /* JsInteropDgnDb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropDgnDb.cpp; path = ../../../iModelJsNodeAddon/JsInteropDgnDb.cpp; sourceTree = "<group>"; };
+		41D9B5AA21E797CE00EE4E3A /* ECPresentationUtils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ECPresentationUtils.cpp; path = ../../../iModelJsNodeAddon/ECPresentationUtils.cpp; sourceTree = "<group>"; };
+		41D9B5AB21E797CE00EE4E3A /* JsInterop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInterop.cpp; path = ../../../iModelJsNodeAddon/JsInterop.cpp; sourceTree = "<group>"; };
+		41D9B5AC21E797CE00EE4E3A /* JsInteropTiles.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropTiles.cpp; path = ../../../iModelJsNodeAddon/JsInteropTiles.cpp; sourceTree = "<group>"; };
+		41D9B5AD21E797CE00EE4E3A /* IModelJsNative.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = IModelJsNative.cpp; path = ../../../iModelJsNodeAddon/IModelJsNative.cpp; sourceTree = "<group>"; };
+		41D9B5AE21E797CE00EE4E3A /* IModelJsNative.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = IModelJsNative.h; path = ../../../iModelJsNodeAddon/IModelJsNative.h; sourceTree = "<group>"; };
+		41D9B5B121E79F2400EE4E3A /* node_api_types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = node_api_types.h; path = "../../../node-addon-api/Napi/node_api_types.h"; sourceTree = "<group>"; };
+		41D9B5B221E79F2400EE4E3A /* napi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = napi.h; path = "../../../node-addon-api/Napi/napi.h"; sourceTree = "<group>"; };
+		41D9B5B321E79F2400EE4E3A /* node_api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = node_api.h; path = "../../../node-addon-api/Napi/node_api.h"; sourceTree = "<group>"; };
+		41D9B5B421E79F2400EE4E3A /* napi-inl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "napi-inl.h"; path = "../../../node-addon-api/Napi/napi-inl.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -149,43 +236,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				41EB13AD217E68AC001A7A2A /* libuv.a in Frameworks */,
-				41EB13A2217E68AC001A7A2A /* liblzma.a in Frameworks */,
-				41EB139C217E68AC001A7A2A /* libBentleyGeomSerialization.a in Frameworks */,
-				41EB13AF217E68AC001A7A2A /* liblibapr.a in Frameworks */,
-				41EB13A9217E68AC001A7A2A /* libBeSQLiteEC.a in Frameworks */,
-				41EB139A217E68AC001A7A2A /* libBentleyGeom.a in Frameworks */,
+				41B023E221DD080B009FF9CB /* AppAuth.framework in Frameworks */,
+				41B023E021CD8F16009FF9CB /* AppAuth.framework in Frameworks */,
 				2699BBA620779DBF00F763EE /* CoreFoundation.framework in Frameworks */,
-				41EB13A1217E68AC001A7A2A /* libUnits.a in Frameworks */,
-				41EB139E217E68AC001A7A2A /* libBeOpenSSL.a in Frameworks */,
-				41EB13BA217E68AC001A7A2A /* liblibaprutil.a in Frameworks */,
 				2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */,
-				41EB13A7217E68AC001A7A2A /* libBeZlib.a in Frameworks */,
-				41EB13A0217E68AC001A7A2A /* libBeFolly.a in Frameworks */,
-				41EB13AC217E68AC001A7A2A /* libBeJsonCpp.a in Frameworks */,
-				41EB13B0217E68AC001A7A2A /* libBeLibJpegTurbo.a in Frameworks */,
-				41EB13B1217E68AC001A7A2A /* libECObjects.a in Frameworks */,
-				41EB13B7217E68AC001A7A2A /* libBentley.a in Frameworks */,
-				41EB139D217E68AC001A7A2A /* libBaseGeoCoord.a in Frameworks */,
-				41EB13B3217E68AC001A7A2A /* libsnappy.a in Frameworks */,
-				41EB13B6217E68AC001A7A2A /* libDgnPlatform.a in Frameworks */,
-				41EB13A4217E68AC001A7A2A /* libBeSQLite.a in Frameworks */,
-				41EB13A8217E68AC001A7A2A /* libBeIcu4c.a in Frameworks */,
-				41EB13A3217E68AC001A7A2A /* libBeCsmapStatic.a in Frameworks */,
-				41EB13AE217E68AC001A7A2A /* libBeXml.a in Frameworks */,
+				4122C1BD21ED209E0073674D /* libiModelJsHost.a in Frameworks */,
+				41B023E721DD0818009FF9CB /* AppAuthCore.framework in Frameworks */,
 				2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */,
-				41EB13A6217E68AC001A7A2A /* libBePng.a in Frameworks */,
-				41EB13B9217E68AC001A7A2A /* libliblog4cxx010.a in Frameworks */,
-				41EB13AA217E68AC001A7A2A /* liblibexpat.a in Frameworks */,
-				41EB139B217E68AC001A7A2A /* libBeHttp.a in Frameworks */,
-				41EB139F217E68AC001A7A2A /* libiModelJs.a in Frameworks */,
-				41EB13A5217E68AC001A7A2A /* libBeJpeg.a in Frameworks */,
-				41EB13B8217E68AC001A7A2A /* libBeCurl.a in Frameworks */,
 				26E6C0CC2076B8200031769D /* WebKit.framework in Frameworks */,
-				41EB13B4217E68AC001A7A2A /* libbentleylog4cxx.a in Frameworks */,
-				41EB13B5217E68AC001A7A2A /* libECPresentation.a in Frameworks */,
-				41EB13B2217E68AC001A7A2A /* libfreetype2.a in Frameworks */,
-				41EB13AB217E68AC001A7A2A /* libBeLibxml2.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -195,9 +253,11 @@
 		26E6C0A82076B63E0031769D = {
 			isa = PBXGroup;
 			children = (
-				4153DBB82138250200F4A0D2 /* WindowTimers */,
-				41999A81211CB34000489006 /* XMLHTTPRequest */,
-				4161BC1820FE83E5001830CF /* Src */,
+				4122C1A821E7E9F20073674D /* src_Bindings */,
+				41D9B5B021E79EFC00EE4E3A /* src_Napi */,
+				41D9B5AF21E798A400EE4E3A /* Thirdparty */,
+				41D9B5A021E7979F00EE4E3A /* src_iModelJsNative */,
+				41D9B58121E7972000EE4E3A /* src_iModelJsMobile */,
 				26E6C0B32076B63E0031769D /* iModelJsApp */,
 				26E6C0B22076B63E0031769D /* Products */,
 				26E6C0CA2076B8200031769D /* Frameworks */,
@@ -216,7 +276,6 @@
 			isa = PBXGroup;
 			children = (
 				41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */,
-				3B3F6FD1208FBF4A00F27DF1 /* JsInterop.cpp */,
 				26E6C0B42076B63E0031769D /* AppDelegate.h */,
 				26E6C0B52076B63E0031769D /* AppDelegate.mm */,
 				26E6C0B72076B63E0031769D /* ViewController.h */,
@@ -226,6 +285,8 @@
 				26E6C0BF2076B63F0031769D /* LaunchScreen.storyboard */,
 				26E6C0C22076B63F0031769D /* Info.plist */,
 				26E6C0C32076B63F0031769D /* main.m */,
+				41876CB921CBEDBF00A62096 /* AssetHandler.h */,
+				41876CBA21CBEDBF00A62096 /* AssetHandler.m */,
 			);
 			path = iModelJsApp;
 			sourceTree = "<group>";
@@ -233,39 +294,7 @@
 		26E6C0CA2076B8200031769D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				41EB137C217E68AA001A7A2A /* libBaseGeoCoord.a */,
-				41EB1382217E68AB001A7A2A /* libBeCsmapStatic.a */,
-				41EB1397217E68AC001A7A2A /* libBeCurl.a */,
-				41EB137F217E68AB001A7A2A /* libBeFolly.a */,
-				41EB137A217E68AA001A7A2A /* libBeHttp.a */,
-				41EB1387217E68AB001A7A2A /* libBeIcu4c.a */,
-				41EB1384217E68AB001A7A2A /* libBeJpeg.a */,
-				41EB138B217E68AB001A7A2A /* libBeJsonCpp.a */,
-				41EB138F217E68AB001A7A2A /* libBeLibJpegTurbo.a */,
-				41EB138A217E68AB001A7A2A /* libBeLibxml2.a */,
-				41EB1396217E68AC001A7A2A /* libBentley.a */,
-				41EB1379217E68AA001A7A2A /* libBentleyGeom.a */,
-				41EB137B217E68AA001A7A2A /* libBentleyGeomSerialization.a */,
-				41EB1393217E68AC001A7A2A /* libbentleylog4cxx.a */,
-				41EB137D217E68AB001A7A2A /* libBeOpenSSL.a */,
-				41EB1385217E68AB001A7A2A /* libBePng.a */,
-				41EB1383217E68AB001A7A2A /* libBeSQLite.a */,
-				41EB1388217E68AB001A7A2A /* libBeSQLiteEC.a */,
-				41EB138D217E68AB001A7A2A /* libBeXml.a */,
-				41EB1386217E68AB001A7A2A /* libBeZlib.a */,
-				41EB1395217E68AC001A7A2A /* libDgnPlatform.a */,
-				41EB1390217E68AC001A7A2A /* libECObjects.a */,
-				41EB1394217E68AC001A7A2A /* libECPresentation.a */,
-				41EB1391217E68AC001A7A2A /* libfreetype2.a */,
-				41EB137E217E68AB001A7A2A /* libiModelJs.a */,
-				41EB138E217E68AB001A7A2A /* liblibapr.a */,
-				41EB1399217E68AC001A7A2A /* liblibaprutil.a */,
-				41EB1389217E68AB001A7A2A /* liblibexpat.a */,
-				41EB1398217E68AC001A7A2A /* libliblog4cxx010.a */,
-				41EB1381217E68AB001A7A2A /* liblzma.a */,
-				41EB1392217E68AC001A7A2A /* libsnappy.a */,
-				41EB1380217E68AB001A7A2A /* libUnits.a */,
-				41EB138C217E68AB001A7A2A /* libuv.a */,
+				4122C1BC21ED209E0073674D /* libiModelJsHost.a */,
 				2699BBA520779DBE00F763EE /* CoreFoundation.framework */,
 				2699BBA320779DB500F763EE /* JavaScriptCore.framework */,
 				2699BBA120779DAF00F763EE /* CFNetwork.framework */,
@@ -274,63 +303,102 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		4153DBB82138250200F4A0D2 /* WindowTimers */ = {
+		4122C1A821E7E9F20073674D /* src_Bindings */ = {
 			isa = PBXGroup;
 			children = (
-				4153DBB92138250200F4A0D2 /* WindowTimers.h */,
-				4153DBBA2138250200F4A0D2 /* WindowTimers.m */,
+				4122C1B921E7EA1E0073674D /* Bindings */,
+				4122C1B721E7EA1E0073674D /* IModelJsHost.mke */,
+				4122C1B821E7EA1E0073674D /* IModelJsHost.mm */,
+				4122C1BB21E7EA1E0073674D /* PublicAPI */,
+				4122C1BA21E7EA1E0073674D /* system */,
 			);
-			name = WindowTimers;
-			path = iModelJsApp/WindowTimers;
+			name = src_Bindings;
 			sourceTree = "<group>";
 		};
-		4161BC1820FE83E5001830CF /* Src */ = {
+		41B023AE21CD8EFF009FF9CB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				41412605218895B800E09671 /* jsc */,
-				41999A88211CD90400489006 /* Utilities.cpp */,
-				41999A87211CC44300489006 /* iModelJsInternal.h */,
-				41E94103210FAC8A0089D2A6 /* PublicAPI */,
-				41E94102210B76880089D2A6 /* iModelJsNodeAddon */,
-				41E94101210B766A0089D2A6 /* websocketpp */,
-				41E94100210B76500089D2A6 /* libuv */,
-				4161BC70210A6B60001830CF /* getaddrinfo.c */,
-				4161BC69210A117D001830CF /* iModelJs.h */,
-				4161BC6C210A117E001830CF /* iModelJsApp.h */,
-				4161BC6A210A117E001830CF /* iModelJsServicesTier.h */,
-				4161BC6B210A117E001830CF /* iModelJsUtilities.h */,
-				4161BC2221026FB0001830CF /* ECPresentationUtils.cpp */,
-				4161BC1C21026FAF001830CF /* ECPresentationUtils.h */,
-				4161BC2321026FB0001830CF /* ECSchemaXmlContextUtils.cpp */,
-				4161BC1F21026FB0001830CF /* ECSchemaXmlContextUtils.h */,
-				4161BC1D21026FAF001830CF /* IModelJsNative.cpp */,
-				4161BC2121026FB0001830CF /* IModelJsNative.h */,
-				4161BC2421026FB0001830CF /* JsInteropBriefcaseManager.cpp */,
-				4161BC2021026FB0001830CF /* JsInteropDgnDb.cpp */,
-				4161BC1E21026FB0001830CF /* JsInteropTiles.cpp */,
-				4161BC1920FE935D001830CF /* BeJavaScript.cpp */,
-				4161BC1A20FE935D001830CF /* BeJavaScript.h */,
-				4161BC1B20FE935E001830CF /* node_api.cc */,
-				4161BC1220FE83D4001830CF /* ServicesTierEnvironment.cpp */,
-				4161BC1720FE83D5001830CF /* ServicesTierExtension.cpp */,
-				4161BC1020FE83D4001830CF /* ServicesTierHost.cpp */,
-				4161BC1120FE83D4001830CF /* ServicesTierNodeHost.cpp */,
-				4161BC1420FE83D4001830CF /* ServicesTierScripts.cpp */,
-				4161BC1620FE83D4001830CF /* ServicesTierUtilities.cpp */,
-				4161BC1520FE83D4001830CF /* ServicesTierUtilities.h */,
-				4161BC1320FE83D4001830CF /* ServicesTierUvHost.cpp */,
+				41B023C121CD8EFF009FF9CB /* libAppAuth-iOS.a */,
+				41B023C321CD8EFF009FF9CB /* AppAuth-iOSTests.xctest */,
+				41B023C521CD8EFF009FF9CB /* libAppAuth-macOS.a */,
+				41B023C721CD8EFF009FF9CB /* AppAuth-macOSTests.xctest */,
+				41B023C921CD8EFF009FF9CB /* libAppAuth-tvOS.a */,
+				41B023CB21CD8EFF009FF9CB /* AppAuth-tvOSTests.xctest */,
+				41B023CD21CD8EFF009FF9CB /* libAppAuth-watchOS.a */,
+				41B023CF21CD8EFF009FF9CB /* AppAuth.framework */,
+				41B023D121CD8EFF009FF9CB /* AppAuth_iOSTests.xctest */,
+				41B023D321CD8EFF009FF9CB /* AppAuth.framework */,
+				41B023D521CD8EFF009FF9CB /* AppAUth.framework */,
+				41B023D721CD8EFF009FF9CB /* AppAuth_tvOSTests.xctest */,
+				41B023D921CD8EFF009FF9CB /* AppAuth.framework */,
+				41B023DB21CD8EFF009FF9CB /* AppAuth_macOSTests.xctest */,
+				41B023DD21CD8EFF009FF9CB /* AppAuthCore.framework */,
+				41B023DF21CD8EFF009FF9CB /* AppAuthCoreTests.xctest */,
 			);
-			name = Src;
+			name = Products;
 			sourceTree = "<group>";
 		};
-		41999A81211CB34000489006 /* XMLHTTPRequest */ = {
+		41D9B58121E7972000EE4E3A /* src_iModelJsMobile */ = {
 			isa = PBXGroup;
 			children = (
-				41999A83211CB34000489006 /* XMLHTTPRequest.h */,
-				41999A84211CB34000489006 /* XMLHTTPRequest.m */,
+				41D9B59921E7978800EE4E3A /* iModelJsInternal.h */,
+				41D9B59021E7978700EE4E3A /* jsc */,
+				41D9B59721E7978800EE4E3A /* node_api_portable.cc */,
+				41D9B59D21E7978800EE4E3A /* node_internals.cc */,
+				41D9B59E21E7978900EE4E3A /* node_internals.h */,
+				41D9B59521E7978800EE4E3A /* PublicAPI */,
+				41D9B59A21E7978800EE4E3A /* ServicesTierEnvironment.cpp */,
+				41D9B59F21E7978900EE4E3A /* ServicesTierExtension.cpp */,
+				41D9B59421E7978800EE4E3A /* ServicesTierHost.cpp */,
+				41D9B59621E7978800EE4E3A /* ServicesTierNodeHost.cpp */,
+				41D9B59221E7978800EE4E3A /* ServicesTierScripts.cpp */,
+				41D9B59321E7978800EE4E3A /* ServicesTierUtilities.cpp */,
+				41D9B59821E7978800EE4E3A /* ServicesTierUtilities.d.ts */,
+				41D9B59B21E7978800EE4E3A /* ServicesTierUtilities.h */,
+				41D9B59121E7978700EE4E3A /* ServicesTierUvHost.cpp */,
+				41D9B59C21E7978800EE4E3A /* Utilities.cpp */,
 			);
-			name = XMLHTTPRequest;
-			path = iModelJsApp/XMLHTTPRequest;
+			name = src_iModelJsMobile;
+			sourceTree = "<group>";
+		};
+		41D9B5A021E7979F00EE4E3A /* src_iModelJsNative */ = {
+			isa = PBXGroup;
+			children = (
+				41D9B5AA21E797CE00EE4E3A /* ECPresentationUtils.cpp */,
+				41D9B5A321E797CE00EE4E3A /* ECPresentationUtils.h */,
+				41D9B5A821E797CE00EE4E3A /* ECSchemaXmlContextUtils.cpp */,
+				41D9B5A621E797CE00EE4E3A /* ECSchemaXmlContextUtils.h */,
+				41D9B5AD21E797CE00EE4E3A /* IModelJsNative.cpp */,
+				41D9B5AE21E797CE00EE4E3A /* IModelJsNative.h */,
+				41D9B5AB21E797CE00EE4E3A /* JsInterop.cpp */,
+				41D9B5A421E797CE00EE4E3A /* JsInteropBriefcaseManager.cpp */,
+				41D9B5A921E797CE00EE4E3A /* JsInteropDgnDb.cpp */,
+				41D9B5AC21E797CE00EE4E3A /* JsInteropTiles.cpp */,
+				41D9B5A521E797CE00EE4E3A /* suppress_warnings.h */,
+				41D9B5A121E797CD00EE4E3A /* TestUtils.cpp */,
+				41D9B5A721E797CE00EE4E3A /* UlasClient.cpp */,
+				41D9B5A221E797CE00EE4E3A /* UlasClient.h */,
+			);
+			name = src_iModelJsNative;
+			sourceTree = "<group>";
+		};
+		41D9B5AF21E798A400EE4E3A /* Thirdparty */ = {
+			isa = PBXGroup;
+			children = (
+				41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */,
+			);
+			name = Thirdparty;
+			sourceTree = "<group>";
+		};
+		41D9B5B021E79EFC00EE4E3A /* src_Napi */ = {
+			isa = PBXGroup;
+			children = (
+				41D9B5B421E79F2400EE4E3A /* napi-inl.h */,
+				41D9B5B221E79F2400EE4E3A /* napi.h */,
+				41D9B5B121E79F2400EE4E3A /* node_api_types.h */,
+				41D9B5B321E79F2400EE4E3A /* node_api.h */,
+			);
+			name = src_Napi;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -344,10 +412,13 @@
 				26E6C0AE2076B63E0031769D /* Frameworks */,
 				26E6C0AF2076B63E0031769D /* Resources */,
 				264171772077A9D200A1B72B /* Assets */,
+				41B023E621DD080B009FF9CB /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				41B023E521DD080B009FF9CB /* PBXTargetDependency */,
+				41B023EA21DD0818009FF9CB /* PBXTargetDependency */,
 			);
 			name = iModelJsApp;
 			productName = iModelJsApp;
@@ -365,6 +436,7 @@
 				TargetAttributes = {
 					26E6C0B02076B63E0031769D = {
 						CreatedOnToolsVersion = 9.3;
+						LastSwiftMigration = 1010;
 					};
 				};
 			};
@@ -379,12 +451,133 @@
 			mainGroup = 26E6C0A82076B63E0031769D;
 			productRefGroup = 26E6C0B22076B63E0031769D /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 41B023AE21CD8EFF009FF9CB /* Products */;
+					ProjectRef = 41B023AD21CD8EFF009FF9CB /* AppAuth.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				26E6C0B02076B63E0031769D /* iModelJsApp */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		41B023C121CD8EFF009FF9CB /* libAppAuth-iOS.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libAppAuth-iOS.a";
+			remoteRef = 41B023C021CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023C321CD8EFF009FF9CB /* AppAuth-iOSTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "AppAuth-iOSTests.xctest";
+			remoteRef = 41B023C221CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023C521CD8EFF009FF9CB /* libAppAuth-macOS.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libAppAuth-macOS.a";
+			remoteRef = 41B023C421CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023C721CD8EFF009FF9CB /* AppAuth-macOSTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "AppAuth-macOSTests.xctest";
+			remoteRef = 41B023C621CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023C921CD8EFF009FF9CB /* libAppAuth-tvOS.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libAppAuth-tvOS.a";
+			remoteRef = 41B023C821CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023CB21CD8EFF009FF9CB /* AppAuth-tvOSTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "AppAuth-tvOSTests.xctest";
+			remoteRef = 41B023CA21CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023CD21CD8EFF009FF9CB /* libAppAuth-watchOS.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libAppAuth-watchOS.a";
+			remoteRef = 41B023CC21CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023CF21CD8EFF009FF9CB /* AppAuth.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = AppAuth.framework;
+			remoteRef = 41B023CE21CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023D121CD8EFF009FF9CB /* AppAuth_iOSTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = AppAuth_iOSTests.xctest;
+			remoteRef = 41B023D021CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023D321CD8EFF009FF9CB /* AppAuth.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = AppAuth.framework;
+			remoteRef = 41B023D221CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023D521CD8EFF009FF9CB /* AppAUth.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = AppAUth.framework;
+			remoteRef = 41B023D421CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023D721CD8EFF009FF9CB /* AppAuth_tvOSTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = AppAuth_tvOSTests.xctest;
+			remoteRef = 41B023D621CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023D921CD8EFF009FF9CB /* AppAuth.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = AppAuth.framework;
+			remoteRef = 41B023D821CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023DB21CD8EFF009FF9CB /* AppAuth_macOSTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = AppAuth_macOSTests.xctest;
+			remoteRef = 41B023DA21CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023DD21CD8EFF009FF9CB /* AppAuthCore.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = AppAuthCore.framework;
+			remoteRef = 41B023DC21CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		41B023DF21CD8EFF009FF9CB /* AppAuthCoreTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = AppAuthCoreTests.xctest;
+			remoteRef = 41B023DE21CD8EFF009FF9CB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		26E6C0AF2076B63E0031769D /* Resources */ = {
@@ -394,7 +587,6 @@
 				26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */,
 				26E6C0BE2076B63F0031769D /* Assets.xcassets in Resources */,
 				26E6C0BC2076B63E0031769D /* Main.storyboard in Resources */,
-				41412606218895B800E09671 /* jsc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -413,7 +605,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\n\n# iModelJsNative Assets folder\nrm -rf $AppBundleRoot/iModelJsNative\nmkdir $AppBundleRoot/iModelJsNative\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $AppBundleRoot/iModelJsNative\n# cp $AssetRoot/backend/assets/test.bim $AppBundleRoot/iModelJsNative/Assets/\n\n# Copy FrontEnd and BackEnd assets\nrm -rf $AppBundleRoot/Assets\nmkdir $AppBundleRoot/Assets\ncp -L -R $AssetRoot/ $AppBundleRoot/Assets/\n\n";
+			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\nProjectDir=\"$PROJECT_DIR\";\n\n# iModelJsNative Assets folder\nrm -rf $AppBundleRoot/iModelJsNative\nmkdir $AppBundleRoot/iModelJsNative\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJsHost/Assets $AppBundleRoot/iModelJsNative\n# cp $AssetRoot/backend/assets/test.bim $AppBundleRoot/iModelJsNative/Assets/\n\n\n# Copy FrontEnd and BackEnd assets\nrm -rf $AppBundleRoot/Assets\nmkdir $AppBundleRoot/Assets\ncp -L -R $AssetRoot/ $AppBundleRoot/Assets/\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -423,15 +615,26 @@
 			buildActionMask = 2147483647;
 			files = (
 				26E6C0B92076B63E0031769D /* ViewController.mm in Sources */,
-				41999A86211CB34000489006 /* XMLHTTPRequest.m in Sources */,
 				26E6C0C42076B63F0031769D /* main.m in Sources */,
-				4153DBBB2138250200F4A0D2 /* WindowTimers.m in Sources */,
 				26E6C0B62076B63E0031769D /* AppDelegate.mm in Sources */,
-				41999A89211CD90500489006 /* Utilities.cpp in Sources */,
+				41876CBB21CBEDBF00A62096 /* AssetHandler.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		41B023E521DD080B009FF9CB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = AppAuth_iOS;
+			targetProxy = 41B023E421DD080B009FF9CB /* PBXContainerItemProxy */;
+		};
+		41B023EA21DD0818009FF9CB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = AppAuthCore;
+			targetProxy = 41B023E921DD0818009FF9CB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		26E6C0BA2076B63E0031769D /* Main.storyboard */ = {
@@ -507,6 +710,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				"OTHER_LDFLAGS[arch=*]" = "";
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
@@ -569,14 +773,11 @@
 			baseConfigurationReference = 41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
-				HEADER_SEARCH_PATHS = (
-					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsMobile/PublicAPI/",
-					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsMobile/VendorAPI/",
-					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsNodeAddon/Delivery/imodeljs-addon-iModelJs-objs/",
-				);
+				HEADER_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/includes/";
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -584,13 +785,16 @@
 					"@executable_path/Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsMobile/SubParts/Libs/",
 					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/Libs",
+					"$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.imodeljsapp.iModelJsApp;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)1";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "iModelJsApp/iModelJsApp-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -600,14 +804,11 @@
 			baseConfigurationReference = 41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
-				HEADER_SEARCH_PATHS = (
-					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsMobile/PublicAPI/",
-					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsMobile/VendorAPI/",
-					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsNodeAddon/Delivery/imodeljs-addon-iModelJs-objs/",
-				);
+				HEADER_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/includes/";
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -615,13 +816,15 @@
 					"@executable_path/Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsMobile/SubParts/Libs/",
 					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/Libs",
+					"$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.imodeljsapp.iModelJsApp;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)2";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "iModelJsApp/iModelJsApp-Bridging-Header.h";
+				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

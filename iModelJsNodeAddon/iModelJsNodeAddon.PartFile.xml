@@ -50,11 +50,11 @@
 
   <Part Name="iModelJsNative-Mobile" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
     <!-- Get the node-addon-api (declaration) from iModelJs, not from node! -->
-    <SubPart PartName="VendorAPI" PartFile="iModelJsMobile" Repository="iModelJsMobile"/>
+    <!-- SubPart PartName="VendorAPI" PartFile="iModelJsMobile" Repository="iModelJsMobile"/-->
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
     <Bindings>
-        <Directory SourceName="Delivery/imodeljs-addon-iModelJs-objs" SubPartDirectory="imodeljs-addon-objs" />
+        <Directory SourceName="Delivery/imodeljs-addon-objs" SubPartDirectory="imodeljs-addon-objs" />
         <Files SubPartDirectory="imodeljs-addon-build-tools">
             Delivery/IModelJsNative_input_libs.mki
         </Files>

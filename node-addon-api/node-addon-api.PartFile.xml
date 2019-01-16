@@ -11,6 +11,7 @@
 
     <!-- on Windows, builds napi.lib and all three napi.dll (stub, node, and electron), on other platforms builds stub .a and (for non-static builds) .so  -->
     <Part Name="napi-stub-build" BentleyBuildMakeFile="node-addon-lib.mke">
+        <SubPart PartName="BentleyLib" PartFile="iModelCore/Bentley/Bentley"/>
         <SubPart PartName="VendorAPI"/>
     </Part>
 

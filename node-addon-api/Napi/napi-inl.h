@@ -12,7 +12,7 @@
 
 #include <cstring>
 #include <type_traits>
-
+#include <Bentley/BentleyConfig.h>
 namespace Napi {
 
 // Helpers to handle functions exposed from C++.
@@ -206,6 +206,15 @@ struct AccessorCallbackData {
 // Module registration
 ////////////////////////////////////////////////////////////////////////////////
 
+
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+	extern "C" void imodeljs_register_addon(char const*, Napi::ModuleRegisterCallback);
+ 
+	#define NODE_API_MODULE(modname, regfunc) \
+    	extern "C"  void imodeljs_addon_entry_point() {imodeljs_register_addon(#modname, regfunc);}
+    
+#else
+    
 #define NODE_API_MODULE(modname, regfunc)                 \
   napi_value __napi_ ## regfunc(napi_env env,             \
                                 napi_value exports) {     \
@@ -224,7 +233,7 @@ inline napi_value RegisterModule(napi_env env,
                                        Napi::Object(env, exports)));
   });
 }
-
+#endif
 ////////////////////////////////////////////////////////////////////////////////
 // Env class
 ////////////////////////////////////////////////////////////////////////////////
@@ -699,7 +708,13 @@ inline std::string String::Utf8Value() const {
   std::string value;
   value.reserve(length + 1);
   value.resize(length);
-  status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), nullptr);
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+  size_t returnSize;
+  status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), &returnSize);
+  value.resize(returnSize - 1);
+#else
+    status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), nullptr);
+#endif
   NAPI_THROW_IF_FAILED(_env, status, "");
   return value;
 }

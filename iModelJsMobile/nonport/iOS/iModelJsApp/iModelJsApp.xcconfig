@@ -1,0 +1,15 @@
+//
+//  iModelJsApp.xcconfig
+//  iModelJsApp
+//
+//  Created by Affan Khan on 7/12/18.
+//  Copyright © 2018 Bentley Systems. All rights reserved.
+//
+SrcRoot = /Users/Affan.Khan/imodel02/src/
+OutRoot = /Users/Affan.Khan/imodel02/out/debug/
+//AssetRoot = /Users/Affan.Khan/ui-test-app/
+AssetRoot = /Users/Affan.Khan/simple-viewer-app
+//AssetRoot = /Users/Affan.Khan/mobile
+
+BuildArchitecture = iOSARM64
+

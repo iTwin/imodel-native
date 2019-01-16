@@ -98,10 +98,8 @@ void UvHost::EventLoopThreadEntry (void* arg)
 void UvHost::EventLoopThreadMain()
     {   
     auto& config = GetConfig();
-
-        const char* threadPoolSize = "UV_THREADPOOL_SIZE=2";
-    putenv(const_cast<char*>(threadPoolSize));
-        
+    const char* threadPoolSize = "UV_THREADPOOL_SIZE=1";
+    putenv(const_cast<char*>(threadPoolSize));        
     m_jsRuntime = new Js::Runtime("iModel.js Services Tier", config.enableJsDebugger, config.jsDebuggerPort);
 
     NotifyStarting();

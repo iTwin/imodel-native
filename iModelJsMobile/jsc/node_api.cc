@@ -6,14 +6,13 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
-#include "node_api.h"
+#include <Napi/node_api.h>
 #include "../node_internals.h"
 #include <Bentley/BeAssert.h>
 #undef min
 
 #include <JavaScriptCore/JavaScriptCore.h>
 
-#define NAPI_VERSION  1
 
 #define RETURN_STATUS_IF_FALSE(env, condition, status)                  \
   do {                                                                  \

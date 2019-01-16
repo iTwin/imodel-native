@@ -4476,6 +4476,17 @@ bool JsInterop::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
     return callIsLogLevelEnabledJs(category, sev);
     }
 
+static Utf8String s_mobileResourcesDir;
+static Utf8String s_mobileTempDir;
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Satyakam.Khadilkar    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+extern "C" 
+    { 
+    void imodeljs_addon_setMobileResourcesDir(Utf8CP d) {s_mobileResourcesDir = d;}
+    void imodeljs_addon_setMobileTempDir(Utf8CP d) {s_mobileTempDir = d;}
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/

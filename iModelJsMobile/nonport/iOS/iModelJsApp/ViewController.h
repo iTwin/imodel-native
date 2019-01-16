@@ -8,8 +8,10 @@
 
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
-
-@interface ViewController : UIViewController <WKUIDelegate>
-@property (nonatomic, weak, readonly) WKWebView* webView;
+#import <AppAuth/AppAuth.h>
+@interface ViewController : UIViewController <WKUIDelegate, WKNavigationDelegate>
+@property (nonatomic, weak, nullable, readonly) WKWebView* webView;
+// property of the containing class
+@property(nonatomic, strong, nullable) OIDAuthState *authState;
 @end
 

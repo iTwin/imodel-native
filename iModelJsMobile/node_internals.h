@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <libuv/uv.h>
 #include <string>
-#include <node-addon-api/node_api.h>
+#include <Napi/node_api.h>
 
 // Windows 8+ does not like abort() in Release mode
 #ifdef _WIN32

@@ -51,11 +51,7 @@ Runtime::EvaluateResult Runtime::EvaluateScript (Napi::String script, Napi::Stri
     {
     EvaluateResult result;
     napi_value resvalue;
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
-    auto nstatus = napi_run_script_with_identifier(Env(), script, identifier, &resvalue);
-#else
     auto nstatus = napi_run_script(Env(), script, &resvalue);
-#endif
     if (napi_ok == nstatus)
         {
         result.status = EvaluateStatus::Success;

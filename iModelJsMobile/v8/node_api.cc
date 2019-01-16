@@ -14,7 +14,7 @@
 #include <cmath>
 #include <vector>
 #include <Bentley/BeAssert.h>
-#include <node-addon-api/node_api.h>
+#include <Napi/node_api.h>
 #include "../node_internals.h"
 #include "util-inl.h"
 #include "v8_node_internals.h"

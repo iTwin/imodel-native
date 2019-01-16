@@ -7,12 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "XMLHTTPRequest.h"
-#import "WindowTimers.h"
+#import <AppAuth/AppAuth.h>
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
-@property (strong, nonatomic) UIWindow *window;
-@property (nonatomic) XMLHttpRequest *xmlHttpRequest;
-@property (nonatomic) WTWindowTimers *windowTimers;
+@property (strong, nonatomic, nullable) UIWindow *window;
+// property of the app's AppDelegate
+@property(nonatomic, strong, nullable) id<OIDExternalUserAgentSession> currentAuthorizationFlow;
 @end
 

@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:iModelJsApp.xcodeproj">
+      location = "group:../../../../../../out/release/iOSARM64/static/build/iModelJsHost/libiModelJsHost.a">
+   </FileRef>
+   <FileRef
+      location = "self:">
    </FileRef>
 </Workspace>

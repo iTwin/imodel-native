@@ -4,7 +4,7 @@
 
     <Part Name="iModelJsMobile.Dev" PrgOutputDir="iModelJsMobile">
         <SubPart PartName="iModelCorePRG" PartFile="iModelCore/DgnPlatform/iModelCore" Repository="imodel02"/>
-        <SubPart PartName="RunGtest"/>
+        <SubPart PartName="RunGtest" />
     </Part>
 
     <Part Name="iModelJs" BentleyBuildMakeFile="iModelJs.mke" ApiNumber="B02">
@@ -13,8 +13,8 @@
         <SubPart PartName="WebSocketPP" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
         <SubPart PartName="libuv" PartFile="libuv" Repository="Thirdparty-libuv" />
-        <SubPart PartName="node-addon-api"/>
-        <SubPart PartName="iModelJsNodeAddonLib-Mobile" Repository="imodel02" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" />
+        <!-- SubPart PartName="VendorAPI"/ -->
+        <SubPart PartName="iModelJsNative-Mobile" Repository="imodel02" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" />
         <SubPart PartName="iModelJsWindows-Only-SubParts" />
 
         <Bindings>
@@ -23,16 +23,50 @@
             <Assemblies>Delivery/$(shlibprefix)iModelJs$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-
     <Part Name="iModelJsWindows-Only-SubParts" OnlyPlatforms="x64,x86">
         <SdkSource>google_v8_winx64</SdkSource>
     </Part>
 
-    <Part Name="node-addon-api" BentleyBuildMakeFile="prewirenapi.mke">
+    <!-- Part Name="VendorAPI" BentleyBuildMakeFile="prewirenapi.mke">
         <Bindings>
-            <PublicAPI Domain="node-addon-api"/>
+            <VendorAPI Domain="Napi"/>
+        </Bindings>
+    </Part -->
+    <!-- ========================================================================================================
+      Platform-specific apps IOS
+     ======================================================================================================== -->
+    <Part Name="iModelJsHost" BentleyBuildMakeFile="nonport/Native/IModelJsHost.mke" ApiNumber="B02">
+           <SubPart PartName="iModelJs" LibType="Static" />
+           <Bindings>
+            <PublicAPI ProductDirectoryName="iModelJsHostPublicAPI" Domain="iModelJsHost" />
+            <Libs ProductDirectoryName="iModelJsHostLibs" >Delivery/$(libprefix)iModelJsHost$(libext)</Libs>
+            <Assemblies ProductDirectoryName="iModelJsHostLibs">Delivery/$(shlibprefix)iModelJsHost$(ApiNumber)$(shlibext)</Assemblies>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="system" SourceName="Delivery/system"/>
         </Bindings>
     </Part>
+
+    <Product Name="iModelJsHost">
+          <SubPart PartName="iModelJsHost" LibType="Static" />
+          <Directories DirectoryListName="iModelJsHost" />
+    </Product>
+
+    <ProductDirectoryList ListName="iModelJsHost">
+        <ProductDirectory Name="Root" Path=""/>
+        <ProductDirectory Name="Root" Path="" LibType="Static"/>
+        <ProductDirectory Name="iModelJsHostPublicAPI" Path="includes"/>
+        <ProductDirectory Name="iModelJsHostPublicAPI" Path="includes" LibType="Static"/>
+        <ProductDirectory Name="iModelJsHostLibs" Path="libs"/>
+        <ProductDirectory Name="iModelJsHostLibs" Path="libs" LibType="Static"/>
+        <ProductDirectory Name="Libs"   RelativeTo="libs" Deliver="false"/>
+        <ProductDirectory Name="Libs"   RelativeTo="libs" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="libs" Deliver="false"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="libs" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="Root"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="Root"  LibType="static"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="Root" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="Root" Path="Notices" LibType="static"/>
+    </ProductDirectoryList>
+
 
     <!-- ========================================================================================================
       Platform-specific apps
@@ -69,7 +103,7 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
     </ProductDirectoryList>
 
-    <Part Name="imodeljsiosapp" BentleyBuildMakeFile="nonport/iOS/iModelJsApp/iModelJsApp.mke">
+    <Part Name="imodeljsiosapp" BentleyBuildMakeFile="nonport/iOS/iModelJsApp/iModelJsApp.mke" OnlyPlatforms="MacOs*,Linux*,iOSARM64">
         <SubPart PartName="iModelJs" LibType="Static" />
     </Part>
 

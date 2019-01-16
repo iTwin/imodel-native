@@ -75,7 +75,7 @@ iModelJsObjs =% $(MultiCompileObjectList)
 #   Compile our version of node-addon-api
 #--------------------------------------------------------------------------------------
 
-nodeAddonApiPublicApiSourceDir = $(baseDir)PublicAPI/node-addon-api/
+nodeAddonApiPublicApiSourceDir = $(BuildContext)VendorAPI/Napi/
 
 napiHeaders = $(nodeAddonApiPublicApiSourceDir)napi.h
 
