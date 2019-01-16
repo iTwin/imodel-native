@@ -1446,8 +1446,57 @@ DbResult SyncInfo::Level::Insert(Db& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::FindFirstSubCategory(DgnSubCategoryId& glid, BeSQLite::Db& db, V8ModelSource fm, uint32_t flid, Level::Type ltype)
+BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCategoryId& subCatId, DgnV8ModelCR v8Model, uint32_t levelId, Level::Type ltype, Converter& converter)
     {
+    DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
+    BeAssert(repositoryLinkId.IsValid());
+    Utf8String v8LevelId = FormatSourceId(levelId);
+    Utf8String v8ModelId = V8ModelExternalSourceAspect::FormatSourceId(v8Model);
+    auto desiredCategoryClassId = converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, (Level::Type::Spatial == ltype)? BIS_CLASS_SpatialCategory: BIS_CLASS_DrawingCategory);
+    
+    auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT x.Element.Id, x.Properties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_SubCategory) " e"
+        " WHERE (x.Element.Id=e.ECInstanceId AND x.Scope.Id=? AND x.Kind=? AND x.SourceId=? AND json_extract(x.Properties, '$.v8ModelId') = ?)");
+    aspectStmt->BindId(1, repositoryLinkId);
+    aspectStmt->BindText(2, KindToString(Kind::Level), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    aspectStmt->BindText(3, v8LevelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    aspectStmt->BindText(4, v8ModelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+    BeSQLite::EC::CachedECSqlStatementPtr catClassStmt;
+
+    while (BE_SQLITE_ROW == aspectStmt->Step())
+        {
+        subCatId = aspectStmt->GetValueId<DgnSubCategoryId>(0);
+
+        // Must be a SubCategory of the requested type of Category (spatial or drawing)
+        if (!catClassStmt.IsValid())
+            catClassStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
+                "SELECT c.ECClassId FROM " BIS_SCHEMA(BIS_CLASS_Category) " c JOIN " BIS_SCHEMA(BIS_CLASS_SubCategory) " s ON c.ECInstanceId=s.Parent.Id"
+                " WHERE s.ECInstanceId=?");
+
+        catClassStmt->Reset();
+        catClassStmt->BindId(1, subCatId);
+        if (BE_SQLITE_ROW != catClassStmt->Step())
+            continue;
+        if (catClassStmt->GetValueId<ECN::ECClassId>(0) != desiredCategoryClassId)
+            continue;
+
+        return BSISUCCESS;
+        }
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::FindFirstSubCategory(DgnSubCategoryId& glid, BeSQLite::Db& db, DgnV8ModelCR v8Model, uint32_t flid, Level::Type ltype)
+    {
+    if (m_converter._WantProvenanceInBim())
+        {
+        return LevelExternalSourceAspect::FindFirstSubCategory(glid, v8Model, flid, ltype, m_converter);
+        }
+
+    V8ModelSource fm(v8Model);
     CachedStatementPtr stmt;
     m_dgndb->GetCachedStatement(stmt, "SELECT Id FROM " SYNCINFO_ATTACH(SYNC_TABLE_Level) " WHERE V8FileSyncInfoId=? AND V8Model=? AND V8Id=? AND Type=?");
 
@@ -1465,10 +1514,48 @@ BentleyStatus SyncInfo::FindFirstSubCategory(DgnSubCategoryId& glid, BeSQLite::D
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Converter& converter)
+    {
+    BeAssert(scopeId.IsValid());
+
+    auto aspectClass = GetAspectClass(converter.GetDgnDb());
+    if (nullptr == aspectClass)
+        return LevelExternalSourceAspect(nullptr);
+    
+    DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
+    BeAssert(repositoryLinkId.IsValid());
+    auto instance = CreateInstance(repositoryLinkId, KindToString(Kind::Level), FormatSourceId(vlevel.GetLevelId()), nullptr, *aspectClass);
+    
+    LevelExternalSourceAspect aspect(instance.get());
+    
+    Utf8String v8LevelName(vlevel.GetName());
+    Utf8String v8ModelId = V8ModelExternalSourceAspect::FormatSourceId(v8Model);
+
+    rapidjson::Document json(rapidjson::kObjectType);
+    auto& allocator = json.GetAllocator();
+    json.AddMember("v8ModelId", rapidjson::Value(v8ModelId.c_str(), allocator), allocator);
+    json.AddMember("v8LevelName", rapidjson::Value(v8LevelName.c_str(), allocator), allocator);
+    aspect.SetProperties(json);
+
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Converter& converter)
+    {
+    return CreateAspect(converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()), vlevel, v8Model, converter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::Level SyncInfo::InsertLevel(DgnSubCategoryId subcategoryid, V8ModelSource fm, DgnV8Api::LevelHandle const& vlevel)
+SyncInfo::Level SyncInfo::InsertLevel(DgnSubCategoryId subcategoryid, DgnV8ModelCR v8model, DgnV8Api::LevelHandle const& vlevel)
     {
+    V8ModelSource fm(v8model);
     auto catid = DgnSubCategory::QueryCategoryId(*GetDgnDb(), subcategoryid);
     Level::Type ltype = m_converter.IsSpatialCategory(catid)? Level::Type::Spatial: Level::Type::Drawing;
 
@@ -1496,45 +1583,54 @@ SyncInfo::Level SyncInfo::InsertLevel(DgnSubCategoryId subcategoryid, V8ModelSou
             }
         }
 
+    if (m_converter._WantProvenanceInBim())
+        {
+        auto subCatEl = GetDgnDb()->Elements().GetForEdit<DgnSubCategory>(subcategoryid);
+        // *** TODO: Check to see if an aspect (from some other source model) is already on element?
+        auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(vlevel, v8model, m_converter);
+        aspect.AddAspect(*subCatEl);
+        subCatEl->Update();
+        }
+
     return levelprov;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, V8FileSyncInfoId fid, Level::Type ltype)
+DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, DgnV8FileR v8File, Level::Type ltype)
     {
-    V8ModelSource modelSource(fid, V8ModelId());
+    V8FileSyncInfoId fid = Converter::GetV8FileSyncInfoIdFromAppData(v8File);
     DgnSubCategoryId glid;
-    return (FindFirstSubCategory(glid, *m_dgndb, modelSource, v8levelId, ltype) == BSISUCCESS) ? glid : DgnSubCategoryId();
+    return (FindFirstSubCategory(glid, *m_dgndb, v8File.GetDictionaryModel(), v8levelId, ltype) == BSISUCCESS) ? glid : DgnSubCategoryId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId SyncInfo::FindCategory(uint32_t v8levelId, V8FileSyncInfoId fid, Level::Type ltype)
+DgnCategoryId SyncInfo::FindCategory(uint32_t v8levelId, DgnV8FileR v8File, Level::Type ltype)
     {
-    DgnSubCategoryId subcatid = FindSubCategory(v8levelId, fid, ltype);
+    DgnSubCategoryId subcatid = FindSubCategory(v8levelId, v8File, ltype);
     return DgnSubCategory::QueryCategoryId(*GetDgnDb(), subcatid);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, V8ModelSource fm, Level::Type ltype)
+DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, DgnV8ModelCR v8Model, Level::Type ltype)
     {
     DgnSubCategoryId glid;
-    return (FindFirstSubCategory(glid, *m_dgndb, fm, v8levelId, ltype) == BSISUCCESS) ? glid : DgnSubCategoryId();
+    return (FindFirstSubCategory(glid, *m_dgndb, v8Model, v8levelId, ltype) == BSISUCCESS) ? glid : DgnSubCategoryId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId SyncInfo::GetSubCategory(uint32_t v8levelId, V8ModelSource fm, Level::Type ltype)
+DgnSubCategoryId SyncInfo::GetSubCategory(uint32_t v8levelId, DgnV8ModelCR v8Model, Level::Type ltype)
     {
     DgnSubCategoryId glid;
-    if (FindFirstSubCategory(glid, *m_dgndb, fm, v8levelId, ltype) != BSISUCCESS
-        && FindFirstSubCategory(glid, *m_dgndb, V8ModelSource(fm.GetV8FileSyncInfoId(), V8ModelId()), v8levelId, ltype) != BSISUCCESS)
+    if (FindFirstSubCategory(glid, *m_dgndb, v8Model, v8levelId, ltype) != BSISUCCESS
+        && FindFirstSubCategory(glid, *m_dgndb, v8Model.GetDgnFileP()->GetDictionaryModel(), v8levelId, ltype) != BSISUCCESS)
         {
         return DgnCategory::GetDefaultSubCategoryId(GetConverter().GetUncategorizedCategory()); // unable to categorize
         }
@@ -1569,7 +1665,7 @@ DgnCategoryId SyncInfo::GetCategory(DgnV8EhCR v8Eh, ResolvedModelMapping const& 
     Level::Type ltype = v8mm.GetDgnModel().Is3d() ? Level::Type::Spatial : Level::Type::Drawing;
     DgnCategoryId categoryId;
     if (0 != v8Level)
-        categoryId = FindCategory(v8Level, Converter::GetV8FileSyncInfoIdFromAppData(*v8Eh.GetDgnModelP()->GetDgnFileP()), ltype);
+        categoryId = FindCategory(v8Level, *v8Eh.GetDgnModelP()->GetDgnFileP(), ltype);
 
     return (categoryId.IsValid() ? categoryId : GetConverter().GetUncategorizedCategory()); // return uncategorized if we didn't find a valid category...
     }
@@ -2538,7 +2634,7 @@ bool SyncInfo::EnsureImageryTableExists()
                          "FileSize BIGINT,"
                          "ETag TEXT,"
                          "RDSId TEXT");
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Level "(ElementId)");
+    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
 
     return true;
     }

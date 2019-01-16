@@ -1051,6 +1051,8 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
 struct TestXDomain : XDomain
     {
     int m_counts[2] {};
+    bool m_onBeginCalled{};
+    bool m_onFinishCalled{};
 
     void _DetermineElementParams(DgnClassId&, DgnCode& code, DgnCategoryId&, DgnV8EhCR v8eh, Converter& cvt, ECObjectsV8::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) override
         {
@@ -1069,6 +1071,9 @@ struct TestXDomain : XDomain
 
         ++m_counts[1];
         }
+
+    void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) override {m_onBeginCalled=true;}
+    void _OnFinishConversion(Converter&) override {m_onFinishCalled=true;}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1087,6 +1092,8 @@ TEST_F(ConverterTests, XDomainTest)
     XDomain::Register(testXdomain);
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
+    EXPECT_TRUE(testXdomain.m_onBeginCalled);
+    EXPECT_TRUE(testXdomain.m_onFinishCalled);
     EXPECT_EQ(1, testXdomain.m_counts[0]);
     EXPECT_EQ(1, testXdomain.m_counts[1]);
 

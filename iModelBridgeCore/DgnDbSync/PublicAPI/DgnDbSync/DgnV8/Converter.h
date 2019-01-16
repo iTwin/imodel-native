@@ -1098,7 +1098,7 @@ public:
 
     DGNDBSYNC_EXPORT static void ConvertSolidKernelEntity(IBRepEntityPtr& clone, Bentley::ISolidKernelEntityCR v8Entity);
 
-    DGNDBSYNC_EXPORT void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model);
+    DGNDBSYNC_EXPORT void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, DgnV8ModelCR);
 
     void InitLineStyle(Render::GeometryParams& params, DgnModelRefR styleModelRef, int32_t srcLineStyleNum, DgnV8Api::LineStyleParams const* v8lsParams);
 
@@ -2924,6 +2924,11 @@ struct XDomain
     DGNDBSYNC_EXPORT static void Register(XDomain& xd);
     //! Un-Register an XDomain. 
     DGNDBSYNC_EXPORT static void UnRegister(XDomain& xd);
+
+    //! This is invoked just after the V8 root model is opened but before any references are detected or any elements are converted. 
+    virtual void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) {}
+    //! This is invoked by _FinishConversion, after all models and elements (and ECRelationships) have been processed.
+    virtual void _OnFinishConversion(Converter&) = 0;
 };
 
 //=======================================================================================

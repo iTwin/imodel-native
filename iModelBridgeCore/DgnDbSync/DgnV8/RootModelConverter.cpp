@@ -115,6 +115,10 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     // The of models that we find will be fed into the ECSchema conversion logic. These functions will ALSO enroll the v8files that they find in syncinfo.
     CreateProvenanceTables(); // TRICKY: Call this before anyone calls _GetV8FileIntoSyncInfo
     _GetV8FileIntoSyncInfo(*m_rootFile, _GetIdPolicy(*m_rootFile)); // TRICKY: Before looking for models, register the root file in syncinfo. This starts the process of populating m_v8files. Do NOT CALL GetV8FileSyncInfoId as that will fail to populate m_v8Files in some cases.
+    
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        xdomain->_OnBeginConversion(*this, *m_rootModelRef->GetDgnModelP());
+    
     FindSpatialV8Models(*GetRootModelP());
     FindV8DrawingsAndSheets();
 
@@ -1475,6 +1479,11 @@ void RootModelConverter::_FinishConversion()
     for (auto f : m_finishers)
         {
         f->_OnFinishConversion(*this);
+        }
+
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        xdomain->_OnFinishConversion(*this);
         }
 
     if (!IsUpdating())

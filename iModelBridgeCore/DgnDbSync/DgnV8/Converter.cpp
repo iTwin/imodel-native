@@ -3809,7 +3809,17 @@ ResolvedModelMapping ConverterLibrary::RecordModelMapping(DgnV8ModelR sourceV8Mo
 void ConverterLibrary::RecordLevelMappingForModel(DgnV8Api::LevelId sourceV8LevelId, DgnSubCategoryId targetBimSubCategory, DgnV8ModelRefR sourceV8Model)
     {
     auto v8Level = sourceV8Model.GetLevelCache().GetLevel(sourceV8LevelId);
-    m_syncInfo.InsertLevel(targetBimSubCategory, SyncInfo::V8ModelSource(*sourceV8Model.GetDgnModelP()), v8Level);
+    m_syncInfo.InsertLevel(targetBimSubCategory, *sourceV8Model.GetDgnModelP(), v8Level);
+
+    /*
+    if (_WantProvenanceInBim())
+        {
+        auto el = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(targetBimSubCategory);
+        auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(v8Level, *sourceV8Model.GetDgnModelP(), *this);
+        aspect.AddAspect(*el);
+        el->Update();
+        }
+        */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3819,7 +3829,17 @@ void ConverterLibrary::RecordLevelMappingForModel(DgnV8Api::LevelId sourceV8Leve
     {
     auto v8Level = sourceV8File.GetLevelCacheR().GetLevel(sourceV8LevelId);
     SyncInfo::V8FileSyncInfoId v8fileId = GetV8FileSyncInfoIdFromAppData(sourceV8File);
-    m_syncInfo.InsertLevel(targetBimSubCategory, SyncInfo::V8ModelSource(v8fileId, SyncInfo::V8ModelId(-1)), v8Level);
+    m_syncInfo.InsertLevel(targetBimSubCategory, sourceV8File.GetDictionaryModel(), v8Level);
+
+    /*
+    if (_WantProvenanceInBim())
+        {
+        auto el = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(targetBimSubCategory);
+        auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(v8Level, sourceV8File.GetDictionaryModel(), *this);
+        aspect.AddAspect(*el);
+        el->Update();
+        }
+        */
     }
 
 /*---------------------------------------------------------------------------------**//**

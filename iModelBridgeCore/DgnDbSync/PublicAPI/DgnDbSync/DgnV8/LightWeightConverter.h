@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/DgnV8/LightWeightConverter.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,7 +66,7 @@ struct LightWeightConverter
         void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d);
         bool InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context);
 
-        virtual DgnSubCategoryId GetSubCategory(uint32_t v8levelid, SyncInfo::V8ModelSource source, SyncInfo::Level::Type ltype) 
+        virtual DgnSubCategoryId GetSubCategory(uint32_t v8levelid, DgnV8ModelCR, SyncInfo::Level::Type ltype) 
             {
             return GetSubCategory(v8levelid, ltype);
             };
@@ -82,7 +82,7 @@ struct LightWeightConverter
             }
 
         virtual DgnStyleId _RemapLineStyle(double& unitsScale, DgnV8Api::DgnFile&, int32_t v8LineStyleId, bool required);
-        void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model);
+        void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, DgnV8ModelCR);
         void InitLineStyle(Render::GeometryParams& params, DgnModelRefR styleModelRef, int32_t srcLineStyleNum, DgnV8Api::LineStyleParams const* v8lsParams);
         DGNDBSYNC_EXPORT static void ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8Api::LineStyleParams const* v8lsParams, double uorPerMeter, double componentScale, double modelLsScale);
 

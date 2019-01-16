@@ -538,6 +538,43 @@ struct SyncInfo
         DGNDBSYNC_EXPORT ExternalSourceAspect::Kind GetKind() const;
         };
 
+    struct LevelExternalSourceAspect : ExternalSourceAspect
+        {
+        private:
+        static Utf8String FormatSourceId(DgnV8Api::LevelId v8Id) {return Utf8PrintfString("%d", v8Id);}
+        LevelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const&, DgnV8ModelCR, Converter&);
+
+        public:
+        static constexpr Utf8CP json_v8LevelName = "v8LevelName";
+        static constexpr Utf8CP json_v8ModelId = "v8ModelId";
+
+        //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file. Caller must call AddAspect, passing in the Category element.
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnV8Api::LevelHandle const&, DgnV8ModelCR, Converter&);
+
+        DGNDBSYNC_EXPORT static BentleyStatus FindFirstSubCategory(DgnSubCategoryId&, DgnV8ModelCR v8Model, uint32_t flid, Level::Type ltype, Converter& converter);
+        };
+
+#ifdef WIP_DrawingGraphicExternalSourceAspect
+    //! Identifies a drawing graphic in the V8 source
+    struct DrawingGraphicExternalSourceAspect : ExternalSourceAspect
+        {
+        // Scope = RepositoryLink for V8 File that contains:
+        //                          "DrawingV8ModelSyncInfoId BIGINT NOT NULL," // A V8 type-100 (DgnAttachment) element - represents the section as a whole -- this is the model that contains the type 100
+        // SourceId                 "AttachmentV8ElementId BIGINT NOT NULL,"       //              "                                                         -- this is the ID of the type 100
+        // OriginalV8ModelSyncInfoId BIGINT NOT NULL,"   // A V8 3D element that was sectioned
+        //      Will have to become the RepositoryLink that contains:
+        // OriginalV8ElementId BIGINT NOT NULL,"         //              "
+        // Category BIGINT NOT NULL,"                    // The BIM category of the graphic
+        // Host element             "Graphic BIGINT NOT NULL,"                     // The BIM DrawingGraphic element that contains all of the section graphics derived from the above element (in this particular attachment's section)
+        /*
+                                    "PRIMARY KEY(DrawingV8ModelSyncInfoId,AttachmentV8ElementId,"
+                                     "OriginalV8ModelSyncInfoId,OriginalV8ElementId,"
+                                     "Category)"
+                                     */
+        };
+#endif
+
     //! Identifies the source of a ViewDefinition. The source is identified by the ElementId of the V8 view element. 
     //! This aspect *also* stores a view name as data, not as the primary identifier.
     struct ViewDefinitionExternalSourceAspect : ExternalSourceAspect
@@ -815,7 +852,7 @@ protected:
     void DumpElement (DgnV8Api::ElementHandle const&);
     void DumpXAttribute (DgnV8Api::ElementHandle::XAttributeIter const& ix);
     //! Optimized for fast look-up
-    BentleyStatus FindFirstSubCategory (DgnSubCategoryId&, BeSQLite::Db&, V8ModelSource, uint32_t flid, Level::Type ltype);
+    BentleyStatus FindFirstSubCategory (DgnSubCategoryId&, BeSQLite::Db&, DgnV8ModelCR, uint32_t flid, Level::Type ltype);
 
     BentleyStatus PerformVersionChecks();
 
@@ -943,15 +980,15 @@ public:
     //! Lookup the first native level mapped to the specified v8 level id. Elements using this level are assumed to be in the current v8 model in the current v8 file.
     //! This function checks first for a model-specific version of the level and then falls back to a file-wide version.
     //! This function returns the default category if all else fails
-    DGNDBSYNC_EXPORT DgnSubCategoryId GetSubCategory(uint32_t v8levelid, V8ModelSource, Level::Type ltype);
+    DGNDBSYNC_EXPORT DgnSubCategoryId GetSubCategory(uint32_t v8levelid, DgnV8ModelCR, Level::Type ltype);
 
     //! Find the category to use for the specified DgnV8 element
     //! This function returns the default category if all else fails
     DGNDBSYNC_EXPORT DgnCategoryId GetCategory(DgnV8EhCR, ResolvedModelMapping const&);
 
-    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelid, V8ModelSource, Level::Type ltype);
-    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelId, V8FileSyncInfoId, Level::Type ltype);
-    DGNDBSYNC_EXPORT DgnCategoryId FindCategory(uint32_t v8levelId, V8FileSyncInfoId, Level::Type ltype);
+    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelid, DgnV8ModelCR, Level::Type ltype);
+    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelId, DgnV8FileR, Level::Type ltype);
+    DGNDBSYNC_EXPORT DgnCategoryId FindCategory(uint32_t v8levelId, DgnV8FileR, Level::Type ltype);
 
     //! Query sync info for a v8 font in the current v8 file.
     DGNDBSYNC_EXPORT DgnFontId FindFont(V8FontId oldId);
@@ -1104,12 +1141,12 @@ public:
     //! Record sync info for a level.
     //! @param[out] info        Sync info for the level
     //! @param[in]  glevelId    The level's ID in the DgnDb
-    //! @param[in]  fmid        If the level is to be used only by elements in a single model, then \a fmid should identify the model. If the level is to be
-    //! used by elements in any model in the current v8 file, then pass (-1)
+    //! @param[in]  v8model     If the level is to be used only by elements in a single model, then \a v8model should identify the model. If the level is to be
+    //! used by elements in any model in the current v8 file, then pass the dictionary model.
     //! @param[in]  vlevel      The V8 level that was converted
     //! @return non-zero error status if the level could not be inserted in sync info. This would probably be caused by a non-unique name.
     //! @note reports an issue in insertion fails.
-    DGNDBSYNC_EXPORT Level InsertLevel(DgnSubCategoryId glevelId, V8ModelSource, DgnV8Api::LevelHandle const& vlevel);
+    DGNDBSYNC_EXPORT Level InsertLevel(DgnSubCategoryId glevelId, DgnV8ModelCR v8model, DgnV8Api::LevelHandle const& vlevel);
 
     //! @name ImportJobs - When we convert a DgnV8-based project and store its contents in a DgnDb, that's an "import job".
     //! A given DgnDb can built up by many import jobs. We keep track of import jobs so that we can find them when doing an update from the source V8 files later.
