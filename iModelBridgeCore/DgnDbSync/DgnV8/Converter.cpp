@@ -2140,7 +2140,7 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
 +---------------+---------------+---------------+---------------+---------------+------*/
  BentleyStatus  Converter::WriteV8ElementExternalSourceAspect(DgnElementR el, SyncInfo::V8ElementExternalSourceAspectData const& elprov)
     {
-    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::Get(el, elprov.m_v8Id);
+    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::GetAspect(el, elprov.m_v8Id);
     if (aspect.IsValid())
         {
         BeAssert(aspect.GetV8ElementId() == elprov.m_v8Id);
@@ -2148,8 +2148,8 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
         return BSISUCCESS;
         }
 
-    aspect = SyncInfo::V8ElementExternalSourceAspect::Make(elprov, GetDgnDb());
-    return aspect.AddTo(el) == DgnDbStatus::Success ? BSISUCCESS : BSIERROR;
+    aspect = SyncInfo::V8ElementExternalSourceAspect::CreateAspect(elprov, GetDgnDb());
+    return aspect.AddAspect(el) == DgnDbStatus::Success ? BSISUCCESS : BSIERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2548,7 +2548,7 @@ void Converter::RecordConversionResultsInSyncInfo(ElementConversionResults& resu
         m_syncInfo.UpdateElement(results.m_mapping);
         }
 
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
     GetSyncInfo().AssertAspectMatchesSyncInfo(results.m_mapping);
 #endif
 
@@ -3365,14 +3365,14 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
     if (_WantProvenanceInBim())
         {
         auto modeledElement = m_dgndb->Elements().GetElement(model->GetModeledElementId())->CopyForEdit();
-        auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::Make(v8Model, trans, *this);
-        modelAspect.AddTo(*modeledElement);
+        auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(v8Model, trans, *this);
+        modelAspect.AddAspect(*modeledElement);
         auto updatedModelElement = modeledElement->Update();
         BeAssert(updatedModelElement.IsValid());
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
         if (updatedModelElement.IsValid())
             {
-            auto storedAspect = SyncInfo::V8ModelExternalSourceAspect::Get(*updatedModelElement, v8Model.GetModelId());
+            auto storedAspect = SyncInfo::V8ModelExternalSourceAspect::GetAspect(*updatedModelElement, v8Model.GetModelId());
             if (!storedAspect.IsValid()) 
                 {
                 BeAssert(false);
@@ -3809,7 +3809,17 @@ ResolvedModelMapping ConverterLibrary::RecordModelMapping(DgnV8ModelR sourceV8Mo
 void ConverterLibrary::RecordLevelMappingForModel(DgnV8Api::LevelId sourceV8LevelId, DgnSubCategoryId targetBimSubCategory, DgnV8ModelRefR sourceV8Model)
     {
     auto v8Level = sourceV8Model.GetLevelCache().GetLevel(sourceV8LevelId);
-    m_syncInfo.InsertLevel(targetBimSubCategory, SyncInfo::V8ModelSource(*sourceV8Model.GetDgnModelP()), v8Level);
+    m_syncInfo.InsertLevel(targetBimSubCategory, *sourceV8Model.GetDgnModelP(), v8Level);
+
+    /*
+    if (_WantProvenanceInBim())
+        {
+        auto el = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(targetBimSubCategory);
+        auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(v8Level, *sourceV8Model.GetDgnModelP(), *this);
+        aspect.AddAspect(*el);
+        el->Update();
+        }
+        */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3819,7 +3829,17 @@ void ConverterLibrary::RecordLevelMappingForModel(DgnV8Api::LevelId sourceV8Leve
     {
     auto v8Level = sourceV8File.GetLevelCacheR().GetLevel(sourceV8LevelId);
     SyncInfo::V8FileSyncInfoId v8fileId = GetV8FileSyncInfoIdFromAppData(sourceV8File);
-    m_syncInfo.InsertLevel(targetBimSubCategory, SyncInfo::V8ModelSource(v8fileId, SyncInfo::V8ModelId(-1)), v8Level);
+    m_syncInfo.InsertLevel(targetBimSubCategory, sourceV8File.GetDictionaryModel(), v8Level);
+
+    /*
+    if (_WantProvenanceInBim())
+        {
+        auto el = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(targetBimSubCategory);
+        auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(v8Level, sourceV8File.GetDictionaryModel(), *this);
+        aspect.AddAspect(*el);
+        el->Update();
+        }
+        */
     }
 
 /*---------------------------------------------------------------------------------**//**

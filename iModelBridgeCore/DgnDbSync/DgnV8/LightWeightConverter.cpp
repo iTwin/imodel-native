@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/LightWeightConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -966,7 +966,7 @@ DgnSubCategoryId LightWeightConverter::ConvertLevelToSubCategory(DgnV8Api::Level
 
     // NEEDSWORK LevelMap cache is needed. 
 
-    //m_syncInfo.InsertLevel(dbSubCategoryId, SyncInfo::V8ModelSource(v8Model), level);
+    //m_syncInfo.InsertLevel(dbSubCategoryId, v8Model, level);
     return dbSubCategoryId;
     }
 
