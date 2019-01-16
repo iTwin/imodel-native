@@ -245,27 +245,27 @@
         <SubPart PartName="TestHelpers" />
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/BDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
         </Bindings>
     </Part>
     <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="BackDoorForUnitTests" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/NonPub" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
     <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="BackDoorForUnitTests" />
         <SubPart PartName="ECPresentation-PublishedAPI" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/Pub" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
     </Part>
     <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance -dUsePublishedApi">
         <SubPart PartName="BackDoorForUnitTests" />
         <SubPart PartName="ECPresentation-PublishedAPI" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/Perf" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>
     </Part>
     <Part Name="Tests">
@@ -304,7 +304,7 @@
     </Part>
 
     <!-- Desktop -->
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests TEST_SHORT_NAME=ECP -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="ECPresentation-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -325,7 +325,7 @@
     </Part>
 
     <!-- Android -->
-    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_SHORT_NAME=ECPresTst -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="ECPresentation-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
