@@ -1,8 +1,8 @@
 #--------------------------------------------------------------------------------------+
 #
-#     $Source: Profiles/Profiles.prewire.mke $
+#     $Source: Profiles/ProfilesDomainDLL.prewire.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------+
 %include mdl.mki

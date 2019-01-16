@@ -10,6 +10,15 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Internal", "Internal", "{C5A1F86D-999E-4474-8409-B3BA24F4B5DB}"
 	ProjectSection(SolutionItems) = preProject
 		Internal\CommonCommands.txt = Internal\CommonCommands.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Root", "Root", "{D3156F12-6564-47A9-AAF3-FE2546FD4F2F}"
+	ProjectSection(SolutionItems) = preProject
+		ProfilesDomain.Partfile.xml = ProfilesDomain.Partfile.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{25990648-55DC-4F50-AFAC-F9AE0289FDC0}"
+	ProjectSection(SolutionItems) = preProject
 		Docs\Profiles.cmap = Docs\Profiles.cmap
 	EndProjectSection
 EndProject
@@ -40,5 +49,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C5A1F86D-999E-4474-8409-B3BA24F4B5DB} = {D3156F12-6564-47A9-AAF3-FE2546FD4F2F}
+		{25990648-55DC-4F50-AFAC-F9AE0289FDC0} = {D3156F12-6564-47A9-AAF3-FE2546FD4F2F}
 	EndGlobalSection
 EndGlobal

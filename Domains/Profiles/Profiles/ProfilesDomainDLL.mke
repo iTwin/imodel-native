@@ -1,12 +1,12 @@
 #--------------------------------------------------------------------------------------+
 #
-#     $Source: Profiles/Profiles.mke $
+#     $Source: Profiles/ProfilesDomainDLL.mke $
 #
 #  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/Profiles/Profiles/Profiles.mki
+%include $(SrcRoot)DgnDomains/Profiles/Profiles/ProfilesDomainDLL.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -35,7 +35,7 @@ GCC_NO_PRE_COMPILED_HEADER = 1
 % endif
 
 # CompileOptionsMki will be included by PreCompileHeader.mki
-CompileOptionsMki = $(_MakeFilePath)Profiles.mki
+CompileOptionsMki = $(_MakeFilePath)ProfilesDomainDLL.mki
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts = $(UsePrecompiledHeaderOptions)

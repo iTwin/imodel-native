@@ -1,14 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Schema">
-      <UniqueIdentifier>{63a23246-07cc-48b0-bf8f-23cbfc20be92}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Mke">
       <UniqueIdentifier>{4946b62f-72d3-4ea8-a292-5609a8727bcf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Partfile">
-      <UniqueIdentifier>{8ab8f151-a8a9-46ed-a400-413a444e20cf}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src">
       <UniqueIdentifier>{5cdf2964-269e-45a8-8fba-2029ba6351c8}</UniqueIdentifier>
@@ -69,23 +63,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Profiles.mke">
+    <None Include="ProfilesDomainDLL.mke">
       <Filter>Mke</Filter>
     </None>
-    <None Include="Profiles.prewire.mke">
+    <None Include="ProfilesDomainDLL.mki">
       <Filter>Mke</Filter>
     </None>
-    <None Include="Profiles.mki">
+    <None Include="ProfilesDomainDLL.prewire.mke">
       <Filter>Mke</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="Profiles.ecschema.xml">
-      <Filter>Schema</Filter>
-    </Xml>
-    <Xml Include="..\ProfilesDomain.Partfile.xml">
-      <Filter>Partfile</Filter>
-    </Xml>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Profile.cpp">
@@ -348,5 +334,8 @@
     <ClInclude Include="src\PrivateAPI\ProfilesQuery.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Profiles.ecschema.xml" />
   </ItemGroup>
 </Project>

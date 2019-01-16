@@ -20,17 +20,7 @@
         <Directories DirectoryListName="ProfilesTestsDirs"/>
     </Product>
 
-    <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles/Profiles.prewire.mke" ApiNumber="B02">
-        <Bindings>
-            <PublicAPI Domain="Profiles"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/Profiles.ecschema.xml
-            </Files>
-            <Directory SourceName="PublicAPI/Profiles" ProductDirectoryName="ProfilesDomainIncludes" />
-        </Bindings>
-    </Part>
-
-    <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/Profiles.mke" ApiNumber="B02">
+    <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/ProfilesDomainDLL.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <SubPart PartName="ProfilesPublicAPI"/>
         <Bindings>
@@ -40,6 +30,16 @@
             <Assemblies>
                 Delivery/$(shlibprefix)Profiles$(ApiNumber)$(shlibext)
             </Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles/ProfilesDomainDll.prewire.mke" ApiNumber="B02">
+        <Bindings>
+            <PublicAPI Domain="Profiles"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Profiles.ecschema.xml
+            </Files>
+            <Directory SourceName="PublicAPI/Profiles" ProductDirectoryName="ProfilesDomainIncludes" />
         </Bindings>
     </Part>
 

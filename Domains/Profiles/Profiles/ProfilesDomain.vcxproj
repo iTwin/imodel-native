@@ -19,14 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Profiles.mke" />
-    <None Include="Profiles.mki" />
-    <None Include="Profiles.prewire.mke" />
+    <None Include="ProfilesDomainDLL.mke" />
+    <None Include="ProfilesDomainDLL.mki" />
+    <None Include="ProfilesDomainDLL.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\ProfilesDomain.Partfile.xml">
-      <SubType>Designer</SubType>
-    </Xml>
     <Xml Include="Profiles.ecschema.xml">
       <SubType>Designer</SubType>
     </Xml>
