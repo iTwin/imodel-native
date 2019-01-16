@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="tests.mke">
+    <None Include="CodeCoverage.mke">
       <Filter>Mke</Filter>
     </None>
-    <None Include="CodeCoverage.mke">
+    <None Include="Tests.mke">
       <Filter>Mke</Filter>
     </None>
   </ItemGroup>

@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
-    <ProjectName>ProfilesDomainTests</ProjectName>
+    <ProjectName>Tests</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Generic Configuration">
@@ -51,7 +51,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="CodeCoverage.mke" />
-    <None Include="tests.mke" />
+    <None Include="Tests.mke" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ArbitraryCompositeProfileTests.cpp" />

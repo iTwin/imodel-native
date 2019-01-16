@@ -122,7 +122,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
-    <ProjectName>ProfilesDomain</ProjectName>
+    <ProjectName>Profiles</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Generic Configuration">

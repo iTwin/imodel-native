@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProfilesDomainTests", "Tests\ProfilesDomainTests.vcxproj", "{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxproj", "{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProfilesDomain", "Profiles\ProfilesDomain.vcxproj", "{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Profiles", "Profiles\Profiles.vcxproj", "{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Internal", "Internal", "{C5A1F86D-999E-4474-8409-B3BA24F4B5DB}"
 	ProjectSection(SolutionItems) = preProject
