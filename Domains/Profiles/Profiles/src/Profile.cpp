@@ -6,9 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
+#include <ProfilesInternal\ProfilesLogging.h>
 #include <Profiles\Profile.h>
 
-USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (ProfileHandler)
@@ -99,6 +99,19 @@ DgnDbStatus Profile::_OnDelete() const
     // DerivedProfile, ArbitraryCompositeProfile
 
     return T_Super::_OnDelete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void Profile::_CopyFrom (DgnElement const& source)
+    {
+    if (auto const* pSourceProfile = dynamic_cast<Profile const*> (&source))
+        m_geometryUpdated = pSourceProfile->m_geometryUpdated;
+    else
+        ProfilesLog::FailedCopyFrom_InvalidElement (PRF_CLASS_Profile, m_elementId, source.GetElementId());
+
+    return T_Super::_CopyFrom (source);
     }
 
 /*---------------------------------------------------------------------------------**//**
