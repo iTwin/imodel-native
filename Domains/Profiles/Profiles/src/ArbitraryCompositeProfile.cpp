@@ -7,11 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <ProfilesInternal\ProfilesGeometry.h>
+#include <ProfilesInternal\ProfilesLogging.h>
 #include <Profiles\ArbitraryCompositeProfile.h>
 
-USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (ArbitraryCompositeProfileHandler)
@@ -64,7 +62,7 @@ bool ArbitraryCompositeProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    if (m_components.empty())
+    if (m_components.size() < 2)
         return false;
 
     for (CompositeProfileComponent const& component : m_components)
@@ -86,6 +84,7 @@ IGeometryPtr ArbitraryCompositeProfile::_CreateGeometry() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Insert relationships for every component.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ArbitraryCompositeProfile::_InsertInDb()
@@ -107,17 +106,52 @@ DgnDbStatus ArbitraryCompositeProfile::_InsertInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ArbitraryCompositeProfile::_OnUpdate (DgnElement const& original)
     {
-    // TODO Karolis: Update temporary not allowed.
-    return DgnDbStatus::ReadOnly;
+    return T_Super::_OnUpdate (original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Cleanup all relationships that this profile had.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ArbitraryCompositeProfile::_OnDelete() const
+    {
+    Utf8CP pSqlString = "DELETE FROM " PRF_SCHEMA (PRF_REL_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles) " WHERE SourceECInstanceId=?";
+
+    ECSqlStatement sqlStatement;
+    ECSqlStatus sqlStatus = sqlStatement.Prepare (m_dgndb, pSqlString);
+    if (sqlStatus != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+
+    sqlStatus = sqlStatement.BindId (1, m_elementId);
+    if (sqlStatus != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+
+    if (sqlStatement.Step() != BE_SQLITE_DONE)
+        return DgnDbStatus::SQLiteError;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ArbitraryCompositeProfile::_OnDelete() const
+void ArbitraryCompositeProfile::_CopyFrom (DgnElement const& source)
     {
-    // TODO Karolis: Delete temporary not allowed.
-    return DgnDbStatus::DeletionProhibited;
+    if (auto const* pSourceProfile = dynamic_cast<ArbitraryCompositeProfile const*> (&source))
+        m_components = pSourceProfile->m_components;
+    else
+        ProfilesLog::FailedCopyFrom_InvalidElement (PRF_CLASS_ArbitraryCompositeProfile, m_elementId, source.GetElementId());
+
+    return T_Super::_CopyFrom (source);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Element is loading from db - query relationships and populate components vector.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ArbitraryCompositeProfile::_LoadFromDb()
+    {
+    return T_Super::_LoadFromDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -148,8 +182,8 @@ DgnDbStatus ArbitraryCompositeProfile::InsertRelationship (CompositeProfileCompo
         return DgnDbStatus::SQLiteError;
 
     ECInstanceKey relationshipKey;
-    BeSQLite::DbResult dbResult = m_dgndb.InsertLinkTableRelationship (relationshipKey, *pRelationshipClass, m_elementId, component.singleProfileId, relationshipInstancePtr.get());
-    if (dbResult != BeSQLite::BE_SQLITE_OK)
+    DbResult dbResult = m_dgndb.InsertLinkTableRelationship (relationshipKey, *pRelationshipClass, m_elementId, component.singleProfileId, relationshipInstancePtr.get());
+    if (dbResult != BE_SQLITE_OK)
         return DgnDbStatus::SQLiteError;
 
     return DgnDbStatus::Success;
