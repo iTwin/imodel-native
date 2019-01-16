@@ -196,17 +196,17 @@ int RunBridge(Env env, const char* jsonString)
     SET_ARG("fwk_input", L"fwk-input") 
 
     // Optional 
-    SET_ARG("server_project_guid", "server-project-guid"); 
-    SET_ARG("fwk_bridge_regsubkey", "fwk-bridge-regsubkey");
-    SET_ARG("fwk_input_sheet", "fwk-input-sheet");
-    SET_ARG("fwk_revision_comment", "fwk-revision-comment");
-    SET_ARG("fwk_logging_config_file", "fwk-logging-config-file");
-    SET_ARG("fwk_argsJson", "fwk-argsJson");
-    SET_ARG("fwk_max_wait", "fwk_max-wait");
-    SET_ARG("fwk_jobrun_guid", "fwk-jobrun-guid");
-    SET_ARG("fwk_imodelbank_url", "fwk-imodelbank-url");    
-    SET_ARG("fwk_jobrequest_guid", "fwk-jobrequest-guid");  
-    SET_ARG("fwk_create_repository_if_necessary", "fwk-create-repository-if-necessary");  
+    SET_ARG("server_project_guid", L"server-project-guid"); 
+    SET_ARG("fwk_bridge_regsubkey", L"fwk-bridge-regsubkey");
+    SET_ARG("fwk_input_sheet", L"fwk-input-sheet");
+    SET_ARG("fwk_revision_comment", L"fwk-revision-comment");
+    SET_ARG("fwk_logging_config_file", L"fwk-logging-config-file");
+    SET_ARG("fwk_argsJson", L"fwk-argsJson");
+    SET_ARG("fwk_max_wait", L"fwk_max-wait");
+    SET_ARG("fwk_jobrun_guid", L"fwk-jobrun-guid");
+    SET_ARG("fwk_imodelbank_url", L"fwk-imodelbank-url");    
+    SET_ARG("fwk_jobrequest_guid", L"fwk-jobrequest-guid");  
+    SET_ARG("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary");  
     
     bvector<WCharCP> argptrs;
     MAKE_ARGC_ARGV(argptrs, args);
