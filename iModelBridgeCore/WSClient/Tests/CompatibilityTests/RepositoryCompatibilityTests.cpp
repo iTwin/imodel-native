@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/RepositoryCompatibilityTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,8 +11,6 @@
 #include <WebServices/Cache/CachingDataSource.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <BeHttp/HttpConfigurationHandler.h>
-
-#include "../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 
 #include "TestsHelper.h"
 #include "TestsHost.h"
@@ -24,7 +22,7 @@ bvector<TestRepositories> s_createTestData;
 bvector<TestRepositories> s_upgradeTestData;
 bvector<TestRepositories> s_downloadSchemasTestData;
 
-StubLocalState s_localState;
+RuntimeJsonLocalState s_localState;
 IHttpHandlerPtr s_proxy;
 ConnectSignInManagerPtr s_signInManager;
 
@@ -50,7 +48,7 @@ void RepositoryCompatibilityTests::SetTestData(const bvector<TestRepositories>& 
 void RepositoryCompatibilityTests::SetUp()
     {
     TestsHost::GetErrorLog().clear();
-    s_localState = StubLocalState();
+    s_localState = RuntimeJsonLocalState();
     s_proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     UrlProvider::Uninitialize();

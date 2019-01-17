@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Ims/SolrClientTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,7 +13,7 @@
 
 struct SolrClientTests : public WSClientBaseTest
     {
-    StubLocalState m_localState;
+    RuntimeJsonLocalState m_localState;
     IHttpHandlerPtr m_proxy;
     Utf8String m_serverUrl;
     Credentials m_credentials;

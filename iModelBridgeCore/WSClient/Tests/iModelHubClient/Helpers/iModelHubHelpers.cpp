@@ -2,14 +2,13 @@
 |
 |     $Source: Tests/iModelHubClient/Helpers/iModelHubHelpers.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <OidcNativeClient/OidcNative.h>
 #include "iModelHubHelpers.h"
 #include "IntegrationTestsSettings.h"
 #include "TestsProgressCallback.h"
-#include "StubLocalState.h"
 #include "DgnPlatformHelpers.h"
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/Connect/SimpleConnectTokenProvider.h>
