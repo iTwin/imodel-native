@@ -100,7 +100,6 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\BackDoor.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\Localization.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\SelectionManager.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\StubLocalState.h" />
     <ClInclude Include="NonPublished\RulesEngine\ContentProviderTests.h" />
     <ClInclude Include="NonPublished\RulesEngine\ECDbTestProject.h" />
     <ClInclude Include="NonPublished\RulesEngine\ECSchemaHelperTests.h" />

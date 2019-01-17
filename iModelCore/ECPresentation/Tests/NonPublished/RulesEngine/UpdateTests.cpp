@@ -47,7 +47,7 @@ struct UpdateTests : ECPresentationTest
     static BeFileName s_seedProjectPath;
     static bmap<Utf8String, Utf8String> s_registeredSchemaXmls;
     TestRuleSetLocaterPtr m_locater;
-    StubLocalState m_localState;
+    RuntimeJsonLocalState m_localState;
     ConnectionManager m_connections;
     RulesDrivenECPresentationManager* m_manager;
     RefCountedPtr<TestECInstanceChangeEventsSource> m_eventsSource;
@@ -64,7 +64,7 @@ struct UpdateTests : ECPresentationTest
     virtual void SetUp() override
         {
         ECPresentationTest::SetUp();
-        m_localState.GetStubMap().clear();
+        m_localState.GetValues().clear();
         
         BeAssert(s_seedProjectPath.DoesPathExist());
         BeFileName projectPath = BeFileName(s_seedProjectPath)
