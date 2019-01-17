@@ -1220,8 +1220,8 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_DifferentUserInOtherSignInMana
 
     auto imsClient1 = std::make_shared<MockImsClient>();
     auto imsClient2 = std::make_shared<MockImsClient>();
-    StubLocalState localState1;
-    StubLocalState localState2;
+    RuntimeJsonLocalState localState1;
+    RuntimeJsonLocalState localState2;
 
     EXPECT_CALL(*imsClient1, RequestToken(An<SamlTokenCR>(), _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUserA"}})))));
@@ -1256,8 +1256,8 @@ TEST_F(ConnectSignInManagerTests, SignInWithCredentials_DifferentUserInOtherSign
 
     auto imsClient1 = std::make_shared<MockImsClient>();
     auto imsClient2 = std::make_shared<MockImsClient>();
-    StubLocalState localState1;
-    StubLocalState localState2;
+    RuntimeJsonLocalState localState1;
+    RuntimeJsonLocalState localState2;
 
     EXPECT_CALL(*imsClient1, RequestToken(An<CredentialsCR>(), _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUserA"}})))));
@@ -1292,8 +1292,8 @@ TEST_F(ConnectSignInManagerTests, SetUserChangeHandler_CreedentialsUserWasChange
 
     auto imsClient1 = std::make_shared<MockImsClient>();
     auto imsClient2 = std::make_shared<MockImsClient>();
-    StubLocalState localState1;
-    StubLocalState localState2;
+    RuntimeJsonLocalState localState1;
+    RuntimeJsonLocalState localState2;
 
     EXPECT_CALL(*imsClient1, RequestToken(An<CredentialsCR>(), _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUserA"}})))));
@@ -1339,8 +1339,8 @@ TEST_F(ConnectSignInManagerTests, SetUserChangeHandler_CreedentialsUserWasChange
 
     auto imsClient1 = std::make_shared<MockImsClient>();
     auto imsClient2 = std::make_shared<MockImsClient>();
-    StubLocalState localState1;
-    StubLocalState localState2;
+    RuntimeJsonLocalState localState1;
+    RuntimeJsonLocalState localState2;
 
     EXPECT_CALL(*imsClient1, RequestToken(An<CredentialsCR>(), _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUserA"}})))));

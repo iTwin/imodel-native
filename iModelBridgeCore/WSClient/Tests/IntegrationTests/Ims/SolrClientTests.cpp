@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Ims/SolrClientTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,7 @@ void SolrClientTests::SetUp()
     {
     WSClientBaseTest::SetUp();
 
-    m_localState = StubLocalState();
+    m_localState = RuntimeJsonLocalState();
 
     m_proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     m_serverUrl = "https://qa-waz-search.bentley.com/";
