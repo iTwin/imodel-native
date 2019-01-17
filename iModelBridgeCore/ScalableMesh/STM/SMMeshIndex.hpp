@@ -75,6 +75,28 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
     this->m_updateClipTimestamp = dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->m_nodeInstanciationClipTimestamp;
     }
 
+
+
+//=======================================================================================
+// @bsimethod                                                     Mathieu.St-Pierre 10/19
+//=======================================================================================
+SMMeshDataToLoad::SMMeshDataToLoad()
+    {    
+    m_ptIndices = true;
+    m_features = false;
+    m_graph = false;
+    m_textureIndices = false;
+    m_texture = false;
+    };
+
+//=======================================================================================
+// @bsimethod                                                     Mathieu.St-Pierre 10/19
+//=======================================================================================
+SMMeshDataToLoad::~SMMeshDataToLoad()
+    {
+    }
+
+
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(uint64_t nodeID,
                                                                                      size_t pi_SplitTreshold,
                                                                                      const EXTENT& pi_rExtent,
@@ -451,6 +473,49 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
     THIS_HINVARIANTS;
 
     return returnValue;
+    }
+
+
+//=======================================================================================
+// @bsimethod                                                     Mathieu.St-Pierre 01/19
+//=======================================================================================
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadData(SMNodeDataToLoad* dataToLoad) 
+    {
+    __super::LoadData(dataToLoad);
+    
+    if (dataToLoad == nullptr)
+        {
+        GetPtsIndicePtr();
+        GetUVCoordsPtr();
+        GetUVsIndicesPtr();
+        GetTexturePtr();            
+        GetGraphPtr();
+        GetLinearFeaturesPtr();
+        }
+    else
+        {
+        SMMeshDataToLoad* meshDataToLoad = dynamic_cast<SMMeshDataToLoad*>(dataToLoad);
+        assert(meshDataToLoad != nullptr);
+    
+        if (meshDataToLoad->m_ptIndices)
+            GetPtsIndicePtr();
+
+        if (meshDataToLoad->m_textureIndices)
+            {
+            GetUVCoordsPtr();
+            GetUVsIndicesPtr();
+            }
+            
+        if (meshDataToLoad->m_texture)
+            GetTexturePtr();
+
+        if (meshDataToLoad->m_features)
+            GetLinearFeaturesPtr();
+
+        if (meshDataToLoad->m_graph)
+            GetGraphPtr();        
+        }
+        
     }
 
 //=======================================================================================

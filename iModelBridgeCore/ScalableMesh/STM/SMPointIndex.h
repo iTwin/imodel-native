@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointIndex.h $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -115,6 +115,17 @@ template <class POINT, class EXTENT> class ProducedNodeContainer;
 
 template <class POINT, class EXTENT> class SMMeshIndex;    
 template <class POINT, class EXTENT> class SMMeshIndexNode;    
+
+
+struct SMNodeDataToLoad 
+    {
+    SMNodeDataToLoad();        
+
+    virtual ~SMNodeDataToLoad();
+
+    bool m_pts;
+    };
+
 
 template <class POINT, class EXTENT> class SMPointIndexNode : public HFCShareableObject<SMPointIndexNode<POINT, EXTENT>>
     {
@@ -574,6 +585,11 @@ public:
      Loads the present tile if delay loaded.
     -----------------------------------------------------------------------------*/
     virtual void Load() const; 
+
+    /**----------------------------------------------------------------------------
+    Loads the data for a node
+    -----------------------------------------------------------------------------*/
+    virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr); 
 
     /**----------------------------------------------------------------------------
     Unloads the present tile if delay loaded.
@@ -1262,6 +1278,9 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
             };
 
         virtual void Load() const override
+            {};
+        
+        virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr) override
             {};
 
         virtual bool Store() override

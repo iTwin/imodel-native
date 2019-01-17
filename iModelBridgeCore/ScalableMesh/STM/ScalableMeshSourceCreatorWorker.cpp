@@ -801,8 +801,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>>     nodesToMesh;
     bvector<RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>>> ptsNeighbors;
-    
-        
+
+    SMMeshDataToLoad meshDataToLoad;
+
+    meshDataToLoad.m_features = true;
+    meshDataToLoad.m_graph = true;
+            
     do
         {
         assert(pChildNode != nullptr);
@@ -829,17 +833,21 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         assert(tileIds.size() > 0);
 
         xmlStatus = pChildNode->GetAttributeStringValue(attrStr, "stitchIds");
-        assert(xmlStatus == BEXML_Success);
-        //assert(pChildNode->GetNextSibling() == nullptr);
+        assert(xmlStatus == BEXML_Success || xmlStatus == BEXML_AttributeNotFound);
 
-        //TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
+        if (xmlStatus == BEXML_Success)
+            {        
+            //assert(pChildNode->GetNextSibling() == nullptr);
 
-        idAttrs.clear();
-        BeStringUtilities::ParseArguments(idAttrs, attrStr.c_str(), L",");
+            //TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
 
-        for (auto& idStr : idAttrs)
-            {
-            stitchTileIds.push_back(BeStringUtilities::ParseUInt64(Utf8String(idStr).c_str()));                
+            idAttrs.clear();
+            BeStringUtilities::ParseArguments(idAttrs, attrStr.c_str(), L",");
+
+            for (auto& idStr : idAttrs)
+                {
+                stitchTileIds.push_back(BeStringUtilities::ParseUInt64(Utf8String(idStr).c_str()));                
+                }
             }
 
         bool needFiltering; 
@@ -864,8 +872,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 meshNode->NeedToLoadNeighbors(false);
 
             meshNode->Load();
-
-            ptsNeighbors.push_back(meshNode->GetPointsPtr());
+            meshNode->LoadData(&meshDataToLoad);
+                        
             nodesToMesh.push_back(meshNode);            
             }
 
@@ -924,8 +932,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                  
         pChildNode = pChildNode->GetNextSibling();
         } while (pChildNode != nullptr);
-    
-
+            
     //Flush all the data on disk
     OpenSqlFiles(false, true);
 
@@ -961,6 +968,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     pSqliteStore->SaveSisterFiles();
 
     fclose(lockFile);
+
+
+    assert(SMMemoryPool::GetInstance()->GetCurrentlyUsed() == 0);
         
     return SUCCESS;
     }
@@ -1515,6 +1525,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
 
     GetTaskPlanFileName(taskPlanFileName);
 
+    struct _stat64i32 buffer;
+
+    //If task plan doesn't exist. 
+    if (_wstat(taskPlanFileName.c_str(), &buffer) != 0)
+        return SUCCESS_TASK_PLAN_COMPLETE;                
+
     FILE* file = nullptr;
 
     file = _wfsopen(taskPlanFileName.c_str(), L"ab+", _SH_DENYRW);
@@ -1542,7 +1558,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
     assert(pXmlDom.IsValid());
 
     BeXmlNodeP pXmlTaskPlanNode(pXmlDom->GetRootElement());
-
+	
+	assert(pXmlTaskPlanNode != nullptr);
+    
     assert(Utf8String(pXmlTaskPlanNode->GetName()).CompareTo("taskPlan") == 0);
 
     BeXmlNodeP pTaskNode = pXmlTaskPlanNode->GetFirstChild();
