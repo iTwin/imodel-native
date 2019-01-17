@@ -813,18 +813,6 @@ static void addRefAttachment(BentleyApi::BeFileName filename, DgnV8Api::ModelId 
     v8editor.Save();
     }
 
-static size_t countJobSubjects(DgnDbR db)
-    {
-    size_t actualCount = 0;
-    auto childids = db.Elements().GetRootSubject()->QueryChildren();
-    for (auto childid : childids)
-        {
-        auto subj = db.Elements().Get<Subject>(childid);
-        if (subj.IsValid() && JobSubjectUtils::IsJobSubject(*subj))
-            ++actualCount;
-        }
-    return actualCount;
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -880,8 +868,9 @@ TEST_F(ModelTests, MultipleRootFiles)
     ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SpatialModel)));
     ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
 
-    // Also verify that we have 2 job subjects
-    ASSERT_EQ(2, countJobSubjects(*db));
+    // Also verify that we have 2 job subjects and 2 master models
+    ASSERT_EQ(2, CountJobSubjects(*db));
+    ASSERT_EQ(2, CountSourceMasterModelSubjects(*db));
 
     db->CloseDb();
     db = nullptr;

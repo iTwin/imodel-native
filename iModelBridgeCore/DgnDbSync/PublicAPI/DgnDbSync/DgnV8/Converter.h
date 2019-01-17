@@ -896,6 +896,12 @@ struct Converter
         L10N_STRING(SpatialData)                        // =="Spatial data"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
+    static constexpr Utf8CP SubjectPhysicalBreakdownStructureCode =  "Physical";
+    static constexpr Utf8CP SubjectConvertedDrawingsCode =           "Drawings";
+    static constexpr Utf8CP SubjectConvertedSheetsCode =             "Sheets";
+    static constexpr Utf8CP SubjectDefinitionsCode =                 "Definitions";
+    static constexpr Utf8CP SubjectConvertedGroupsCode =             "Groups";
+
     //! Reports conversion issues
     struct IssueReporter
     {
@@ -2355,7 +2361,7 @@ public:
     void PushChangesForModel(DgnV8ModelRefCR);
 
     //! Sets the Params BridgeJobName property
-    DGNDBSYNC_EXPORT void ComputeDefaultImportJobName();
+    DGNDBSYNC_EXPORT void ComputeDefaultImportJobName(SubjectCR sourceMasterModelSubject);
 
     //! Delete all content derived from files that were recorded in syncinfo but not longer exist
     DGNDBSYNC_EXPORT void _DetectDeletedDocuments() override;
@@ -2397,6 +2403,8 @@ public:
     //! @param v8ConverterType  type of V8 converter
     protected:
     DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type v8ConverterType);
+    DGNDBSYNC_EXPORT SubjectCPtr GetSourceMasterModelSubject(DgnV8ModelR v8RootModel);
+
     public:
 
     //! Query the job info for this conversion.

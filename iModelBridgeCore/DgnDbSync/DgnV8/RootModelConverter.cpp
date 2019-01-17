@@ -307,7 +307,7 @@ void RootModelConverter::CorrectSpatialTransforms()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::ComputeDefaultImportJobName()
+void SpatialConverterBase::ComputeDefaultImportJobName(SubjectCR sourceMasterModelSubject)
     {
     if (nullptr == GetRootModelP())
         {
@@ -315,8 +315,66 @@ void SpatialConverterBase::ComputeDefaultImportJobName()
         return;
         }
 
-    Utf8String jobName = iModelBridge::ComputeJobSubjectName(GetDgnDb(), _GetParams(), Utf8String(GetRootModelP()->GetModelName()));
+    /*
+    Utf8String jobName = iModelBridge::ComputeJobSubjectName(sourceMasterModelSubject, _GetParams(), Utf8String(GetRootModelP()->GetModelName()));
+    */
+    Utf8String jobName = _GetParams().GetBridgeRegSubKeyUtf8();
     _GetParamsR().SetBridgeJobName(jobName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnCode createUniqueSubjectCode(SubjectCR parent, Utf8CP baseName)
+    {
+    DgnDbR db = parent.GetDgnDb();
+    DgnCode code = Subject::CreateCode(parent, baseName);
+    if (!db.Elements().QueryElementIdByCode(code).IsValid())
+        return code;
+
+    int counter=1;
+    do  {
+        Utf8PrintfString name("%s-%d", baseName, counter);
+        code = Subject::CreateCode(parent, name.c_str());
+        counter++;
+        }
+    while (db.Elements().QueryElementIdByCode(code).IsValid());
+
+    return code;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectCPtr SpatialConverterBase::GetSourceMasterModelSubject(DgnV8ModelR v8RootModel)
+    {
+    // Make sure the code is unique among Subjects that are children of the root subject.
+    // Make sure the code is *the same* for all bridges based on the V8 converter. For example, IModelBridgeForMstn and ABD bridge must use the same code,
+    // as their bridge job subjects must be children of the same master model subject.
+    Utf8String sourceMasterModelName("IModelBridgeForMstn master model ");     
+    sourceMasterModelName.append(GetSyncInfo().GetUniqueNameForFile(*v8RootModel.GetDgnFileP()));
+    sourceMasterModelName.append(", ").append(Utf8String(v8RootModel.GetModelName()));
+
+    Utf8String sourceMasterModelUserLabel(IssueReporter::FmtFileBaseName(*v8RootModel.GetDgnFileP()));
+
+    auto code = createUniqueSubjectCode(*GetDgnDb().Elements().GetRootSubject(), sourceMasterModelName.c_str());
+    auto sourceMasterModelId = GetDgnDb().Elements().QueryElementIdByCode(code);
+    if (sourceMasterModelId.IsValid())
+        return GetDgnDb().Elements().Get<Subject>(sourceMasterModelId);
+
+    auto ed = Subject::Create(*GetDgnDb().Elements().GetRootSubject(), code.GetValueUtf8());
+
+    ed->SetUserLabel(sourceMasterModelUserLabel.c_str());
+    
+    Json::Value modelProps(Json::nullValue);
+    modelProps["Type"] = "SourceMasterModel";
+    ed->SetSubjectJsonProperties(Subject::json_Model(), modelProps);
+
+    auto sourceMasterModelSubject = dynamic_cast<Subject const*>(ed->Insert().get());
+
+    iModelBridge::InsertElementHasLinksRelationship(GetDgnDb(), sourceMasterModelSubject->GetElementId(), GetRepositoryLinkFromAppData(*v8RootModel.GetDgnFileP()));
+
+    return sourceMasterModelSubject;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -338,10 +396,12 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
 
     WriteRepositoryLink(*GetRootV8File());  // Write the RepositoryLink element for the root file now. This is the order in which the older converter did it.
 
+    auto sourceMasterModelSubject = GetSourceMasterModelSubject(*GetRootModelP());
+
     Utf8String jobName = _GetParams().GetBridgeJobName();
     if (jobName.empty())
         {
-        ComputeDefaultImportJobName();
+        ComputeDefaultImportJobName(*sourceMasterModelSubject);
         jobName = _GetParams().GetBridgeJobName();
         }
     else
@@ -377,7 +437,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     _SetChangeDetector(false);
 
     // 2. Create a subject, as a child of the rootsubject
-    SubjectPtr ed = Subject::Create(*GetDgnDb().Elements().GetRootSubject(), jobName);
+    SubjectPtr ed = Subject::Create(*sourceMasterModelSubject, jobName);
 
     Json::Value v8JobProps(Json::objectValue);      // V8Bridge-specific job properties - information that is not recorded anywhere else.
     v8JobProps["RootModel"] = Utf8String(m_rootModelRef->GetDgnModelP()->GetModelName());
@@ -400,8 +460,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     GetOrCreateJobPartitions();
 
     //  ... and create and push the root model's "hierarchy" subject. The root model's physical partition will be a child of that.
-    Utf8String mastermodelName = _ComputeModelName(*m_rootModelRef->GetDgnModelP());
-    SubjectCPtr hsubj = GetOrCreateModelSubject(GetJobSubject(), mastermodelName, ModelSubjectType::Hierarchy);
+    SubjectCPtr hsubj = GetOrCreateModelSubject(GetJobSubject(), SubjectPhysicalBreakdownStructureCode, ModelSubjectType::Hierarchy);
     if (!hsubj.IsValid())
         {
         BeAssert(false);
@@ -595,21 +654,6 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
         if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
             continue; // missing reference 
 
-        if (!hasPushedReferencesSubject)
-            {
-            SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, v8mm.GetDgnModel().GetName(), ModelSubjectType::References);
-            if (!myRefsSubject.IsValid())
-                {
-                BeAssert(false);
-                ReportError(IssueCategory::Unsupported(), Issue::Error(), Utf8PrintfString("Failed to create references subject. Parent[%s]. Attachment[%s].",
-                                                                                           IssueReporter::FmtModel(thisV8Model).c_str(),
-                                                                                           IssueReporter::FmtAttachment(*attachment).c_str()).c_str());
-                continue;
-                }
-            SetSpatialParentSubject(*myRefsSubject); // >>>>>>>>>> Push spatial parent subject
-            hasPushedReferencesSubject = true;
-            }
-
         if (!ShouldConvertToPhysicalModel(*attachment->GetDgnModelP()))
             {
             // 3D model referencing a 2D model
@@ -619,6 +663,21 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
                                                                                        IssueReporter::FmtAttachment(*attachment).c_str()).c_str());
             continue;
             }
+
+        auto refname = IssueReporter::FmtFileBaseName(*attachment->GetDgnModelP()->GetDgnFileP());
+        auto refModelName = _ComputeModelName(*attachment->GetDgnModelP());
+        if (!refModelName.EqualsI(refname))
+            refname.append(", ").append(refModelName);
+        SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, refname, ModelSubjectType::References);
+        if (!myRefsSubject.IsValid())
+            {
+            BeAssert(false);
+            ReportError(IssueCategory::Unsupported(), Issue::Error(), Utf8PrintfString("Failed to create references subject. Parent[%s]. Attachment[%s].",
+                                                                                        IssueReporter::FmtModel(thisV8Model).c_str(),
+                                                                                        IssueReporter::FmtAttachment(*attachment).c_str()).c_str());
+            continue;
+            }
+        SetSpatialParentSubject(*myRefsSubject); // >>>>>>>>>> Push spatial parent subject
 
         Transform refTrans = ComputeAttachmentTransform(trans, *attachment);
         ImportSpatialModels(haveFoundSpatialRoot, *attachment, refTrans);

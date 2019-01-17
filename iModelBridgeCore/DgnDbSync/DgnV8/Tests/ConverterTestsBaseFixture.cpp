@@ -692,16 +692,70 @@ DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Ap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectCPtr ConverterTestBaseFixture::GetFirstJobSubject(DgnDbR db)
+SubjectCPtr ConverterTestBaseFixture::GetFirstSourceMasterModelSubject(DgnDbR db)
     {
+    // A real converter will put each bridge job subject under a single SourceMasterModel subject
     auto childids = db.Elements().GetRootSubject()->QueryChildren();
     for (auto childid : childids)
         {
         auto subj = db.Elements().Get<Subject>(childid);
+        if (!subj.IsValid())
+            continue;
+        auto props = subj->GetSubjectJsonProperties(Subject::json_Model());
+        if (0==strcmp(props["Type"].asCString(), "SourceMasterModel"))
+            return subj;
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ConverterTestBaseFixture::CountSourceMasterModelSubjects(DgnDbR db)
+    {
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(db, "SELECT COUNT(*) FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Model.Type') = 'SourceMasterModel'");
+    stmt.Step();
+    return stmt.GetValueInt(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectCPtr ConverterTestBaseFixture::GetFirstJobSubjectUnderParent(SubjectCR parent)
+    {
+    auto childids = parent.QueryChildren();
+    for (auto childid : childids)
+        {
+        auto subj = parent.GetDgnDb().Elements().Get<Subject>(childid);
         if (subj.IsValid() && JobSubjectUtils::IsJobSubject(*subj))
             return subj;
         }
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectCPtr ConverterTestBaseFixture::GetFirstJobSubject(DgnDbR db)
+    {
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(db, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Job') is not null");
+    if (BE_SQLITE_ROW != stmt.Step())
+        return nullptr;
+
+    return db.Elements().Get<Subject>(stmt.GetValueId<DgnElementId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ConverterTestBaseFixture::CountJobSubjects(DgnDbR db)
+    {
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(db, "SELECT COUNT(*) FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Job') is not null");
+    stmt.Step();
+    return stmt.GetValueInt(0);
     }
 
 //---------------------------------------------------------------------------------------
