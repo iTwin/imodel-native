@@ -449,7 +449,7 @@ TEST_F (LiteralExpressionTests, MiscSymbols)
     TestExpressionEquals (requiredSymbolSets, "System.Path.GetFileNameWithoutExtension(\"\\dir\\subdir\\filename.ext\")",  ECValue("filename"));
     TestExpressionEquals (requiredSymbolSets, "System.Path.GetFileName(\"\\dir\\subdir\\filename.ext\")",                  ECValue("filename.ext"));
     TestExpressionEquals (requiredSymbolSets, "System.Path.Combine (\"\\dir\")",                                           ECValue(TEST_PATH_SEP "dir"));
-    TestExpressionEquals (requiredSymbolSets, "System.Path.Combine (\\\dir\", \"subdir\")",                               ECValue(TEST_PATH_SEP "dir" TEST_PATH_SEP "subdir"));
+    TestExpressionEquals (requiredSymbolSets, "System.Path.Combine (\"\\dir\", \"subdir\")",                               ECValue(TEST_PATH_SEP "dir" TEST_PATH_SEP "subdir"));
     TestExpressionEquals (requiredSymbolSets, "System.Path.Combine (\"\\dir\", \"subdir\\\", \"filename.ext\")",           ECValue(TEST_PATH_SEP "dir" TEST_PATH_SEP "subdir" TEST_PATH_SEP "filename.ext"));
 
     Utf8String fileName (L"c:\\dir\\subdir\\filename.ext");
