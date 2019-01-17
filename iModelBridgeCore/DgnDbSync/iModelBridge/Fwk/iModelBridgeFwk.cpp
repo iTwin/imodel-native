@@ -1096,7 +1096,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         params.SetUrlEnvironment(m_iModelHubArgs->m_environment);
         params.SetiModelName(m_iModelHubArgs->m_repositoryName);
         }
-    params.SetWantProvenanceInBim(m_jobEnvArgs.m_wantProvenanceInBim || iModelBridge::TestFeatureFlag(IModelBridgeFeatureFlag::WantProvenanceInBim));
+    params.SetWantProvenanceInBim(m_jobEnvArgs.m_wantProvenanceInBim || m_bridge->TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim));
 
     }
 
