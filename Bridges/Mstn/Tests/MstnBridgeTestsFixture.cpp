@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/MstnBridgeTestsFixture.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -220,6 +220,27 @@ int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile, int n
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t MstnBridgeTestsFixture::AddModel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR modelName)
+{
+    Bentley::WString wModelName (modelName.c_str ());
+    int64_t modelId = 0;
+    DgnV8Api::ModelId modelid;
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost ();
+    if (adoptHost)
+        testHost.Init ();
+    {
+        V8FileEditor v8editor;
+        v8editor.Open (inputFile);
+        v8editor.AddModel (modelid, wModelName.c_str ());
+    }
+    modelId = modelid;
+    return modelId;        
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 int32_t MstnBridgeTestsFixture::DbFileInfo::GetElementCount()
@@ -367,7 +388,7 @@ BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementBy
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(*m_db, "SELECT sourceInfo.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
-                  SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
+                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
                   " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
     estmt.BindInt64(1, srcElementId);
     if (BE_SQLITE_ROW != estmt.Step())

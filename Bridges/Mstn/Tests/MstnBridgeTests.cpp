@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/MstnBridgeTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "MstnBridgeTestsFixture.h"
@@ -123,6 +123,66 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
     ASSERT_TRUE(id.IsValid());
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MstnBridgeTests, TestModelAspect)
+{
+    auto testDir = getiModelBridgeTestsOutputDir (L"TestModelAspect");
+
+    ASSERT_EQ (BeFileNameStatus::Success, BeFileName::CreateNewDirectory (testDir));
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs (args, testDir.c_str (), MSTN_BRIDGE_REG_SUB_KEY);
+
+    args.push_back (L"--fwk-storeElementIdsInBIM");
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile (inputFile, L"Test3d.dgn", NULL);
+
+    args.push_back (WPrintfString (L"--fwk-input=\"%ls\"", inputFile.c_str ()));
+    args.push_back (L"--fwk-skip-assignment-check");
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestIModelHubClientForBridges testIModelHubClientForBridges (testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting (testIModelHubClientForBridges);
+
+    testIModelHubClientForBridges.CreateRepository ("iModelBridgeTests_Test1", GetSeedFile ());
+
+    BentleyApi::BeFileName dbFile (testDir);
+    dbFile.AppendToPath (L"iModelBridgeTests_Test1.bim");
+    int64_t modelid = AddModel (inputFile, "TestModel");
+    if (true)
+    {
+        // and run an update
+        RunTheBridge (args);
+    }
+    DbFileInfo info (dbFile);
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare (*info.m_db, "SELECT kind,SourceId,Properties FROM "
+        BIS_SCHEMA (BIS_CLASS_Model) " AS m,"
+        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+        " WHERE (sourceInfo.Element.Id=m.ModeledElement.Id) AND (sourceInfo.SourceId = ?)");
+    estmt.BindInt64 (1, modelid);
+    
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
+    BentleyApi::Utf8String kind, properties, modelName;
+    int64_t srcid;
+    rapidjson::Document json;
+    
+    kind = estmt.GetValueText (0);
+    ASSERT_TRUE (kind.Equals ("Model"));
+
+    srcid = estmt.GetValueId<int64_t> (1);
+    ASSERT_TRUE (srcid == modelid);
+    
+    properties = estmt.GetValueText (2);
+    json.Parse (properties.c_str ());
+    modelName = json["v8ModelName"].GetString ();
+    ASSERT_TRUE (modelName.Equals ("TestModel"));
+}
+
 extern "C"
     {
     EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;

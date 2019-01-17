@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/MstnBridgeTestsFixture.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,6 +37,8 @@ struct MstnBridgeTestsFixture : ::testing::Test
     void AddAttachment(BentleyApi::BeFileName& inputFile, BentleyApi::BeFileNameR refV8File, int32_t num, bool useOffsetForElement);
 
     int64_t AddLine(BentleyApi::BeFileName& inputFile, int count = 1);
+
+    int64_t AddModel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR modelName);
 
     struct DbFileInfo
         {
