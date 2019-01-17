@@ -27,10 +27,7 @@
                         
                         <Sources>
                             <Include>
-                                <Source>.*\\src\\RevitBridge\\src\\.*</Source>
-                                <Source>.*\\src\\RvtConverter\\src\\RvtFileLoader\\.*</Source>
-                                <Source>.*\\src\\RvtConverter\\src\\BrepConverter\\.*</Source>
-                                <Source>.*\\src\\PSolidReco\\PSolidRecoLib\\.*</Source>
+                                <Source>.*\\src\\DgnDbSync\\.*</Source>
                             </Include>
                         </Sources>
 
