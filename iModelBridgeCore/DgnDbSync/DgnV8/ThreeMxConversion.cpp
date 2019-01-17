@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ThreeMxConversion.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -325,7 +325,7 @@ StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8
                 BeAssert (false && "unable to find classifier level");
                 break;
                 }
-            classifierCategoryId = converter.GetSyncInfo().FindCategory(levelHandle.GetLevelId(), classifierMM.GetV8FileSyncInfoId(), SyncInfo::Level::Type::Spatial);
+            classifierCategoryId = converter.GetSyncInfo().FindCategory(levelHandle.GetLevelId(), *classifierMM.GetV8Model().GetDgnFileP(), SyncInfo::Level::Type::Spatial);
             }
         
         classifiers.push_back(ModelSpatialClassifier(classifiedModelId, classifierCategoryId, classifierElementId, classifierFlags, Utf8String(wName.c_str()), expandDistance * converter.ComputeUnitsScaleFactor(*v8el.GetModelRef()->GetDgnModelP()), activeLinkId == classifierXai.GetId()));

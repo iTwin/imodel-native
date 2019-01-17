@@ -784,15 +784,16 @@ bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus iModelExternalSourceAspect::AddTo(DgnElementR el)
+DgnDbStatus iModelExternalSourceAspect::AddAspect(DgnElementR el)
     {
+    BeAssert(m_instance.IsValid());
     return DgnElement::GenericMultiAspect::AddAspect(el, *m_instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstancePtr iModelExternalSourceAspect::MakeInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const* ss, ECN::ECClassCR aspectClass) 
+ECN::IECInstancePtr iModelExternalSourceAspect::CreateInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const* ss, ECN::ECClassCR aspectClass) 
     {
     auto instance = aspectClass.GetDefaultStandaloneEnabler()->CreateInstance();
     instance->SetValue(XTRN_SRC_ASPCT_Scope, ECN::ECValue(scope));
@@ -814,6 +815,23 @@ ECN::ECClassCP iModelExternalSourceAspect::GetAspectClass(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId)
+    {
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND SourceId=?)");
+    sel->BindId(1, scopeId);
+    sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    ElementAndAspectId res;
+    if (BE_SQLITE_ROW != sel->Step())
+        return res;
+    res.elementId = sel->GetValueId<DgnElementId>(0);
+    res.aspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(1);
+    return res;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
 bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAll(DgnElementCR el, ECN::ECClassCP aspectClass)
     {
     bvector<iModelExternalSourceAspect> aspects;
@@ -823,6 +841,28 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAll(DgnElemen
         return aspects;
     auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=?)");
     sel->BindId(1, el.GetElementId());
+    while (BE_SQLITE_ROW == sel->Step())
+        {
+        auto aspectid = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+        auto aspect = GetAspect(el, aspectid);
+        aspects.push_back(aspect);
+        }
+    return aspects;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(DgnElementCR el, Utf8CP kind, ECN::ECClassCP aspectClass)
+    {
+    bvector<iModelExternalSourceAspect> aspects;
+    if (!aspectClass)
+        aspectClass = GetAspectClass(el.GetDgnDb());
+    if (nullptr == aspectClass)
+        return aspects;
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=?)");
+    sel->BindId(1, el.GetElementId());
+    sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     while (BE_SQLITE_ROW == sel->Step())
         {
         auto aspectid = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
@@ -933,6 +973,23 @@ iModelExternalSourceAspect iModelExternalSourceAspect::GetAspect(DgnElementR el,
     return iModelExternalSourceAspect(instance);
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelExternalSourceAspect iModelExternalSourceAspect::GetAspectBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId)
+    {
+    auto found = FindElementBySourceId(db, scopeId, kind, sourceId);
+    if (!found.elementId.IsValid())
+        return iModelExternalSourceAspect();
+
+    auto el = db.Elements().GetElement(found.elementId);
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        return iModelExternalSourceAspect();
+        }
+    return GetAspect(*el, found.aspectId, nullptr);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
@@ -967,21 +1024,24 @@ Utf8CP iModelExternalSourceAspect::GetKind() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelExternalSourceAspect::GetSourceState(SourceState& ss) const
+iModelExternalSourceAspect::SourceState iModelExternalSourceAspect::GetSourceState() const
     {
-    ECN::ECValue v;
-    m_instance->GetValue(v, XTRN_SRC_ASPCT_Hash);
-    if (v.IsNull())
-        return BSIERROR;
-    size_t sz;
-    auto b = v.GetBinary(sz);
-    unsigned arraySize = sz / sizeof(unsigned char);
-    ss.m_hash.insert(ss.m_hash.end(), b, &b[arraySize]);
-    
-    m_instance->GetValue(v, XTRN_SRC_ASPCT_LastModifiedTime);
-    ss.m_lastModifiedTime = v.GetDouble();
+    SourceState ss;
 
-    return BSISUCCESS;
+    ECN::ECValue v;
+    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_Hash)) && !v.IsNull())
+        {
+        size_t sz;
+        auto b = v.GetBinary(sz);
+        ss.m_hash.assign(b, b + sz);
+        }
+
+    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_LastModifiedTime)) && !v.IsNull())
+        {
+        ss.m_lastModifiedTime = v.GetDouble();
+        }
+
+    return ss;
     }
 
 /*---------------------------------------------------------------------------------**//**

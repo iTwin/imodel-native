@@ -956,7 +956,7 @@ bool InitGeometryParams(Render::GeometryParams& params)
 
     params.SetCategoryId(categoryId);
     params.SetSubCategoryId(subCategoryId);
-    m_converter.InitGeometryParams(params, *m_context->GetCurrentDisplayParams(), *m_context, false, m_parentModelMapping.GetV8ModelSource());
+    m_converter.InitGeometryParams(params, *m_context->GetCurrentDisplayParams(), *m_context, false, m_parentModelMapping.GetV8Model());
 
     if (m_processingText)
         {

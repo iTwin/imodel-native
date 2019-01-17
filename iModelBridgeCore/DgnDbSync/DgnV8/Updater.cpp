@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Updater.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -100,7 +100,7 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
             ++found;
         }
 
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
     {
     // TODO - must filter on scope
     // auto findAspect = converter.GetDgnDb().GetPreparedECSqlStatement("Select * from SourceInfo.SourceElementInfo where (SourceId=? and Kind='Element')");
@@ -121,7 +121,7 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
         res.m_v8ElementMapping = found.GetV8ElementMapping();
         res.m_changeType = found.GetProvenance().IsSame(res.m_currentElementProvenance)? ChangeType::None: ChangeType::Update;
 
-#ifdef TEST_SYNC_INFO_ASPECT
+#ifdef TEST_EXTERNAL_SOURCE_ASPECT
         converter.GetSyncInfo().AssertAspectMatchesSyncInfo(res.m_v8ElementMapping);
 #endif
         if (v8mm.GetDgnModel().IsSpatialModel() && converter.HasRootTransChanged())
@@ -443,71 +443,83 @@ void ChangeDetector::_OnViewSeen(Converter&, DgnViewId viewId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
+void Converter::DeleteView(DgnViewId previouslyConvertedViewId, SyncInfo& syncInfo)
+    {
+    auto&   elements = GetDgnDb().Elements();
+
+    // a special case for a SpatialView: if attached to a Sheet::ViewAttachment, do not delete it:
+    bool    isAttached = false;
+    for (auto va : elements.MakeIterator(BIS_SCHEMA(BIS_CLASS_ViewAttachment)))
+        {
+        auto viewAttachment = elements.Get<Sheet::ViewAttachment>(va.GetElementId());
+        if (viewAttachment.IsValid() && viewAttachment->GetAttachedViewId() == previouslyConvertedViewId)
+            {
+            isAttached = true;
+            break;
+            }
+        }
+    if (!isAttached)
+        {
+        ViewDefinitionCPtr tempView = GetDgnDb().Elements().Get<ViewDefinition>(previouslyConvertedViewId);
+        DgnElementId categorySelectorId = tempView->GetCategorySelectorId();
+        DgnElementId displayStyleId = tempView->GetDisplayStyleId();
+        DgnElementId modelSelectorId;
+
+        if (tempView->ToSpatialView() != nullptr)
+                modelSelectorId = tempView->ToSpatialView()->GetModelSelectorId();
+
+        elements.Delete(previouslyConvertedViewId); // Note that cascading delete takes care of deleting the ExternalSourceAspect, if any.
+        syncInfo.DeleteView(previouslyConvertedViewId);
+
+        // Clean up the component elements
+        // Category Selector
+        BeSQLite::EC::ECSqlStatement stmt;
+        Utf8PrintfString sql("SELECT 1 FROM %s WHERE %s.Id = ?", BIS_SCHEMA(BIS_CLASS_ViewDefinition), BIS_CLASS_CategorySelector);
+        stmt.Prepare(GetDgnDb(), sql.c_str());
+        stmt.BindId(1, categorySelectorId);
+        auto rc = stmt.Step();
+        if (BE_SQLITE_DONE == rc)
+            elements.Delete(categorySelectorId);
+
+        BeSQLite::EC::ECSqlStatement stmt2;
+        Utf8PrintfString sql2("SELECT 1 FROM %s WHERE %s.Id = ?", BIS_SCHEMA(BIS_CLASS_ViewDefinition), BIS_CLASS_DisplayStyle);
+        stmt2.Prepare(GetDgnDb(), sql2.c_str());
+        stmt2.BindId(1, displayStyleId);
+        rc = stmt2.Step();
+        if (BE_SQLITE_DONE == rc)
+            elements.Delete(displayStyleId);
+
+        if (modelSelectorId.IsValid())
+            {
+            BeSQLite::EC::ECSqlStatement stmt3;
+            Utf8PrintfString sql3("SELECT 1 FROM %s WHERE %s.Id = ?", BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition), BIS_CLASS_ModelSelector);
+            stmt3.Prepare(GetDgnDb(), sql3.c_str());
+            stmt3.BindId(1, modelSelectorId);
+            rc = stmt3.Step();
+            if (BE_SQLITE_DONE == rc)
+                elements.Delete(modelSelectorId);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
 void ChangeDetector::_DetectDeletedViews(Converter& converter, SyncInfo::ViewIterator &iter)
     {
+    BeAssert(!converter._WantProvenanceInBim() && "Should not use syncinfo-based method of detecting previously converted views if we are using external source aspects");
+
     auto&   elements = converter.GetDgnDb().Elements();
     auto&   syncInfo = converter.GetSyncInfo();
-    auto    jobModelId = converter.GetJobDefinitionModel()->GetModelId();
 
     for (auto viewSyncInfo = iter.begin(); viewSyncInfo != iter.end(); ++viewSyncInfo)
         {
         auto previouslyConvertedViewId = viewSyncInfo.GetId();
+
         if (m_viewsSeen.find(previouslyConvertedViewId) != m_viewsSeen.end())
             continue;
-
-        // a special case for a SpatialView: if attached to a Sheet::ViewAttachment, do not delete it:
-        bool    isAttached = false;
-        for (auto va : elements.MakeIterator(BIS_SCHEMA(BIS_CLASS_ViewAttachment)))
-            {
-            auto viewAttachment = elements.Get<Sheet::ViewAttachment>(va.GetElementId());
-            if (viewAttachment.IsValid() && viewAttachment->GetAttachedViewId() == previouslyConvertedViewId)
-                {
-                isAttached = true;
-                break;
-                }
-            }
-        if (!isAttached)
-            {
-            ViewDefinitionCPtr tempView = converter.GetDgnDb().Elements().Get<ViewDefinition>(previouslyConvertedViewId);
-            DgnElementId categorySelectorId = tempView->GetCategorySelectorId();
-            DgnElementId displayStyleId = tempView->GetDisplayStyleId();
-            DgnElementId modelSelectorId;
-
-            if (tempView->ToSpatialView() != nullptr)
-                 modelSelectorId = tempView->ToSpatialView()->GetModelSelectorId();
-
-            elements.Delete(previouslyConvertedViewId);
-            syncInfo.DeleteView(previouslyConvertedViewId);
-
-            // Clean up the component elements
-            // Category Selector
-            BeSQLite::EC::ECSqlStatement stmt;
-            Utf8PrintfString sql("SELECT 1 FROM %s WHERE %s.Id = ?", BIS_SCHEMA(BIS_CLASS_ViewDefinition), BIS_CLASS_CategorySelector);
-            stmt.Prepare(converter.GetDgnDb(), sql.c_str());
-            stmt.BindId(1, categorySelectorId);
-            auto rc = stmt.Step();
-            if (BE_SQLITE_DONE == rc)
-                elements.Delete(categorySelectorId);
-
-            BeSQLite::EC::ECSqlStatement stmt2;
-            Utf8PrintfString sql2("SELECT 1 FROM %s WHERE %s.Id = ?", BIS_SCHEMA(BIS_CLASS_ViewDefinition), BIS_CLASS_DisplayStyle);
-            stmt2.Prepare(converter.GetDgnDb(), sql2.c_str());
-            stmt2.BindId(1, displayStyleId);
-            rc = stmt2.Step();
-            if (BE_SQLITE_DONE == rc)
-                elements.Delete(displayStyleId);
-
-            if (modelSelectorId.IsValid())
-                {
-                BeSQLite::EC::ECSqlStatement stmt3;
-                Utf8PrintfString sql3("SELECT 1 FROM %s WHERE %s.Id = ?", BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition), BIS_CLASS_ModelSelector);
-                stmt3.Prepare(converter.GetDgnDb(), sql3.c_str());
-                stmt3.BindId(1, modelSelectorId);
-                rc = stmt3.Step();
-                if (BE_SQLITE_DONE == rc)
-                    elements.Delete(modelSelectorId);
-                }
-            }
+        
+        converter.DeleteView(previouslyConvertedViewId, syncInfo);
         }
     }
 
@@ -516,9 +528,26 @@ void ChangeDetector::_DetectDeletedViews(Converter& converter, SyncInfo::ViewIte
 //---------------+---------------+---------------+---------------+---------------+-------
 void ChangeDetector::_DetectDeletedViewsInFile(Converter& converter, DgnV8FileR v8File)
     {
-    SyncInfo::ViewIterator viewsInFile(converter.GetDgnDb(), "V8FileSyncInfoId=?");
-    viewsInFile.GetStatement()->BindInt(1, Converter::GetV8FileSyncInfoIdFromAppData(v8File).GetValue());
-    _DetectDeletedViews(converter, viewsInFile);
+    if (converter._WantProvenanceInBim())
+        {
+        auto scope = converter.GetRepositoryLinkFromAppData(v8File);
+        auto iterator = SyncInfo::ViewDefinitionExternalSourceAspect::GetIteratorForScope(converter.GetDgnDb(), scope);
+        while (BE_SQLITE_ROW == iterator->Step())
+            {
+            auto previouslyConvertedViewId = iterator->GetValueId<DgnViewId>(0);
+
+            if (m_viewsSeen.find(previouslyConvertedViewId) != m_viewsSeen.end())
+                continue;
+        
+            converter.DeleteView(previouslyConvertedViewId, converter.GetSyncInfo());
+            }
+        }
+    else
+        {
+        SyncInfo::ViewIterator viewsInFile(converter.GetDgnDb(), "V8FileSyncInfoId=?");
+        viewsInFile.GetStatement()->BindInt(1, Converter::GetV8FileSyncInfoIdFromAppData(v8File).GetValue());
+        _DetectDeletedViews(converter, viewsInFile);
+        }
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

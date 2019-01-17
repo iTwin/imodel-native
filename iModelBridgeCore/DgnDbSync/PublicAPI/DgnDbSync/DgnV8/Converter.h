@@ -1098,7 +1098,7 @@ public:
 
     DGNDBSYNC_EXPORT static void ConvertSolidKernelEntity(IBRepEntityPtr& clone, Bentley::ISolidKernelEntityCR v8Entity);
 
-    DGNDBSYNC_EXPORT void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model);
+    DGNDBSYNC_EXPORT void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, DgnV8ModelCR);
 
     void InitLineStyle(Render::GeometryParams& params, DgnModelRefR styleModelRef, int32_t srcLineStyleNum, DgnV8Api::LineStyleParams const* v8lsParams);
 
@@ -1266,6 +1266,8 @@ public:
     //! @return true if the view should be ignored and not converted.
     virtual bool _FilterOutView(DgnV8ViewInfoCR v8View) {return false;}
     virtual Utf8String _ComputeViewName(Utf8StringCR defaultName, DgnV8ViewInfoCR) {return defaultName;}
+
+    void DeleteView(DgnViewId, SyncInfo&);
 
     void HandleLevelAppearanceInconsistency(ViewDefinitionR, DgnAttachmentCR, DgnV8Api::LevelId, DgnCategoryId, DgnSubCategoryId, bool isV8LevelOn);
     //! Interpret the level mask from a V8 view for the specified attachment. The result will be to add the corresponding categories to \a viewDef that are on in the V8 view.
@@ -2922,6 +2924,11 @@ struct XDomain
     DGNDBSYNC_EXPORT static void Register(XDomain& xd);
     //! Un-Register an XDomain. 
     DGNDBSYNC_EXPORT static void UnRegister(XDomain& xd);
+
+    //! This is invoked just after the V8 root model is opened but before any references are detected or any elements are converted. 
+    virtual void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) {}
+    //! This is invoked by _FinishConversion, after all models and elements (and ECRelationships) have been processed.
+    virtual void _OnFinishConversion(Converter&) = 0;
 };
 
 //=======================================================================================

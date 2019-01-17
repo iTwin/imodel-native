@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConverterInternal.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@
 #define NO_USING_NAMESPACE_BENTLEY 1
 
 #ifndef NDEBUG
-    #define TEST_SYNC_INFO_ASPECT
+    #define TEST_EXTERNAL_SOURCE_ASPECT
 #endif
 
 #include <DgnDbSync/DgnV8/DgnV8.h> // NB: Must include this first!

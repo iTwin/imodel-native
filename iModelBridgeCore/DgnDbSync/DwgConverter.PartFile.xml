@@ -117,7 +117,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="Teigha"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha"      Repository="bin-teigha"  />
-        <SubPart PartName="PSolid"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/psolid"      Repository="bin-psolid" />
+        <SubPart PartName="PsolidShim_x64"  PartFile="DgnPlatform"                                  Repository="DgnPlatform"/> <!-- so we more easily match what DgnPlatform uses -->
         <SubPart PartName="GeomDlls"        PartFile="GeomLibs"                                     Repository="GeomLibs" />
         <Bindings>
             <Libs ProductDirectoryName="DwgDbLibs" Required="false">Delivery/OpenDwgImporter/$(libprefix)OpenDwgDbExchange$(libext)</Libs>
@@ -210,7 +210,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="RealDwg"         PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg"     Repository="bin-realdwg" />
-        <SubPart PartName="PSolid"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/psolid"      Repository="bin-psolid" />
+        <SubPart PartName="PsolidShim_x64"  PartFile="DgnPlatform"                                  Repository="DgnPlatform"/> <!-- so we more easily match what DgnPlatform uses -->
         <SubPart PartName="GeomDlls"        PartFile="Geomlibs"                                     Repository="GeomLibs" />
         <Bindings>
             <!-- Put the .lib file to a versioned sub-folder to avoid name collision -->
@@ -297,7 +297,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="RealDwg2018"     PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg"     Repository="bin-realdwg2018" />
-        <SubPart PartName="PSolid"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/psolid"      Repository="bin-psolid" />
+        <SubPart PartName="PsolidShim_x64"  PartFile="DgnPlatform"                                  Repository="DgnPlatform"/> <!-- so we more easily match what DgnPlatform uses -->
         <SubPart PartName="GeomDlls"        PartFile="Geomlibs"                                     Repository="GeomLibs" />
         <Bindings>
             <!-- Put the .lib file to a versioned sub-folder to avoid name collision -->
