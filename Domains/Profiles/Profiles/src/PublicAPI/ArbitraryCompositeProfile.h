@@ -17,17 +17,24 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct CompositeProfileComponent
+struct ArbitraryCompositeProfileComponent
     {
-    PROFILES_EXPORT CompositeProfileComponent() = default;
-    PROFILES_EXPORT CompositeProfileComponent (SinglePerimeterProfile const& singleProfile, bool mirrorAboutYAxis, DPoint2d const& offset, Angle const& rotation);
-    PROFILES_EXPORT CompositeProfileComponent (Dgn::DgnElementId const& singleProfileId, bool mirrorAboutYAxis, DPoint2d const& offset, Angle const& rotation);
+public:
+    PROFILES_EXPORT ArbitraryCompositeProfileComponent() = default;
+    PROFILES_EXPORT ArbitraryCompositeProfileComponent (Dgn::DgnElementId const& singleProfileId, DPoint2d const& offset,
+                                               Angle const& rotation = Angle::FromRadians (0.0), bool mirrorAboutYAxis = false);
 
-    SinglePerimeterProfilePtr singleProfilePtr = nullptr;
+    int GetMemberPriority() const { return m_memberPriority; }
+
+public:
     Dgn::DgnElementId singleProfileId = Dgn::DgnElementId();
-    bool mirrorAboutYAxis = false;
     DPoint2d offset = DPoint2d::From (0.0, 0.0);
     Angle rotation = Angle::FromRadians (0.0);
+    bool mirrorAboutYAxis = false;
+
+private:
+    friend struct ArbitraryCompositeProfile;
+    int m_memberPriority = -1;
     };
 
 
@@ -47,11 +54,11 @@ public:
         explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
 
     public:
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, bvector<CompositeProfileComponent> const& components);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, bvector<ArbitraryCompositeProfileComponent> const& components);
 
     public:
         //! Required properties
-        bvector<CompositeProfileComponent> components;
+        bvector<ArbitraryCompositeProfileComponent> components;
         };
 
 protected:
@@ -63,11 +70,8 @@ protected:
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _InsertInDb() override;
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
-    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _LoadFromDb() override;
-
-private:
-    Dgn::DgnDbStatus InsertRelationship (CompositeProfileComponent const& component, int memberPriority);
+    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryCompositeProfile)
@@ -76,11 +80,11 @@ public:
     PROFILES_EXPORT static ArbitraryCompositeProfilePtr Create (CreateParams const& params) { return new ArbitraryCompositeProfile (params); }
 
 public:
-    PROFILES_EXPORT bvector<CompositeProfileComponent> GetComponents() const;
-    PROFILES_EXPORT void SetComponents (bvector<CompositeProfileComponent> const& components);
+    PROFILES_EXPORT bvector<ArbitraryCompositeProfileComponent> GetComponents() const;
+    PROFILES_EXPORT void SetComponents (bvector<ArbitraryCompositeProfileComponent> const& components);
 
 private:
-    bvector<CompositeProfileComponent> m_components;
+    bvector<ArbitraryCompositeProfileComponent> m_components;
 
     }; // ArbitraryCompositeProfile
 

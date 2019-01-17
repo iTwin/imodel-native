@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <ProfilesInternal\ProfilesGeometry.h>
 #include <ProfilesInternal\ProfilesLogging.h>
+#include <ProfilesInternal\ArbitraryCompositeProfileAspect.h>
 #include <Profiles\ArbitraryCompositeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -17,27 +18,18 @@ HANDLER_DEFINE_MEMBERS (ArbitraryCompositeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-CompositeProfileComponent::CompositeProfileComponent (SinglePerimeterProfile const& singleProfile, bool mirrorAboutYAxis, DPoint2d const& offset, Angle const& rotation)
-    : singleProfileId (singleProfile.GetElementId())
-    , mirrorAboutYAxis (mirrorAboutYAxis)
-    , offset (offset)
-    , rotation (rotation)
-    {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-CompositeProfileComponent::CompositeProfileComponent (DgnElementId const& singleProfileId, bool mirrorAboutYAxis, DPoint2d const& offset, Angle const& rotation)
+ArbitraryCompositeProfileComponent::ArbitraryCompositeProfileComponent (DgnElementId const& singleProfileId, DPoint2d const& offset,
+                                                                        Angle const& rotation, bool mirrorAboutYAxis)
     : singleProfileId (singleProfileId)
-    , mirrorAboutYAxis (mirrorAboutYAxis)
     , offset (offset)
     , rotation (rotation)
+    , mirrorAboutYAxis (mirrorAboutYAxis)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArbitraryCompositeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, bvector<CompositeProfileComponent> const& components)
+ArbitraryCompositeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, bvector<ArbitraryCompositeProfileComponent> const& components)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , components (components)
     {}
@@ -65,8 +57,9 @@ bool ArbitraryCompositeProfile::_Validate() const
     if (m_components.size() < 2)
         return false;
 
-    for (CompositeProfileComponent const& component : m_components)
+    for (ArbitraryCompositeProfileComponent const& component : m_components)
         {
+        // TODO Karolis: Validate other component properties?
         SinglePerimeterProfilePtr singleProfilePtr = SinglePerimeterProfile::GetForEdit (m_dgndb, component.singleProfileId);
         if (singleProfilePtr.IsNull())
             return false;
@@ -84,18 +77,16 @@ IGeometryPtr ArbitraryCompositeProfile::_CreateGeometry() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Insert relationships for every component.
+* Insert aspects for every component.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ArbitraryCompositeProfile::_InsertInDb()
     {
     int memberPriority = 0;
-    for (CompositeProfileComponent const& component : m_components)
+    for (ArbitraryCompositeProfileComponent& component : m_components)
         {
-        DgnDbStatus status;
-        status = InsertRelationship (component, memberPriority++);
-        if (status != DgnDbStatus::Success)
-            return status;
+        ArbitraryCompositeProfileAspectPtr aspectPtr = ArbitraryCompositeProfileAspect::Create (component, memberPriority++);
+        DgnElement::MultiAspect::AddAspect (*this, *aspectPtr);
         }
 
     return T_Super::_InsertInDb();
@@ -115,7 +106,7 @@ DgnDbStatus ArbitraryCompositeProfile::_OnUpdate (DgnElement const& original)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ArbitraryCompositeProfile::_OnDelete() const
     {
-    Utf8CP pSqlString = "DELETE FROM " PRF_SCHEMA (PRF_REL_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles) " WHERE SourceECInstanceId=?";
+    /*Utf8CP pSqlString = "DELETE FROM " PRF_SCHEMA (PRF_REL_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles) " WHERE SourceECInstanceId=?";
 
     ECSqlStatement sqlStatement;
     ECSqlStatus sqlStatus = sqlStatement.Prepare (m_dgndb, pSqlString);
@@ -127,9 +118,46 @@ DgnDbStatus ArbitraryCompositeProfile::_OnDelete() const
         return DgnDbStatus::SQLiteError;
 
     if (sqlStatement.Step() != BE_SQLITE_DONE)
+        return DgnDbStatus::SQLiteError;*/
+
+    return T_Super::_OnDelete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Element is loading from db - query aspects and populate local components vector.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ArbitraryCompositeProfile::_LoadFromDb()
+    {
+    Utf8CP pSqlString = "SELECT ECInstanceId FROM " PRF_SCHEMA (PRF_CLASS_ArbitraryCompositeProfileAspect) " WHERE Element.Id=?";
+
+    ECSqlStatement sqlStatement;
+    ECSqlStatus sqlStatus = sqlStatement.Prepare (m_dgndb, pSqlString);
+    if (sqlStatus != ECSqlStatus::Success)
         return DgnDbStatus::SQLiteError;
 
-    return DgnDbStatus::Success;
+    sqlStatus = sqlStatement.BindId (1, m_elementId);
+    if (sqlStatus != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+
+    BeAssert (m_components.empty() && "Profile is loading from db - components should be empty");
+    while (sqlStatement.Step() == BE_SQLITE_ROW)
+        {
+        ECClass const* pAspectClass = QueryClass (m_dgndb, PRF_CLASS_ArbitraryCompositeProfileAspect);
+        ECInstanceId aspectId = sqlStatement.GetValueId<ECInstanceId> (0);
+
+        ArbitraryCompositeProfileAspectCPtr aspectPtr = MultiAspect::Get<ArbitraryCompositeProfileAspect> (*this, *pAspectClass, aspectId);
+        if (aspectPtr.IsNull())
+            return DgnDbStatus::BadElement;
+
+        ArbitraryCompositeProfileComponent component (aspectPtr->singleProfileId, aspectPtr->offset, aspectPtr->rotation, aspectPtr->mirrorAboutYAxis);
+        component.m_memberPriority = aspectPtr->memberPriority;
+
+        // TODO Karolis: make sure compoent is valid.
+        m_components.push_back (component);
+        }
+
+    return T_Super::_LoadFromDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -146,65 +174,18 @@ void ArbitraryCompositeProfile::_CopyFrom (DgnElement const& source)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Element is loading from db - query relationships and populate components vector.
+* Return a copy of components vector.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ArbitraryCompositeProfile::_LoadFromDb()
+bvector<ArbitraryCompositeProfileComponent> ArbitraryCompositeProfile::GetComponents() const
     {
-    return T_Super::_LoadFromDb();
+    return m_components;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ArbitraryCompositeProfile::InsertRelationship (CompositeProfileComponent const& component, int memberPriority)
-    {
-    ECRelationshipClass const* pRelationshipClass = QueryClass (m_dgndb, PRF_REL_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles)->GetRelationshipClassCP();
-    if (pRelationshipClass == nullptr)
-        DgnDbStatus::SQLiteError;
-
-    StandaloneECRelationshipEnablerPtr relationshipEnablerPtr = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*pRelationshipClass);
-    if (relationshipEnablerPtr.IsNull())
-        DgnDbStatus::SQLiteError;
-
-    StandaloneECRelationshipInstancePtr relationshipInstancePtr = relationshipEnablerPtr->CreateRelationshipInstance();
-    if (relationshipInstancePtr.IsNull())
-        DgnDbStatus::SQLiteError;
-
-    std::array<ECObjectsStatus, 4> ecStatusArray =
-        {
-        relationshipInstancePtr->SetValue (PRF_PROP_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles_MemberPriority, ECValue (memberPriority)),
-        relationshipInstancePtr->SetValue (PRF_PROP_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles_MirrorProfileAboutYAxis, ECValue (component.mirrorAboutYAxis)),
-        relationshipInstancePtr->SetValue (PRF_PROP_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles_Offset, ECValue (component.offset)),
-        relationshipInstancePtr->SetValue (PRF_PROP_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles_Rotation, ECValue (component.rotation.Radians()))
-        };
-    if (std::any_of (ecStatusArray.begin(), ecStatusArray.end(), [](ECObjectsStatus status) { return status != ECObjectsStatus::Success; }))
-        return DgnDbStatus::SQLiteError;
-
-    ECInstanceKey relationshipKey;
-    DbResult dbResult = m_dgndb.InsertLinkTableRelationship (relationshipKey, *pRelationshipClass, m_elementId, component.singleProfileId, relationshipInstancePtr.get());
-    if (dbResult != BE_SQLITE_OK)
-        return DgnDbStatus::SQLiteError;
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<CompositeProfileComponent> ArbitraryCompositeProfile::GetComponents() const
-    {
-    bvector<CompositeProfileComponent> components (m_components);
-    for (auto& component : components)
-        component.singleProfilePtr = SinglePerimeterProfile::GetForEdit (m_dgndb, component.singleProfileId);
-
-    return components;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryCompositeProfile::SetComponents (bvector<CompositeProfileComponent> const& components)
+void ArbitraryCompositeProfile::SetComponents (bvector<ArbitraryCompositeProfileComponent> const& components)
     {
     m_components = components;
     }

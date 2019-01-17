@@ -206,10 +206,6 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_ZShapeProfile_FlangeSlope                                       "FlangeSlope"
 #define PRF_PROP_MaterialProfile_Material                                        "Material"
 #define PRF_PROP_MaterialProfile_Profile                                         "Profile"
-#define PRF_PROP_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles_MemberPriority            "MemberPriority"
-#define PRF_PROP_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles_MirrorProfileAboutYAxis   "MirrorProfileAboutYAxis"
-#define PRF_PROP_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles_Offset                    "Offset"
-#define PRF_PROP_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles_Rotation                  "Rotation"
 
 
 //-----------------------------------------------------------------------------------------

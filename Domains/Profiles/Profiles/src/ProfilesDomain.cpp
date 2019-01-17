@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <Profiles\ProfilesApi.h>
+#include <ProfilesInternal\ArbitraryCompositeProfileAspect.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -48,6 +49,7 @@ ProfilesDomain::ProfilesDomain() : DgnDomain (PRF_SCHEMA_NAME, "Bentley Profiles
     RegisterHandler (DoubleCShapeProfileHandler::GetHandler());
     RegisterHandler (DoubleLShapeProfileHandler::GetHandler());
     RegisterHandler (ArbitraryCompositeProfileHandler::GetHandler());
+    RegisterHandler (ArbitraryCompositeProfileAspectHandler::GetHandler());
     RegisterHandler (StandardProfileAspectHandler::GetHandler());
     RegisterHandler (CustomCardinalPointsAspectHandler::GetHandler());
     RegisterHandler (MaterialProfileDefinitionHandler::GetHandler());

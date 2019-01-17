@@ -1035,10 +1035,11 @@ IGeometryPtr ProfilesGeometry::CreateArbitraryCompositeShape (ArbitraryComposite
     {
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
 
-    bvector<CompositeProfileComponent> components = profile.GetComponents();
+    bvector<ArbitraryCompositeProfileComponent> components = profile.GetComponents();
     for (auto const& component : components)
         {
-        if (component.singleProfilePtr.IsNull())
+        ProfileCPtr singleProfilePtr = Profile::Get (profile.GetDgnDb(), component.singleProfileId);
+        if (singleProfilePtr.IsNull())
             return nullptr;
 
         DPoint3d scale = DPoint3d::From (1.0, component.mirrorAboutYAxis ? -1.0 : 1.0, 1.0);
@@ -1054,7 +1055,7 @@ IGeometryPtr ProfilesGeometry::CreateArbitraryCompositeShape (ArbitraryComposite
         Transform transform;
         BeAssert (transform.InitFrom (transformMatrix));
 
-        curveVector->Add (component.singleProfilePtr->GetShape()->Clone (transform)->GetAsCurveVector());
+        curveVector->Add (singleProfilePtr->GetShape()->Clone (transform)->GetAsCurveVector());
         }
 
     return IGeometry::Create (curveVector);

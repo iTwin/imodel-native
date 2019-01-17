@@ -29,6 +29,7 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\ArbitraryCompositeProfileAspect.cpp" />
     <ClCompile Include="src\AsymmetricIShapeProfile.cpp" />
     <ClCompile Include="src\BentPlateProfile.cpp" />
     <ClCompile Include="src\CapsuleProfile.cpp" />
@@ -72,6 +73,7 @@
     <ClCompile Include="src\ZShapeProfile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\PrivateAPI\ArbitraryCompositeProfileAspect.h" />
     <ClInclude Include="src\PrivateAPI\ProfilesLogging.h" />
     <ClInclude Include="src\PrivateAPI\ProfilesPrivateApi.h" />
     <ClInclude Include="src\PrivateAPI\ProfilesQuery.h" />

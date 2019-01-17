@@ -74,6 +74,8 @@ $(o)ArbitraryCenterLineProfile$(oext) : $(appSrc)ArbitraryCenterLineProfile.cpp 
 
 $(o)ArbitraryCompositeProfile$(oext) : $(appSrc)ArbitraryCompositeProfile.cpp ${MultiCompileDepends} $(appPublicApi)ArbitraryCompositeProfile.h
 
+$(o)ArbitraryCompositeProfileAspect$(oext) : $(appSrc)ArbitraryCompositeProfileAspect.cpp ${MultiCompileDepends} $(appPrivateApi)ArbitraryCompositeProfileAspect.h
+
 $(o)ArbitraryShapeProfile$(oext) : $(appSrc)ArbitraryShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)ArbitraryShapeProfile.h
 
 $(o)DerivedProfile$(oext) : $(appSrc)DerivedProfile.cpp ${MultiCompileDepends} $(appPublicApi)DerivedProfile.h

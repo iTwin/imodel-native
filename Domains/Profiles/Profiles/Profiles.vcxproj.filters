@@ -197,6 +197,9 @@
     <ClCompile Include="src\ProfilesQuery.cpp">
       <Filter>Src\PrivateAPI</Filter>
     </ClCompile>
+    <ClCompile Include="src\ArbitraryCompositeProfileAspect.cpp">
+      <Filter>Src\PrivateAPI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\PublicAPI\Profile.h">
@@ -332,6 +335,9 @@
       <Filter>PublicAPI\MaterialProfiles</Filter>
     </ClInclude>
     <ClInclude Include="src\PrivateAPI\ProfilesQuery.h">
+      <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PrivateAPI\ArbitraryCompositeProfileAspect.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
   </ItemGroup>
