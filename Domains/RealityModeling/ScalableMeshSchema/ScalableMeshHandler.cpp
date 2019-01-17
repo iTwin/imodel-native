@@ -1156,7 +1156,7 @@ void SMScene::LoadOverview(SMNode* node)
 
     node->Read3SMTile(in, *this, GetRenderSystemP(), false);
 
-    if (!node->_HasGraphics())
+    if (node->GetGeometry().empty())
         {
         node->m_canUnloadChildren = false;
 
