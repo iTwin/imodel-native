@@ -32,4 +32,9 @@ struct IModelBridgeRegistry : IRefCounted
     };
 
 
+struct iModelBridgeFeatureFlag
+    {
+    static constexpr CharCP WantProvenanceInBim = "IMODEL_BRIDGE_WANT_PROVENANCE_IN_BIM";
+    };
+
 END_BENTLEY_DGN_NAMESPACE

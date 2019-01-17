@@ -1048,7 +1048,7 @@ public:
 
     IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
 
-    IMODEL_BRIDGE_EXPORT bool WantModelProvenanceInBim(DgnDbR db);
+    IMODEL_BRIDGE_EXPORT static bool WantModelProvenanceInBim(DgnDbR db);
     //! @}
     };
 

@@ -1087,7 +1087,5 @@ bool iModelBridge::TestFeatureFlag(CharCP ff)
     {
     bool flagVal = false;
     iModelBridgeLdClient::GetInstance(GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
-    
-    //IMODEL_BRIDGE_WANT_PROVENANCE_IN_BIM
     return flagVal;
     }

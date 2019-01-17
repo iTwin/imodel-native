@@ -631,7 +631,7 @@ BentleyStatus ConverterApp::Run(int argc, WCharCP argv[])
     {
     iModelBridgeSacAdapter::InitCrt(false);
 
-    _GetConverterParams().SetWantProvenanceInBim(iModelBridge::TestFeatureFlag(IModelBridgeFeatureFlag::WantProvenanceInBim));
+    _GetConverterParams().SetWantProvenanceInBim(true);
 
     iModelBridgeSacAdapter::Params saparams;
     if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*this, saparams, argc, argv))
