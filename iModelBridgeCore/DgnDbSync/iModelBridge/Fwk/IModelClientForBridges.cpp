@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/IModelClientForBridges.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/Fwk/IModelClientForBridges.h>
@@ -20,51 +20,14 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ServiceLocalState : public IJsonLocalState
-    {
-    private:
-        Json::Value m_map;
-
-    public:
-        JsonValueR GetStubMap()
-            {
-            return m_map;
-            }
-        //! Saves the Utf8String value in the local state.
-        //! @note The nameSpace and key pair must be unique.
-        void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
-            {
-            Utf8PrintfString identifier("%s/%s", nameSpace, key);
-
-            if (value == "null")
-                {
-                m_map.removeMember(identifier);
-                }
-            else
-                {
-                m_map[identifier] = value;
-                }
-            };
-        //! Returns a stored Utf8String from the local state.
-        //! @note The nameSpace and key pair uniquely identifies the value.
-        Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
-            {
-            Utf8PrintfString identifier("%s/%s", nameSpace, key);
-            return m_map.isMember(identifier) ? m_map[identifier].asCString() : "null";
-            };
-    };
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ServiceLocalState* getLocalState()
+static IJsonLocalState* getLocalState()
     {
     BeSystemMutexHolder threadSafety;
-    static ServiceLocalState* s_localState;
+    static RuntimeJsonLocalState* s_localState;
     if (s_localState == nullptr)
-        s_localState = new ServiceLocalState;
+        s_localState = new RuntimeJsonLocalState;
     return s_localState;
     }
 
@@ -86,9 +49,9 @@ IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, 
     m_iModelId(args.m_iModelId)
     {
     ClientHelper::GetInstance()->SetUrl(args.m_url);
-	m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
+    m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
     ClientHelper::GetInstance()->SetUrl("");
-	}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
