@@ -2070,7 +2070,7 @@ public:
     void ClearV8ProgressMeter();
     
     //! Add model requiring reality tiles.
-    void AddModelRequiringRealityTiles(DgnModelId id, Utf8StringCR sourceFile, SyncInfo::V8FileSyncInfoId fileId) { m_modelsRequiringRealityTiles.Insert(id, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>(sourceFile, fileId)); }
+    void AddModelRequiringRealityTiles(DgnModelId id, Utf8StringCR sourceFile, SyncInfo::V8FileSyncInfoId fileId);
     //! @}
 
     //! @name Change Monitoring

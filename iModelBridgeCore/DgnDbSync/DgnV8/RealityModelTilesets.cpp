@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/RealityModelTilesets.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -383,11 +383,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             }
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
-
-        if (isUpdate)
-            m_syncInfo.UpdateImageryFile(model->GetModeledElementId(), currentLastModifiedTime, currentFileSize, currentEtag.c_str(), identifier.c_str());
-        else
-            m_syncInfo.InsertImageryFile(model->GetModeledElementId(), fileId, fileName.c_str(), currentLastModifiedTime, currentFileSize, currentEtag.c_str(), identifier.c_str());
+        m_syncInfo.UpdateImageryFile(model->GetModeledElementId(), currentLastModifiedTime, currentFileSize, currentEtag.c_str(), identifier.c_str());
 
         }
 

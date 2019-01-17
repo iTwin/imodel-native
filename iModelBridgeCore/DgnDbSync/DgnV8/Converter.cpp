@@ -2830,6 +2830,46 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+void Converter::AddModelRequiringRealityTiles(DgnModelId id, Utf8StringCR sourceFile, SyncInfo::V8FileSyncInfoId fileId)
+    {
+    m_modelsRequiringRealityTiles.Insert(id, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>(sourceFile, fileId));
+
+    BeFileName file(sourceFile.c_str());
+    uint64_t currentLastModifiedTime;
+    uint64_t currentFileSize;
+    Utf8String currentEtag;
+    GetSyncInfo().GetCurrentImageryInfo(sourceFile, currentLastModifiedTime, currentFileSize, currentEtag);
+
+    uint64_t existingLastModifiedTime;
+    uint64_t existingFileSize;
+    Utf8String existingEtag;
+    Utf8String rdsId;
+    bool isUpdate = false;
+
+    DgnElementId modeledElementId(DgnElementId(id.GetValue()));
+    Utf8String fileName = Utf8String(sourceFile.c_str());
+    if (GetSyncInfo().TryFindImageryFile(modeledElementId, fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
+        {
+        if (!existingEtag.empty())
+            {
+            if (existingEtag.Equals(currentEtag))
+                return;
+            }
+        else if (currentLastModifiedTime == existingLastModifiedTime && currentFileSize == existingFileSize)
+            return;
+        isUpdate = true;
+        }
+
+    if (isUpdate)
+        m_syncInfo.UpdateImageryFile(modeledElementId, currentLastModifiedTime, currentFileSize, currentEtag.c_str(), "");
+    else
+        m_syncInfo.InsertImageryFile(modeledElementId, fileId, sourceFile.c_str(), currentLastModifiedTime, currentFileSize, currentEtag.c_str(), "");
+
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Keith.Bentley                   02 / 15
 //---------------------------------------------------------------------------------------
 BentleyStatus SpatialConverterBase::DoConvertSpatialElement(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement)
