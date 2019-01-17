@@ -120,9 +120,9 @@ def main():
     # Relevant nugets (all others must be ignored until they are deleted from the server):
     # 2019.1.14.1: nuget containing CoreCustomAttributes schema bump to 1.0.1
     imodel02MinimumNugetVersion = "2019.1.14.1"
-    imodel02IgnoreNugetVersions = {}
+    imodel02IgnoreNugetVersions = {"2019.1.14.2"}
 
-    ec33MinimumNugetVersion = "2019.1.14.1"
+    ec33MinimumNugetVersion = "2019.1.17.1"
     ec33IgnoreNugetVersions = {}
 
     # Test runners are downloaded into src as pulling them in with every TMR might take too long
