@@ -417,17 +417,25 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ArbitraryCompositeProfileRefersToSinglePerimeterProfiles" modifier="Sealed" strength="referencing">
-        <BaseClass>bis:ElementGroupsMembers</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="has profiles" polymorphic="false">
-            <Class class="ArbitraryCompositeProfile" />
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is part of" polymorphic="true">
-            <Class class="SinglePerimeterProfile" />
-        </Target>
-        <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="" />
+    <ECEntityClass typeName="ArbitraryCompositeProfileAspect" modifier="Sealed" description="Aspect used by ArbitraryCompostiteProfile to reference SinglePerimeterProfile and geometry transformations for it. This cannot be done by a relationship class because we allow multiple references to the same profile with different transformations.">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="SingleProfile" relationshipName="ArbitraryCompositeProfileAspectRefersToSinglePerimeterProfile" direction="Forward" description="" />
         <ECProperty propertyName="Offset" typeName="point2d" description="" />
         <ECProperty propertyName="Rotation" typeName="double" description="" />
+        <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="" />
+        <ECProperty propertyName="MemberPriority" typeName="int" description="Member Priority, same as in bis:ElementGorupsMembers" />
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ArbitraryCompositeProfileAspectRefersToSinglePerimeterProfile" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="refers to profile" polymorphic="false">
+            <Class class="ArbitraryCompositeProfileAspect" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="SinglePerimeterProfile" />
+        </Target>
     </ECRelationshipClass>
 
     <ECEntityClass typeName="DoubleLShapeProfile" modifier="Sealed" description="A CompositeProfile comprised of back-to-back Ls with the horizontal legs at the top of the Profile.">
