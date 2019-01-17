@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileWriter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -78,7 +78,7 @@ BentleyStatus Writer::WriteGltf()
 
     long    startPosition =  m_buffer.GetSize();
     m_buffer.Append(Format::Gltf);
-    m_buffer.Append(Gltf::Version2);
+    m_buffer.Append(Gltf::Version1);
     long    lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);
     m_buffer.Append((const uint8_t*) &sceneStrLength, sizeof(sceneStrLength));
