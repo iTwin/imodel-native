@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformToolsCurl/RealityDataDownload.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,6 +11,7 @@
 #include <curl/curl.h>
 #include <thread>
 #include <chrono>
+#include <RealityPlatformTools/SimpleRDSApi.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -21,7 +22,7 @@ int RealityDataDownload::s_MaxRetryTentative = 25;
 //=======================================================================================
 
 static size_t callback_fwrite_func(void *buffer, size_t size, size_t nmemb, void *pClient)
-{
+    {
     if (NULL == pClient)
         return 0;
 
@@ -49,14 +50,14 @@ static size_t callback_fwrite_func(void *buffer, size_t size, size_t nmemb, void
 #endif
 
     return byteWritten;
-}
+    }
 
 static int callback_progress_func(void *pClient,
     curl_off_t dltotal,
     curl_off_t dlnow,
     curl_off_t ultotal,
     curl_off_t ulnow)
-{
+    {
     (void)ultotal;
     (void)ulnow;
 
@@ -74,16 +75,13 @@ static int callback_progress_func(void *pClient,
             pFileTrans->downloadedSizeStep = (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
             }
 
-        if ((size_t)dlnow > pFileTrans->downloadedSizeStep)
+        if ((size_t)dltotal > pFileTrans->downloadedSizeStep)
             {
-            if (pFileTrans->filesize == 0)
-                pFileTrans->downloadedSizeStep += pFileTrans->downloadedSizeStep;       // predefine step
-            else
-                pFileTrans->downloadedSizeStep += (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
+            // TODO Alain Robert XXX - The cast to size_t of the float is doubtful
+            pFileTrans->downloadedSizeStep += (size_t)pFileTrans->progressStep;
 
-            
             if (NULL != pFileTrans->pProgressFunc)
-                statusCode = (pFileTrans->pProgressFunc)((int) pFileTrans->index, pClient, (size_t) dlnow, pFileTrans->filesize);
+                statusCode = (pFileTrans->pProgressFunc)((int) pFileTrans->index, pClient, (size_t) dlnow, dltotal);
             }
         }
 
@@ -99,7 +97,7 @@ static int callback_progress_func(void *pClient,
         }
 
     return 0;
-}
+    }
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Francis Boily                   09/2015
@@ -116,6 +114,76 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return std::find_if(caps.begin(), caps.end(), [&capId](const downloadCap& obj) {return obj.sourceId == capId; })
     }*/
 
+static RealityDataDownload_ProgressCallBack s_RDSProgressCallback = 0;
+static RealityDataDownload_StatusCallBack s_RDSStatusCallback = 0;
+
+void RealityDataDownload::ParseRDS()
+    {
+    m_omittedEntries = bset<size_t>();
+
+    for(size_t i = 0; i < m_nbEntry; ++i)
+        {
+        WString url = WString(m_pEntries[i].mirrors[0].url.c_str(), true);
+        if(url.ContainsI(L"S3MXECPlugin") && !url.EndsWithI(L".zip"))
+            {
+            m_omittedEntries.insert(i);
+            /*size_t pos = url.find_last_of(L"/\\");
+            WString guid = url.substr(pos + 1, pos + 37);
+            m_RDSEntries.push_back(guid);*/
+            }
+        }
+    
+    s_RDSProgressCallback = m_pProgressFunc;
+    }
+
+static RealityDataDownload::FileTransfer* s_CurrentRDSDownload;
+
+static void RDSProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
+    {
+    if(s_RDSProgressCallback && s_CurrentRDSDownload != nullptr)
+        s_RDSProgressCallback((int)(s_CurrentRDSDownload->index), s_CurrentRDSDownload, (size_t)( 10000.00 * repoProgress), 10000);
+    }
+
+void RealityDataDownload::DownloadFromRDS()
+    {
+    RDSRequestManager::Setup();
+    
+    RealityDataService::SetProjectId(m_projectId);
+
+    for(bset<size_t>::iterator it = m_omittedEntries.begin(); it != m_omittedEntries.end(); ++it)
+        {
+        Mirror_struct& ms = m_pEntries[*it].mirrors[0];
+
+        WString url = WString(ms.url.c_str(), true);
+        size_t pos = url.find_last_of(L"/\\");
+        WString guid = url.substr(pos + 1, 36);
+        
+        BeFileName targetPath(BeFileName::GetDirectoryName(ms.filename.c_str()).c_str());
+        targetPath.AppendToPath(guid.c_str());
+        targetPath.AppendSeparator();
+        
+        RealityDataServiceDownload download = RealityDataServiceDownload(targetPath, Utf8String(guid.c_str()));
+        if (download.IsValidTransfer())
+            {
+            s_CurrentRDSDownload = &m_pEntries[*it];
+            download.SetProgressCallBack(RDSProgressFunc);
+            download.SetProgressStep(0.01);
+            download.OnlyReportErrors(true);
+            download.Perform();
+            }
+        Utf8String msg = Utf8PrintfString("RDS download completed for %ls", targetPath.c_str());
+        if(m_pStatusFunc)
+            m_pStatusFunc((int)(s_CurrentRDSDownload->index), s_CurrentRDSDownload, 0, msg.c_str());
+        }
+    }
+
+void RealityDataDownload::SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func, float pi_step)
+    {
+    m_pProgressFunc = pi_func; 
+    m_progressStep = pi_step;
+    s_RDSProgressCallback = m_pProgressFunc;
+    }
+
 RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName) : RealityDataDownload()
     {
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -130,6 +198,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
         InitEntry(i);
         m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
         }
+    ParseRDS();
     }
 
 RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_wMirrors) : RealityDataDownload()
@@ -148,6 +217,7 @@ RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_
         InitEntry(i);
         m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
         }
+    ParseRDS();
     }
 
 RealityDataDownload::RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters) :
@@ -177,6 +247,7 @@ RealityDataDownload::RealityDataDownload(const Link_File_wMirrors_wSisters& pi_L
         m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
 
         }
+    ParseRDS();
     }
 
 //----------------------------------------------------------------------------------------
@@ -213,162 +284,168 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
         }
 
     // if everything already downloaded, exit with success.
-    if (atLeast1Download == false)
-        return nullptr;
-
-    int still_running; /* keep number of running handles */
-    int repeats = 0;
-
-    do
+    if (atLeast1Download)
         {
-        CURLMcode mc; /* curl_multi_wait() return code */
-        int numfds;
+        int still_running; /* keep number of running handles */
+        int repeats = 0;
 
-        curl_multi_perform(m_pToolHandle, &still_running);
-
-        /* wait for activity, timeout or "nothing" */
-        mc = curl_multi_wait(m_pToolHandle, NULL, 0, 1000, &numfds);
-
-        if (mc != CURLM_OK)
+        do
             {
-            ReportStatus(-1, NULL, mc, "curl_multi_wait() failed");
-#ifdef TRACE_DEBUG
-               fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
-#endif
-            break;
-            }
+            CURLMcode mc; /* curl_multi_wait() return code */
+            int numfds;
 
-        /* 'numfds' being zero means either a timeout or no file descriptors to
-        wait for. Try timeout on first occurrence, then assume no file
-        descriptors and no file descriptors to wait for means wait for 100
-        milliseconds. */
+            curl_multi_perform(m_pToolHandle, &still_running);
 
-        if (!numfds)
-            {
-            repeats++; /* count number of repeated zero numfds */
-            if (repeats > 1)
-                std::this_thread::sleep_for(std::chrono::milliseconds(300)); /* sleep 300 milliseconds */
-            }
-        else
-            repeats = 0;
+            /* wait for activity, timeout or "nothing" */
+            mc = curl_multi_wait(m_pToolHandle, NULL, 0, 1000, &numfds);
 
-        CURLMsg *msg;
-        int nbQueue;
-        while ((msg = curl_multi_info_read(m_pToolHandle, &nbQueue)))
-            {
-            if (msg->msg == CURLMSG_DONE)
+            if (mc != CURLM_OK)
                 {
-                char *pClient;
-                curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
-                struct FileTransfer *pFileTrans = (struct FileTransfer *)pClient;
-
-                if (pFileTrans->fileStream.IsOpen())
-                    pFileTrans->fileStream.Close();
-
-                if(pFileTrans->mirrors[0].cap != nullptr)
-                    {
-                    DownloadCap* cap = pFileTrans->mirrors[0].cap;
-                    //bvector<downloadCap>::itterator it = findInCap(cap->sourceId, m_caps);
-                    if(m_caps.find(cap->sourceId) != m_caps.end())
-                        m_caps[cap->sourceId].currentDownloads --;
-                    }
-
-                // Retry on error
-                if (msg->data.result == 56)     // Recv failure, try again
-                    {
-                    if (pFileTrans->nbRetry < s_MaxRetryTentative)
-                        { 
-                        ++pFileTrans->nbRetry;
-                        pFileTrans->iAppend = 0;
-                        ReportStatus((int)pFileTrans->index, pClient, REALITYDATADOWNLOAD_RETRY_TENTATIVE, "Trying again...");
+                ReportStatus(-1, NULL, mc, "curl_multi_wait() failed");
 #ifdef TRACE_DEBUG
-                        fprintf(stderr, "R: %d - Retry(%d) <%ls>\n", REALITYDATADOWNLOAD_RETRY_TENTATIVE, pFileTrans->nbRetry, pFileTrans->filename.c_str());
+                fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
 #endif
-                        SetupRequestandFile(&m_pEntries[pFileTrans->index], true);
-                        still_running++;
-                        }
-                    else
-                        {   
-                        if(SetupMirror(pFileTrans->index, 56))
-                            still_running++;
-                        else
-                            {
-                            // Maximun retry done, return error.
-                            ReportStatus((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
-                            }
-                        }
-                    }
-                else if (msg->data.result == CURLE_OK)
-                    {
-                    ReportStatus((int) pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
-#ifdef TRACE_DEBUG
-                    fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
-#endif
+                break;
+                }
 
-                    FileTransfer* nextSister = pFileTrans->mirrors[0].nextSister;
-                    if(nextSister != nullptr)
-                        {
-                        if (m_pStatusFunc)
-                            m_pStatusFunc((int) pFileTrans->index, nextSister, REALITYDATADOWNLOAD_CONTACTING_SISTER, "File retrieved successfully, attempting to retrieve next sister");
-                        if (SetupRequestandFile(nextSister) == SetupRequestStatus::Success)
-                            {
-                            still_running++;
-                            }
-                        }
-                    }
-                else if (msg->data.result != CURLE_OK)
-                    { 
-                    if(SetupMirror(pFileTrans->index, msg->data.result)) //if there's an error, try next mirror
-                        still_running++;
+            /* 'numfds' being zero means either a timeout or no file descriptors to
+            wait for. Try timeout on first occurrence, then assume no file
+            descriptors and no file descriptors to wait for means wait for 100
+            milliseconds. */
 
-                    else
-                        {
-                        ReportStatus((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
-#ifdef TRACE_DEBUG
-                    fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
-#endif
-                        }
-                    }
-
-                curl_multi_remove_handle(m_pToolHandle, msg->easy_handle);
-                curl_easy_cleanup(msg->easy_handle);
+            if (!numfds)
+                {
+                repeats++; /* count number of repeated zero numfds */
+                if (repeats > 1)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(300)); /* sleep 300 milliseconds */
                 }
             else
-                {
-                ReportStatus(-1, NULL, msg->msg, "CurlMsg failed");
-#ifdef TRACE_DEBUG
-                    fprintf(stderr, "E: CURLMsg (%d)\n", msg->msg);
-#endif
-                }
+                repeats = 0;
 
-            if (still_running < MAX_NB_CONNECTIONS)
+            CURLMsg *msg;
+            int nbQueue;
+            while ((msg = curl_multi_info_read(m_pToolHandle, &nbQueue)))
                 {
-                // Other URL to download ?
-                if(m_waitingList.size() > 0)
+                if (msg->msg == CURLMSG_DONE)
                     {
-                    bpair<Utf8String, FileTransfer*> waiter;
-                    for (int i = 0; i < m_waitingList.size(); i++)
+                    char *pClient;
+                    curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
+                    struct FileTransfer *pFileTrans = (struct FileTransfer *)pClient;
+
+                    if (pFileTrans->fileStream.IsOpen())
+                        pFileTrans->fileStream.Close();
+
+                    if(pFileTrans->mirrors[0].cap != nullptr)
                         {
-                        waiter = m_waitingList[i];
-                        //bvector<downloadCap>::itterator it = findInCap(waiter->first, m_caps);
-                        if ((m_caps.find(waiter.first) != m_caps.end()) && (m_caps[waiter.first].currentDownloads < m_caps[waiter.first].concurrentDownloadCap))
-                            {
-                            SetupRequestandFile(waiter.second, false);
+                        DownloadCap* cap = pFileTrans->mirrors[0].cap;
+                        //bvector<downloadCap>::itterator it = findInCap(cap->sourceId, m_caps);
+                        if(m_caps.find(cap->sourceId) != m_caps.end())
+                            m_caps[cap->sourceId].currentDownloads --;
+                        }
+
+                    // Retry on error
+                    if (msg->data.result == 56)     // Recv failure, try again
+                        {
+                        if (pFileTrans->nbRetry < s_MaxRetryTentative)
+                            { 
+                            ++pFileTrans->nbRetry;
+                            pFileTrans->iAppend = 0;
+                            ReportStatus((int)pFileTrans->index, pClient, REALITYDATADOWNLOAD_RETRY_TENTATIVE, "Trying again...");
+#ifdef TRACE_DEBUG
+                            fprintf(stderr, "R: %d - Retry(%d) <%ls>\n", REALITYDATADOWNLOAD_RETRY_TENTATIVE, pFileTrans->nbRetry, pFileTrans->filename.c_str());
+#endif
+                            SetupRequestandFile(&m_pEntries[pFileTrans->index], true);
                             still_running++;
-                            m_waitingList.erase(m_waitingList.begin() + i);
-                            break;
+                            }
+                        else
+                            {   
+                            if(SetupMirror(pFileTrans->index, 56))
+                                still_running++;
+                            else
+                                {
+                                // Maximun retry done, return error.
+                                ReportStatus((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                                }
                             }
                         }
-                    }  
-                else if (m_curEntry < m_nbEntry)
+                    else if (msg->data.result == CURLE_OK)
+                        {
+                        ReportStatus((int) pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+#ifdef TRACE_DEBUG
+                        fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
+#endif
+
+                        FileTransfer* nextSister = pFileTrans->mirrors[0].nextSister;
+                        if(nextSister != nullptr)
+                            {
+                            if (m_pStatusFunc)
+                                m_pStatusFunc((int) pFileTrans->index, nextSister, REALITYDATADOWNLOAD_CONTACTING_SISTER, "File retrieved successfully, attempting to retrieve next sister");
+                            if (SetupRequestandFile(nextSister) == SetupRequestStatus::Success)
+                                {
+                                still_running++;
+                                }
+                            }
+                        }
+                    else if (msg->data.result != CURLE_OK)
+                        { 
+                        if(SetupMirror(pFileTrans->index, msg->data.result)) //if there's an error, try next mirror
+                            still_running++;
+
+                        else
+                            {
+                            ReportStatus((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+#ifdef TRACE_DEBUG
+                        fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
+#endif
+                            }
+                        }
+
+                    curl_multi_remove_handle(m_pToolHandle, msg->easy_handle);
+                    curl_easy_cleanup(msg->easy_handle);
+                    }
+                else
                     {
-                    if (SetupNextEntry())
-                        still_running++;
+                    ReportStatus(-1, NULL, msg->msg, "CurlMsg failed");
+#ifdef TRACE_DEBUG
+                        fprintf(stderr, "E: CURLMsg (%d)\n", msg->msg);
+#endif
+                    }
+
+                if (still_running < MAX_NB_CONNECTIONS)
+                    {
+                    // Other URL to download ?
+                    if(m_waitingList.size() > 0)
+                        {
+                        bpair<Utf8String, FileTransfer*> waiter;
+                        for (size_t i = 0; i < m_waitingList.size(); i++)
+                            {
+                            waiter = m_waitingList[i];
+                            //bvector<downloadCap>::itterator it = findInCap(waiter->first, m_caps);
+                            if ((m_caps.find(waiter.first) != m_caps.end()) && (m_caps[waiter.first].currentDownloads < m_caps[waiter.first].concurrentDownloadCap))
+                                {
+                                SetupRequestandFile(waiter.second, false);
+                                still_running++;
+                                m_waitingList.erase(m_waitingList.begin() + i);
+                                break;
+                                }
+                            }
+                        }  
+                    else if (m_curEntry < m_nbEntry)
+                        {
+                        if (SetupNextEntry())
+                            still_running++;
+                        }
                     }
                 }
-            }
 
-        } while (still_running);
+            } while (still_running);
+        }
+    else
+        {
+        delete m_dlReport;
+        m_dlReport = nullptr;
+        }
+    DownloadFromRDS();
 
     return m_dlReport;
     }

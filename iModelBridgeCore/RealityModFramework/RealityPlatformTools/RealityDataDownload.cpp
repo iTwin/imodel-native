@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/RealityDataDownload.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -78,10 +78,10 @@ void RealityDataDownload::InitEntry(size_t i)
         m_pEntries[i].nbRetry = 0;
         m_pEntries[i].index = i;
 
-        m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+        m_pEntries[i].downloadedSizeStep = 0; //DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
         m_pEntries[i].filesize = 0;
         m_pEntries[i].fromCache = true;                                 // from cache if possible by default
-        m_pEntries[i].progressStep = 0.01;
+        m_pEntries[i].progressStep = 0.01f;
     }
 
 void RealityDataDownload::AddSisterFiles(FileTransfer* ft, bvector<url_file_pair> sisters, size_t index, size_t sisterCount, size_t sisterIndex)
@@ -123,10 +123,10 @@ bool RealityDataDownload::SetupMirror(size_t index, int errorCode)
     m_pEntries[index].iAppend = 0;
     m_pEntries[index].nbRetry = 0;
 
-    m_pEntries[index].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+    m_pEntries[index].downloadedSizeStep = 0; //DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
     m_pEntries[index].filesize = 0;
     m_pEntries[index].fromCache = true;                                 // from cache if possible by default
-    m_pEntries[index].progressStep = 0.01;
+    m_pEntries[index].progressStep = 0.01f;
     SetupRequestandFile(&m_pEntries[index]);
     return true;
     }   
@@ -136,6 +136,8 @@ bool RealityDataDownload::SetupNextEntry()
     SetupRequestStatus status;
     do 
         {
+        while(m_omittedEntries.count(m_curEntry) > 0)
+            ++m_curEntry;
         if (m_curEntry < m_nbEntry)
             {
             status = SetupRequestandFile(&m_pEntries[m_curEntry]);

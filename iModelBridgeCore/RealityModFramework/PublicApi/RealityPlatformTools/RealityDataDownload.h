@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatformTools/RealityDataDownload.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,6 +14,7 @@
 #include <Bentley/bmap.h>
 #include <BeXml/BeXml.h>
 #include <Bentley/DateTime.h>
+#include <Bentley/bset.h>
 #include <RealityPlatformTools/WSGServices.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 
@@ -316,11 +317,8 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(WStringCR certificatePath) { m_certPath = certificatePath; };
 
     //! Set callback to follow progression of the download.
-    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func, float pi_step = 0.01) 
-        {
-        m_pProgressFunc = pi_func; 
-        m_progressStep = pi_step;
-        }
+    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func, float pi_step = 0.01f); 
+
     //! Set callback to allow the user to mass cancel all downloads
     REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataDownload_HeartbeatCallBack pi_func)
                                                                    {m_pHeartbeatFunc = pi_func;}
@@ -340,6 +338,9 @@ public:
     //! Set the timeout to cancel a download, if it hangs
     REALITYDATAPLATFORM_EXPORT void SetTimeout(long timeInS) { m_timeout = timeInS; }
 
+    REALITYDATAPLATFORM_EXPORT void SetProjectId(Utf8String guid) { m_projectId = guid; }
+
+
 private:
     RealityDataDownload();
     RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName);
@@ -358,10 +359,15 @@ private:
 
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
 
+    void ParseRDS();
+    void DownloadFromRDS();
+
     void*                       m_pToolHandle;
     size_t                      m_nbEntry;
     size_t                      m_curEntry;
     FileTransfer                *m_pEntries;
+    bvector<WString>            m_RDSEntries;
+    bset<size_t>                m_omittedEntries;
     long                        m_timeout = 0L;
 
     WString                                 m_certPath;
@@ -376,6 +382,8 @@ private:
     DownloadReport*                         m_dlReport;
     bmap<Utf8String, DownloadCap>           m_caps;
     bvector<bpair<Utf8String, FileTransfer*>> m_waitingList;
+
+    Utf8String                              m_projectId;
     };
     
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

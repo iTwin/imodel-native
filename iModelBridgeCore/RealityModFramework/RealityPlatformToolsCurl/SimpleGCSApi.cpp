@@ -9,7 +9,8 @@ bool GCSRequestManager::AlternateDownload
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(downloadOrder);
     if (pDownload != NULL)
         {
-        pDownload->SetProgressCallBack(GCS_progress_func, 0.1);
+        pDownload->SetProjectId(GeoCoordinationService::GetProjectId());
+        pDownload->SetProgressCallBack(GCS_progress_func, 0.1f);
         pDownload->SetStatusCallBack(GCS_status_func);
         if (!certificatePath.empty())
             pDownload->SetCertificatePath(certificatePath);

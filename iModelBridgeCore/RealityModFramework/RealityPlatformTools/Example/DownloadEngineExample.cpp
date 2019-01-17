@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/DownloadEngineExample.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -295,7 +295,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);
     if (pDownload != NULL)
         {
-        pDownload->SetProgressCallBack(callback_progress_func, 0.1);
+        pDownload->SetProgressCallBack(callback_progress_func, 0.1f);
         pDownload->SetStatusCallBack(callback_status_func);
         pDownload->Perform();
         }
