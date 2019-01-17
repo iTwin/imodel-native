@@ -29,7 +29,7 @@ BentleyStatus   iModelBridgeLdClient::Init(CharCP authKey)
         }
 
     unsigned int maxwaitmilliseconds = 60 * 1000;
-    m_client = LDClient::Init(m_config, m_user, maxwaitmilliseconds);
+    m_client = LDClientInit(m_config, m_user, maxwaitmilliseconds);
     if (NULL == m_client)
         {
         LDFree(m_config);
@@ -58,8 +58,12 @@ iModelBridgeLdClient::iModelBridgeLdClient()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeLdClient::Close()
     {
-    if (NULL == m_client)
-        m_client->close();
+    if (NULL != m_client)
+        {
+        LDClientClose(m_client);
+        LDFree(m_client);
+        m_client = NULL;
+        }
 
     if (NULL != m_user)
         {
@@ -71,12 +75,6 @@ BentleyStatus   iModelBridgeLdClient::Close()
         {
         LDFree(m_config);
         m_config = NULL;
-        }
-
-    if (NULL != m_client)
-        {
-        LDFree(m_client);
-        m_client = NULL;
         }
 
     return SUCCESS;
@@ -96,10 +94,10 @@ iModelBridgeLdClient::~iModelBridgeLdClient()
 BentleyStatus   iModelBridgeLdClient::IsFeatureOn(bool& flag, CharCP featureName)
     {
     static int timeOut = 60 * 1000;
-    if (!m_client->awaitInitialized(timeOut))
+    if (!LDClientAwaitInitialized(m_client,timeOut))
         return ERROR;
 
-    flag = m_client->boolVariation(featureName, flag);
+    flag = LDBoolVariation (m_client,featureName, flag);
     return SUCCESS;
     }
 

@@ -14,8 +14,8 @@
 
 typedef struct LDConfig_i LDConfig;
 typedef struct LDUser_i LDUser;
+struct LDClient_i;
 
-class LDClient;
 
 struct iModelBridgeLdClient
     {
@@ -23,7 +23,7 @@ struct iModelBridgeLdClient
         std::unordered_map <std::string, bool> m_featureFlags;
         LDConfig*   m_config;
         LDUser*     m_user;
-        LDClient*   m_client;
+        LDClient_i* m_client;
         
         iModelBridgeLdClient();
         BentleyStatus   Init(CharCP authKey);
