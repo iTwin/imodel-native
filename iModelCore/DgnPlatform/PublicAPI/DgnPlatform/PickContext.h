@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/PickContext.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -162,9 +162,9 @@ public:
     DGNVIEW_EXPORT PickContext(LocateOptions const& options, StopLocateTest* stopTester=nullptr);
     DGNVIEW_EXPORT bool PickElements(DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);
     DGNVIEW_EXPORT TestHitStatus TestHit(HitDetailCR, DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
-    static void InitBoresite(DRay3dR boresite, DPoint3dCR localPoint, DMatrix4dCR viewToLocal);
-    static void InitBoresite(DRay3dR boresite, DPoint3dCR worldPoint, DgnViewportCR vp, TransformCP localToWorld=nullptr);
-    static void InitBoresite(DRay3dR boresite, DgnButtonEventCR ev, TransformCP localToWorld=nullptr);
+    DGNVIEW_EXPORT static void InitBoresite(DRay3dR boresite, DPoint3dCR localPoint, DMatrix4dCR viewToLocal);
+    DGNVIEW_EXPORT static void InitBoresite(DRay3dR boresite, DPoint3dCR worldPoint, DgnViewportCR vp, TransformCP localToWorld=nullptr);
+    DGNVIEW_EXPORT static void InitBoresite(DRay3dR boresite, DgnButtonEventCR ev, TransformCP localToWorld=nullptr);
 
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   02/17
