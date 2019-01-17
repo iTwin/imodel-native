@@ -2,7 +2,7 @@
 #
 #     $Source: iModelBridge/iModelBridge.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -37,6 +37,12 @@ $(o)iModelBridgeSyncInfoFile$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFile.c
 
 $(o)iModelBridgeSyncInfoFileChangeDetector$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFileChangeDetector.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSyncInfoFile.h ${MultiCompileDepends}
 
+%if $(TARGET_PLATFORM)=="Windows"
+
+$(o)iModelBridgeLdClient$(oext) : $(_MakeFilePath)iModelBridgeLdClient.cpp $(_MakeFilePath)iModelBridgeLdClient.h ${MultiCompileDepends}
+
+%endif
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------
@@ -69,6 +75,7 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClien
 
 %if $(TARGET_PLATFORM)=="Windows"
     LINKER_LIBRARIES        + Dbghelp.lib
+    LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)windows-vs-64bit-ldapi$(libext)
 %endif
 
 %include $(sharedMki)linkLibrary.mki

@@ -1091,7 +1091,13 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
+    if (m_useIModelHub)
+        {
+        params.SetUrlEnvironment(m_iModelHubArgs->m_environment);
+        params.SetiModelName(m_iModelHubArgs->m_repositoryName);
+        }
     params.SetWantProvenanceInBim(m_jobEnvArgs.m_wantProvenanceInBim || iModelBridge::TestFeatureFlag(IModelBridgeFeatureFlag::WantProvenanceInBim));
+
     }
 
 /*---------------------------------------------------------------------------------**//**

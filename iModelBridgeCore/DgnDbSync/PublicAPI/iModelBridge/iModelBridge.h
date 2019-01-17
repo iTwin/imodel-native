@@ -17,6 +17,7 @@
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <WebServices/Client/ClientInfo.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
+#include <WebServices/Configuration/UrlProvider.h>
 
 #ifdef __IMODEL_BRIDGE_BUILD__
     #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
@@ -536,6 +537,10 @@ struct iModelBridge
         DgnElementId m_jobSubjectId;
         Utf8String   m_jobRunCorrelationId;
         IDmsSupport* m_dmsSupport;
+
+        Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
+        WebServices::UrlProvider::Environment   m_environment;    //!< Connect environment
+
         bool m_wantProvenanceInBim {};
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
@@ -643,6 +648,12 @@ struct iModelBridge
 
         void SetWantProvenanceInBim(bool v) { m_wantProvenanceInBim = v; }
         bool GetWantProvenanceInBim() const { return m_wantProvenanceInBim; }
+
+        Utf8String GetiModelName() const { return m_repositoryName; }
+        void SetiModelName(Utf8StringCR repositoryName)  { m_repositoryName = repositoryName; }
+
+        WebServices::UrlProvider::Environment GetUrlEnvironment() const { return m_environment; }
+        void SetUrlEnvironment(WebServices::UrlProvider::Environment env)  { m_environment = env; }
 
 	    //! Check if a document is assigned to this job or not.
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
@@ -1035,9 +1046,9 @@ public:
     //! @name Feature Flags
     //! @{
 
-    IMODEL_BRIDGE_EXPORT static bool TestFeatureFlag(IModelBridgeFeatureFlag);
+    IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
 
-    IMODEL_BRIDGE_EXPORT static bool WantModelProvenanceInBim(DgnDbR db);
+    IMODEL_BRIDGE_EXPORT bool WantModelProvenanceInBim(DgnDbR db);
     //! @}
     };
 

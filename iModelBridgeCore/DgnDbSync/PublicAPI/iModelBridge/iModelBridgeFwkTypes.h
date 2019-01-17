@@ -31,9 +31,5 @@ struct IModelBridgeRegistry : IRefCounted
     virtual ~IModelBridgeRegistry() {}
     };
 
-enum class IModelBridgeFeatureFlag
-    {
-    WantProvenanceInBim
-    };
 
 END_BENTLEY_DGN_NAMESPACE
