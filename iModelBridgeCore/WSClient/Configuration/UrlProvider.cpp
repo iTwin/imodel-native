@@ -2,7 +2,7 @@
 |
 |     $Source: Configuration/UrlProvider.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -52,7 +52,7 @@ UrlProvider::UrlDescriptor::Registry s_urlRegistry;
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
     "BIMReviewShare",
-    "https://dev-bimreviewshare.bentley.com",
+    "https://qa-bimreviewshare.bentley.com",
     "https://qa-bimreviewshare.bentley.com",
     "https://bimreviewshare.bentley.com",
     nullptr,
