@@ -19,25 +19,20 @@ public:
     typedef ArbitraryCompositeProfile::CreateParams CreateParams;
 
 protected:
-    CompositeProfileComponent CreateComponent (SinglePerimeterProfilePtr const& profilePtr)
+    ArbitraryCompositeProfileComponent CreateComponent (DgnElementId const& profileId)
         {
-        return CompositeProfileComponent (*profilePtr, false, DPoint2d::From (0.0, 0.0), Angle::FromRadians (0.0));
+        return ArbitraryCompositeProfileComponent (profileId, DPoint2d::From (0.0, 0.0));
         }
 
-    CompositeProfileComponent CreateComponent (DgnElementId const& profileId)
-        {
-        return CompositeProfileComponent (profileId, false, DPoint2d::From (0.0, 0.0), Angle::FromRadians (0.0));
-        }
-
-    CompositeProfileComponent CreateDefaultComponent()
+    ArbitraryCompositeProfileComponent CreateDefaultComponent()
         {
         CircleProfilePtr profilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
-        return CreateComponent (profilePtr);
+        return CreateComponent (profilePtr->GetElementId());
         }
 
-    bvector<CompositeProfileComponent> DefaultComponentVector()
+    bvector<ArbitraryCompositeProfileComponent> DefaultComponentVector()
         {
-        return bvector<CompositeProfileComponent> { CreateDefaultComponent(), CreateDefaultComponent() };
+        return bvector<ArbitraryCompositeProfileComponent> { CreateDefaultComponent(), CreateDefaultComponent() };
         }
     };
 
@@ -46,7 +41,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ArbitraryCompositeProfileTestCase, Create_CreateParams_NewInstance)
     {
-    CreateParams params (GetModel(), "Composite", bvector<CompositeProfileComponent>());
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent>());
 
     ArbitraryCompositeProfilePtr profilePtr = CreateProfile (params);
     EXPECT_TRUE (profilePtr.IsValid());
@@ -55,15 +50,40 @@ TEST_F (ArbitraryCompositeProfileTestCase, Create_CreateParams_NewInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryCompositeProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
+TEST_F (ArbitraryCompositeProfileTestCase, Insert_TwoDifferentProfileInstances_SuccessfulInsert)
     {
-    SinglePerimeterProfilePtr profile1Ptr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
-    SinglePerimeterProfilePtr profile2Ptr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
-    CompositeProfileComponent component1 = CreateComponent (profile1Ptr);
-    CompositeProfileComponent component2 = CreateComponent (profile2Ptr->GetElementId());
+    ProfilePtr profile1Ptr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+    ProfilePtr profile2Ptr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+    ArbitraryCompositeProfileComponent component1 = CreateComponent (profile1Ptr->GetElementId());
+    ArbitraryCompositeProfileComponent component2 = CreateComponent (profile2Ptr->GetElementId());
 
-    CreateParams requiredParams (GetModel(), "Composite", bvector<CompositeProfileComponent> {component1, component2});
-    EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { component1, component2 });
+    EXPECT_SUCCESS_Insert (params) << "Profile should succeed to insert two components referencing different profiles.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ArbitraryCompositeProfileTestCase, Insert_TwoSameProfileInstances_SuccessfulInsert)
+    {
+    ProfilePtr profilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+    ArbitraryCompositeProfileComponent component1 = CreateComponent (profilePtr->GetElementId());
+    ArbitraryCompositeProfileComponent component2 = CreateComponent (profilePtr->GetElementId());
+
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { component1, component2 });
+    EXPECT_SUCCESS_Insert (params) << "Profile should succeed to insert with two components referencing same profile.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ArbitraryCompositeProfileTestCase, Insert_SingleProfileInstances_FailedInsert)
+    {
+    ProfilePtr profilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+    ArbitraryCompositeProfileComponent component = CreateComponent (profilePtr->GetElementId());
+
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { component });
+    EXPECT_FAIL_Insert (params) << "Profile should succeed to insert with two components referencing same profile.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,17 +91,16 @@ TEST_F (ArbitraryCompositeProfileTestCase, Insert_ValidCreateParams_SuccessfulIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ArbitraryCompositeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
     {
-    CompositeProfileComponent component = CreateDefaultComponent();
-    CreateParams params (GetModel(), "Composite", bvector<CompositeProfileComponent> { component });
+    ArbitraryCompositeProfileComponent component = CreateDefaultComponent();
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { component });
 
     ArbitraryCompositeProfilePtr profilePtr = CreateProfile (params);
     ASSERT_TRUE (profilePtr.IsValid());
 
-    bvector<CompositeProfileComponent> components = profilePtr->GetComponents();
-    CompositeProfileComponent& firstComponent = components[0];
+    bvector<ArbitraryCompositeProfileComponent> components = profilePtr->GetComponents();
+    ArbitraryCompositeProfileComponent& firstComponent = components[0];
     EXPECT_EQ ("Composite", profilePtr->GetName());
     EXPECT_EQ (component.singleProfileId, firstComponent.singleProfileId);
-    EXPECT_EQ (component.singleProfileId, firstComponent.singleProfilePtr->GetElementId());
     EXPECT_EQ (component.offset, firstComponent.offset);
     EXPECT_EQ (component.mirrorAboutYAxis, firstComponent.mirrorAboutYAxis);
     EXPECT_EQ (component.rotation.Radians(), firstComponent.rotation.Radians());
@@ -92,20 +111,19 @@ TEST_F (ArbitraryCompositeProfileTestCase, GetProperties_ProfileInstance_ValidPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ArbitraryCompositeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     {
-    CompositeProfileComponent component = CreateDefaultComponent();
-    CreateParams params (GetModel(), "Composite", bvector<CompositeProfileComponent>());
+    ArbitraryCompositeProfileComponent component = CreateDefaultComponent();
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent>());
 
     ArbitraryCompositeProfilePtr profilePtr = CreateProfile (params);
     ASSERT_TRUE (profilePtr.IsValid());
 
     profilePtr->SetName ("Composite");
-    profilePtr->SetComponents (bvector<CompositeProfileComponent> { component });
+    profilePtr->SetComponents (bvector<ArbitraryCompositeProfileComponent> { component });
 
-    bvector<CompositeProfileComponent> components = profilePtr->GetComponents();
-    CompositeProfileComponent& firstComponent = components[0];
+    bvector<ArbitraryCompositeProfileComponent> components = profilePtr->GetComponents();
+    ArbitraryCompositeProfileComponent& firstComponent = components[0];
     EXPECT_EQ ("Composite", profilePtr->GetName());
     EXPECT_EQ (component.singleProfileId, firstComponent.singleProfileId);
-    EXPECT_EQ (component.singleProfileId, firstComponent.singleProfilePtr->GetElementId());
     EXPECT_EQ (component.offset, firstComponent.offset);
     EXPECT_EQ (component.mirrorAboutYAxis, firstComponent.mirrorAboutYAxis);
     EXPECT_EQ (component.rotation.Radians(), firstComponent.rotation.Radians());
@@ -141,9 +159,9 @@ TEST_F (ArbitraryCompositeProfileTestCase, Insert_ValidProfileName_SuccessfulIns
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ArbitraryCompositeProfileTestCase, Insert_InvalidSingleProfileId_FailedInsert)
     {
-    CompositeProfileComponent component1 (DgnElementId ((uint64_t)0), false, DPoint2d::From (0.0, 0.0), Angle::FromRadians (0.0));
-    CompositeProfileComponent component2 (DgnElementId ((uint64_t)0), false, DPoint2d::From (0.0, 0.0), Angle::FromRadians (0.0));
+    ArbitraryCompositeProfileComponent component1 (DgnElementId ((uint64_t)0), DPoint2d::From (0.0, 0.0));
+    ArbitraryCompositeProfileComponent component2 (DgnElementId ((uint64_t)0), DPoint2d::From (0.0, 0.0));
 
-    CreateParams params (GetModel(), "Composite", bvector<CompositeProfileComponent> { component1, component2 });
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { component1, component2 });
     EXPECT_FAIL_Insert (params) << "Profile should fail with invalid SinglieProfile id.";
     }

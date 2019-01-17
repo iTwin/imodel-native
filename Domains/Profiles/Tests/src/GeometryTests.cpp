@@ -284,14 +284,14 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     CircleProfilePtr rightEyeBallPtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Right eye ball", 0.2));
     TrapeziumProfilePtr nosePtr = InsertElement<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Nose", 0.0001, 1, 2.0, 0.5));
     CShapeProfilePtr mouthPtr = InsertElement<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "Mouth", 1.5, 4.0, 0.15, 0.15, 0.5));
-    bvector<CompositeProfileComponent> faceComponents =
+    bvector<ArbitraryCompositeProfileComponent> faceComponents =
         {
-        CompositeProfileComponent (*leftEyePtr, false, DPoint2d::From (-2.0, 0.0), Angle::FromRadians (0.0)),
-        CompositeProfileComponent (*leftEyeBallPtr, false, DPoint2d::From (-2.0, 0.0), Angle::FromRadians (0.0)),
-        CompositeProfileComponent (*rightEyePtr, false, DPoint2d::From (2.0, 0.0), Angle::FromRadians (0.0)),
-        CompositeProfileComponent (*rightEyeBallPtr, false, DPoint2d::From (2.0, 0.0), Angle::FromRadians (0.0)),
-        CompositeProfileComponent (*nosePtr, false, DPoint2d::From (0.0, -2.0), Angle::FromRadians (0.0)),
-        CompositeProfileComponent (*mouthPtr, false, DPoint2d::From (0.0, -3.5), Angle::FromRadians (PI / 2.0))
+        ArbitraryCompositeProfileComponent (leftEyePtr->GetElementId(), DPoint2d::From (-2.0, 0.0), Angle::FromRadians (0.0), false),
+        ArbitraryCompositeProfileComponent (leftEyeBallPtr->GetElementId(), DPoint2d::From (-2.0, 0.0), Angle::FromRadians (0.0), false),
+        ArbitraryCompositeProfileComponent (rightEyePtr->GetElementId(), DPoint2d::From (2.0, 0.0), Angle::FromRadians (0.0), false),
+        ArbitraryCompositeProfileComponent (rightEyeBallPtr->GetElementId(), DPoint2d::From (2.0, 0.0), Angle::FromRadians (0.0), false),
+        ArbitraryCompositeProfileComponent (nosePtr->GetElementId(), DPoint2d::From (0.0, -2.0), Angle::FromRadians (0.0), false),
+        ArbitraryCompositeProfileComponent (mouthPtr->GetElementId(), DPoint2d::From (0.0, -3.5), Angle::FromRadians (PI / 2.0), false)
         };
     InsertProfileGeometry<ArbitraryCompositeProfile> (ArbitraryCompositeProfile::CreateParams (GetModel(), "Smiley face", faceComponents), true);
     }
