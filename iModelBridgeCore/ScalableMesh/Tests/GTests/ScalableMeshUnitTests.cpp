@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/GTests/ScalableMeshUnitTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -146,7 +146,7 @@ class ScalableMeshTest : public ::testing::Test
             return true;
             };
         getNonEmptyNodes(sm->GetRootNode());
-        
+        if(nodesList.empty()) return nullptr;
         if (returnFirstNonEmptyNode) return nodesList[0];
         std::random_device rd;
         std::default_random_engine e1(rd());
@@ -161,31 +161,38 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
     protected:
         BeFileName m_filename;
 
+        void RemoveTempFiles()
+            {
+            BeFileName tempClipFile = ScalableMeshGTestUtil::GetTempPathFromProjectPath(m_filename);
+            tempClipFile.append(L"_clips");
+
+
+            BeFileName tempClipDefFile = ScalableMeshGTestUtil::GetTempPathFromProjectPath(m_filename);
+            tempClipDefFile.append(L"_clipDefinitions");
+
+            if(BeFileName::DoesPathExist(tempClipFile.c_str()))
+                {
+                ASSERT_TRUE(BeFileNameStatus::Success == DELETE_FILE(tempClipFile.c_str(), true));
+                }
+            if(BeFileName::DoesPathExist(tempClipDefFile.c_str()))
+                {
+                ASSERT_TRUE(BeFileNameStatus::Success == DELETE_FILE(tempClipDefFile.c_str(), true));
+                }
+            }
     public:
         virtual void SetUp()
             {
             m_filename = GetParam();
+
+            //remove any existing 3sm clip files for this filename from the temp folder
+            RemoveTempFiles();
             }
 
         virtual void TearDown()
-        {
-            //remove the 3sm clip files for this filename
-            BeFileName tempClipFile = ScalableMeshGTestUtil::GetTempPathFromProjectPath(m_filename);
-            tempClipFile.append(L"_clips");
-
-            
-            BeFileName tempClipDefFile = ScalableMeshGTestUtil::GetTempPathFromProjectPath(m_filename);
-            tempClipDefFile.append(L"_clipDefinitions");
-
-            if (BeFileName::DoesPathExist(tempClipFile.c_str()))
-                {
-                ASSERT_TRUE(BeFileNameStatus::Success == DELETE_FILE(tempClipFile.c_str(), true));
-                }
-            if (BeFileName::DoesPathExist(tempClipDefFile.c_str()))
-                {
-                ASSERT_TRUE(BeFileNameStatus::Success == DELETE_FILE(tempClipDefFile.c_str(), true));
-                }
-        }
+            {
+            //remove the 3sm clip files for this filename from the temp folder
+            RemoveTempFiles();
+            }
         BeFileName GetFileName() { return m_filename; }
         ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
 
@@ -1784,20 +1791,27 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
-    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
-
-    if (nodeP->GetPointCount() > 4)
-    {
 #ifdef VANCOUVER_API
-        range.scaleAboutCenter(&range, 0.75);
+    range.scaleAboutCenter(&range, 0.75);
 #else
-        range.ScaleAboutCenter(range, 0.75);
+    range.ScaleAboutCenter(range, 0.75);
 #endif
 
-        Transform tr = Transform::FromIdentity();
+    bvector<DPoint3d> clipPoints;
+    CreateSimpleClipFromRangeHelper(clipPoints, range);
 
-        bvector<DPoint3d> clipPoints;
-        CreateSimpleClipFromRangeHelper(clipPoints, range);
+    DRange3d clipRange = DRange3d::From(clipPoints);
+
+
+    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh, [&] (IScalableMeshNodePtr nodeP)
+                                                   {
+                                                   return clipRange.IntersectsWith(nodeP->GetContentExtent());
+                                                   });
+
+    if(nodeP->GetPointCount() > 4)
+        {
+
+        Transform tr = Transform::FromIdentity();
 
         uint64_t clipId = 1;
         ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
@@ -1805,11 +1819,11 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false, true);
 
         auto mesh = nodeP->GetMesh(flags);
-        if (!nodeP->GetContentExtent().IsNull())
+        if(!nodeP->GetContentExtent().IsNull())
             ASSERT_TRUE(mesh.IsValid());
-        if (mesh.IsValid())
-        {
-            if (nodeP->IsTextured())
+        if(mesh.IsValid())
+            {
+            if(nodeP->IsTextured())
                 ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() != nullptr);
             else
                 ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() == nullptr);
@@ -1825,8 +1839,8 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
             ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
             ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
             ASSERT_GE(nodeP->GetPointCount(), mesh->GetNbPoints());
+            }
         }
-    }
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2411,18 +2425,25 @@ TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
         {
         return nodeP->HasAnyClip();
         });
+    if(nodeP != nullptr)
+        {
+        ASSERT_TRUE(nodeP != nullptr);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, false);
 
-    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, false);
-
-    Transform tr = myScalableMesh->GetReprojectionTransform();
-    nodeP->RefreshMergedClip(tr);
-    auto mesh = nodeP->GetMeshUnderClip(flags, clipId);
-    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
-    { 
-        ASSERT_TRUE(mesh.IsValid());
-        for (size_t pt = 0; pt < mesh->GetPolyfaceQuery()->GetPointIndexCount(); ++pt)
-            ASSERT_TRUE(range.IsContainedXY(mesh->GetPolyfaceQuery()->GetPointCP()[mesh->GetPolyfaceQuery()->GetPointIndexCP()[pt]-1]));
-    }
+        Transform tr = myScalableMesh->GetReprojectionTransform();
+        nodeP->RefreshMergedClip(tr);
+        auto mesh = nodeP->GetMeshUnderClip(flags, clipId);
+        if(!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+            {
+            ASSERT_TRUE(mesh.IsValid());
+            for(size_t pt = 0; pt < mesh->GetPolyfaceQuery()->GetPointIndexCount(); ++pt)
+                ASSERT_TRUE(range.IsContainedXY(mesh->GetPolyfaceQuery()->GetPointCP()[mesh->GetPolyfaceQuery()->GetPointIndexCP()[pt] - 1]));
+            }
+        }
+    else
+        {
+        std::cerr << "[          ] Skipping data where clips has no effect on the mesh..." << std::endl;
+        }
 }
 
 TEST_P(ScalableMeshTestWithParams, MeshClipperClipFilterModes3D)

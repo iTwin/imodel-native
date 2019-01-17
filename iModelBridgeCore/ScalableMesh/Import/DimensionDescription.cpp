@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:47:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -15,32 +15,6 @@
 #include <ScalableMesh/Import/Exceptions.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsiclass                                                  Raymond.Gauthier   07/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DimensionType::Info
-    {
-    const WString                m_name;
-    size_t                          m_size;
-
-    explicit                        Info                               (const WChar*      name,
-                                                                        size_t              size)
-        :   m_name(name),
-            m_size(size)
-        {
-        }
-
-    bool                            operator==                         (const Info&         rhs) const
-        {
-        return m_name == rhs.m_name;
-        }
-    bool                            operator<                          (const Info&         rhs) const
-        {
-        return m_name < rhs.m_name;
-        }
-    };
 
 
 namespace {
@@ -52,7 +26,6 @@ DimensionType::Info                 s_typeInfoUInt16               (L"UInt16",  
 DimensionType::Info                 s_typeInfoUInt32               (L"uint32_t",          4);
 DimensionType::Info                 s_typeInfoFloat32              (L"Float32",         4);
 DimensionType::Info                 s_typeInfoFloat64              (L"Float64",         8);
-
 
 
 /*---------------------------------------------------------------------------------**//**

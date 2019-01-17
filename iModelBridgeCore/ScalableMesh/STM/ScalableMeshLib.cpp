@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ScalableMeshLib.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -632,6 +632,35 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     if (NULL != t_scalableTerrainModelHost)
         return;
 
+
+    //register types
+
+    const WChar TIN_AS_LINEAR_HEADER_TYPE_NAME[] = L"TINAsLinearHeader";
+    static BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearHeaderType(TIN_AS_LINEAR_HEADER_TYPE_NAME, sizeof(ISMStore::FeatureHeader));
+
+    const WChar TIN_AS_LINEAR_POINT_TYPE_NAME[] = L"TINAsLinearPoint";
+    static BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearPointType(TIN_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
+
+    const WChar MESH_AS_LINEAR_HEADER_TYPE_NAME[] = L"MeshAsLinearHeader";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMesAsLinearPointType(MESH_AS_LINEAR_HEADER_TYPE_NAME, sizeof(ISMStore::FeatureHeader));
+
+    const WChar MESH_AS_LINEAR_POINT_TYPE_NAME[] = L"MeshAsLinearPoint";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearPointIdxType(MESH_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
+    const WChar MESH_PTS_NAME[] = L"MeshPoints";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshHeaderType(MESH_PTS_NAME, sizeof(DPoint3d));
+
+    const WChar MESH_INDEX_NAME[] = L"MeshIndex";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshPointType(MESH_INDEX_NAME, sizeof(int32_t));
+
+    const WChar MESH_METADATA_NAME[] = L"MeshMetadata";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshMetadataType(MESH_METADATA_NAME, sizeof(uint8_t));
+
+    const WChar MESH_TEX_NAME[] = L"MeshTex";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshTexType(MESH_TEX_NAME, sizeof(uint8_t));
+
+    const WChar MESH_UV_NAME[] = L"MeshUv";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshUvType(MESH_UV_NAME, sizeof(DPoint2d));
+
     // Register point converters:
     static RegisterIDTMPointConverter<DPoint3d, DPoint3d>                        s_ptTypeConv0;
 
@@ -664,6 +693,7 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     static RegisterTINAsIDTMLinearToIDTMLinearConverter                              s_tinToLinTypeConv0;
 
     static RegisterMeshConverter<DPoint3d, DPoint3d>                        s_ptMeshConv0;
+
 
 
     // Register Moniker

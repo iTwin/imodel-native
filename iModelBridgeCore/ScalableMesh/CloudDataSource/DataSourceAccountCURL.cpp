@@ -13,6 +13,11 @@
 #include <Bentley/BeFile.h>
 #endif
 
+#ifdef VANCOUVER_API
+#define ISURL(filename) BeFileName::IsUrl(filename)
+#else
+#define ISURL(filename) NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6))
+#endif
 OpenSSLMutexes* OpenSSLMutexes::s_instance = nullptr;
 
 OpenSSLMutexes::OpenSSLMutexes(size_t numMutexes)
@@ -260,7 +265,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         //assert(!"cURL error, download failed");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
-    else if (!IsResponseOK(response_header))
+    else if (ISURL(url.c_str()) && !IsResponseOK(response_header))
         {
         //assert(!"HTTP error, download failed or resource not found");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);

@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -1244,7 +1244,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             if (!m_streamingSettings->IsValid())
                 return ERROR;
             if (m_streamingSettings->IsDataFromRDS())
-                m_smRDSProvider = IScalableMeshRDSProvider::Create(m_streamingSettings->GetUtf8ProjectID(), m_streamingSettings->GetUtf8GUID());
+                m_smRDSProvider = IScalableMeshRDSProvider::Create("https://" + m_streamingSettings->GetUtf8ServerID() + ".bentley.com/", m_streamingSettings->GetUtf8ProjectID(), m_streamingSettings->GetUtf8GUID());
             m_isCesium3DTiles = m_streamingSettings->IsCesium3DTiles();
             m_isFromStubFile = m_streamingSettings->IsStubFile();
 
@@ -3629,7 +3629,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
         DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnModel));
         return this->_Reproject(newDgnGcsPtr.get(), dgnModel);
         }
-    else 
     #endif
     
     // Greate a GCS from the ScalableMesh
