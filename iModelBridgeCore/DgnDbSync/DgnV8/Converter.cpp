@@ -8,6 +8,7 @@
 #include "ConverterInternal.h"
 #include <GeoCoord\BaseGeoCoord.h>
 
+// #define WIP_DUMP
 
 // Via RequiredRepository entry in the DgnV8ConverterDLL Part. The way this piece was designed was that is was so small, every library gets and builds as source.
 #include "../../V8IModelExtraFiles/V8IModelExtraFiles.h"
@@ -1051,6 +1052,7 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
             }
 
         PhysicalPartitionPtr ed = PhysicalPartition::Create(parentSubject, partitionCode.GetValueUtf8CP());
+        ed->SetUserLabel(ConverterDataStrings::GetString(ConverterDataStrings::PhysicalPartitionUserLabel()).c_str());
         PhysicalPartitionCPtr partition = ed->InsertT<PhysicalPartition>();
         if (!partition.IsValid())
             {
@@ -1514,12 +1516,11 @@ static void dumpParentAndChildren(DgnElementCR el, int indent)
     
     dumpElement(el);
     
-    if (nullptr != dynamic_cast<PhysicalPartition const*>(&el))
-        dumpPartitionRepositoryLink(el);
-
     auto subj = dynamic_cast<Subject const*>(&el);
     if (nullptr != subj)
         printf(" %s", Json::FastWriter::ToString(subj->GetSubjectJsonProperties()).c_str());
+
+    dumpPartitionRepositoryLink(el);
 
     puts("");
 
@@ -1837,15 +1838,14 @@ void Converter::InitLinkConverter()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::InitGroupModel()
     {
-    Utf8CP partitionName = "Converted Groups";
-    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), partitionName);
+    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), SubjectConvertedGroupsCode);
     DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
     m_groupModelId = DgnModelId(partitionId.GetValueUnchecked());
     
     if (m_groupModelId.IsValid())
         return BentleyStatus::SUCCESS;
 
-    GroupInformationPartitionPtr ed = GroupInformationPartition::Create(GetJobSubject(), partitionName);
+    GroupInformationPartitionPtr ed = GroupInformationPartition::Create(GetJobSubject(), partitionCode.GetValueUtf8CP());
     GroupInformationPartitionCPtr partition = ed->InsertT<GroupInformationPartition>();
     if (!partition.IsValid())
         return BentleyStatus::ERROR;
@@ -1863,15 +1863,14 @@ BentleyStatus Converter::InitGroupModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::InitDrawingListModel()
     {
-    Utf8CP partitionName = "Converted Drawings";
-    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), partitionName);
+    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), SubjectConvertedDrawingsCode);
     DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
     m_drawingListModelId = DgnModelId(partitionId.GetValueUnchecked());
     
     if (m_drawingListModelId.IsValid())
         return BentleyStatus::SUCCESS;
 
-    DocumentPartitionPtr ed = DocumentPartition::Create(GetJobSubject(), partitionName);
+    DocumentPartitionPtr ed = DocumentPartition::Create(GetJobSubject(), partitionCode.GetValueUtf8CP());
     DocumentPartitionCPtr partition = ed->InsertT<DocumentPartition>();
     if (!partition.IsValid())
         return BentleyStatus::ERROR;
@@ -1889,15 +1888,14 @@ BentleyStatus Converter::InitDrawingListModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::InitSheetListModel()
     {
-    Utf8CP partitionName = "Converted Sheets";
-    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), partitionName);
+    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), SubjectConvertedSheetsCode);
     DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
     m_sheetListModelId = DgnModelId(partitionId.GetValueUnchecked());
     
     if (m_sheetListModelId.IsValid())
         return BentleyStatus::SUCCESS;
 
-    DocumentPartitionPtr ed = DocumentPartition::Create(GetJobSubject(), partitionName);
+    DocumentPartitionPtr ed = DocumentPartition::Create(GetJobSubject(), partitionCode.GetValueUtf8CP());
     DocumentPartitionCPtr partition = ed->InsertT<DocumentPartition>();
     if (!partition.IsValid())
         return BentleyStatus::ERROR;
@@ -1919,14 +1917,13 @@ DefinitionModelPtr Converter::GetJobDefinitionModel()
         return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
 
     SubjectCR job = GetJobSubject();
-    Utf8PrintfString partitionName("Definition Model For %s", job.GetDisplayLabel().c_str());
-    DgnCode partitionCode = DefinitionPartition::CreateCode(job, partitionName);
+    DgnCode partitionCode = DefinitionPartition::CreateCode(job, SubjectDefinitionsCode);
     DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
     m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());
     if (m_jobDefinitionModelId.IsValid())
         return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
 
-    DefinitionPartitionPtr ed = DefinitionPartition::Create(job, partitionName.c_str());
+    DefinitionPartitionPtr ed = DefinitionPartition::Create(job, partitionCode.GetValueUtf8CP());
     DefinitionPartitionCPtr partition = ed->InsertT<DefinitionPartition>();
     if (!partition.IsValid())
         return DefinitionModelPtr();

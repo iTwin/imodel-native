@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ConverterTestsBaseFixture.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -75,9 +75,13 @@ struct ConverterTestBaseFixture : public testing::Test
     void countElements(DgnModel& model, int expected);
     void countElementsInModelByClass(DgnModel& model, DgnClassId classId, int expected);
     void countModels(DgnDbR db, int ndrawings_expected, int nspatial_expected);
+    SubjectCPtr GetFirstJobSubjectUnderParent(SubjectCR);
     SubjectCPtr GetFirstJobSubject(DgnDbR db);
     SubjectCPtr GetJobHierarchySubject(DgnDbR db);
     SubjectCPtr GetReferencesChildSubjectOf(SubjectCR);
+    SubjectCPtr GetFirstSourceMasterModelSubject(DgnDbR);
+    size_t CountJobSubjects(DgnDbR);
+    size_t CountSourceMasterModelSubjects(DgnDbR);
 
     DefinitionModelPtr GetJobDefinitionModel(DgnDbR db);
     bool ShouldImportSchema(BentleyApi::Utf8StringCR fullSchemaName, DgnV8Api::DgnModel& v8Model) { return _ShouldImportSchema(fullSchemaName, v8Model); }

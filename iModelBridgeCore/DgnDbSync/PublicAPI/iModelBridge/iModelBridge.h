@@ -1026,9 +1026,10 @@ public:
 
     //! Default implementation to create a bridge job name. The function uses details from params. The resulting string will be unique within an iModel.
     //! @param bridgeSpecificSuffix A suffix specfic to a bridge that can be used to store additional information.
-    //! @param db The iModel to test for subject name uniqueness
+    //! @param parent The parent subject, which will be the parent of the JobSubject element and is the "scope" in which the subject name must be unique. For most bridges,
+    //! This should be a Subject that identifies the root file.
     //! @param params The bridge parameters structure
-    IMODEL_BRIDGE_EXPORT static Utf8String ComputeJobSubjectName(DgnDbCR db, Params const& params, Utf8StringCR bridgeSpecificSuffix);
+    IMODEL_BRIDGE_EXPORT static Utf8String ComputeJobSubjectName(SubjectCR parent, Params const& params, Utf8StringCR bridgeSpecificSuffix);
 
     //! @}
 

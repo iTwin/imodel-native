@@ -88,7 +88,8 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     if (nullptr != rootSubjectDescription)
         createProjectParams.SetRootSubjectDescription(rootSubjectDescription);
 
-    createProjectParams.SetRootSubjectName(_GetParams().GetBridgeRegSubKeyUtf8().c_str());
+    Utf8String rootSubjName(_GetParams().GetBriefcaseName().GetBaseName());
+    createProjectParams.SetRootSubjectName(rootSubjName.c_str());
 
     // Create the DgnDb file. All currently registered domain schemas are imported.
     BeSQLite::DbResult createStatus;
@@ -880,8 +881,10 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& params, Utf8StringCR bridgeSpecificSuffix)
+Utf8String      iModelBridge::ComputeJobSubjectName(SubjectCR parent, Params const& params, Utf8StringCR bridgeSpecificSuffix)
     {
+    auto& db = parent.GetDgnDb();
+
     // Use the document GUID, if available, to ensure a unique Job subject name.
     Utf8String docIdStr;
     auto docGuid = params.QueryDocumentGuid(params.GetInputFileName());
@@ -899,13 +902,13 @@ Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& pa
         jobName.append(bridgeSpecificSuffix);
         }
 
-    DgnCode code = Subject::CreateCode(*db.Elements().GetRootSubject(), jobName.c_str());
+    DgnCode code = Subject::CreateCode(parent, jobName.c_str());
     int i = 0;
     while (db.Elements().QueryElementIdByCode(code).IsValid())
         {
         Utf8String uniqueJobName(jobName);
         uniqueJobName.append(Utf8PrintfString("%d", ++i).c_str());
-        code = Subject::CreateCode(*db.Elements().GetRootSubject(), uniqueJobName.c_str());
+        code = Subject::CreateCode(parent, uniqueJobName.c_str());
         }
     jobName = code.GetValueUtf8();
     return jobName;

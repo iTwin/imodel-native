@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Issues.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -72,7 +72,14 @@ Utf8String Converter::IssueReporter::FmtTransform(Transform const& trans)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Converter::IssueReporter::FmtFileBaseName(DgnV8Api::DgnFile const& ff)
     {
-    Utf8String fn(BeFileName::GetFileNameWithoutExtension(ff.GetFileName().c_str()));
+    Bentley::WString basename;
+    if (BSISUCCESS != DgnV8Api::DgnFile::ParsePackagedName(nullptr, nullptr, &basename, ff.GetFileName().c_str()))
+        {
+        basename = ff.GetFileName();
+        }
+
+    Utf8String fn(BeFileName::GetFileNameWithoutExtension(basename.c_str()).c_str());
+
     size_t idot = fn.find(".");
     if (idot != Utf8String::npos)
         fn.erase(idot);

@@ -36,12 +36,11 @@ static Utf8CP s_barGuid = "6640b375-a539-4e73-b3e1-2c0ceb912552";
 static bvector<SubjectCPtr> getJobSubjects(DgnDbR db)
     {
 	bvector<SubjectCPtr> subjects;
-    auto childids = db.Elements().GetRootSubject()->QueryChildren();
-    for (auto childid : childids)
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(db, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Job') is not null");
+    while (BE_SQLITE_ROW != stmt.Step())
         {
-        auto subj = db.Elements().Get<Subject>(childid);
-        if (subj.IsValid() && JobSubjectUtils::IsJobSubject(*subj))
-            subjects.push_back(subj);
+        subjects.push_back(db.Elements().Get<Subject>(stmt.GetValueId<DgnElementId>(0)));
         }
     return subjects;
     }

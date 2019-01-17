@@ -1588,7 +1588,6 @@ SyncInfo::Level SyncInfo::InsertLevel(DgnSubCategoryId subcategoryid, DgnV8Model
     if (m_converter._WantProvenanceInBim())
         {
         auto subCatEl = GetDgnDb()->Elements().GetForEdit<DgnSubCategory>(subcategoryid);
-        // *** TODO: Check to see if an aspect (from some other source model) is already on element?
         auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(vlevel, v8model, m_converter);
         aspect.AddAspect(*subCatEl);
         subCatEl->Update();
