@@ -894,6 +894,7 @@ struct Converter
         L10N_STRING(Drawings)                           // =="Drawings"==
         L10N_STRING(GlobalProperties)                   // =="Global properties"==
         L10N_STRING(SpatialData)                        // =="Spatial data"==
+        L10N_STRING(PhysicalPartitionUserLabel)         // =="Content"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     static constexpr Utf8CP SubjectPhysicalBreakdownStructureCode =  "Physical";
@@ -2404,6 +2405,7 @@ public:
     protected:
     DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type v8ConverterType);
     DGNDBSYNC_EXPORT SubjectCPtr GetSourceMasterModelSubject(DgnV8ModelR v8RootModel);
+    DGNDBSYNC_EXPORT Utf8String ComputeReferenceSubjectName(DgnAttachmentCR);
 
     public:
 

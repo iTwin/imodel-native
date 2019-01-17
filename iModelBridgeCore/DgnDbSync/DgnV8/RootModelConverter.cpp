@@ -378,6 +378,42 @@ SubjectCPtr SpatialConverterBase::GetSourceMasterModelSubject(DgnV8ModelR v8Root
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SpatialConverterBase::ComputeReferenceSubjectName(DgnAttachmentCR attachment)
+    {
+    BeAssert(nullptr != attachment.GetDgnModelP());
+    auto& v8Model = *attachment.GetDgnModelP();
+    auto& v8File = *v8Model.GetDgnFileP();
+
+    Bentley::WString v8FileName;
+    if (BSISUCCESS != DgnV8Api::DgnFile::ParsePackagedName(nullptr, nullptr, &v8FileName, v8File.GetFileName().c_str()))
+        v8FileName = v8File.GetFileName();
+    
+    Utf8String refFileName(BeFileName::GetFileNameAndExtension(v8FileName.c_str()).c_str());
+
+    auto modelName = _ComputeModelName(v8Model);
+
+    auto logicalName = attachment.GetLogicalName();
+
+    // The name/code of the attachment subject element should be what displays in the References dialog in MicroStation:
+    //      [logicalname,] filename[, modelname]
+    //  modelname is omitted if the attachment is to the Default model.
+
+    Utf8String refname;
+
+    if (0 != *logicalName)
+        refname.append(Utf8String(logicalName)).append(", ");;
+    
+    refname.append(refFileName);
+
+    if (!modelName.EqualsI(GetFileBaseName(v8File)))
+        refname.append(", ").append(modelName);
+
+    return refname;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type jtype)
@@ -664,11 +700,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
             continue;
             }
 
-        auto refname = IssueReporter::FmtFileBaseName(*attachment->GetDgnModelP()->GetDgnFileP());
-        auto refModelName = _ComputeModelName(*attachment->GetDgnModelP());
-        if (!refModelName.EqualsI(refname))
-            refname.append(", ").append(refModelName);
-        SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, refname, ModelSubjectType::References);
+        SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, ComputeReferenceSubjectName(*attachment), ModelSubjectType::References);
         if (!myRefsSubject.IsValid())
             {
             BeAssert(false);
