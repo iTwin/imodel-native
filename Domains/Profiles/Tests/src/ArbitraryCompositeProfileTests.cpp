@@ -264,6 +264,37 @@ TEST_F (ArbitraryCompositeProfileTestCase, DeleteReferencedProfile_ExistingCompo
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ArbitraryCompositeProfileTestCase, UpdateReferencedProfile_ExistingCompositeProfile_UpdatedCompositeGeometry)
     {
+    RectangleProfilePtr rectanglePtr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r", 1.0, 1.0));
+
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { CreateComponent (*rectanglePtr), CreateComponent (*rectanglePtr) });
+    ProfilePtr profilePtr = InsertElement<ArbitraryCompositeProfile> (params);
+    DgnElementId compositeProfileId = profilePtr->GetElementId();
+
+    DRange3d range;
+    ASSERT_TRUE (Profile::Get (GetDb(), compositeProfileId)->GetShape()->TryGetRange (range));
+    EXPECT_EQ (1.0, range.XLength());
+    EXPECT_EQ (1.0, range.YLength());
+
+    rectanglePtr->SetWidth (2.0);
+    rectanglePtr->Update();
+
+    ASSERT_TRUE (Profile::Get (GetDb(), compositeProfileId)->GetShape()->TryGetRange (range));
+    EXPECT_EQ (2.0, range.XLength());
+    EXPECT_EQ (1.0, range.YLength());
+
+    rectanglePtr->SetDepth (2.0);
+    rectanglePtr->Update();
+
+    ASSERT_TRUE (Profile::Get (GetDb(), compositeProfileId)->GetShape()->TryGetRange (range));
+    EXPECT_EQ (2.0, range.XLength());
+    EXPECT_EQ (2.0, range.YLength());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ArbitraryCompositeProfileTestCase, UpdateReferencedProfiles_ExistingCompositeProfile_UpdatedCompositeGeometry)
+    {
     RectangleProfilePtr rectangle1Ptr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r1", 1.0, 1.0));
     RectangleProfilePtr rectangle2Ptr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r2", 1.0, 1.0));
 

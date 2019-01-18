@@ -152,7 +152,7 @@ bvector<RefCountedPtr<T>> ProfilesQuery::SelectByNavigationProperty (DgnDb const
                                                                      Utf8CP pClassName, Utf8CP pNavigationPropertyName, DgnDbStatus* pStatus)
     {
     Utf8String sqlString;
-    sqlString += "SELECT ECInstanceId FROM " PRF_SCHEMA_NAME "." + Utf8String (pClassName) +
+    sqlString += "SELECT DISTINCT ECInstanceId FROM " PRF_SCHEMA_NAME "." + Utf8String (pClassName) +
                  " WHERE " + Utf8String (pNavigationPropertyName) + ".Id=?";
 
     return selectProfiles<T> (db, referencedProfileId, sqlString.c_str(), pStatus);
@@ -172,7 +172,7 @@ bvector<RefCountedPtr<T>> ProfilesQuery::SelectByAspectNavigationProperty (DgnDb
                                                                            Utf8CP pAspectName, Utf8CP pNavigationPropertyName, DgnDbStatus* pStatus)
     {
     Utf8String sqlString;
-    sqlString += "SELECT Element.Id FROM " PRF_SCHEMA_NAME "." + Utf8String (pAspectName) +
+    sqlString += "SELECT DISTINCT Element.Id FROM " PRF_SCHEMA_NAME "." + Utf8String (pAspectName) +
                  " WHERE " + Utf8String (pNavigationPropertyName) + ".Id=?";
 
     return selectProfiles<T> (db, referencedProfileId, sqlString.c_str(), pStatus);
