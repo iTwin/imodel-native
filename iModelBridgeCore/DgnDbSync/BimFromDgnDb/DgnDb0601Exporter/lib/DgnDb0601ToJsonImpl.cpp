@@ -1369,7 +1369,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportSchemas() const
                     if (prop->IsCalculated())
                         prop->SetIsReadOnly(false);
                     // BisCore renames several properties on core classes.  This could cause a conflict with an inherited class's property, so we need to rename it
-                    if (prop->GetName().EqualsIAscii("Model") || prop->GetName().EqualsIAscii("Parent") || prop->GetName().EqualsIAscii("ID"))
+                    if (nonConstClass->Is(m_elementClass) && (prop->GetName().EqualsIAscii("Model") || prop->GetName().EqualsIAscii("Parent") || prop->GetName().EqualsIAscii("ID")))
                         {
                         nonConstClass->RenameConflictProperty(prop, true);
                         }
@@ -1851,6 +1851,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElements(Json::Value& entry, Utf8CP sch
         Json::Value obj = Json::Value(Json::ValueType::objectValue);
         obj.clear();
         jsonAdapter.GetRowInstance(obj);
+        RenameConflictMembers(obj, prefix.c_str(), "ID");
 
         obj[JSON_INSTANCE_ID] = IdToString(obj["$ECInstanceId"].asString().c_str()).c_str();
         obj.removeMember("$ECInstanceId");
@@ -2240,7 +2241,8 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
     Utf8PrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     if (aspectId.IsValid())
         {
-        ecSql.append(" WHERE ECInstanceId=%" PRIu64, aspectId.GetValue());
+        Utf8PrintfString append(" WHERE ECInstanceId=%" PRIu64, aspectId.GetValue());
+        ecSql.append(append.c_str());
         }
     CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement(ecSql.c_str());
     if (!statement.IsValid())
