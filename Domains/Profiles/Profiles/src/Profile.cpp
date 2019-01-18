@@ -80,37 +80,26 @@ DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
 
 /*---------------------------------------------------------------------------------**//**
 * Profiles should override this method to update geometry of profiles that reference/
-* depend on it. See to Profile::UpdateGeometry.
+* depend on it. If overriden, T_Super must be called. See Profile::UpdateGeometry.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_UpdateInDb()
     {
-    // TODO Karolis: Update geometry for Profiles that are referencing this profile:
-    // DerivedProfile, ArbitraryCompositeProfile
+    // TODO Karolis: Update geometry for DerivedProfiles that are referencing this profile.
 
-    m_geometryUpdated = true;
+    // Finishing update operation for this Profile - new calls to Update will require to update geometry.
+    m_geometryUpdated = false;
+
     return T_Super::_UpdateInDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Prohibit deleteion of this profile if it is being referenced by ArbitraryCompositeProfile.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_OnDelete() const
     {
-    DgnDbStatus dbStatus;
-    DgnElementId compositeProfileId = ProfilesQuery::SelectFirstByAspectNavigationProperty (m_dgndb, m_elementId,
-        PRF_CLASS_ArbitraryCompositeProfileAspect, PRF_PROP_ArbitraryCompositeProfileAspect_SingleProfile, &dbStatus);
-    if (dbStatus != DgnDbStatus::Success)
-        return dbStatus;
-
-    if (compositeProfileId.IsValid())
-        {
-        ProfilesLog::FailedDelete_ProfileHasReference (PRF_CLASS_Profile, m_elementId, PRF_CLASS_ArbitraryCompositeProfile, compositeProfileId);
-        return DgnDbStatus::ForeignKeyConstraint;
-        }
-
     // TODO Karolis: Prohibit deletion of this profile if it is being referenced by DerivedProfile.
+
     return T_Super::_OnDelete();
     }
 
@@ -148,9 +137,11 @@ bool Profile::CreateGeometry()
 /*---------------------------------------------------------------------------------**//**
 * Public, non exported method for internal use only. Used to update geometry of profiles
 * that reference/depend on 'relatedProfile'. This method should be called in
-* _UpdateInDb() passing 'this' as a parameter to profiles that need the geometry update
+* _UpdateInDb() passing 'this' as a parameter to profiles that need the geometry update.
+* Note _UpdateInDb() callback is important here because the profile geometry will get
+* updated during _OnUpdate() which happens before _UpdateInDb().
 * e.g. LShapeProfile should call doubleLShapeProfile->UpdateGeometry (this); folowed
-* by a doubleLShapeProfile->Update() to save geometry changes.
+* by a doubleLShapeProfile->Update() to save geometry changes
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::UpdateGeometry (Profile const& relatedProfile)

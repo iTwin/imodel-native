@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PublicAPI/SinglePerimeterProfile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,6 +23,9 @@ struct SinglePerimeterProfile : Profile
 
 protected:
     explicit SinglePerimeterProfile (CreateParams const& params) : T_Super (params) {}
+
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (SinglePerimeterProfile)
