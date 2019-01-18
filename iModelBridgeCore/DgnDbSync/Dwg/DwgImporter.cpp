@@ -2217,7 +2217,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
 
     DwgImportHost::GetHost().Initialize (*this);
     DwgImportHost::GetHost().NewProgressMeter ();
-    DwgImporter::RegisterProtocalExtensions ();
+    DwgImporter::RegisterProtocolExtensions ();
 
     // try loading user object enablers if specified
     for (auto& oe : userObjectEnablers)

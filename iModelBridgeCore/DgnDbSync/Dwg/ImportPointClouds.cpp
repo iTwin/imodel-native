@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportPointClouds.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgPointCloudExExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgPointCloudExExt)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          06/16
@@ -20,7 +20,7 @@ DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgPointCloudExExt)
 class PointsCollector : public IPointsProcessor
 {
 private:
-    ProtocalExtensionContext&   m_context;
+    ProtocolExtensionContext&   m_context;
     Render::GeometryParams&     m_geometryParams;
     GeometryBuilderR            m_geometryBuilder;
     Transform                   m_worldToElement;
@@ -31,7 +31,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-explicit PointsCollector (ProtocalExtensionContext& context, GeometryBuilderR builder, Render::GeometryParams& params)
+explicit PointsCollector (ProtocolExtensionContext& context, GeometryBuilderR builder, Render::GeometryParams& params)
     : m_context(context), m_geometryBuilder(builder), m_geometryParams(params)
     {
     m_worldToElement.InitIdentity ();
@@ -112,7 +112,7 @@ virtual IPointsProcessor::Status    _Process (PointCloudDataQueryCP dataQuery) o
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgPointCloudExExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
+BentleyStatus   DwgPointCloudExExt::_ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer)
     {
     DwgDbEntityPtr&     entity = context.GetEntityPtrR ();
     DwgDbPointCloudExCP pointcloud = DwgDbPointCloudEx::Cast(entity.get());

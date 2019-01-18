@@ -54,6 +54,7 @@ BimFromJsonImpl::BimFromJsonImpl(DgnDb* dgndb, bool setQuietAssertions) : m_dgnd
 
     m_meter = DgnPlatformLib::GetHost().GetProgressMeter();
     m_importTimer.Init(false);
+    m_counter = 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -301,6 +302,9 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
 
     if (objectType.Equals(JSON_TYPE_Schema))
         m_importTimer.Start();
+
+    if (++m_counter % 5000 == 0)
+        m_dgndb->SaveChanges();
 
     return SUCCESS;
     }

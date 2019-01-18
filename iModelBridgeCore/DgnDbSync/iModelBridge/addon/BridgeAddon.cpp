@@ -143,6 +143,13 @@ wchar_t const** argv = argptrs.data();\
     }\
 }
 
+#define SET_ARG_NO_VALUE(MEMBER, COMMAND) \
+{\
+    if(json.isMember(MEMBER)) { \
+        args.push_back(WPrintfString(L"--%s", COMMAND));\
+    }\
+}
+
 // Note: Used by OidcTokenProvider.cpp.
 Napi::Function RequestTokenFunction() 
     {
@@ -206,7 +213,10 @@ int RunBridge(Env env, const char* jsonString)
     SET_ARG("fwk_jobrun_guid", L"fwk-jobrun-guid");
     SET_ARG("fwk_imodelbank_url", L"fwk-imodelbank-url");    
     SET_ARG("fwk_jobrequest_guid", L"fwk-jobrequest-guid");  
-    SET_ARG("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary");  
+    SET_ARG("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary"); 
+
+    SET_ARG_NO_VALUE("fwk_skip_assignment_check", L"fwk-skip-assignment-check");
+     
     
     bvector<WCharCP> argptrs;
     MAKE_ARGC_ARGV(argptrs, args);

@@ -141,7 +141,7 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
 
 #elif DWGTOOLKIT_RealDwg
 
-    acrxRegisterService (NAME_DwgProtocalExtension);
+    acrxRegisterService (NAME_DwgProtocolExtension);
     // load point cloud DBX for DwgDbPointCloudEx
     acrxLoadModule (L"AcDbPointCloudObj.dbx", 0);
 #if VendorVersion == 2017
