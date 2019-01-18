@@ -1814,10 +1814,14 @@ void SyncInfo::V8ElementExternalSourceAspect::AssertMatch(DgnElementCR el, DgnV8
     // TODO: Get and check the aspect corresponding to the original v8 model
     // BeAssert(GetScope().GetValue() == el.GetModelId().GetValue()); -- No. scope identifies the model in the bim that represents the v8 element's model. The v8 element itself might not have been added to that bim model. For example, when we encounter a NamedGroup definiton element in a model, we typically write it to the bim dictionary model.
     BeAssert(GetKind() == ExternalSourceAspect::Kind::Element);
+    
     auto ss = GetSourceState();
-    BeAssert(ss.m_hash.size() == sizeof(elprov.m_hash.m_buffer));
-    BeAssert(std::equal(ss.m_hash.begin(), ss.m_hash.end(), elprov.m_hash.m_buffer));
+
     BeAssert(ss.m_lastModifiedTime == elprov.m_lastModified);
+
+    Utf8String provHash;
+    iModelExternalSourceAspect::HexStrFromBytes(provHash, elprov.m_hash.m_buffer);
+    BeAssert(ss.m_hash.Equals(provHash));
     }
 #endif
 
@@ -1907,7 +1911,7 @@ SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect:
 void SyncInfo::V8ElementExternalSourceAspect::Update(ElementProvenance const& prov)
     {
     SourceState ss;
-    prov.GetHashAsByteVector(ss.m_hash);
+    iModelExternalSourceAspect::HexStrFromBytes(ss.m_hash, prov.m_hash.m_buffer);
     ss.m_lastModifiedTime = prov.m_lastModified; 
     SetSourceState(ss); 
     }

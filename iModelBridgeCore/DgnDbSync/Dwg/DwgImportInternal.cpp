@@ -24,37 +24,37 @@ USING_NAMESPACE_DWG
 #define gpDesc      g_pDesc
 #endif
 
-DWG_TypeP(RxClass)  DwgProtocalExtension::gpDesc = nullptr;
+DWG_TypeP(RxClass)  DwgProtocolExtension::gpDesc = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DWG_TypeP(RxClass)  DwgProtocalExtension::desc ()
+DWG_TypeP(RxClass)  DwgProtocolExtension::desc ()
     {
     if (gpDesc != nullptr)
         return gpDesc;
 
-    return gpDesc = DwgRxClass::QueryClassFromDictionary (NAME_DwgProtocalExtension);
+    return gpDesc = DwgRxClass::QueryClassFromDictionary (NAME_DwgProtocolExtension);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DWG_TypeP(RxClass)  DwgProtocalExtension::Desc ()
+DWG_TypeP(RxClass)  DwgProtocolExtension::Desc ()
     {
-    return  DwgProtocalExtension::desc ();
+    return  DwgProtocolExtension::desc ();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgProtocalExtension* DwgProtocalExtension::Cast (DWG_TypeCP(RxObject) obj)
+DwgProtocolExtension* DwgProtocolExtension::Cast (DWG_TypeCP(RxObject) obj)
     {
-    DwgProtocalExtension* extensionObj = (DwgProtocalExtension*)obj;
+    DwgProtocolExtension* extensionObj = (DwgProtocolExtension*)obj;
     if (nullptr != extensionObj)
         {
 #ifdef DWGTOOLKIT_RealDwg
-        if (!extensionObj->IsKindOf(DwgProtocalExtension::Desc()))
+        if (!extensionObj->IsKindOf(DwgProtocolExtension::Desc()))
             return  nullptr;
 #endif
         }
@@ -65,85 +65,87 @@ DwgProtocalExtension* DwgProtocalExtension::Cast (DWG_TypeCP(RxObject) obj)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DWG_TypeP(RxClass)  DwgProtocalExtension::isA () const
+DWG_TypeP(RxClass)  DwgProtocolExtension::isA () const
     {
     if (gpDesc != nullptr)
         return gpDesc;
 
-    return gpDesc = DwgRxClass::QueryClassFromDictionary (NAME_DwgProtocalExtension);
+    return gpDesc = DwgRxClass::QueryClassFromDictionary (NAME_DwgProtocolExtension);
     }
 
 #ifdef DWGTOOLKIT_OpenDwg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DWG_TypeP(RxObject) DwgProtocalExtension::queryX (DWG_TypeCP(RxClass) obj) const
+DWG_TypeP(RxObject) DwgProtocolExtension::queryX (DWG_TypeCP(RxClass) obj) const
     {
-    return obj->queryX (DwgProtocalExtension::desc());
+    return obj->queryX (DwgProtocolExtension::desc());
     }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        DwgProtocalExtension::rxInit ()
+void        DwgProtocolExtension::rxInit ()
     {
     if (gpDesc != nullptr)
         {
-        DWG_TypeP(RxClass) pClass = DwgRxClass::QueryClassFromDictionary (NAME_DwgProtocalExtension);
+        DWG_TypeP(RxClass) pClass = DwgRxClass::QueryClassFromDictionary (NAME_DwgProtocolExtension);
         if (pClass)
             {
             if (gpDesc == pClass)
                 return;
             else
-                BeAssert (false && L"DwgProtocalExtension class mismatch!");
+                BeAssert (false && L"DwgProtocolExtension class mismatch!");
             }
         }
-    gpDesc = DwgRxClass::NewDwgRxClass (NAME_DwgProtocalExtension, L"DwgRxObject");
+    gpDesc = DwgRxClass::NewDwgRxClass (NAME_DwgProtocolExtension, L"DwgRxObject");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        DwgProtocalExtension::RxInit ()
+void        DwgProtocolExtension::RxInit ()
     {
-    DwgProtocalExtension::rxInit ();
+    DwgProtocolExtension::rxInit ();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        DwgImporter::RegisterProtocalExtensions ()
+void        DwgImporter::RegisterProtocolExtensions ()
     {
-    DwgProtocalExtension::RxInit ();
+    DwgProtocolExtension::RxInit ();
     DwgRasterImageExt::RxInit ();
     DwgPointCloudExExt::RxInit ();
     DwgViewportExt::RxInit ();
     DwgLightExt::RxInit ();
     DwgBrepExt::RxInit ();
+    DwgBlockReferenceExt::RxInit ();
 
     DwgRxClass::BuildClassHierarchy ();
 
-    DWG_TypeP(RxClass) protocalClass = DwgProtocalExtension::Desc ();
-    if (nullptr == protocalClass)
+    DWG_TypeP(RxClass) protocolClass = DwgProtocolExtension::Desc ();
+    if (nullptr == protocolClass)
         {
-        BeAssert (false && L"Protocal extension class not initialized!");
+        BeAssert (false && L"Protocol extension class not initialized!");
         return;
         }
 
     // add our protocal extensions to toolkit's classes(hence "SuperDesc"):
-    DwgRxClass::AddProtocolExtension (DwgDbRasterImage::SuperDesc(), protocalClass, DwgRasterImageExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbPointCloudEx::SuperDesc(), protocalClass, DwgPointCloudExExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbViewport::SuperDesc(), protocalClass, DwgViewportExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbLight::SuperDesc(), protocalClass, DwgLightExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDb3dSolid::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbRegion::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbBody::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbExtrudedSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbLoftedSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbNurbSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbRevolvedSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbPlaneSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
-    DwgRxClass::AddProtocolExtension (DwgDbSweptSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbRasterImage::SuperDesc(), protocolClass, DwgRasterImageExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbPointCloudEx::SuperDesc(), protocolClass, DwgPointCloudExExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbViewport::SuperDesc(), protocolClass, DwgViewportExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbLight::SuperDesc(), protocolClass, DwgLightExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDb3dSolid::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbRegion::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbBody::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbExtrudedSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbLoftedSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbNurbSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbRevolvedSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbPlaneSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbSweptSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbBlockReference::SuperDesc(), protocolClass, DwgBlockReferenceExt::CreateObject());
     }
 

@@ -1031,9 +1031,7 @@ iModelExternalSourceAspect::SourceState iModelExternalSourceAspect::GetSourceSta
     ECN::ECValue v;
     if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_Hash)) && !v.IsNull())
         {
-        size_t sz;
-        auto b = v.GetBinary(sz);
-        ss.m_hash.assign(b, b + sz);
+        ss.m_hash = v.GetUtf8CP();
         }
 
     if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_LastModifiedTime)) && !v.IsNull())
@@ -1075,27 +1073,8 @@ rapidjson::Document iModelExternalSourceAspect::GetProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelExternalSourceAspect::SetSourceState(ECN::IECInstanceR instance, SourceState const& ss)
     {
-    instance.SetValue(XTRN_SRC_ASPCT_Hash, ECN::ECValue(&ss.m_hash[0], ss.m_hash.size()* sizeof(ss.m_hash[0])));
+    instance.SetValue(XTRN_SRC_ASPCT_Hash, ECN::ECValue(ss.m_hash.c_str()));
     instance.SetValue(XTRN_SRC_ASPCT_LastModifiedTime, ECN::ECValue(ss.m_lastModifiedTime));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-int char2int(char input)
-    {
-    if (input == '\0')
-        return 0;
-
-    if (input >= '0' && input <= '9')
-        return input - '0';
-    if (input >= 'A' && input <= 'F')
-        return input - 'A' + 10;
-    if (input >= 'a' && input <= 'f')
-        return input - 'a' + 10;
-    
-    BeAssert(false);
-    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1105,12 +1084,6 @@ iModelExternalSourceAspect::SourceState iModelBridgeSyncInfoFile::SourceState::G
     {
     iModelExternalSourceAspect::SourceState state;
     state.m_lastModifiedTime = m_lmt;
-    
-    for (int index = 0; index < m_hash.size(); index = index + 2)
-        {
-        unsigned char value = char2int(m_hash[index]) * 16 + char2int(m_hash[index + 1]);
-        state.m_hash.push_back(value);
-        }
-
+    state.m_hash = m_hash;
     return state;
     }

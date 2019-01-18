@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportRaster.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgRasterImageExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgRasterImageExt)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
@@ -175,7 +175,7 @@ bool    DwgRasterImageExt::GetUrlCacheFile (DwgStringR checkPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
+BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer)
     {
     m_toBimContext = &context;
     m_importer = &importer;

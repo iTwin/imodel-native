@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportBreps.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -11,13 +11,13 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgBrepExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgBrepExt)
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgBrepExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
+BentleyStatus   DwgBrepExt::_ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer)
     {
     // a sanity check:
     m_entity = context.GetEntityPtrR().get ();
@@ -107,6 +107,8 @@ GeometricPrimitivePtr DwgBrepExt::_ConvertToGeometry (DwgDbEntityCP entity, DwgI
         return  nullptr;
 
 #if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StartSession ();
+
     PK_BODY_create_topology_2_r_t brep;
     GeometricPrimitivePtr   geometry = this->CreateGeometry (brep);
 
@@ -114,6 +116,7 @@ GeometricPrimitivePtr DwgBrepExt::_ConvertToGeometry (DwgDbEntityCP entity, DwgI
     if (!geometry.IsValid())
         this->FreeBrep (brep);
 
+    PSolidKernelManager::StopSession ();
     return  geometry;
 #endif
 
