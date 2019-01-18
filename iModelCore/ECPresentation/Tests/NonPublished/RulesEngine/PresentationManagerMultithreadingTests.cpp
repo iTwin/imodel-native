@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/PresentationManagerMultithreadingTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
@@ -135,7 +135,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, RulesetLocaterCallsI
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, UserSettingsManagerCallsItsCallbacksOnECPresentationThread)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     m_manager->GetUserSettings().SetLocalState(&localState);
     TestUserSettingsChangeListener listener;
     m_manager->GetUserSettings().SetChangesListener(&listener);

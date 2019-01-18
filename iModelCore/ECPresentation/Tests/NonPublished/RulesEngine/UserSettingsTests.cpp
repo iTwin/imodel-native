@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/UserSettingsTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -435,7 +435,7 @@ TEST_F(UserSettingsTests, HasValueReturnsTrueWhenTheresAValue)
 +===============+===============+===============+===============+===============+======*/
 struct UserSettingsRoundtripTests : UserSettingsTests
     {  
-    StubLocalState m_localState;
+    RuntimeJsonLocalState m_localState;
     void SetUp() override
         {
         UserSettingsTests::SetUp();        

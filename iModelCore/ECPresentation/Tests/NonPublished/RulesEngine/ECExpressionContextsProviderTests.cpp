@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECExpressionContextsProviderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -39,7 +39,7 @@ struct ECExpressionContextsProviderTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     static IConnectionPtr s_connection;
-    StubLocalState m_localState;
+    RuntimeJsonLocalState m_localState;
     TestUserSettings m_userSettings;
     Utf8String m_locale;
     

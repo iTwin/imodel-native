@@ -207,7 +207,7 @@ Utf8String RulesDrivenECPresentationManagerTests::GetDisplayLabel(IECInstanceCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerTests, InitializesUserSettings)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     m_manager->SetLocalState(&localState);
 
     ASSERT_TRUE(m_manager->GetUserSettings("MyRulesetId").GetSettingValue("TestSetting").empty());
