@@ -22,15 +22,15 @@ public:
     typedef ArbitraryCompositeProfile::CreateParams CreateParams;
 
 protected:
-    ArbitraryCompositeProfileComponent CreateComponent (DgnElementId const& profileId)
+    ArbitraryCompositeProfileComponent CreateComponent (SinglePerimeterProfile const& profile)
         {
-        return ArbitraryCompositeProfileComponent (profileId, DPoint2d::From (0.0, 0.0));
+        return ArbitraryCompositeProfileComponent (profile.GetElementId(), DPoint2d::From (0.0, 0.0));
         }
 
     ArbitraryCompositeProfileComponent CreateDefaultComponent()
         {
         CircleProfilePtr profilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
-        return CreateComponent (profilePtr->GetElementId());
+        return CreateComponent (*profilePtr);
         }
 
     bvector<ArbitraryCompositeProfileComponent> DefaultComponentVector()
@@ -55,10 +55,10 @@ TEST_F (ArbitraryCompositeProfileTestCase, Create_CreateParams_NewInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ArbitraryCompositeProfileTestCase, Insert_TwoDifferentProfileInstances_SuccessfulInsert)
     {
-    ProfilePtr profile1Ptr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
-    ProfilePtr profile2Ptr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
-    ArbitraryCompositeProfileComponent component1 = CreateComponent (profile1Ptr->GetElementId());
-    ArbitraryCompositeProfileComponent component2 = CreateComponent (profile2Ptr->GetElementId());
+    CircleProfilePtr profile1Ptr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+    CircleProfilePtr profile2Ptr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+    ArbitraryCompositeProfileComponent component1 = CreateComponent (*profile1Ptr);
+    ArbitraryCompositeProfileComponent component2 = CreateComponent (*profile2Ptr);
 
     CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { component1, component2 });
     EXPECT_SUCCESS_Insert (params) << "Profile should succeed to insert two components referencing different profiles.";
@@ -69,9 +69,9 @@ TEST_F (ArbitraryCompositeProfileTestCase, Insert_TwoDifferentProfileInstances_S
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ArbitraryCompositeProfileTestCase, Insert_TwoSameProfileInstances_SuccessfulInsert)
     {
-    ProfilePtr profilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
-    ArbitraryCompositeProfileComponent component1 = CreateComponent (profilePtr->GetElementId());
-    ArbitraryCompositeProfileComponent component2 = CreateComponent (profilePtr->GetElementId());
+    CircleProfilePtr profilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+    ArbitraryCompositeProfileComponent component1 = CreateComponent (*profilePtr);
+    ArbitraryCompositeProfileComponent component2 = CreateComponent (*profilePtr);
 
     CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { component1, component2 });
     EXPECT_SUCCESS_Insert (params) << "Profile should succeed to insert with two components referencing same profile.";
@@ -82,8 +82,8 @@ TEST_F (ArbitraryCompositeProfileTestCase, Insert_TwoSameProfileInstances_Succes
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ArbitraryCompositeProfileTestCase, Insert_SingleProfileInstances_FailedInsert)
     {
-    ProfilePtr profilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
-    ArbitraryCompositeProfileComponent component = CreateComponent (profilePtr->GetElementId());
+    CircleProfilePtr profilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+    ArbitraryCompositeProfileComponent component = CreateComponent (*profilePtr);
 
     CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { component });
     EXPECT_FAIL_Insert (params) << "Profile should succeed to insert with two components referencing same profile.";
@@ -248,8 +248,8 @@ TEST_F (ArbitraryCompositeProfileTestCase, Delete_QueryAspects_ZeroRows)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ArbitraryCompositeProfileTestCase, DeleteReferencedProfile_ExistingCompositeProfile_FailedDelete)
     {
-    ProfilePtr singleProfilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
-    bvector<ArbitraryCompositeProfileComponent> components { CreateComponent (singleProfilePtr->GetElementId()), CreateComponent (singleProfilePtr->GetElementId()) };
+    CircleProfilePtr singleProfilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+    bvector<ArbitraryCompositeProfileComponent> components { CreateComponent (*singleProfilePtr), CreateComponent (*singleProfilePtr) };
 
     CreateParams params (GetModel(), "Composite", components);
     ProfilePtr profilePtr = InsertElement<ArbitraryCompositeProfile> (params);
@@ -257,4 +257,36 @@ TEST_F (ArbitraryCompositeProfileTestCase, DeleteReferencedProfile_ExistingCompo
     ASSERT_EQ (DgnDbStatus::ForeignKeyConstraint, singleProfilePtr->Delete()) << "SingleProfile should fail to delete if it is being referenced by ArbitraryCompositeProfile";
     profilePtr->Delete();
     ASSERT_EQ (DgnDbStatus::Success, singleProfilePtr->Delete()) << "SingleProfile should succeed to delete when it's not referenced by ArbitraryCompositeProfile";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ArbitraryCompositeProfileTestCase, UpdateReferencedProfile_ExistingCompositeProfile_UpdatedCompositeGeometry)
+    {
+    RectangleProfilePtr rectangle1Ptr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r1", 1.0, 1.0));
+    RectangleProfilePtr rectangle2Ptr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r2", 1.0, 1.0));
+
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { CreateComponent (*rectangle1Ptr), CreateComponent (*rectangle2Ptr) });
+    ProfilePtr profilePtr = InsertElement<ArbitraryCompositeProfile> (params);
+    DgnElementId compositeProfileId = profilePtr->GetElementId();
+
+    DRange3d range;
+    ASSERT_TRUE (Profile::Get (GetDb(), compositeProfileId)->GetShape()->TryGetRange (range));
+    EXPECT_EQ (1.0, range.XLength());
+    EXPECT_EQ (1.0, range.YLength());
+
+    rectangle1Ptr->SetWidth (2.0);
+    rectangle1Ptr->Update();
+
+    ASSERT_TRUE (Profile::Get (GetDb(), compositeProfileId)->GetShape()->TryGetRange (range));
+    EXPECT_EQ (2.0, range.XLength());
+    EXPECT_EQ (1.0, range.YLength());
+
+    rectangle2Ptr->SetDepth (2.0);
+    rectangle2Ptr->Update();
+
+    ASSERT_TRUE (Profile::Get (GetDb(), compositeProfileId)->GetShape()->TryGetRange (range));
+    EXPECT_EQ (2.0, range.XLength());
+    EXPECT_EQ (2.0, range.YLength());
     }
