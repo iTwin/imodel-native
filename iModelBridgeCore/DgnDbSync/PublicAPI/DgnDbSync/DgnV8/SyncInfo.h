@@ -370,7 +370,6 @@ struct SyncInfo
         ElementProvenance(DgnV8EhCR, SyncInfo&, StableIdPolicy);
         ElementProvenance() {}
         bool IsSame(ElementProvenance const& other){return (m_idPolicy==StableIdPolicy::ByHash || m_lastModified==other.m_lastModified) && m_hash.IsSame(other.m_hash);}
-        void GetHashAsByteVector(bvector<unsigned char>& v) const {v.assign(m_hash.m_buffer, &m_hash.m_buffer[_countof(m_hash.m_buffer)]);}
     };
 
     //! Data that uniquely identifies a V8 *element*. This data is used as part of the input when constructing a ExternalSourceAspect.

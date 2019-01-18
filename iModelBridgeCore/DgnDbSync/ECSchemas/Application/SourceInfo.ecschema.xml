@@ -3,7 +3,7 @@
 
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
 
-    <ECRelationshipClass typeName="ScopeOfSourceId" strength="referencing" modifier="Sealed">
+    <ECRelationshipClass typeName="ElementScopesExternalSourceId" strength="referencing" modifier="Sealed">
         <Source multiplicity="(1..1)" roleLabel="is scope of" polymorphic="true">
             <Class class="bis:Element"/>
         </Source>
@@ -30,13 +30,13 @@
                 </Indexes>
             </DbIndexList>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Scope" relationshipName="ScopeOfSourceId" direction="Backward" displayLabel="Scope" description="The context in which the combination of (Kind, SourceId) identifies the item uniquely within the source repository. Scope is the ID of an element in the iModel (not the source) that corresponds to the scope or container in the source that owns, contains, or qualifies the identity of the source item.">
+        <ECNavigationProperty propertyName="Scope" relationshipName="ElementScopesExternalSourceId" direction="Backward" displayLabel="Scope" description="The context in which the combination of (Kind, SourceId) identifies the item uniquely within the source repository. Scope is the ID of an element in the iModel (not the source) that corresponds to the scope or container in the source that owns, contains, or qualifies the identity of the source item.">
             <!-- Should have IsNullable=False -->
         </ECNavigationProperty>
         <ECProperty propertyName="SourceId" typeName="string" description="bridge-specific identifier of the object in the source repository" />
         <ECProperty propertyName="Kind" typeName="string" description="bridge-specific identifier of the `kind` of object this is in the source repository"/>
         <ECProperty propertyName="LastModifiedTime" typeName="double" description="Optional value that represents a timestamp of the last change to source object's content, if available. This value does not have to be a real DateTime. If not zero, this value must be guaranteed to change when *any* of the source item's content changes. If LastModifiedTime is non-zero and if the current value equals the stored value, then a bridge will conclude that the item is unchanged. Otherwise, the bridge will use the hash." />
-        <ECProperty propertyName="Hash" typeName="binary" description="The cryptographic hash (any algorithm) of source object's content. Must be guaranteed to change when *any* of the source item's content changes." />
+        <ECProperty propertyName="Hash" typeName="string" description="The cryptographic hash (any algorithm) of source object's content. Must be guaranteed to change when *any* of the source item's content changes." />
         <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json" description="A place where a bridge may store additional provenance properties"/>
     </ECEntityClass>
 </ECSchema>
