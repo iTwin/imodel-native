@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDBridge.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ORDBridgeInternal.h"
@@ -94,6 +94,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
         }
 
     DgnDbSync::DgnV8::Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), BeFileName(L"DgnV8"), nullptr, false, argc, argv, nullptr);
+    DependencyManager::SetProcessingDisabled(false);
     AppendCifSdkToDllSearchPath(_GetParams().GetLibraryDir());
 
     // Initialize Cif SDK
@@ -343,12 +344,12 @@ void ORDBridge::_OnCloseBim(BentleyStatus, ClosePurpose)
             {
             // TODO: Some CIF object smart pointers are blowing up after deleting 
             // the converter instance.  Look into this!
-            //delete m_converter;
+            delete m_converter;
             }
         IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(;)
             {
             }
-        //m_converter = nullptr;
+        m_converter = nullptr;
         }
     }
 
@@ -387,7 +388,7 @@ extern "C" BentleyStatus iModelBridge_releaseInstance(BentleyApi::Dgn::iModelBri
     if (PSolidKernelManager::IsSessionStarted())
         PSolidKernelManager::StopSession();
     #endif
-        
+
     delete bridge;
     return SUCCESS;
     }

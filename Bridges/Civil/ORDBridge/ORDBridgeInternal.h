@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDBridgeInternal.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -34,7 +34,7 @@
 #include <CifApi/Cif/SDK/CIFGeometryModelSDK.h>
 #include <CifApi/Cif/SDK/GeometryModelDgnECDataBinder.h>
 #include <CifApi/Cif/SDK/ConsensusDgnECProvider.h>
-#include <CifApi/Cif/SDK/CIFGeometryModelECSchema.h> 
+#include <CifApi/Cif/SDK/CIFGeometryModelECSchema.h>
 #include <ORDBridge/ORDBridgeApi.h>
 
 /** @namespace DgnDbSync Contains types defined by %Bentley Systems that are used to synchronize between DgnDb and foreign data formats. */

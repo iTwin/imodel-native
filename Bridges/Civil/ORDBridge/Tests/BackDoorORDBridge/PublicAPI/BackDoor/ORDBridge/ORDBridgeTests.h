@@ -5,6 +5,7 @@
 #include <LinearReferencing/LinearReferencingApi.h>
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <RoadRailPhysical/RoadRailPhysicalApi.h>
+#include <ORDBridge/PublishORDToBimDLL.h>
 
 struct ORDBridgeTestsHostImpl;
 
@@ -27,6 +28,8 @@ public:
     BeFileName GetTestAppProductDirectory();
     BeFileName GetOutputDirectory();
     BeFileName GetDgnPlatformAssetsDirectory();
+    WString* GetInputFileArgument(BeFileName inputPath, WCharCP input);
+    WString* GetOutputFileArgument(BeFileName outputPath, WCharCP bimFileName);
     BeFileName BuildProjectFileName(WCharCP);
 };
 
@@ -50,7 +53,7 @@ protected:
     void TearDown() {}
 
     static bool CopyTestFile(Utf8CP source, Utf8CP target);
-    static bool RunTestApp(Utf8CP input, Utf8CP bimFileName, bool updateMode);
+    static bool RunTestApp(WCharCP input, WCharCP bimFileName, bool updateMode);
     static Dgn::DgnDbPtr VerifyConvertedElements(Utf8CP bimFileName, size_t alignmentCount, size_t corridorCount);
 
 public:

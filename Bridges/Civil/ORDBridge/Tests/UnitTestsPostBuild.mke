@@ -1,0 +1,13 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ORDBridge/Tests/UnitTestsPostBuild.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+always:
+	-$(deleteCmd) $(OutRoot)Winx64\Product\CiviliModelBridges-Gtest\AutomaticGroundDetection.dll
+	-$(deleteCmd) $(OutRoot)Winx64\Product\CiviliModelBridges-Gtest\CloudDataSource.dll
+	-$(deleteCmd) $(OutRoot)Winx64\Product\CiviliModelBridges-Gtest\ScalableMesh.dll

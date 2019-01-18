@@ -138,8 +138,10 @@
     </Part>
 
     <Part Name="BackdoorForORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackdoorORDBridge">
-        <SubProduct ProductName="ORDBridgeTestApp"/>
+        <SubProduct ProductName="PublishORDToBIM"/>
         <SubPart PartName="PrewireForORDBridgeUnitTests" />
+        <SubPart PartName="PublishORDToBimDLL"/>
+        <SubPart PartName="Cif_InternalSDK" />
         <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesORDBridge/Backdoor" SourceName="Delivery/UnitTests/Objects/BackdoorORDBridge"/>
@@ -185,10 +187,42 @@
 
     <!-- Build a gtest exe to run the tests -->
     <Product Name="CiviliModelBridges-Gtest">
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest" />
         <SubPart PartName="Gtest" />
+        <SubPart PartName="Cif_InternalSDK" />
+        <SubPart PartName="VersionedV8_InternalSDK" Repository="DgnDbSync" PartFile="DgnDbSync"/>
+        <Directories DirectoryListName="GtestProduct"/>
+        <Directories DirectoryListName="CiviliModelBridgeTestDirectoryList" />
     </Product>
 
+    <ProductDirectoryList ListName="CiviliModelBridgeTestDirectoryList">
+        <ProductDirectory Name="ApplicationRoot"                Path=""/>
+        <!--<ProductDirectory Name="Assemblies"   Path="Assemblies"   RelativeTo="ApplicationRoot"/>-->
+        <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
+        <ProductDirectory Name="CifDlls"  Path="Cif"/>
+    </ProductDirectoryList>
+
+    <!-- *********************************************************************************************** -->
+    <!-- ProductDirectory used by all gtest products -->
+    <!-- *********************************************************************************************** -->
+    <ProductDirectoryList ListName="GtestProduct">
+        <ProductDirectory Name="ApplicationRoot"                Path=""/>
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
+        <ProductDirectory Name="Assemblies" Path="Assemblies"   RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies" Path="Assemblies"   RelativeTo="ApplicationRoot" LibType="Static"/>
+        <ProductDirectory Name="Assets" Path="Assets-g"/>
+        <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    </ProductDirectoryList>
+
+    <Part Name="ORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke" >
+        <SubProduct ProductName="CiviliModelBridges-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+    </Part>
+    
     <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
         -dTEST_NAME=CiviliModelBridgesTests
         -dTEST_COLLECTION_PRODUCT=CiviliModelBridges-Tests
@@ -202,8 +236,7 @@
     </Part>
 
     <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="CiviliModelBridges-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+        <SubPart PartName="ORDBridgeUnitTests" />
     </Part>
 
     <Part Name="GTest-Run-CheckCoverage" Scope="Private" OnlyPlatforms="x64"
@@ -254,6 +287,22 @@
     </Bindings>
   </Part>
 
+    
+  <!-- ........................................................................................................................................ -->
+  <!-- PublishORDToBimDLL    This library is used to run the bridge. It's called during unit testing to convert the test models in-proc.        -->
+  <!-- ........................................................................................................................................ -->
+  
+  <Part Name="PublishORDToBimDLL" BentleyBuildMakeFile="ORDBridge/PublishORDToBimDLL/PublishORDToBimDLL/PublishORDToBimDLL.mke" >
+    <SubPart PartName="ORDBridgeLibrary"/>
+    <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
+    <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
+    <Bindings>
+        <Libs Required="false">Delivery/$(libprefix)PublishORDToBimDLL$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)PublishORDToBimDLL$(shlibext)</Assemblies>
+    </Bindings>
+  </Part>
+    
+    
   <!-- ........................................................................................................................................ -->
   <!-- ORDBridgeGUI    This is a GUI wrapper for the PublishORDToBIM & iModelBridgeFwk                                                          -->
   <!-- ........................................................................................................................................ -->

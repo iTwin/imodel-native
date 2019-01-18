@@ -43,7 +43,7 @@ BeFileName ORDBridgeTestsHost::GetTestAppProductDirectory()
     char* outPath = getenv("OutRoot");
 
     BeFileName testAppPath(outPath);
-    testAppPath.AppendA("Winx64\\Product\\ORDBridgeTestApp\\");
+    testAppPath.AppendA("Winx64\\Product\\ORDBridge\\");
 
     return testAppPath;
     }
@@ -68,6 +68,30 @@ BeFileName ORDBridgeTestsHost::GetDgnPlatformAssetsDirectory()
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsRootDirectory);
     return assetsRootDirectory;
     }
+
+WString* ORDBridgeTestsHost::GetInputFileArgument(BeFileName inputPath, WCharCP input)
+{
+    char* outPath = getenv("OutRoot");
+
+    BeFileName inputPath1(outPath);
+    inputPath1.AppendString(WCharCP(L"Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\"));
+    inputPath1.AppendString(WCharCP(input));
+
+    WCharCP inputArgument(WString(WCharCP(L"--input=\"")).append(inputPath1.c_str()).append(WCharCP(L"\"")).c_str());
+    auto inputArgumentAllocated = new WString(inputArgument);
+    return inputArgumentAllocated;
+}
+
+WString* ORDBridgeTestsHost::GetOutputFileArgument(BeFileName outputPath1, WCharCP bimFileName)
+{
+    char* outPath = getenv("OutRoot");
+
+    BeFileName outputPath = GetOutputDirectory();
+    outputPath.AppendString(WCharCP(bimFileName));
+    WCharCP outputArgument(WString(WCharCP(L"--output=\"")).append(outputPath.c_str()).append(WCharCP(L"\"")).c_str());
+    auto outputArgumentAllocated = new WString(outputArgument);
+    return outputArgumentAllocated;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2014
@@ -119,10 +143,10 @@ ORDBridgeTestsHostImpl::ORDBridgeTestsHostImpl() : m_isInitialized(false)
     {
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
-    DgnPlatformLib::Initialize(*this, false);
-    DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes);
+    //DgnPlatformLib::Initialize(*this, false);
+    /*DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes);
     DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes);
-    DgnDomains::RegisterDomain(RoadRailPhysical::RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);
+    DgnDomains::RegisterDomain(RoadRailPhysical::RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);*/
     m_isInitialized = true;
     }
 
@@ -176,26 +200,31 @@ bool CiviliModelBridgesORDBridgeTestsFixture::CopyTestFile(Utf8CP source, Utf8CP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP bimFileName, bool updateMode)
+bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP bimFileName, bool updateMode)
     {
     char* outPath = getenv("OutRoot");
     BeFileName testAppPath = m_host->GetTestAppProductDirectory();
-    testAppPath.AppendA("ORDBridgeTestApp.exe");
+    testAppPath.AppendA("PublishORDToBim.exe");
 
     BeFileName inputPath(outPath);
-    inputPath.AppendA("Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\");
-    inputPath.AppendA(input);
+    inputPath.AppendString(WCharCP(L"Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\"));
+    inputPath.AppendString(WCharCP(input));
 
     BeFileName outputPath = m_host->GetOutputDirectory();
-    outputPath.AppendA(bimFileName);
+    outputPath.AppendString(WCharCP(bimFileName));
 
-    Utf8PrintfString cmd("%s -i=\"%s\" -o=\"%s\" --no-assert-dialogs %s", 
-        Utf8String(testAppPath.c_str()).c_str(), 
-        Utf8String(inputPath.c_str()).c_str(), 
-        Utf8String(outputPath.c_str()).c_str(),
-        (updateMode) ? "--update" : "");
+    WCharCP testAppPathArgument = testAppPath;
+    auto inputArgument = m_host->GetInputFileArgument(inputPath, input);
+    auto outputArgument = m_host->GetOutputFileArgument(outputPath, bimFileName);
+    WCharCP noAssertDialoguesArgument = WCharCP(L"--no-assert-dialogs");
+    WCharCP command[4] = { testAppPathArgument, WCharCP((*inputArgument).c_str()), WCharCP((*outputArgument).c_str()), noAssertDialoguesArgument };
 
-    /*int errcode = system(cmd.c_str());
+    int errcode = PublishORDToBimDLL::RunBridge(4, command);
+
+    //had to store the arguments on the heap to prevent the strings from colliding
+    delete inputArgument;
+    delete outputArgument;
+
     bool retVal = (0 == errcode);
     
     if (retVal)
@@ -209,7 +238,7 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP bi
             BeAssert(false);
         }
 
-    return retVal;*/
+    return retVal;
     return true;
     }
 

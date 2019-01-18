@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDConverter.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -69,6 +69,7 @@ public:
         // m_skipECContent set to true.  Let's change that for us to default to false so we default to getting
         // item types converted.
         m_skipECContent = false;
+        this->SetKeepHostAlive(true);
         }
 
     virtual ~ORDConverter()
