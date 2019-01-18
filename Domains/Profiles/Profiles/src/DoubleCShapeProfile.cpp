@@ -73,12 +73,11 @@ IGeometryPtr DoubleCShapeProfile::_CreateGeometry() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr DoubleCShapeProfile::_UpdateGeometry (Profile const& relatedProfile) const
     {
-    // TODO Karolis: Investigate check by typeid instead of a dynamic cast.
-    CShapeProfile const* pSingleProfile = dynamic_cast<CShapeProfile const*> (&relatedProfile);
-    if (pSingleProfile == nullptr)
-        return nullptr;
+    if (typeid (relatedProfile) == typeid (CShapeProfile))
+        return ProfilesGeometry::CreateDoubleCShape (*this, static_cast<CShapeProfile const&> (relatedProfile));
 
-    return ProfilesGeometry::CreateDoubleCShape (*this, *pSingleProfile);
+    BeAssert (false);
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
