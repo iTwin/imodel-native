@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
 #include <ProfilesInternal\ProfilesLogging.h>
+#include <ProfilesInternal\ProfilesQuery.h>
+#include <ProfilesInternal\ArbitraryCompositeProfileAspect.h>
 #include <Profiles\Profile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -91,13 +93,24 @@ DgnDbStatus Profile::_UpdateInDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Prohibit deleteion of this profile if it is being referenced by ArbitraryCompositeProfile.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_OnDelete() const
     {
-    // TODO Karolis: Prohibit deletion of this profile if it is being referenced by profiles:
-    // DerivedProfile, ArbitraryCompositeProfile
+    DgnDbStatus dbStatus;
+    DgnElementId compositeProfileId = ProfilesQuery::SelectFirstByAspectNavigationProperty (m_dgndb, m_elementId,
+        PRF_CLASS_ArbitraryCompositeProfileAspect, PRF_PROP_ArbitraryCompositeProfileAspect_SingleProfile, &dbStatus);
+    if (dbStatus != DgnDbStatus::Success)
+        return dbStatus;
 
+    if (compositeProfileId.IsValid())
+        {
+        ProfilesLog::FailedDelete_ProfileHasReference (PRF_CLASS_Profile, m_elementId, PRF_CLASS_ArbitraryCompositeProfile, compositeProfileId);
+        return DgnDbStatus::ForeignKeyConstraint;
+        }
+
+    // TODO Karolis: Prohibit deletion of this profile if it is being referenced by DerivedProfile.
     return T_Super::_OnDelete();
     }
 

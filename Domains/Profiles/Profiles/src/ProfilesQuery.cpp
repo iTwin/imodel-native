@@ -21,8 +21,37 @@ template bvector<DoubleCShapeProfilePtr> ProfilesQuery::SelectByNavigationProper
 template bvector<DoubleLShapeProfilePtr> ProfilesQuery::SelectByNavigationProperty (DgnDb const&, DgnElementId const&, Utf8CP, Utf8CP, DgnDbStatus*);
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId selectFirst (DgnDb const& db, Utf8CP pSqlString, DgnElementId const& referencedProfileId, DgnDbStatus& status)
+    {
+    ECSqlStatement sqlStatement;
+    ECSqlStatus ecStatus = sqlStatement.Prepare (db, pSqlString);
+    if (ecStatus != ECSqlStatus::Success)
+        {
+        status = DgnDbStatus::SQLiteError;
+        return DgnElementId();
+        }
+
+    ecStatus = sqlStatement.BindId (1, referencedProfileId);
+    if (ecStatus != ECSqlStatus::Success)
+        {
+        status = DgnDbStatus::SQLiteError;
+        return DgnElementId();
+        }
+
+    DgnElementId elementId;
+    if (sqlStatement.Step() == BE_SQLITE_ROW)
+        elementId = sqlStatement.GetValueId<DgnElementId> (0);
+
+    status = DgnDbStatus::Success;
+    return elementId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Perform ECSql SELECT to query first Profile that has a navigation property referencing
-* 'referencedProfileId', returns invalid DgnElementId if no one is referencing the profile.
+* 'referencedProfileId'. Returns id of the PROFILE that is referencing and invalid
+* DgnElementId if profile is not referenced by the 'pClassName'.
 * @param referencedProfileId - id of profile to search for in navigation properties.
 * @param pClassName - name of ECEntityClass to perform the query on.
 * @param pNavigationPropertyName - name of ECNavigationProperty to perform the query on.
@@ -39,27 +68,31 @@ DgnElementId ProfilesQuery::SelectFirstByNavigationProperty (DgnDb const& db, Dg
     sqlString += "SELECT ECInstanceId FROM " PRF_SCHEMA_NAME "." + Utf8String (pClassName) +
                  " WHERE " + Utf8String (pNavigationPropertyName) + ".Id=? LIMIT 1";
 
-    ECSqlStatement sqlStatement;
-    ECSqlStatus status = sqlStatement.Prepare (db, sqlString.c_str());
-    if (status != ECSqlStatus::Success)
-        {
-        *pStatus = DgnDbStatus::SQLiteError;
-        return DgnElementId();
-        }
+    return selectFirst (db, sqlString.c_str(), referencedProfileId, *pStatus);
+    }
 
-    status = sqlStatement.BindId (1, referencedProfileId);
-    if (status != ECSqlStatus::Success)
-        {
-        *pStatus = DgnDbStatus::SQLiteError;
-        return DgnElementId();
-        }
+/*---------------------------------------------------------------------------------**//**
+* Perform ECSql SELECT to query first Profiles Aspect that has a navigation property
+* referencing 'referencedProfileId'. Returns id of the HOST PROFILE of the 'pAspectClass'
+* and invalid DgnElementId if profile is not referenced by the 'pAspectName'.
+* @param referencedProfileId - id of profile to search for in navigation properties.
+* @param pAspectName - name of Aspect ECEntityClass to perform the query on.
+* @param pNavigationPropertyName - name of ECNavigationProperty to perform the query on.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ProfilesQuery::SelectFirstByAspectNavigationProperty (DgnDb const& db, DgnElementId const& referencedProfileId,
+                                                                   Utf8CP pAspectName, Utf8CP pNavigationPropertyName, DgnDbStatus* pStatus)
+    {
+    DgnDbStatus dbStatus;
+    if (pStatus == nullptr)
+        pStatus = &dbStatus;
 
-    DgnElementId elementId;
-    if (sqlStatement.Step() == DbResult::BE_SQLITE_ROW)
-        elementId = sqlStatement.GetValueId<DgnElementId> (0);
+    Utf8String sqlString;
+    sqlString += "SELECT Element.Id FROM " PRF_SCHEMA_NAME "." + Utf8String (pAspectName) +
+                 " WHERE " + Utf8String (pNavigationPropertyName) + ".Id=? LIMIT 1";
 
-    *pStatus = DgnDbStatus::Success;
-    return elementId;
+    return selectFirst (db, sqlString.c_str(), referencedProfileId, *pStatus);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
