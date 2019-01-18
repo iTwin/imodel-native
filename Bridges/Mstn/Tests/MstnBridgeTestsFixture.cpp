@@ -161,7 +161,7 @@ void MstnBridgeTestsFixture::SetUpBridgeProcessingArgs(BentleyApi::bvector<Bentl
     args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
     if (setCredentials)
         {
-        args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+        args.push_back(L"--server-user=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
         args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
         }
     args.push_back(BentleyApi::WPrintfString(L"--fwk-bridge-library=\"%s\"", GetDgnv8BridgeDllName().c_str()));     // must refer to a path that exists! 
