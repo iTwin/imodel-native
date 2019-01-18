@@ -1464,6 +1464,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     //We are done processing the dgn db file. Release the bridge
     if (SUCCESS != ReleaseBridge())
         LOG.errorv(L"%s - Memory leak. This bridge was not released properly.", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
+    
+    if (m_useIModelHub)
+        iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).Close();
 
     return status;
     }

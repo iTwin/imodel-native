@@ -33,7 +33,7 @@ struct iModelBridgeLdClient
         IMODEL_BRIDGE_EXPORT BentleyStatus SetUserName(CharCP userName);
         IMODEL_BRIDGE_EXPORT BentleyStatus SetProjectDetails(CharCP iModelName, CharCP guid);
         IMODEL_BRIDGE_EXPORT BentleyStatus InitClient();
-        BentleyStatus Close();
+        IMODEL_BRIDGE_EXPORT BentleyStatus Close();
         IMODEL_BRIDGE_EXPORT ~iModelBridgeLdClient();
         BentleyStatus IsFeatureOn(bool &, CharCP featureName);
     };

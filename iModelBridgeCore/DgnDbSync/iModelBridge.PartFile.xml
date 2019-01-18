@@ -12,7 +12,7 @@
         <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="SourceInfoSchemaPrewire"/>
-        <SubPart PartName="LaunchDarkly-CPP-Client"   PartFile="${SrcRoot}bsicommon/CvsPartfiles/LaunchDarkly"           Repository="bin-LaunchDarkly"/>
+        <SubPart PartName="LaunchDarkly-CPP-ClientSrc"   PartFile="${SrcRoot}bsicommon/CvsPartfiles/LaunchDarkly"           Repository="bin-LaunchDarkly"/>
       <Bindings>
             <Libs Required="false">Delivery/$(libprefix)iModelBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)iModelBridge$(ApiNumber)$(shlibext)</Assemblies>

@@ -9,6 +9,7 @@
 #include <LaunchDarkly/ldapi.h>
 #include <mutex>
 #include <rapidjson/document.h>
+#include <Logging/bentleylogging.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2019
@@ -16,21 +17,18 @@
 BentleyStatus   iModelBridgeLdClient::Init(CharCP authKey)
     {
     if (NULL == authKey)
-		return ERROR;
-	
+        return ERROR;
+
+    LDSetLogFunction(LD_LOG_INFO, [](const char* msg) {
+        NativeLogging::LoggingManager::GetLogger(L"iModelBridge")->info(msg);
+    });
+
     m_config = LDConfigNew(authKey);
     if (NULL == m_config)
         return ERROR;
 
     LDConfigSetStreaming(m_config, false);
 
-    m_user = LDUserNew(NULL);//TODO check whether we need the user key.
-    if (NULL == m_user)
-        {
-        LDFree(m_config);
-        m_config = NULL;
-        return ERROR;
-        }
     return SUCCESS;
     }
 
@@ -39,8 +37,13 @@ BentleyStatus   iModelBridgeLdClient::Init(CharCP authKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeLdClient::InitClient()
     {
-    unsigned int maxwaitmilliseconds = 60 * 1000;
-    m_client = LDClientInit(m_config, m_user, maxwaitmilliseconds);
+    if (NULL == m_user)//If a user is not set fallback to deviceid
+        m_user = LDUserNew(NULL);//TODO check whether we need the user key.
+
+    if (NULL != m_client)
+        return SUCCESS;
+
+    m_client = LDClientInit(m_config, m_user, 0);
     if (NULL == m_client)
         return ERROR;
 
@@ -63,23 +66,14 @@ BentleyStatus   iModelBridgeLdClient::Close()
     {
     if (NULL != m_client)
         {
+        LDClientFlush(m_client);
         LDClientClose(m_client);
-        LDFree(m_client);
         m_client = NULL;
         }
 
-    if (NULL != m_user)
-        {
-        LDFree(m_user);
-        m_user = NULL;
-        }
-
-    if (NULL != m_config)
-        {
-        LDFree(m_config);
-        m_config = NULL;
-        }
-
+    m_user = NULL;
+    m_config = NULL;
+    LDSetLogFunction(LD_LOG_INFO, NULL);
     return SUCCESS;
     }
 
@@ -102,8 +96,15 @@ BentleyStatus   iModelBridgeLdClient::IsFeatureOn(bool& flag, CharCP featureName
             return ERROR;
         }
 
-    static int timeOut = 60 * 1000;
-    if (!LDClientAwaitInitialized(m_client,timeOut))
+    //static int timeOut = 60 * 1000;
+    bool isInitialized = LDClientIsInitialized(m_client);
+    for (int index = 0; index < 60 && !isInitialized; ++index)
+        {
+        BeDuration::FromMilliseconds(1000).Sleep();
+        isInitialized = LDClientIsInitialized(m_client);
+        }
+
+    if (!isInitialized)
         return ERROR;
 
     flag = LDBoolVariation (m_client,featureName, flag);
@@ -116,12 +117,10 @@ BentleyStatus   iModelBridgeLdClient::IsFeatureOn(bool& flag, CharCP featureName
 iModelBridgeLdClient& iModelBridgeLdClient::GetInstance(WebServices::UrlProvider::Environment environment)
     {
     static iModelBridgeLdClient s_instance;
-    static std::once_flag s_initOnce;
-    std::call_once(s_initOnce, [&]
-        {
-        CharCP key = GetSDKKey(environment);
+    CharCP key = GetSDKKey(environment);
+    if (NULL == s_instance.m_user)
         s_instance.Init(key);
-    });
+    
     return s_instance;
     }
 
@@ -133,11 +132,11 @@ CharCP          iModelBridgeLdClient::GetSDKKey(WebServices::UrlProvider::Enviro
     switch (environment)
         {
         case WebServices::UrlProvider::Dev:
-            return "sdk-1bf2601d-6ba9-406c-919b-882e3c5c7694";
+            return "mob-e6ea1207-0646-42a1-90e9-21ce02b3d03f";
         case WebServices::UrlProvider::Qa:
-            return "sdk-959d4e68-a773-4c2a-9a03-cef74473b61b";
+            return "mob-6829cc02-a35a-4c16-ab59-1483ccfff249";
         case WebServices::UrlProvider::Release:
-            return "sdk-b30b05ae-73c9-4303-b43d-38db8fe6f8d8";
+            return "mob-b32e5416-cf05-4c75-bfca-64492e14d6ab";
         case WebServices::UrlProvider::Perf:
         default:
             return NULL;
@@ -149,6 +148,9 @@ CharCP          iModelBridgeLdClient::GetSDKKey(WebServices::UrlProvider::Enviro
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeLdClient::SetUserName(CharCP userName)
     {
+    if (NULL == m_user)
+        m_user = LDUserNew(userName);//TODO check whether we need the user key.
+    
     LDUserSetName(m_user, userName);
     return SUCCESS;
     }
@@ -158,9 +160,17 @@ BentleyStatus   iModelBridgeLdClient::SetUserName(CharCP userName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeLdClient::SetProjectDetails(CharCP iModelName, CharCP guid)
     {
-    rapidjson::Document json(rapidjson::kObjectType);
-    auto& allocator = json.GetAllocator();
-    json.AddMember("iModelName", rapidjson::Value(iModelName,allocator), allocator);
-    json.AddMember("ConnectProjectGuid", rapidjson::Value(guid, allocator), allocator);
-    return LDUserSetCustomAttributesJSON(m_user, json.GetString()) ? SUCCESS : ERROR;
+    //rapidjson::Document json(rapidjson::kObjectType);
+    //auto& allocator = json.GetAllocator();
+    //json.AddMember("iModelName", rapidjson::Value(iModelName,allocator), allocator);
+    //json.AddMember("ConnectProjectGuid", rapidjson::Value(guid, allocator), allocator);
+    
+    LDNode* customAttributes = LDNodeCreateHash();
+    LDNodeAddString(&customAttributes, "iModelName", iModelName);
+    LDNodeAddString(&customAttributes, "ConnectProjectGuid", guid);
+    
+    //return LDUserSetCustomAttributesJSON(m_user, BeRapidJsonUtilities::ToString(json).c_str()) ? SUCCESS : ERROR;
+
+    LDUserSetCustomAttributes(m_user, customAttributes);
+    return SUCCESS;
     }
