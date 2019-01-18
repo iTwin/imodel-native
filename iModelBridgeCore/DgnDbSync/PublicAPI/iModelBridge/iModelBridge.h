@@ -48,7 +48,7 @@
 #define XTRN_SRC_ASPCT_Scope                    "Scope"
 #define XTRN_SRC_ASPCT_SourceId                 "SourceId"
 #define XTRN_SRC_ASPCT_Kind                     "Kind"
-#define XTRN_SRC_ASPCT_LastModifiedTime         "LastModifiedTime"
+#define XTRN_SRC_ASPCT_LastModHash              "LastModHash"
 #define XTRN_SRC_ASPCT_Hash                     "Hash"
 #define XTRN_SRC_ASPCT_Properties               "Properties"
 

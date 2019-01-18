@@ -255,8 +255,9 @@ method and not in its _ConvertToBim method.
 //! Optional properties:
 //!
 //! SourceState
-//! The "lastModifiedTime" property is optional. If non-zero, it must be an infallible indicator that an item's content has changed, so that change-detectors can conclude that an item is unchanged 
-//! if its lastModifiedTime is unchanged. Change-detectors compare lastModifiedTime as a short-cut to detect no-change, so as to avoid making the item's handler compute a hash (in case that is expensive).
+//! The "lastModHash" - Optional value that is a version number or last modified time -- something quick that will allow the synchronizer to detect that an item is unchanged and avoid computing 
+//! a cryptographic hash. If present, this value must be guaranteed to change when *any* of the source item's content changes. If LastModHash is non-empty and if the current value equals the stored 
+//! value, then a bridge will conclude that the item is unchanged. Otherwise, the bridge will ask for and use the cryptographic hash.
 //! The "hash" property must capture the state of the source item's content. Its value must be guaranteed to be unique to the content. A cryptographic hash or message digest is ideal for this purpose.
 //! For very small items, the item's state itself would also work.
 //!
@@ -293,10 +294,15 @@ struct iModelExternalSourceAspect
         std::transform(str.begin(), str.end(), bytes, [](Utf8Char ch) {return isdigit(ch) ? ch - '0' : static_cast <char> (tolower(ch)) - 'a' + 10;});
         }
 
+    // Generate a string representation of a double, without losing any precision
+    static void DoubleToString(Utf8StringR str, double v) {str.Sprintf("%.17g", v);}
+    // Reconstruct a double by parsing a string representation
+    static double DoubleFromString(Utf8CP str) {return ::atof(str);}
+
     struct SourceState
         {
-        Utf8String m_hash; //!< The cryptographic hash (any algorithm) of source object's content. Must be guaranteed to change when *any* of the source item's content changes.
-        double m_lastModifiedTime; //!< Optional value that represents a timestamp of the last change to source object's content, if available. This value does not have to be a real DateTime. If not zero, this value must be guaranteed to change when *any* of the source item's content changes. If LastModifiedTime is non-zero and if the current value equals the stored value, then a bridge will conclude that the item is unchanged. Otherwise, the bridge will use the hash.
+        Utf8String m_hash;
+        Utf8String m_lastModHash;
         };
 
     RefCountedPtr<ECN::IECInstance> m_instance;

@@ -1034,9 +1034,9 @@ iModelExternalSourceAspect::SourceState iModelExternalSourceAspect::GetSourceSta
         ss.m_hash = v.GetUtf8CP();
         }
 
-    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_LastModifiedTime)) && !v.IsNull())
+    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_LastModHash)) && !v.IsNull())
         {
-        ss.m_lastModifiedTime = v.GetDouble();
+        ss.m_lastModHash = v.GetUtf8CP();
         }
 
     return ss;
@@ -1060,9 +1060,9 @@ void iModelExternalSourceAspect::SetProperties(rapidjson::Document const& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document iModelExternalSourceAspect::GetProperties() const
     {
-    rapidjson::Document json;
+    rapidjson::Document json(rapidjson::kObjectType);
     ECN::ECValue props;
-    if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, XTRN_SRC_ASPCT_Properties) || !props.IsString())
+    if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, XTRN_SRC_ASPCT_Properties) || !props.IsString() || props.IsNull())
         return json;
     json.Parse(props.GetUtf8CP());
     return json;
@@ -1074,7 +1074,7 @@ rapidjson::Document iModelExternalSourceAspect::GetProperties() const
 void iModelExternalSourceAspect::SetSourceState(ECN::IECInstanceR instance, SourceState const& ss)
     {
     instance.SetValue(XTRN_SRC_ASPCT_Hash, ECN::ECValue(ss.m_hash.c_str()));
-    instance.SetValue(XTRN_SRC_ASPCT_LastModifiedTime, ECN::ECValue(ss.m_lastModifiedTime));
+    instance.SetValue(XTRN_SRC_ASPCT_LastModHash, ECN::ECValue(ss.m_lastModHash.c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1083,7 +1083,7 @@ void iModelExternalSourceAspect::SetSourceState(ECN::IECInstanceR instance, Sour
 iModelExternalSourceAspect::SourceState iModelBridgeSyncInfoFile::SourceState::GetAspectState() const
     {
     iModelExternalSourceAspect::SourceState state;
-    state.m_lastModifiedTime = m_lmt;
+    iModelExternalSourceAspect::DoubleToString(state.m_lastModHash, m_lmt);
     state.m_hash = m_hash;
     return state;
     }
