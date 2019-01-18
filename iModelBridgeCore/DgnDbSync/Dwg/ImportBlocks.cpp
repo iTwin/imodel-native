@@ -16,11 +16,38 @@ DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgBlockReferenceExt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter::SharedPartKey::SharedPartKey (DwgDbObjectIdCR block, DwgDbObjectIdCR layer, double scale) 
+    : m_blockId(block), m_layerId(layer), m_basePartScale(scale)
+    {
+    // build a SharedPartKey value by hashing blockId, layerId, and basePartScale
+    MD5 hasher;
+    auto v = m_blockId.ToUInt64 ();
+    hasher.Add (&v, sizeof(v));
+    v = m_layerId.ToUInt64 ();
+    hasher.Add (&v, sizeof(v));
+    hasher.Add (&scale, sizeof(scale));
+    m_keyValue = hasher.GetHashVal ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter::SharedPartKey::SharedPartKey ()
+    {
+    m_blockId.SetNull (); 
+    m_layerId.SetNull ();
+    m_basePartScale = 0.0;
+    ::memset (m_keyValue.m_buffer, 0, MD5::HashBytes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 bool DwgImporter::SharedPartKey::operator < (SharedPartKey const& rho) const
     {
-    if (m_blockId == rho.GetBlockId())
-        return m_basePartScale < rho.GetBasePartScale() && fabs(m_basePartScale - rho.GetBasePartScale()) > 1.0e-5;
-    return m_blockId < rho.GetBlockId();
+    BeAssert (this->IsValid() && rho.IsValid() && "Uninitialized SharePartKey!");
+    auto res = ::memcmp(m_keyValue.m_buffer, rho.GetKeyValue().m_buffer, MD5::HashBytes);
+    return res < 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,7 +86,7 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
     if (canShareParts)
         {
         // user wants shared parts, and block transform is valid for shared parts, now search the parts cache:
-        SharedPartKey key(insert->GetBlockTableRecordId(), partScale);
+        SharedPartKey key(insert->GetBlockTableRecordId(), insert->GetLayerId(), partScale);
         found = m_blockPartsMap.find (key);
         }
 

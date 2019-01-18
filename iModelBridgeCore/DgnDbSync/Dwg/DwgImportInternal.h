@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgImportInternal.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -434,6 +434,7 @@ private:
     bool                m_canCreateSharedParts;
     bool                m_hasBaseTransform;
     DwgDbObjectId       m_sourceBlockId;
+    DwgDbObjectId       m_sourceLayerId;
     DwgImporter&        m_importer;
 
     void            SetDefaultCreation ();

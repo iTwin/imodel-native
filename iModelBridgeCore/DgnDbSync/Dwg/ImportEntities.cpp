@@ -2170,6 +2170,7 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
     m_is3d = m_inputs.GetTargetModelR().Is3d ();
     m_canCreateSharedParts = m_importer.GetOptions().IsBlockAsSharedParts ();
     m_sourceBlockId.SetNull ();
+    m_sourceLayerId.SetNull ();
 
     // find the element handler
     m_elementHandler = dgn_ElementHandler::Element::FindHandler (m_inputs.GetTargetModelR().GetDgnDb(), m_inputs.GetClassId());
@@ -2195,6 +2196,7 @@ void    ElementFactory::SetDefaultCreation ()
         insert->GetBlockTransform (blockTrans);
 
         m_sourceBlockId = insert->GetBlockTableRecordId ();
+        m_sourceLayerId = insert->GetLayerId ();
 
         // don't need to create shared parts for an anoymouse block
         DwgDbBlockTableRecordPtr    block (m_sourceBlockId, DwgDbOpenMode::ForRead);
@@ -2519,7 +2521,7 @@ BentleyStatus   ElementFactory::CreateSharedParts ()
 
     // cache the parts created for this block
     auto& blockPartsMap = m_importer.GetBlockPartsR ();
-    DwgImporter::SharedPartKey  key(m_sourceBlockId, m_basePartScale);
+    DwgImporter::SharedPartKey  key(m_sourceBlockId, m_sourceLayerId, m_basePartScale);
     blockPartsMap.insert (DwgImporter::T_BlockPartsEntry(key, parts));
 
     // create part elements from the part cache:
