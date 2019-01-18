@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectSignInManagerTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -18,7 +18,7 @@ class ConnectSignInManagerTests : public BaseMockHttpHandlerTest
     public:
         std::shared_ptr<StubImsClient> m_imsClient;
         std::shared_ptr<StubBuddiClient> m_buddiClient;
-        StubLocalState m_localState;
+        RuntimeJsonLocalState m_localState;
         std::shared_ptr<StubSecureStore> m_secureStore;
 
     public:

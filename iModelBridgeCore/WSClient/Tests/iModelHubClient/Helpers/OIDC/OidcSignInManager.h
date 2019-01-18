@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Helpers/OIDC/OidcSignInManager.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,10 +32,7 @@ struct OidcSignInManager : IConnectSignInManager
         AsyncTaskPtr<WSConnectVoidResult> _SignOut() override;
         bool _IsSignedIn() const override;
         UserInfo _GetUserInfo() const override;
-        Utf8String _GetLastUsername() const override;
         IConnectTokenProviderPtr _GetTokenProvider(Utf8StringCR rpUri) const override;
-        //! Will be called by CheckUserChange
-        void _StoreSignedInUser() override;
 
         AuthenticationHandlerPtr _GetAuthenticationHandler
             (
@@ -46,6 +43,8 @@ struct OidcSignInManager : IConnectSignInManager
 
     public:
         AsyncTaskPtr<OidcSignInResult> SignInWithCredentials(CredentialsCR credentials);
+
+        OidcSignInManager() : IConnectSignInManager(std::make_shared<RuntimeLocalState>()) {};
     };
 
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

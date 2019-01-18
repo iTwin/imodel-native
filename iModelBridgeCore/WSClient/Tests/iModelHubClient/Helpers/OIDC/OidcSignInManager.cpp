@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Helpers/OIDC/OidcSignInManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "OidcSignInManager.h"
@@ -59,24 +59,9 @@ IConnectSignInManager::UserInfo OidcSignInManager::_GetUserInfo() const
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String OidcSignInManager::_GetLastUsername() const
-    {
-    return "";
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                     Algirdas.Mikoliunas             08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 IConnectTokenProviderPtr OidcSignInManager::_GetTokenProvider(Utf8StringCR rpUri) const
     {
     return m_tokenProvider;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                     Algirdas.Mikoliunas             08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OidcSignInManager::_StoreSignedInUser()
-    {
     }
 
 /*--------------------------------------------------------------------------------------+

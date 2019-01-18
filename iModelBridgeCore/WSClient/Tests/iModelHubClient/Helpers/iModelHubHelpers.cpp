@@ -2,14 +2,13 @@
 |
 |     $Source: Tests/iModelHubClient/Helpers/iModelHubHelpers.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <OidcNativeClient/OidcNative.h>
 #include "iModelHubHelpers.h"
 #include "IntegrationTestsSettings.h"
 #include "TestsProgressCallback.h"
-#include "StubLocalState.h"
 #include "DgnPlatformHelpers.h"
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/Connect/SimpleConnectTokenProvider.h>
@@ -90,7 +89,7 @@ namespace iModelHubHelpers
 
         Utf8String project;
         project.Sprintf("%s--%s", ServerSchema::Plugin::Project, projectId.c_str());
-        result = WSRepositoryClient::Create(serverUrl, project, clientInfo, nullptr, client.GetHttpHandler());
+        result = WSRepositoryClient::Create(serverUrl, ServerProperties::ServiceVersion(), project, clientInfo, nullptr, client.GetHttpHandler());
         }
 
     /*--------------------------------------------------------------------------------------+
@@ -115,7 +114,9 @@ namespace iModelHubHelpers
         {
         IWSRepositoryClientPtr wsClient;
         CreateProjectWSClient(wsClient, *client, projectId);
-        ASSERT_SUCCESS(wsClient->SendCreateObjectRequest(iModelCreationJson(imodelName, ""), BeFileName(), nullptr, nullptr)->GetResult());
+
+        auto requestOptions = CreateiModelHubRequestOptions();
+        ASSERT_SUCCESS(wsClient->SendCreateObjectRequestWithOptions(iModelCreationJson(imodelName, ""), BeFileName(), nullptr, requestOptions)->GetResult());
         result = client->GetiModelByName(projectId, imodelName)->GetResult();
         ASSERT_SUCCESS(result);
         }
@@ -720,7 +721,7 @@ namespace iModelHubHelpers
     WebServices::IWSRepositoryClientPtr CreateWSClient(iModelInfoPtr imodel, std::shared_ptr<MockHttpHandler> mockHandler)
         {
         WebServices::ClientInfoPtr clientInfo = IntegrationTestsSettings::Instance().GetClientInfo();
-        return WebServices::WSRepositoryClient::Create(imodel->GetServerURL(), imodel->GetWSRepositoryName(), clientInfo, nullptr, mockHandler);
+        return WebServices::WSRepositoryClient::Create(imodel->GetServerURL(), ServerProperties::ServiceVersion(), imodel->GetWSRepositoryName(), clientInfo, nullptr, mockHandler);
         }
     
     //---------------------------------------------------------------------------------------
@@ -741,6 +742,23 @@ namespace iModelHubHelpers
             {
             pointersVector.push_back(changeSetPtr.get());
             }
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             12/18
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    IWSRepositoryClient::RequestOptionsPtr CreateiModelHubRequestOptions()
+        {
+        auto requestOptions = std::make_shared<IWSRepositoryClient::RequestOptions>();
+
+        requestOptions->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+        if (!requestOptions->GetActivityOptions()->HasActivityId())
+            {
+            BeSQLite::BeGuid id = BeSQLite::BeGuid(true);
+            requestOptions->GetActivityOptions()->SetActivityId(id.ToString());
+            }
+
+        return requestOptions;
         }
     }
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

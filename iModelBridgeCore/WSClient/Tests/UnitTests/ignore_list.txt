@@ -65,3 +65,9 @@ ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
+
+WSRepositoryClientTests.SendCreateObjectRequest_WebApiV2AndRootInstanceContainsId_IdAddedToUrlToAllowRelatedInstanceModificationsc
+
+    # VSTS#58325
+    # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/09/2019
+    # Crash

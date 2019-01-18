@@ -84,6 +84,7 @@
     <ClInclude Include="Integration\iModelTestsBase.h" />
     <ClInclude Include="Integration\IntegrationTestsBase.h" />
     <ClInclude Include="Integration\LRPJobBackdoorAPI.h" />
+    <ClInclude Include="Integration\RequestVerifyHttpHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Integration\IntegrationTests.json" />

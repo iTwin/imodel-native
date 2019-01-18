@@ -135,7 +135,8 @@ WSQuery VersionsManager::CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8Str
 VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancellationToken, Thumbnail::Size thumbnailsToSelect) const
     {
     const Utf8String methodName = "VersionsManager::GetAllVersions";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Version);
 
     Utf8String select = "*";
@@ -145,7 +146,7 @@ VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancel
         Thumbnail::AddHasThumbnailSelect(select, Thumbnail::Size::Large);
     query.SetSelect(select);
 
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<VersionsInfoResult>
+    return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)->Then<VersionsInfoResult>
         ([=](const WSObjectsResult& versionInfoResult)
         {
         if (versionInfoResult.IsSuccess())
@@ -165,7 +166,7 @@ VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancel
             }
         else
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, versionInfoResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, versionInfoResult.GetError().GetMessage().c_str());
             return VersionsInfoResult::Error(versionInfoResult.GetError());
             }
         });
@@ -177,7 +178,8 @@ VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancel
 VersionInfoTaskPtr VersionsManager::GetVersionById(Utf8StringCR versionId, ICancellationTokenPtr cancellationToken, Thumbnail::Size thumbnailsToSelect) const
     {
     const Utf8String methodName = "VersionsManager::GetVersionById";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     WSQuery query(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, versionId));
 
     Utf8String select = "*";
@@ -187,7 +189,7 @@ VersionInfoTaskPtr VersionsManager::GetVersionById(Utf8StringCR versionId, ICanc
         Thumbnail::AddHasThumbnailSelect(select, Thumbnail::Size::Large);
     query.SetSelect(select);
 
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
+    return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)
         ->Then<VersionInfoResult>([=](WSObjectsResult const& versionInfoResult)
         {
         if (versionInfoResult.IsSuccess())
@@ -197,7 +199,7 @@ VersionInfoTaskPtr VersionsManager::GetVersionById(Utf8StringCR versionId, ICanc
             }
         else
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, versionInfoResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, versionInfoResult.GetError().GetMessage().c_str());
             return VersionInfoResult::Error(versionInfoResult.GetError());
             }
         });
@@ -209,11 +211,12 @@ VersionInfoTaskPtr VersionsManager::GetVersionById(Utf8StringCR versionId, ICanc
 VersionInfoTaskPtr VersionsManager::CreateVersion(VersionInfoR version, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "VersionsManager::CreateVersion";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     auto jsonBody = version.GenerateJson();
     m_globalRequestOptionsPtr->InsertRequestOptions(jsonBody);
 
-    return m_wsRepositoryClient->SendCreateObjectRequest(jsonBody, BeFileName(), nullptr, cancellationToken)
+    return m_wsRepositoryClient->SendCreateObjectRequestWithOptions(jsonBody, BeFileName(), nullptr, requestOptions, cancellationToken)
         ->Then<VersionInfoResult>([=](const WSCreateObjectResult& versionInfoResult)
         {
         if (versionInfoResult.IsSuccess())
@@ -227,7 +230,7 @@ VersionInfoTaskPtr VersionsManager::CreateVersion(VersionInfoR version, ICancell
             }
         else
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, versionInfoResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, versionInfoResult.GetError().GetMessage().c_str());
             return VersionInfoResult::Error(versionInfoResult.GetError());
             }
         });
@@ -240,20 +243,21 @@ VersionInfoTaskPtr VersionsManager::CreateVersion(VersionInfoR version, ICancell
 StatusTaskPtr VersionsManager::UpdateVersion(VersionInfoCR version, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "VersionsManager::UpdateVersion";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
     Json::Value varsionJson = version.GenerateJson();
 
-    return m_wsRepositoryClient->SendUpdateObjectRequest(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, version.GetId()), 
+    return m_wsRepositoryClient->SendUpdateObjectRequestWithOptions(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, version.GetId()), 
                                                          varsionJson[ServerSchema::Instance][ServerSchema::Properties], nullptr, BeFileName(), 
-                                                         nullptr, cancellationToken)
+                                                         nullptr, requestOptions, cancellationToken)
         ->Then<StatusResult>([=](const WSUpdateObjectResult& result)
         {
         if (result.IsSuccess())
             return StatusResult::Success();
         else
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, requestOptions, result.GetError().GetMessage().c_str());
             return StatusResult::Error(result.GetError());
             }
         });

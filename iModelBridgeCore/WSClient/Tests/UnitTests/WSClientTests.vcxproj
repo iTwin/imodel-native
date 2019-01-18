@@ -111,7 +111,6 @@
     <ClInclude Include="Published\WebServices\Connect\SecurityTokenTests.h" />
     <ClInclude Include="Published\WebServices\Connect\SimpleConnectTokenProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubImsClient.h" />
-    <ClInclude Include="Published\WebServices\Connect\StubLocalState.h" />
     <ClInclude Include="Published\Utils\FSTest.h" />
     <ClInclude Include="Published\Utils\Http\AuthenticationHandlerTests.h" />
     <ClInclude Include="Published\Utils\Http\BaseMockHttpHandlerTest.h" />

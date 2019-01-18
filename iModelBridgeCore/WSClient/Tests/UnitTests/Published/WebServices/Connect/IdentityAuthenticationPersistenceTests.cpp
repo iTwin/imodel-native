@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/IdentityAuthenticationPersistenceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,7 +10,6 @@
 
 #include "../../../../../Connect/IdentityAuthenticationPersistence.h"
 #include "ConnectTestsHelper.h"
-#include "StubLocalState.h"
 #include "StubSecureStore.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -21,7 +20,7 @@ using namespace ::testing;
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenNotCalled_ReturnsNull)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     IdentityAuthenticationPersistence persistence(&localState, std::make_shared<StubSecureStore>());
 
     ASSERT_EQ(nullptr, persistence.GetToken());
@@ -32,7 +31,7 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenNotCalled_Return
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenWithNullCalled_ReturnsNull)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     IdentityAuthenticationPersistence persistence(&localState, std::make_shared<StubSecureStore>());
 
     persistence.SetToken(StubSamlToken());
@@ -45,7 +44,7 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenWithNullCalled_R
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSameToken)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     IdentityAuthenticationPersistence persistence(&localState, std::make_shared<StubSecureStore>());
 
     auto token = StubSamlToken();
@@ -59,7 +58,7 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenNotCalled_ReturnsInvalid)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     IdentityAuthenticationPersistence persistence(&localState, std::make_shared<StubSecureStore>());
 
     EXPECT_EQ(DateTime(), persistence.GetTokenSetTime());
@@ -70,7 +69,7 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenNotCalled
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenCalledWithNull_ReturnsInvalid)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     IdentityAuthenticationPersistence persistence(&localState, std::make_shared<StubSecureStore>());
 
     persistence.SetToken(StubSamlToken());
@@ -83,7 +82,7 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenCalledWit
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenCalled_ReturnsSetTime)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     IdentityAuthenticationPersistence persistence(&localState, std::make_shared<StubSecureStore>());
 
     auto before = DateTime::GetCurrentTimeUtc();
@@ -100,7 +99,7 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenCalled_Re
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetCredentials_Always_ReturnsEmpty)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     IdentityAuthenticationPersistence persistence(&localState, std::make_shared<StubSecureStore>());
 
     EXPECT_TRUE(persistence.GetCredentials().IsEmpty());
