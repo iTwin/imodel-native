@@ -1083,7 +1083,7 @@ void iModelExternalSourceAspect::SetSourceState(ECN::IECInstanceR instance, Sour
 iModelExternalSourceAspect::SourceState iModelBridgeSyncInfoFile::SourceState::GetAspectState() const
     {
     iModelExternalSourceAspect::SourceState state;
-    DoubleToString(stat.m_lastModHash, m_lmt);
+    iModelExternalSourceAspect::DoubleToString(state.m_lastModHash, m_lmt);
     state.m_hash = m_hash;
     return state;
     }
