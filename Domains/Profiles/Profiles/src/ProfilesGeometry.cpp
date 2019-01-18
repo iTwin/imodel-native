@@ -974,6 +974,8 @@ IGeometryPtr ProfilesGeometry::CreateTrapezium (TrapeziumProfile const& profile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* 'singleProfile' passed by reference and not directly retrieved from 'doubleProfile'
+* because of support for geometry update case (see Profile::UpdateGeometry()).
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateDoubleLShape (DoubleLShapeProfile const& doubleProfile, LShapeProfile const& singleProfile)
@@ -1017,6 +1019,8 @@ IGeometryPtr ProfilesGeometry::CreateDoubleLShape (DoubleLShapeProfile const& do
     }
 
 /*---------------------------------------------------------------------------------**//**
+* 'singleProfile' passed by reference and not directly retrieved from 'doubleProfile'
+* because of support for geometry update case (see Profile::UpdateGeometry()).
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateDoubleCShape (DoubleCShapeProfile const& doubleProfile, CShapeProfile const& singleProfile)
@@ -1042,9 +1046,12 @@ IGeometryPtr ProfilesGeometry::CreateDoubleCShape (DoubleCShapeProfile const& do
     }
 
 /*---------------------------------------------------------------------------------**//**
+* 'updatedProfilePtr' is used to update composite geometry when one of the referenced
+* profiles was updated (from _UpdateGeometry()). 'updatedProfilePtr' might be null if
+* the geometry is being created for the first time (from _CreateGeometry()).
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateArbitraryCompositeShape (ArbitraryCompositeProfile const& profile)
+IGeometryPtr ProfilesGeometry::CreateArbitraryCompositeShape (ArbitraryCompositeProfile const& profile, SinglePerimeterProfileCPtr updatedProfilePtr)
     {
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
 
@@ -1068,7 +1075,13 @@ IGeometryPtr ProfilesGeometry::CreateArbitraryCompositeShape (ArbitraryComposite
         Transform transform;
         BeAssert (transform.InitFrom (transformMatrix));
 
-        curveVector->Add (singleProfilePtr->GetShape()->Clone (transform)->GetAsCurveVector());
+        IGeometryPtr profileGeometryPtr = nullptr;
+        if (updatedProfilePtr.IsValid() && updatedProfilePtr->GetElementId() == singleProfilePtr->GetElementId())
+            profileGeometryPtr = updatedProfilePtr->GetShape();
+        else
+            profileGeometryPtr = singleProfilePtr->GetShape();
+
+        curveVector->Add (profileGeometryPtr->Clone (transform)->GetAsCurveVector());
         }
 
     return IGeometry::Create (curveVector);

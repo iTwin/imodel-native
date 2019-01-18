@@ -73,7 +73,22 @@ bool ArbitraryCompositeProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ArbitraryCompositeProfile::_CreateGeometry() const
     {
-    return ProfilesGeometry::CreateArbitraryCompositeShape (*this);
+    return ProfilesGeometry::CreateArbitraryCompositeShape (*this, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ArbitraryCompositeProfile::_UpdateGeometry (Profile const& relatedProfile) const
+    {
+    SinglePerimeterProfile const* pSingleProfile = dynamic_cast<SinglePerimeterProfile const*> (&relatedProfile);
+    if (pSingleProfile == nullptr)
+        {
+        BeAssert (false);
+        return nullptr;
+        }
+
+    return ProfilesGeometry::CreateArbitraryCompositeShape (*this, pSingleProfile);
     }
 
 /*---------------------------------------------------------------------------------**//**

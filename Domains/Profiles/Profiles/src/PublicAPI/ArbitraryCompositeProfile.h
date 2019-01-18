@@ -65,12 +65,15 @@ protected:
     explicit ArbitraryCompositeProfile (CreateParams const& params);
 
     virtual bool _Validate() const override;
-    virtual IGeometryPtr _CreateGeometry() const override;
 
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _InsertInDb() override;
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _LoadFromDb() override;
     PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
+
+private:
+    virtual IGeometryPtr _CreateGeometry() const override;
+    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryCompositeProfile)
