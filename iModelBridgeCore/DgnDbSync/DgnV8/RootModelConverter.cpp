@@ -482,6 +482,12 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
     JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());
 
+    if (_WantProvenanceInBim())
+        {
+        auto aspect = SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(*GetRootModelP(), (SyncInfo::BridgeJobletExternalSourceAspect::ConverterType)jtype, *this);
+        aspect.AddAspect(*ed);
+        }
+
     SubjectCPtr jobSubject = ed->InsertT<Subject>();
     if (!jobSubject.IsValid())
         return ImportJobCreateStatus::FailedInsertFailure;

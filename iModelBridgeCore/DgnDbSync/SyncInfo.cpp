@@ -1817,7 +1817,9 @@ void SyncInfo::V8ElementExternalSourceAspect::AssertMatch(DgnElementCR el, DgnV8
     
     auto ss = GetSourceState();
 
-    BeAssert(ss.m_lastModifiedTime == elprov.m_lastModified);
+    Utf8String provLastMod;
+    iModelExternalSourceAspect::DoubleToString(provLastMod, elprov.m_lastModified);
+    BeAssert(ss.m_lastModHash == provLastMod);
 
     Utf8String provHash;
     iModelExternalSourceAspect::HexStrFromBytes(provHash, elprov.m_hash.m_buffer);
@@ -1912,7 +1914,7 @@ void SyncInfo::V8ElementExternalSourceAspect::Update(ElementProvenance const& pr
     {
     SourceState ss;
     iModelExternalSourceAspect::HexStrFromBytes(ss.m_hash, prov.m_hash.m_buffer);
-    ss.m_lastModifiedTime = prov.m_lastModified; 
+    DoubleToString(ss.m_lastModHash, prov.m_lastModified);
     SetSourceState(ss); 
     }
 
@@ -1994,6 +1996,72 @@ void SyncInfo::V8ModelExternalSourceAspect::AssertMatch(V8ModelMapping const& ma
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(DgnV8ModelCR masterModel, ConverterType converterType, Converter& converter) 
+    {
+    auto aspectClass = GetAspectClass(converter.GetDgnDb());
+    if (nullptr == aspectClass)
+        return BridgeJobletExternalSourceAspect(nullptr);
+    
+    DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*masterModel.GetDgnFileP());
+    auto instance = CreateInstance(repositoryLinkId, KindToString(Kind::BridgeJoblet), FormatSourceId(masterModel), nullptr, *aspectClass);
+    
+    BridgeJobletExternalSourceAspect aspect(instance.get());
+    
+    rapidjson::Document json(rapidjson::kObjectType);
+    auto& allocator = json.GetAllocator();
+    // transform property is initially missing/null
+    json.AddMember("type", (int)converterType, allocator);
+    aspect.SetProperties(json);
+
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::BridgeJobletExternalSourceAspect::SetTransform(TransformCR t)
+    {
+    auto json = GetProperties();
+    auto& allocator = json.GetAllocator();
+    if (!json.HasMember("transform"))
+        json.AddMember("transform", fixedArrayToJson((double*)&t, 12, allocator), allocator);
+    else
+        json["transform"] = fixedArrayToJson((double*)&t, 12, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform SyncInfo::BridgeJobletExternalSourceAspect::GetTransform() const
+    {
+    auto json = GetProperties();
+    if (!json.HasMember("transform"))
+        return Transform::FromIdentity();
+    Transform transform;
+    fixedArrayFromJson((double*)&transform, 12, json["transform"].GetArray());
+    return transform;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::BridgeJobletExternalSourceAspect::ConverterType SyncInfo::BridgeJobletExternalSourceAspect::GetConverterType() const
+    {
+    auto json = GetProperties();
+    return (ConverterType)(json["type"].GetInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8Api::ModelId SyncInfo::BridgeJobletExternalSourceAspect::GetMasterModelId() const
+    {
+    return atoi(GetSourceId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::CreateAspect(DgnElementId scopeId, Utf8StringCR tag, DgnDbR db)
@@ -2057,10 +2125,10 @@ void SyncInfo::ViewDefinitionExternalSourceAspect::Update(DgnV8ViewInfoCR viewIn
         }
 
     iModelExternalSourceAspect::SourceState ss;
-    ss.m_lastModifiedTime = viewInfo.GetElementRef()->GetLastModified();
+    DoubleToString(ss.m_lastModHash, viewInfo.GetElementRef()->GetLastModified());
     SetSourceState(ss);
 
-    rapidjson::Document json(rapidjson::kObjectType);
+    auto json = GetProperties();
     auto& allocator = json.GetAllocator();
     if (!json.HasMember(json_v8ViewName))
         json.AddMember("v8ViewName", rapidjson::Value(viewName.c_str(), allocator), allocator);

@@ -504,7 +504,7 @@ struct SyncInfo
       public:
         enum class Kind
             {
-            Element, Model, DrawingGraphic, Level, GeomPart, ViewDefinition
+            Element, Model, DrawingGraphic, Level, GeomPart, ViewDefinition, BridgeJoblet
             };
 
         static Utf8CP KindToString(Kind kind)
@@ -517,6 +517,7 @@ struct SyncInfo
                 case Kind::Level: return "Level";
                 case Kind::GeomPart: return "GeomPart";
                 case Kind::ViewDefinition: return "ViewDefinition";
+                case Kind::BridgeJoblet: return "BridgeJoblet";
                 }
             BeAssert(false);
             return "Element";
@@ -530,6 +531,7 @@ struct SyncInfo
             if (0==strcmp(str,"Level")) return Kind::Level;
             if (0==strcmp(str,"GeomPart")) return Kind::GeomPart;
             if (0==strcmp(str,"ViewDefinition")) return Kind::ViewDefinition;
+            if (0==strcmp(str,"BridgeJoblet")) return Kind::BridgeJoblet;
             BeAssert(false);
             return Kind::Element;
             }
@@ -675,6 +677,29 @@ struct SyncInfo
         #ifdef TEST_EXTERNAL_SOURCE_ASPECT
         void AssertMatch(V8ModelMapping const&);
         #endif
+        };
+
+    //! Marker for a Subject that represents a Bridge "joblet", that is, a combination of bridge and master file/model.
+    struct BridgeJobletExternalSourceAspect : ExternalSourceAspect
+        {
+        enum class ConverterType {RootModel=0, TiledFile=1}; //!< persistent data. do not change!
+
+      private:
+        BridgeJobletExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+      public:
+        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return Utf8PrintfString("%lld", v8Id);}
+        static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}
+
+        //! Create a new aspect in memory. Caller must call AddAspect, passing in the model element that is to have this aspect.
+        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect CreateAspect(DgnV8ModelCR masterModel, ConverterType, Converter&);
+        
+        //! Update the root transform
+        DGNDBSYNC_EXPORT void SetTransform(TransformCR);
+        //! Get the root transform
+        DGNDBSYNC_EXPORT Transform GetTransform() const;
+
+        DGNDBSYNC_EXPORT DgnV8Api::ModelId GetMasterModelId() const;
+        DGNDBSYNC_EXPORT ConverterType GetConverterType() const;
         };
 
     //! Provenance info for an element that was \em not converted but was discarded instead.
