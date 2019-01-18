@@ -273,12 +273,13 @@ struct DwgImporter
     friend struct LayoutXrefFactory;
     friend struct GroupFactory;
     friend struct ElementFactory;
-    friend class DwgProtocalExtension;
+    friend class DwgProtocolExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
     friend class DwgViewportExt;
     friend class DwgLightExt;
     friend class DwgBrepExt;
+    friend class DwgBlockReferenceExt;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1016,7 +1017,7 @@ private:
     DgnCategoryId           FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
     DgnSubCategoryId        FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
 
-    static void             RegisterProtocalExtensions ();
+    static void             RegisterProtocolExtensions ();
 
 //__PUBLISH_SECTION_START__
 protected:
@@ -1162,8 +1163,18 @@ protected:
     // DWG entity section is the ModelSpace block containing graphical entities
     DWG_EXPORT virtual BentleyStatus  _ImportEntitySection ();
     //! Import a database-resident entity
+    //! @note This is the default method that converts a modelspace or paperspace entity to BIM.
+    //! The import process first tries to convert an entity via an object protocol extension, DwgProtocolExtension.
+    //! If the entity does not have DwgProtocolExtension, it gets directly sent into this method for conversion.
+    //! If the entity has DwgProtocolExtension, it gets sent into_ImportEntityByProtocolExtension.  The entity extension
+    //! may convert the entity data completely on its own. It may also alternatively fallback to call this method 
+    //! as it sees appropriate.
+    //! @see _ImportEntityByProtocolExtension
     DWG_EXPORT virtual BentleyStatus  _ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
-    //! Import a block reference entity
+    //! Import a database-resident entity that is implemented by DwgProtocolExtension
+    //! @see _ImportEntity
+    DWG_EXPORT virtual BentleyStatus  _ImportEntityByProtocolExtension (ElementImportResults& results, ElementImportInputs& inputs, DwgProtocolExtension& ext);
+    //! Import an xReference entity
     DWG_EXPORT virtual BentleyStatus  _ImportXReference (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a normal block reference entity
     DWG_EXPORT virtual BentleyStatus  _ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs);
