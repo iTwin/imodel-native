@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/TestHelpers.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -532,6 +532,14 @@ public:
     void SetUpdateNodeHandler(UpdateNodeHandler handler) {m_updateNodeHandler = handler;}
     void SetUpdateDataSourceHandler(UpdateDataSourceHandler handler) {m_updateDataSourceHandler = handler;}
     void SetLocateNodeHandler(LocateNodeHandler handler) {m_locateNodeHandler = handler;}
+    size_t GetCachedChildrenCount(uint64_t parentId) 
+        { 
+        return std::count_if(m_nodes.begin(), m_nodes.end(), 
+            [&](bpair<uint64_t, JsonNavNodePtr> nodePair) 
+            {
+            return parentId == nodePair.second->GetParentNodeId(); 
+            }); 
+        }
 };
 
 //=======================================================================================

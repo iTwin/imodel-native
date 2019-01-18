@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/QueryBasedSpecificationNodesProviderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../../../Source/RulesDriven/RulesEngine/JsonNavNode.h"
@@ -691,4 +691,348 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NotifiesAboutUsedRelatedClass
     iter = m_usedClassesListener.GetUsedClasses().find(m_gadgetClass);
     ASSERT_TRUE(m_usedClassesListener.GetUsedClasses().end() != iter);
     EXPECT_TRUE(iter->second); // polymorphic
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_ForwardRelationshipFrom0To1_Forward)
+    {
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD");
+    ECClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE");
+    ECRelationshipClassCP classDHasE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
+    
+    ECInstanceInserter inserterD(s_project->GetECDb(), *classD, nullptr);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterD, *classD);
+
+    ECInstanceInserter inserterE(s_project->GetECDb(), *classE, nullptr);
+    IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterE, *classE);
+    
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasE, *d, *e, nullptr, true);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", "RulesEngineTest:ClassD", false);
+    rule->AddSpecification(*spec);
+
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    RelatedInstanceNodesSpecificationP childSpecification = new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection::RequiredRelationDirection_Forward, "", "RulesEngineTest:ClassDHasClassE", "");
+    childRule->AddSpecification(*childSpecification);
+    m_ruleset->AddPresentationRule(*childRule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    ASSERT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_ForwardRelationshipFrom0To1_Backward)
+    {
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD");
+    ECClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE");
+    ECRelationshipClassCP classDHasE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
+
+    ECInstanceInserter inserterD(s_project->GetECDb(), *classD, nullptr);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterD, *classD);
+
+    ECInstanceInserter inserterE(s_project->GetECDb(), *classE, nullptr);
+    IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterE, *classE);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasE, *d, *e, nullptr, true);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", "RulesEngineTest:ClassE", false);
+    rule->AddSpecification(*spec);
+
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    RelatedInstanceNodesSpecificationP childSpecification = new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection::RequiredRelationDirection_Backward, "", "RulesEngineTest:ClassDHasClassE", "");
+    childRule->AddSpecification(*childSpecification);
+    m_ruleset->AddPresentationRule(*childRule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    ASSERT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_ForwardRelationshipFrom0To1_Both)
+    {
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD");
+    ECClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE");
+    ECRelationshipClassCP classDHasE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
+
+    ECInstanceInserter inserterD(s_project->GetECDb(), *classD, nullptr);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterD, *classD);
+
+    ECInstanceInserter inserterE(s_project->GetECDb(), *classE, nullptr);
+    IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterE, *classE);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasE, *d, *e, nullptr, true);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", "RulesEngineTest:ClassD", false);
+    rule->AddSpecification(*spec);
+
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    RelatedInstanceNodesSpecificationP childSpecification = new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection::RequiredRelationDirection_Both, "", "RulesEngineTest:ClassDHasClassE", "");
+    childRule->AddSpecification(*childSpecification);
+    m_ruleset->AddPresentationRule(*childRule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    ASSERT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_ForwardRelationshipFrom1To1_Forward)
+    {
+    ECClassCP classA2Base = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2Base");
+    ECClassCP classB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB2");
+    ECRelationshipClassCP classA2BaseHasB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2BaseHasB2")->GetRelationshipClassCP();
+
+    ECInstanceInserter inserterclassA2Base(s_project->GetECDb(), *classA2Base, nullptr);
+    IECInstancePtr a2Base = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterclassA2Base, *classA2Base);
+
+    ECInstanceInserter inserterB2(s_project->GetECDb(), *classB2, nullptr);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterB2, *classB2);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2BaseHasB2, *a2Base, *b2, nullptr, true);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", "RulesEngineTest:ClassA2Base", false);
+    rule->AddSpecification(*spec);
+
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    RelatedInstanceNodesSpecificationP childSpecification = new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection::RequiredRelationDirection_Forward, "", "RulesEngineTest:ClassA2BaseHasB2", "");
+    childRule->AddSpecification(*childSpecification);
+    m_ruleset->AddPresentationRule(*childRule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    ASSERT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_ForwardRelationshipFrom1To1_Backward)
+    {
+    ECClassCP classA2Base = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2Base");
+    ECClassCP classB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB2");
+    ECRelationshipClassCP classA2BaseHasB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2BaseHasB2")->GetRelationshipClassCP();
+
+    ECInstanceInserter inserterclassA2Base(s_project->GetECDb(), *classA2Base, nullptr);
+    IECInstancePtr a2Base = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterclassA2Base, *classA2Base);
+
+    ECInstanceInserter inserterB2(s_project->GetECDb(), *classB2, nullptr);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterB2, *classB2);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2BaseHasB2, *a2Base, *b2, nullptr, true);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", "RulesEngineTest:ClassB2", false);
+    rule->AddSpecification(*spec);
+
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    RelatedInstanceNodesSpecificationP childSpecification = new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection::RequiredRelationDirection_Backward, "", "RulesEngineTest:ClassA2BaseHasB2", "");
+    childRule->AddSpecification(*childSpecification);
+    m_ruleset->AddPresentationRule(*childRule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    ASSERT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_ForwardRelationshipFrom1To1_Both)
+    {
+    ECClassCP classA2Base = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2Base");
+    ECClassCP classB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB2");
+    ECRelationshipClassCP classA2BaseHasB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2BaseHasB2")->GetRelationshipClassCP();
+
+    ECInstanceInserter inserterclassA2Base(s_project->GetECDb(), *classA2Base, nullptr);
+    IECInstancePtr a2Base = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterclassA2Base, *classA2Base);
+
+    ECInstanceInserter inserterB2(s_project->GetECDb(), *classB2, nullptr);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterB2, *classB2);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2BaseHasB2, *a2Base, *b2, nullptr, true);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", "RulesEngineTest:ClassA2Base", false);
+    rule->AddSpecification(*spec);
+
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    RelatedInstanceNodesSpecificationP childSpecification = new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection::RequiredRelationDirection_Both, "", "RulesEngineTest:ClassA2BaseHasB2", "");
+    childRule->AddSpecification(*childSpecification);
+    m_ruleset->AddPresentationRule(*childRule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    ASSERT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_BackwardRelationshipFrom0To0_Forward)
+    {
+    ECClassCP classG = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassG");
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD");
+    ECRelationshipClassCP classGHasD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassGUsesClassD")->GetRelationshipClassCP();
+
+    ECInstanceInserter inserterG(s_project->GetECDb(), *classG, nullptr);
+    IECInstancePtr g = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterG, *classG);
+
+    ECInstanceInserter inserterD(s_project->GetECDb(), *classD, nullptr);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterD, *classD);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *d, *g, nullptr, true);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", "RulesEngineTest:ClassG", false);
+    rule->AddSpecification(*spec);
+
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    RelatedInstanceNodesSpecificationP childSpecification = new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection::RequiredRelationDirection_Forward, "", "RulesEngineTest:ClassGUsesClassD", "");
+    childRule->AddSpecification(*childSpecification);
+    m_ruleset->AddPresentationRule(*childRule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    ASSERT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_BackwardRelationshipFrom0To0_Backward)
+    {
+    ECClassCP classG = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassG");
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD");
+    ECRelationshipClassCP classGHasD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassGUsesClassD")->GetRelationshipClassCP();
+
+    ECInstanceInserter inserterG(s_project->GetECDb(), *classG, nullptr);
+    IECInstancePtr g = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterG, *classG);
+
+    ECInstanceInserter inserterD(s_project->GetECDb(), *classD, nullptr);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterD, *classD);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *d, *g, nullptr, true);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", "RulesEngineTest:ClassD", false);
+    rule->AddSpecification(*spec);
+
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    RelatedInstanceNodesSpecificationP childSpecification = new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection::RequiredRelationDirection_Backward, "", "RulesEngineTest:ClassGUsesClassD", "");
+    childRule->AddSpecification(*childSpecification);
+    m_ruleset->AddPresentationRule(*childRule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    ASSERT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_BackwardRelationshipFrom0To0_Both)
+    {
+    ECClassCP classG = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassG");
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD");
+    ECRelationshipClassCP classGHasD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassGUsesClassD")->GetRelationshipClassCP();
+
+    ECInstanceInserter inserterG(s_project->GetECDb(), *classG, nullptr);
+    IECInstancePtr g = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterG, *classG);
+
+    ECInstanceInserter inserterD(s_project->GetECDb(), *classD, nullptr);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterD, *classD);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *d, *g, nullptr, true);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", "RulesEngineTest:ClassG", false);
+    rule->AddSpecification(*spec);
+
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    RelatedInstanceNodesSpecificationP childSpecification = new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection::RequiredRelationDirection_Both, "", "RulesEngineTest:ClassGUsesClassD", "");
+    childRule->AddSpecification(*childSpecification);
+    m_ruleset->AddPresentationRule(*childRule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    ASSERT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
     }
