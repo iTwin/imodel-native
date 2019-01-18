@@ -266,9 +266,36 @@ method and not in its _ConvertToBim method.
 //! in JSON format, but that is up to the bridge.
 struct iModelExternalSourceAspect
     {
+    //! Utility function to convert a fixed-length byte array to its hex string representation. This is useful when 
+    //! converting an MD5 or SHA1 hash value to a string in order to store it. This is a common operation.
+    template<size_t BYTE_COUNT> static void HexStrFromBytes(Utf8StringR str, const Byte (&bytes)[BYTE_COUNT])
+        {
+        str.clear();
+        str.reserve(2 * BYTE_COUNT);
+        for (size_t i = 0; i < BYTE_COUNT; i++)
+            {
+            static constexpr char* dec2hex = "0123456789abcdef";
+            str += dec2hex[(bytes[i] >> 4) & 15];
+            str += dec2hex[ bytes[i]       & 15];
+            }
+        }
+
+    //! Utility function to convert a hex string representation of a byte array to a fixed-length byte array. This is useful when 
+    //! converting a stored hash value back to a MD5 or SHA1 binary hash value. This should be rarely needed, as hash values can
+    //! be compared for equality in their stringified form.
+    template<size_t BYTE_COUNT> static void HextStrToBytes(Byte (&bytes)[BYTE_COUNT], Utf8StringCR str)
+        {
+        if (str.size() != 2 * BYTE_COUNT)
+            {
+            BeAssert(false);
+            return;
+            }
+        std::transform(str.begin(), str.end(), bytes, [](Utf8Char ch) {return isdigit(ch) ? ch - '0' : static_cast <char> (tolower(ch)) - 'a' + 10;});
+        }
+
     struct SourceState
         {
-        bvector<unsigned char> m_hash; //!< The cryptographic hash (any algorithm) of source object's content. Must be guaranteed to change when *any* of the source item's content changes.
+        Utf8String m_hash; //!< The cryptographic hash (any algorithm) of source object's content. Must be guaranteed to change when *any* of the source item's content changes.
         double m_lastModifiedTime; //!< Optional value that represents a timestamp of the last change to source object's content, if available. This value does not have to be a real DateTime. If not zero, this value must be guaranteed to change when *any* of the source item's content changes. If LastModifiedTime is non-zero and if the current value equals the stored value, then a bridge will conclude that the item is unchanged. Otherwise, the bridge will use the hash.
         };
 

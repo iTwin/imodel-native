@@ -1827,7 +1827,7 @@ bool            SkipBlockChildGeometry (DwgDbEntityCP entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   CreateBlockChildGeometry (DwgDbEntityCP entity)
     {
-    auto* objExt = DwgProtocalExtension::Cast (entity->QueryX(DwgProtocalExtension::Desc()));
+    auto* objExt = DwgProtocolExtension::Cast (entity->QueryX(DwgProtocolExtension::Desc()));
     if (nullptr == objExt)
         return  BSIERROR;
 
@@ -2912,10 +2912,6 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     // prepare for import
     PrepareEntityForImport (drawParams, geomFactory, entity);
 
-#if defined (BENTLEYCONFIG_PARASOLID)
-    PSolidKernelManager::StartSession ();
-#endif
-
     // draw entity and create geometry from it in our factory:
     try
         {
@@ -2936,10 +2932,6 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     // create elements from collected geometries
     ElementFactory  elemFactory(results, inputs, createParams, *this);
     status = elemFactory.CreateElements (&geometryMap);
-
-#if defined (BENTLEYCONFIG_PARASOLID)
-    PSolidKernelManager::StopSession ();
-#endif
 
     if (BSISUCCESS == status)
         m_entitiesImported++;
@@ -3129,6 +3121,15 @@ bool            DwgImporter::_FilterEntity (ElementImportInputs& inputs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::_ImportEntityByProtocolExtension (ElementImportResults& results, ElementImportInputs& inputs, DwgProtocolExtension& objExt)
+    {
+    ProtocolExtensionContext context(inputs, results);
+    return objExt._ConvertToBim (context, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, ElementImportInputs& inputs)
     {
     // if the entity is extended to support ToDgnDb method, let it take over the importing:
@@ -3136,18 +3137,9 @@ BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, Elemen
     if (entity.IsNull())
         return  BSIERROR;
 
-    DwgProtocalExtension*   objExt = DwgProtocalExtension::Cast (entity->QueryX(DwgProtocalExtension::Desc()));
+    DwgProtocolExtension*   objExt = DwgProtocolExtension::Cast (entity->QueryX(DwgProtocolExtension::Desc()));
     if (nullptr != objExt)
-        {
-        ProtocalExtensionContext context(inputs, results);
-        return objExt->_ConvertToBim (context, *this);
-        }
-
-    DwgDbBlockReferenceP    insert = DwgDbBlockReference::Cast (entity);
-    if (nullptr != insert && insert->IsXAttachment())
-        return  this->_ImportXReference (results, inputs);
-    else if (nullptr != insert)
-        return  this->_ImportBlockReference (results, inputs);
+        return  this->_ImportEntityByProtocolExtension (results, inputs, *objExt);
 
     return  this->_ImportEntity (results, inputs);
     }
@@ -3408,97 +3400,6 @@ DgnClassId      DwgImporter::_GetElementType (DwgDbBlockTableRecordCR block)
         }
 
     return DgnClassId (elementClass->GetId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DwgImporter::SharedPartKey::operator < (SharedPartKey const& rho) const
-    {
-    if (m_blockId == rho.GetBlockId())
-        return m_basePartScale < rho.GetBasePartScale() && fabs(m_basePartScale - rho.GetBasePartScale()) > 1.0e-5;
-    return m_blockId < rho.GetBlockId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs)
-    {
-    BentleyStatus   status = BSIERROR;
-    DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(inputs.GetEntityP());
-    if (nullptr == insert)
-        {
-        BeAssert (false && "Not a DwgDbBlockReference!");
-        return  status;
-        }
-
-    /*-----------------------------------------------------------------------------------
-    We attempt to use shared parts for a block, but we first have to check:
-    a) if the block transform is valid for shared parts, and
-    b) if the block has been been previously imported as shared parts.
-    -----------------------------------------------------------------------------------*/
-    auto found = m_blockPartsMap.end ();
-
-    // get the transform of the insert entity:
-    auto blockTrans = Transform::FromIdentity ();
-    insert->GetBlockTransform (blockTrans);
-
-    // attempt to create shared parts from a block only if that is what the user wants:
-    double  partScale = 0.0;
-    bool    canShareParts = this->GetOptions().IsBlockAsSharedParts ();
-    if (canShareParts)
-        {
-        auto blockToModel = Transform::FromProduct (inputs.GetTransform(), blockTrans);
-        canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockToModel);
-        }
-
-    if (canShareParts)
-        {
-        // user wants shared parts, and block transform is valid for shared parts, now search the parts cache:
-        SharedPartKey key(insert->GetBlockTableRecordId(), partScale);
-        found = m_blockPartsMap.find (key);
-        }
-
-    if (found == m_blockPartsMap.end())
-        {
-        // either can't share parts or parts cache not found - import the new insert entity from cratch:
-        status = this->_ImportEntity (results, inputs);
-        }
-    else
-        {
-        // found parts from the cache - create elements from them:
-        ElementCreateParams  params(inputs.GetTargetModelR());
-        status = this->_GetElementCreateParams (params, inputs.GetTransform(), inputs.GetEntity());
-        if (BSISUCCESS != status)
-            return  status;
-
-        ElementFactory  elemFactory(results, inputs, params, *this);
-        elemFactory.SetCreateSharedParts (true);
-        elemFactory.SetBaseTransform (blockTrans);
-
-        // we should have avoided a transform not supported by shared parts
-        BeAssert (elemFactory.CanCreateSharedParts() && "Shared parts cannot be created for this insert!!");
-
-        // create elements from the block-parts cache
-        status = elemFactory.CreatePartElements (found->second);
-        }
-    if (status != BSISUCCESS)
-        return  status;
-
-    // get imported DgnElement
-    DgnElementP     hostElement = nullptr;
-    if (BSISUCCESS == status)
-        hostElement = results.GetImportedElement ();
-
-    if (nullptr == hostElement)
-        return  BSIERROR;
-
-    // create elements from attributes attached to the block reference:
-    AttributeFactory        attribFactory(*this, *hostElement, results, inputs);
-    attribFactory.CreateElements (*insert);
-
-    return  status;
     }
 
 /*---------------------------------------------------------------------------------**//**

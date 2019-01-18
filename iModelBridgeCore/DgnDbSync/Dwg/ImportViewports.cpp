@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgViewportExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgViewportExt)
 
 
 /*=================================================================================**//**
@@ -1197,7 +1197,7 @@ DgnViewId       ViewportFactory::CreateModelView (DgnModelCR targetModel, Utf8St
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
+BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer)
     {
     // this is a viewport entity that displays the modelspace, not an overall viewport for a paperspace!
     DwgDbEntityPtr&     entity = context.GetEntityPtrR ();
@@ -1252,7 +1252,7 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName)
+BentleyStatus   DwgViewportExt::UpdateBim (ProtocolExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName)
     {
     /*-----------------------------------------------------------------------------------
     The default implementation of importing an entity can only update a single output 
