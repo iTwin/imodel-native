@@ -101,29 +101,6 @@ DgnDbStatus ArbitraryCompositeProfile::_OnUpdate (DgnElement const& original)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Cleanup all relationships that this profile had.
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ArbitraryCompositeProfile::_OnDelete() const
-    {
-    /*Utf8CP pSqlString = "DELETE FROM " PRF_SCHEMA (PRF_REL_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles) " WHERE SourceECInstanceId=?";
-
-    ECSqlStatement sqlStatement;
-    ECSqlStatus sqlStatus = sqlStatement.Prepare (m_dgndb, pSqlString);
-    if (sqlStatus != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-
-    sqlStatus = sqlStatement.BindId (1, m_elementId);
-    if (sqlStatus != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-
-    if (sqlStatement.Step() != BE_SQLITE_DONE)
-        return DgnDbStatus::SQLiteError;*/
-
-    return T_Super::_OnDelete();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Element is loading from db - query aspects and populate local components vector.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -188,6 +165,10 @@ bvector<ArbitraryCompositeProfileComponent> ArbitraryCompositeProfile::GetCompon
 void ArbitraryCompositeProfile::SetComponents (bvector<ArbitraryCompositeProfileComponent> const& components)
     {
     m_components = components;
+
+    int memberPriority = 0;
+    for (ArbitraryCompositeProfileComponent& component : m_components)
+        component.m_memberPriority = memberPriority++;
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
