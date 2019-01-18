@@ -22,6 +22,7 @@
 #include "../iModelBridgeHelpers.h"
 #include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
+#include "../iModelBridgeLdClient.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -1095,6 +1096,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         {
         params.SetUrlEnvironment(m_iModelHubArgs->m_environment);
         params.SetiModelName(m_iModelHubArgs->m_repositoryName);
+        params.SetUserName(m_iModelHubArgs->m_credentials.GetUsername());
+        params.SetProjectGuid(m_iModelHubArgs->m_bcsProjectId);
         }
     params.SetWantProvenanceInBim(m_jobEnvArgs.m_wantProvenanceInBim || m_bridge->TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim));
 
@@ -1357,6 +1360,15 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (BentleyStatus::SUCCESS != LoadBridge())
         return RETURN_STATUS_CONVERTER_ERROR;
 
+    //Initialize the launch darkly client;
+    if (m_useIModelHub)
+        {
+        iModelBridgeLdClient& client = iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment);
+        client.SetUserName(m_iModelHubArgs->m_credentials.GetUsername().c_str());
+        client.SetProjectDetails(m_iModelHubArgs->m_repositoryName.c_str(), m_iModelHubArgs->m_bcsProjectId.c_str());
+        if (SUCCESS != client.InitClient())
+            LOG.errorv(L"Error initializing launch darkly.");
+        }
     // Initialize the DgnViewLib Host.
     m_repoAdmin = new FwkRepoAdmin(*this);  // TRICKY: This is ultimately passed to the host as a host variable, and host terimation will delete it.
     iModelBridge::Params params;
@@ -1452,6 +1464,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     //We are done processing the dgn db file. Release the bridge
     if (SUCCESS != ReleaseBridge())
         LOG.errorv(L"%s - Memory leak. This bridge was not released properly.", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
+    
+    if (m_useIModelHub)
+        iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).Close();
 
     return status;
     }

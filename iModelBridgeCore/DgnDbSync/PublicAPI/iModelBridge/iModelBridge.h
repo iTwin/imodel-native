@@ -540,6 +540,8 @@ struct iModelBridge
 
         Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
         WebServices::UrlProvider::Environment   m_environment;    //!< Connect environment
+        Utf8String                              m_iModelHubUserName;
+        Utf8String                              m_projectGuid;
 
         bool m_wantProvenanceInBim {};
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
@@ -654,6 +656,12 @@ struct iModelBridge
 
         WebServices::UrlProvider::Environment GetUrlEnvironment() const { return m_environment; }
         void SetUrlEnvironment(WebServices::UrlProvider::Environment env)  { m_environment = env; }
+
+        Utf8String GetUserName() const { return m_iModelHubUserName; }
+        void SetUserName(Utf8StringCR name) { m_iModelHubUserName = name; }
+
+        Utf8String GetProjectGuid() const { return m_projectGuid; }
+        void SetProjectGuid(Utf8StringCR projectGuid) { m_projectGuid = projectGuid; }
 
 	    //! Check if a document is assigned to this job or not.
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.

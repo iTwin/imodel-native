@@ -75,7 +75,7 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClien
 
 %if $(TARGET_PLATFORM)=="Windows"
     LINKER_LIBRARIES        + Dbghelp.lib
-    LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)windows-vs-64bit-ldapi$(libext)
+    LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)ldapi$(libext)
 %endif
 
 %include $(sharedMki)linkLibrary.mki
