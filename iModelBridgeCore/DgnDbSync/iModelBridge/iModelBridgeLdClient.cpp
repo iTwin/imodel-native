@@ -8,12 +8,16 @@
 #include "iModelBridgeLdClient.h"
 #include <LaunchDarkly/ldapi.h>
 #include <mutex>
+#include <rapidjson/document.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeLdClient::Init(CharCP authKey)
     {
+    if (NULL == authKey)
+		return ERROR;
+	
     m_config = LDConfigNew(authKey);
     if (NULL == m_config)
         return ERROR;
@@ -27,20 +31,19 @@ BentleyStatus   iModelBridgeLdClient::Init(CharCP authKey)
         m_config = NULL;
         return ERROR;
         }
+    return SUCCESS;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeLdClient::InitClient()
+    {
     unsigned int maxwaitmilliseconds = 60 * 1000;
     m_client = LDClientInit(m_config, m_user, maxwaitmilliseconds);
     if (NULL == m_client)
-        {
-        LDFree(m_config);
-        m_config = NULL;
-
-        LDFree(m_user);
-        m_user = NULL;
-
         return ERROR;
-        }
-    
+
     return SUCCESS;
     }
 
@@ -93,6 +96,12 @@ iModelBridgeLdClient::~iModelBridgeLdClient()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeLdClient::IsFeatureOn(bool& flag, CharCP featureName)
     {
+    if (NULL == m_client)
+        {
+        if (SUCCESS != InitClient())
+            return ERROR;
+        }
+
     static int timeOut = 60 * 1000;
     if (!LDClientAwaitInitialized(m_client,timeOut))
         return ERROR;
@@ -111,7 +120,6 @@ iModelBridgeLdClient& iModelBridgeLdClient::GetInstance(WebServices::UrlProvider
     std::call_once(s_initOnce, [&]
         {
         CharCP key = GetSDKKey(environment);
-        BeAssert(NULL != key);
         s_instance.Init(key);
     });
     return s_instance;
@@ -134,4 +142,25 @@ CharCP          iModelBridgeLdClient::GetSDKKey(WebServices::UrlProvider::Enviro
         default:
             return NULL;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeLdClient::SetUserName(CharCP userName)
+    {
+    LDUserSetName(m_user, userName);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeLdClient::SetProjectDetails(CharCP iModelName, CharCP guid)
+    {
+    rapidjson::Document json(rapidjson::kObjectType);
+    auto& allocator = json.GetAllocator();
+    json.AddMember("iModelName", rapidjson::Value(iModelName,allocator), allocator);
+    json.AddMember("ConnectProjectGuid", rapidjson::Value(guid, allocator), allocator);
+    return LDUserSetCustomAttributesJSON(m_user, json.GetString()) ? SUCCESS : ERROR;
     }

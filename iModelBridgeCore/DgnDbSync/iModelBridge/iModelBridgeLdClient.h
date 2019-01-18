@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-
+#include <iModelBridge/iModelBridge.h>
 #include <Bentley/WString.h>
 #include <unordered_map>
 #include <WebServices/Configuration/UrlProvider.h>
@@ -29,9 +29,11 @@ struct iModelBridgeLdClient
         BentleyStatus   Init(CharCP authKey);
         static CharCP   GetSDKKey(WebServices::UrlProvider::Environment environment);
     public:
-        static iModelBridgeLdClient& GetInstance(WebServices::UrlProvider::Environment environment);
-        
+        IMODEL_BRIDGE_EXPORT static iModelBridgeLdClient& GetInstance(WebServices::UrlProvider::Environment environment);
+        IMODEL_BRIDGE_EXPORT BentleyStatus SetUserName(CharCP userName);
+        IMODEL_BRIDGE_EXPORT BentleyStatus SetProjectDetails(CharCP iModelName, CharCP guid);
+        IMODEL_BRIDGE_EXPORT BentleyStatus InitClient();
         BentleyStatus Close();
-        ~iModelBridgeLdClient();
+        IMODEL_BRIDGE_EXPORT ~iModelBridgeLdClient();
         BentleyStatus IsFeatureOn(bool &, CharCP featureName);
     };
