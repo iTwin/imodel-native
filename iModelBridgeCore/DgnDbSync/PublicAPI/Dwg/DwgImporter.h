@@ -733,16 +733,23 @@ public:
         {
     private:
         DwgDbObjectId               m_blockId;
+        DwgDbObjectId               m_layerId;
         double                      m_basePartScale;
+        MD5::HashVal                m_keyValue;
     public:
-        SharedPartKey (DwgDbObjectIdCR id, double scale) : m_blockId(id), m_basePartScale(scale) {}
-        SharedPartKey () : m_basePartScale(0.0) { m_blockId.SetNull(); }
+        //! A unique key value consists of blockId, layerId and scale
+        DWG_EXPORT SharedPartKey (DwgDbObjectIdCR block, DwgDbObjectIdCR layer, double scale);
+        DWG_EXPORT SharedPartKey ();
 
+        MD5::HashVal const& GetKeyValue () const { return m_keyValue; }
         DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
         void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
+        DwgDbObjectIdCR GetLayerId () const { return m_layerId; }
+        void    SetLayerId (DwgDbObjectIdCR id) { m_layerId = id; }
         double  GetBasePartScale () const { return m_basePartScale; }
         void    SetBasePartScale (double scale) { m_basePartScale = scale; }
         bool    IsMirrored () const { return m_basePartScale < -1.0e-5; }
+        bool    IsValid () const { return m_keyValue.m_buffer[0] != 0; }
         //! The left-hand operand of the key
         bool operator < (SharedPartKey const& rho) const;
         };  // SharedPartKey

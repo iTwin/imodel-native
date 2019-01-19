@@ -70,7 +70,6 @@ BentleyStatus   DwgBrepExt::_ConvertToBim (ProtocolExtensionContext& context, Dw
 
         // we are done with creating element - always free the Parasolid body:
         this->FreeBrep (brep);
-        PSolidKernelManager::StopSession ();
 #endif
         }
 
@@ -116,7 +115,6 @@ GeometricPrimitivePtr DwgBrepExt::_ConvertToGeometry (DwgDbEntityCP entity, DwgI
     if (!geometry.IsValid())
         this->FreeBrep (brep);
 
-    PSolidKernelManager::StopSession ();
     return  geometry;
 #endif
 

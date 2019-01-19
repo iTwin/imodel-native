@@ -2225,6 +2225,10 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
 
     // load fonts before we start reading the DWG file as the toolkit may search for them via the hostApp:
     m_loadedFonts.LoadFonts ();
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StartSession ();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2241,6 +2245,9 @@ DwgImporter::~DwgImporter ()
     m_loadedXrefFiles.clear ();
     m_presentationRuleContents.clear ();
     m_reportedIssues.clear ();
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StopSession ();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
