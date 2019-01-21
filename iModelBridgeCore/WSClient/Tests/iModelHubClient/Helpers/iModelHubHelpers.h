@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Helpers/iModelHubHelpers.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,6 +28,7 @@ namespace iModelHubHelpers
     void CreateProjectWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR projectId);
 
     iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR projectId, bool expectSuccess);
+    iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR projectId, Utf8StringCR name, Utf8StringCR description, bool expectSuccess);
     void CreateUninitializediModel(iModelResult& result, ClientPtr client, Utf8StringCR projectId, Utf8StringCR imodelName);
     void LockiModel(StatusResult& result, iModelConnectionPtr connection, bool expectSuccess = true);
     void UploadNewSeedFile(FileResult& result, iModelConnectionPtr connection, DgnDbPtr db, bool expectSuccess = true);
@@ -51,7 +52,8 @@ namespace iModelHubHelpers
 
     ChangeSetsResult PullMergeAndPush(BriefcasePtr briefcase, bool shouldPush, bool shouldPull = false, bool relinquish = true, bool expectSuccess = true);
     StatusResult AddChangeSets(BriefcasePtr briefcase, uint32_t count = 1, uint32_t statingNumber = 0, bool needsPull = false, bool expectSuccess = true);
-    void AcquireAndAddChangeSets(ClientPtr client, iModelInfoPtr info, uint32_t count = 1);
+    BriefcasePtr AcquireAndAddChangeSets(ClientPtr client, iModelInfoPtr info, uint32_t count = 1);
+    void PushDefaultView(ClientPtr client, iModelInfoPtr info);
     void CreateNamedVersion(VersionInfoPtr& result, iModelConnectionPtr connection, Utf8StringCR name, int index);
 
     void SetLastPulledChangeSetId(BriefcasePtr briefcase, Utf8StringCR changeSetId);

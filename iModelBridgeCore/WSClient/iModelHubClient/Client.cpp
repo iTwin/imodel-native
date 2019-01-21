@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/Client.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/Client.h>
@@ -324,7 +324,7 @@ ICancellationTokenPtr cancellationToken
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 BEGIN_UNNAMED_NAMESPACE
-Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description)
+Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description, Utf8StringCR imodelTemplate)
     {
     Json::Value iModelCreation(Json::objectValue);
     JsonValueR instance = iModelCreation[ServerSchema::Instance] = Json::objectValue;
@@ -333,6 +333,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
     properties[ServerSchema::Property::iModelName] = iModelName;
     properties[ServerSchema::Property::iModelDescription] = description;
+    properties[ServerSchema::Property::iModelTemplate] = imodelTemplate;
     return iModelCreation;
     }
 END_UNNAMED_NAMESPACE
@@ -341,12 +342,12 @@ END_UNNAMED_NAMESPACE
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
 iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
-                                           ICancellationTokenPtr cancellationToken) const
+                                           Utf8StringCR imodelTemplate, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateiModelInstance";
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
 
-    Json::Value imodelCreationJson = iModelCreationJson(iModelName, description);
+    Json::Value imodelCreationJson = iModelCreationJson(iModelName, description, imodelTemplate);
     m_globalRequestOptionsPtr->InsertRequestOptions(imodelCreationJson);
 
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
@@ -438,7 +439,7 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, U
 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating iModel instance. Name: %s.", iModelName.c_str());
-    return CreateiModelInstance(projectId, iModelName, description, cancellationToken)
+    return CreateiModelInstance(projectId, iModelName, description, "", cancellationToken)
         ->Then([=](iModelResultCR createiModelResult)
         {
         if (!createiModelResult.IsSuccess())
@@ -501,6 +502,49 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, b
     Utf8String description;
     db.QueryProperty(description, BeSQLite::PropertySpec(Db::Properties::Description, Db::Properties::ProjectNamespace));
     return CreateNewiModel(projectId, db, name, description, waitForInitialized, callback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             01/2019
+//---------------------------------------------------------------------------------------
+iModelTaskPtr Client::CreateEmptyiModel(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description, 
+                                      ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::CreateEmptyiModel";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    if (m_serverUrl.empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid server URL.");
+        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::InvalidServerURL));
+        }
+    if (!m_credentials.IsValid() && !m_customHandler)
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
+        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::CredentialsNotSet));
+        }
+    if (iModelName.empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel name.");
+        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::InvalidiModelName));
+        }
+
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating empty iModel instance. Name: %s.", iModelName.c_str());
+    return CreateiModelInstance(projectId, iModelName, description, ServerSchema::iModelTemplateEmpty, cancellationToken)
+        ->Then<iModelResult>([=](iModelResultCR createiModelResult)
+        {
+        if (!createiModelResult.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, createiModelResult.GetError().GetMessage().c_str());
+            return iModelResult::Error(createiModelResult.GetError());
+            }
+
+        auto iModelInfo = createiModelResult.GetValue();
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+
+        return iModelResult::Success(iModelInfo);
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -1094,7 +1138,7 @@ StatusTaskPtr Client::UpdateiModel(Utf8StringCR projectId, iModelInfoCR iModelIn
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidiModelId));
         }
 
-    Json::Value iModelJson = iModelCreationJson(iModelInfo.GetName(), iModelInfo.GetDescription());
+    Json::Value iModelJson = iModelCreationJson(iModelInfo.GetName(), iModelInfo.GetDescription(), "");
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
 
     return client->SendUpdateObjectRequestWithOptions(ObjectId(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelInfo.GetId()),

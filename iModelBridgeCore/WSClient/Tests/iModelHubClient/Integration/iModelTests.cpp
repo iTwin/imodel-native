@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/iModelTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsBase.h"
@@ -152,6 +152,38 @@ TEST_F(iModelTests, SuccessfulCreateiModel)
     EXPECT_EQ(oldestiModelId, primaryiModelId);
 
     s_client->DeleteiModel(s_projectId, *createResult2.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, CreateEmptyiModel)
+    {
+    m_imodelName = GetTestiModelName();
+    iModelResult createResult = CreateEmptyiModel(m_imodelName);
+    ASSERT_SUCCESS(createResult);
+
+    iModelInfoPtr creatediModel = createResult.GetValue();
+
+    iModelResult getResult = s_client->GetiModelByName(s_projectId, m_imodelName)->GetResult();
+    ASSERT_SUCCESS(getResult);
+
+    EXPECT_TRUE(creatediModel->IsInitialized());
+    EXPECT_EQ(creatediModel->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
+    DateTime compareDate(DateTime::Kind::Utc, 2019, 1, 1, 0, 0, 0, 0);
+    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(compareDate, creatediModel->GetCreatedDate()));
+
+    creatediModel->SetName(GetTestiModelName() + "_Renamed");
+    ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, creatediModel->GetName()));
+    creatediModel->SetDescription("Description_Renamed");
+    ASSERT_SUCCESS(s_client->UpdateiModel(s_projectId, *creatediModel)->GetResult());
+
+    getResult = s_client->GetiModelByName(s_projectId, creatediModel->GetName())->GetResult();
+    ASSERT_SUCCESS(getResult);
+    EXPECT_EQ(creatediModel->GetName(), getResult.GetValue()->GetName());
+    EXPECT_EQ(creatediModel->GetDescription(), getResult.GetValue()->GetDescription());
+
+    ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, creatediModel->GetName()));
     }
 
 /*--------------------------------------------------------------------------------------+
