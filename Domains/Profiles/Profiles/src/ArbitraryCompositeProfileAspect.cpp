@@ -15,12 +15,12 @@ HANDLER_DEFINE_MEMBERS (ArbitraryCompositeProfileAspectHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArbitraryCompositeProfileAspect::ArbitraryCompositeProfileAspect (ArbitraryCompositeProfileComponent const& component, int memberPriority)
+ArbitraryCompositeProfileAspect::ArbitraryCompositeProfileAspect (ArbitraryCompositeProfileComponent const& component)
     : singleProfileId (component.singleProfileId)
     , offset (component.offset)
     , rotation (component.rotation)
     , mirrorAboutYAxis (component.mirrorAboutYAxis)
-    , memberPriority (memberPriority)
+    , memberPriority (component.GetMemberPriority())
     {
     }
 
@@ -71,19 +71,19 @@ DgnDbStatus ArbitraryCompositeProfileAspect::_UpdateProperties (DgnElement const
                                 PRF_PROP_ArbitraryCompositeProfileAspect_MemberPriority "=? "
                         " WHERE ECInstanceId=?";
 
-    ECSqlStatement sqlStatement;
-    ECSqlStatus ecStatus = sqlStatement.Prepare (element.GetDgnDb(), pSqlString, writeToken);
-    if (ecStatus != ECSqlStatus::Success)
+    DgnDb& db = element.GetDgnDb();
+    CachedECSqlStatementPtr sqlStatementPtr = db.GetNonSelectPreparedECSqlStatement (pSqlString, writeToken);
+    if (sqlStatementPtr.IsNull())
         return DgnDbStatus::SQLiteError;
 
-    sqlStatement.BindNavigationValue (1, singleProfileId);
-    sqlStatement.BindPoint2d (2, offset);
-    sqlStatement.BindDouble (3, rotation.Radians());
-    sqlStatement.BindBoolean (4, mirrorAboutYAxis);
-    sqlStatement.BindInt (5, memberPriority);
-    sqlStatement.BindId (6, GetAspectInstanceId());
+    sqlStatementPtr->BindNavigationValue (1, singleProfileId);
+    sqlStatementPtr->BindPoint2d (2, offset);
+    sqlStatementPtr->BindDouble (3, rotation.Radians());
+    sqlStatementPtr->BindBoolean (4, mirrorAboutYAxis);
+    sqlStatementPtr->BindInt (5, memberPriority);
+    sqlStatementPtr->BindId (6, GetAspectInstanceId());
 
-    if (sqlStatement.Step() != BE_SQLITE_DONE)
+    if (sqlStatementPtr->Step() != BE_SQLITE_DONE)
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;

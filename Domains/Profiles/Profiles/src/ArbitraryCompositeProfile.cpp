@@ -15,6 +15,8 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (ArbitraryCompositeProfileHandler)
 
+typedef bvector<ArbitraryCompositeProfileAspectPtr> AspectVector;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -29,7 +31,7 @@ ArbitraryCompositeProfileComponent::ArbitraryCompositeProfileComponent (DgnEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArbitraryCompositeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, bvector<ArbitraryCompositeProfileComponent> const& components)
+ArbitraryCompositeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, ComponentVector const& components)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , components (components)
     {}
@@ -57,9 +59,12 @@ bool ArbitraryCompositeProfile::_Validate() const
     if (m_components.size() < 2)
         return false;
 
+    int componentIndex = 0;
     for (ArbitraryCompositeProfileComponent const& component : m_components)
         {
-        // TODO Karolis: Validate other component properties?
+        if (component.m_memberPriority != componentIndex++)
+            return false;
+
         SinglePerimeterProfilePtr singleProfilePtr = SinglePerimeterProfile::GetForEdit (m_dgndb, component.singleProfileId);
         if (singleProfilePtr.IsNull())
             return false;
@@ -92,17 +97,52 @@ IGeometryPtr ArbitraryCompositeProfile::_UpdateGeometry (Profile const& relatedP
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Insert aspects for every component.
+* Query all aspects that the 'profile' has.
+* IMPORTANT: aspects cannot be cached and should be queried. This is due to obscure
+* platfrom "features"/implementation related to 'm_appData' (aspects are appData hack).
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static AspectVector queryAspects (ArbitraryCompositeProfile& profile)
+    {
+    AspectVector aspects;
+    ECClass const* pAspectClass = profile.GetDgnDb().Schemas().GetClass (PRF_SCHEMA_NAME, PRF_CLASS_ArbitraryCompositeProfileAspect);
+
+    ElementAspectIterator aspectIterator = profile.MakeAspectIterator();
+    for (ElementAspectIteratorEntry const& aspectEntry : aspectIterator)
+        {
+        ArbitraryCompositeProfileAspectPtr aspectPtr = DgnElement::MultiAspect::GetP<ArbitraryCompositeProfileAspect>
+            (profile, *pAspectClass, aspectEntry.GetECInstanceId());
+        if (aspectPtr.IsNull())
+            {
+            BeAssert (false);
+            return AspectVector();
+            }
+
+        aspects.push_back (aspectPtr);
+        }
+
+    return aspects;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Create and insert component corresponding Aspects.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void insertAspects (ArbitraryCompositeProfile& profile, ArbitraryCompositeProfile::ComponentVector& components)
+    {
+    for (ArbitraryCompositeProfileComponent& component : components)
+        {
+        ArbitraryCompositeProfileAspectPtr aspectPtr = ArbitraryCompositeProfileAspect::Create (component);
+        DgnElement::MultiAspect::AddAspect (profile, *aspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ArbitraryCompositeProfile::_InsertInDb()
     {
-    int memberPriority = 0;
-    for (ArbitraryCompositeProfileComponent& component : m_components)
-        {
-        ArbitraryCompositeProfileAspectPtr aspectPtr = ArbitraryCompositeProfileAspect::Create (component, memberPriority++);
-        DgnElement::MultiAspect::AddAspect (*this, *aspectPtr);
-        }
+    insertAspects (*this, m_components);
 
     return T_Super::_InsertInDb();
     }
@@ -112,6 +152,13 @@ DgnDbStatus ArbitraryCompositeProfile::_InsertInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ArbitraryCompositeProfile::_OnUpdate (DgnElement const& original)
     {
+    // TODO Karolis: Deleting every aspect and inserting new ones is wasteful - could update only those that actualy changed.
+    bvector<ArbitraryCompositeProfileAspectPtr> aspects = queryAspects (*this);
+    for (auto const& aspectPtr : aspects)
+        aspectPtr->Delete();
+
+    insertAspects (*this, m_components);
+
     return T_Super::_OnUpdate (original);
     }
 
@@ -121,31 +168,15 @@ DgnDbStatus ArbitraryCompositeProfile::_OnUpdate (DgnElement const& original)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ArbitraryCompositeProfile::_LoadFromDb()
     {
-    Utf8CP pSqlString = "SELECT ECInstanceId FROM " PRF_SCHEMA (PRF_CLASS_ArbitraryCompositeProfileAspect) " WHERE Element.Id=?";
-
-    ECSqlStatement sqlStatement;
-    ECSqlStatus sqlStatus = sqlStatement.Prepare (m_dgndb, pSqlString);
-    if (sqlStatus != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-
-    sqlStatus = sqlStatement.BindId (1, m_elementId);
-    if (sqlStatus != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-
     BeAssert (m_components.empty() && "Profile is loading from db - components should be empty");
-    while (sqlStatement.Step() == BE_SQLITE_ROW)
+    AspectVector aspects = queryAspects (*this);
+
+    m_components.reserve (aspects.size());
+    for (ArbitraryCompositeProfileAspectPtr const& aspectPtr : aspects)
         {
-        ECClass const* pAspectClass = QueryClass (m_dgndb, PRF_CLASS_ArbitraryCompositeProfileAspect);
-        ECInstanceId aspectId = sqlStatement.GetValueId<ECInstanceId> (0);
-
-        ArbitraryCompositeProfileAspectCPtr aspectPtr = MultiAspect::Get<ArbitraryCompositeProfileAspect> (*this, *pAspectClass, aspectId);
-        if (aspectPtr.IsNull())
-            return DgnDbStatus::BadElement;
-
         ArbitraryCompositeProfileComponent component (aspectPtr->singleProfileId, aspectPtr->offset, aspectPtr->rotation, aspectPtr->mirrorAboutYAxis);
         component.m_memberPriority = aspectPtr->memberPriority;
 
-        // TODO Karolis: make sure compoent is valid.
         m_components.push_back (component);
         }
 
@@ -157,8 +188,8 @@ DgnDbStatus ArbitraryCompositeProfile::_LoadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ArbitraryCompositeProfile::_CopyFrom (DgnElement const& source)
     {
-    if (auto const* pSourceProfile = dynamic_cast<ArbitraryCompositeProfile const*> (&source))
-        m_components = pSourceProfile->m_components;
+    if (typeid (source) == typeid (ArbitraryCompositeProfile))
+        m_components = static_cast<ArbitraryCompositeProfile const&> (source).m_components;
     else
         ProfilesLog::FailedCopyFrom_InvalidElement (PRF_CLASS_ArbitraryCompositeProfile, m_elementId, source.GetElementId());
 
@@ -169,7 +200,7 @@ void ArbitraryCompositeProfile::_CopyFrom (DgnElement const& source)
 * Return a copy of components vector.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ArbitraryCompositeProfileComponent> ArbitraryCompositeProfile::GetComponents() const
+ArbitraryCompositeProfile::ComponentVector ArbitraryCompositeProfile::GetComponents() const
     {
     return m_components;
     }
@@ -177,7 +208,7 @@ bvector<ArbitraryCompositeProfileComponent> ArbitraryCompositeProfile::GetCompon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryCompositeProfile::SetComponents (bvector<ArbitraryCompositeProfileComponent> const& components)
+void ArbitraryCompositeProfile::SetComponents (ComponentVector const& components)
     {
     m_components = components;
 

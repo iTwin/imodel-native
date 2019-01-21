@@ -37,7 +37,7 @@ struct ArbitraryCompositeProfileAspect : Dgn::DgnElement::MultiAspect
 
 private:
     PROFILES_EXPORT explicit ArbitraryCompositeProfileAspect() = default;
-    PROFILES_EXPORT explicit ArbitraryCompositeProfileAspect (ArbitraryCompositeProfileComponent const& component, int memberPriority);
+    PROFILES_EXPORT explicit ArbitraryCompositeProfileAspect (ArbitraryCompositeProfileComponent const& component);
 
 protected:
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _LoadProperties (Dgn::DgnElementCR el) override;
@@ -48,9 +48,9 @@ protected:
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryCompositeProfileAspect)
 
-    static ArbitraryCompositeProfileAspectPtr Create (ArbitraryCompositeProfileComponent const& component, int memberPriority)
+    static ArbitraryCompositeProfileAspectPtr Create (ArbitraryCompositeProfileComponent const& component)
         {
-        return new ArbitraryCompositeProfileAspect (component, memberPriority);
+        return new ArbitraryCompositeProfileAspect (component);
         }
 
 public:

@@ -48,17 +48,20 @@ struct ArbitraryCompositeProfile : CompositeProfile
     friend struct ArbitraryCompositeProfileHandler;
 
 public:
+    typedef bvector<ArbitraryCompositeProfileComponent> ComponentVector;
+
+public:
     struct CreateParams : T_Super::CreateParams
         {
         DEFINE_T_SUPER(ArbitraryCompositeProfile::T_Super::CreateParams);
         explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
 
     public:
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, bvector<ArbitraryCompositeProfileComponent> const& components);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, ComponentVector const& components);
 
     public:
         //! Required properties
-        bvector<ArbitraryCompositeProfileComponent> components;
+        ComponentVector components;
         };
 
 protected:
@@ -81,12 +84,11 @@ public:
 
     PROFILES_EXPORT static ArbitraryCompositeProfilePtr Create (CreateParams const& params) { return new ArbitraryCompositeProfile (params); }
 
-public:
-    PROFILES_EXPORT bvector<ArbitraryCompositeProfileComponent> GetComponents() const;
-    PROFILES_EXPORT void SetComponents (bvector<ArbitraryCompositeProfileComponent> const& components);
+    PROFILES_EXPORT ComponentVector GetComponents() const;
+    PROFILES_EXPORT void SetComponents (ComponentVector const& components);
 
 private:
-    bvector<ArbitraryCompositeProfileComponent> m_components;
+    ComponentVector m_components;
 
     }; // ArbitraryCompositeProfile
 
