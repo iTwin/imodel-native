@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECExpressionsToECSqlConverterTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -296,4 +296,54 @@ TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCase)
 
     ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => this.SomeProperty.Id = x)");
     EXPECT_STREQ("[this].[SomeProperty].[Id] IN (1, 2, 3, '4')", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ParseValueExpressionAndCreateTree_ExpressionOptimizedWithWhitespaceBeforeParentheses)
+    {
+    Utf8CP expectedString = "ParentNode.IsOfClass(\"Subject\",\"BisCore\")";
+    NodePtr node = m_helper.GetNodeFromExpression("ParentNode.ECInstance.IsOfClass (\"Subject\", \"BisCore\")");
+    EXPECT_STREQ(expectedString, node->ToExpressionString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ParseValueExpressionAndCreateTree_ExpressionOptimizedWithMultipleWhitespacesBeforeParantheses)
+    {
+    Utf8CP expectedString = "ParentNode.IsOfClass(\"Subject\",\"BisCore\")";
+    NodePtr node = m_helper.GetNodeFromExpression("ParentNode.ECInstance.IsOfClass \t\n(\"Subject\", \"BisCore\")");
+    EXPECT_STREQ(expectedString, node->ToExpressionString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ParseValueExpressionAndCreateTree_ExpressionArgumentsNotCorruptedWithWhitespacesInsideQuotation)
+    {
+    Utf8CP expectedString = "ParentNode.IsOfClass(\"Subject \",\"BisCore\")";
+    NodePtr node = m_helper.GetNodeFromExpression("ParentNode.ECInstance.IsOfClass(\"Subject \", \"BisCore\")");
+    EXPECT_STREQ(expectedString, node->ToExpressionString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ParseValueExpressionAndCreateTree_SingleExpressionWhitespaceNotRemovedIfBetweenAlphaNumSymbols)
+    {
+    Utf8CP expectedString = "ParentNode.IsOfClass(\"Subject \",\"BisCore\")Or ThisNode.IsOfClass(\"Subject \",\"BisCore\")";
+    NodePtr node = m_helper.GetNodeFromExpression("ParentNode.ECInstance.IsOfClass(\"Subject \", \"BisCore\") Or ThisNode.IsOfClass(\"Subject \", \"BisCore\")");
+    EXPECT_STREQ(expectedString, node->ToExpressionString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ParseValueExpressionAndCreateTree_MultipleExpressionWhitespacesNotRemovedIfBetweenAlphaNumSymbols)
+    {
+    Utf8CP expectedString = "ParentNode.IsOfClass(\"Subject \",\"BisCore\")Or ThisNode.IsOfClass(\"Subject \",\"BisCore\")";
+    NodePtr node = m_helper.GetNodeFromExpression("ParentNode.ECInstance.IsOfClass(\"Subject \", \"BisCore\") \tOr \n\tThisNode.IsOfClass(\"Subject \", \"BisCore\")");
+    EXPECT_STREQ(expectedString, node->ToExpressionString().c_str());
     }

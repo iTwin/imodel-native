@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECExpressionContextsProvider.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -79,7 +79,7 @@ private:
         }
 
 protected:
-    ExpressionStatus _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) override {return m_internalContext->ResolveMethod(result, ident, useOuterIfNecessary);}
+    ExpressionStatus _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary, ExpressionMethodType methodType) override {return m_internalContext->ResolveMethod(result, ident, useOuterIfNecessary, methodType);}
     bool _IsNamespace() const override {return m_internalContext->IsNamespace();}
     ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contexts, ::uint32_t startIndex) override {return m_internalContext->GetValue(evalResult, primaryList, contexts, startIndex);}
     ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contexts, ::uint32_t startIndex) override {return m_internalContext->GetReference(evalResult, refResult, primaryList, contexts, startIndex);}
@@ -168,6 +168,7 @@ public:
         ECInstancesHelper::LoadInstance(instance, m_connection, key->GetInstanceKey());
         if (instance.IsValid())
             instanceContext->SetInstance(*instance);
+
         return instanceContext;
         }
 };
@@ -1706,6 +1707,59 @@ bvector<Utf8String> const& ECExpressionsHelper::GetUsedClasses(Utf8StringCR expr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsNextNonWhiteSpaceAlphaNum(Utf8StringCR expression, size_t currentIndex)
+    {
+    for (size_t i = currentIndex + 1; i < expression.size(); ++i)
+        {
+        if (std::isspace(expression[i]))
+            continue;
+
+        return std::isalnum(expression[i]);
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void RemoveExpressionWhitespaces(Utf8StringR expression)
+    {
+    bool inQuatation = false; // To ignore whitespaces between quatation marks
+    bool lastAlphaNum = false;
+    bool nextAlphaNum = false;
+    bool lastWSpace = false;
+    size_t currentIndex = 0;
+    char* removedItems = std::remove_if
+    (
+        expression.begin(), 
+        expression.end(), 
+        [&inQuatation, &lastAlphaNum, &nextAlphaNum, &expression, &currentIndex, &lastWSpace](Utf8Char c)
+            {
+            if ('\"' == c)
+                inQuatation = !inQuatation;
+            
+            bool isWSpace = std::isspace(c);
+            bool isAlphaNum = std::isalnum(c);
+
+            if (isWSpace != lastWSpace) // Recheck next alpha num only if last one has changed for optimization
+                nextAlphaNum = IsNextNonWhiteSpaceAlphaNum(expression, currentIndex);
+            bool remove = isWSpace && !inQuatation && !(lastAlphaNum && nextAlphaNum); // Remove whitespaces that are not between alphanum symbols
+            
+            lastAlphaNum = isAlphaNum ? true : (isWSpace ? lastAlphaNum : false);
+            lastWSpace = isWSpace;
+
+            ++currentIndex;
+            return remove;
+            }
+    );
+
+    expression.erase(removedItems, expression.end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodePtr ECExpressionsHelper::GetNodeFromExpression(Utf8CP expr)
@@ -1715,6 +1769,9 @@ NodePtr ECExpressionsHelper::GetNodeFromExpression(Utf8CP expr)
         return node;
 
     Utf8String expression = expr;
+
+    // Remove excessive whitespaces for optimizations below to work
+    RemoveExpressionWhitespaces(expression);
 
     // check node's class instead of instance's class - this allows us to avoid retrieving the ECInstance
     // if we're only checking for class.
