@@ -30,12 +30,26 @@ protected:
     ArbitraryCompositeProfileComponent CreateDefaultComponent()
         {
         CircleProfilePtr profilePtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "c", 1.0));
+        BeAssert (profilePtr.IsValid());
         return CreateComponent (*profilePtr);
         }
 
     bvector<ArbitraryCompositeProfileComponent> DefaultComponentVector()
         {
         return bvector<ArbitraryCompositeProfileComponent> { CreateDefaultComponent(), CreateDefaultComponent() };
+        }
+
+    int GetAspectCount (Profile const& profile)
+        {
+        Utf8CP pSqlString = "SELECT COUNT (*) FROM " PRF_SCHEMA ("ArbitraryCompositeProfileAspect") " WHERE Element.Id=?";
+        ECSqlStatement sqlStatement;
+        sqlStatement.Prepare (GetDb(), pSqlString);
+        sqlStatement.BindId (1, profile.GetElementId());
+
+        if (sqlStatement.Step() != BE_SQLITE_ROW)
+            return -1;
+
+        return sqlStatement.GetValueInt (0);
         }
     };
 
@@ -214,15 +228,7 @@ TEST_F (ArbitraryCompositeProfileTestCase, Insert_QueryAspects_TwoRows)
     CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { CreateDefaultComponent(), CreateDefaultComponent() });
     ProfilePtr profilePtr = InsertElement<ArbitraryCompositeProfile> (params);
 
-    Utf8CP pSqlString = "SELECT * FROM " PRF_SCHEMA ("ArbitraryCompositeProfileAspect") " WHERE Element.Id=?";
-
-    ECSqlStatement sqlStatement;
-    sqlStatement.Prepare (GetDb(), pSqlString);
-    sqlStatement.BindId (1, profilePtr->GetElementId());
-
-    ASSERT_EQ (BE_SQLITE_ROW, sqlStatement.Step()) << "Aspect for first component should exist";
-    ASSERT_EQ (BE_SQLITE_ROW, sqlStatement.Step()) << "Aspect for second component should exist";
-    ASSERT_EQ (BE_SQLITE_DONE, sqlStatement.Step()) << "No more aspects should exist for this profile";
+    ASSERT_EQ (2, GetAspectCount (*profilePtr));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -232,15 +238,51 @@ TEST_F (ArbitraryCompositeProfileTestCase, Delete_QueryAspects_ZeroRows)
     {
     CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { CreateDefaultComponent(), CreateDefaultComponent() });
     ProfilePtr profilePtr = InsertElement<ArbitraryCompositeProfile> (params);
+
     profilePtr->Delete();
+    ASSERT_EQ (0, GetAspectCount (*profilePtr));
+    }
 
-    Utf8CP pSqlString = "SELECT * FROM " PRF_SCHEMA ("ArbitraryCompositeProfileAspect") " WHERE Element.Id=?";
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ArbitraryCompositeProfileTestCase, Update_AddedComponent_AddedAspect)
+    {
+    RectangleProfilePtr rectanglePtr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r1", 1.0, 1.0));
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent> { CreateComponent (*rectanglePtr), CreateComponent (*rectanglePtr) });
 
-    ECSqlStatement sqlStatement;
-    sqlStatement.Prepare (GetDb(), pSqlString);
-    sqlStatement.BindId (1, profilePtr->GetElementId());
+    ArbitraryCompositeProfilePtr profilePtr = InsertElement<ArbitraryCompositeProfile> (params);
 
-    ASSERT_EQ (BE_SQLITE_DONE, sqlStatement.Step()) << "No aspects should exist for this profile";
+    ArbitraryCompositeProfile::ComponentVector components = profilePtr->GetComponents();
+    components.push_back (CreateComponent (*rectanglePtr));
+    profilePtr->SetComponents (components);
+
+    ASSERT_EQ (2, GetAspectCount (*profilePtr));
+
+    profilePtr->Update();
+    ASSERT_EQ (3, GetAspectCount (*profilePtr));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ArbitraryCompositeProfileTestCase, Update_RemovedComponent_RemovedAspect)
+    {
+    RectangleProfilePtr rectanglePtr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r1", 1.0, 1.0));
+    CreateParams params (GetModel(), "Composite", bvector<ArbitraryCompositeProfileComponent>
+        { CreateComponent (*rectanglePtr), CreateComponent (*rectanglePtr), CreateComponent (*rectanglePtr) });
+
+    ArbitraryCompositeProfilePtr profilePtr = InsertElement<ArbitraryCompositeProfile> (params);
+
+    ArbitraryCompositeProfile::ComponentVector components = profilePtr->GetComponents();
+    components.pop_back();
+
+    profilePtr->SetComponents (components);
+
+    ASSERT_EQ (3, GetAspectCount (*profilePtr));
+
+    profilePtr->Update();
+    ASSERT_EQ (2, GetAspectCount (*profilePtr));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -262,7 +304,7 @@ TEST_F (ArbitraryCompositeProfileTestCase, DeleteReferencedProfile_ExistingCompo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryCompositeProfileTestCase, UpdateReferencedProfile_ExistingCompositeProfile_UpdatedCompositeGeometry)
+TEST_F (ArbitraryCompositeProfileTestCase, Update_UpdatedReferencedProfile_UpdatedCompositeGeometry)
     {
     RectangleProfilePtr rectanglePtr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r", 1.0, 1.0));
 
@@ -293,7 +335,7 @@ TEST_F (ArbitraryCompositeProfileTestCase, UpdateReferencedProfile_ExistingCompo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryCompositeProfileTestCase, UpdateReferencedProfiles_ExistingCompositeProfile_UpdatedCompositeGeometry)
+TEST_F (ArbitraryCompositeProfileTestCase, Update_UpdatedReferencedProfiles_UpdatedCompositeGeometry)
     {
     RectangleProfilePtr rectangle1Ptr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r1", 1.0, 1.0));
     RectangleProfilePtr rectangle2Ptr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r2", 1.0, 1.0));
