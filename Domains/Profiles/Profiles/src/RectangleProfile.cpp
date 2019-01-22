@@ -10,7 +10,6 @@
 #include <ProfilesInternal\ProfilesGeometry.h>
 #include <ProfilesInternal\ProfilesProperty.h>
 
-USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (RectangleProfileHandler)

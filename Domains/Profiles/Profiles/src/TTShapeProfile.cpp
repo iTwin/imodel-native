@@ -8,7 +8,6 @@
 #include "ProfilesInternal.h"
 #include <Profiles\TTShapeProfile.h>
 
-USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (TTShapeProfileHandler)

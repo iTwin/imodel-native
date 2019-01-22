@@ -8,8 +8,6 @@
 #include "ProfilesInternal.h"
 #include <ProfilesInternal\ProfilesGeometry.h>
 
-USING_NAMESPACE_BENTLEY_DGN
-
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**

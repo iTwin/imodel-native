@@ -9,7 +9,6 @@
 #include <Profiles\CenterLineLShapeProfile.h>
 #include <ProfilesInternal\ProfilesGeometry.h>
 
-USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (CenterLineLShapeProfileHandler)
