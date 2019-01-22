@@ -1301,7 +1301,23 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
 
-    autoHandlePropertiesToJson(val, *this);
+    if (nullptr != m_ecPropertyData) // if auto-handled properties are already in memory
+        {
+        ElementAutoHandledPropertiesECInstanceAdapter autoHandledAdapter(*this, true);
+        std::function<bool(Utf8CP)> shouldWriteProperty = [this](Utf8CP propName)
+            {
+            if (ECJsonSystemNames::IsTopLevelSystemMember(propName))
+                return false;
+
+            ElementECPropertyAccessor const accessor(*this, propName);
+            return accessor.IsValid() && accessor.IsAutoHandled();
+            };
+        JsonEcInstanceWriter::WritePartialInstanceToJson(val, autoHandledAdapter, JsonEcInstanceWriter::MemberNameCasing::LowerFirstChar, shouldWriteProperty);
+        }
+    else // else not in memory so query from database using ECSQL
+        {
+        autoHandlePropertiesToJson(val, *this);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

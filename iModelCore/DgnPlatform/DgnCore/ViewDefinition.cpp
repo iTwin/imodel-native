@@ -382,6 +382,16 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::_RemapIds(DgnImportContext& importContext)
+    {
+    m_categorySelectorId = importContext.FindElementId(m_categorySelectorId);
+    m_displayStyleId = importContext.FindElementId(m_displayStyleId);
+    T_Super::_RemapIds(importContext);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr SpatialViewDefinition::_SupplyController() const
@@ -610,6 +620,19 @@ void CategorySelector::_CopyFrom(DgnElementCR in)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void CategorySelector::_RemapIds(DgnImportContext& importContext)
+    {
+    DgnCategoryIdSet remappedCategories;
+    for (auto const& category: m_categories)
+        remappedCategories.insert(importContext.FindCategory(category));
+
+    m_categories = remappedCategories;
+    T_Super::_RemapIds(importContext);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CategorySelector::_InsertInDb()
@@ -730,6 +753,19 @@ void ModelSelector::_CopyFrom(DgnElementCR rhsElement)
 
     auto const& rhs = (ModelSelector const&)rhsElement;
     m_models = rhs.m_models;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ModelSelector::_RemapIds(DgnImportContext& importContext)
+    {
+    DgnModelIdSet remappedModels;
+    for (auto const& model: m_models)
+        remappedModels.insert(importContext.FindModelId(model));
+
+    m_models = remappedModels;
+    T_Super::_RemapIds(importContext);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1100,6 +1136,15 @@ void SpatialViewDefinition::_CopyFrom(DgnElementCR el)
 
     m_modelSelectorId = other.m_modelSelectorId;
     m_modelSelector = other.m_modelSelector.IsValid() ? other.m_modelSelector->MakeCopy<ModelSelector>() : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewDefinition::_RemapIds(DgnImportContext& importContext)
+    {
+    m_modelSelectorId = importContext.FindElementId(m_modelSelectorId);
+    T_Super::_RemapIds(importContext);
     }
 
 /*---------------------------------------------------------------------------------**//**

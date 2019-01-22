@@ -327,6 +327,7 @@ protected:
     bool EqualState(ModelSelectorCR other) const {return m_models==other.m_models;}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _OnDeleted() const override;
@@ -384,6 +385,7 @@ protected:
     bool EqualState(CategorySelectorCR other) const;
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
@@ -477,6 +479,7 @@ protected:
     void _OnUpdateFinished() const override {ClearState(); T_Super::_OnUpdateFinished();}
     void _OnDeleted() const override {DeleteThumbnail(); T_Super::_OnDeleted();}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     DgnDbStatus _SetParentId(DgnElementId, DgnClassId) override {return DgnDbStatus::InvalidParent;}
@@ -1157,7 +1160,8 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     void _OnInserted(DgnElementP copiedFrom) const override {m_modelSelector=nullptr; T_Super::_OnInserted(copiedFrom);}
     void _OnUpdateFinished() const override {m_modelSelector=nullptr; T_Super::_OnUpdateFinished();}
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     bool _ViewsModel(DgnModelId modelId) override {return GetModelSelector().ContainsModel(modelId);}
     SpatialViewDefinitionCP _ToSpatialView() const override {return this;}
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;

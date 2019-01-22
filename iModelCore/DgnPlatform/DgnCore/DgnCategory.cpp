@@ -482,9 +482,7 @@ void DgnSubCategory::Appearance::RelocateToDestinationDb(DgnImportContext& conte
         return;
 
     if (m_style.IsValid())
-        {
-        //BeAssert(false && "*** TBD: remap style id");
-        }
+        m_style = context.RemapLineStyleId(m_style);
 
     if (m_material.IsValid())
         m_material = context.RemapRenderMaterialId(m_material);
@@ -565,8 +563,8 @@ void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCategory::_RemapIds(DgnImportContext& importer)
     {
-    // Note - it's too soon to try to remap my default SubCategory -- I don't have an ElementId yet.
-    // Wait for _OnImported.
+    // Note - Wait for _OnImported to remap the default SubCategory -- This DgnCategory doesn't have an ElementId yet.
+    T_Super::_RemapIds(importer);
     }
 
 /*---------------------------------------------------------------------------------**//**

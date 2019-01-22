@@ -67,6 +67,10 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();
 
+#define REQUIRE_ARGUMENT_STRING_ID(i, strId, T, id, retval)\
+    REQUIRE_ARGUMENT_STRING(i, strId, retval)\
+    T id(BeInt64Id::FromString(strId.c_str()).GetValue());
+
 #define REQUIRE_ARGUMENT_STRING_ARRAY(i, var, retval)\
     if (info.Length() <= (i) || !info[i].IsArray()) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an array of strings", retval)\
@@ -4324,6 +4328,148 @@ struct DisableNativeAssertions : Napi::ObjectWrap<DisableNativeAssertions>
             }
     };
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct NativeImportContext : Napi::ObjectWrap<NativeImportContext>
+{
+private:
+    DEFINE_CONSTRUCTOR;
+    DgnImportContext* m_importContext = nullptr;
+
+public:
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ImportContext", {
+            InstanceMethod("addCodeSpecId", &NativeImportContext::AddCodeSpecId),
+            InstanceMethod("addElementId", &NativeImportContext::AddElementId),
+            InstanceMethod("dispose", &NativeImportContext::Dispose),
+            InstanceMethod("findCodeSpecId", &NativeImportContext::FindCodeSpecId),
+            InstanceMethod("findElementId", &NativeImportContext::FindElementId),
+            InstanceMethod("importCodeSpec", &NativeImportContext::ImportCodeSpec),
+            InstanceMethod("cloneElement", &NativeImportContext::CloneElement),
+            InstanceMethod("importFont", &NativeImportContext::ImportFont),
+        });
+        exports.Set("ImportContext", t);
+        SET_CONSTRUCTOR(t);
+        }
+
+    NativeImportContext(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeImportContext>(info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, sourceDb, );
+        REQUIRE_ARGUMENT_OBJ(1, NativeDgnDb, targetDb, );
+        m_importContext = new DgnImportContext(sourceDb->GetDgnDb(), targetDb->GetDgnDb());
+        }
+
+    static bool InstanceOf(Napi::Value val)
+        {
+        if (!val.IsObject())
+            return false;
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+        }
+
+    void Dispose(Napi::CallbackInfo const& info)
+        {
+        if (nullptr != m_importContext)
+            {
+            delete m_importContext;
+            m_importContext = nullptr;
+            }
+        }
+
+    Napi::Value AddCodeSpecId(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, CodeSpecId, sourceId, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
+        REQUIRE_ARGUMENT_STRING_ID(1, targetIdStr, CodeSpecId, targetId, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
+        m_importContext->AddCodeSpecId(sourceId, targetId);
+        return Napi::Number::New(Env(), (int) BentleyStatus::SUCCESS);
+        }
+
+    Napi::Value AddElementId(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceId, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
+        REQUIRE_ARGUMENT_STRING_ID(1, targetIdStr, DgnElementId, targetId, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
+        m_importContext->AddElementId(sourceId, targetId);
+        return Napi::Number::New(Env(), (int) BentleyStatus::SUCCESS);
+        }
+
+    Napi::Value FindCodeSpecId(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, CodeSpecId, sourceId, Env().Undefined());
+        CodeSpecId targetId = m_importContext->FindCodeSpecId(sourceId);
+        return toJsString(Env(), targetId);
+        }
+
+    Napi::Value FindElementId(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceId, Env().Undefined());
+        DgnElementId targetId = m_importContext->FindElementId(sourceId);
+        return toJsString(Env(), targetId);
+        }
+
+    Napi::Value CloneElement(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceElementId, Env().Undefined());
+        DgnElementCPtr sourceElement = m_importContext->GetSourceDb().Elements().GetElement(sourceElementId);
+        if (!sourceElement.IsValid())
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid source ElementId", Env().Undefined());
+
+        DgnModelId targetModelId = m_importContext->FindModelId(sourceElement->GetModelId());
+        DgnModelPtr targetModel = m_importContext->GetDestinationDb().Models().GetModel(targetModelId);
+        if (!targetModel.IsValid())
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid target model", Env().Undefined());
+
+        DgnElementPtr targetElement = sourceElement->CloneForImport(nullptr, *targetModel, *m_importContext);
+        if (!targetElement.IsValid())
+            THROW_TYPE_EXCEPTION_AND_RETURN("Unable to clone element", Env().Undefined());
+
+        Json::Value toJsonOptions;
+        toJsonOptions["wantGeometry"] = true; // want everything since insert will happen on TypeScript side
+        toJsonOptions["wantBRepData"] = true;
+        Json::Value targetElementJson = targetElement->ToJson(toJsonOptions);
+        return NapiUtils::Convert(Env(), targetElementJson);
+        }
+
+    Napi::Value ImportCodeSpec(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, CodeSpecId, sourceId, Env().Undefined());
+        CodeSpecId targetId = m_importContext->RemapCodeSpecId(sourceId);
+        return toJsString(Env(), targetId);
+        }
+
+    Napi::Value ImportFont(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_NUMBER(0, sourceFontNumber, Env().Undefined());
+        DgnFontId sourceFontId(static_cast<uint64_t>(sourceFontNumber.Uint32Value())); // BESERVER_ISSUED_ID_CLASS can be represented as a number in TypeScript
+        DgnFontId targetFontId = m_importContext->RemapFont(sourceFontId);
+        return Napi::Number::New(Env(), targetFontId.GetValue());
+        }
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                    12/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4518,6 +4664,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     NativeECSchemaXmlContext::Init(env, exports);
     SnapRequest::Init(env, exports);
     DisableNativeAssertions::Init(env, exports);
+    NativeImportContext::Init(env, exports);
 
     exports.DefineProperties(
         {

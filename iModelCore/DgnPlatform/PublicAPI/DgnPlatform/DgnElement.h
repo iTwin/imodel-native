@@ -44,8 +44,6 @@ struct DgnRemapTables
 {
 protected:
     // *** NEEDS WORK: We may have to move these remappings into temp tables
-    bmap<DgnModelId, DgnModelId> m_modelId;
-    bmap<DgnGeometryPartId, DgnGeometryPartId> m_geomPartId;
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<CodeSpecId, CodeSpecId> m_codeSpecId;
@@ -58,12 +56,12 @@ public:
     DgnRemapTables& Get(DgnDbR);
     CodeSpecId Find(CodeSpecId sourceId) const {return Find<CodeSpecId>(m_codeSpecId, sourceId);}
     CodeSpecId Add(CodeSpecId sourceId, CodeSpecId targetId) {return m_codeSpecId[sourceId] = targetId;}
-    DgnModelId Find(DgnModelId sourceId) const {return Find<DgnModelId>(m_modelId, sourceId);}
-    DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return m_modelId[sourceId] = targetId;}
+    DgnModelId Find(DgnModelId sourceId) const {return DgnModelId(FindElement(DgnElementId(sourceId.GetValueUnchecked())).GetValueUnchecked());} // ModelElementId has the same value as ModelId
+    DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return DgnModelId((m_elementId[DgnElementId(sourceId.GetValueUnchecked())] = DgnElementId(targetId.GetValueUnchecked())).GetValueUnchecked());} // ModelElementId has the same value as ModelId
     DgnElementId Find(DgnElementId sourceId) const {return Find<DgnElementId>(m_elementId, sourceId);}
     DgnElementId Add(DgnElementId sourceId, DgnElementId targetId) {return m_elementId[sourceId] = targetId;}
-    DgnGeometryPartId Find(DgnGeometryPartId sourceId) const {return Find<DgnGeometryPartId>(m_geomPartId, sourceId);}
-    DgnGeometryPartId Add(DgnGeometryPartId sourceId, DgnGeometryPartId targetId) {return m_geomPartId[sourceId] = targetId;}
+    DgnGeometryPartId Find(DgnGeometryPartId sourceId) const {return FindElement<DgnGeometryPartId>(sourceId);}
+    DgnGeometryPartId Add(DgnGeometryPartId sourceId, DgnGeometryPartId targetId) {return DgnGeometryPartId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnCategoryId Find(DgnCategoryId sourceId) const {return FindElement<DgnCategoryId>(sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     RenderMaterialId Find(RenderMaterialId sourceId) const {return FindElement<RenderMaterialId>(sourceId);}
@@ -148,7 +146,7 @@ public:
     //! Construct a DgnImportContext object.
     DGNPLATFORM_EXPORT DgnImportContext(DgnDbR source, DgnDbR dest);
     //! Destruct a DgnImportContext object.
-    DGNPLATFORM_EXPORT ~DgnImportContext();
+    DGNPLATFORM_EXPORT virtual ~DgnImportContext();
 
     //! @name Source and Destination Dbs
     //! @{
@@ -161,6 +159,8 @@ public:
     //! @{
     //! Make sure that a CodeSpec has been imported
     CodeSpecId RemapCodeSpecId(CodeSpecId sourceId) {return _RemapCodeSpecId(sourceId);}
+    //! Look up a copy of a CodeSpec
+    CodeSpecId FindCodeSpecId(CodeSpecId sourceId) {return m_remap.Find(sourceId);}
     //! Register a copy of a CodeSpec
     CodeSpecId AddCodeSpecId(CodeSpecId sourceId, CodeSpecId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of a model
@@ -1586,6 +1586,10 @@ public:
     //! @param[in] params Optional CreateParams. Might specify a different destination model, etc.
     //! @remarks If no CreateParams are supplied, a new DgnCode will be generated for the cloned element - it will \em not be copied from this element's DgnCode.
     DGNPLATFORM_EXPORT DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
+
+    //! Used by iModelJsNodeAddon to clone an Element in native code but insert it from TypeScript
+    //! @hidden
+    DgnElementPtr CloneForImport(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const {return _CloneForImport(stat, destModel, importer);}
 
     //! Copy the content of another DgnElement into this DgnElement. Also see @ref ElementCopying.
     //! @param[in] source The other element whose content is copied into this element.
