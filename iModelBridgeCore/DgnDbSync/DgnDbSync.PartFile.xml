@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\BentleyBuild\PartFile.xsd">
 
     <Part Name="VersionedV8_InternalSDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
       <NuGetPackage targetFramework="native">V8_InternalSDKNuget</NuGetPackage>
@@ -493,6 +493,21 @@
         <Directories DirectoryListName="BimUpgraderDirList" />
     </Product>
 
+    <Part Name="BimUpgraderTestsExe" BentleyBuildMakeFile="BimFromDgnDb/Tests/Tests.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="GTestDependencies"/>
+        <SubPart PartName="DgnDbCreator" PartFile="BimUpgrader" />
+        <SubPart PartName="BimFromDgnDb"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/BimUpgraderTests.exe</Files>
+        </Bindings>
+    </Part>
+    
+    <Product Name="BimUpgraderTests">
+        <SubPart PartName="BimUpgraderTestsExe" />
+        <Directories DirectoryListName="BimUpgraderDirList"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+    </Product>
+    
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
