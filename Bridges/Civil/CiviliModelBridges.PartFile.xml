@@ -190,32 +190,14 @@
         <SubPart PartName="Gtest" />
         <SubPart PartName="Cif_InternalSDK" />
         <SubPart PartName="VersionedV8_InternalSDK" Repository="DgnDbSync" PartFile="DgnDbSync"/>
-        <Directories DirectoryListName="GtestProduct"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest" />
         <Directories DirectoryListName="CiviliModelBridgeTestDirectoryList" />
     </Product>
 
     <ProductDirectoryList ListName="CiviliModelBridgeTestDirectoryList">
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
-        <!--<ProductDirectory Name="Assemblies"   Path="Assemblies"   RelativeTo="ApplicationRoot"/>-->
         <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
         <ProductDirectory Name="CifDlls"  Path="Cif"/>
-    </ProductDirectoryList>
-
-    <!-- *********************************************************************************************** -->
-    <!-- ProductDirectory used by all gtest products -->
-    <!-- *********************************************************************************************** -->
-    <ProductDirectoryList ListName="GtestProduct">
-        <ProductDirectory Name="ApplicationRoot"                Path=""/>
-        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
-        <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
-        <ProductDirectory Name="Assemblies" Path="Assemblies"   RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assemblies" Path="Assemblies"   RelativeTo="ApplicationRoot" LibType="Static"/>
-        <ProductDirectory Name="Assets" Path="Assets-g"/>
-        <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
-        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
-        <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
-        <ProductDirectory Name="VendorNotices" Deliver="false" />
-        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
     </ProductDirectoryList>
 
     <Part Name="ORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke" >

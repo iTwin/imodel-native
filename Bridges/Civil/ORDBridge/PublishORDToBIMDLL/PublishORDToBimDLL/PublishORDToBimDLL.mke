@@ -47,8 +47,6 @@ LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)ORDBridge$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
-LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)Imagepp$(libext)
-LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)Raster$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 

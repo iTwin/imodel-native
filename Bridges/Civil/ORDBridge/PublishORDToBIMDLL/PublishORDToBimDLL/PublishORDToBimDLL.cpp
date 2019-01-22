@@ -34,6 +34,7 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
     bool shouldTryUpdate = saparams.ShouldTryUpdate();
     saparams.SetShouldTryUpdate(true);
 
+    //We're keeping the hosts alive, so don't initialize hosts if we've already done so
     if(&DgnViewLib::GetHost() == nullptr)
         iModelBridgeSacAdapter::InitializeHost(*iModelBridgeP);
 
@@ -62,11 +63,6 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
 
     //Terminate
     iModelBridge_releaseInstance(iModelBridgeP);
-    /*
-    DgnViewLib::GetHost().Terminate(true);
-    ImageppLib::GetHost().Terminate();
-    iModelBridge::L10N::Terminate();
-    */
 
     if (BentleyStatus::SUCCESS == retVal)
         return retVal;
