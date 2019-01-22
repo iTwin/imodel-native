@@ -6,11 +6,7 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="PublishedAPI" />
         <SubPart PartName="BeSecurityLibrary" />
-      <!-- 
-        Don't include anything that requires gradle in here. Do that in higher-level parts like DgnClientFxJar. We want it to be
-          possible for a developer to build all native code using the NDK only, without having to install gradle, etc.
         <SubPart PartName="BeSecurityMavenArchive" />
-      -->
       </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="B02">
