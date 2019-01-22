@@ -62,15 +62,26 @@ bool ArbitraryCompositeProfile::_Validate() const
     int componentIndex = 0;
     for (ArbitraryCompositeProfileComponent const& component : m_components)
         {
-        if (component.m_memberPriority != componentIndex++)
-            return false;
-
-        SinglePerimeterProfilePtr singleProfilePtr = SinglePerimeterProfile::GetForEdit (m_dgndb, component.singleProfileId);
-        if (singleProfilePtr.IsNull())
+        if (!ValidateComponent (component, componentIndex++))
             return false;
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ArbitraryCompositeProfile::ValidateComponent (ArbitraryCompositeProfileComponent const& component, int componentIndex) const
+    {
+    bool const isSingleProfileValid = SinglePerimeterProfile::GetForEdit (m_dgndb, component.singleProfileId).IsValid();
+    bool const isOffsetXValid = BeNumerical::BeFinite (component.offset.x);
+    bool const isOffsetYValid = BeNumerical::BeFinite (component.offset.y);
+    bool const isRotationValid = BeNumerical::BeFinite (component.rotation.Radians());
+    bool const isMemberPriorityValid = component.GetMemberPriority() == componentIndex;
+
+
+    return isSingleProfileValid && isOffsetXValid && isOffsetYValid && isRotationValid && isMemberPriorityValid;
     }
 
 /*---------------------------------------------------------------------------------**//**

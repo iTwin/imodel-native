@@ -75,6 +75,8 @@ protected:
     PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
 
 private:
+    bool ValidateComponent (ArbitraryCompositeProfileComponent const& component, int componentIndex) const;
+
     virtual IGeometryPtr _CreateGeometry() const override;
     virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override;
 
