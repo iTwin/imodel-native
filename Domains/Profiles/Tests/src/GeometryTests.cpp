@@ -231,7 +231,7 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.17));
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape rounded, with max girth", 3.5, 10.0, 1.0, 10.0 / 2 - 0.01, 0.17));
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape rounded, without girth", 3.5, 10.0, 1.0, 3.5, 0.17));
-    
+
     InsertProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape not rounded, without girth", 3.5, 10.00, 1.0, 0.0, 0.0), true);
     InsertProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape not rounded, with girth", 3.5, 10.00, 1.0, 2.0, 0.0));
     InsertProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with girth", 3.5, 10.00, 1.0, 2.0, 0.17));
@@ -264,32 +264,63 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium wider top centered", 6.0, 4.0, 4.0, -1.0));
     InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium bigger top offset", 2.0, 4.0, 4.0, 6.0));
 
-    LShapeProfilePtr wideL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 6x3 (for DoubleL)", 6.0, 3.0, 1.0, 0.5), true);
-    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 6x3 LLBB", 0.25, wideL->GetElementId(), DoubleLShapeProfileType::LLBB));
-    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 6x3 SLBB", 0.25, wideL->GetElementId(), DoubleLShapeProfileType::SLBB));
-    LShapeProfilePtr deepL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 3x6 (for DoubleL)", 3.0, 6.0, 1.0, 0.5));
-    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 LLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::LLBB));
-    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 SLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::SLBB));
-    InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 SLBB (0 spacing)", 0.0, deepL->GetElementId(), DoubleLShapeProfileType::SLBB));
-
-    CShapeProfilePtr cShape = InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "C (for DoubleL)", 3.0, 6.0, 0.5, 0.5, 0.25), true);
-    InsertProfileGeometry<DoubleCShapeProfile> (DoubleCShapeProfile::CreateParams (GetModel(), "DoubleC", 0.25, cShape->GetElementId()));
-    InsertProfileGeometry<DoubleCShapeProfile> (DoubleCShapeProfile::CreateParams (GetModel(), "DoubleC (0 spacing)", 0.0, cShape->GetElementId()));
-
-    HollowCircleProfilePtr leftEyePtr = InsertElement<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "Left eye", 1.0, 0.15));
-    CircleProfilePtr leftEyeBallPtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Left eye ball", 0.2));
-    HollowCircleProfilePtr rightEyePtr = InsertElement<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "Right eye", 1.0, 0.15));
-    CircleProfilePtr rightEyeBallPtr = InsertElement<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Right eye ball", 0.2));
-    TrapeziumProfilePtr nosePtr = InsertElement<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Nose", 0.0001, 1, 2.0, 0.5));
-    CShapeProfilePtr mouthPtr = InsertElement<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "Mouth", 1.5, 4.0, 0.15, 0.15, 0.5));
-    bvector<ArbitraryCompositeProfileComponent> faceComponents =
         {
-        ArbitraryCompositeProfileComponent (leftEyePtr->GetElementId(), DPoint2d::From (-2.0, 0.0), Angle::FromRadians (0.0), false),
-        ArbitraryCompositeProfileComponent (leftEyeBallPtr->GetElementId(), DPoint2d::From (-2.0, 0.0), Angle::FromRadians (0.0), false),
-        ArbitraryCompositeProfileComponent (rightEyePtr->GetElementId(), DPoint2d::From (2.0, 0.0), Angle::FromRadians (0.0), false),
-        ArbitraryCompositeProfileComponent (rightEyeBallPtr->GetElementId(), DPoint2d::From (2.0, 0.0), Angle::FromRadians (0.0), false),
-        ArbitraryCompositeProfileComponent (nosePtr->GetElementId(), DPoint2d::From (0.0, -2.0), Angle::FromRadians (0.0), false),
-        ArbitraryCompositeProfileComponent (mouthPtr->GetElementId(), DPoint2d::From (0.0, -3.5), Angle::FromRadians (PI / 2.0), false)
-        };
-    InsertProfileGeometry<ArbitraryCompositeProfile> (ArbitraryCompositeProfile::CreateParams (GetModel(), "Smiley face", faceComponents), true);
+        LShapeProfilePtr wideL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 6x3 (for DoubleL)", 6.0, 3.0, 1.0, 0.5), true);
+        InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 6x3 LLBB", 0.25, wideL->GetElementId(), DoubleLShapeProfileType::LLBB));
+        InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 6x3 SLBB", 0.25, wideL->GetElementId(), DoubleLShapeProfileType::SLBB));
+        }
+
+        {
+        LShapeProfilePtr deepL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 3x6 (for DoubleL)", 3.0, 6.0, 1.0, 0.5));
+        InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 LLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::LLBB));
+        InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 SLBB", 0.25, deepL->GetElementId(), DoubleLShapeProfileType::SLBB));
+        InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 3x6 SLBB (0 spacing)", 0.0, deepL->GetElementId(), DoubleLShapeProfileType::SLBB));
+        }
+
+        {
+        CShapeProfilePtr cShape = InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "C (for DoubleL)", 3.0, 6.0, 0.5, 0.5, 0.25), true);
+        InsertProfileGeometry<DoubleCShapeProfile> (DoubleCShapeProfile::CreateParams (GetModel(), "DoubleC", 0.25, cShape->GetElementId()));
+        InsertProfileGeometry<DoubleCShapeProfile> (DoubleCShapeProfile::CreateParams (GetModel(), "DoubleC (0 spacing)", 0.0, cShape->GetElementId()));
+        }
+
+        { // Arbitrary composite profile - I shape with plates on flanges
+        IShapeProfilePtr iShapePtr = InsertElement<IShapeProfile> (IShapeProfile::CreateParams (GetModel(), "I shape for composite",
+            6.0, 10.0, 0.5, 0.75, 0.5, 0.25, Angle::FromRadians (PI / 32)));
+        RectangleProfilePtr platePtr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "plate for composite", 5.0, 0.75));
+        ArbitraryCompositeProfile::ComponentVector components =
+            {
+            ArbitraryCompositeProfileComponent (*iShapePtr, DPoint2d::From (0.0, 0.0)),
+            ArbitraryCompositeProfileComponent (*platePtr, DPoint2d::From (0.0, 5.0 + 0.75 / 2.0)),
+            ArbitraryCompositeProfileComponent (*platePtr, DPoint2d::From (0.0, -5.0 - 0.75 / 2.0))
+            };
+        InsertProfileGeometry<ArbitraryCompositeProfile> (ArbitraryCompositeProfile::CreateParams (GetModel(), "I shape beam with plates", components), true);
+        }
+
+        { // Arbitrary composite profile - 4 angle shape
+        LShapeProfilePtr anglePtr = InsertElement<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L shape for composite", 5.0, 5.0, 0.5, 0.2, 0.2));
+        ArbitraryCompositeProfile::ComponentVector components =
+            {
+            ArbitraryCompositeProfileComponent (*anglePtr, DPoint2d::From (2.6, 2.6), Angle::FromRadians (0.0)),
+            ArbitraryCompositeProfileComponent (*anglePtr, DPoint2d::From (-2.6, 2.6), Angle::FromRadians (PI / 2.0)),
+            ArbitraryCompositeProfileComponent (*anglePtr, DPoint2d::From (-2.6, -2.6), Angle::FromRadians (PI)),
+            ArbitraryCompositeProfileComponent (*anglePtr, DPoint2d::From (2.6, -2.6), Angle::FromRadians (-PI / 2.0))
+            };
+        InsertProfileGeometry<ArbitraryCompositeProfile> (ArbitraryCompositeProfile::CreateParams (GetModel(), "4 Angle shape", components));
+        }
+
+        {
+        CShapeProfilePtr baseProfilePtr = InsertElement<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "C shape for derived profile", 6.0, 6.0, 0.75, 0.75));
+
+        InsertProfileGeometry<DerivedProfile> (DerivedProfile::CreateParams (GetModel(), "Derived - offseted C (2.0 xAxis)", *baseProfilePtr,
+            DPoint2d::From (2.0, 0.0), DPoint2d::From (1.0, 1.0), Angle::FromRadians (0.0)), true);
+
+        InsertProfileGeometry<DerivedProfile> (DerivedProfile::CreateParams (GetModel(), "Derived - Uniformly scaled C (0.5)", *baseProfilePtr,
+            DPoint2d::From (0.0, 0.0), DPoint2d::From (0.5, 0.5), Angle::FromRadians (0.0)));
+
+        InsertProfileGeometry<DerivedProfile> (DerivedProfile::CreateParams (GetModel(), "Derived - Rotated C (90 deg)", *baseProfilePtr,
+            DPoint2d::From (0.0, 0.0), DPoint2d::From (1.0, 1.0), Angle::FromRadians (PI / 2.0)));
+
+        InsertProfileGeometry<DerivedProfile> (DerivedProfile::CreateParams (GetModel(), "Derived - mirrored C", *baseProfilePtr,
+            DPoint2d::From (0.0, 0.0), DPoint2d::From (1.0, 1.0), Angle::FromRadians (0.0), true));
+        }
     }
