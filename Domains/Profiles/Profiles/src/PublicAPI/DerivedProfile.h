@@ -49,7 +49,10 @@ protected:
     explicit DerivedProfile (CreateParams const& params);
 
     virtual bool _Validate() const override;
+
+private:
     virtual IGeometryPtr _CreateGeometry() const override;
+    virtual IGeometryPtr _UpdateGeometry (Profile const& baseProfile) const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DerivedProfile)

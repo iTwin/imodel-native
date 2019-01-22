@@ -91,7 +91,6 @@ bool ArbitraryCompositeProfile::ValidateComponent (ArbitraryCompositeProfileComp
     bool const isRotationValid = BeNumerical::BeFinite (component.rotation.Radians());
     bool const isMemberPriorityValid = component.GetMemberPriority() == componentIndex;
 
-
     return isSingleProfileValid && isOffsetXValid && isOffsetYValid && isRotationValid && isMemberPriorityValid;
     }
 
@@ -108,14 +107,11 @@ IGeometryPtr ArbitraryCompositeProfile::_CreateGeometry() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ArbitraryCompositeProfile::_UpdateGeometry (Profile const& relatedProfile) const
     {
-    SinglePerimeterProfile const* pSingleProfile = dynamic_cast<SinglePerimeterProfile const*> (&relatedProfile);
-    if (pSingleProfile == nullptr)
-        {
-        BeAssert (false);
-        return nullptr;
-        }
+    if (SinglePerimeterProfile const* pSingleProfile = dynamic_cast<SinglePerimeterProfile const*> (&relatedProfile))
+        return ProfilesGeometry::CreateArbitraryCompositeShape (*this, pSingleProfile);
 
-    return ProfilesGeometry::CreateArbitraryCompositeShape (*this, pSingleProfile);
+    BeAssert (false);
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

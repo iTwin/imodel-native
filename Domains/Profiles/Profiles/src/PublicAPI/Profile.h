@@ -42,7 +42,6 @@ protected:
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override;
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
     PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
 
 public:

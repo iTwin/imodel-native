@@ -102,6 +102,18 @@ IGeometryPtr DerivedProfile::_CreateGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr DerivedProfile::_UpdateGeometry (Profile const& baseProfile) const
+    {
+    if (SinglePerimeterProfile const* pBaseProfile = dynamic_cast<SinglePerimeterProfile const*> (&baseProfile))
+        return ProfilesGeometry::CreateDerivedShape (*this, *pBaseProfile);
+
+    BeAssert (false);
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 SinglePerimeterProfilePtr DerivedProfile::GetBaseProfile() const
     {
     DgnElementId baseProfileId = GetPropertyValueId<DgnElementId> (PRF_PROP_DerivedProfile_BaseProfile);

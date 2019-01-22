@@ -85,22 +85,10 @@ DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_UpdateInDb()
     {
-    // TODO Karolis: Update geometry for DerivedProfiles that are referencing this profile.
-
-    // Finishing update operation for this Profile - new calls to Update will require to update geometry.
+    // Finishing update operation for this Profile - set flag for geometry update for new calls to Update().
     m_geometryUpdated = false;
 
     return T_Super::_UpdateInDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Profile::_OnDelete() const
-    {
-    // TODO Karolis: Prohibit deletion of this profile if it is being referenced by DerivedProfile.
-
-    return T_Super::_OnDelete();
     }
 
 /*---------------------------------------------------------------------------------**//**

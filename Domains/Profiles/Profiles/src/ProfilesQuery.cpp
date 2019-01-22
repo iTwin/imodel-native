@@ -10,16 +10,15 @@
 #include <ProfilesInternal\ProfilesQuery.h>
 #include <Profiles\DoubleCShapeProfile.h>
 #include <Profiles\DoubleLShapeProfile.h>
+#include <Profiles\DerivedProfile.h>
 #include <Profiles\ArbitraryCompositeProfile.h>
 
-USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 // Explicitly instantiate template query methods
 template bvector<DoubleCShapeProfilePtr> ProfilesQuery::SelectByNavigationProperty (DgnDb const&, DgnElementId const&, Utf8CP, Utf8CP, DgnDbStatus*);
 template bvector<DoubleLShapeProfilePtr> ProfilesQuery::SelectByNavigationProperty (DgnDb const&, DgnElementId const&, Utf8CP, Utf8CP, DgnDbStatus*);
+template bvector<DerivedProfilePtr> ProfilesQuery::SelectByNavigationProperty (DgnDb const&, DgnElementId const&, Utf8CP, Utf8CP, DgnDbStatus*);
 template bvector<ArbitraryCompositeProfilePtr> ProfilesQuery::SelectByAspectNavigationProperty (DgnDb const&, DgnElementId const& , Utf8CP , Utf8CP , DgnDbStatus*);
 
 /*---------------------------------------------------------------------------------**//**
