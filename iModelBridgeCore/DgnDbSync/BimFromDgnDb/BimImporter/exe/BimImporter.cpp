@@ -11,6 +11,9 @@
 #include <Windows.h>
 #endif
 
+#include <DgnView/DgnViewAPI.h>
+#include <DgnView/DgnViewLib.h>
+
 #include <BimFromDgnDb/BimFromDgnDb.h>
 #include <BimFromDgnDb/BimFromJson.h>
 #include <Logging/bentleylogging.h>
@@ -197,6 +200,9 @@ BentleyStatus BimImporter::_Initialize(int argc, WCharCP argv[])
         }
     InitLogging(argv[0]);
 
+    //m_host->SetProgressMeter(new PrintfProgressMeter());
+    DgnPlatformLib::Initialize(*this, false);
+
     return SUCCESS;
 
     }
@@ -286,7 +292,7 @@ L10N::SqlangFiles BimImporter::_SupplySqlangFiles()
     {
     BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     sqlangFile.AppendToPath(L"sqlang");
-    sqlangFile.AppendToPath(L"BisJson1Importer_en-US.sqlang.db3");
+    sqlangFile.AppendToPath(L"BimFromJson_en-US.sqlang.db3");
 
     return L10N::SqlangFiles(sqlangFile);
     }

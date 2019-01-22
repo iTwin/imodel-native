@@ -66,14 +66,14 @@ private:
     void InitLogging(WCharCP argv0);
     WString GetArgValueW(WCharCP arg);
 
-    virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
+    virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimImporter"); }
     virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
     virtual L10N::SqlangFiles _SupplySqlangFiles() override;
 
     int _PrintUsage(WCharCP programName);
     BentleyStatus _ParseCommandLine(WStringR errmsg, int argc, WCharCP argv[]);
     BentleyStatus _Initialize(int argc, WCharCP argv[]);
-    static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimTeleporter"); }
+    static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimImporter"); }
     DgnDbPtr CreateNewBim();
 
     static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
