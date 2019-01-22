@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
+#include <ProfilesInternal\ProfilesGeometry.h>
 #include <Profiles\DerivedProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -15,8 +16,9 @@ HANDLER_DEFINE_MEMBERS (DerivedProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName)
+DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, DgnElementId const& baseProfileId)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , baseProfileId (baseProfileId)
     , offset (DPoint2d::From (0.0, 0.0))
     , scale (DPoint2d::From (1.0, 1.0))
     , rotation (Angle::FromRadians (0.0))
@@ -27,13 +29,31 @@ DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, DPoint2d const& offset, DPoint2d const& scale,
-                                            Angle const& rotation, bool mirrorAboutYAxis)
+DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile)
+    : CreateParams (model, pName, baseProfile.GetElementId())
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, DgnElementId const& baseProfileId,
+                                            DPoint2d const& offset, DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , baseProfileId (baseProfileId)
     , offset (offset)
     , scale (scale)
     , rotation (rotation)
     , mirrorAboutYAxis (mirrorAboutYAxis)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile,
+                                            DPoint2d const& offset, DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis)
+    : CreateParams (model, pName, baseProfile.GetElementId(), offset, scale, rotation, mirrorAboutYAxis)
     {
     }
 
@@ -46,6 +66,7 @@ DerivedProfile::DerivedProfile (CreateParams const& params)
     if (params.m_isLoadingElement)
         return;
 
+    SetBaseProfile (params.baseProfileId);
     SetOffset (params.offset);
     SetScale (params.scale);
     SetRotation (params.rotation);
@@ -75,7 +96,7 @@ bool DerivedProfile::_Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr DerivedProfile::_CreateGeometry() const
     {
-    return nullptr;
+    return ProfilesGeometry::CreateDerivedShape (*this, *GetBaseProfile());
     }
 
 /*---------------------------------------------------------------------------------**//**

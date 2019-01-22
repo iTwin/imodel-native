@@ -1087,4 +1087,31 @@ IGeometryPtr ProfilesGeometry::CreateArbitraryCompositeShape (ArbitraryComposite
     return IGeometry::Create (curveVector);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* 'baseProfile' passed by reference and not directly retrieved from 'profile'
+* because of support for geometry update case (see Profile::UpdateGeometry()).
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateDerivedShape (DerivedProfile const& profile, SinglePerimeterProfile const& baseProfile)
+    {
+    DPoint3d scale = DPoint3d::From (profile.GetScale());
+    DPoint3d const translation = DPoint3d::From (profile.GetOffset());
+    Angle const rotation = profile.GetRotation();
+
+    if (profile.GetMirrorAboutYAxis())
+        scale.x *= -1.0;
+
+    DMatrix4d transformMatrix = DMatrix4d::FromScaleAndTranslation (scale, translation);
+    if (!BeNumerical::IsEqualToZero (rotation.Radians()))
+        {
+        DMatrix4d const rotationMatrix = DMatrix4d::From (RotMatrix::FromVectorAndRotationAngle (DVec3d::From (0.0, 0.0, 1.0), rotation.Radians()));
+        transformMatrix = transformMatrix * rotationMatrix;
+        }
+
+    Transform transform;
+    BeAssert (transform.InitFrom (transformMatrix));
+
+    return baseProfile.GetShape()->Clone (transform);
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE

@@ -38,6 +38,7 @@ public:
     static IGeometryPtr CreateDoubleLShape (DoubleLShapeProfile const& doubleProfile, LShapeProfile const& singleProfile);
     static IGeometryPtr CreateDoubleCShape (DoubleCShapeProfile const& doubleProfile, CShapeProfile const& singleProfile);
     static IGeometryPtr CreateArbitraryCompositeShape (ArbitraryCompositeProfile const& profile, SinglePerimeterProfileCPtr updatedProfilePtr);
+    static IGeometryPtr CreateDerivedShape (DerivedProfile const& profile, SinglePerimeterProfile const& baseProfile);
 
     };
 

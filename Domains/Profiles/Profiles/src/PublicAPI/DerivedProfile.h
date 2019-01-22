@@ -29,12 +29,16 @@ public:
         explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
 
     public:
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, DPoint2d const& offset,
-                                               DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, Dgn::DgnElementId const& baseProfileId);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, Dgn::DgnElementId const& baseProfileId,
+                                               DPoint2d const& offset, DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis = false);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile,
+                                               DPoint2d const& offset, DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis = false);
 
     public:
         //! Required properties
+        Dgn::DgnElementId baseProfileId;
         DPoint2d offset;
         DPoint2d scale;
         Angle rotation;
