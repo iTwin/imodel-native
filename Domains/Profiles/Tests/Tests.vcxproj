@@ -59,6 +59,7 @@
     <ClCompile Include="src\CenterLineCShapeProfileTests.cpp" />
     <ClCompile Include="src\CircleProfileTests.cpp" />
     <ClCompile Include="src\CShapeProfileTests.cpp" />
+    <ClCompile Include="src\DerivedProfileTests.cpp" />
     <ClCompile Include="src\DoubleCShapeProfileTests.cpp" />
     <ClCompile Include="src\DoubleLShapeProfileTests.cpp" />
     <ClCompile Include="src\EllipseProfileTests.cpp" />

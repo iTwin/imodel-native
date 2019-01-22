@@ -304,7 +304,7 @@ TEST_F (ArbitraryCompositeProfileTestCase, DeleteReferencedProfile_ExistingCompo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryCompositeProfileTestCase, Update_UpdatedReferencedProfile_UpdatedCompositeGeometry)
+TEST_F (ArbitraryCompositeProfileTestCase, UpdateReferencedProfile_ExistingCompositeProfile_UpdatedCompositeGeometry)
     {
     RectangleProfilePtr rectanglePtr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r", 1.0, 1.0));
 
@@ -335,7 +335,7 @@ TEST_F (ArbitraryCompositeProfileTestCase, Update_UpdatedReferencedProfile_Updat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryCompositeProfileTestCase, Update_UpdatedReferencedProfiles_UpdatedCompositeGeometry)
+TEST_F (ArbitraryCompositeProfileTestCase, UpdateReferencedProfiles_ExistingCompositeProfile_UpdatedCompositeGeometry)
     {
     RectangleProfilePtr rectangle1Ptr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r1", 1.0, 1.0));
     RectangleProfilePtr rectangle2Ptr = InsertElement<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "r2", 1.0, 1.0));
