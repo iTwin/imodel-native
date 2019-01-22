@@ -443,7 +443,7 @@
         <SubPart PartName="BimFromJsonSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\BimImporter.exe</Files>
-            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimUpgrader.logging.config.xml</Files>
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimFromDgnDb.logging.config.xml</Files>
         </Bindings>
     </Part>
 
