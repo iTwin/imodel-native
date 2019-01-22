@@ -13,7 +13,8 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * Creates geometry of an arc between the two lines with the given radius. First line
 * should end where the second line starts. First lines end point is adjusted to the 
-* start point of the arc, second lines start point is adjusted to the end of the arc.
+* start point of the arc, second lines start point is adjusted to the end of the arc. If
+* arc radius is zero returns null, without adjusting start and end points for lines
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ICurvePrimitivePtr createArcBetweenLines (ICurvePrimitivePtr& firstLinePtr, ICurvePrimitivePtr& secondLinePtr, double arcRadius)
@@ -32,6 +33,11 @@ static ICurvePrimitivePtr createArcBetweenLines (ICurvePrimitivePtr& firstLinePt
     if (!firstLineEndPoint.IsEqual (secondLineStartPoint))
         {
         BeAssert (false && "first line should end where the second one starts");
+        return nullptr;
+        }
+
+    if (BeNumerical::IsEqualToZero(arcRadius))
+        {
         return nullptr;
         }
 
@@ -641,6 +647,96 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile co
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createCenterLineCShape(double halfWidth, double halfDepth, double wallThickness, double innerFilletRadius, double outerFilletRadius, double girth)
+    {
+    DPoint3d const tl_outerApex = { -halfWidth, halfDepth, 0.0 };
+    DPoint3d const tl_innerApex = { -(halfWidth - wallThickness), halfDepth - wallThickness, 0.0 };
+    DPoint3d const bl_outerApex = { -halfWidth, -halfDepth, 0.0 };
+    DPoint3d const bl_innerApex = { -(halfWidth - wallThickness), -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const br_outerApex = { halfWidth, -halfDepth, 0.0 };
+    DPoint3d const br_innerApex = { halfWidth - wallThickness, -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const tr_outerApex = { halfWidth, halfDepth, 0.0 };
+    DPoint3d const tr_innerApex = { halfWidth - wallThickness, (halfDepth - wallThickness), 0.0 };
+    DPoint3d const br_outerGirth = { halfWidth, -(halfDepth - girth), 0.0 };
+    DPoint3d const br_innerGirth = { halfWidth - wallThickness, -(halfDepth - girth), 0.0 };
+    DPoint3d const tr_innerGirth = { halfWidth - wallThickness, (halfDepth - girth), 0.0 };
+    DPoint3d const tr_outerGirth = { halfWidth, (halfDepth - girth), 0.0 };
+
+    ICurvePrimitivePtr topOuterGirthLine  = ICurvePrimitive::CreateLine (tr_outerGirth, tr_outerApex);
+    ICurvePrimitivePtr topOuterLine  = ICurvePrimitive::CreateLine (tr_outerApex, tl_outerApex);
+    ICurvePrimitivePtr topRightOuterArc = createArcBetweenLines (topOuterGirthLine, topOuterLine, outerFilletRadius);
+    ICurvePrimitivePtr leftOuterLine  = ICurvePrimitive::CreateLine (tl_outerApex, bl_outerApex);
+    ICurvePrimitivePtr topLeftOuterArc = createArcBetweenLines (topOuterLine, leftOuterLine, outerFilletRadius);
+    ICurvePrimitivePtr bottomOuterLine  = ICurvePrimitive::CreateLine (bl_outerApex, br_outerApex);
+    ICurvePrimitivePtr bottomLeftOuterArc = createArcBetweenLines (leftOuterLine, bottomOuterLine, outerFilletRadius);
+    ICurvePrimitivePtr bottomGirthOuterLine  = ICurvePrimitive::CreateLine (br_outerApex, br_outerGirth);
+    ICurvePrimitivePtr bottomGirthConnectLine = ICurvePrimitive::CreateLine (br_outerGirth, br_innerGirth);
+    ICurvePrimitivePtr bottomGirthOuterArc = createArcBetweenLines(bottomOuterLine, bottomGirthOuterLine, outerFilletRadius);
+    ICurvePrimitivePtr bottomGirthInnerLine = ICurvePrimitive::CreateLine (br_innerGirth, br_innerApex);
+    ICurvePrimitivePtr bottomInnerLine = ICurvePrimitive::CreateLine (br_innerApex, bl_innerApex);
+    ICurvePrimitivePtr bottomGirthInnerArc = createArcBetweenLines(bottomGirthInnerLine, bottomInnerLine, innerFilletRadius);
+    ICurvePrimitivePtr leftInnerLine = ICurvePrimitive::CreateLine (bl_innerApex, tl_innerApex);
+    ICurvePrimitivePtr bottomLeftInnerArc = createArcBetweenLines(bottomInnerLine, leftInnerLine, innerFilletRadius);
+    ICurvePrimitivePtr topInnerLine = ICurvePrimitive::CreateLine (tl_innerApex, tr_innerApex);
+    ICurvePrimitivePtr topLeftInnerArc = createArcBetweenLines(leftInnerLine, topInnerLine, innerFilletRadius);
+    ICurvePrimitivePtr topGirthInnerLine = ICurvePrimitive::CreateLine (tr_innerApex, tr_innerGirth);
+    ICurvePrimitivePtr topGirthInnerArc = createArcBetweenLines(topInnerLine, topGirthInnerLine, innerFilletRadius);
+    ICurvePrimitivePtr topGirtConnectLine = ICurvePrimitive::CreateLine (tr_innerGirth, tr_outerGirth);
+
+    bvector<ICurvePrimitivePtr> curves =
+        {
+        topOuterGirthLine,  topRightOuterArc, topOuterLine,
+        topLeftOuterArc,  leftOuterLine, bottomLeftOuterArc,
+        bottomOuterLine,  bottomGirthOuterArc, bottomGirthOuterLine,
+        bottomGirthConnectLine, bottomGirthInnerLine, bottomGirthInnerArc,
+        bottomInnerLine, bottomLeftInnerArc, leftInnerLine,
+        topLeftInnerArc, topInnerLine, topGirthInnerArc,
+        topGirthInnerLine, topGirtConnectLine,
+        };
+
+    return createGeometryFromPrimitiveArray(curves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createCenterLineCShape (double halfWidth, double halfDepth, double wallThickness, double innerFilletRadius, double outerFilletRadius)
+    {
+    DPoint3d const tl_outerApex = { -halfWidth, halfDepth, 0.0 };
+    DPoint3d const tl_innerApex = { -(halfWidth - wallThickness), halfDepth - wallThickness, 0.0 };
+    DPoint3d const bl_outerApex = { -halfWidth, -halfDepth, 0.0 };
+    DPoint3d const bl_innerApex = { -(halfWidth - wallThickness), -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const br_outerApex = { halfWidth, -halfDepth, 0.0 };
+    DPoint3d const br_innerApex = { halfWidth, -(halfDepth - wallThickness), 0.0 };
+    DPoint3d const tr_outerApex = { halfWidth, halfDepth, 0.0 };
+    DPoint3d const tr_innerApex = { halfWidth, (halfDepth - wallThickness), 0.0 };
+
+    ICurvePrimitivePtr topOuterLine  = ICurvePrimitive::CreateLine (tr_outerApex, tl_outerApex);
+    ICurvePrimitivePtr leftOuterLine = ICurvePrimitive::CreateLine (tl_outerApex, bl_outerApex);
+    ICurvePrimitivePtr leftOuterTopArc = createArcBetweenLines (topOuterLine, leftOuterLine, outerFilletRadius);
+    ICurvePrimitivePtr bottomOuterLine = ICurvePrimitive::CreateLine (bl_outerApex, br_outerApex);
+    ICurvePrimitivePtr leftOuterBottomArc = createArcBetweenLines (leftOuterLine, bottomOuterLine, outerFilletRadius);
+    ICurvePrimitivePtr bottomLinesConnector = ICurvePrimitive::CreateLine (br_outerApex, br_innerApex);
+    ICurvePrimitivePtr bottomInnerLine = ICurvePrimitive::CreateLine (br_innerApex, bl_innerApex);
+    ICurvePrimitivePtr leftInnerLine = ICurvePrimitive::CreateLine (bl_innerApex, tl_innerApex);
+    ICurvePrimitivePtr leftInnerBottomArc = createArcBetweenLines (bottomInnerLine, leftInnerLine, innerFilletRadius);
+    ICurvePrimitivePtr topInnerLine = ICurvePrimitive::CreateLine (tl_innerApex, tr_innerApex);
+    ICurvePrimitivePtr leftInnerTopArc = createArcBetweenLines (leftInnerLine, topInnerLine, innerFilletRadius);
+    ICurvePrimitivePtr topLinesConnector = ICurvePrimitive::CreateLine (tr_innerApex, tr_outerApex);
+
+    bvector<ICurvePrimitivePtr> curves =
+        {
+        topOuterLine, leftOuterTopArc, leftOuterLine, leftOuterBottomArc, bottomOuterLine,
+        bottomLinesConnector,  bottomInnerLine, leftInnerBottomArc, leftInnerLine, leftInnerTopArc,
+        topInnerLine,  topLinesConnector,
+        };
+
+    return createGeometryFromPrimitiveArray(curves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile const& profile)
@@ -649,159 +745,16 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     double const halfDepth = profile.GetDepth() / 2.0;
     double const wallThickness = profile.GetWallThickness();
     double const filletRadius = profile.GetFilletRadius();
-    double const outerFilletRadius = filletRadius + wallThickness;
     double const girth = profile.GetGirth();
 
-    DPoint3d const tl_outerRangeApex  = { -halfWidth, halfDepth, 0.0 };
-    DPoint3d const tl_outerLeft       = { -halfWidth, halfDepth - outerFilletRadius, 0.0 };
-    DPoint3d const bl_outerLeft       = { -halfWidth, -(halfDepth - outerFilletRadius), 0.0 };
-    DPoint3d const bl_outerRangeApex  = { -halfWidth, -halfDepth, 0.0 };
-    DPoint3d const bl_outerBottom     = { -(halfWidth - outerFilletRadius), -halfDepth, 0.0 };
-    DPoint3d br_outerBottom     = { halfWidth - outerFilletRadius, -halfDepth, 0.0 };
-    DPoint3d const br_outerRangeApex  = { halfWidth, -halfDepth, 0.0 };
-    DPoint3d br_outerRight      = { halfWidth, -(halfDepth - outerFilletRadius), 0.0 };
-    DPoint3d br_outerRightGirth = { halfWidth, -(halfDepth - girth), 0.0 };
-    DPoint3d br_innerRightGirth = { halfWidth - wallThickness, -(halfDepth - girth), 0.0 };
-    DPoint3d br_innerRight      = { halfWidth - wallThickness, -(halfDepth - wallThickness - filletRadius), 0.0 };
-    DPoint3d br_innerRangeApex  = { halfWidth - wallThickness, -(halfDepth - wallThickness), 0.0 };
-    DPoint3d br_innerBottom     = { (halfWidth - wallThickness - filletRadius), -(halfDepth - wallThickness), 0.0 };
-    DPoint3d const bl_innerBottom     = { -(halfWidth - wallThickness - filletRadius), -(halfDepth - wallThickness), 0.0 };
-    DPoint3d const bl_innerRangeApex  = { -(halfWidth - wallThickness), -(halfDepth - wallThickness), 0.0 };
-    DPoint3d const bl_innerLeft       = { -(halfWidth - wallThickness), -(halfDepth - wallThickness - filletRadius), 0.0 };
-    DPoint3d const tl_innerLeft       = { -(halfWidth - wallThickness), halfDepth - wallThickness - filletRadius, 0.0 };
-    DPoint3d const tl_innerRangeApex  = { -(halfWidth - wallThickness), halfDepth - wallThickness, 0.0 };
-    DPoint3d const tl_innerTop        = { -(halfWidth - wallThickness - filletRadius), (halfDepth - wallThickness), 0.0 };
-    DPoint3d tr_innerTop        = { (halfWidth - wallThickness - filletRadius), (halfDepth - wallThickness), 0.0 };
-    DPoint3d tr_innerRangeApex  = { halfWidth - wallThickness, (halfDepth - wallThickness), 0.0 };
-    DPoint3d tr_innerRight      = { halfWidth - wallThickness, (halfDepth - wallThickness - filletRadius), 0.0 };
-    DPoint3d tr_innerRightGirth = { halfWidth - wallThickness, (halfDepth - girth), 0.0 };
-    DPoint3d tr_outerRightGirth = { halfWidth, (halfDepth - girth), 0.0 };
-    DPoint3d tr_outerRight      = { halfWidth, (halfDepth - outerFilletRadius), 0.0 };
-    DPoint3d const tr_outerRangeApex  = { halfWidth, halfDepth, 0.0 };
-    DPoint3d tr_outerTop        = { (halfWidth - outerFilletRadius), halfDepth, 0.0 };
-    DPoint3d const tl_outerTop        = { -(halfWidth - outerFilletRadius), halfDepth, 0.0 };
-
-    if (BeNumerical::IsEqualToZero (girth))
+    if (BeNumerical::IsEqualToZero(girth))
         {
-        br_outerRight = { halfWidth, -(halfDepth - wallThickness), 0.0 };
-        br_innerRangeApex  = br_outerRight;
-        br_innerRightGirth = br_innerRangeApex;
-        br_innerRight = br_innerRangeApex;
-        br_innerBottom = br_innerRangeApex;
-        br_outerRightGirth = br_innerRangeApex;
-        br_outerBottom = br_outerRangeApex;
-
-
-        tr_outerRight = { halfWidth,  halfDepth - wallThickness, 0.0 };
-        tr_innerRangeApex = tr_outerRight;
-        tr_innerRightGirth = tr_innerRangeApex;
-        tr_innerRight = tr_innerRangeApex;
-        tr_innerTop = tr_innerRangeApex;
-
-        tr_outerRightGirth = tr_innerRangeApex;
-        tr_outerTop = tr_outerRangeApex;
+        return createCenterLineCShape (halfWidth, halfDepth, wallThickness, filletRadius, filletRadius + wallThickness);
         }
-
-    ICurvePrimitivePtr line2 = ICurvePrimitive::CreateLine (tl_outerLeft, bl_outerLeft);
-    ICurvePrimitivePtr line3 = ICurvePrimitive::CreateLine (bl_outerLeft, bl_outerRangeApex);
-    ICurvePrimitivePtr line4 = ICurvePrimitive::CreateLine (bl_outerRangeApex, bl_outerBottom);
-
-    if (BeNumerical::IsGreaterThanZero (outerFilletRadius))
+    else
         {
-        line3 = createArcBetweenLines (line3, line4, outerFilletRadius);
-        line4 = nullptr;
+        return createCenterLineCShape (halfWidth, halfDepth, wallThickness, filletRadius, filletRadius + wallThickness, girth);
         }
-
-    ICurvePrimitivePtr  line5 = ICurvePrimitive::CreateLine (bl_outerBottom, br_outerBottom);
-    ICurvePrimitivePtr  line6 = ICurvePrimitive::CreateLine (br_outerBottom, br_outerRangeApex);
-    ICurvePrimitivePtr  line7 = ICurvePrimitive::CreateLine (br_outerRangeApex, br_outerRight);
-
-    if (BeNumerical::IsGreaterThanZero (outerFilletRadius) && BeNumerical::IsGreaterThanZero (girth))
-        {
-        line6 = createArcBetweenLines (line6, line7, outerFilletRadius);
-        line7 = nullptr;
-        }
-   
-    ICurvePrimitivePtr  line8 = ICurvePrimitive::CreateLine (br_outerRight, br_outerRightGirth);
-    ICurvePrimitivePtr  line9 = ICurvePrimitive::CreateLine (br_outerRightGirth, br_innerRightGirth);
-    ICurvePrimitivePtr line10 = ICurvePrimitive::CreateLine (br_innerRightGirth, br_innerRight);
-    ICurvePrimitivePtr line11 = ICurvePrimitive::CreateLine (br_innerRight, br_innerRangeApex);
-    ICurvePrimitivePtr line12 = ICurvePrimitive::CreateLine (br_innerRangeApex, br_innerBottom);
-
-    if (BeNumerical::IsGreaterThanZero (filletRadius))
-        {
-        line11 = createArcBetweenLines (line11, line12, filletRadius);
-        line12 = nullptr;
-        }
-
-    ICurvePrimitivePtr line13 = ICurvePrimitive::CreateLine (br_innerBottom, bl_innerBottom);
-    ICurvePrimitivePtr line14 = ICurvePrimitive::CreateLine (bl_innerBottom, bl_innerRangeApex);
-    ICurvePrimitivePtr line15 = ICurvePrimitive::CreateLine (bl_innerRangeApex, bl_innerLeft);
-
-    if (BeNumerical::IsGreaterThanZero (filletRadius))
-        {
-        line14 = createArcBetweenLines(line14, line15, filletRadius);
-        line15 = nullptr;
-        }
-
-    ICurvePrimitivePtr line16 = ICurvePrimitive::CreateLine (bl_innerLeft, tl_innerLeft);
-    ICurvePrimitivePtr line17 = ICurvePrimitive::CreateLine (tl_innerLeft, tl_innerRangeApex);
-    ICurvePrimitivePtr line18 = ICurvePrimitive::CreateLine (tl_innerRangeApex, tl_innerTop);
-
-    if (BeNumerical::IsGreaterThanZero (filletRadius))
-        {
-        line17 = createArcBetweenLines (line17, line18, filletRadius);
-        line18 = nullptr;
-        }
-
-    ICurvePrimitivePtr line19 = ICurvePrimitive::CreateLine (tl_innerTop, tr_innerTop);
-    ICurvePrimitivePtr line20 = ICurvePrimitive::CreateLine (tr_innerTop, tr_innerRangeApex);
-    ICurvePrimitivePtr line21 = ICurvePrimitive::CreateLine (tr_innerRangeApex, tr_innerRight);
-
-    if (BeNumerical::IsGreaterThanZero (filletRadius) && BeNumerical::IsGreaterThanZero (girth))
-        {
-        line20 = createArcBetweenLines (line20, line21, filletRadius);
-        line21 = nullptr;
-        }
-
-    ICurvePrimitivePtr line22 = ICurvePrimitive::CreateLine (tr_innerRight, tr_innerRightGirth);
-    ICurvePrimitivePtr line23 = ICurvePrimitive::CreateLine (tr_innerRightGirth, tr_outerRightGirth);
-    ICurvePrimitivePtr line24 = ICurvePrimitive::CreateLine (tr_outerRightGirth, tr_outerRight);
-
-    ICurvePrimitivePtr line25 = ICurvePrimitive::CreateLine (tr_outerRight, tr_outerRangeApex);
-    ICurvePrimitivePtr line26 = ICurvePrimitive::CreateLine (tr_outerRangeApex, tr_outerTop);
-
-    if (BeNumerical::IsGreaterThanZero (outerFilletRadius) && BeNumerical::IsGreaterThanZero (girth))
-        {
-        line25 = createArcBetweenLines (line25, line26, outerFilletRadius);
-        line26 = nullptr;
-        }
-
-    ICurvePrimitivePtr line27 = ICurvePrimitive::CreateLine (tr_outerTop, tl_outerTop);
-    ICurvePrimitivePtr line28 = ICurvePrimitive::CreateLine (tl_outerTop, tl_outerRangeApex);
-    ICurvePrimitivePtr  line1 = ICurvePrimitive::CreateLine (tl_outerRangeApex, tl_outerLeft);
-
-    if (BeNumerical::IsGreaterThanZero (outerFilletRadius))
-        {
-        line28 = createArcBetweenLines (line28, line1, outerFilletRadius);
-        line1 = nullptr;
-        }
-
-    bvector<ICurvePrimitivePtr> curves =
-        {
-        line1,  line2, line3,
-        line4,  line5, line6,
-        line7,  line8, line9,
-        line10, line11, line12,
-        line13, line14, line15,
-        line16, line17, line18, 
-        line19, line20, line21, 
-        line22, line23, line24,
-        line25, line26, line27, 
-        line28,
-        };
-
-    return createGeometryFromPrimitiveArray (curves);
     }
 
 /*---------------------------------------------------------------------------------**//**
