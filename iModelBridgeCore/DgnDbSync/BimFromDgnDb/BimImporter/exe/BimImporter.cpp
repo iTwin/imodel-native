@@ -230,8 +230,7 @@ Usage: %ls -i|--input= -o|--output= \
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Muhammad.Zaighum                  05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus BimImporter::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath)
+BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName jsonFilePath)
     {
     Utf8String fileContent;
 
@@ -264,28 +263,6 @@ BentleyStatus BimImporter::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileN
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbPtr BimImporter::CreateNewBim()
-    {
-    Utf8String subjectName(m_outputPath.GetFileNameWithoutExtension());
-
-    DbResult dbStatus;
-    Dgn::CreateDgnDbParams params;
-    params.SetOverwriteExisting(true);
-    params.SetRootSubjectName(subjectName.c_str());
-
-    DgnDbPtr dgndb = DgnDb::CreateDgnDb(&dbStatus, m_outputPath, params);
-
-    if (!dgndb.IsValid())
-        {
-        // Report Error
-        return dgndb;
-        }
-
-    return dgndb;
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 L10N::SqlangFiles BimImporter::_SupplySqlangFiles()
@@ -295,6 +272,28 @@ L10N::SqlangFiles BimImporter::_SupplySqlangFiles()
     sqlangFile.AppendToPath(L"BimFromJson_en-US.sqlang.db3");
 
     return L10N::SqlangFiles(sqlangFile);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+folly::Future<bool> ReadJsonFile(BeFileName inputFileName, BimFromJson* importer)
+    {
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=] ()
+        {
+        Json::Value jsonInput;
+        ReadJsonInputFromFile(jsonInput, inputFileName);
+
+        for (Json::Value::iterator iter = jsonInput.begin(); iter != jsonInput.end(); iter++)
+            {
+            Json::Value& entry = *iter;
+            if (entry.isNull())
+                continue;
+            importer->AddToQueue(entry.toStyledString().c_str());
+            }
+
+        return true;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -328,18 +327,16 @@ int BimImporter::Run(int argc, WCharCP argv[])
         return _PrintUsage(argv[0]);
         }
 
-    Json::Value jsonInput;
-    ReadJsonInputFromFile(jsonInput, m_inputFileName);
-
     BimFromJson importer(m_outputPath.GetName());
-    
-    for (Json::Value::iterator iter = jsonInput.begin(); iter != jsonInput.end(); iter++)
+    if (!importer.CreateBim())
         {
-        Json::Value& entry = *iter;
-        if (entry.isNull())
-            continue;
-        importer.AddToQueue(entry.toStyledString().c_str());
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("BimImporter")->fatal("Failed to create bim.  Aborting");
+        return -1;
         }
+
+    auto future = ReadJsonFile(m_inputFileName, &importer);
+    importer.ImportJson(future);
+
     return 0;
     }
 END_BIM_FROM_DGNDB_NAMESPACE

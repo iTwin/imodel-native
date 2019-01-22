@@ -76,8 +76,6 @@ private:
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimImporter"); }
     DgnDbPtr CreateNewBim();
 
-    static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
-
 public:
     //! wmain should call this to run the job.
     int Run(int argc, WCharCP argv[]);
