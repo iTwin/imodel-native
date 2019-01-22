@@ -53,6 +53,65 @@ DerivedProfile::DerivedProfile (CreateParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DerivedProfile::_Validate() const
+    {
+    if (!T_Super::_Validate())
+        return false;
+
+    bool const isBaseProfileValid = GetBaseProfile().IsValid();
+    bool const isOffsetXValid = BeNumerical::BeFinite (GetOffset().x);
+    bool const isOffsetYValid = BeNumerical::BeFinite (GetOffset().y);
+    bool const isScaleXValid = BeNumerical::BeFinite (GetScale().x);
+    bool const isScaleYValid = BeNumerical::BeFinite (GetScale().y);
+    bool const isRotationValid = BeNumerical::BeFinite (GetRotation().Radians());
+
+    return isBaseProfileValid && isOffsetXValid && isOffsetYValid && isScaleXValid && isScaleYValid && isRotationValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr DerivedProfile::_CreateGeometry() const
+    {
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SinglePerimeterProfilePtr DerivedProfile::GetBaseProfile() const
+    {
+    DgnElementId baseProfileId = GetPropertyValueId<DgnElementId> (PRF_PROP_DerivedProfile_BaseProfile);
+    return SinglePerimeterProfile::GetForEdit (m_dgndb, baseProfileId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId DerivedProfile::GetBaseProfileId() const
+    {
+    return GetPropertyValueId<DgnElementId> (PRF_PROP_DerivedProfile_BaseProfile);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DerivedProfile::SetBaseProfile (SinglePerimeterProfile const& baseProfile)
+    {
+    SetPropertyValue (PRF_PROP_DerivedProfile_BaseProfile, baseProfile.GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DerivedProfile::SetBaseProfile (Dgn::DgnElementId const& baseProfileId)
+    {
+    SetPropertyValue (PRF_PROP_DerivedProfile_BaseProfile, baseProfileId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint2d DerivedProfile::GetOffset() const

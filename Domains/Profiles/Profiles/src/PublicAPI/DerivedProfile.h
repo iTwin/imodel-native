@@ -44,6 +44,9 @@ public:
 protected:
     explicit DerivedProfile (CreateParams const& params);
 
+    virtual bool _Validate() const override;
+    virtual IGeometryPtr _CreateGeometry() const override;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DerivedProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (DerivedProfile)
@@ -51,6 +54,11 @@ public:
     PROFILES_EXPORT static DerivedProfilePtr Create (CreateParams const& params) { return new DerivedProfile (params); }
 
 public:
+    PROFILES_EXPORT SinglePerimeterProfilePtr GetBaseProfile() const;
+    PROFILES_EXPORT Dgn::DgnElementId GetBaseProfileId() const;
+    PROFILES_EXPORT void SetBaseProfile (SinglePerimeterProfile const& baseProfile);
+    PROFILES_EXPORT void SetBaseProfile (Dgn::DgnElementId const& baseProfileId);
+
     PROFILES_EXPORT DPoint2d GetOffset() const;
     PROFILES_EXPORT void SetOffset (DPoint2d const& value);
 
