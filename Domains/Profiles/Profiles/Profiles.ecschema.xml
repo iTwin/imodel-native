@@ -386,10 +386,10 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="" />
         <ECProperty propertyName="Offset" typeName="point2d" description="" />
-        <ECProperty propertyName="Rotation" typeName="point2d" description="" />
         <ECProperty propertyName="Scale" typeName="point2d" description="" />
+        <ECProperty propertyName="Rotation" typeName="double" description="" />
+        <ECProperty propertyName="MirrorAboutYAxis" typeName="boolean" description="" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="SinglePerimeterProfileOwnsDerivedProfile" modifier="Sealed" strength="embedding">
@@ -425,7 +425,7 @@
         <ECNavigationProperty propertyName="SingleProfile" relationshipName="ArbitraryCompositeProfileAspectRefersToSinglePerimeterProfile" direction="Forward" description="" />
         <ECProperty propertyName="Offset" typeName="point2d" description="" />
         <ECProperty propertyName="Rotation" typeName="double" description="" />
-        <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="" />
+        <ECProperty propertyName="MirrorAboutYAxis" typeName="boolean" description="" />
         <ECProperty propertyName="MemberPriority" typeName="int" description="Member Priority, same as in bis:ElementGorupsMembers" />
     </ECEntityClass>
 
