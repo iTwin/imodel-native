@@ -31,6 +31,17 @@ ArbitraryCompositeProfileComponent::ArbitraryCompositeProfileComponent (DgnEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+ArbitraryCompositeProfileComponent::ArbitraryCompositeProfileComponent (SinglePerimeterProfile const& singleProfile, DPoint2d const& offset,
+                                                                        Angle const& rotation, bool mirrorAboutYAxis)
+    : singleProfileId (singleProfile.GetElementId())
+    , offset (offset)
+    , rotation (rotation)
+    , mirrorAboutYAxis (mirrorAboutYAxis)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 ArbitraryCompositeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, ComponentVector const& components)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , components (components)

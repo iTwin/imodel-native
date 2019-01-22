@@ -21,6 +21,8 @@ struct ArbitraryCompositeProfileComponent
     {
 public:
     PROFILES_EXPORT ArbitraryCompositeProfileComponent() = default;
+    PROFILES_EXPORT ArbitraryCompositeProfileComponent (SinglePerimeterProfile const& singleProfile, DPoint2d const& offset,
+                                               Angle const& rotation = Angle::FromRadians (0.0), bool mirrorAboutYAxis = false);
     PROFILES_EXPORT ArbitraryCompositeProfileComponent (Dgn::DgnElementId const& singleProfileId, DPoint2d const& offset,
                                                Angle const& rotation = Angle::FromRadians (0.0), bool mirrorAboutYAxis = false);
 
