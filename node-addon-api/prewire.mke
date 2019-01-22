@@ -5,7 +5,7 @@
 
 %include mdl.mki
 
-baseDir     = $(_MakeFilePath)
+baseDir = $(_MakeFilePath)
 
 $(BuildContext)VendorAPI/Napi : $(baseDir)/Napi
     $(LinkFirstDepToFirstTargetAsDirectory)

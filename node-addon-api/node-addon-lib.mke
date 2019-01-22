@@ -8,7 +8,6 @@
 
 %include mdl.mki
 
-# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 ContextDeliveryDir      = $(BuildContext)Delivery/
 appName                 = napi
 CCompPDBName            = $(appName)
@@ -46,22 +45,14 @@ DLM_NOENTRY             = 1
 
 ContextDeliveryDir = $(BuildContext)Delivery/Node/
 DLM_NO_IMPLIB = 1
+DLM_SPECIAL_LINKOPT = -delayload:node.exe
+LINKER_LIBRARIES = DelayImp.lib $(BuildContext)SubParts\nodelib\node.lib
 
 cDefs = $(cDefsSave)
 cdefs  + -DBUILD_FOR_NODE
 o = $(OutputRootDir)build/NapiLib/Node/
 
 $(o)napi_stub$(oext)  : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
-
-objs = $(o)napi_stub$(oext) 
-%include $(sharedMki)linkLibrary.mki
-
-ContextDeliveryDir = $(BuildContext)Delivery/Electron/
-cDefs = $(cDefsSave)
-cdefs  + -DBUILD_FOR_ELECTRON
-o = $(OutputRootDir)build/NapiLib/Electron/
-
-$(o)napi_stub$(oext) : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
 
 objs = $(o)napi_stub$(oext) 
 %include $(sharedMki)linkLibrary.mki

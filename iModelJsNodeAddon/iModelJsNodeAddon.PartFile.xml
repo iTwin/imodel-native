@@ -65,7 +65,7 @@
   </Part>
 
   <Part Name="iModelJsLib" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke"  >
-    <SubPart PartName="napi-lib-win" PartFile="node-addon-api/node-addon-api"/>
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
     <Bindings>
@@ -82,7 +82,7 @@
   </Part>
 
   <Part Name="iModelJsNative-Static" OnlyPlatforms="Linux*,MacOS*"  ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" >
-    <SubPart PartName="napi-stub-build"  PartFile="node-addon-api/node-addon-api"/>
+    <SubPart PartName="napi-lib"  PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
     <Bindings>

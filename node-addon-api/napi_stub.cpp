@@ -2,12 +2,13 @@
 |
 |     $Source: napi/node_api_stub.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Napi/node_api.h"
 #include <signal.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 /** This file exists to resolve the references to the Node "napi" layer from our .dlls 
  * (e.g. DgnPlatform and iModelJs.node).
@@ -16,29 +17,35 @@
 
 #if defined(_WIN32)
 #pragma warning(disable : 4100)
+#define ABORT_NO_BACKTRACE() raise(SIGABRT)
+#define FORWARD_EXPORT(name) __pragma(comment(linker, "/export:"##name))
 #elif defined(__clang__)
+#define ABORT_NO_BACKTRACE() abort()
+#define FORWARD_EXPORT(name)
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-function"
 #pragma clang diagnostic ignored "-Wconstant-conversion"
 #endif
 
-#if defined(_WIN32)
-#define ABORT_NO_BACKTRACE() raise(SIGABRT)
-#define FORWARD_EXPORT(name) __pragma(comment(linker, "/export:"##name##"="##EXPORT_DEST##"."##name))
-#else
-#define ABORT_NO_BACKTRACE() abort()
-#define FORWARD_EXPORT(name)
-#endif
-
-#if defined(BUILD_FOR_NODE)
-#define EXPORT_DEST "node.exe"
-#elif defined(BUILD_FOR_ELECTRON)
-#define EXPORT_DEST "electron.exe"
-#endif
-
 #define FORWARD_NAPI_EXPORT(name) FORWARD_EXPORT("napi_"##name)
 
-#if defined(EXPORT_DEST)
+#if defined(BUILD_FOR_NODE)
+
+#if defined(_WIN32)
+#include <windows.h>
+#include <delayimp.h>
+
+// On Windows, we delay load node.lib. It declares all of its exports to be from "node.exe".
+// We Register a delay-load hook to redirect any node.exe references to be from the loading executable.
+// This way the addon will still work even if the host executable is not named node.exe.
+static FARPROC delayLoadNotify(unsigned dliNotify, PDelayLoadInfo pdli)
+{
+    if (dliNotePreLoadLibrary != dliNotify || 0 != _stricmp(pdli->szDll, "node.exe"))
+        return nullptr;
+    return (FARPROC)::GetModuleHandle(nullptr);
+}
+decltype(__pfnDliNotifyHook2) __pfnDliNotifyHook2 = delayLoadNotify;
+#endif
 
 FORWARD_NAPI_EXPORT("acquire_threadsafe_function")
 FORWARD_NAPI_EXPORT("add_env_cleanup_hook")

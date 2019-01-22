@@ -9,23 +9,21 @@ Generally, C++ programs include `<Napi/napi.h>` and don't directly access the C 
 The file `napi_stub.cpp` exists for two reasons:
 
 - We sometimes want to *stub out* Node when we write tests, or when we use our dlls in an environment where we don't need JavaScript
-- On Windows, Electron exports the `napi_` symbols differently than Node does.
+- On Windows, Electron exports the `napi_` symbols differently than Node does (from `electron.exe` instead of `node.exe`), and the electron executable is also usually renamed when distributing applications.
 
-For this reason, rather than link all of our .dlls (that have a JavaScript dependency) with the Node/Electron delivered .lib files (node.lib and iojs.lib), we link our .dlls with a new "napi.dll" created from `napi_stub.cpp`. Then, napi.dll *forwards* the references to the `napi_xxx` symbols to the appropriate place. That way we don't have to have 3 versions of all of our .dlls that use the "Napi" header files.
+For this reason, rather than link all of our .dlls (that have a JavaScript dependency) with the Node/Electron delivered node.lib file we link our .dlls with a new "napi.dll" created from `napi_stub.cpp`. Then, napi.dll *forwards* the references to the `napi_xxx` symbols to the appropriate place. That way we don't have to have 2 versions of all of our .dlls that use the "Napi" header files.
 
 ## How `napi_stub.cpp` resolves the `napi_xxx` symbols
 
-There are 3 ways that `napi_stub.cpp` resolves the `napi_xxx` symbols:
+There are 2 ways that `napi_stub.cpp` resolves the `napi_xxx` symbols:
 
-1. from `node.exe` when we run under Node.
-2. from `electron.exe` when we run under Electron
-3. from stubs when we run tests, or other places where we don't want a dependence on Node.
+1. from the executable that loaded the addon (usually either `node.exe` or `electron.exe`).
+2. from stubs when we run tests, or other places where we don't want a dependence on Node.
 
-To complicate things further, the first 2 cases above are only relevant for Windows, because the Unix loader does not specify the source for an import. But, we still have the 3rd case under Unix.
+To complicate things further, the first case above is only relevant for Windows, because the Unix loader does not specify the source for an import. But, we still have the 2nd case under Unix.
 
-In `node-addon-api.mke`, we compile `napi_stub.cpp` 3 times, first with no macros defined, then with `BUILD_FOR_NODE` defined, and finally with `BUILD_FOR_ELECTRON` defined. The first build generates the .lib file that we use to link our .dlls under Windows, and the .a file we link with under Unix. When we compile for Node we *forward* all the exported symbols to `node.exe` and for Electron to `electron.exe` (that's what the `FORWARD_NAPI_EXPORT` lines do.) For the "stub" build we simply implement each function to do nothing. That generates 3 different `napi.dll` files in our BuildContext.
-
-[N.B. when the loader loads `napi.dll` and sees the "forwarding" references, it resolves the symbol directly from the *target* .exe so there is no performance penalty for this approach.]
+In `node-addon-api.mke`, we compile `napi_stub.cpp` twice, first with no macros defined, then with `BUILD_FOR_NODE` define. The first build generates the .lib file that we use to link our .dlls under Windows, and the .a file we link with under Unix. When we compile for Node we *forward* all the exported symbols to `node.exe` (that's what the `FORWARD_NAPI_EXPORT` lines do).
+Also, on Windows, we register a [delay-load hook](https://docs.microsoft.com/en-us/cpp/build/reference/notification-hooks?view=vs-2017) to redirect any `node.exe` references to use the loading executable. This way, the addon will still work even if the host executable is `electron.exe` or is renamed to anything else. For the "stub" build we simply implement each function to do nothing. That generates 2 different `napi.dll` files in our BuildContext.
 
 ## Making PartFiles that use the `node-addon-api` PartFile
 
@@ -37,7 +35,7 @@ In `node-addon-api.mke`, we compile `napi_stub.cpp` 3 times, first with no macro
 
 Under Windows:
 
-- deliver each of the Node and Electron versions of napi.dll in subdirectories with the appropriate name via the `napi-dll-win` Part. At runtime we prepend the name of that directory to the PATH variable so the loader finds the right one.
+- Deliver the Node version of napi.dll via the `napi-dll-win` Part.
 
 Under Unix:
 
@@ -47,6 +45,6 @@ Under Unix:
 
 When we update to a new version of Node, unless they change something in Napi, there are **no changes** required. If they *do* happen to change/add/remove symbols in napi:
 
- 1. copy the new header files into the Napi subdirectory. We don't use the .lib files from Node's delivery (other than for step 3 below).
- 2. the file `Napi/node_api.h` has the names/signatures of all the functions. Ensure that the signtaures of the stubs in `napi_stubs.cpp` agree exactly.
- 3. for the "forwarding" sections, it may be easier to do a `dumpbin /exports iojs.lib` from the Node delivery, then find all the symbols with the "napi_" prefix.
+ 1. copy the new header files into the Napi subdirectory and .lib files into the node subdirectory.
+ 2. the file `Napi/node_api.h` has the names/signatures of all the functions. Ensure that the signatures of the stubs in `napi_stubs.cpp` agree exactly.
+ 3. for the "forwarding" sections, it may be easier to do a `dumpbin /exports node.lib` from the Node delivery, then find all the symbols with the "napi_" prefix.
