@@ -5675,6 +5675,11 @@ template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
         pNewNode->SetParentNodePtr(parentNodePtr);
         }
 
+    if (useNodeMap)
+        {
+        this->m_createdNodeMap.insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(blockID.m_integerID, pNewNode));
+        }
+
     return pNewNode;
     }
 

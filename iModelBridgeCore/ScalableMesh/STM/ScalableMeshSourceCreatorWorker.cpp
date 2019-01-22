@@ -173,7 +173,7 @@ IScalableMeshSourceCreatorWorker::Impl::~Impl()
     CachedDataEventTracer::GetInstance()->analyze(::_getpid());
 #endif	
     }
-
+   
 HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
     {
     if (m_pDataIndex.GetPtr() == nullptr)
@@ -857,9 +857,16 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
         //Load all the nodes created during the indexing step. 
         
-        //TBD_G : Need lock file?
-        OpenSqlFiles(true, true);
+        //TBD_G : Need lock file?        
+        StatusInt status = OpenSqlFiles(true, true);
+        assert(status == SUCCESS);
 
+        bool dbOpResult = m_smDb->StartTransaction();
+        assert(dbOpResult == true);
+
+        dbOpResult = m_smSisterDb->StartTransaction();
+        assert(dbOpResult == true);
+		
         for (auto& tileId : tileIds)
             {            
             HPMBlockID blockID(tileId);
@@ -870,14 +877,51 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 meshNode->NeedToLoadNeighbors(true);
             else
                 meshNode->NeedToLoadNeighbors(false);
-
+        
             meshNode->Load();
             meshNode->LoadData(&meshDataToLoad);
+            ptsNeighbors.push_back(meshNode->GetPointsPtr());
                         
             nodesToMesh.push_back(meshNode);            
             }
+        
+        dbOpResult = m_smDb->CommitTransaction();
+        assert(dbOpResult == true);    
+        
+        dbOpResult = m_smSisterDb->CommitTransaction();
+        assert(dbOpResult == true);
 
         CloseSqlFiles();
+
+        for (auto& node : nodesToMesh)
+            {
+            vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> subNodes(node->GetSubNodes());
+            
+
+            for (auto& subNode : subNodes)
+                {         
+                bool found = false;
+
+                if (subNode.GetPtr() == nullptr)
+                    {
+                    found = true;
+                    }
+                else
+                    {
+                    for (auto& generatedNode : generatedNodes)
+                        {
+                        if (generatedNode.GetPtr() == subNode.GetPtr())
+                            found = true;
+                        }    
+                    }
+
+                if (!found)
+                    {
+                    found = found;
+                    }
+                }
+            }
+            
                     
         if (needFiltering)
             {
