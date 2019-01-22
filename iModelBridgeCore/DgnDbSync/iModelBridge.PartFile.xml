@@ -79,6 +79,21 @@
         <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
     </ProductDirectoryList>
 
+    <NuGetProduct Name="iModelBridgeFwkNuget" Description="iModel Bridge Framework">
+        <SubPart PartName="iModelBridgeFwkExe-Windows" LibType="Dynamic"/>
+        <SubPart PartName="iModelBridgeFwkExe-Unix-Shim"/>
+        <SubPart PartName="Docs-Windows" LibType="Dynamic"/>
+        <SubPart PartName="Docs-Unix-Shim"/>
+
+        <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
+        <Directories DirectoryListName="iModelBridgeFwkDirList"/>
+        <Directories DirectoryListName="iModelBridgeFwkNugetDirList"/>
+    </NuGetProduct>
+
+    <ProductDirectoryList ListName="iModelBridgeFwkNugetDirList">
+        <ProductDirectory Name="applicationroot" Path="native"/>
+    </ProductDirectoryList>
+
     <Part Name="iModelBridgeFwkExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
       <SubPart PartName="iModelBridgeFwkExe"/>
     </Part>
@@ -394,9 +409,9 @@
     <ProductDirectory Name="ApplicationRoot"            Path="" LibType="Static"/>
     <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot"/>
     <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot" LibType="static"/>
-    <ProductDirectory Name="VendorNotices"              Path="notices" />
-    <ProductDirectory Name="VendorNotices"              Path="notices" LibType="Static" />
-    <ProductDirectory Name="BentleyEulaDelivery"        Path="notices"/>
+    <ProductDirectory Name="VendorNotices"              Path="notices" RelativeTo="applicationroot" />
+    <ProductDirectory Name="VendorNotices"              Path="notices" RelativeTo="applicationroot" LibType="Static" />
+    <ProductDirectory Name="BentleyEulaDelivery"        Path="notices" RelativeTo="applicationroot"/>
     <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
     <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="applicationroot"/>
     <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="applicationroot"/>
@@ -405,8 +420,8 @@
     <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
     <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
     <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
-    <ProductDirectory Name="DgnV8Dlls"                  Path="DgnV8"/>
-    <ProductDirectory Name="DgnV8DummyUstation"         Path="DgnV8"/>
+    <ProductDirectory Name="DgnV8Dlls"                  Path="DgnV8" RelativeTo="applicationroot"/>
+    <ProductDirectory Name="DgnV8DummyUstation"         Path="DgnV8" RelativeTo="applicationroot"/>
 
   </ProductDirectoryList>
 

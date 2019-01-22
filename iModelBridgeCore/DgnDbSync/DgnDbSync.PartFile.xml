@@ -186,7 +186,7 @@
         <ProductDirectory Name="applicationroot" Path="DgnV8Converter"/>
     </ProductDirectoryList>
 
-    <NuGetProduct Name="DgnV8Converter_2_0_Nuget" OnlyPlatforms="x64" Description="DgnV8ConverterNuget">
+    <NuGetProduct Name="DgnV8ConverterNuget" OnlyPlatforms="x64" Description="DgnV8ConverterNuget">
         <SubPart PartName="TiledDgnV8ConverterExe"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="DgnV8ConverterDirList"/>
