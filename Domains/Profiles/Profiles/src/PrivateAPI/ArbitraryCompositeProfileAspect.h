@@ -13,7 +13,7 @@
 #define PRF_PROP_ArbitraryCompositeProfileAspect_SingleProfile              "SingleProfile"
 #define PRF_PROP_ArbitraryCompositeProfileAspect_Offset                     "Offset"
 #define PRF_PROP_ArbitraryCompositeProfileAspect_Rotation                   "Rotation"
-#define PRF_PROP_ArbitraryCompositeProfileAspect_MirrorProfileAboutYAxis    "MirrorProfileAboutYAxis"
+#define PRF_PROP_ArbitraryCompositeProfileAspect_MirrorAboutYAxis           "MirrorAboutYAxis"
 #define PRF_PROP_ArbitraryCompositeProfileAspect_MemberPriority             "MemberPriority"
 
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ArbitraryCompositeProfileAspect)

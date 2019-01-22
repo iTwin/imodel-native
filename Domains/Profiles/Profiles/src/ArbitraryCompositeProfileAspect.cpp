@@ -32,7 +32,7 @@ DgnDbStatus ArbitraryCompositeProfileAspect::_LoadProperties (DgnElement const& 
     Utf8CP pSqlString = "SELECT " PRF_PROP_ArbitraryCompositeProfileAspect_SingleProfile ".Id"
                            ", \"" PRF_PROP_ArbitraryCompositeProfileAspect_Offset "\""
                            ", "   PRF_PROP_ArbitraryCompositeProfileAspect_Rotation
-                           ", "   PRF_PROP_ArbitraryCompositeProfileAspect_MirrorProfileAboutYAxis
+                           ", "   PRF_PROP_ArbitraryCompositeProfileAspect_MirrorAboutYAxis
                            ", "   PRF_PROP_ArbitraryCompositeProfileAspect_MemberPriority
                         " FROM " PRF_SCHEMA (PRF_CLASS_ArbitraryCompositeProfileAspect)
                         " WHERE ECInstanceId=?";
@@ -67,7 +67,7 @@ DgnDbStatus ArbitraryCompositeProfileAspect::_UpdateProperties (DgnElement const
                                 PRF_PROP_ArbitraryCompositeProfileAspect_SingleProfile "=?, "
                            "\"" PRF_PROP_ArbitraryCompositeProfileAspect_Offset "\"=?, "
                                 PRF_PROP_ArbitraryCompositeProfileAspect_Rotation "=?, "
-                                PRF_PROP_ArbitraryCompositeProfileAspect_MirrorProfileAboutYAxis "=?, "
+                                PRF_PROP_ArbitraryCompositeProfileAspect_MirrorAboutYAxis "=?, "
                                 PRF_PROP_ArbitraryCompositeProfileAspect_MemberPriority "=? "
                         " WHERE ECInstanceId=?";
 

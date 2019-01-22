@@ -13,27 +13,43 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (DerivedProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DerivedProfilePtr DerivedProfile::Create (/*TODO: args*/)
+DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , offset (DPoint2d::From (0.0, 0.0))
+    , scale (DPoint2d::From (1.0, 1.0))
+    , rotation (Angle::FromRadians (0.0))
+    , mirrorAboutYAxis (false)
     {
-    return nullptr; // TODO: Not Implemented
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DerivedProfile::GetMirrorProfileAboutYAxis() const
+DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, DPoint2d const& offset, DPoint2d const& scale,
+                                            Angle const& rotation, bool mirrorAboutYAxis)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , offset (offset)
+    , scale (scale)
+    , rotation (rotation)
+    , mirrorAboutYAxis (mirrorAboutYAxis)
     {
-    return GetPropertyValueBoolean (PRF_PROP_DerivedProfile_MirrorProfileAboutYAxis);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetMirrorProfileAboutYAxis (bool value)
+DerivedProfile::DerivedProfile (CreateParams const& params)
+    : T_Super (params)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_MirrorProfileAboutYAxis, ECN::ECValue (value));
+    if (params.m_isLoadingElement)
+        return;
+
+    SetOffset (params.offset);
+    SetScale (params.scale);
+    SetRotation (params.rotation);
+    SetMirrorAboutYAxis (params.mirrorAboutYAxis);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,25 +63,25 @@ DPoint2d DerivedProfile::GetOffset() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetOffset (DPoint2dCR value)
+void DerivedProfile::SetOffset (DPoint2d const& value)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_Offset, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_DerivedProfile_Offset, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d DerivedProfile::GetRotation() const
+Angle DerivedProfile::GetRotation() const
     {
-    return GetPropertyValueDPoint2d (PRF_PROP_DerivedProfile_Rotation);
+    return Angle::FromRadians (GetPropertyValueDouble (PRF_PROP_DerivedProfile_Rotation));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetRotation (DPoint2dCR value)
+void DerivedProfile::SetRotation (Angle const& value)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_Rotation, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_DerivedProfile_Rotation, ECValue (value.Radians()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -79,9 +95,25 @@ DPoint2d DerivedProfile::GetScale() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetScale (DPoint2dCR value)
+void DerivedProfile::SetScale (DPoint2d const& value)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_Scale, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_DerivedProfile_Scale, ECValue (value));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DerivedProfile::GetMirrorAboutYAxis() const
+    {
+    return GetPropertyValueBoolean (PRF_PROP_DerivedProfile_MirrorAboutYAxis);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void DerivedProfile::SetMirrorAboutYAxis (bool value)
+    {
+    SetPropertyValue (PRF_PROP_DerivedProfile_MirrorAboutYAxis, ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
