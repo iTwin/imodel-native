@@ -2,32 +2,22 @@
 #
 #     $Source: BimFromDgnDb/BimImporter/exe/BimImporter.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
-cdefs + -D__BIMTELEPORTER_BUILD__
+cdefs + -D__BIM_FROM_DGNDB_BUILD__
 %include mdl.mki
 
 appName     = BimImporter
 baseDir     = $(_MakeFilePath)
 
-# Need to ignore this because it's in Vancouver's header files.
-%if defined(MSVC_VERSION)
-%if MSVC_VERSION >= 1900
-    # C4312: 'type cast': conversion from '...' to '...' of greater size
-    CCompOpts + -wd4312
-
-    # C4091: '... ': ignored on left of '...' when no variable is declared
-    CCompOpts + -wd4091
-%endif
-%endif
 
 o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
 
-PublicApi = $(SrcRoot)DgnDbSync\PublicApi\BimTeleporter/
+PublicApi = $(SrcRoot)DgnDbSync\PublicApi\BimFromDgnDb/
 
 HeaderFiles = $(PublicApi)BimTeleporter.h $(PublicApi)BimImporter.h
 
@@ -44,7 +34,7 @@ EXE_DEST     = $(o)
 EXE_NAME     = $(appname)
 EXE_OBJS     = $(o)BimImporter.obj
 EXE_LOPT1    = -entry:wmainCRTStartup
-LINKER_LIBRARIES  + $(BuildContext)Delivery/BisJson1Importer.lib
+LINKER_LIBRARIES  + $(BuildContext)Delivery/BimFromJson.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLiteEC.lib
@@ -63,7 +53,7 @@ always:
     ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
 
 # *** NB: Keep the name of the logging config file consistent
-$(BuildContext)Delivery/BimTeleporter.logging.config.xml : $(baseDir)../../logging.config.xml
+$(BuildContext)Delivery/BimFromDgnDb.logging.config.xml : $(baseDir)../../logging.config.xml
     $(LinkFirstDepToFirstTarget)
 
 # -- Localize -------------------------------------------------------------------------------------

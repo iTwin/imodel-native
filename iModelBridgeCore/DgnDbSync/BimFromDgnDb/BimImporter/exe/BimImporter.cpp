@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/exe/BimImporter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,8 +11,11 @@
 #include <Windows.h>
 #endif
 
-#include <BimTeleporter/BisJson1Importer.h>
+#include <BimFromDgnDb/BimFromDgnDb.h>
+#include <BimFromDgnDb/BimFromJson.h>
+#include <Logging/bentleylogging.h>
 #include "BimImporter.h"
+
 #include <folly/futures/Future.h>
 #include <folly/ProducerConsumerQueue.h>
 #include <folly/BeFolly.h>
@@ -28,10 +31,10 @@ USING_NAMESPACE_BENTLEY_EC
                                 va_end (args);                  \
                                 }
 
-static WCharCP s_configFileName = L"BimTeleporter.logging.config.xml";
+static WCharCP s_configFileName = L"BimUpgrader.logging.config.xml";
 #define BIM_EXT L"bim"
 
-BEGIN_BIM_TELEPORTER_NAMESPACE
+BEGIN_BIM_FROM_DGNDB_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -87,11 +90,11 @@ BentleyStatus BimImporter::GetLogConfigurationFilename(BeFileName& configFile, W
     {
     WString programBasename = BeFileName::GetFileNameWithoutExtension(argv0);
 
-    if (SUCCESS == getEnv(configFile, L"BENTLEY_BIMTELEPORTER_LOGGING_CONFIG"))
+    if (SUCCESS == getEnv(configFile, L"BENTLEY_BIMUPGRADER_LOGGING_CONFIG"))
         {
         if (configFile.DoesPathExist())
             {
-            _PrintMessage(L"%ls configuring logging with %s (Set by BENTLEY_BIMTELEPORTER_LOGGING_CONFIG environment variable.)\n", programBasename.c_str(), configFile.GetName());
+            _PrintMessage(L"%ls configuring logging with %s (Set by BENTLEY_BIMUPGRADER_LOGGING_CONFIG environment variable.)\n", programBasename.c_str(), configFile.GetName());
             return SUCCESS;
             }
         }
@@ -102,7 +105,7 @@ BentleyStatus BimImporter::GetLogConfigurationFilename(BeFileName& configFile, W
 
     if (BeFileName::DoesPathExist(configFile))
         {
-        _PrintMessage(L"%ls configuring logging using %ls. Override by setting BENTLEY_BIMTELEPORTER_LOGGING_CONFIG in environment.\n", programBasename.c_str(), configFile.GetName());
+        _PrintMessage(L"%ls configuring logging using %ls. Override by setting BENTLEY_BIMUPGRADER_LOGGING_CONFIG in environment.\n", programBasename.c_str(), configFile.GetName());
         return SUCCESS;
         }
 
@@ -333,13 +336,13 @@ int BimImporter::Run(int argc, WCharCP argv[])
         }
     return 0;
     }
-END_BIM_TELEPORTER_NAMESPACE
+END_BIM_FROM_DGNDB_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, wchar_t const* argv[])
     {
-    BentleyApi::Dgn::BimTeleporter::BimImporter app;
+    BentleyApi::Dgn::BimFromDgnDb::BimImporter app;
     return app.Run(argc, argv);
     }

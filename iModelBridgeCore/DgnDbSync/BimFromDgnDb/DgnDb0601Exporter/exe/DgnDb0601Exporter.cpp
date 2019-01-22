@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/DgnDb0601Exporter/exe/DgnDb0601Exporter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,7 +13,7 @@
 
 #include <DgnDb06Api/Logging/bentleylogging.h>
 #include <BimFromDgnDb/BimFromDgnDb.h>
-#include <BimFromDgnDb/JsonFromDgnDb0601.h>
+#include <BimFromDgnDb/DgnDb0601ToJson.h>
 #include "DgnDb0601Exporter.h"
 
 DGNDB06_USING_NAMESPACE_BENTLEY_LOGGING
@@ -29,12 +29,12 @@ DGNDB06_USING_NAMESPACE_BENTLEY
 // This should come from bentleylogging.h, but it is unpublished, which means the VendorApi version doesn't have it.
 #define CONFIG_OPTION_CONFIG_FILE           L"CONFIG_FILE"
 
-static WCharCP s_configFileName = L"BimTeleporter.logging.config.xml";
+static WCharCP s_configFileName = L"BimFromDgnDbUpgrader.logging.config.xml";
 #define JSON_EXT L"json"
 
-#define LOG             BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter")
+#define LOG             BentleyApi::NativeLogging::LoggingManager::GetLogger("BimFromDgnDb")
 
-BEGIN_BIM_EXPORTER_NAMESPACE
+BEGIN_BIM_FROM_DGNDB_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -99,7 +99,7 @@ BentleyStatus BimExporter0601::GetLogConfigurationFilename(BeFileName& configFil
     {
     WString programBasename = BeFileName::GetFileNameWithoutExtension(argv0);
 
-    if (SUCCESS == getEnv(configFile, L"BENTLEY_BIMTELEPORTER_LOGGING_CONFIG"))
+    if (SUCCESS == getEnv(configFile, L"BENTLEY_BIMUPGRADER_LOGGING_CONFIG"))
         {
         if (configFile.DoesPathExist())
             {
@@ -271,13 +271,13 @@ int BimExporter0601::Run(int argc, WCharCP argv[])
 
     BeFileName assetsDirectory = executableDirectory;
     assetsDirectory.AppendToPath(L"Assets");
-    BentleyB0200::Dgn::BimTeleporter::DgnDb0601ToJson exporter(m_inputFileName.GetName(), tempPathW, assetsDirectory.GetName());
+    BentleyB0200::Dgn::BimFromDgnDb::DgnDb0601ToJson exporter(m_inputFileName.GetName(), tempPathW, assetsDirectory.GetName());
 
     LOG->infov(L"Successfully opened %ls\n", m_inputFileName.GetName());
 
     auto logFunc = [] (BimFromDgnDbLoggingSeverity severity, const char* message)
         {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter")->message((SEVERITY) severity, message);
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("BimUpgrader")->message((SEVERITY) severity, message);
         };
     exporter.SetLogger(logFunc);
 
@@ -316,13 +316,14 @@ int BimExporter0601::Run(int argc, WCharCP argv[])
     PrintMessage(L"Successfully exported %ls to %ls\n", m_inputFileName.GetName(), m_outputPath.GetName());
     return 0;
     }
-END_BIM_EXPORTER_NAMESPACE
+END_BIM_FROM_DGNDB_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, wchar_t const* argv[])
     {
-    BentleyG0601::Dgn::BimTeleporter::BimExporter0601 app;
+    BentleyB0200::Dgn::BimFromDgnDb::BimExporter0601 app;
     return app.Run(argc, argv);
     }
+
