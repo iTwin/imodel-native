@@ -386,19 +386,19 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="BaseProfile" relationshipName="DerivedProfileRefersToSinglePerimeterProfile" direction="Forward" description="" />
         <ECProperty propertyName="Offset" typeName="point2d" description="" />
         <ECProperty propertyName="Scale" typeName="point2d" description="" />
         <ECProperty propertyName="Rotation" typeName="double" description="" />
         <ECProperty propertyName="MirrorAboutYAxis" typeName="boolean" description="" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="SinglePerimeterProfileOwnsDerivedProfile" modifier="Sealed" strength="embedding">
-        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="is base profile of" polymorphic="true">
-            <Class class="SinglePerimeterProfile" />
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is derived profile of" polymorphic="false">
+    <ECRelationshipClass typeName="DerivedProfileRefersToSinglePerimeterProfile" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="is derived profile of" polymorphic="false">
             <Class class="DerivedProfile" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is base profile of" polymorphic="true">
+            <Class class="SinglePerimeterProfile" />
         </Target>
     </ECRelationshipClass>
 

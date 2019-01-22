@@ -81,7 +81,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_CustomCardinalPointsAspect                         "CustomCardinalPointsAspect"
 
 // Relationships
-#define PRF_REL_ArbitraryCompositeProfileRefersToSinglePerimeterProfiles        "ArbitraryCompositeProfileRefersToSinglePerimeterProfiles"
+#define PRF_REL_DerivedProfileRefersToSinglePerimeterProfile                    "DerivedProfileRefersToSinglePerimeterProfile"
 #define PRF_REL_DoubleLShapeProfileRefersToLShapeProfile                        "DoubleLShapeProfileRefersToLShapeProfile"
 #define PRF_REL_DoubleCShapeProfileRefersToCShapeProfile                        "DoubleCShapeProfileRefersToCShapeProfile"
 #define PRF_REL_MaterialProfileRefersToProfile                                  "MaterialProfileRefersToProfile"
@@ -125,6 +125,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_CenterLineZShapeProfile_FilletRadius                            "FilletRadius"
 #define PRF_PROP_CenterLineZShapeProfile_Girth                                   "Girth"
 #define PRF_PROP_CircleProfile_Radius                                            "Radius"
+#define PRF_PROP_DerivedProfile_BaseProfile                                      "BaseProfile"
 #define PRF_PROP_DerivedProfile_Offset                                           "Offset"
 #define PRF_PROP_DerivedProfile_Scale                                            "Scale"
 #define PRF_PROP_DerivedProfile_Rotation                                         "Rotation"
