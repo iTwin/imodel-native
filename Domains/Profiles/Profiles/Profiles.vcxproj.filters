@@ -202,142 +202,142 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\PublicAPI\Profile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\Profile.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\ProfilesApi.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ProfilesApi.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\ProfilesDefinitions.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ProfilesDefinitions.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\ProfilesDomain.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ProfilesDomain.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\CShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\LetterShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\AsymmetricIShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\AsymmetricIShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\LetterShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\IShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\IShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\LetterShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\LShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\LShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\LetterShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\TTShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TTShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\LetterShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\TShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\LetterShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\ZShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ZShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\LetterShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\CenterLineCShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CenterLineCShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\CenterLineShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\CenterLineLShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CenterLineLShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\CenterLineShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\CenterLineZShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CenterLineZShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\CenterLineShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\ICenterLineProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ICenterLineProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\CenterLineShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\HollowRectangleProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\HollowRectangleProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\HollowCircleProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\HollowCircleProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\EllipseProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\EllipseProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\RegularPolygonProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\RegularPolygonProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\RectangleProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\RectangleProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\RoundedRectangleProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\RoundedRectangleProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\TrapeziumProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TrapeziumProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\BentPlateProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\BentPlateProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\CenterLineShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\CapsuleProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CapsuleProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\CircleProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CircleProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\CompositeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CompositeProfile.h">
       <Filter>PublicAPI\CompositeProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\DoubleCShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\DoubleCShapeProfile.h">
       <Filter>PublicAPI\CompositeProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\DoubleLShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\DoubleLShapeProfile.h">
       <Filter>PublicAPI\CompositeProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\DerivedProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\DerivedProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\SinglePerimeterProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\SinglePerimeterProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\SchifflerizedLShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\SchifflerizedLShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\LetterShapes</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\StandardProfileAspect.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\StandardProfileAspect.h">
       <Filter>PublicAPI\Aspects</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\ArbitraryShapeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ArbitraryShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\ArbitraryCenterLineProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ArbitraryCenterLineProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\ArbitraryCompositeProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ArbitraryCompositeProfile.h">
       <Filter>PublicAPI\CompositeProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\ParametricProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ParametricProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\CustomCardinalPointsAspect.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CustomCardinalPointsAspect.h">
       <Filter>PublicAPI\Aspects</Filter>
     </ClInclude>
-    <ClInclude Include="src\PrivateAPI\ProfilesGeometry.h">
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesGeometry.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\PrivateAPI\ProfilesProperty.h">
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesProperty.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
     <ClInclude Include="src\ProfilesInternal.h">
       <Filter>Pch</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\MaterialProfile.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\MaterialProfile.h">
       <Filter>PublicAPI\MaterialProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PrivateAPI\ProfilesLogging.h">
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesLogging.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\PrivateAPI\ProfilesPrivateApi.h">
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesPrivateApi.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\PublicAPI\MaterialProfileDefinition.h">
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\MaterialProfileDefinition.h">
       <Filter>PublicAPI\MaterialProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="src\PrivateAPI\ProfilesQuery.h">
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesQuery.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\PrivateAPI\ArbitraryCompositeProfileAspect.h">
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ArbitraryCompositeProfileAspect.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
   </ItemGroup>
