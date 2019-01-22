@@ -193,21 +193,17 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="OverallWidth" typeName="double" description="" />
-        <ECProperty propertyName="LeftFlangeWidth" typeName="double" description="" />
-        <ECProperty propertyName="RightFlangeWidth" typeName="double" description="" />
-        <ECProperty propertyName="OverallDepth" typeName="double" description="" />
-        <ECProperty propertyName="FlangeDepth" typeName="double" description="" />
-        <ECProperty propertyName="FlangeDraft" typeName="double" description="" />
-        <ECProperty propertyName="FlangeChamfer" typeName="double" description="" />
-        <ECProperty propertyName="FlangeBaseFillet" typeName="double" description="" />
-        <ECProperty propertyName="FlangeTopFillet" typeName="double" description="" />
-        <ECProperty propertyName="StemBaseWidth" typeName="double" description="" />
-        <ECProperty propertyName="StemTopWidth" typeName="double" description="" />
-        <ECProperty propertyName="StemBaseChamfer" typeName="double" description="" />
-        <ECProperty propertyName="StemTopChamfer" typeName="double" description="" />
-        <ECProperty propertyName="StemBaseFillet" typeName="double" description="" />
-        <ECProperty propertyName="StemTopFillet" typeName="double" description="" />
+        <ECProperty propertyName="FlangeWidth" typeName="double" description="Extent of the width (top flange), defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="FlangeThickness" typeName="double" description="Constant wall thickness of the flange." />
+        <ECProperty propertyName="WebThickness" typeName="double" description="Constant wall thickness of the web." />
+        <ECProperty propertyName="WebSpacing" typeName="double" description="Spacing between the two webs." />
+        <!-- Optional properties -->
+        <ECProperty propertyName="FilletRadius" typeName="double" description="The fillet radius between the web and the flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeSlope" typeName="double" description="Slope of the lower face of the flange. Non-zero in case of tapered flange, 0 in case of non-tapered flange, default 0 if not specified." />
+        <ECProperty propertyName="WebEdgeRadius" typeName="double" description="Radius of web edges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="WebSlope" typeName="double" description="Slope of the web. Non-zero in case of tapered web, 0 in case of non-tapered web, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="ZShapeProfile" modifier="Sealed" description="A Z-shaped Profile similar to rolled steel Z-shapes.">
