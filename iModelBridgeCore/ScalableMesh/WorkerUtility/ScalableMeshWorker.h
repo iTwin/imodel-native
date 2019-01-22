@@ -92,6 +92,7 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
         uint16_t   m_nbExtraWorkers;
         Utf8String m_workerProcessName;
         bool       m_useGroupingStrategy;
+        uint32_t   m_groupingSize;
 
         WString GetArgValueW(WCharCP arg);
         Utf8String GetArgValue(WCharCP arg);        
@@ -103,6 +104,7 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
             {
             m_nbExtraWorkers = 0;
             m_useGroupingStrategy = false;
+            m_groupingSize = 20000;
             }
         
         int PrintUsage(WCharCP programName);

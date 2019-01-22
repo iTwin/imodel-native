@@ -265,6 +265,13 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             m_useGroupingStrategy = true;            
             continue;
             }
+
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"-groupingSize=") || argv[iArg] == wcsstr(argv[iArg], L"-gs="))
+            {
+            m_groupingSize = BeStringUtilities::Wtoi(GetArgValueW(argv[iArg]).c_str());            
+            continue;
+            }                        
        
         fwprintf(stderr, L"Unrecognized command line option: %ls\n", argv[iArg]);
         return PrintUsage(argv[0]);
@@ -331,7 +338,7 @@ void ScalableMeshWorker::Start()
             }
         }    
 
-    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers, m_useGroupingStrategy);
+    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers, m_useGroupingStrategy, m_groupingSize);
 
     taskScheduler.Start();
     }

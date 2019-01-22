@@ -34,9 +34,9 @@ StatusInt IScalableMeshSourceCreatorWorker::CreateTaskPlan() const
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateTaskPlan();
     }
 
-StatusInt IScalableMeshSourceCreatorWorker::CreateGenerationTasks() const
+StatusInt IScalableMeshSourceCreatorWorker::CreateGenerationTasks(uint32_t maxGroupSize) const
     {
-    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateGenerationTasks();
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateGenerationTasks(maxGroupSize);
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::ExecuteNextTaskInTaskPlan() const
@@ -465,22 +465,21 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
     }
 
 
-void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks)
+void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks, uint32_t maxGroupSize)
     {   
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
     HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> rootNode(pDataIndex->GetRootNode());
     
     IScalableMeshNodePtr meshRootNode(new ScalableMeshNode<DPoint3d>(rootNode));
-            
-    uint64_t pointThreshold = 20000; 
+                
     int childrenGroupingSize = 0;     
     int nbResolutions = (int)(pDataIndex->GetDepth() + 1);
 
-    GroupNodes(toExecuteTasks, meshRootNode, pointThreshold, childrenGroupingSize, nbResolutions);
+    GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions);
     }
 
-StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks()
+StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize)
     {
     BeFileName taskDirectory(m_scmFileName);
 
@@ -492,7 +491,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks()
     
     bvector<GenerationTaskPtr> generationTasks;
 
-    GetGenerationTasks(generationTasks);
+    GetGenerationTasks(generationTasks, maxGroupSize);
 
     uint64_t totalNodes = 0;
     uint64_t totalStichableNodes = 0;
