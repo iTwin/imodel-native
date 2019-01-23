@@ -2,7 +2,7 @@
 |
 |     $Source: Profiles/src/PrivateAPI/ProfilesProperty.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,9 +19,15 @@ struct ProfilesProperty
 public:
     ProfilesProperty() = delete;
 
+    static bool IsEqual (double leftValue, double rightValue);
+    static bool IsGreater (double leftValue, double rightValue);
+    static bool IsGreaterOrEqual (double leftValue, double rightValue);
+    static bool IsLess (double leftValue, double rightValue);
+    static bool IsLessOrEqual (double leftValue, double rightValue);
+
+    static bool IsEqualToZero (double value);
     static bool IsGreaterThanZero (double value);
     static bool IsGreaterOrEqualToZero (double value);
-    static bool IsEqualToZero (double value);
     };
 
 END_BENTLEY_PROFILES_NAMESPACE

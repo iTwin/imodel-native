@@ -11,6 +11,54 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProfilesProperty::IsEqual (double leftValue, double rightValue)
+    {
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) == 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProfilesProperty::IsGreater (double leftValue, double rightValue)
+    {
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) == 1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProfilesProperty::IsGreaterOrEqual (double leftValue, double rightValue)
+    {
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) >= 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProfilesProperty::IsLess (double leftValue, double rightValue)
+    {
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) == -1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProfilesProperty::IsLessOrEqual (double leftValue, double rightValue)
+    {
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) <= 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProfilesProperty::IsEqualToZero (double value)
+    {
+    return BeNumerical::BeFinite (value) && BeNumerical::IsEqualToZero (value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProfilesProperty::IsGreaterThanZero (double value)
@@ -24,14 +72,6 @@ bool ProfilesProperty::IsGreaterThanZero (double value)
 bool ProfilesProperty::IsGreaterOrEqualToZero (double value)
     {
     return BeNumerical::BeFinite (value) && BeNumerical::IsGreaterOrEqualToZero (value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ProfilesProperty::IsEqualToZero (double value)
-    {
-    return BeNumerical::BeFinite (value) && BeNumerical::IsEqualToZero (value);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
