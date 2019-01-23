@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDBridge.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,6 +24,7 @@ private:
 
     Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams m_params;
     ORDConverter* m_converter;
+    bool m_isUnitTesting;
 
 protected:
     Dgn::CategorySelectorPtr CreateSpatialCategorySelector(Dgn::DefinitionModelR);
@@ -58,7 +59,10 @@ public:
     static WCharCP GetRegistrySubKey() { return L"OpenRoadsDesignerBridge"; }
     static void AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir);
 
-    ORDBridge() : m_converter(nullptr) {}
+    void SetIsUnitTesting(bool isUnitTesting) { m_isUnitTesting = isUnitTesting; }
+    bool CheckIfUnitTesting(int argc, WCharCP argv[]);
+
+    ORDBridge() : m_converter(nullptr), m_isUnitTesting(false) {}
     virtual ~ORDBridge()
         {
         if (m_converter != nullptr)

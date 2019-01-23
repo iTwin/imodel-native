@@ -7,6 +7,8 @@
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
+#We want the unit tests to find the version of these dll's delivered by the CIF SDK, not the version built from source
+#so we delete the ones that are built from source to avoid conflicts at runtime
 always:
 	-$(deleteCmd) $(OutRoot)Winx64\Product\CiviliModelBridges-Gtest\AutomaticGroundDetection.dll
 	-$(deleteCmd) $(OutRoot)Winx64\Product\CiviliModelBridges-Gtest\CloudDataSource.dll

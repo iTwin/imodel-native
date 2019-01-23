@@ -143,10 +143,6 @@ ORDBridgeTestsHostImpl::ORDBridgeTestsHostImpl() : m_isInitialized(false)
     {
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
-    //DgnPlatformLib::Initialize(*this, false);
-    /*DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes);
-    DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes);
-    DgnDomains::RegisterDomain(RoadRailPhysical::RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);*/
     m_isInitialized = true;
     }
 
@@ -239,7 +235,6 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP 
         }
 
     return retVal;
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -262,7 +257,6 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP
     auto partitionName = RoadRailAlignmentDomain::GetDesignPartitionName();
     stmt.BindText(1, RoadRailAlignmentDomain::GetDesignPartitionName(), IECSqlBinder::MakeCopy::Yes);
     BeAssert(DbResult::BE_SQLITE_ROW == stmt.Step());
-    auto value = stmt.GetValueInt(0);
     BeAssert(alignmentCount == stmt.GetValueInt(0));
     
     stmt.Finalize();
@@ -274,7 +268,6 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP
     BeAssert(stmt.IsPrepared());
     partitionName = RoadRailPhysical::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName();
     stmt.BindText(1, RoadRailPhysical::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName(), IECSqlBinder::MakeCopy::Yes);
-    value = stmt.GetValueInt(0);
 
     if (corridorCount == 0)
         BeAssert(DbResult::BE_SQLITE_DONE == stmt.Step());

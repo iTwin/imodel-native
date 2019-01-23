@@ -81,6 +81,8 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     if (_GetParams().GetBridgeRegSubKey().empty())
         _GetParams().SetBridgeRegSubKey(GetRegistrySubKey());
 
+    m_isUnitTesting = CheckIfUnitTesting(argc, argv);
+
     // The call to iModelBridge::_Initialize is the time to register domains.
     DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(AlignmentBim::RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
@@ -94,7 +96,11 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
         }
 
     DgnDbSync::DgnV8::Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), BeFileName(L"DgnV8"), nullptr, false, argc, argv, nullptr);
-    DependencyManager::SetProcessingDisabled(false);
+    if (m_isUnitTesting)
+        {
+        //When unit testing, we need to make an additional call to SetProcessingDisabled in order for CIF backpointers to be created in ProcessAffected()
+        DependencyManager::SetProcessingDisabled(false);
+        }
     AppendCifSdkToDllSearchPath(_GetParams().GetLibraryDir());
 
     // Initialize Cif SDK
@@ -276,6 +282,19 @@ void ORDBridge::AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir)
     _wputenv(newPath.c_str());
     }
 
+bool ORDBridge::CheckIfUnitTesting(int argc, WCharCP argv[])
+{
+    //check argv[] for '--unit-testing' parameter
+    for (int i = 0; i < argc; i++)
+    {
+        if (argv[i] == wcsstr(argv[i], L"--unit-testing"))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    diego.diaz                      07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -340,16 +359,20 @@ void ORDBridge::_OnCloseBim(BentleyStatus, ClosePurpose)
     // this also has the side effect of closing the source files
     if (m_converter != nullptr)
         {
-        IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        //calling delete on the ORDConverter will result in source files closing, which is important for the unit tests to run properly
+        if (m_isUnitTesting)
+        {
+            IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
             {
-            // TODO: Some CIF object smart pointers are blowing up after deleting 
-            // the converter instance.  Look into this!
-            delete m_converter;
+                // TODO: Some CIF object smart pointers are blowing up after deleting 
+                // the converter instance.  Look into this!
+                delete m_converter;
             }
-        IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(;)
+            IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(;)
             {
             }
-        m_converter = nullptr;
+            m_converter = nullptr;
+        }
         }
     }
 

@@ -43,20 +43,23 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
     iModelBridgeAffinityLevel affinityLevel;
     iModelBridge_getAffinity(buffer, _MAX_PATH, affinityLevel, BeFileName(argv[0]).GetDirectoryName(), iModelBridgeP->_GetParams().GetInputFileName());
 
+    //Need to add the '--unit-testing' parameter to argv so our ORDBridge instance knows we're unit testing
+    argv = AddUnitTestingParameter(argc, argv);
+
     if (BSISUCCESS != iModelBridgeP->_Initialize(argc, argv))
-    {
+        {
         fprintf(stderr, "_Initialize failed\n");
         return RESULT_ERROR_FAILED_TO_INITIALIZE_BRIDGE;
-    }
+        }
 
     saparams.Initialize();
 
     if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
-    {
+        {
         fprintf(stderr, "No Civil data found.\n");
         if (iModelBridgeAffinityLevel::None == affinityLevel)
             return RESULT_AFFINITY_CHECK_NONE;
-    }
+        }
 
     //Execute
     auto retVal = iModelBridgeSacAdapter::Execute(*iModelBridgeP, saparams);
@@ -64,9 +67,24 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
     //Terminate
     iModelBridge_releaseInstance(iModelBridgeP);
 
+    delete[] argv;
+
     if (BentleyStatus::SUCCESS == retVal)
         return retVal;
     else
         return RESULT_ERROR_GENERAL;
 
+    }
+
+WCharCP* PublishORDToBimDLL::AddUnitTestingParameter(int& argc, WCharCP argv[])
+    {
+    WCharCP* argvWithArgument = new WCharCP[argc+1];
+    for (int i = 0; i < argc; i++)
+        {
+        argvWithArgument[i] = argv[i];
+        }
+    WCharCP* unitTestArg = new WCharCP(L"--unit-testing");
+    argvWithArgument[argc] = *unitTestArg;
+    argc++;
+    return argvWithArgument;
     }
