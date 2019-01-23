@@ -116,8 +116,8 @@ bool IShapeProfile::ValidateFilletRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
-    bool const fitsinFlange = filletRadius <= GetInnerFlangeFaceLength() / 2.0;
-    bool const fitsInWeb = filletRadius <= GetInnerWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
+    bool const fitsinFlange = filletRadius <= GetFlangeInnerFaceLength() / 2.0;
+    bool const fitsInWeb = filletRadius <= GetWebInnerFaceLength() / 2.0 - GetFlangeSlopeHeight();
 
     return isPositive && fitsinFlange && fitsInWeb;
     }
@@ -132,7 +132,7 @@ bool IShapeProfile::ValidateFlangeEdgeRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeEdgeRadius);
-    bool const fitsInFlangeWidth = flangeEdgeRadius <= GetInnerFlangeFaceLength() / 2.0;
+    bool const fitsInFlangeWidth = flangeEdgeRadius <= GetFlangeInnerFaceLength() / 2.0;
     bool const fitsInFlangeThickness = flangeEdgeRadius <= GetFlangeThickness() / 2.0;
 
     return isPositive && fitsInFlangeWidth && fitsInFlangeThickness;
@@ -149,7 +149,7 @@ bool IShapeProfile::ValidateFlangeSlope() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeSlope);
     bool const isLessThanHalfPi = flangeSlope < PI / 2.0;
-    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetInnerWebFaceLength() / 2.0;
+    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetWebInnerFaceLength() / 2.0;
 
     return isPositive && isLessThanHalfPi && slopeHeightFitsInWeb;
     }
@@ -269,7 +269,7 @@ void IShapeProfile::SetFlangeSlope (Angle const& value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double IShapeProfile::GetInnerFlangeFaceLength() const
+double IShapeProfile::GetFlangeInnerFaceLength() const
     {
     return (GetFlangeWidth() - GetWebThickness()) / 2.0;
     }
@@ -277,7 +277,7 @@ double IShapeProfile::GetInnerFlangeFaceLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double IShapeProfile::GetInnerWebFaceLength() const
+double IShapeProfile::GetWebInnerFaceLength() const
     {
     return GetDepth() - GetFlangeThickness() * 2.0;
     }
@@ -291,7 +291,7 @@ double IShapeProfile::GetFlangeSlopeHeight() const
     if (BeNumerical::IsLessOrEqualToZero (flangeSlopeCos))
         return 0.0;
 
-    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetFlangeSlope().Sin();
+    return (GetFlangeInnerFaceLength() / flangeSlopeCos) * GetFlangeSlope().Sin();
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

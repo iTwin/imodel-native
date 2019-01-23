@@ -85,8 +85,8 @@ public:
     PROFILES_EXPORT void SetLegSlope (Angle const& value);
 
 public:
-    PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
-    PROFILES_EXPORT double GetInnerWebFaceLength() const;
+    PROFILES_EXPORT double GetFlangeInnerFaceLength() const;
+    PROFILES_EXPORT double GetWebInnerFaceLength() const;
     PROFILES_EXPORT double GetHorizontalLegSlopeHeight() const;
     PROFILES_EXPORT double GetVerticalLegSlopeHeight() const;
 

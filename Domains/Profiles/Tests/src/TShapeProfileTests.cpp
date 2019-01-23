@@ -116,15 +116,15 @@ TEST_F (TShapeProfileTestCase, GetInnerFlangeFaceLength_FlangeWidthAndWebThickne
 
     profilePtr->SetFlangeWidth (0.0);
     profilePtr->SetWebThickness (0.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetInnerFlangeFaceLength());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetFlangeInnerFaceLength());
 
     profilePtr->SetFlangeWidth (3.0);
     profilePtr->SetWebThickness (1.0);
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetInnerFlangeFaceLength());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeInnerFaceLength());
 
     profilePtr->SetFlangeWidth (1.0);
     profilePtr->SetWebThickness (3.0);
-    EXPECT_DOUBLE_EQ (-1.0, profilePtr->GetInnerFlangeFaceLength());
+    EXPECT_DOUBLE_EQ (-1.0, profilePtr->GetFlangeInnerFaceLength());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -137,15 +137,15 @@ TEST_F (TShapeProfileTestCase, GetInnerWebFaceLength_DepthAndFlangeThickness_Cor
 
     profilePtr->SetDepth (0.0);
     profilePtr->SetFlangeThickness (0.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetWebInnerFaceLength());
 
     profilePtr->SetDepth (2.0);
     profilePtr->SetFlangeThickness (1.0);
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWebInnerFaceLength());
 
     profilePtr->SetDepth (1.0);
     profilePtr->SetFlangeThickness (2.0);
-    EXPECT_DOUBLE_EQ (-1.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (-1.0, profilePtr->GetWebInnerFaceLength());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -328,7 +328,7 @@ TEST_F (TShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlange_CorrectInsert
     TShapeProfilePtr profilePtr = CreateProfile (params);
 
     params.filletRadius = 1.0;
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetInnerFlangeFaceLength() / 2.0);
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
 
     params.filletRadius = BeNumerical::BeNextafter (1.0, INFINITY);
@@ -346,7 +346,7 @@ TEST_F (TShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertRes
     TShapeProfilePtr profilePtr = CreateProfile (params);
 
     params.filletRadius = 1.0;
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetInnerWebFaceLength() / 2.0);
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWebInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
 
     params.filletRadius = BeNumerical::BeNextafter (1.0, INFINITY);
@@ -363,7 +363,7 @@ TEST_F (TShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlangeWithSlope_Corr
 
     TShapeProfilePtr profilePtr = CreateProfile (params);
 
-    double const maximumFilletRadiusForFlange = profilePtr->GetInnerFlangeFaceLength() / 2.0 - profilePtr->GetWebSlopeHeight();
+    double const maximumFilletRadiusForFlange = profilePtr->GetFlangeInnerFaceLength() / 2.0 - profilePtr->GetWebSlopeHeight();
     EXPECT_GE (maximumFilletRadiusForFlange, 0.0) << "Web slope height cannot be greater than half of the inner flange face length";
 
     params.filletRadius = 1.0;
@@ -386,7 +386,7 @@ TEST_F (TShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_Correct
 
     TShapeProfilePtr profilePtr = CreateProfile (params);
 
-    double const maximumFilletRadiusForWeb = profilePtr->GetInnerWebFaceLength() / 2.0 - profilePtr->GetFlangeSlopeHeight();
+    double const maximumFilletRadiusForWeb = profilePtr->GetWebInnerFaceLength() / 2.0 - profilePtr->GetFlangeSlopeHeight();
     EXPECT_GE (maximumFilletRadiusForWeb, 0.0) << "Flange slope height cannot be greater than half of the inner web face length";
 
     params.filletRadius = 1.0;
@@ -466,8 +466,8 @@ TEST_F (TShapeProfileTestCase, Insert_FlangeSlopeOf45Degrees_SuccessfulInsert)
 
     // 45 degree angle means a slope height of 4, when the inner flange face length is 4
     // since inner web face length is 8, a slope of 45 degree should be the maximum allowed value
-    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetInnerFlangeFaceLength());
-    EXPECT_DOUBLE_EQ (8.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetFlangeInnerFaceLength());
+    EXPECT_DOUBLE_EQ (8.0, profilePtr->GetWebInnerFaceLength());
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetFlangeSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
 
@@ -516,8 +516,8 @@ TEST_F (TShapeProfileTestCase, Insert_WebSlopeOf45Degrees_SuccessfulInsert)
 
     // 45 degree angle means a slope height of 4, when the inner web face length is 4
     // since inner flange face length is 8, a slope of 45 degree should be the maximum allowed value
-    EXPECT_DOUBLE_EQ (8.0, profilePtr->GetInnerFlangeFaceLength());
-    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (8.0, profilePtr->GetFlangeInnerFaceLength());
+    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetWebInnerFaceLength());
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetWebSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Web slope should be such, that the slope height should be less or equal to half of inner flange face length.";
 

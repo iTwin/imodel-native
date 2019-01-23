@@ -131,15 +131,15 @@ TEST_F (AsymmetricIShapeProfileTestCase, GetInnerTopFlangeFaceLength_TopFlangeWi
 
     profilePtr->SetTopFlangeWidth (0.0);
     profilePtr->SetWebThickness (0.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetInnerTopFlangeFaceLength());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetTopFlangeInnerFaceLength());
 
     profilePtr->SetTopFlangeWidth (3.0);
     profilePtr->SetWebThickness (1.0);
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetInnerTopFlangeFaceLength());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetTopFlangeInnerFaceLength());
 
     profilePtr->SetTopFlangeWidth (1.0);
     profilePtr->SetWebThickness (3.0);
-    EXPECT_DOUBLE_EQ (-1.0, profilePtr->GetInnerTopFlangeFaceLength());
+    EXPECT_DOUBLE_EQ (-1.0, profilePtr->GetTopFlangeInnerFaceLength());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -152,15 +152,15 @@ TEST_F (AsymmetricIShapeProfileTestCase, GetInnerBottomFlangeFaceLength_BottomFl
 
     profilePtr->SetBottomFlangeWidth (0.0);
     profilePtr->SetWebThickness (0.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetInnerBottomFlangeFaceLength());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetBottomFlangeInnerFaceLength());
 
     profilePtr->SetBottomFlangeWidth (3.0);
     profilePtr->SetWebThickness (1.0);
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetInnerBottomFlangeFaceLength());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetBottomFlangeInnerFaceLength());
 
     profilePtr->SetBottomFlangeWidth (1.0);
     profilePtr->SetWebThickness (3.0);
-    EXPECT_DOUBLE_EQ (-1.0, profilePtr->GetInnerBottomFlangeFaceLength());
+    EXPECT_DOUBLE_EQ (-1.0, profilePtr->GetBottomFlangeInnerFaceLength());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -174,17 +174,17 @@ TEST_F (AsymmetricIShapeProfileTestCase, GetInnerWebFaceLength_DepthAndFlangeThi
     profilePtr->SetDepth (0.0);
     profilePtr->SetTopFlangeThickness (0.0);
     profilePtr->SetBottomFlangeThickness (0.0);
-    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (0.0, profilePtr->GetWebInnerFaceLength());
 
     profilePtr->SetDepth (3.0);
     profilePtr->SetTopFlangeThickness (1.0);
     profilePtr->SetBottomFlangeThickness (1.0);
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWebInnerFaceLength());
 
     profilePtr->SetDepth (1.0);
     profilePtr->SetTopFlangeThickness (2.0);
     profilePtr->SetBottomFlangeThickness (2.0);
-    EXPECT_DOUBLE_EQ (-3.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (-3.0, profilePtr->GetWebInnerFaceLength());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -461,7 +461,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeFilletRadiusAgainstTheF
     AsymmetricIShapeProfilePtr profilePtr = CreateProfile (params);
 
     params.topFlangeFilletRadius = 0.5;
-    EXPECT_DOUBLE_EQ (0.5, profilePtr->GetInnerTopFlangeFaceLength() / 2.0);
+    EXPECT_DOUBLE_EQ (0.5, profilePtr->GetTopFlangeInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Top flange fillet radius should be less or equal to half of the inner face of the top flange.";
 
     params.topFlangeFilletRadius = BeNumerical::BeNextafter (0.5, INFINITY);
@@ -477,7 +477,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeFilletRadiusAgainstT
     AsymmetricIShapeProfilePtr profilePtr = CreateProfile (params);
 
     params.bottomFlangeFilletRadius = 0.5;
-    EXPECT_DOUBLE_EQ (0.5, profilePtr->GetInnerBottomFlangeFaceLength() / 2.0);
+    EXPECT_DOUBLE_EQ (0.5, profilePtr->GetBottomFlangeInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Bottom flange fillet radius should be less or equal to half of the inner face of the bottom flange.";
 
     params.bottomFlangeFilletRadius = BeNumerical::BeNextafter (0.5, INFINITY);
@@ -493,7 +493,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeFilletRadiusAgainstTheW
     AsymmetricIShapeProfilePtr profilePtr = CreateProfile (params);
 
     params.topFlangeFilletRadius = 0.5;
-    EXPECT_DOUBLE_EQ (0.5, profilePtr->GetInnerWebFaceLength() / 2.0);
+    EXPECT_DOUBLE_EQ (0.5, profilePtr->GetWebInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Top flange fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
 
     params.topFlangeFilletRadius = BeNumerical::BeNextafter (0.5, INFINITY);
@@ -509,7 +509,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeFilletRadiusAgainstT
     AsymmetricIShapeProfilePtr profilePtr = CreateProfile (params);
 
     params.bottomFlangeFilletRadius = 0.5;
-    EXPECT_DOUBLE_EQ (0.5, profilePtr->GetInnerWebFaceLength() / 2.0);
+    EXPECT_DOUBLE_EQ (0.5, profilePtr->GetWebInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Bottom flange fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
 
     params.bottomFlangeFilletRadius = BeNumerical::BeNextafter (0.5, INFINITY);
@@ -526,7 +526,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeFilletRadiusAgainstTheW
 
     AsymmetricIShapeProfilePtr profilePtr = CreateProfile (params);
 
-    double const maximumFilletRadiusForWeb = profilePtr->GetInnerWebFaceLength() / 2.0 - profilePtr->GetTopFlangeSlopeHeight();
+    double const maximumFilletRadiusForWeb = profilePtr->GetWebInnerFaceLength() / 2.0 - profilePtr->GetTopFlangeSlopeHeight();
     EXPECT_GE (maximumFilletRadiusForWeb, 0.0) << "Top flange slope height cannot be greater than half of the inner web face length";
 
     params.topFlangeFilletRadius = 1.0;
@@ -549,7 +549,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeFilletRadiusAgainstT
 
     AsymmetricIShapeProfilePtr profilePtr = CreateProfile (params);
 
-    double const maximumFilletRadiusForWeb = profilePtr->GetInnerWebFaceLength() / 2.0 - profilePtr->GetBottomFlangeSlopeHeight();
+    double const maximumFilletRadiusForWeb = profilePtr->GetWebInnerFaceLength() / 2.0 - profilePtr->GetBottomFlangeSlopeHeight();
     EXPECT_GE (maximumFilletRadiusForWeb, 0.0) << "Bottom flange slope height cannot be greater than half of the inner web face length";
 
     params.bottomFlangeFilletRadius = 1.0;
@@ -684,8 +684,8 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeSlopeOf45Degrees_Succes
 
     // 45 degree angle means a slope height of 4, when the inner flange face length is 4
     // since inner web face length is 8, a slope of 45 degree should be the maximum allowed value
-    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetInnerTopFlangeFaceLength());
-    EXPECT_DOUBLE_EQ (8.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetTopFlangeInnerFaceLength());
+    EXPECT_DOUBLE_EQ (8.0, profilePtr->GetWebInnerFaceLength());
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetTopFlangeSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Top flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
 
@@ -705,8 +705,8 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeSlopeOf45Degrees_Suc
 
     // 45 degree angle means a slope height of 4, when the inner flange face length is 4
     // since inner web face length is 8, a slope of 45 degree should be the maximum allowed value
-    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetInnerBottomFlangeFaceLength());
-    EXPECT_DOUBLE_EQ (8.0, profilePtr->GetInnerWebFaceLength());
+    EXPECT_DOUBLE_EQ (4.0, profilePtr->GetBottomFlangeInnerFaceLength());
+    EXPECT_DOUBLE_EQ (8.0, profilePtr->GetWebInnerFaceLength());
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetBottomFlangeSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Bottom flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
 

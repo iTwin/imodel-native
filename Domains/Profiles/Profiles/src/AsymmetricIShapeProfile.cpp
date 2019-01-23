@@ -191,7 +191,7 @@ static bool validateFlangeSlope (Angle const& flangeSlope, double flangeSlopeHei
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AsymmetricIShapeProfile::ValidateTopFlangeFilletRadius() const
     {
-    return validateFlangeFilletRadius (GetTopFlangeFilletRadius(), GetInnerTopFlangeFaceLength(), GetTopFlangeSlopeHeight(), GetInnerWebFaceLength());
+    return validateFlangeFilletRadius (GetTopFlangeFilletRadius(), GetTopFlangeInnerFaceLength(), GetTopFlangeSlopeHeight(), GetWebInnerFaceLength());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -199,7 +199,7 @@ bool AsymmetricIShapeProfile::ValidateTopFlangeFilletRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AsymmetricIShapeProfile::ValidateTopFlangeEdgeRadius() const
     {
-    return validateFlangeEdgeRadius (GetTopFlangeEdgeRadius(), GetInnerTopFlangeFaceLength(), GetTopFlangeThickness());
+    return validateFlangeEdgeRadius (GetTopFlangeEdgeRadius(), GetTopFlangeInnerFaceLength(), GetTopFlangeThickness());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -207,7 +207,7 @@ bool AsymmetricIShapeProfile::ValidateTopFlangeEdgeRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AsymmetricIShapeProfile::ValidateTopFlangeSlope() const
     {
-    return validateFlangeSlope (GetTopFlangeSlope(), GetTopFlangeSlopeHeight(), GetInnerWebFaceLength());
+    return validateFlangeSlope (GetTopFlangeSlope(), GetTopFlangeSlopeHeight(), GetWebInnerFaceLength());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -215,7 +215,7 @@ bool AsymmetricIShapeProfile::ValidateTopFlangeSlope() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AsymmetricIShapeProfile::ValidateBottomFlangeFilletRadius() const
     {
-    return validateFlangeFilletRadius (GetBottomFlangeFilletRadius(), GetInnerBottomFlangeFaceLength(), GetBottomFlangeSlopeHeight(), GetInnerWebFaceLength());
+    return validateFlangeFilletRadius (GetBottomFlangeFilletRadius(), GetBottomFlangeInnerFaceLength(), GetBottomFlangeSlopeHeight(), GetWebInnerFaceLength());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -223,7 +223,7 @@ bool AsymmetricIShapeProfile::ValidateBottomFlangeFilletRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AsymmetricIShapeProfile::ValidateBottomFlangeEdgeRadius() const
     {
-    return validateFlangeEdgeRadius (GetBottomFlangeEdgeRadius(), GetInnerBottomFlangeFaceLength(), GetBottomFlangeThickness());
+    return validateFlangeEdgeRadius (GetBottomFlangeEdgeRadius(), GetBottomFlangeInnerFaceLength(), GetBottomFlangeThickness());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,7 +231,7 @@ bool AsymmetricIShapeProfile::ValidateBottomFlangeEdgeRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AsymmetricIShapeProfile::ValidateBottomFlangeSlope() const
     {
-    return validateFlangeSlope (GetBottomFlangeSlope(), GetBottomFlangeSlopeHeight(), GetInnerWebFaceLength());
+    return validateFlangeSlope (GetBottomFlangeSlope(), GetBottomFlangeSlopeHeight(), GetWebInnerFaceLength());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -429,7 +429,7 @@ void AsymmetricIShapeProfile::SetBottomFlangeSlope (Angle const& value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AsymmetricIShapeProfile::GetInnerTopFlangeFaceLength() const
+double AsymmetricIShapeProfile::GetTopFlangeInnerFaceLength() const
     {
     return (GetTopFlangeWidth() - GetWebThickness()) / 2.0;
     }
@@ -437,7 +437,7 @@ double AsymmetricIShapeProfile::GetInnerTopFlangeFaceLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AsymmetricIShapeProfile::GetInnerBottomFlangeFaceLength() const
+double AsymmetricIShapeProfile::GetBottomFlangeInnerFaceLength() const
     {
     return (GetBottomFlangeWidth() - GetWebThickness()) / 2.0;
     }
@@ -445,7 +445,7 @@ double AsymmetricIShapeProfile::GetInnerBottomFlangeFaceLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AsymmetricIShapeProfile::GetInnerWebFaceLength() const
+double AsymmetricIShapeProfile::GetWebInnerFaceLength() const
     {
     return GetDepth() - GetTopFlangeThickness() - GetBottomFlangeThickness();
     }
@@ -459,7 +459,7 @@ double AsymmetricIShapeProfile::GetTopFlangeSlopeHeight() const
     if (BeNumerical::IsLessOrEqualToZero (topFlangeSlopeCos))
         return 0.0;
 
-    return (GetInnerTopFlangeFaceLength() / topFlangeSlopeCos) * GetTopFlangeSlope().Sin();
+    return (GetTopFlangeInnerFaceLength() / topFlangeSlopeCos) * GetTopFlangeSlope().Sin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -471,7 +471,7 @@ double AsymmetricIShapeProfile::GetBottomFlangeSlopeHeight() const
     if (BeNumerical::IsLessOrEqualToZero (bottomFlangeSlopeCos))
         return 0.0;
 
-    return (GetInnerBottomFlangeFaceLength() / bottomFlangeSlopeCos) * GetBottomFlangeSlope().Sin();
+    return (GetBottomFlangeInnerFaceLength() / bottomFlangeSlopeCos) * GetBottomFlangeSlope().Sin();
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

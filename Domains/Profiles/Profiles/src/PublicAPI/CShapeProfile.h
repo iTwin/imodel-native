@@ -91,8 +91,8 @@ public:
     PROFILES_EXPORT void SetFlangeSlope (Angle const& value);
 
 public:
-    PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
-    PROFILES_EXPORT double GetInnerWebFaceLength() const;
+    PROFILES_EXPORT double GetFlangeInnerFaceLength() const;
+    PROFILES_EXPORT double GetWebInnerFaceLength() const;
     PROFILES_EXPORT double GetFlangeSlopeHeight() const;
 
     }; // CShapeProfile

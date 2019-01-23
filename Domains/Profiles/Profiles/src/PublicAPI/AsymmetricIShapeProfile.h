@@ -113,9 +113,9 @@ public:
     PROFILES_EXPORT void SetBottomFlangeSlope (Angle const& value);
 
 public:
-    PROFILES_EXPORT double GetInnerTopFlangeFaceLength() const;
-    PROFILES_EXPORT double GetInnerBottomFlangeFaceLength() const;
-    PROFILES_EXPORT double GetInnerWebFaceLength() const;
+    PROFILES_EXPORT double GetTopFlangeInnerFaceLength() const;
+    PROFILES_EXPORT double GetBottomFlangeInnerFaceLength() const;
+    PROFILES_EXPORT double GetWebInnerFaceLength() const;
     PROFILES_EXPORT double GetTopFlangeSlopeHeight() const;
     PROFILES_EXPORT double GetBottomFlangeSlopeHeight() const;
 

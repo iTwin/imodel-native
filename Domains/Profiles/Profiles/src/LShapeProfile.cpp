@@ -146,8 +146,8 @@ bool LShapeProfile::ValidateFilletRadius() const
     if (ProfilesProperty::IsEqualToZero (filletRadius))
         return true;
 
-    double const availableWebLength = GetInnerWebFaceLength() / 2.0 - GetHorizontalLegSlopeHeight();
-    double const availableFlangeLength = GetInnerFlangeFaceLength() / 2.0 - GetVerticalLegSlopeHeight();
+    double const availableWebLength = GetWebInnerFaceLength() / 2.0 - GetHorizontalLegSlopeHeight();
+    double const availableFlangeLength = GetFlangeInnerFaceLength() / 2.0 - GetVerticalLegSlopeHeight();
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
     bool const isLessThanAvailableWebLength = filletRadius <= availableWebLength;
@@ -167,7 +167,7 @@ bool LShapeProfile::ValidateEdgeRadius() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (edgeRadius);
     bool const isLessThanHalfThickness = edgeRadius <= GetThickness() / 2.0;
-    bool const isLessThanAvailableFlangeLength = edgeRadius <= GetInnerFlangeFaceLength() / 2.0;
+    bool const isLessThanAvailableFlangeLength = edgeRadius <= GetFlangeInnerFaceLength() / 2.0;
 
     return isPositive && isLessThanHalfThickness && isLessThanAvailableFlangeLength;
     }
@@ -183,8 +183,8 @@ bool LShapeProfile::ValidateLegSlope() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (legSlope);
     bool const isLessThan90Degrees = legSlope < PI / 2.0;
-    bool const slopeHeightIsLessThanAvailableFlangeLength = GetVerticalLegSlopeHeight() <= GetInnerFlangeFaceLength() / 2.0;
-    bool const slopeHeightIsLessThanAvailableWebLength = GetHorizontalLegSlopeHeight() <= GetInnerWebFaceLength() / 2.0;
+    bool const slopeHeightIsLessThanAvailableFlangeLength = GetVerticalLegSlopeHeight() <= GetFlangeInnerFaceLength() / 2.0;
+    bool const slopeHeightIsLessThanAvailableWebLength = GetHorizontalLegSlopeHeight() <= GetWebInnerFaceLength() / 2.0;
 
     return isPositive && isLessThan90Degrees && slopeHeightIsLessThanAvailableFlangeLength && slopeHeightIsLessThanAvailableWebLength;
     }
@@ -288,7 +288,7 @@ void LShapeProfile::SetLegSlope (Angle const& value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double LShapeProfile::GetInnerFlangeFaceLength() const
+double LShapeProfile::GetFlangeInnerFaceLength() const
     {
     return GetWidth() - GetThickness();
     }
@@ -296,7 +296,7 @@ double LShapeProfile::GetInnerFlangeFaceLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double LShapeProfile::GetInnerWebFaceLength() const
+double LShapeProfile::GetWebInnerFaceLength() const
     {
     return GetDepth() - GetThickness();
     }
@@ -310,7 +310,7 @@ double LShapeProfile::GetHorizontalLegSlopeHeight() const
     if (BeNumerical::IsLessOrEqualToZero (flangeSlopeCos))
         return 0.0;
 
-    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetLegSlope().Sin();
+    return (GetFlangeInnerFaceLength() / flangeSlopeCos) * GetLegSlope().Sin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,7 +322,7 @@ double LShapeProfile::GetVerticalLegSlopeHeight() const
     if (BeNumerical::IsLessOrEqualToZero (webSlopeCos))
         return 0.0;
 
-    return (GetInnerWebFaceLength() / webSlopeCos) * GetLegSlope().Sin();
+    return (GetWebInnerFaceLength() / webSlopeCos) * GetLegSlope().Sin();
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
