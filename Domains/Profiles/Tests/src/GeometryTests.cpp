@@ -157,9 +157,7 @@ void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, bool placeI
     PhysicalElementPtr physicaleElementPtr = GenericPhysicalObject::Create (GetPhysicalModel(), GetCategoryId());
     physicaleElementPtr->SetUserLabel (profilePtr->GetName().c_str());
 
-    GeometrySourceP pGeometrySource = physicaleElementPtr->ToGeometrySourceP();
-    pGeometrySource->SetCategoryId (GetCategoryId());
-
+    GeometrySource* pGeometrySource = physicaleElementPtr->ToGeometrySourceP();
     IGeometryPtr profileGeometryPtr = profilePtr->GetShape();
 
     Placement3d elementPlacement;
@@ -167,7 +165,6 @@ void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, bool placeI
     physicaleElementPtr->SetPlacement (elementPlacement);
 
     GeometryBuilderPtr builder = GeometryBuilder::Create (*pGeometrySource);
-    builder->Append (GetCategoryId());
     builder->Append (GetGeometryParams());
     builder->Append (*profileGeometryPtr);
     builder->Finish (*pGeometrySource);
