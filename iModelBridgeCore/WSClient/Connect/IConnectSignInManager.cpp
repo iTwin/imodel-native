@@ -52,10 +52,9 @@ AsyncTaskPtr<void> IConnectSignInManager::CheckAndUpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<void> IConnectSignInManager::SignOut()
     {
-    m_mutex.Enter();
+    BeMutexHolder lock(m_mutex);
     return _SignOut()->Then<void>([=] (WSConnectVoidResult result)
         {
-        m_mutex.Leave();
         if (!result.IsSuccess())
             {
             LOG.infov("ConnectSignOut failed");
