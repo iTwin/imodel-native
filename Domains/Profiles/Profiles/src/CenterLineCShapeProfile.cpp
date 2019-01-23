@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\CenterLineCShapeProfile.h>
 #include <ProfilesInternal\ProfilesGeometry.h>
+#include <ProfilesInternal\ProfilesProperty.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -26,12 +27,13 @@ CenterLineCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 +---------------+---------------+---------------+---------------+---------------+------*/
 CenterLineCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double wallThickness, double girth /*= 0.0*/, double filletRadius /*= 0.0*/)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
-    , flangeWidth (flangeWidth)
-    , depth (depth)
-    , wallThickness (wallThickness)
-    , girth (girth)
-    , filletRadius (filletRadius)
-    {}
+      , flangeWidth (flangeWidth)
+      , depth (depth)
+      , wallThickness (wallThickness)
+      , girth (girth)
+      , filletRadius (filletRadius)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
@@ -72,18 +74,17 @@ bool CenterLineCShapeProfile::_Validate() const
 
     if (BeNumerical::IsGreaterThanZero (girth))
         {
-        isValid  = isValid  && (1 == BeNumerical::Compare (girth, wallThickness + filletRadius) || BeNumerical::IsEqual (girth, wallThickness + filletRadius));
-        isValid  = isValid  && (-1 == BeNumerical::Compare(girth, depth / 2.0));
+        isValid  = isValid  && ProfilesProperty::IsGreaterOrEqual (girth, wallThickness + filletRadius);
+        isValid  = isValid  && ProfilesProperty::IsLess (girth, depth / 2.0);
         }
 
-    isValid  = isValid  && (-1 == BeNumerical::Compare (wallThickness, flangeWidth / 2.0)) && (-1 == BeNumerical::Compare (wallThickness, depth / 2.0));
+    isValid  = isValid  && (ProfilesProperty::IsLess (wallThickness, flangeWidth / 2.0))
+                        && (ProfilesProperty::IsLess (wallThickness, depth / 2.0));
 
     if (isValid  && BeNumerical::IsGreaterThanZero (filletRadius))
         {
-        isValid  = isValid  && 
-            ((-1 == BeNumerical::Compare (filletRadius, flangeWidth / 2.0 - wallThickness) || BeNumerical::IsEqual(filletRadius, flangeWidth / 2.0 - wallThickness)) &&
-             (-1 == BeNumerical::Compare (filletRadius, depth / 2.0 - wallThickness) || BeNumerical::IsEqual(filletRadius, depth / 2.0 - wallThickness))
-            );
+        isValid  = isValid  && ProfilesProperty::IsLessOrEqual (filletRadius, flangeWidth / 2.0 - wallThickness) &&
+            ProfilesProperty::IsLessOrEqual (filletRadius, depth / 2.0 - wallThickness);
         }
 
     return isValid ;
