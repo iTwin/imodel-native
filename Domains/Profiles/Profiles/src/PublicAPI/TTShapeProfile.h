@@ -53,6 +53,7 @@ protected:
     explicit TTShapeProfile (CreateParams const& params);
 
     virtual bool _Validate() const override;
+    virtual IGeometryPtr _CreateGeometry() const override;
 
 private:
     bool ValidateFlangeThickness() const;
@@ -102,10 +103,11 @@ public:
     PROFILES_EXPORT void SetWebSlope (Angle const& value);
 
 public:
-    PROFILES_EXPORT double GetInnerFlangeFaceLength() const;
-    PROFILES_EXPORT double GetInnerWebFaceLength() const;
+    PROFILES_EXPORT double GetFlangeInnerFaceLength() const;
     PROFILES_EXPORT double GetFlangeSlopeHeight() const;
-    PROFILES_EXPORT double GetWebSlopeHeight() const;
+    PROFILES_EXPORT double GetWebInnerFaceLength() const;
+    PROFILES_EXPORT double GetWebInnerSlopeHeight() const;
+    PROFILES_EXPORT double GetWebOuterSlopeHeight() const;
 
     }; // TTShapeProfile
 

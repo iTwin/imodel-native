@@ -25,6 +25,7 @@ public:
     static IGeometryPtr CreateAsymmetricIShape (AsymmetricIShapeProfile const& profile);
     static IGeometryPtr CreateLShape (LShapeProfile const& profile);
     static IGeometryPtr CreateTShape (TShapeProfile const& profile);
+    static IGeometryPtr CreateTTShape (TTShapeProfile const& profile);
     static IGeometryPtr CreateZShape (ZShapeProfile const& profile);
     static IGeometryPtr CreateCenterLineCShape (CenterLineCShapeProfile const& profile);
     static IGeometryPtr CreateCenterLineLShape (CenterLineLShapeProfile const& profile);

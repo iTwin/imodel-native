@@ -394,7 +394,6 @@ IGeometryPtr ProfilesGeometry::CreateTShape (TShapeProfile const& profile)
     DPoint3d const topMiddle = { 0.0, halfDepth, 0.0 };
     DPoint3d const topRight = { halfWidth, halfDepth, 0.0 };
     DPoint3d const bottomRight = { halfWebThickness, -halfDepth, 0.0 };
-    DPoint3d const bottomMiddle = { 0.0, -halfDepth, 0.0 };
     DPoint3d const bottomLeft = { -halfWebThickness, -halfDepth, 0.0 };
     DPoint3d const topRightFlangeEdge = topRight - DPoint3d { 0.0, flangeThickness };
     DPoint3d const topLeftFlangeEdge = topLeft - DPoint3d { 0.0, flangeThickness };
@@ -451,6 +450,106 @@ IGeometryPtr ProfilesGeometry::CreateTShape (TShapeProfile const& profile)
         {
         topLine, topRightFlangeEdgeLine, topRightFlangeEdgeArc, topRightFlangeSlopeLine, topRightInnerCornerArc, innerRightWebLine, bottomRightWebEdgeArc,
         bottomLine, bottomLeftWebEdgeArc, innerLeftWebLine, topLeftInnerCornerArc, topLeftFlangeSlopeLine, topLeftFlangeEdgeArc, topLeftFlangeEdgeLine
+        };
+    return createGeometryFromPrimitiveArray (orderedCurves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateTTShape (TTShapeProfile const& profile)
+    {
+    double const halfWidth = profile.GetFlangeWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const flangeThickness = profile.GetFlangeThickness();
+    double const webThickness = profile.GetWebThickness();
+    double const halfWebSpacing = profile.GetWebSpacing() / 2.0;
+    double const webLength = profile.GetDepth() - flangeThickness;
+    double const flangeSlopeHeight = profile.GetFlangeSlopeHeight();
+    double const webOuterSlopeHeight = profile.GetWebOuterSlopeHeight();
+    double const webInnerSlopeHeight = profile.GetWebInnerSlopeHeight();
+
+    DPoint3d const flangeTopLeft = { -halfWidth, halfDepth, 0.0 };
+    DPoint3d const flangeBottomLeft = flangeTopLeft - DPoint3d { 0.0, flangeThickness };
+    DPoint3d const flangeTopRight = { halfWidth, halfDepth, 0.0 };
+    DPoint3d const flangeBottomRight = flangeTopRight - DPoint3d { 0.0, flangeThickness };
+    DPoint3d const flangeBottomMiddle = { 0.0, halfDepth - flangeThickness, 0.0 };
+
+    DPoint3d const rightWebTopLeft = flangeBottomMiddle - DPoint3d { -halfWebSpacing + webInnerSlopeHeight, flangeSlopeHeight };
+    DPoint3d rightWebTopRight = flangeBottomMiddle - DPoint3d { -halfWebSpacing - webThickness, 0.0 };
+    DPoint3d const rightWebBottomRight = flangeBottomMiddle - DPoint3d { -halfWebSpacing - webThickness, webLength };
+    DPoint3d const rightWebBottomLeft = flangeBottomMiddle - DPoint3d { -halfWebSpacing, webLength };
+
+    DPoint3d leftWebTopLeft = flangeBottomMiddle - DPoint3d { halfWebSpacing + webThickness, 0.0 };
+    DPoint3d const leftWebTopRight = flangeBottomMiddle - DPoint3d { halfWebSpacing - webInnerSlopeHeight, flangeSlopeHeight };
+    DPoint3d const leftWebBottomRight = flangeBottomMiddle - DPoint3d { halfWebSpacing, webLength };
+    DPoint3d const leftWebBottomLeft = flangeBottomMiddle - DPoint3d { halfWebSpacing + webThickness, webLength };
+
+    // Adjust fillet points where two slopes meet
+    DSegment3d rightWebRightSlopeSegment = DSegment3d::From (rightWebBottomRight, rightWebTopRight - DPoint3d { -webOuterSlopeHeight, 0.0 });
+    DSegment3d flangeRightSlopeSegment = DSegment3d::From (flangeBottomRight, rightWebTopRight - DPoint3d { 0.0, flangeSlopeHeight });
+    rightWebTopRight = getLineIntersectionPoint (rightWebRightSlopeSegment, flangeRightSlopeSegment);
+
+    DSegment3d leftWebLeftSlopeSegment = DSegment3d::From (leftWebBottomLeft, leftWebTopLeft - DPoint3d { webOuterSlopeHeight, 0.0 });
+    DSegment3d flangeLeftSlopeSegment = DSegment3d::From (flangeBottomLeft, leftWebTopLeft - DPoint3d { 0.0, flangeSlopeHeight });
+    leftWebTopLeft = getLineIntersectionPoint (leftWebLeftSlopeSegment, flangeLeftSlopeSegment);
+
+    ICurvePrimitivePtr flangeTopLine = ICurvePrimitive::CreateLine (flangeTopLeft, flangeTopRight);
+    ICurvePrimitivePtr flangeRightLine = ICurvePrimitive::CreateLine (flangeTopRight, flangeBottomRight);
+    ICurvePrimitivePtr flangeRightEdgeArc = nullptr;
+    ICurvePrimitivePtr flangeRightSlopeLine = ICurvePrimitive::CreateLine (flangeBottomRight, rightWebTopRight);
+    ICurvePrimitivePtr rightWebRightFilletArc = nullptr;
+    ICurvePrimitivePtr rightWebRightSlopeLine = ICurvePrimitive::CreateLine (rightWebTopRight, rightWebBottomRight);
+    ICurvePrimitivePtr rightWebRightEdgeArc = nullptr;
+    ICurvePrimitivePtr rightWebBottomLine = ICurvePrimitive::CreateLine (rightWebBottomRight, rightWebBottomLeft);
+    ICurvePrimitivePtr rightWebLeftEdgeArc = nullptr;
+    ICurvePrimitivePtr rightWebLeftSlopeLine = ICurvePrimitive::CreateLine (rightWebBottomLeft, rightWebTopLeft);
+    ICurvePrimitivePtr rightWebLeftFilletArc = nullptr;
+    ICurvePrimitivePtr webSpacingLine = ICurvePrimitive::CreateLine (rightWebTopLeft, leftWebTopRight);
+    ICurvePrimitivePtr leftWebRightFilletArc = nullptr;
+    ICurvePrimitivePtr leftWebRightSlopeLine = ICurvePrimitive::CreateLine (leftWebTopRight, leftWebBottomRight);
+    ICurvePrimitivePtr leftWebRightEdgeArc = nullptr;
+    ICurvePrimitivePtr leftWebBottomLine = ICurvePrimitive::CreateLine (leftWebBottomRight, leftWebBottomLeft);
+    ICurvePrimitivePtr leftWebLeftEdgeArc = nullptr;
+    ICurvePrimitivePtr leftWebLeftSlopeLine = ICurvePrimitive::CreateLine (leftWebBottomLeft, leftWebTopLeft);
+    ICurvePrimitivePtr leftWebLeftFilletArc = nullptr;
+    ICurvePrimitivePtr flangeLeftSlopeLine = ICurvePrimitive::CreateLine (leftWebTopLeft, flangeBottomLeft);
+    ICurvePrimitivePtr flangeLeftEdgeArc = nullptr;
+    ICurvePrimitivePtr flangeLeftLine = ICurvePrimitive::CreateLine (flangeBottomLeft, flangeTopLeft);
+
+    double const filletRadius = profile.GetFilletRadius();
+    double const flangeEdgeRadius = profile.GetFlangeEdgeRadius();
+    double const webEdgeRadius = profile.GetWebEdgeRadius();
+
+    // Clip fillet radius for the fillets between the webs (in the WebSpacing)
+    double spacingFilletRadius = 0.0;
+    if (BeNumerical::IsGreaterThanZero (filletRadius))
+        spacingFilletRadius = std::min (filletRadius, halfWebSpacing - webInnerSlopeHeight);
+
+    flangeRightEdgeArc = createArcBetweenLines (flangeRightLine, flangeRightSlopeLine, flangeEdgeRadius);
+    rightWebRightFilletArc = createArcBetweenLines (flangeRightSlopeLine, rightWebRightSlopeLine, filletRadius);
+    rightWebRightEdgeArc = createArcBetweenLines (rightWebRightSlopeLine, rightWebBottomLine, webEdgeRadius);
+    rightWebLeftEdgeArc = createArcBetweenLines (rightWebBottomLine, rightWebLeftSlopeLine, webEdgeRadius);
+    rightWebLeftFilletArc = createArcBetweenLines (rightWebLeftSlopeLine, webSpacingLine, spacingFilletRadius);
+    leftWebRightFilletArc = createArcBetweenLines (webSpacingLine, leftWebRightSlopeLine, spacingFilletRadius);
+    leftWebRightEdgeArc = createArcBetweenLines (leftWebRightSlopeLine, leftWebBottomLine, webEdgeRadius);
+    leftWebLeftEdgeArc = createArcBetweenLines (leftWebBottomLine, leftWebLeftSlopeLine, webEdgeRadius);
+    leftWebLeftFilletArc = createArcBetweenLines (leftWebLeftSlopeLine, flangeLeftSlopeLine, filletRadius);
+    flangeLeftEdgeArc = createArcBetweenLines (flangeLeftSlopeLine, flangeLeftLine, flangeEdgeRadius);
+
+    if (BeNumerical::IsEqualToZero (rightWebBottomLine->GetLineCP()->Length()))
+        rightWebBottomLine = nullptr;
+    if (BeNumerical::IsEqualToZero (leftWebBottomLine->GetLineCP()->Length()))
+        leftWebBottomLine = nullptr;
+    if (BeNumerical::IsEqualToZero (webSpacingLine->GetLineCP()->Length()))
+        webSpacingLine = nullptr;
+
+    bvector<ICurvePrimitivePtr> orderedCurves =
+        {
+        flangeTopLine, flangeRightLine, flangeRightEdgeArc, flangeRightSlopeLine, rightWebRightFilletArc, rightWebRightSlopeLine,
+        rightWebRightEdgeArc, rightWebBottomLine, rightWebLeftEdgeArc, rightWebLeftSlopeLine, rightWebLeftFilletArc, webSpacingLine,
+        leftWebRightFilletArc, leftWebRightSlopeLine, leftWebRightEdgeArc, leftWebBottomLine, leftWebLeftEdgeArc,
+        leftWebLeftSlopeLine, leftWebLeftFilletArc, flangeLeftSlopeLine, flangeLeftEdgeArc, flangeLeftLine
         };
     return createGeometryFromPrimitiveArray (orderedCurves);
     }
