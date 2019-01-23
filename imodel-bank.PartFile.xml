@@ -35,29 +35,24 @@
   </Product>
 
   <ProductDirectoryList ListName="imodel-bank-delivery-list">
-    <ProductDirectory Name="AddonRoot" Path="Addon" />
-    <ProductDirectory Name="imodel_bank_node_module" RelativeTo="AddonRoot"/>
-    <ProductDirectory Name="imodel_bank_node_module" RelativeTo="AddonRoot" LibType="Static" />
-    <ProductDirectory Name="SupportingFilesRoot" Path="Support" />
-    <ProductDirectory Name="Assemblies" Path="" RelativeTo="SupportingFilesRoot"/>
+    <ProductDirectory Name="AddonRoot" Path="" />
+    <ProductDirectory Name="AddonRoot" Path="" LibType="Static" />
+    <ProductDirectory Name="Assemblies" Path="" RelativeTo="AddonRoot"/>
     <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
-    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="SupportingFilesRoot"/>
-    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="SupportingFilesRoot" LibType="Static"/>
-
-    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot"/>
-    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot" LibType="Static"/>
-
-    <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices"/>
-    <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot" LibType="Static"/>
+    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="AddonRoot" LibType="Static"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices" LibType="static"/>
   </ProductDirectoryList>
 
   <Part Name="imodel-bank-lib" BentleyBuildMakeFile="imodel-bank.mke" >
-    <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
-    <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite"/>
-    <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
+    <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
+    <SubPart PartName="GeomDlls" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
     <Bindings>
-      <!-- KEEP THIS CONSISTENT WITH api_package\install-imodel-bank-native.js -->
-      <Files ProductDirectoryName="imodel_bank_node_module" ProductSubDirectory="n_8">
+      <Files ProductDirectoryName="AddonRoot">
         Delivery/imodel-bank/imodel-bank.node
       </Files>
     </Bindings>

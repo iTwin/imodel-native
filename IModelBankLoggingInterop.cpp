@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "IModelBank.h"
-#include <node-addon-api/napi.h>
+#include <Napi/napi.h>
 
 namespace IModelBank
 {

@@ -7,11 +7,22 @@
 +--------------------------------------------------------------------------------------*/
 #include "IModelBank.h"
 #include <Bentley/Desktop/FileSystem.h>
-#include <node-addon-api/napi.h>
+#include <Napi/napi.h>
 #include <imodel-bank-package-version.h>
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/RevisionChangesFile.h>
 #include "DgnSqlFuncsForTriggers.h"
+
+#if defined(_WIN32)
+#include <windows.h>
+#include <delayimp.h>
+
+// On Windows, we delay load node.lib. It declares all of its exports to be from "node.exe".
+// We Register a delay-load hook to redirect any node.exe references to be from the loading executable.
+// This way the addon will still work even if the host executable is not named node.exe.
+static FARPROC delayLoadNotify(unsigned dliNotify, PDelayLoadInfo pdli) {return (dliNotePreLoadLibrary != dliNotify || 0 != _stricmp(pdli->szDll, "node.exe")) ? nullptr : (FARPROC)::GetModuleHandle(nullptr);}
+decltype(__pfnDliNotifyHook2) __pfnDliNotifyHook2 = delayLoadNotify;
+#endif
 
 #define PROPERTY_ATTRIBUTES static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)
 
@@ -262,7 +273,7 @@ static DbResult applyChangeSet(ChangeSetApplyStats &stats, Db &db, bvector<BeFil
     DbResult result = changesetReader.GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
     if (result != BE_SQLITE_OK)
     {
-//        BeAssert(false);
+        //        BeAssert(false);
         return result;
     }
 
@@ -614,12 +625,10 @@ struct NativeSQLiteStatement : Napi::ObjectWrap<NativeSQLiteStatement>
     }
 };
 
-} // namespace IModelBank
-
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Object iModelBankRegisterModule(Napi::Env env, Napi::Object exports)
+static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
 {
     s_env = new Napi::Env(env);
 
@@ -629,21 +638,22 @@ static Napi::Object iModelBankRegisterModule(Napi::Env env, Napi::Object exports
 
     s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
 
-    IModelBank::initialize(addondir);
+    initialize(addondir);
 
-    IModelBank::NativeSQLiteDb::Init(env, exports);
-    IModelBank::NativeSQLiteStatement::Init(env, exports);
+    NativeSQLiteDb::Init(env, exports);
+    NativeSQLiteStatement::Init(env, exports);
 
     exports.DefineProperties(
         {
-            Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
-            Napi::PropertyDescriptor::Accessor("logger", &IModelBank::getLogger, &IModelBank::setLogger),
+        Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
+        Napi::PropertyDescriptor::Accessor(env, exports, "logger", &getLogger, &setLogger)
         });
-
     return exports;
 }
 
 Napi::FunctionReference IModelBank::NativeSQLiteDb::s_constructor;
 Napi::FunctionReference IModelBank::NativeSQLiteStatement::s_constructor;
 
-NODE_API_MODULE(at_bentley_imodel_bank_nodeaddon, iModelBankRegisterModule)
+NODE_API_MODULE(imodel_bank, registerModule)
+
+} // namespace IModelBank

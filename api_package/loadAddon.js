@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------------------------+
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
-var path = require('path');
-var formatPackageName = require('./formatPackageName.js').formatPackageName;
+const path = require('path');
 
-// Compute the part of the addon name that corresponds to the platform that we are running on right now
-function getCurrentPlatformPrefix() {
-    const nodeVersion = process.version.substring(1).split("."); // strip off the character 'v' from the start of the string
-    return "n_" + nodeVersion[0]; // use only major version number
-}
+exports.formatPackageName = function () { return `imodel-bank-${process.platform}-${process.arch}`; }
 
-// Load the right node addon for this platform (node|electron, OS, cpu)
-// @param dir - optional directory from which addon should be loaded
-exports.loadAddon = function (dir) {
-    return require(path.join(dir || "", formatPackageName(getCurrentPlatformPrefix()), "addon", "imodel-bank.node"));
+// Load the right node addon for this platform (OS, cpu)
+exports.loadAddon = function () {
+    // We make sure we are running in a known platform.
+    if (typeof process === "undefined" || process.platform === undefined || process.arch === undefined)
+        throw new Error("Error - unknown process");
+
+    const packageName = exports.formatPackageName(); // this includes current platform and CPU
+    const addonDir = path.join("@bentley", "imodel-bank", packageName);
+    return require(path.join(addonDir, "imodel-bank.node"));
 }

@@ -92,7 +92,8 @@ DLM_NO_CONTEXT_LINK = 1
 
     DLM_OBJECT_FILES  + $(IMODEL_BANK_LIBS)
 
-    LINKER_LIBRARIES +  $(ContextSubpartsLibs)$(stlibprefix)node$(stlibext)
+    DLM_SPECIAL_LINKOPT = -delayload:node.exe
+    LINKER_LIBRARIES = DelayImp.lib $(BuildContext)SubParts\nodelib\node.lib
 
     # Always produce a .SO (even though this is a static build)
     %undef CREATE_STATIC_LIBRARIES

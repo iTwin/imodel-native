@@ -1,25 +1,24 @@
 /*--------------------------------------------------------------------------------------+
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
-var exec = require('child_process').exec;
-var path = require('path');
-var fs = require('fs');
-var os = require('os');
-let version = require("./package.json").version;
-var formatPackageName = require('./formatPackageName.js').formatPackageName;
+const exec = require("child_process").exec;
+const path = require("path");
+const fs = require("fs");
+const os = require("os");
+const version = require("./package.json").version;
+const formatPackageName = require("./loadAddon.js").formatPackageName;
 
 function copyFolderRecursiveSync(source, target) {
-    var targetFolder = path.join(target, path.basename(source));
-    if (!fs.existsSync(targetFolder))
-        fs.mkdirSync(targetFolder);
+    if (!fs.existsSync(target))
+        fs.mkdirSync(target);
 
     if (fs.lstatSync(source).isDirectory()) {
         fs.readdirSync(source).forEach(function (file) {
-            var curSource = path.join(source, file);
+            const curSource = path.join(source, file);
             if (fs.lstatSync(curSource).isDirectory()) {
-                copyFolderRecursiveSync(curSource, targetFolder);
+                copyFolderRecursiveSync(curSource, path.join(target, path.basename(curSource)));
             } else {
-                fs.writeFileSync(path.join(targetFolder, file), fs.readFileSync(curSource));
+                fs.writeFileSync(path.join(target, file), fs.readFileSync(curSource));
             }
         });
     }
@@ -28,30 +27,21 @@ function copyFolderRecursiveSync(source, target) {
 // We have to run npm install in a temp directory. If we try to run it in the current directory,
 // it will fight over a (file?) lock that the parent npm install holds.
 // Note that we have to copy the current package.json to the temp directory, or else npm install will object.
-let installDir = path.join(os.tmpdir(), "install-imodel-bank-addon");
+const installDir = path.join(os.tmpdir(), "install-imodel-bank");
 try { fs.mkdirSync(installDir); } catch (err) { }
 fs.copyFileSync(path.join(__dirname, "package.json"), path.join(installDir, "package.json"));
 
-// We will then copy the results of the install from teh temp directory into the targetDirectory
-// We know that this script is in:               <somewhere>/node_modules/@bentley/imodeljs-native-platform-api
-// We want to put the native addon packages in:  <somewhere>/node_modules
-let currdir = process.cwd();
-let targetDir = path.normalize(path.join(currdir, "..", "..", "..")); // See comment below
-
-// Install in tmp dir and copy into target dir
-function installNativePlatformPackage(version_prefix) {
-    let cmdLine = `npm install --no-save ${formatPackageName(version_prefix)}@${version}`;
+// We will then copy the results of the install from the temp directory into sub-directories below this one.
+function installNativePackage(package) {
+    const cmdLine = `npm install --no-save @bentley/${package}`;
     console.log(cmdLine);
     exec(cmdLine, { cwd: installDir }, (error, stdout, stderr) => {
         if (error)
             throw error;
         console.log(stdout);
         console.log(stderr);
-        copyFolderRecursiveSync(path.join(installDir, 'node_modules'), targetDir);
+        copyFolderRecursiveSync(path.join(installDir, "node_modules", "@bentley"), __dirname);
     });
 }
 
-// Install both flavors of the addon for the current platform
-// *** KEEP THIS CONSISTENT WITH imodel-bank/addon/MakePackages.py ***
-
-installNativePlatformPackage('n_8');
+installNativePackage(`${formatPackageName()}@${version}`);
