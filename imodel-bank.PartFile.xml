@@ -11,24 +11,24 @@
   </Part>
 
   <Product Name="imodel-bank">
-    <SubProduct ProductName="imodel-bank-windows" />
-    <SubProduct ProductName="imodel-bank-linux" />
-    <SubProduct ProductName="imodel-bank-darwin" />
+    <SubProduct ProductName="imodel-bank-Windows" />
+    <SubProduct ProductName="imodel-bank-Linux" />
+    <SubProduct ProductName="imodel-bank-Darwin" />
   </Product>
 
-  <Product Name="imodel-bank-windows" OnlyPlatforms="x64">
+  <Product Name="imodel-bank-Windows" OnlyPlatforms="x64">
     <SubPart PartName="imodel-bank-lib" LibType="Static" />
     <SubPart PartName="imodel-sqlang" LibType="Static" />
     <Directories DirectoryListName="imodel-bank-delivery-list" />
   </Product>
 
-  <Product Name="imodel-bank-linux" OnlyPlatforms="Linux*">
+  <Product Name="imodel-bank-Linux" OnlyPlatforms="Linux*">
     <SubPart PartName="imodel-bank-lib" LibType="Static" />
     <SubPart PartName="imodel-sqlang" LibType="Static" />
     <Directories DirectoryListName="imodel-bank-delivery-list" />
   </Product>
 
-  <Product Name="imodel-bank-darwin" OnlyPlatforms="MacOSX64">
+  <Product Name="imodel-bank-Darwin" OnlyPlatforms="MacOSX64">
     <SubPart PartName="imodel-bank-lib" LibType="Static" />
     <SubPart PartName="imodel-sqlang" LibType="Static" />
     <Directories DirectoryListName="imodel-bank-delivery-list" />
