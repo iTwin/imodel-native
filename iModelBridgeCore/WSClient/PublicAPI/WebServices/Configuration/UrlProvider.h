@@ -111,6 +111,12 @@ struct UrlProvider
         //! Get available UrlDescriptors
         WSCLIENT_EXPORT static bset<const UrlProvider::UrlDescriptor*> GetUrlRegistry();
 
+        //! Get stored connect environment. Can be used before initializing to check previous value.
+        //! @param localState - local state to inspect.
+        //! @param environmentOut - output environment.
+        //! @return true if found a value, false otherwise.
+        WSCLIENT_EXPORT static bool GetStoredEnvironment(IJsonLocalState& localState, Environment& environmentOut);
+
         //! Get connect environment
         WSCLIENT_EXPORT static Environment GetEnvironment();
 

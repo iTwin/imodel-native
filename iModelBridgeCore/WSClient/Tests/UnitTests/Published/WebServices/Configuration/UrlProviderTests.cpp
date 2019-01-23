@@ -519,4 +519,30 @@ TEST_F(UrlDescriptorTests, GetBuddiUrl_UrlDescriptorWithEmptyName_EmptyString)
     UrlProvider::UrlDescriptor descriptor("", "", "", "", "", &registry);
     EXPECT_STREQ("", descriptor.GetBuddiUri().c_str());
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                      Vincas.Razma    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, GetStoredEnvironment_FreshLocalState_ReturnsFalse)
+    {
+    StubLocalState localState;
+    UrlProvider::Environment env = (UrlProvider::Environment)123;
+    EXPECT_FALSE(UrlProvider::GetStoredEnvironment(localState, env));
+    EXPECT_EQ(123, env);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                      Vincas.Razma    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, GetStoredEnvironment_InitializedLocalState_ReturnsTrueAndEnvironment)
+    {
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
+    UrlProvider::Uninitialize();
+
+    UrlProvider::Environment env = (UrlProvider::Environment)123;
+    EXPECT_TRUE(UrlProvider::GetStoredEnvironment(localState, env));
+    EXPECT_EQ(UrlProvider::Environment::Qa, env);
+    }
+
 #endif
