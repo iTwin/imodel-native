@@ -16,11 +16,11 @@ baseDir = $(_MakeFilePath)
     NodeOS=win32
     NodeCPU=X64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
-    Platform=linux
+    Platform=Linux
     NodeOS=linux
     NodeCPU=X64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
-    Platform=darwin
+    Platform=Darwin
     NodeOS=darwin
     NodeCPU=X64
 %else
@@ -41,13 +41,15 @@ baseDir = $(_MakeFilePath)
 # Never want to do anything in firebug
 # PRG wants to do everything
 #----------------------------------------------------------------------------------------
-%if defined (IMODEL_JS_NODE_ADDON_PUBLISH) || defined (SUBNET_PRG)
+# Detecting AGENT_NAME is a hack while we transition to VSTS builds and release piplines.
+# When all builds are done that way, this MKE script should /never/ publish.
+%if defined (IMODEL_JS_NODE_ADDON_PUBLISH) || (defined (SUBNET_PRG) && !defined(AGENT_NAME))
     ACTION=publish
 %else
     ACTION=print
 %endif
 
 always:
-    |-- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
+    |-- Making package imodel-bank-$(NodeOS)-$(NodeCPU) --
     -@$(rmdirRecursiveCmd) $(o)
     python $(_MakeFilePath)makePackages.py $(ProductDir)imodel-bank-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(ACTION)
