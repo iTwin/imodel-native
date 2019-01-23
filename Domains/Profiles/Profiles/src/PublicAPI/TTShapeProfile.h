@@ -52,6 +52,18 @@ public:
 protected:
     explicit TTShapeProfile (CreateParams const& params);
 
+    virtual bool _Validate() const override;
+
+private:
+    bool ValidateFlangeThickness() const;
+    bool ValidateWebThickness() const;
+    bool ValidateWebSpacing() const;
+    bool ValidateFilletRadius() const;
+    bool ValidateFlangeEdgeRadius() const;
+    bool ValidateFlangeSlope() const;
+    bool ValidateWebEdgeRadius() const;
+    bool ValidateWebSlope() const;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (TTShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (TTShapeProfile)
