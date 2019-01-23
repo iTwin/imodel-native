@@ -307,7 +307,7 @@ double LShapeProfile::GetInnerWebFaceLength() const
 double LShapeProfile::GetHorizontalLegSlopeHeight() const
     {
     double const flangeSlopeCos = GetLegSlope().Cos();
-    if (flangeSlopeCos <= DBL_EPSILON)
+    if (BeNumerical::IsLessOrEqualToZero (flangeSlopeCos))
         return 0.0;
 
     return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetLegSlope().Sin();
@@ -319,7 +319,7 @@ double LShapeProfile::GetHorizontalLegSlopeHeight() const
 double LShapeProfile::GetVerticalLegSlopeHeight() const
     {
     double const webSlopeCos = GetLegSlope().Cos();
-    if (webSlopeCos <= DBL_EPSILON)
+    if (BeNumerical::IsLessOrEqualToZero (webSlopeCos))
         return 0.0;
 
     return (GetInnerWebFaceLength() / webSlopeCos) * GetLegSlope().Sin();

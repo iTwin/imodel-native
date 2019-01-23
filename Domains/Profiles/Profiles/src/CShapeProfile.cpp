@@ -334,7 +334,7 @@ double CShapeProfile::GetInnerWebFaceLength() const
 double CShapeProfile::GetFlangeSlopeHeight() const
     {
     double const flangeSlopeCos = GetFlangeSlope().Cos();
-    if (flangeSlopeCos <= DBL_EPSILON)
+    if (BeNumerical::IsLessOrEqualToZero (flangeSlopeCos))
         return 0.0;
 
     return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetFlangeSlope().Sin();

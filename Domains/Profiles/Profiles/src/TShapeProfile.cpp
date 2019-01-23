@@ -359,7 +359,7 @@ double TShapeProfile::GetInnerWebFaceLength() const
 double TShapeProfile::GetFlangeSlopeHeight() const
     {
     double const flangeSlopeCos = GetFlangeSlope().Cos();
-    if (flangeSlopeCos <= DBL_EPSILON)
+    if (BeNumerical::IsLessOrEqualToZero (flangeSlopeCos))
         return 0.0;
 
     return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetFlangeSlope().Sin();
@@ -371,7 +371,7 @@ double TShapeProfile::GetFlangeSlopeHeight() const
 double TShapeProfile::GetWebSlopeHeight() const
     {
     double const webSlopeCos = GetWebSlope().Cos();
-    if (webSlopeCos <= DBL_EPSILON)
+    if (BeNumerical::IsLessOrEqualToZero (webSlopeCos))
         return 0.0;
 
     return (GetInnerWebFaceLength() / webSlopeCos) * GetWebSlope().Sin();

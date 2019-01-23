@@ -456,7 +456,7 @@ double AsymmetricIShapeProfile::GetInnerWebFaceLength() const
 double AsymmetricIShapeProfile::GetTopFlangeSlopeHeight() const
     {
     double const topFlangeSlopeCos = GetTopFlangeSlope().Cos();
-    if (topFlangeSlopeCos <= DBL_EPSILON)
+    if (BeNumerical::IsLessOrEqualToZero (topFlangeSlopeCos))
         return 0.0;
 
     return (GetInnerTopFlangeFaceLength() / topFlangeSlopeCos) * GetTopFlangeSlope().Sin();
@@ -468,7 +468,7 @@ double AsymmetricIShapeProfile::GetTopFlangeSlopeHeight() const
 double AsymmetricIShapeProfile::GetBottomFlangeSlopeHeight() const
     {
     double const bottomFlangeSlopeCos = GetBottomFlangeSlope().Cos();
-    if (bottomFlangeSlopeCos <= DBL_EPSILON)
+    if (BeNumerical::IsLessOrEqualToZero (bottomFlangeSlopeCos))
         return 0.0;
 
     return (GetInnerBottomFlangeFaceLength() / bottomFlangeSlopeCos) * GetBottomFlangeSlope().Sin();

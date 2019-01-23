@@ -836,13 +836,13 @@ static void appendRectangleToCurveVector (CurveVectorPtr& curveVector, double wi
         bottomLeftArc = createArcBetweenLines (bottomLine, leftLine, roundingRadius);
         topLeftArc = createArcBetweenLines (leftLine, topLine, roundingRadius);
 
-        if (topLine->GetLineCP()->Length() <= DBL_EPSILON)
+        if (BeNumerical::IsLessOrEqualToZero (topLine->GetLineCP()->Length()))
             topLine = nullptr;
-        if (rightLine->GetLineCP()->Length() <= DBL_EPSILON)
+        if (BeNumerical::IsLessOrEqualToZero (rightLine->GetLineCP()->Length()))
             rightLine = nullptr;
-        if (bottomLine->GetLineCP()->Length() <= DBL_EPSILON)
+        if (BeNumerical::IsLessOrEqualToZero (bottomLine->GetLineCP()->Length()))
             bottomLine = nullptr;
-        if (leftLine->GetLineCP()->Length() <= DBL_EPSILON)
+        if (BeNumerical::IsLessOrEqualToZero (leftLine->GetLineCP()->Length()))
             leftLine = nullptr;
         }
 

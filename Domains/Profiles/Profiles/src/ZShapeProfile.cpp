@@ -288,7 +288,7 @@ double ZShapeProfile::GetInnerWebFaceLength() const
 double ZShapeProfile::GetFlangeSlopeHeight() const
     {
     double const flangeSlopeCos = GetFlangeSlope().Cos();
-    if (flangeSlopeCos <= DBL_EPSILON)
+    if (BeNumerical::IsLessOrEqualToZero (flangeSlopeCos))
         return 0.0;
 
     return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetFlangeSlope().Sin();

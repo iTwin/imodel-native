@@ -219,4 +219,44 @@ void TTShapeProfile::SetWebSlope (Angle const& value)
     SetPropertyValue (PRF_PROP_TTShapeProfile_WebSlope, ECValue (value.Radians()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+double TTShapeProfile::GetInnerFlangeFaceLength() const
+    {
+    return GetFlangeWidth() - 2.0 * GetWebThickness() - GetWebSpacing();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+double TTShapeProfile::GetInnerWebFaceLength() const
+    {
+    return GetDepth() - GetFlangeThickness();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+double TTShapeProfile::GetFlangeSlopeHeight() const
+    {
+    double const flangeSlopeCos = GetFlangeSlope().Cos();
+    if (BeNumerical::IsLessOrEqualToZero (flangeSlopeCos))
+        return 0.0;
+
+    return (GetInnerFlangeFaceLength() / flangeSlopeCos) * GetFlangeSlope().Sin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+double TTShapeProfile::GetWebSlopeHeight() const
+    {
+    double const webSlopeCos = GetWebSlope().Cos();
+    if (BeNumerical::IsLessOrEqualToZero (webSlopeCos))
+        return 0.0;
+
+    return (GetInnerWebFaceLength() / webSlopeCos) * GetWebSlope().Sin();
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE
