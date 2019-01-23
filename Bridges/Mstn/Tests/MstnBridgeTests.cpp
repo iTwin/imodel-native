@@ -407,7 +407,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     if (true)
         {
         BentleyApi::BeFileName testDir1;
-        SetupTestDirectory(testDir1, L"ConvertAttachmentMultiBridgeSharedReference1", iModelName, inputFile1, guid1, refFile, refGuid);
+        SetupTestDirectory(testDir1, L"1", iModelName, inputFile1, guid1, refFile, refGuid);
 
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         bvector<WString> margs(args);
@@ -430,7 +430,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     if (true)
         {
         BentleyApi::BeFileName testDir2;
-        SetupTestDirectory(testDir2, L"ConvertAttachmentMultiBridgeSharedReference2", iModelName, inputFile1, guid1, refFile, refGuid);
+        SetupTestDirectory(testDir2, L"2", iModelName, inputFile1, guid1, refFile, refGuid);
 
         //We added a new attachment.
         bvector<WString> rargs(args);
@@ -456,7 +456,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     if (true)
         {
         BentleyApi::BeFileName testDir3;
-        SetupTestDirectory(testDir3, L"ConvertAttachmentMultiBridgeSharedReference3", iModelName, inputFile2, guid2, refFile, refGuid);
+        SetupTestDirectory(testDir3, L"3", iModelName, inputFile2, guid2, refFile, refGuid);
 
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         bvector<WString> margs(args);
@@ -481,7 +481,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     if (true)
         {
         BentleyApi::BeFileName testDir4;
-        SetupTestDirectory(testDir4, L"ConvertAttachmentMultiBridgeSharedReference4", iModelName, inputFile2, guid2, refFile, refGuid);
+        SetupTestDirectory(testDir4, L"4", iModelName, inputFile2, guid2, refFile, refGuid);
 
         //We added a new attachment.
         bvector<WString> rargs(args);

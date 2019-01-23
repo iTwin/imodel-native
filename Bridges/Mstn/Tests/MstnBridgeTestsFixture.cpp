@@ -27,8 +27,8 @@ BentleyApi::BeFileName MstnBridgeTestsFixture::GetOutputDir()
     {
     BentleyApi::BeFileName testDir;
     BentleyApi::BeTest::GetHost().GetOutputRoot(testDir);
-    testDir.AppendToPath(L"iModelBridgeTests");
-    testDir.AppendToPath(L"Dgnv8Bridge");
+    //testDir.AppendToPath(L"iModelBridgeTests");
+    //testDir.AppendToPath(L"Dgnv8Bridge");
     return testDir;
     }
 
