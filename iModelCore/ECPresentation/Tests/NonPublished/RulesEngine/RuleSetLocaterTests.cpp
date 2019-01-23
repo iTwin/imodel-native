@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/RuleSetLocaterTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -335,6 +335,33 @@ TEST_F(RuleSetLocaterManagerTests, InvalidateCacheForwardsCallToRegisteredLocate
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RuleSetLocaterManagerTests, FindsSupplementalRulesetsAfterReregisteringRuleset)
+    {
+    m_project->Create(BeTest::GetNameOfCurrentTest());
+    IConnectionPtr connection = m_connections->NotifyConnectionOpened(m_project->GetECDb());
+
+    TestRuleSetLocaterPtr supplementalsProvider = TestRuleSetLocater::Create();
+    supplementalsProvider->AddRuleSet(*PresentationRuleSet::CreateInstance("", "supplemental"));
+    RefCountedPtr<SupplementalRuleSetLocater> supplementalsLocater = SupplementalRuleSetLocater::Create(*supplementalsProvider);
+    m_manager->RegisterLocater(*supplementalsLocater);
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("1", 1, 0, false, "", "", "", false));
+    m_manager->RegisterLocater(*locater);
+
+    bvector<PresentationRuleSetPtr> locatedRulesets1 = m_manager->LocateRuleSets(*connection, "1");
+    ASSERT_EQ(2, locatedRulesets1.size());
+
+    locater->Clear();
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("2", 1, 0, false, "", "", "", false));
+
+    bvector<PresentationRuleSetPtr> locatedRulesets2 = m_manager->LocateRuleSets(*connection, "2");
+    ASSERT_EQ(2, locatedRulesets2.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RuleSetLocater, CallsRulesetCallbacksHandlerWhenHandlerIsSetAfterOnRulesetCreatedCall)
@@ -355,16 +382,6 @@ TEST(RuleSetLocater, CallsRulesetCallbacksHandlerWhenHandlerIsSetAfterOnRulesetC
     // make sure the handler got called
     locater->SetRulesetCallbacksHandler(&handler);
     EXPECT_EQ(1, onCreatedCallbackCallCount);
-
-    // reset
-    onCreatedCallbackCallCount = 0;
-    locater->SetRulesetCallbacksHandler(nullptr);
-    EXPECT_EQ(0, onCreatedCallbackCallCount);
-    
-    // set again to make sure it doesn't get called more than once
-    onCreatedCallbackCallCount = 0;
-    locater->SetRulesetCallbacksHandler(&handler);
-    EXPECT_EQ(0, onCreatedCallbackCallCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
