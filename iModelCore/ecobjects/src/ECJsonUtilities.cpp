@@ -1631,7 +1631,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
                 break;
 
             // write the primitive value
-            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(entryObj, typeString, ecValue, memberType, koq)))
+            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(entryObj, typeString, ecValue, memberType, koq, casing)))
                 {
                 BeAssert(false);
                 return ixwStatus;
@@ -1662,7 +1662,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
 
             ECClassCR   structClass = structInstance->GetClass();
             StatusInt iwxStatus;
-            if (BSISUCCESS != (iwxStatus = WritePropertyValuesOfClassOrStructArrayMember(entryObj, structClass, *structInstance.get(), nullptr, classLocator, writeFormattedQuantities, serializeNullValues)))
+            if (BSISUCCESS != (iwxStatus = WritePropertyValuesOfClassOrStructArrayMember(entryObj, structClass, *structInstance.get(), nullptr, classLocator, writeFormattedQuantities, serializeNullValues, casing)))
                 {
                 BeAssert(false);
                 return iwxStatus;
@@ -1697,7 +1697,7 @@ StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& va
     thisAccessString.append(".");
 
     ECClassCR   structClass = structProperty.GetType();
-    WritePropertyValuesOfClassOrStructArrayMember(structObj, structClass, ecInstance, thisAccessString.c_str(), nullptr, writeFormattedQuantities, serializeNullValues);
+    WritePropertyValuesOfClassOrStructArrayMember(structObj, structClass, ecInstance, thisAccessString.c_str(), nullptr, writeFormattedQuantities, serializeNullValues, casing);
 
     if (!structObj.empty() || serializeNullValues)
         valueToPopulate[FormatMemberName(structName, casing)] = structObj;
