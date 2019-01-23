@@ -195,8 +195,9 @@ bool TTShapeProfile::ValidateWebSlope() const
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (webSlope);
     bool const isLessThanHalfPi = ProfilesProperty::IsLess (webSlope, PI / 2.0);
     bool const slopeHeightFitsInFlange = ProfilesProperty::IsLessOrEqual (GetWebSlopeHeight(), GetInnerFlangeFaceLength() / 2.0);
+    bool const slopeHeightFitsInWebSpacing = ProfilesProperty::IsLessOrEqual (GetWebSlopeHeight(), GetWebSpacing() / 2.0);
 
-    return isPositive && isLessThanHalfPi && slopeHeightFitsInFlange;
+    return isPositive && isLessThanHalfPi && slopeHeightFitsInFlange && slopeHeightFitsInWebSpacing;
     }
 
 /*---------------------------------------------------------------------------------**//**
