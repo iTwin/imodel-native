@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/RuleSetLocater.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -18,7 +18,7 @@
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RuleSetLocaterManager::RuleSetLocaterManager(IConnectionManagerCR connections)
-    : m_connections(connections), m_cacheRulesetsOnCreated(false)
+    : m_connections(connections), m_isLocating(false)
     {
     m_connections.AddListener(*this);
     }
@@ -44,7 +44,6 @@ void RuleSetLocaterManager::_RegisterLocater(RuleSetLocater& locater)
     locater.SetRulesetCallbacksHandler(this);
     m_locaters.push_back(&locater);
     m_rulesetsCache.clear();
-    m_cacheRulesetsOnCreated = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,7 +61,6 @@ void RuleSetLocaterManager::_UnregisterLocater(RuleSetLocater const& locater)
     (*iter)->SetRulesetCallbacksHandler(nullptr);
     m_locaters.erase(iter);
     m_rulesetsCache.clear();
-    m_cacheRulesetsOnCreated = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,34 +90,8 @@ void RuleSetLocaterManager::_OnRulesetCreated(RuleSetLocaterCR locater, Presenta
     if (nullptr != GetRulesetCallbacksHandler())
         GetRulesetCallbacksHandler()->_OnRulesetCreated(locater, ruleset);
 
-    if (!m_cacheRulesetsOnCreated)
-        return;
-
-    IConnectionCP connection = locater.GetDesignatedConnection();
-    int locaterPriority = locater.GetPriority();
-    if (connection != nullptr && !ECSchemaHelper(*connection, nullptr, nullptr, nullptr, nullptr).AreSchemasSupported(ruleset.GetSupportedSchemas()))
-        return;
-
-    auto pair = m_rulesetsCache.find(CacheKey(connection == nullptr ? "" : connection->GetId(), ruleset.GetRuleSetId()));
-    if (pair == m_rulesetsCache.end())
-        m_rulesetsCache[CacheKey(connection == nullptr ? "" : connection->GetId(), ruleset.GetRuleSetId())].push_back(CacheValue(&ruleset, locaterPriority));
-    else
-        {
-        Utf8StringCR fullId = ruleset.GetFullRuleSetId();
-        for (CacheValue& cacheValue : pair->second)
-            {
-            if (!cacheValue.m_ruleset->GetFullRuleSetId().Equals(fullId))
-                continue;
-
-            if (locaterPriority > cacheValue.m_locaterPriority)
-                {
-                pair->second.erase(&cacheValue);
-                pair->second.push_back(CacheValue(&ruleset, locaterPriority));
-                }
-            return;
-            }
-        pair->second.push_back(CacheValue(&ruleset, locaterPriority));
-        }
+    if (!m_isLocating)
+        RemoveCachedRulesets(ruleset.GetRuleSetId().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -148,6 +120,14 @@ void RuleSetLocaterManager::_InvalidateCache(Utf8CP rulesetId)
     for (RuleSetLocaterPtr const& locater : m_locaters)
         locater->InvalidateCache(rulesetId);
 
+    RemoveCachedRulesets(rulesetId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RuleSetLocaterManager::RemoveCachedRulesets(Utf8CP rulesetId)
+    {
     bvector<CacheKey> toErase;
     for (auto pair : m_rulesetsCache)
         {
@@ -190,9 +170,7 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(IConnecti
         if (cacheIterWithId != m_rulesetsCache.end() || cacheIterWithoutId != m_rulesetsCache.end())
             return rulesets;
         }
-
-    m_cacheRulesetsOnCreated = false;
-
+    
     bvector<RuleSetLocaterPtr> sortedLocaters = m_locaters;
     std::sort(sortedLocaters.begin(), sortedLocaters.end(), [](RuleSetLocaterPtr a, RuleSetLocaterPtr b)
         {
@@ -202,6 +180,8 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(IConnecti
             return 1;
         return 0;
         });
+
+    m_isLocating = true;
 
     bmap<Utf8String, PresentationRuleSetPtr> locatedRulesets;
     for (RuleSetLocaterPtr& locater : sortedLocaters)
@@ -224,11 +204,12 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(IConnecti
             }
         }
 
+    m_isLocating = false;
+
     bvector<PresentationRuleSetPtr> results;
     for (auto& pair : locatedRulesets)
         results.push_back(pair.second);
 
-    m_cacheRulesetsOnCreated = true;
     return results;
     }
 
@@ -285,14 +266,13 @@ void RuleSetLocater::InvalidateCache(Utf8CP rulesetId)
 void RuleSetLocater::OnRulesetDisposed(PresentationRuleSetR ruleset) const
     {
     BeMutexHolder lock(GetMutex());
+
+    auto iter = std::find(m_createdRulesets.begin(), m_createdRulesets.end(), &ruleset);
+    if (m_createdRulesets.end() != iter)
+        m_createdRulesets.erase(iter);
+
     if (nullptr != m_rulesetCallbacksHandler)
         m_rulesetCallbacksHandler->_OnRulesetDispose(*this, ruleset);
-    else
-        {
-        auto iter = std::find(m_createdRulesets.begin(), m_createdRulesets.end(), &ruleset);
-        if (m_createdRulesets.end() != iter)
-            m_createdRulesets.erase(iter);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -301,17 +281,11 @@ void RuleSetLocater::OnRulesetDisposed(PresentationRuleSetR ruleset) const
 void RuleSetLocater::OnRulesetCreated(PresentationRuleSetR ruleset) const
     {
     BeMutexHolder lock(GetMutex());
+
+    m_createdRulesets.push_back(&ruleset);
+
     if (nullptr != m_rulesetCallbacksHandler)
-        {
-        // unused
-        // IConnectionCP connection = GetDesignatedConnection();
-        // Utf8CP connectionId = nullptr;
-        // if (connection != nullptr)
-        //     Utf8StringCP connectionId = &connection->GetId();
         m_rulesetCallbacksHandler->_OnRulesetCreated(*this, ruleset);
-        }
-    else
-        m_createdRulesets.push_back(&ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,8 +300,7 @@ void RuleSetLocater::SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handle
     if (nullptr != m_rulesetCallbacksHandler)
         {
         for (RefCountedPtr<PresentationRuleSet> const& ruleset : m_createdRulesets)
-            OnRulesetCreated(*ruleset);
-        m_createdRulesets.clear();
+            m_rulesetCallbacksHandler->_OnRulesetCreated(*this, *ruleset);
         }
     }
 
