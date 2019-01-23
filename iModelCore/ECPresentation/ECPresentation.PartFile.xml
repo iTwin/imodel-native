@@ -298,11 +298,11 @@
     </Product>
 
     <!-- Memory leak testing -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x64">
+<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="ECPresentation-Gtest" />
     </Part>
-
+ -->
     <!-- Desktop -->
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="ECPresentation-Tests"/>

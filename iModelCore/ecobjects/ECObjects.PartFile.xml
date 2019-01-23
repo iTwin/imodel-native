@@ -168,11 +168,11 @@
     </Part>
 
     <!-- Memory leak testing of ECObjects tests. Only called on demand -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECObjects-Gtest -dGTEST_NAME=ECObjectsTest" OnlyPlatforms="x64">
+<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECObjects-Gtest -dGTEST_NAME=ECObjectsTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="ECObjects-Gtest" />
     </Part>
-
+ -->
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->

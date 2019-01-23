@@ -371,11 +371,11 @@
     </Part>
 
     <!-- Memory leak testing of DgnV8Converter tests. Only called on demand -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64">
+<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="DgnV8ConverterTests" />
     </Part>
-
+ -->
     <Part Name="FontConverterAppExe" BentleyBuildMakeFile="DgnV8/Converters/FontConverterApp.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="DgnV8ConverterDLL"/>
         <SubPart PartName="LoggingNative" PartFile="iModelCore/LoggingSDK/LoggingSDK"/>

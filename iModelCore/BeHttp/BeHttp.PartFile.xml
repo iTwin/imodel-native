@@ -277,11 +277,11 @@
     </Part>
 
     <!-- Memory leak testing of BeHttp tests. Only called on demand -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=BeHttp-Gtest -dGTEST_NAME=BeHttpTest" OnlyPlatforms="x64">
+<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=BeHttp-Gtest -dGTEST_NAME=BeHttpTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="BeHttp-Gtest" />
     </Part>
-
+ -->
 
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="iModelCore-CodeCoverage" OnlyPlatforms="x64" PrgOutputDir="iModelCoreCoverage">
+        <SubPart PartName="Bentley-CodeCoverage"/>
+        <SubPart PartName="BeSecurity-CodeCoverage"/>
+        <SubPart PartName="BeSQLite-CodeCoverage"/>
+        <SubPart PartName="DgnPlatform-CodeCoverage"/>
+        <SubPart PartName="ECDb-CodeCoverage"/>
+        <SubPart PartName="ECObjects-CodeCoverage"/>
+        <SubPart PartName="ECPresentation-CodeCoverage"/>
+        <SubPart PartName="GeomLibs-CodeCoverage"/>
+        <SubPart PartName="Licensing-CodeCoverage"/>
+        <SubPart PartName="Units-CodeCoverage"/>
+        <SubPart PartName="WSClient-CodeCoverage"/>
+    </Part>
+
+    <Part Name="Bentley-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=Bentley" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/Bentley/Bentley" ProductName="Bentley-GTest"/>
+    </Part>
+
+    <Part Name="BeSecurity-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=BeSecurity" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/BeSecurity/BeSecurity" ProductName="BeSecurity-GTest"/>
+    </Part>
+
+    <Part Name="BeSQLite-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=BeSQLite" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/BeSQLite/BeSQLite" ProductName="BeSQLite-GTest"/>
+    </Part>
+
+    <Part Name="DgnPlatform-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=DgnPlatform" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform" ProductName="DgnPlatform-GTest"/>
+    </Part>
+
+    <Part Name="ECDb-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=ECDb" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/ECDb/ECDb" ProductName="ECDb-GTest"/>
+    </Part>
+
+    <Part Name="ECObjects-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=ECObjects" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/ECObjects/ECObjects" ProductName="ECObjects-GTest"/>
+    </Part>
+
+    <Part Name="ECPresentation-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=ECPresentation" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/ECPresentation/ECPresentation" ProductName="ECPresentation-GTest"/>
+    </Part>
+
+    <Part Name="GeomLibs-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=GeomLibs" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/GeomLibs/GeomLibs" ProductName="GeomLibs-GTest"/>
+    </Part>
+
+    <Part Name="Licensing-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=Licensing" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" ProductName="Licensing-GTest"/>
+    </Part>
+
+    <Part Name="Units-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=Units" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/Units/Units" ProductName="Units-GTest"/>
+    </Part>
+
+    <Part Name="WSClient-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=WSClient" OnlyPlatforms="x64">
+        <SubProduct Repository="imodel02" PartFile="iModelCore/WSClient/WSClient" ProductName="WSClient-GTest"/>
+    </Part>
+
+</BuildContext>

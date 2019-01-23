@@ -23,17 +23,5 @@
             "version_env": "VER_IMODELBRIDGECORE",
             "version_seed": "2.1.0"
         }
-    ],
-
-    "archived_strategies": [
-        {
-            "comments": "Integration tests that take too long for PR turnaround",
-
-            "name": "IModelEvolutionTests",
-            "archs": "x64",
-            "augments": "BuildAll",
-            "version_env": "VER_IMODELEVOLUTIONTESTS",
-            "version_seed": "2.1.0"
-        }
     ]
 }

@@ -119,11 +119,11 @@
     </Part>
 
     <!-- Memory leak testing of Bentley tests -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=Bentley-Gtest -dGTEST_NAME=BentleyTest" OnlyPlatforms="x64">
+<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=Bentley-Gtest -dGTEST_NAME=BentleyTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="Bentley-Gtest" />
     </Part>
-
+ -->
     <!--                ********************** -->
     <!--                **** AndroidJUnit **** -->
     <!--                ********************** -->

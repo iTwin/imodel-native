@@ -584,11 +584,11 @@
     </Part>
 
     <!-- Memory leak testing of DgnPlatform tests. Only called on demand -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x64">
+<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="DgnPlatform-Gtest" />
     </Part>
-    
+ -->    
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
@@ -677,7 +677,7 @@
     <!-- ******************************************************************************************* -->
 
     <Part Name="DgnPlatformNoViewTested" PrgOutputDir="DgnClientSdk">
-      <RequiredRepository>DgnDbTestingScripts</RequiredRepository><!--To Automate Unit Testing on Linux-->
+       <!-- <RequiredRepository>DgnDbTestingScripts</RequiredRepository> --><!--To Automate Unit Testing on Linux -->
                 
       <!-- Cannot include because they depend on DgnView
       <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
