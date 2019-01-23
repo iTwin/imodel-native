@@ -216,6 +216,21 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_SlopeAndRoundings",
                                           6, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 12), 0.5, Angle::FromRadians (PI / 48)));
 
+    InsertProfileGeometry<TTShapeProfile> (TTShapeProfile::CreateParams (GetModel(), "TTShape plain",
+                                          10, 10, 1, 1, 2, 0, 0, Angle::FromRadians (0), 0, Angle::FromRadians (0)), true);
+    InsertProfileGeometry<TTShapeProfile> (TTShapeProfile::CreateParams (GetModel(), "TTShape fillet and rounded edges",
+                                          10, 10, 1, 1, 2, 0.5, 0.5, Angle::FromRadians (0), 0.5, Angle::FromRadians (0)));
+    InsertProfileGeometry<TTShapeProfile> (TTShapeProfile::CreateParams (GetModel(), "TTShape max fillet (fillet between webs cliped)",
+                                          10, 10, 1, 1, 2, 1.5, 0.1, Angle::FromRadians (0), 0.1, Angle::FromRadians (0)));
+    InsertProfileGeometry<TTShapeProfile> (TTShapeProfile::CreateParams (GetModel(), "TTShape with slopes",
+                                          10, 10, 1, 1, 2, 0, 0, Angle::FromRadians (PI / 32), 0, Angle::FromRadians (PI / 64)));
+    InsertProfileGeometry<TTShapeProfile> (TTShapeProfile::CreateParams (GetModel(), "TTShape max web slope",
+                                          10, 10, 1, 1, 2, 0, 0, Angle::FromRadians (0), 0, Angle::FromRadians (0.11)));
+    InsertProfileGeometry<TTShapeProfile> (TTShapeProfile::CreateParams (GetModel(), "TTShape max web slope with flange slope present",
+                                          10, 10, 1, 1, 2, 0, 0, Angle::FromRadians (0.3217), 0, Angle::FromRadians (0.124)));
+    InsertProfileGeometry<TTShapeProfile> (TTShapeProfile::CreateParams (GetModel(), "TTShape slopes and roundings",
+                                          10, 10, 1, 1, 2, 0.25, 0.5, Angle::FromRadians (PI / 24), 0.3, Angle::FromRadians (PI / 64)));
+
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_Plain", 3.5, 10, 1, 1, 0, 0), true);
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_FilletAndRoundedEdge", 3.5, 10, 1, 1, 0.5, 0.5));
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_MaxFillet", 3.5, 10, 1, 1, 1.0, 0.1));
