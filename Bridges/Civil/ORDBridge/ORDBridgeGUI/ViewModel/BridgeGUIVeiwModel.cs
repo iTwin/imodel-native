@@ -5,6 +5,7 @@ using Microsoft.Win32;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Windows.Controls;
+using System.Collections;
 
 namespace ORDBridgeGUI.ViewModel
     {
@@ -16,6 +17,12 @@ namespace ORDBridgeGUI.ViewModel
 
     class BridgeGUIViewModel : ViewModelBase
         {
+        // Using for looking up Registry Values
+        private const string OPENROADS  = @"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}";
+        private const string OPENRAIL   = @"SOFTWARE\Bentley\OpenRailDesigner\{718972C7-007F-4F72-8AD5-5B0B750E2493}";
+        private const string OPENBRIDGE = @"SOFTWARE\Bentley\OpenBridgeModeler\{81969A98-EDF7-4B21-9D23-7A15482E543F}";
+        private const string ORDBRIDGE  = @"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge";
+
         private PublisherType m_selectedPublisher;
 
         private string m_inputFile;
@@ -25,6 +32,17 @@ namespace ORDBridgeGUI.ViewModel
         private string[] m_rootModelEntries;
         private string m_selectedRootModel;
         private string m_rootModel;
+
+        private bool m_isDgnInstalled;
+        private string m_openRoadsInstall;
+        private string m_openRailInstall;
+        private string m_openBridgeInstall;
+        private string[] m_dgnInstallEntries;
+        private string m_selectedDgnInstall;
+
+        private string m_defaultRoadsWorkspacePath;
+        private string m_defaultRailWorkspacePath;
+        private string m_defaultBridgeWorkspacePath;
 
         // publisher
         private string m_output;
@@ -42,6 +60,7 @@ namespace ORDBridgeGUI.ViewModel
 
         private bool m_isPublisherRunning;
 
+        #region Mutators
         public PublisherType SelectedPublisher
             {
             get
@@ -170,78 +189,105 @@ namespace ORDBridgeGUI.ViewModel
                 }
             }
 
+        public bool IsPowerPlatformProductSelected
+            {
+            get
+                {
+                return m_isDgnInstalled;
+                }
+            set
+                {
+                m_isDgnInstalled = value;
+                RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(IsDgnInstalled));
+                }
+            }
+
+        public string[] DgnInstallEntries
+            {
+            get
+                {
+                return m_dgnInstallEntries;
+                }
+            set
+                {
+                m_dgnInstallEntries = value;
+                RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(DgnInstallEntries));
+                }
+            }
+
+        public string SelectedDGNInstall
+            {
+            get
+                {
+                return m_selectedDgnInstall;
+                }
+            set
+                {
+                m_selectedDgnInstall = value;
+                RaisePropertyChangedEvent();
+                //RaisePropertyChangedEvent(nameof(SelectedDGNInstall));
+
+                GetSelectedPowerProductWorkspaces();
+                IsPowerPlatformProductSelected = !SelectedDGNInstall.Equals("None");
+                }
+            }
+        #endregion
+
         public BridgeGUIViewModel ()
             {
             Input = "";
             Output = "";
-
             ImsUsername = "";
             ConnectProject = "";
             ConnectOutput = "";
+
 #if DEVELOPER
             m_connectEnv = "QA";
 #else
-            //m_connectEnv = "RELEASE";
-            m_connectEnv = "QA";
+            m_connectEnv = "RELEASE";
 #endif
-
-            m_dgnInstall = LocateDgnInstall();
-            m_dgnInstall = m_dgnInstall.Substring(0, m_dgnInstall.Length - 1);
-            m_bridgeDll = LocateBridgeDll();
-
-            string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ConfigurationPath").ToString();
-            workspacePath = Path.Combine(workspacePath, "Workspaces");
-            WorkspaceEntries = GetWorkspaces(workspacePath);
-            SelectedWorkspace = WorkspaceEntries[0];
+            FindORDBSpecificPaths();
+            DgnInstallEntries = GetDgnInstalls();
+            SelectedDGNInstall = DgnInstallEntries[0];
 
             string[] rootModels = { "Default", "Active", "Other" };
             RootModelEntries = rootModels;
             SelectedRootModel = RootModelEntries[0];
 
-            FindExePaths();
-
             m_isPublisherRunning = false;
             }
 
-        public void FindExePaths ()
+        public void FindORDBSpecificPaths ()
             {
             var curDir = new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).DirectoryName;
             var curDirPublisher = String.Format("{0}\\{1}", curDir, "PublishORDToBIM.exe");
             var curDirFramework = String.Format("{0}\\{1}", curDir, "iModelBridgeFwk.exe");
+            var curDirBridgeDll = String.Format("{0}\\{1}", curDir, "ORDBridge.dll");
 
-            var publisherPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoads Designer Bridge\{BA04D7DE-6102-4C66-B0C0-7C488B8CDD17}")?.GetValue("InstallDir").ToString();
-            publisherPathFromRegistry = Path.Combine(publisherPathFromRegistry, "PublishORDToBIM.exe");
-            //var frameworkPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("PublishORDToBimExe").ToString();
+            var publisherPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(ORDBRIDGE)?.GetValue("PublishORDToBimExe")?.ToString();
+            var frameworkPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(ORDBRIDGE)?.GetValue("iModelFrameWorkExe")?.ToString();
+            var ordbDLLPathFromRegistry   = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(ORDBRIDGE)?.GetValue("BridgeLibraryPath")?.ToString();
 
-            var frameworkPathFromRegistry = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("iModelFrameWorkExe").ToString();
+            m_publisherPath = File.Exists(curDirPublisher) ? curDirPublisher : publisherPathFromRegistry;
+            m_frameworkPath = File.Exists(curDirFramework) ? curDirFramework : frameworkPathFromRegistry;
+            m_bridgeDll     = File.Exists(curDirBridgeDll) ? curDirBridgeDll : ordbDLLPathFromRegistry;
 
-            if ( File.Exists(curDirPublisher) )
-                {
-                m_publisherPath = curDirPublisher;
-                }
-            else if ( File.Exists(publisherPathFromRegistry) )
-                {
-                m_publisherPath = publisherPathFromRegistry;
-                }
-            else
-                {
-                System.Windows.MessageBox.Show("Please downlaod the Civil iModel Bridge. \"PublishORDToBim.exe\" is missing!");
-                m_publisherPath = "";
-                }
+            if ( m_publisherPath != null && m_frameworkPath != null && m_bridgeDll != null )
+                return;
 
-            if ( File.Exists(curDirFramework) )
-                {
-                m_frameworkPath = curDirFramework;
-                }
-            else if ( File.Exists(frameworkPathFromRegistry) )
-                {
-                m_frameworkPath = frameworkPathFromRegistry;
-                }
-            else
-                {
-                System.Windows.MessageBox.Show("Please downlaod the Civil iModel Bridge. \"iModelBridgeFwk.exe\" is missing!");
-                m_frameworkPath = "";
-                }
+            var errorMsg = "Please download the Civil iModel Bridge...";
+
+            if ( m_publisherPath == null )
+                errorMsg += "\n - \"PublishORDToBim.exe\" is missing!";
+            if ( m_frameworkPath == null )
+                errorMsg += "\n - \"iModelBridgeFwk.exe\" is missing!";
+            if ( m_bridgeDll == null )
+                errorMsg += "\n - \"ORDBridge.dll\" is missing!";
+
+            MessageBox.Show(errorMsg, "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            Environment.Exit(-1);
             }
 
         public ICommand SelectFileCommand
@@ -270,7 +316,7 @@ namespace ORDBridgeGUI.ViewModel
             {
             get
                 {
-                return new RelayCommand((obj) => DoSelectOutDirCommand(), (obj) => String.IsNullOrEmpty(Input));
+                return new RelayCommand((obj) => DoSelectOutDirCommand());
                 }
             }
 
@@ -299,7 +345,27 @@ namespace ORDBridgeGUI.ViewModel
 
         private string LocateDgnInstall ()
             {
-            return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ProgramPath").ToString();
+            return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENROADS)?.GetValue("ProgramPath")?.ToString();
+            }
+
+        private void GetSelectedPowerProductWorkspaces ()
+            {
+            if ( SelectedDGNInstall.Equals("None") )
+                {
+                m_dgnInstall = null;
+                WorkspaceEntries = new string[0];
+                SelectedWorkspace = "";
+                return;
+                }
+            else if ( SelectedDGNInstall.Equals("OpenRoads Designer") )
+                m_dgnInstall = m_defaultRoadsWorkspacePath;
+            else if ( SelectedDGNInstall.Equals("OpenRail Designer") )
+                m_dgnInstall = m_defaultRailWorkspacePath;
+            else if ( SelectedDGNInstall.Equals("OpenBridge Modeler") )
+                m_dgnInstall = m_defaultBridgeWorkspacePath;
+
+            WorkspaceEntries = GetWorkspaces(m_dgnInstall);
+            SelectedWorkspace = WorkspaceEntries[0];
             }
 
         private string[] GetWorkspaces (String dir)
@@ -331,7 +397,12 @@ namespace ORDBridgeGUI.ViewModel
 
         private void DoSelectDgnWorkspaceCommand ()
             {
-            string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}")?.GetValue("ConfigurationPath").ToString();
+            string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENROADS)?.GetValue("ConfigurationPath")?.ToString();
+            if ( workspacePath == null)
+                {
+                System.Windows.MessageBox.Show("Please install Bentley OpenRoads Designer, it is missing!");
+                m_frameworkPath = "";
+                }
             workspacePath = Path.Combine(workspacePath, "Workspaces");
 
             var folderDialog = new FolderBrowserDialog
@@ -344,21 +415,6 @@ namespace ORDBridgeGUI.ViewModel
                 workspacePath = folderDialog.SelectedPath;
                 WorkspaceEntries = GetWorkspaces(workspacePath);
                 SelectedWorkspace = WorkspaceEntries[0];
-                }
-            }
-
-        private string LocateBridgeDll ()
-            {
-            var curDir = new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).DirectoryName;
-            var curDirBridgeDll = String.Format("{0}\\{1}", curDir, "ORDBridge.dll");
-
-            if ( File.Exists(curDirBridgeDll) )
-                {
-                return curDirBridgeDll;
-                }
-            else
-                {
-                return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge")?.GetValue("BridgeLibraryPath").ToString();
                 }
             }
 
@@ -375,6 +431,8 @@ namespace ORDBridgeGUI.ViewModel
             if ( !shouldRun )
                 return;
 
+            bool runPublisher = SelectedPublisher == PublisherType.Local;
+
             string rootModel;
             if ( SelectedRootModel == "Default" )
                 {
@@ -389,18 +447,27 @@ namespace ORDBridgeGUI.ViewModel
                 rootModel = RootModel;
                 }
 
-            string publisherArgs = String.Format("--input=\"{0}\" --output=\"{1}\" --DGN-Install=\"{2}\" --DGN-Workspace=\"{3}\" --root-model=\"{4}\"",
-                Input, Output, m_dgnInstall, SelectedWorkspace, rootModel);
+            string publisherArgs = String.Format("--input=\"{0}\" --output=\"{1}\" --root-model=\"{2}\"", Input, Output, rootModel);
 
-            m_stagingDir = String.Format("{0}Staging", Path.GetDirectoryName(Input));
-            System.IO.Directory.CreateDirectory(m_stagingDir);
+            m_stagingDir = String.Format("{0}\\Staging", Path.GetDirectoryName(Input));
+            if ( !runPublisher )
+                {
+                System.IO.Directory.CreateDirectory(m_stagingDir);
+                }
 
             string frameworkArgs = String.Format("--server-project=\"{0}\" --server-repository=\"{1}\" --server-environment=\"{2}\" --server-user=\"{3}\" --server-password=\"{4}\" " +
-                                                 "--fwk-input=\"{5}\" --fwk-staging-dir=\"{6}\" --fwk-bridge-library=\"{7}\" --fwk-skip-assignment-check --DGN-Install=\"{8}\" --DGN-Workspace=\"{9}\" --root-model=\"{10}\"",
-                ConnectProject, ConnectOutput, m_connectEnv, ImsUsername, pwBox.Password, Input, m_stagingDir, m_bridgeDll, m_dgnInstall, SelectedWorkspace, rootModel);
+                                                 "--fwk-input=\"{5}\" --fwk-staging-dir=\"{6}\" --fwk-bridge-library=\"{7}\" --fwk-skip-assignment-check --root-model=\"{8}\"",
+                                                ConnectProject, ConnectOutput, m_connectEnv, ImsUsername, pwBox.Password, Input, m_stagingDir, m_bridgeDll, rootModel);
 
-            string exe = (SelectedPublisher == PublisherType.Local) ? m_publisherPath : m_frameworkPath;
-            string args = (SelectedPublisher == PublisherType.Local) ? publisherArgs : frameworkArgs;
+            if ( IsPowerPlatformProductSelected )
+                {
+                String optionWorkspaceArgs = String.Format(" --DGN-Install=\"{0}\" --DGN-Workspace=\"{1}\" ", m_dgnInstall, SelectedWorkspace);
+                publisherArgs += optionWorkspaceArgs;
+                frameworkArgs += optionWorkspaceArgs;
+                }
+
+            string exe = runPublisher ? m_publisherPath : m_frameworkPath;
+            string args = runPublisher ? publisherArgs : frameworkArgs;
 
             var proc = new Process
                 {
@@ -437,22 +504,22 @@ namespace ORDBridgeGUI.ViewModel
             switch ( exitCode )
                 {
                 case 0:
-                    System.Windows.MessageBox.Show("INFO: The conversion completed successfully.", "Pass");
+                    MessageBox.Show("The conversion completed successfully.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 case 1:
-                    System.Windows.MessageBox.Show("ERROR: Entered parameters are incorrect", "Failure");
+                    MessageBox.Show("Entered parameters are incorrect", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 2:
-                    System.Windows.MessageBox.Show("ERROR: A converter error has occurred.", "Failure");
+                    MessageBox.Show("A converter error has occurred.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 3:
-                    System.Windows.MessageBox.Show("ERROR: A server error has occurred.", "Failure");
+                    MessageBox.Show("A server error has occurred.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 4:
-                    System.Windows.MessageBox.Show("ERROR: A local error has occurred.", "Failure");
+                    MessageBox.Show("A local error has occurred.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 default:
-                    System.Windows.MessageBox.Show("ERROR: An unknown error has occurred.", "Failure");
+                    MessageBox.Show("An unknown error has occurred.", "Civil iModel Bridge - \"PublishORDToBIM.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 }
             }
@@ -462,28 +529,28 @@ namespace ORDBridgeGUI.ViewModel
             switch ( exitCode )
                 {
                 case 0:
-                    System.Windows.MessageBox.Show("INFO: The conversion completed successfully.", "Pass");
+                    MessageBox.Show("The conversion completed successfully.", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 case 1:
-                    System.Windows.MessageBox.Show("INFO: This file has an Affinity Level of \"None.\"", "Affinity Check Failure");
+                    MessageBox.Show("This file has an Affinity Level of \"None\".", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
                 case 2:
-                    System.Windows.MessageBox.Show("INFO: This file has an Affinity Level of \"Low.\"", "Affinity Check Failure");
+                    MessageBox.Show("This file has an Affinity Level of \"Low\".", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
-                case 3:
-                    System.Windows.MessageBox.Show("INFO: This file has an Affinity Level of \"Medium.\"", "Affinity Check Failure");
+                case 3: // Not sure how this will be possible. Bridge will either determine if model has High affinity or none/low
+                    MessageBox.Show("This file has an Affinity Level of \"Medium\".", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
-                case 4:
-                    System.Windows.MessageBox.Show("INFO: This file has an Affinity Level of \"High.\"", "Affinity Check Failure");
+                case 4: // I wouldn't think this would be an error but its one of the erro codes listed in DgnDbSync platform bridge code. Eitherway should never get hit
+                    MessageBox.Show("This file has an Affinity Level of \"High\".", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
                 case 4097:
-                    System.Windows.MessageBox.Show("ERROR: Failed to parse command line arguments.", "Failure");
+                    MessageBox.Show("Failed to parse arguments.", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 4098:
-                    System.Windows.MessageBox.Show("ERROR: Failed to initialize the iModel Bridge.", "Failure");
+                    MessageBox.Show("Failed to initialize the iModel Bridge.", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 case 32768:
-                    System.Windows.MessageBox.Show("ERROR: General failure.", "Failure");
+                    MessageBox.Show("General failure.", "Civil iModel Bridge - \"iModelBridgeFwk.exe\"", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 }
             }
@@ -492,7 +559,7 @@ namespace ORDBridgeGUI.ViewModel
             {
             if ( String.IsNullOrEmpty(Input) )
                 {
-                System.Windows.MessageBox.Show("Input cannot be empty");
+                MessageBox.Show("Input cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
                 }
 
@@ -500,7 +567,7 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 if ( String.IsNullOrEmpty(Output) )
                     {
-                    System.Windows.MessageBox.Show("Local Ouptut cannot be empty");
+                    MessageBox.Show("Local Ouptut cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 }
@@ -508,22 +575,22 @@ namespace ORDBridgeGUI.ViewModel
                 {
                 if ( String.IsNullOrEmpty(ConnectProject) )
                     {
-                    System.Windows.MessageBox.Show("CONNECT Project ID cannot be empty");
+                    MessageBox.Show("CONNECT Project ID cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 else if ( String.IsNullOrEmpty(ConnectOutput) )
                     {
-                    System.Windows.MessageBox.Show("iModel Name cannot be empty");
+                    MessageBox.Show("iModel Name cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 else if ( String.IsNullOrEmpty(ImsUsername) )
                     {
-                    System.Windows.MessageBox.Show("IMS Username cannot be empty");
+                    MessageBox.Show("IMS Username cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 else if ( String.IsNullOrEmpty(imsPw) )
                     {
-                    System.Windows.MessageBox.Show("IMS Passwod cannot be empty");
+                    MessageBox.Show("IMS Passwod cannot be empty", "Civil iModel Bridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                     }
                 }
@@ -534,6 +601,41 @@ namespace ORDBridgeGUI.ViewModel
                 }
 
             return true;
+            }
+
+        private string[] GetDgnInstalls ()
+            {
+            m_openRoadsInstall = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENROADS)?.GetValue("ProgramPath")?.ToString();
+            m_openRailInstall = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENRAIL)?.GetValue("ProgramPath")?.ToString();
+            //m_openBridgeInstall = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENBRIDGE)?.GetValue("ProgramPath")?.ToString();
+
+            ArrayList dgnInstallList = new ArrayList {"None"};
+
+            if ( m_openRoadsInstall != null )
+                {
+                m_openRoadsInstall = m_openRoadsInstall.Substring(0, m_openRoadsInstall.Length - 1);
+                dgnInstallList.Add("OpenRoads Designer");
+                string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENROADS)?.GetValue("ConfigurationPath")?.ToString();
+                m_defaultRoadsWorkspacePath = Path.Combine(workspacePath, "Workspaces");
+                }
+
+            if ( m_openRailInstall != null )
+                {
+                m_openRailInstall = m_openRailInstall.Substring(0, m_openRailInstall.Length - 1);
+                dgnInstallList.Add("OpenRail Designer");
+                string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENRAIL)?.GetValue("ConfigurationPath")?.ToString();
+                m_defaultRailWorkspacePath = Path.Combine(workspacePath, "Workspaces");
+                }
+
+            //if ( m_openBridgeInstall != null )
+            //    {
+            //    m_openBridgeInstall = m_openBridgeInstall.Substring(0, m_openBridgeInstall.Length - 1);
+            //    dgnInstallList.Add("OpenBridge Modeler");
+            //    string workspacePath = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)?.OpenSubKey(OPENBRIDGE)?.GetValue("ConfigurationPath")?.ToString();
+            //    m_defaultBridgeWorkspacePath = Path.Combine(workspacePath, "Workspaces");
+            //    }
+
+            return dgnInstallList.ToArray(typeof(string)) as string[];
             }
 
         }

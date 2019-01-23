@@ -198,7 +198,7 @@ SubjectCPtr ORDBridge::_InitializeJob()
 
         auto physicalPartitionCPtr = subjectCR.GetDgnDb().Elements().Get<PhysicalPartition>(*physicalPartitionIds.begin());
 
-        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR, 
+        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR,
             physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
 
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
@@ -227,8 +227,8 @@ SubjectCPtr ORDBridge::_InitializeJob()
 //---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     {
-    // This if statement's work is also done in _InitializeJob(), but when the bridge goes off for a second time (an update), 
-    // _InitializeJob() is not called. It's possible that this work can (should?) be just done here and NOT in _InitializeJob(), 
+    // This if statement's work is also done in _InitializeJob(), but when the bridge goes off for a second time (an update),
+    // _InitializeJob() is not called. It's possible that this work can (should?) be just done here and NOT in _InitializeJob(),
     // but I'm not sure yet.
     if (!m_converter->IsPhysicalNetworkModelSet())
         {
@@ -397,7 +397,7 @@ void ORDBridge::_DeleteSyncInfo()
     briefcaseName = briefcaseName.AppendExtension(L"syncinfo");
     if (!briefcaseName.DoesPathExist())
         return;
-    briefcaseName.BeDeleteFile();    
+    briefcaseName.BeDeleteFile();
     }
 
 END_ORDBRIDGE_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDBridgeGUI/ViewModel/ViewModelBase.cs $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -89,7 +89,7 @@ namespace ORDBridgeGUI.ViewModel
         //public void RaisePropertyChangedEvent (string propertyName = null)
         public void RaisePropertyChangedEvent ([CallerMemberName] string propertyName = null)
             {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke (this, new PropertyChangedEventArgs (propertyName));
             //if ( PropertyChanged != null )
             //    PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
