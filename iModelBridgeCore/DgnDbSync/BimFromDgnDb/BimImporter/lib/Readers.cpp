@@ -2115,6 +2115,15 @@ BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
     }
 
 //---------------------------------------------------------------------------------------
+// CalculatedPropertyConverter                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+struct CalculatedPropertyConverter : ECN::IECCustomAttributeConverter
+    {
+    public:
+        ECN::ECObjectsStatus Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, ECN::ECSchemaReadContextP context);
+    };
+
+//---------------------------------------------------------------------------------------
 // ExtendTypeConverter                                   Carole.MacDonald            08/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 static Utf8CP const EXTEND_TYPE = "ExtendType";
@@ -2265,6 +2274,16 @@ Utf8CP getAngleUnitName(Utf8StringCR unit)
         return "ARC_DEG";
     return "RAD";
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::ECObjectsStatus CalculatedPropertyConverter::Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, ECN::ECSchemaReadContextP context)
+    {
+    container.RemoveCustomAttribute(instance.GetClass());
+    return ECN::ECObjectsStatus::Success;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -2488,6 +2507,9 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
 
     ECN::IECCustomAttributeConverterPtr extendType = new ExtendTypeConverter(m_importer->m_masterUnit);
     ECN::ECSchemaConverter::AddConverter("EditorCustomAttributes", EXTEND_TYPE, extendType);
+
+    ECN::IECCustomAttributeConverterPtr calc = new CalculatedPropertyConverter();
+    ECN::ECSchemaConverter::AddConverter("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification", calc);
 
     bvector<SchemaKey> schemasToDrop;
     for (ECN::SchemaKey key : keysToImport)
