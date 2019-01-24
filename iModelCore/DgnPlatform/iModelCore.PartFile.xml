@@ -31,6 +31,24 @@
         <SubPart PartName="RunUnitCppTest" PartFile="iModelCore/DgnPlatform/iModelCoreTesting" Repository="imodel02"/>
     </Part>
 
+    <Product Name="iModelCoreSDK" OnlyPlatforms="x64">
+        <Directories DirectoryListName="iModelCoreSDKDirs"/>
+        <SubPart PartName="iModelCore"/>
+    </Product>
+
+    <ProductDirectoryList ListName="iModelCoreSDKDirs">
+        <ProductDirectory Name="Root" Path=""/>
+
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" RelativeTo="Root" Path="bin"/>
+        <ProductDirectory Name="Assets" LibType="static" RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Assets" RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Libs" LibType="Static" RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="Libs" RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="VendorNotices" LibType="Static" RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="VendorNotices" RelativeTo="Root" Path="notices"/>
+    </ProductDirectoryList>
+
     <!-- ======================================================================================================================================== -->
     <!-- == PRIVATE ============================================================================================================================= -->
     <!-- ======================================================================================================================================== -->
@@ -39,6 +57,7 @@
         <SubPart PartName="iModelCore" LibType="Dynamic"/>
         <SubPart PartName="RunUnitTests" LibType="Dynamic"/>
         <SubPart PartName="__ParasiteSubParts" LibType="Dynamic"/>
+        <SubProduct ProductName="iModelCoreSDK"/>
     </Part>
 
     <Part Name="__iModelCorePRG-Static" OnlyPlatforms="android*,ios*,macos*,linux*">
