@@ -353,6 +353,8 @@ struct iModelExternalSourceAspect
     //! Look up the ElementId of the element that contains an aspect with the specified Scope, Kind, and SourceId. Also returns the aspect's instanceid.
     IMODEL_BRIDGE_EXPORT static ElementAndAspectId FindElementBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
 
+    IMODEL_BRIDGE_EXPORT static ElementAndAspectId FindElementByHash(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
+
     //! Look up all aspects on the specified element
     IMODEL_BRIDGE_EXPORT static bvector<iModelExternalSourceAspect> GetAll(DgnElementCR, ECN::ECClassCP aspectClass = nullptr);
 
@@ -439,6 +441,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         SourceState() : m_lmt(0) {}
         SourceState(double d, Utf8StringCR h) 
             : m_lmt(d), m_hash(h) {}
+        
+        IMODEL_BRIDGE_EXPORT SourceState(iModelExternalSourceAspect::SourceState aspectState);
 
         //! The last "time" the source item was created or modified. The definition of this value is known only to source repository.
         double GetLastModifiedTime() const {return m_lmt;}
@@ -572,9 +576,11 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
             SourceState const& GetCurrentState() const {return m_currentState;}
             };
 
+      private:
+        iModelBridgeSyncInfoFile* m_si;
       protected:
         uint32_t            m_elementsConverted = 0;
-        iModelBridgeSyncInfoFile& m_si;
+        
         DgnElementIdSet     m_elementsSeen;
         bset<ROWID>         m_scopesSkipped;
 
@@ -587,18 +593,18 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! Invoked just before an an element is deleted
         IMODEL_BRIDGE_EXPORT virtual void _OnItemDelete(Record const&);
 
-        DgnDbStatus AddProvenanceAspect(Record const& record, DgnElementR element);
+        DgnDbStatus AddProvenanceAspect(SourceIdentity const& identity, SourceState const &state, DgnElementR element);
       public:
         //! @private
         //! Construct a change detector object. This will invoke the iModelBridgeSyncInfoFile::_OnNewUpdate method on @a si
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
         //! @note You should use the same change detector object for an entire update.
-        IMODEL_BRIDGE_EXPORT ChangeDetector(iModelBridgeSyncInfoFile& si);
+        IMODEL_BRIDGE_EXPORT ChangeDetector(iModelBridgeSyncInfoFile* si);
 
         //! Get a reference to the BIM
-        DgnDbR GetDgnDb() {return m_si.GetDgnDb();}
+        virtual DgnDbR GetDgnDb() {return m_si->GetDgnDb();}
 
-        iModelBridgeSyncInfoFile& GetSyncInfo() {return m_si;}
+        iModelBridgeSyncInfoFile& GetSyncInfo() {return *m_si;}
 
         //! Used to choose one of many existing entries in SyncInfo
         typedef std::function<bool(Record const&, iModelBridgeSyncInfoFile& bridge)> T_Filter;
@@ -656,9 +662,35 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
         //! Construct a change detector that can be used efficiently by a converter that is doing an initial conversion, such that all items are new to the BIM.
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
-        InitialConversionChangeDetector(iModelBridgeSyncInfoFile& si) : ChangeDetector(si) {}
+        InitialConversionChangeDetector(iModelBridgeSyncInfoFile* si) : ChangeDetector(si) {}
         };
 
+    struct iModelBasedChangeDetector : ChangeDetector
+        {
+        DgnDbR m_dgnDb;
+        virtual DgnDbR GetDgnDb() override { return m_dgnDb; }
+        iModelBasedChangeDetector(DgnDbR dgnDb) : ChangeDetector(NULL) , m_dgnDb(dgnDb){}
+        //! Detect if the item has changed or is new.
+        //! @param scope The scoping item
+        //! @param kind the kind of source item
+        //! @param item the source item
+        //! @param filter Optional. How to choose among many records for the same item
+        //! @param forceChange Optional. If the item exists in syncinfo, then always report it as changed.
+        //! return the results of looking in syncinfo and comparing the existing syncinfo record, if any, with the item's current state.
+        IMODEL_BRIDGE_EXPORT virtual Results _DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter = nullptr, bool forceChange = false);
+
+        //! Update the BIM and syncinfo with the results of converting an item to one or more DgnElements.
+        //! If changeDetectorResults indicates that the item is new or changed, the conversion writes are written to the BIM and syncinfo is updated.
+        //! If changeDetectorResults indicates that the item is known and unchanged, then the BIM is not updated.
+        //! In either case, this function will call _OnElementSeen on the DgnElementIds in conversionResults.m_element and its children.
+        //! @note If you decide not to call this function to process unchanged items, then you must call _OnElementSeen or _OnScopeSkipped directly.
+        IMODEL_BRIDGE_EXPORT virtual BentleyStatus _UpdateBimAndSyncInfo(ConversionResults& conversionResults, ChangeDetector::Results const& changeDetectorResults);
+
+        //! Delete all elements in the BIM that are recorded in syncinfo but are not in the set of elements seen and are not the targets of mappings
+        //! in scopes that were skipped as unchanged.
+        //! @param onlyInScopes The scopes to consider. Items in all other scopes are left intact.
+        IMODEL_BRIDGE_EXPORT virtual void _DeleteElementsNotSeenInScopes(bvector<ROWID> const& onlyInScopes);
+        };
     typedef RefCountedPtr<ChangeDetector> ChangeDetectorPtr;
 
   protected:
@@ -747,10 +779,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     IMODEL_BRIDGE_EXPORT BentleyStatus DeleteItem(ROWID itemrid);
 
     //! Return the ChangeDetector that this bridge should use.
-    ChangeDetectorPtr GetChangeDetectorFor(iModelBridge& bridge) 
-        {
-        return bridge._GetParams().IsUpdating()? new ChangeDetector(*this): new InitialConversionChangeDetector(*this);
-        }
+    IMODEL_BRIDGE_EXPORT ChangeDetectorPtr GetChangeDetectorFor(iModelBridge& bridge);
+        
 };
 
 //=======================================================================================

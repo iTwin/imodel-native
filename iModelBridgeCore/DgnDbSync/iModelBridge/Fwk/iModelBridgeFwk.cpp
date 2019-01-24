@@ -1666,40 +1666,13 @@ BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
     if (m_briefcaseDgnDb->Schemas().ContainsSchema(XTRN_SRC_ASPCT_ECSCHEMA_NAME))
         return BSISUCCESS;
 
-    BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    schemaPathname.AppendToPath(L"ECSchemas/Application/SourceInfo.ecschema.xml");
-
-    if (!schemaPathname.DoesPathExist())
-        {
-        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
-        return BSIERROR;
-        }
-
-    ECN::ECSchemaPtr schema;
-    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
-    schemaContext->AddSchemaLocater(m_briefcaseDgnDb->GetSchemaLocater());
-    ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schema, schemaPathname.GetName(), *schemaContext);
-
-    // CreateSearchPathSchemaFileLocater
-    if (ECN::SchemaReadStatus::Success != status)
-        {
-        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
-        return BSIERROR;
-        }
-
     if (SUCCESS != GetSchemaLock())
         {
         GetLogger().fatal("GetSchemaLock failed for ImportElementAspectSchema after all the retries. Ignoring.");
         return BSIERROR;
         }
 
-    bvector<ECN::ECSchemaCP> schemas;
-    schemas.push_back(schema.get());
-    if (SchemaStatus::Success != m_briefcaseDgnDb->ImportV8LegacySchemas(schemas))
-        return BSIERROR;
-
-    madeChanges = true;
-    return BSISUCCESS;
+    return m_bridge->ImportElementAspectSchema(madeChanges, true, *m_briefcaseDgnDb);
     }
 
 /*---------------------------------------------------------------------------------**//**

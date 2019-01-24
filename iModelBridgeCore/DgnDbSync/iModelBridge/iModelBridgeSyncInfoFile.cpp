@@ -756,30 +756,13 @@ struct JobTransformSourceItem : iModelBridgeSyncInfoFile::ISourceItem
 bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR newTrans, TransformR oldTrans,
     iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID srid, Utf8CP kind, Utf8StringCR id)
     {
-    newTrans = GetSpatialDataTransform();
+    newTrans = GetParamsCR().GetSpatialDataTransform();
 
-    JobTransformSourceItem docItem(id, newTrans);
-
-    auto change = changeDetector._DetectChange(srid, kind, docItem);
-    iModelBridgeSyncInfoFile::ConversionResults results;
-    changeDetector._UpdateBimAndSyncInfo(results, change);
-    if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New)
-        {
+    if (BSISUCCESS != JobSubjectUtils::GetTransform(oldTrans, *GetJobSubject()))
         oldTrans.InitIdentity();
-        return !newTrans.IsIdentity();
-        }
-    if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed)
-        {
-        Json::Value json;
-        json = json.From(change.GetSyncInfoRecord().GetSourceState().GetHash());
-        JsonUtils::TransformFromJson(oldTrans, json);
-        return true;
-        }
 
-    oldTrans = newTrans;
-    return false;
+    return !AreTransformsEqual(newTrans, oldTrans);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
@@ -821,6 +804,23 @@ iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindE
     sel->BindId(1, scopeId);
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    ElementAndAspectId res;
+    if (BE_SQLITE_ROW != sel->Step())
+        return res;
+    res.elementId = sel->GetValueId<DgnElementId>(0);
+    res.aspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(1);
+    return res;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementByHash(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR hash)
+    {
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Hash=?)");
+    sel->BindId(1, scopeId);
+    sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sel->BindText(3, hash.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     ElementAndAspectId res;
     if (BE_SQLITE_ROW != sel->Step())
         return res;
@@ -1086,4 +1086,13 @@ iModelExternalSourceAspect::SourceState iModelBridgeSyncInfoFile::SourceState::G
     iModelExternalSourceAspect::DoubleToString(state.m_lastModHash, m_lmt);
     state.m_hash = m_hash;
     return state;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridgeSyncInfoFile::SourceState::SourceState(iModelExternalSourceAspect::SourceState aspectState)
+    {
+    m_hash = aspectState.m_hash;
+    m_lmt = iModelExternalSourceAspect::DoubleFromString(aspectState.m_lastModHash.c_str());
     }
