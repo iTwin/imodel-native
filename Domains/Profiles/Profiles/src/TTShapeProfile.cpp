@@ -139,7 +139,7 @@ bool TTShapeProfile::ValidateFilletRadius() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
     bool const fitsInFlange = ProfilesProperty::IsLessOrEqual (filletRadius, GetFlangeInnerFaceLength() / 2.0 - GetWebOuterSlopeHeight());
-    bool const fitsInWeb = ProfilesProperty::IsLessOrEqual (filletRadius, GetWebInnerFaceLength() / 2.0 - GetFlangeSlopeHeight());
+    bool const fitsInWeb = ProfilesProperty::IsLessOrEqual (filletRadius, GetWebOuterFaceLength() / 2.0 - GetFlangeSlopeHeight());
     // FilletRadius is not being validated against WebSpacing, because fillet radius used between the two webs
     // is adjusted/cliped if it is too big (i.e. doesn't fit in the spacing)
 
@@ -173,7 +173,7 @@ bool TTShapeProfile::ValidateFlangeSlope() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeSlope);
     bool const isLessThanHalfPi = ProfilesProperty::IsLess (flangeSlope, PI / 2.0);
-    bool const slopeHeightFitsInWeb = ProfilesProperty::IsLessOrEqual (GetFlangeSlopeHeight(), GetWebInnerFaceLength() / 2.0);
+    bool const slopeHeightFitsInWeb = ProfilesProperty::IsLessOrEqual (GetFlangeSlopeHeight(), GetWebOuterFaceLength() / 2.0);
 
     return isPositive && isLessThanHalfPi && slopeHeightFitsInWeb;
     }
@@ -188,7 +188,7 @@ bool TTShapeProfile::ValidateWebEdgeRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (webEdgeRadius);
-    bool const fitsInWebLength = ProfilesProperty::IsLessOrEqual (webEdgeRadius, GetWebInnerFaceLength() / 2.0);
+    bool const fitsInWebLength = ProfilesProperty::IsLessOrEqual (webEdgeRadius, GetWebOuterFaceLength() / 2.0);
     bool const fitsInWebThickness = ProfilesProperty::IsLessOrEqual (webEdgeRadius, GetWebThickness() / 2.0);
 
     return isPositive && fitsInWebLength && fitsInWebThickness;
@@ -396,6 +396,14 @@ double TTShapeProfile::GetFlangeSlopeHeight() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TTShapeProfile::GetWebInnerFaceLength() const
     {
+    return GetWebOuterFaceLength() - GetFlangeSlopeHeight();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+double TTShapeProfile::GetWebOuterFaceLength() const
+    {
     return GetDepth() - GetFlangeThickness();
     }
 
@@ -408,7 +416,7 @@ double TTShapeProfile::GetWebInnerSlopeHeight() const
     if (BeNumerical::IsLessOrEqualToZero (webSlopeCos))
         return 0.0;
 
-    return ((GetWebInnerFaceLength() - GetFlangeSlopeHeight()) / webSlopeCos) * GetWebSlope().Sin();
+    return (GetWebInnerFaceLength() / webSlopeCos) * GetWebSlope().Sin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -420,7 +428,7 @@ double TTShapeProfile::GetWebOuterSlopeHeight() const
     if (BeNumerical::IsLessOrEqualToZero (webSlopeCos))
         return 0.0;
 
-    return (GetWebInnerFaceLength() / webSlopeCos) * GetWebSlope().Sin();
+    return (GetWebOuterFaceLength() / webSlopeCos) * GetWebSlope().Sin();
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
