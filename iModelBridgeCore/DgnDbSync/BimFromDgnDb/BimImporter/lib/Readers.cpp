@@ -2616,10 +2616,10 @@ BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& groups)
             continue;
             }
 
-        GenericGroupPtr groupElement = GetDgnDb()->Elements().GetForEdit<GenericGroup>(mappedGroup);
+        DgnElementPtr groupElement = GetDgnDb()->Elements().GetForEdit<DgnElement>(mappedGroup);
         if (!groupElement.IsValid())
             {
-            Utf8PrintfString error("Unable to get GroupInformationElement(%s).", mappedGroup.ToString().c_str());
+            Utf8PrintfString error("Unable to get Group DgnElement(%s).", mappedGroup.ToString().c_str());
             GetLogger().warning(error.c_str());
             continue;
             }
@@ -2641,7 +2641,11 @@ BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& groups)
         int priority = 0;
         if (group.isMember("MemberPriority"))
             priority = group["MemberPriority"].asInt();
-        groupElement->AddMember(*member, priority);
+        DgnDbStatus status;
+        if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*groupElement, *member, priority)))
+            {
+
+            }
         m_importer->SetTaskName(BimFromDgnDb::TASK_ELEMENT_GROUPS_MEMBERS());
         m_importer->ShowProgress();
         }
