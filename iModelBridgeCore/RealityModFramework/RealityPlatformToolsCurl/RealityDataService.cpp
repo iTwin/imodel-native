@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformToolsCurl/RealityDataService.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -76,7 +76,9 @@ const TransferReport& RealityDataServiceTransfer::Perform()
 
     m_curEntry = 0;
 
-    for (int i = 0; i < std::min((int)MAX_NB_CONNECTIONS, (int)m_filesToTransfer.size()); ++i)
+    int min = (MAX_NB_CONNECTIONS < (int)m_filesToTransfer.size()) ? MAX_NB_CONNECTIONS : (int)m_filesToTransfer.size();
+
+    for (int i = 0; i < min; ++i)
         {
         SetupNextEntry();
         }   
@@ -84,8 +86,7 @@ const TransferReport& RealityDataServiceTransfer::Perform()
     int still_running; /* keep number of running handles */
     int repeats = 0;
 
-    do
-        {
+    do {
         CURLMcode mc; /* curl_multi_wait() return code */
         int numfds;
 

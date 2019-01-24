@@ -487,9 +487,20 @@ SetupRequestStatus RealityDataDownload::Login(LoginInfo& loginInfo, AuthInfo& au
 
     curl_easy_setopt(curl, CURLOPT_URL, loginInfo.loginUrl.c_str());
 
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
 
-    curl_easy_setopt(curl, CURLOPT_CAINFO, Utf8String(m_certPath).c_str());
+    auto info = curl_version_info(CURLVERSION_NOW);
+    if (!WString::IsNullOrEmpty(m_certPath.c_str()) && nullptr != info && nullptr != info->ssl_version && nullptr == strstr(info->ssl_version, "WinSSL"))
+        {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1);
+        curl_easy_setopt(curl, CURLOPT_CAINFO, Utf8String(m_certPath).c_str());
+        }
+    else
+        {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+        }
+
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
     //capture full response for debugging
@@ -589,22 +600,29 @@ SetupRequestStatus RealityDataDownload::SetupRequestandFile(FileTransfer* ft, bo
 
     if (pCurl)
         {
-        Utf8String header = "";
+        Utf8String tokenHeader = "";
         if(m_pTokenFunc != nullptr && !currentMirror.tokenType.empty())
             {
-            m_pTokenFunc(currentMirror.tokenType, currentMirror.url, header);
+            m_pTokenFunc(currentMirror.tokenType, currentMirror.url, tokenHeader);
             }
 
         curl_easy_setopt(pCurl, CURLOPT_URL, currentMirror.url.c_str());
-        if (!WString::IsNullOrEmpty(m_certPath.c_str()))
+        auto info = curl_version_info(CURLVERSION_NOW);
+        if (!WString::IsNullOrEmpty(m_certPath.c_str()) && nullptr != info && nullptr != info->ssl_version && nullptr == strstr(info->ssl_version, "WinSSL"))
             {
             curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
+            curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYHOST, 1);
             curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath).c_str());
+            }
+        else
+            {
+            curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYHOST, 0);
             }
 
         struct curl_slist *headers = NULL;
-        if(!header.empty())
-            headers = curl_slist_append(headers, header.c_str());
+        if(!tokenHeader.empty())
+            headers = curl_slist_append(headers, tokenHeader.c_str());
         if(currentCap != nullptr)
             {
             for(Utf8String header : currentCap->auth.headers)
@@ -665,8 +683,8 @@ SetupRequestStatus RealityDataDownload::SetupRequestandFile(FileTransfer* ft, bo
         curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
 
         curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 0L);
-        curl_easy_setopt(pCurl, CURLOPT_PROGRESSFUNCTION, callback_progress_func);
-        curl_easy_setopt(pCurl, CURLOPT_PROGRESSDATA, ft);
+        curl_easy_setopt(pCurl, CURLOPT_XFERINFOFUNCTION, callback_progress_func);
+        curl_easy_setopt(pCurl, CURLOPT_XFERINFODATA, ft);
 
         curl_easy_setopt(pCurl, CURLOPT_PRIVATE, ft);
 

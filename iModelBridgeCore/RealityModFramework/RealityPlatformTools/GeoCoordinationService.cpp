@@ -389,7 +389,7 @@ void DownloadReportUploadRequest::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 Utf8String GeoCoordinationService::s_geoCoordinationServer = "";
 Utf8String GeoCoordinationService::s_geoCoordinationWSGProtocol = "2.4";
-Utf8String GeoCoordinationService::s_geoCoordinationRepoName = "IndexECPlugin-Server";
+Utf8String GeoCoordinationService::s_geoCoordinationRepoName = "IndexECPlugin--Server";
 Utf8String GeoCoordinationService::s_geoCoordinationRepoNameWProjectId = "";
 Utf8String GeoCoordinationService::s_geoCoordinationSchemaName = "RealityModeling";
 Utf8String GeoCoordinationService::s_geoCoordinationProjectId = "";
@@ -628,7 +628,7 @@ void GeoCoordinationService::Request(const PreparedPackagesRequest& request, Raw
     Json::Reader::Parse(rawResponse.body, instances);
 
     if (rawResponse.status == RequestStatus::BADREQ || !instances["instances"][0].isMember("properties") || !instances["instances"][0]["properties"].isMember("Name") || !instances["instances"][0]["properties"].isMember("CreationTime"))
-         rawResponse.status = RequestStatus::BADREQ;
+        rawResponse.status = RequestStatus::BADREQ;
     else
         {
         rawResponse.status = RequestStatus::OK;

@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/RealityDataServiceToolsExample.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -327,8 +327,8 @@ void ListCmd()
                         " Classification : " << pData->GetClassificationTag() << std::endl << "  " <<
                         " Size(KB)       : " << pData->GetTotalSize() << std::endl << "  " <<
                         " Owner          : " << pData->GetOwner() << std::endl << "  " <<
-                        " Created        : " << pData->GetCreationDateTime().ToString() << std::endl << "  " <<
-                        " Modification   : " << pData->GetModifiedDateTime().ToString() << std::endl << "  " <<
+                        " Created        : " << pData->GetCreationDateTime().ToString().c_str() << std::endl << "  " <<
+                        " Modification   : " << pData->GetModifiedDateTime().ToString().c_str() << std::endl << "  " <<
                         " RootDocument   : " << pData->GetRootDocument() << std::endl << "  " <<
                         " Visibility     : " << pData->GetVisibilityTag() << std::endl << "  " <<
                         " Organization   : " << pData->GetOrganizationId() << std::endl << "  " <<

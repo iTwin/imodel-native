@@ -83,7 +83,7 @@ static WString createDirWithHash(Utf8StringCR uri, WStringCR tempPath, uint64_t 
     BeStringUtilities::Split(pathComponents[pathComponents.size() - 1].c_str(), L".", filenameComponents);
 
     // Creating one directory per file because we'll need to unzip it into the directory
-    BeFileName separatedDirectoryForZip(tempPath);
+    BeFileName separatedDirectoryForZip(tempPath.c_str());
     WString filenameTemp = filenameComponents[0];
 
     // Creating the MD5 hash

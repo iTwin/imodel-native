@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: RealityPlatformTools/SimpleGCSApi.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <iostream>
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/DateTime.h>
@@ -204,7 +211,8 @@ void GCSRequestManager::SimpleFileDownload(BeFileName xrdpPath, BeFileName downl
 
         delete report;
 
-        BeFileName reportPath = xrdpPath.PopDir();
+        downloadPath.PopDir();
+        BeFileName reportPath = downloadPath;
         reportPath.AppendToPath(L"report.xml");
 
         BeFile stream;

@@ -10,7 +10,7 @@ bool GCSRequestManager::AlternateDownload
     if (pDownload != NULL)
         {
         pDownload->SetProjectId(GeoCoordinationService::GetProjectId());
-        pDownload->SetProgressCallBack(GCS_progress_func, 0.1f);
+        pDownload->SetProgressCallBack(GCS_progress_func, GetProgressStep());
         pDownload->SetStatusCallBack(GCS_status_func);
         if (!certificatePath.empty())
             pDownload->SetCertificatePath(certificatePath);

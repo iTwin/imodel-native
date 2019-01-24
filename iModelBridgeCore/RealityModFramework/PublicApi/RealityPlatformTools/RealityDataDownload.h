@@ -275,6 +275,7 @@ public:
                 writer->ToString(report);
 #else
                 assert(!"Not compiling on iOS");
+#error Current code does not compile on iOS ... need work (TODO Alain Robert)
 #endif
             }
         };

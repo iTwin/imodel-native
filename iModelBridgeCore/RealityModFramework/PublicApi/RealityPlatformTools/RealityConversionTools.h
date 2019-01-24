@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatformTools/RealityConversionTools.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -109,13 +109,13 @@ public:
 
     //! Utility methods that convert a file containing a GeoCoordinationService package, the package itself or a string containing the package
     //! and produces a download list according tot he package content including alternate data sources as mirror sites and so on.
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageStringToDownloadOrder(Utf8CP source, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName());
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName());
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder = BeFileName());
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageStringToDownloadOrder(Utf8CP source, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true);
 
 private:
     static RealityDataDownload::sisterFileVector SpatialEntityDataSourceToSisterVector(RealityPlatform::SpatialEntityDataSourceCR dataSource, BeFileNameCR destinationFolder);
-    static RealityDataDownload::mirrorWSistersVector RealityDataToMirrorVector(const RealityPlatform::PackageRealityData& realityData, BeFileNameCR destinationFolder);
+    static RealityDataDownload::mirrorWSistersVector RealityDataToMirrorVector(const RealityPlatform::PackageRealityData& realityData, BeFileNameCR destinationFolder, bool skipStreams = true);
     static StatusInt JsonToObjectBase(Utf8CP data, Json::Value& json);
     };
 

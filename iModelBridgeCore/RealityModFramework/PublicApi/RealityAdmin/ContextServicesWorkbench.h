@@ -2,9 +2,12 @@
 |
 |     $Source: PublicApi/RealityAdmin/ContextServicesWorkbench.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
 //__BENTLEY_INTERNAL_ONLY__
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <Bentley/Bentley.h>

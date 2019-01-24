@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/RealityAdmin/WMSParser.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
+
+/*__BENTLEY_INTERNAL_ONLY__*/
 
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
