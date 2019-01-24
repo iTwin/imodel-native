@@ -920,15 +920,6 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
             LOG_MATERIAL.tracev ("Processinging DWG Material %s", materialName.c_str());
             }
 
-        // if found the material in db, use it (i.e. share with other apps)
-        auto dgnMaterialId = RenderMaterial::QueryMaterialId (*model, materialName);
-        if (dgnMaterialId.IsValid())
-            {
-            this->GetSyncInfo().InsertMaterial (dgnMaterialId, *material.get());
-            m_importedMaterials.insert (T_DwgRenderMaterialId(material->GetObjectId(), dgnMaterialId));
-            continue;
-            }
-
         if ((count++ % 100) == 0)
             this->Progress ();
 
@@ -943,6 +934,15 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
                 m_importedMaterials.insert (T_DwgRenderMaterialId(material->GetObjectId(), oldMaterial.m_id));
                 continue;
                 }
+            }
+
+        // if found the material in db, use it (i.e. share with other apps)
+        auto dgnMaterialId = RenderMaterial::QueryMaterialId (*model, materialName);
+        if (dgnMaterialId.IsValid())
+            {
+            this->GetSyncInfo().InsertMaterial (dgnMaterialId, *material.get());
+            m_importedMaterials.insert (T_DwgRenderMaterialId(material->GetObjectId(), dgnMaterialId));
+            continue;
             }
 
         this->_ImportMaterial (material, paletteName, materialName);
