@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProfilesProperty::IsEqual (double leftValue, double rightValue)
     {
-    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) == 0;
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::IsEqual (leftValue, rightValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -23,7 +23,7 @@ bool ProfilesProperty::IsEqual (double leftValue, double rightValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProfilesProperty::IsGreater (double leftValue, double rightValue)
     {
-    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) == 1;
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::IsGreater (leftValue, rightValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,7 +31,7 @@ bool ProfilesProperty::IsGreater (double leftValue, double rightValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProfilesProperty::IsGreaterOrEqual (double leftValue, double rightValue)
     {
-    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) >= 0;
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::IsGreaterOrEqual (leftValue, rightValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,7 +39,7 @@ bool ProfilesProperty::IsGreaterOrEqual (double leftValue, double rightValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProfilesProperty::IsLess (double leftValue, double rightValue)
     {
-    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) == -1;
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::IsLess (leftValue, rightValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,7 +47,7 @@ bool ProfilesProperty::IsLess (double leftValue, double rightValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProfilesProperty::IsLessOrEqual (double leftValue, double rightValue)
     {
-    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::Compare (leftValue, rightValue) <= 0;
+    return BeNumerical::BeFinite (leftValue) && BeNumerical::BeFinite (rightValue) && BeNumerical::IsLessOrEqual (leftValue, rightValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
