@@ -153,8 +153,6 @@ if __name__ == '__main__':
         packageVersion = pvf.read()
     packageVersion = packageVersion.strip()
 
-    addonDir = os.path.join(productdir, 'Addon')
-
     if os.path.exists(outdirParent):
         print '*** ' + outdirParent + ' already exists. Remove output directory before calling this script'
         exit(1)
