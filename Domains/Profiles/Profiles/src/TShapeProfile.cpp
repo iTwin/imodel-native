@@ -124,7 +124,7 @@ bool TShapeProfile::ValidateFilletRadius() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
     bool const fitsInFlange = filletRadius <= GetFlangeInnerFaceLength() / 2.0 - GetWebSlopeHeight();
-    bool const fitsInWeb = filletRadius <= GetWebInnerFaceLength() / 2.0 - GetFlangeSlopeHeight();
+    bool const fitsInWeb = filletRadius <= GetWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
 
     return isPositive && fitsInFlange && fitsInWeb;
     }
@@ -156,7 +156,7 @@ bool TShapeProfile::ValidateFlangeSlope() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeSlope);
     bool const isLessThanHalfPi = flangeSlope < PI / 2.0;
-    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetWebInnerFaceLength() / 2.0;
+    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetWebFaceLength() / 2.0;
 
     return isPositive && isLessThanHalfPi && slopeHeightFitsInWeb;
     }
@@ -171,7 +171,7 @@ bool TShapeProfile::ValidateWebEdgeRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (webEdgeRadius);
-    bool const fitsInWebLength = webEdgeRadius <= GetWebInnerFaceLength() / 2.0;
+    bool const fitsInWebLength = webEdgeRadius <= GetWebFaceLength() / 2.0;
     bool const fitsInWebThickness = webEdgeRadius <= GetWebThickness() / 2.0;
 
     return isPositive && fitsInWebLength && fitsInWebThickness;
@@ -348,7 +348,7 @@ double TShapeProfile::GetFlangeInnerFaceLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double TShapeProfile::GetWebInnerFaceLength() const
+double TShapeProfile::GetWebFaceLength() const
     {
     return GetDepth() - GetFlangeThickness();
     }
@@ -374,7 +374,7 @@ double TShapeProfile::GetWebSlopeHeight() const
     if (BeNumerical::IsLessOrEqualToZero (webSlopeCos))
         return 0.0;
 
-    return (GetWebInnerFaceLength() / webSlopeCos) * GetWebSlope().Sin();
+    return (GetWebFaceLength() / webSlopeCos) * GetWebSlope().Sin();
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -117,7 +117,7 @@ bool IShapeProfile::ValidateFilletRadius() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
     bool const fitsinFlange = filletRadius <= GetFlangeInnerFaceLength() / 2.0;
-    bool const fitsInWeb = filletRadius <= GetWebInnerFaceLength() / 2.0 - GetFlangeSlopeHeight();
+    bool const fitsInWeb = filletRadius <= GetWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
 
     return isPositive && fitsinFlange && fitsInWeb;
     }
@@ -149,7 +149,7 @@ bool IShapeProfile::ValidateFlangeSlope() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeSlope);
     bool const isLessThanHalfPi = flangeSlope < PI / 2.0;
-    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetWebInnerFaceLength() / 2.0;
+    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetWebFaceLength() / 2.0;
 
     return isPositive && isLessThanHalfPi && slopeHeightFitsInWeb;
     }
@@ -277,7 +277,7 @@ double IShapeProfile::GetFlangeInnerFaceLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double IShapeProfile::GetWebInnerFaceLength() const
+double IShapeProfile::GetWebFaceLength() const
     {
     return GetDepth() - GetFlangeThickness() * 2.0;
     }
