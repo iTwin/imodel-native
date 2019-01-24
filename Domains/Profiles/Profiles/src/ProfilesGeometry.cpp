@@ -464,7 +464,7 @@ IGeometryPtr ProfilesGeometry::CreateTTShape (TTShapeProfile const& profile)
     double const flangeThickness = profile.GetFlangeThickness();
     double const webThickness = profile.GetWebThickness();
     double const halfWebSpacing = profile.GetWebSpacing() / 2.0;
-    double const webLength = profile.GetDepth() - flangeThickness;
+    double const webLength = profile.GetWebOuterFaceLength();
     double const flangeSlopeHeight = profile.GetFlangeSlopeHeight();
     double const webOuterSlopeHeight = profile.GetWebOuterSlopeHeight();
     double const webInnerSlopeHeight = profile.GetWebInnerSlopeHeight();

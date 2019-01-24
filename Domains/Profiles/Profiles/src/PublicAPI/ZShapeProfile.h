@@ -89,7 +89,7 @@ public:
 
 public:
     PROFILES_EXPORT double GetFlangeInnerFaceLength() const;
-    PROFILES_EXPORT double GetWebInnerFaceLength() const;
+    PROFILES_EXPORT double GetWebFaceLength() const;
     PROFILES_EXPORT double GetFlangeSlopeHeight() const;
 
     }; // ZShapeProfile

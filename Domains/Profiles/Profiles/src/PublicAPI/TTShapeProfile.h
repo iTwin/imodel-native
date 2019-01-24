@@ -106,6 +106,7 @@ public:
     PROFILES_EXPORT double GetFlangeInnerFaceLength() const;
     PROFILES_EXPORT double GetFlangeSlopeHeight() const;
     PROFILES_EXPORT double GetWebInnerFaceLength() const;
+    PROFILES_EXPORT double GetWebOuterFaceLength() const;
     PROFILES_EXPORT double GetWebInnerSlopeHeight() const;
     PROFILES_EXPORT double GetWebOuterSlopeHeight() const;
 

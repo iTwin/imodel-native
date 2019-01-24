@@ -117,7 +117,7 @@ bool ZShapeProfile::ValidateFilletRadius() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
     bool const fitsInFlange = filletRadius <= GetFlangeInnerFaceLength() / 2.0;
-    bool const fitsInWeb = filletRadius <= GetWebInnerFaceLength() / 2.0 - GetFlangeSlopeHeight();
+    bool const fitsInWeb = filletRadius <= GetWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
 
     return isPositive && fitsInFlange && fitsInWeb;
     }
@@ -149,7 +149,7 @@ bool ZShapeProfile::ValidateFlangeSlope() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeSlope);
     bool const isLessThanHalfPi = flangeSlope < PI / 2.0;
-    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetWebInnerFaceLength() / 2.0;
+    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetWebFaceLength() / 2.0;
 
     return isPositive && isLessThanHalfPi && slopeHeightFitsInWeb;
     }
@@ -277,7 +277,7 @@ double ZShapeProfile::GetFlangeInnerFaceLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double ZShapeProfile::GetWebInnerFaceLength() const
+double ZShapeProfile::GetWebFaceLength() const
     {
     return GetDepth() - GetFlangeThickness();
     }
