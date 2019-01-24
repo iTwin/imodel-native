@@ -1,5 +1,5 @@
 {
-  "name": "@bentley/imodel-bank-addon-api",
+  "name": "@bentley/imodel-bank",
   "license": "UNLICENSED",
   "version": "${PACKAGE_VERSION}",
   "keywords": [
