@@ -54,7 +54,7 @@ struct IECInstanceChangeHandlerPtrComparer
     bool operator()(IECInstanceChangeHandlerPtr const& lhs, IECInstanceChangeHandlerPtr const& rhs) const
         {
         return lhs->GetPriority() < rhs->GetPriority()
-            || lhs->GetPriority() == rhs->GetPriority() && lhs.get() < rhs.get();
+            || (lhs->GetPriority() == rhs->GetPriority() && lhs.get() < rhs.get());
         }
     };
 
