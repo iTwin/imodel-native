@@ -1052,7 +1052,6 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
             }
 
         PhysicalPartitionPtr ed = PhysicalPartition::Create(parentSubject, partitionCode.GetValueUtf8CP());
-        ed->SetUserLabel(ConverterDataStrings::GetString(ConverterDataStrings::PhysicalPartitionUserLabel()).c_str());
         PhysicalPartitionCPtr partition = ed->InsertT<PhysicalPartition>();
         if (!partition.IsValid())
             {
