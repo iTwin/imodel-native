@@ -626,14 +626,7 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
         else
             LOG_LINETYPE.tracev ("Processinging DWG Linetype %ls", name.c_str());
 
-        // if found the linestyle in db, use it (i.e. share it with other apps)
-        DgnStyleId  lstyleId = LineStyleElement::QueryId (*m_dgndb, Utf8String(name.c_str()).c_str());
-        if (lstyleId.IsValid())
-            {
-            this->GetSyncInfo().InsertLinetype (lstyleId, *linetype.get());
-            m_importedLinestyles.insert (T_DwgDgnLineStyleId(linetype->GetObjectId(), lstyleId));
-            continue;
-            }
+        DgnStyleId  lstyleId;
 
         // when updating, if found the linestyle in the syncInfo, update it
         if (this->IsUpdating())
@@ -648,6 +641,15 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
                 m_importedLinestyles.insert (T_DwgDgnLineStyleId(linetype->GetObjectId(), lstyleId));
                 continue;
                 }
+            }
+
+        // if found the linestyle in db, use it (i.e. share it with other apps)
+        lstyleId = LineStyleElement::QueryId (*m_dgndb, Utf8String(name.c_str()).c_str());
+        if (lstyleId.IsValid())
+            {
+            this->GetSyncInfo().InsertLinetype (lstyleId, *linetype.get());
+            m_importedLinestyles.insert (T_DwgDgnLineStyleId(linetype->GetObjectId(), lstyleId));
+            continue;
             }
 
         if ((count++ % 100) == 0)
