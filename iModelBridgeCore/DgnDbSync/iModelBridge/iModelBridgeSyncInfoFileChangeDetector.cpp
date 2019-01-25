@@ -33,6 +33,7 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::InsertResultsIntoBIM(Conve
         {
         BeAssert((DgnDbStatus::LockNotHeld != stat) && "Failed to get or retain necessary locks");
         BeAssert(false);
+        LOG.errorv("Error inserting element due to status %d", stat);
         //ReportIssue(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::ConvertFailure(), IssueReporter::FmtElement(*conversionResults.m_element).c_str());
         return stat;
         }
