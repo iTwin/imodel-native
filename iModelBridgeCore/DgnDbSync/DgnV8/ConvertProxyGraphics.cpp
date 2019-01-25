@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConvertProxyGraphics.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -297,8 +297,10 @@ Converter::V8NamedViewType Converter::GetV8NamedViewTypeOfFirstAttachment(DgnV8M
 DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping, 
                                                          SyncInfo::V8ElementSource const& attachmentSource,
                                                          SyncInfo::V8ElementMapping const& originalElementMapping, DgnV8Api::ElementHandle& v8eh,
-                                                         DgnCategoryId categoryId, GeometryBuilder& builder)
+                                                         DgnCategoryId categoryId, GeometryBuilder& builder, Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel)
     {
+    // The "orignal" element is the 3-D element that was sectioned/projected/rendered
+
     DgnModelR model = drawingModelMapping.GetDgnModel();
 
     DgnCode code;
@@ -311,7 +313,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     V8ElementECContent ecContent;
     bool hasPrimaryInstance = false;
     bool hasSecondaryInstances = false;
-    if (v8eh.IsValid())
+    if (v8eh.IsValid()) // This is the 3-D element that was sectioned/projected/rendered
         {
         bool isNewElement = true;
         if (IsUpdating())
@@ -401,7 +403,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     if (IsUpdating())
         {
-        auto existingDrawingGraphicId = GetSyncInfo().FindExtractedGraphic(attachmentSource, originalElementMapping, categoryId);
+        auto existingDrawingGraphicId = GetSyncInfo().FindExtractedGraphic(attachmentSource, originalElementMapping, categoryId, model, originalElementMapping.m_elementId, elementClassId);
         if (existingDrawingGraphicId.IsValid())
             {
             // We already have a graphic for this element. Update it.
@@ -423,7 +425,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     if (DgnDbStatus::Success != status)
         return status;
 
-    GetSyncInfo().InsertExtractedGraphic(attachmentSource, originalElementMapping, categoryId, drawingGraphic->GetElementId());
+    GetSyncInfo().InsertExtractedGraphic(attachmentSource, originalElementMapping, categoryId, drawingGraphic->GetElementId(), masterModel.GetDgnModel(), attachmentInfo);
 
     if (v8eh.IsValid())
         {

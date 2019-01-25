@@ -380,7 +380,7 @@ SubjectCPtr SpatialConverterBase::GetSourceMasterModelSubject(DgnV8ModelR v8Root
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SpatialConverterBase::ComputeReferenceSubjectName(DgnAttachmentCR attachment)
+Utf8String Converter::ComputeV8AttachmentDescription(DgnAttachmentCR attachment)
     {
     BeAssert(nullptr != attachment.GetDgnModelP());
     auto& v8Model = *attachment.GetDgnModelP();
@@ -411,6 +411,56 @@ Utf8String SpatialConverterBase::ComputeReferenceSubjectName(DgnAttachmentCR att
         refname.append(", ").append(modelName);
 
     return refname;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeV8AttachmentPathDescription(DgnAttachmentCR att)
+    {
+    Utf8String path;
+    auto parentAttachment = att.GetParentDgnAttachmentCP();
+    if (nullptr != parentAttachment)
+        {
+        path = ComputeV8AttachmentPathDescription(*parentAttachment);
+        path.append(" / ");
+        }
+    path.append(ComputeV8AttachmentDescription(att));
+    return path;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeV8AttachmentPathDescriptionAsJson(DgnAttachmentCR att)
+    {
+    auto attachmentInfo = ComputeV8AttachmentPathDescription(att);
+    
+    rapidjson::Document json(rapidjson::kObjectType);
+    auto& allocator = json.GetAllocator();
+    json.AddMember("v8AttachmentInfo", rapidjson::Value(attachmentInfo.c_str(), allocator), allocator);
+    
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    json.Accept(writer);
+
+    return buffer.GetString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeV8AttachmentIdPath(DgnAttachmentCR att)
+    {
+    Utf8String path;
+    auto parentAttachment = att.GetParentDgnAttachmentCP();
+    if (nullptr != parentAttachment)
+        {
+        path = ComputeV8AttachmentIdPath(*parentAttachment);
+        path.append("/");
+        }
+    path.append(SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(att.GetElementId()));
+    return path;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -706,7 +756,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
             continue;
             }
 
-        SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, ComputeReferenceSubjectName(*attachment), ModelSubjectType::References);
+        SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, ComputeV8AttachmentDescription(*attachment), ModelSubjectType::References);
         if (!myRefsSubject.IsValid())
             {
             BeAssert(false);

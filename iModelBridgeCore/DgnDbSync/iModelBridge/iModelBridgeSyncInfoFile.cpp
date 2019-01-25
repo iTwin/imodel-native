@@ -877,7 +877,7 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bool includeSourceState)
     {
-    Utf8PrintfString str("%-10.10s %8.8s %-8.8s", "Kind", "Scope", "SourceId");
+    Utf8PrintfString str("%-16.16s %8.8s %-32.32s %-8.8s", "Kind", "Scope", "Scope Element Class", "SourceId");
     if (includeSourceState)
         {
         // TBD
@@ -892,9 +892,11 @@ Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String iModelExternalSourceAspect::FormatForDump(bool includeProperties, bool includeSourceState) const
+Utf8String iModelExternalSourceAspect::FormatForDump(DgnDbR db, bool includeProperties, bool includeSourceState) const
     {
-    Utf8PrintfString str("%-10.10s %8.0llx %-8.8s", GetKind(), GetScope().GetValueUnchecked(), GetSourceId());
+    auto scopeEl = db.Elements().GetElement(GetScope());
+    auto scopeClass = scopeEl.IsValid()? scopeEl->GetElementClass()->GetFullName(): "?";
+    Utf8PrintfString str("%-16.16s %8.0llx %-32.32s %-8.8s", GetKind().c_str(), GetScope().GetValueUnchecked(), scopeClass, GetSourceId().c_str());
     if (includeSourceState)
         {
         // TBD
@@ -932,12 +934,12 @@ void iModelExternalSourceAspect::Dump(DgnElementCR el, Utf8CP loggingCategory, N
 
     ILogger* logger = loggingCategory? LoggingManager::GetLogger(loggingCategory): nullptr;
 
-    outDump(logger, sev, Utf8PrintfString("Element %llx (%s)", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName()));
+    outDump(logger, sev, Utf8PrintfString("Element ID: %llx Class: %s Code: %s", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName(), el.GetCode().GetValueUtf8CP()));
 
     outDump(logger, sev, GetDumpHeaders(includeProperties, includeSourceState));
     for (auto const& aspect : aspects)
         {
-        auto str = aspect.FormatForDump(includeProperties, includeSourceState);
+        auto str = aspect.FormatForDump(el.GetDgnDb(), includeProperties, includeSourceState);
         outDump(logger, sev, str);
         }
     outDump(logger, sev, "");
@@ -1004,7 +1006,7 @@ DgnElementId iModelExternalSourceAspect::GetScope() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP iModelExternalSourceAspect::GetSourceId() const
+Utf8String iModelExternalSourceAspect::GetSourceId() const
     {
     ECN::ECValue v;
     m_instance->GetValue(v, XTRN_SRC_ASPCT_SourceId);
@@ -1014,7 +1016,7 @@ Utf8CP iModelExternalSourceAspect::GetSourceId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP iModelExternalSourceAspect::GetKind() const 
+Utf8String iModelExternalSourceAspect::GetKind() const 
     {
     ECN::ECValue v;
     m_instance->GetValue(v, XTRN_SRC_ASPCT_Kind);

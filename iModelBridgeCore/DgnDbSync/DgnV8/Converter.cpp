@@ -2475,7 +2475,7 @@ DgnV8Api::FindInstancesScopePtr Converter::CreateFindInstancesScope(DgnV8EhCR v8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementMapping Converter::RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm)
+SyncInfo::V8ElementMapping Converter::RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, Utf8StringCR propsJson)
     {
     SyncInfo::ElementProvenance newProv(v8eh, GetSyncInfo(), StableIdPolicy::ById);
     SyncInfo::V8ElementMapping mapping(bimElementId, v8eh, v8mm.GetV8ModelSyncInfoId(), newProv);
@@ -2483,8 +2483,8 @@ SyncInfo::V8ElementMapping Converter::RecordMappingInSyncInfo(DgnElementId bimEl
 
     if (_WantProvenanceInBim())
         {
-        auto el = v8mm.GetDgnModel().GetDgnDb().Elements().GetElement(bimElementId)->CopyForEdit();
-        SyncInfo::V8ElementExternalSourceAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), newProv);
+auto el = v8mm.GetDgnModel().GetDgnDb().Elements().GetElement(bimElementId)->CopyForEdit();
+        SyncInfo::V8ElementExternalSourceAspectData elprov(scope.GetDgnModel().GetModelId(), v8eh.GetElementId(), newProv, propsJson);
         WriteV8ElementExternalSourceAspect(*el, elprov);
         el->Update();
         }
@@ -2495,7 +2495,7 @@ SyncInfo::V8ElementMapping Converter::RecordMappingInSyncInfo(DgnElementId bimEl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementMapping Converter::UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm)
+SyncInfo::V8ElementMapping Converter::UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, Utf8StringCR propsJson)
     {
     SyncInfo::ElementProvenance newProv(v8eh, GetSyncInfo(), StableIdPolicy::ById);
     SyncInfo::V8ElementMapping mapping(bimElementId, v8eh, v8mm.GetV8ModelSyncInfoId(), newProv);
@@ -2504,7 +2504,7 @@ SyncInfo::V8ElementMapping Converter::UpdateMappingInSyncInfo(DgnElementId bimEl
     if (_WantProvenanceInBim())
         {
         auto el = v8mm.GetDgnModel().GetDgnDb().Elements().GetElement(bimElementId)->CopyForEdit();
-        SyncInfo::V8ElementExternalSourceAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), newProv);
+        SyncInfo::V8ElementExternalSourceAspectData elprov(scope.GetDgnModel().GetModelId(), v8eh.GetElementId(), newProv, propsJson);
         WriteV8ElementExternalSourceAspect(*el, elprov);
         el->Update();
         }
@@ -2797,7 +2797,8 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
 
     // NB! The "scope" for this conversion must be an object in the BIM that coresponds to the *source* model that contains
     //     the v8 element. We may decide to write the element itself to a different model.
-    SyncInfo::V8ElementExternalSourceAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), csearch.m_currentElementProvenance);
+    auto scopeId = conversionResults.m_scope.IsValid()? conversionResults.m_scope.GetDgnModel().GetModelId(): v8mm.GetDgnModel().GetModelId();
+    SyncInfo::V8ElementExternalSourceAspectData elprov(scopeId, v8eh.GetElementId(), csearch.m_currentElementProvenance, conversionResults.m_jsonProps);
 
     if (IChangeDetector::ChangeType::Update == csearch.m_changeType)
         {
