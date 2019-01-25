@@ -1164,6 +1164,9 @@ struct SheetCompositionTests : public ConverterTestBaseFixture
 
         return model.IsValid () ? model->ToSheetModel () : nullptr;
         }
+    void AnalyzeProxyGraphics(std::vector<BentleyApi::DRange3d>& dgRanges, DrawingModelR drawingModel);
+    void FindSheetModelSource(DgnV8Api::ModelId& v8SheetModelId, DgnDbR db, DgnModelId sheetModelId);
+    void AnalyzeDrawingModels(std::vector<DgnElementId>& drawingElementIds, int& attachmentAspectCount, DgnDbR db);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1232,3 +1235,198 @@ TEST_F (SheetCompositionTests, HasDrawingBoundary)
     ASSERT_TRUE (drawingBoundary.IsValid ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SheetCompositionTests::FindSheetModelSource(DgnV8Api::ModelId& v8SheetModelId, DgnDbR db, DgnModelId sheetModelId)
+    {
+    auto selSheetModelSourceId = db.GetPreparedECSqlStatement(
+        "SELECT x.SourceId from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
+        " WHERE x.Element.Id=? and x.Kind='Model'");
+    selSheetModelSourceId->BindId(1, sheetModelId);
+    ASSERT_EQ(BE_SQLITE_ROW, selSheetModelSourceId->Step());
+    ASSERT_EQ(1, sscanf(selSheetModelSourceId->GetValueText(0), "%d", &v8SheetModelId));
+    ASSERT_EQ(BE_SQLITE_DONE, selSheetModelSourceId->Step()) << "Should only be one Model aspect on specified sheet element";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SheetCompositionTests::AnalyzeDrawingModels(std::vector<DgnElementId>& drawingElementIds, int& attachmentAspectCount, DgnDbR db)
+    {
+    auto selDrawingModelAspect = db.GetPreparedECSqlStatement(
+        "SELECT d.ECInstanceId, x.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_Drawing) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
+        " WHERE x.Kind='Element'");
+    while (BE_SQLITE_ROW == selDrawingModelAspect->Step())
+        {
+        DgnElementId eid = selDrawingModelAspect->GetValueId<DgnElementId>(0);
+        auto aspectId = selDrawingModelAspect->GetValueId<EC::ECInstanceId>(1);
+
+        if (std::find(drawingElementIds.begin(), drawingElementIds.end(), eid) == drawingElementIds.end())
+            drawingElementIds.push_back(eid);
+
+        auto el = db.Elements().GetElement(eid);
+        auto aspect = iModelExternalSourceAspect::GetAspect(*el, aspectId);
+        auto aspectDump = aspect.FormatForDump(db, true, true);
+        printf("%s\n", aspectDump.c_str());
+
+        auto props = aspect.GetProperties();
+        if (props.HasMember("v8AttachmentInfo"))
+            ++attachmentAspectCount;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<BentleyApi::DRange3d>& dgRanges, DrawingModelR drawingModel)
+    {
+    auto& db = drawingModel.GetDgnDb();
+
+    // Find all ExternalSourceAspects on all DrawingGraphics in the DrawingModel
+    auto selGraphics = db.GetPreparedECSqlStatement(
+        "SELECT x.SourceId, x.Scope.Id, dg.ECInstanceId, x.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_DrawingGraphic) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
+        " WHERE dg.Model.Id=? and x.Kind='ProxyGraphic'");
+    selGraphics->BindId(1, drawingModel.GetModelId());
+    
+    while (BE_SQLITE_ROW == selGraphics->Step())
+        {
+        Utf8String sourceId = selGraphics->GetValueText(0);
+        DgnElementId scopeId = selGraphics->GetValueId<DgnElementId>(1);
+        DgnElementId dgEid = selGraphics->GetValueId<DgnElementId>(2);
+        auto aspectId = selGraphics->GetValueId<EC::ECInstanceId>(3);
+
+        auto dgEl = db.Elements().Get<DrawingGraphic>(dgEid);
+        auto scopeEl = db.Elements().GetElement(scopeId);
+        printf("SourceId: %s scopeId=%lld (%s) dgEid=%lld (%s)", sourceId.c_str(), scopeId.GetValue(), scopeEl->GetElementClass()->GetFullName(), dgEid.GetValue(), dgEl->GetElementClass()->GetFullName());
+            
+        auto aspect = iModelExternalSourceAspect::GetAspect(*dgEl, aspectId);
+        auto aspectDump = aspect.FormatForDump(db, true, true);
+        printf("%s\n", aspectDump.c_str());
+
+        dgRanges.push_back(dgEl->GetPlacement().CalculateRange());
+        }
+
+    // The loop above examined and counted the DrawingGraphic elements in the drawingModel that have XSAs.
+    // In fact, *all* DrawingGraphic elements should have XSAs. The following check asserts that.
+    countElementsInModelByClass(drawingModel, getBisClassId(db, BIS_CLASS_DrawingGraphic), dgRanges.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, ExtractedDrawingGraphics)
+    {
+    m_params.SetWantProvenanceInBim(true);
+
+    LineUpFiles (L"HasDrawingBoundary.bim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = false;
+
+    static constexpr Utf8CP expectedSeetName = "Section_Case1";
+    static constexpr Utf8CP expectedDrawingUserLabel = "Section_Case1";
+
+    int expectedDrawingElementCount = 1;
+    int expectedAttachmentAspectCount = 4;
+    int expectedDrawingGraphicCount = 7;
+
+    DgnV8Api::ModelId expectedV8SheetModelId = 219;
+
+    std::vector<BentleyApi::DRange3d> dgRanges;
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    
+        auto itModels = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Document));
+        for (auto entry: itModels)
+            {
+            auto el = db->Elements().GetElement(entry.GetElementId());
+            iModelExternalSourceAspect::Dump(*el, nullptr, BentleyApi::NativeLogging::SEVERITY::LOG_INFO);
+            }
+
+        auto itDrawingGraphics = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
+        for (auto entry: itDrawingGraphics)
+            {
+            auto el = db->Elements().GetElement(entry.GetElementId());
+            iModelExternalSourceAspect::Dump(*el, nullptr, BentleyApi::NativeLogging::SEVERITY::LOG_INFO);
+            }
+
+        BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
+        ASSERT_TRUE (nullptr != sheetModel);
+
+        DgnV8Api::ModelId v8SheetModelId{};
+        FindSheetModelSource(v8SheetModelId, *db, sheetModel->GetModelId());
+        ASSERT_EQ(expectedV8SheetModelId, v8SheetModelId);
+
+        std::vector<DgnElementId> drawingElementIds;
+        int attachmentAspectCount = 0;
+        AnalyzeDrawingModels(drawingElementIds, attachmentAspectCount, *db);
+        ASSERT_EQ(expectedDrawingElementCount, drawingElementIds.size());
+        ASSERT_EQ(expectedAttachmentAspectCount, attachmentAspectCount);
+
+        auto drawing = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
+        ASSERT_TRUE(drawing.IsValid());
+        ASSERT_STREQ(drawing->GetUserLabel(), expectedDrawingUserLabel);
+        auto drawingModel = drawing->GetSub<DrawingModel>();
+        ASSERT_TRUE(drawingModel.IsValid());
+
+        AnalyzeProxyGraphics(dgRanges, *drawingModel);
+        ASSERT_EQ(expectedDrawingGraphicCount, dgRanges.size());
+        }
+
+    if (true)
+        {
+        /*
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+
+        auto selSheetModelSourceId = db->GetPreparedECSqlStatement("SELECT x.SourceId from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
+                                                        " WHERE x.Element.Id=? and x.Kind='Model'");
+        selSheetModelSourceId->BindId(1, sheetModel->GetModeledElementId());
+        ASSERT_EQ(BE_SQLITE_ROW, selSheetModelSourceId->Step());
+        DgnV8Api::ModelId v8SheetModelId;
+        ASSERT_EQ(1, sscanf(selSheetModelSourceId->GetValueText(0), "%d", &v8SheetModelId));
+
+
+        auto v8SheetModel = v8editor.m_file->LoadRootModelById(nullptr, v8SheetModelId, true, true, false);
+        ASSERT_TRUE(nullptr != v8SheetModel);
+        */
+
+        }
+
+    // Do an update *with no changes*
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    // Verify that *nothing changed*
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    
+        BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
+        ASSERT_TRUE (nullptr != sheetModel);
+
+        DgnV8Api::ModelId v8SheetModelId{};
+        FindSheetModelSource(v8SheetModelId, *db, sheetModel->GetModelId());
+        ASSERT_EQ(expectedV8SheetModelId, v8SheetModelId);
+
+        std::vector<DgnElementId> drawingElementIds;
+        int attachmentAspectCount = 0;
+        AnalyzeDrawingModels(drawingElementIds, attachmentAspectCount, *db);
+        ASSERT_EQ(expectedDrawingElementCount, drawingElementIds.size());
+        ASSERT_EQ(expectedAttachmentAspectCount, attachmentAspectCount);
+
+        auto drawing = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
+        ASSERT_TRUE(drawing.IsValid());
+        ASSERT_STREQ(drawing->GetUserLabel(), expectedDrawingUserLabel);
+        auto drawingModel = drawing->GetSub<DrawingModel>();
+        ASSERT_TRUE(drawingModel.IsValid());
+
+        // Verify that there are the same number of DrawingGraphics and that they did not change in size, location, or rotation
+        std::vector<BentleyApi::DRange3d> dgRangesAfterUpdate;
+        AnalyzeProxyGraphics(dgRangesAfterUpdate, *drawingModel);
+        ASSERT_EQ(dgRangesAfterUpdate.size(), dgRanges.size()) << "No change expected in the number of DrawingGraphics";
+        for (size_t i=0; i<dgRanges.size(); ++i)
+            {
+            ASSERT_TRUE(dgRangesAfterUpdate[i].IsEqual(dgRanges[i], 1.0e-10)) << "No change expected in the range of an DrawingGraphic";
+            }
+        }
+    }

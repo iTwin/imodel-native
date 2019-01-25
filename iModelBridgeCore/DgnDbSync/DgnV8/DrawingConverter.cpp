@@ -879,6 +879,7 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
         DMatrix4d                               m_map;
         SyncInfo::V8ElementMapping              m_attachElementMapping;
         ResolvedModelMapping                    m_modelMapping;
+        Utf8String                              m_attachmentInfo;
         };
 
     typedef bmap<DgnModelRefP, ModelRefInfo>    T_ModelRefInfoMap;
@@ -887,6 +888,7 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
 
     T_BuilderMap                                m_builders;
     ResolvedModelMapping const&                 m_parentModelMapping;
+    ResolvedModelMapping const&                 m_masterModelMapping;
     Bentley::DgnModelRefP                       m_currentModelRef;
     ModelRefInfo                                m_currentModelInfo;
     Converter&                                  m_converter;
@@ -1089,7 +1091,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  IsElementChanged(SyncInfo::V8ElementMapping& elementMapping, DgnV8Api::EditElementHandle& v8eh)
+bool  IsElementChanged(SyncInfo::V8ElementMapping& elementMapping, DgnV8Api::EditElementHandle& v8eh, DgnAttachmentCP att)
     {
     IChangeDetector::SearchResults      syncInfoSearch;
 
@@ -1101,13 +1103,16 @@ bool  IsElementChanged(SyncInfo::V8ElementMapping& elementMapping, DgnV8Api::Edi
         }
     else if (IChangeDetector::ChangeType::Update == syncInfoSearch.m_changeType)
         {
-        m_converter.UpdateMappingInSyncInfo(syncInfoSearch.GetExistingElementId(), v8eh, m_parentModelMapping);
+        Utf8String attachInfo = att? m_converter.ComputeV8AttachmentPathDescriptionAsJson(*att): "";
+
+        m_converter.UpdateMappingInSyncInfo(syncInfoSearch.GetExistingElementId(), v8eh, m_parentModelMapping, m_masterModelMapping, attachInfo);
         elementMapping = syncInfoSearch.m_v8ElementMapping;
         m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
         }
     else
         {
-        elementMapping = m_converter.RecordMappingInSyncInfo(m_parentModelMapping.GetDgnModel().GetModeledElementId(), v8eh, m_parentModelMapping);
+        Utf8String attachInfo = att? m_converter.ComputeV8AttachmentPathDescriptionAsJson(*att): "";
+        elementMapping = m_converter.RecordMappingInSyncInfo(m_parentModelMapping.GetDgnModel().GetModeledElementId(), v8eh, m_parentModelMapping, m_masterModelMapping, attachInfo);
         }
     return true;
     }
@@ -1154,18 +1159,21 @@ void InitCurrentModel(DgnModelRefP modelRef)
         SyncInfo::V8ElementMapping          attachMapping, clipMapping, maskMapping;
 
 
-        if (IsElementChanged(attachMapping, v8eh))
+        if (IsElementChanged(attachMapping, v8eh, thisAttachment))
             info.m_attachmentChanged = true;
 
         if (attachment == thisAttachment)
+            {
             info.m_attachElementMapping = attachMapping;
+            info.m_attachmentInfo = m_converter.ComputeV8AttachmentPathDescriptionAsJson(*attachment);
+            }
 
         auto                            dvSettings = thisAttachment->GetDynamicViewSettingsCR();
         DgnV8Api::EditElementHandle     clipEh, maskEh;
 
 
-        if ((SUCCESS == dvSettings.GetClipBoundElemHandle(clipEh, thisAttachment->GetParentModelRefP()) && IsElementChanged (clipMapping, clipEh)) ||
-            (SUCCESS == dvSettings.GetClipMaskElemHandle(maskEh, thisAttachment->GetParentModelRefP()) && IsElementChanged (maskMapping, maskEh)))
+        if ((SUCCESS == dvSettings.GetClipBoundElemHandle(clipEh, thisAttachment->GetParentModelRefP()) && IsElementChanged (clipMapping, clipEh, nullptr)) ||
+            (SUCCESS == dvSettings.GetClipMaskElemHandle(maskEh, thisAttachment->GetParentModelRefP()) && IsElementChanged (maskMapping, maskEh, nullptr)))
             info.m_attachmentChanged = true;
 
         if (thisAttachment->IsDirectDgnAttachment() && thisAttachment->IsCameraOn())
@@ -1217,7 +1225,7 @@ bool CreateOrUpdateDrawingGraphics()
             if (nullptr != modelRef && nullptr != modelRef->GetDgnModelP())
                 originalElementMapping = m_converter.FindFirstElementMappedTo(*modelRef->GetDgnModelP(), byElement.first);
 
-            DgnV8Api::ElementHandle v8eh(modelRef->GetDgnModelP()->FindElementByID(byElement.first));
+            DgnV8Api::ElementHandle v8eh(modelRef->GetDgnModelP()->FindElementByID(byElement.first));   // This is the 3-D element that was sectioned/projected/rendered
             if (!originalElementMapping.IsValid())
                 {
                 // See "MergeProxyGraphicsDrawGeom handles both the drawing and attachments to the drawing"
@@ -1233,7 +1241,7 @@ bool CreateOrUpdateDrawingGraphics()
                 {
                 modified = true;
                 seenCategories.insert(bycategory.first);
-                DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, v8eh, bycategory.first, *bycategory.second);
+                DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, v8eh, bycategory.first, *bycategory.second, modelRefInfo.m_attachmentInfo, m_masterModelMapping);
                 if (DgnDbStatus::Success != status)
                     {
                     BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");
@@ -1256,8 +1264,8 @@ bool CreateOrUpdateDrawingGraphics()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-MergeProxyGraphicsDrawGeom(Converter& converter, ResolvedModelMapping const& parentModelMapping)
-                           : m_converter(converter), m_parentModelMapping(parentModelMapping)
+MergeProxyGraphicsDrawGeom(Converter& converter, ResolvedModelMapping const& parentModelMapping, ResolvedModelMapping const& masterModelMapping)
+                           : m_converter(converter), m_parentModelMapping(parentModelMapping), m_masterModelMapping(masterModelMapping)
     { 
     }
 
@@ -1275,6 +1283,7 @@ protected:
 MergeProxyGraphicsDrawGeom&             m_output;
 Converter&                              m_converter;
 bool                                    m_mergeGraphicsForRenderedViews;
+ResolvedModelMapping const&             m_masterModelMapping;   // The model that contains the reference attachments - needed for ExternalSourceAspects
 
 virtual bool _WantUndisplayed () { return false; }
 virtual bool _HandleRefAsViewlet (DgnAttachmentCR thisRef) override  { return false; }
@@ -1284,7 +1293,8 @@ virtual void _SetupOutputs () override {SetIViewDraw (m_output);}
 
 public:
 
-MergeDrawingContext(MergeProxyGraphicsDrawGeom& output, Converter& converter, bool mergeGraphicsForRenderedViews) : m_output (output), m_converter(converter), m_mergeGraphicsForRenderedViews(mergeGraphicsForRenderedViews)
+MergeDrawingContext(MergeProxyGraphicsDrawGeom& output, Converter& converter, bool mergeGraphicsForRenderedViews, ResolvedModelMapping const& mm) 
+    : m_output (output), m_converter(converter), m_mergeGraphicsForRenderedViews(mergeGraphicsForRenderedViews), m_masterModelMapping(mm)
     {
     m_setupScan = true;
     m_purpose = DgnV8Api::DrawPurpose::DgnDbConvert;
@@ -1381,7 +1391,7 @@ void VisitElementHandleWithExceptionHandling(DgnV8Api::ElementHandle const& inEl
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   _VisitElemHandle (DgnV8Api::ElementHandle const& inEl, bool checkRange, bool checkScanCriteria) override
     {
-    if (m_converter.IsUpdating() && !m_output.m_currentModelInfo.m_attachmentChanged)
+    if (m_converter.IsUpdating() && !m_output.m_currentModelInfo.m_attachmentChanged && !m_output.m_currentModelInfo.m_modelContentsChanged)
         {
         IChangeDetector::SearchResults      syncInfoSearch;
         if (!m_converter.GetChangeDetector()._IsElementChanged(syncInfoSearch, m_converter, inEl, m_output.m_currentModelInfo.m_modelMapping))
@@ -1626,10 +1636,10 @@ static void  createProxyGraphics (Converter& converter, DgnModelRefR modelRef, V
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool createOrUpdateDrawingGraphics(Converter& converter, Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport, bool mergeGraphicsForRenderedViews)
+static bool createOrUpdateDrawingGraphics(Converter& converter, Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport, bool mergeGraphicsForRenderedViews, ResolvedModelMapping const& masterModelMapping)
     {
-    MergeProxyGraphicsDrawGeom      drawGeom(converter, v8mm);
-    MergeDrawingContext             mergeDrawingContext(drawGeom, converter, mergeGraphicsForRenderedViews);
+    MergeProxyGraphicsDrawGeom      drawGeom(converter, v8mm, masterModelMapping);
+    MergeDrawingContext             mergeDrawingContext(drawGeom, converter, mergeGraphicsForRenderedViews, masterModelMapping);
 
     drawGeom.SetViewContext(&mergeDrawingContext);
     mergeDrawingContext.Process(viewport, &baseModelRef);
@@ -1716,7 +1726,7 @@ void Converter::DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm)
     bool isThisIndependentDrawing = !ConverterMadeCopyMarker::IsFoundOn(v8ParentModel);
 
     createProxyGraphics(*this, v8ParentModel, fakeVp, isThisIndependentDrawing /* If independent generate proxy for rendered views */);
-    if (!createOrUpdateDrawingGraphics(*this, v8ParentModel, v8mm, fakeVp, isThisIndependentDrawing /* If independent merge proxy for rendered views */))
+    if (!createOrUpdateDrawingGraphics(*this, v8ParentModel, v8mm, fakeVp, isThisIndependentDrawing /* If independent merge proxy for rendered views */, v8mm))
         m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
 
     //  Convert all views of this model
@@ -1747,7 +1757,7 @@ void Converter::CreateSheetExtractionAttachments(ResolvedModelMapping const& v8S
 
                 createdDrawing.SetTransform(v8SheetModelMapping.GetTransform());
                 createProxyGraphics(*this, *attachment, fakeVp, false);
-                createOrUpdateDrawingGraphics(*this, *attachment, createdDrawing, fakeVp, false);
+                createOrUpdateDrawingGraphics(*this, *attachment, createdDrawing, fakeVp, false, v8SheetModelMapping);
                 }
             }
         }

@@ -363,9 +363,14 @@ struct ResolvedModelMappingWithElement : ResolvedModelMapping
 //=======================================================================================
 struct ElementConversionResults
 {
+    /* *** For ExternalSourceAspect *** */
+    ResolvedModelMapping m_scope;     //!< INPUT: Optional scope element for ExternalSourceAspect. Defaults to mapping passed to ProcessConversionResults
+    Utf8String m_sourceId;            //!< INPUT: Optional SourceId for ExternalSourceAspect.
+    Utf8String m_jsonProps;           //!< INPUT: Optional JSON properties for ExternalSourceAspect.
     DgnElementPtr m_element;  //!< The DgnDb element created to represent the V8 element -- optional
     V8ECInstanceKey m_v8PrimaryInstance; //!< The primary ECInstance found on the V8 element
     bvector<bpair<V8ECInstanceKey,ECN::IECInstancePtr>> m_v8SecondaryInstanceMappings; //!< The secondary ECInstances found on the v8 element plus their converted IECInstance
+    /* ********************************* */
 
     bvector<ElementConversionResults> m_childElements; //!< Child elements
 
@@ -1418,6 +1423,11 @@ public:
     //! @name Extracted drawing graphics
     //! @{
 
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentDescription(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescription(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescriptionAsJson(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentIdPath(DgnAttachmentCR);
+
     DgnCategoryId GetExtractionCategoryId(V8NamedViewType);
     DGNDBSYNC_EXPORT virtual DgnCategoryId _GetExtractionCategoryId(DgnAttachmentCR);
     DGNDBSYNC_EXPORT virtual DgnSubCategoryId _GetExtractionSubCategoryId(DgnCategoryId, DgnV8Api::ClipVolumePass pass,
@@ -1434,7 +1444,8 @@ public:
                                                                            SyncInfo::V8ElementSource const& attachmentMapping,
                                                                            SyncInfo::V8ElementMapping const& originalElementMapping,
                                                                            DgnV8Api::ElementHandle& eh,
-                                                                           DgnCategoryId categoryId, GeometryBuilder& builder);
+                                                                           DgnCategoryId categoryId, GeometryBuilder& builder,
+                                                                           Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel); // <-- this is for new external source aspect
     DGNDBSYNC_EXPORT virtual bool _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
@@ -1824,10 +1835,10 @@ public:
                                            IChangeDetector::SearchResults const& updatePlan, bool isParentElement = true);
     
     //! This function can be used to record a mapping from a V8 element to an existing BIM element. Rarely used.
-    SyncInfo::V8ElementMapping RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
+    SyncInfo::V8ElementMapping RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, Utf8StringCR propsJson);
 
     //! This function can be used to update the provenance data stored in an existing SyncInfo mapping. Rarely used.
-    SyncInfo::V8ElementMapping UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
+    SyncInfo::V8ElementMapping UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, Utf8StringCR propsJson);
 
     //! Convenience method to create a new, non-persistent element.
     static DgnElementPtr CreateNewElement(DgnDbApi::DgnModel&, DgnClassId, DgnCategoryId, DgnCode, Utf8CP label = nullptr);
@@ -2405,7 +2416,6 @@ public:
     protected:
     DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type v8ConverterType);
     DGNDBSYNC_EXPORT SubjectCPtr GetSourceMasterModelSubject(DgnV8ModelR v8RootModel);
-    DGNDBSYNC_EXPORT Utf8String ComputeReferenceSubjectName(DgnAttachmentCR);
 
     public:
 
