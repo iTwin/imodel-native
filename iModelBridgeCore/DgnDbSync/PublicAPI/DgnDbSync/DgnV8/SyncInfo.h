@@ -377,7 +377,7 @@ struct SyncInfo
     struct V8ElementExternalSourceAspectData
         {
         DgnModelId m_scope;         // The model that was created (earlier) in the iModel from the V8 model that contains this V8 element.
-        DgnV8Api::ElementId m_v8Id; // The V8 element's ID
+        DgnV8Api::ElementId m_v8Id {}; // The V8 element's ID
         Utf8String m_v8IdPath;      // Or, a path of V8 element IDs, in case of elements in nested references.
         ElementProvenance m_prov;   // The V8 element's state
         Utf8String m_propsJson;
@@ -565,12 +565,11 @@ struct SyncInfo
     struct DrawingGraphicExternalSourceAspect : ExternalSourceAspect
         {
         private:
-        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
         DrawingGraphicExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
         public:
-        DGNDBSYNC_EXPORT static DrawingGraphicExternalSourceAspect CreateAspect(DgnModelCR bimDrawingModel, DgnV8Api::ElementId, Utf8StringCR propsJson, DgnDbR db);
-        DGNDBSYNC_EXPORT static DgnElementId FindDrawingGraphicBySource(DgnModelCR drawingModel, DgnV8Api::ElementId attachmentElementId, 
-                                                                        DgnCategoryId drawingGraphicCategory, DgnElementId original3DElement, DgnClassId, DgnDbR db);
+        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
+        DGNDBSYNC_EXPORT static DrawingGraphicExternalSourceAspect CreateAspect(DgnModelCR bimDrawingModel, Utf8StringCR idPath, Utf8StringCR propsJson, DgnDbR db);
+        DGNDBSYNC_EXPORT static DgnElementId FindDrawingGraphicBySource(DgnModelCR drawingModel, Utf8StringCR idPath, DgnCategoryId drawingGraphicCategory, DgnClassId elementClassId, DgnDbR db);
         };
 
     //! Identifies the source of a ViewDefinition. The source is identified by the ElementId of the V8 view element. 
@@ -633,10 +632,12 @@ struct SyncInfo
         
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
         //! Use this method only in the case where the element is known to have only a single element kind aspect.
-        static V8ElementExternalSourceAspect GetAspect(DgnElementR, DgnV8Api::ElementId);
+        static V8ElementExternalSourceAspect GetAspect(DgnElementR, Utf8StringCR);
+        static V8ElementExternalSourceAspect GetAspect(DgnElementR el, DgnV8Api::ElementId eid) {return GetAspect(el, FormatSourceId(eid));}
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
         //! Use this method only in the case where the element is known to have only a single element kind aspect.
-        static V8ElementExternalSourceAspect GetAspect(DgnElementCR, DgnV8Api::ElementId);
+        static V8ElementExternalSourceAspect GetAspect(DgnElementCR, Utf8StringCR);
+        static V8ElementExternalSourceAspect GetAspect(DgnElementCR el, DgnV8Api::ElementId eid) {return GetAspect(el, FormatSourceId(eid));}
 
         DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov); 
 
@@ -1132,7 +1133,7 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus InsertExtractedGraphic(V8ElementSource const& attachment,
                                                           V8ElementSource const& originalElement,
                                                           DgnCategoryId categoryId, DgnElementId extractedGraphic,
-                                                          DgnModelCR bimDrawingModel, Utf8StringCR attachmentInfo); // <-- this is for new external source aspect
+                                                          DgnModelCR bimDrawingModel, Utf8StringCR idPathOptional, Utf8StringCR attachmentInfo); // <-- this is for new external source aspect
     //! Delete mappings for all extracted graphics associated with the specified V8 element.
     DGNDBSYNC_EXPORT BentleyStatus DeleteExtractedGraphics(V8ElementSource const& attachment,
                                                            V8ElementSource const& originalElement);
@@ -1144,8 +1145,7 @@ public:
     DGNDBSYNC_EXPORT DgnElementId FindExtractedGraphic(V8ElementSource const& attachment,       
                                                        V8ElementSource const& originalElement,  
                                                        DgnCategoryId categoryId,                
-                                                       DgnModelCR scope_bimDrawingModel, // <-- this is for new external source aspect
-                                                       DgnElementId physicalElementRepresented, DgnClassId); // <-- this is for new external source aspect
+                                                       DgnModelCR scope_bimDrawingModel, Utf8StringCR idPath, DgnClassId); // <-- this is for new external source aspect
 
     //! Record a mapping between a DgnV8 View and a DgnDb ID
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo, Utf8CP viewName);

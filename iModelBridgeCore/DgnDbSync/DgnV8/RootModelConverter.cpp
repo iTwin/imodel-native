@@ -466,7 +466,7 @@ Utf8String Converter::ComputeV8AttachmentIdPath(DgnAttachmentCR att)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Converter::ComputeElementIdPath(DgnV8EhCR eh)
+Utf8String Converter::ComputeV8ElementIdPath(DgnV8EhCR eh)
     {
     Utf8String path;
     auto attachment = eh.GetModelRef()->AsDgnAttachmentCP();
@@ -476,6 +476,22 @@ Utf8String Converter::ComputeElementIdPath(DgnV8EhCR eh)
         path.append("/");
         }
     path.append(SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(eh.GetElementId()));
+    return path;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeV8ElementIdPath(DgnV8Api::DisplayPath const& dpath)
+    {
+    Utf8String path;
+    auto attachment = dpath.GetRoot()->AsDgnAttachmentCP();
+    if (nullptr != attachment)
+        {
+        path = ComputeV8AttachmentIdPath(*attachment);
+        path.append("/");
+        }
+    path.append(SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(dpath.GetTailElem()->GetElementId()));
     return path;
     }
 
@@ -493,7 +509,7 @@ void Converter::ComputeXSAInfo(Utf8StringR idPath, Utf8StringR v8AttachmentJson,
         }
 
     // This is normal element. It may be in an attached model.
-    idPath = ComputeElementIdPath(eh);
+    idPath = ComputeV8ElementIdPath(eh);
 
     att = eh.GetModelRef()->AsDgnAttachmentCP();
     if (nullptr != att)

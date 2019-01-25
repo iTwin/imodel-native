@@ -1427,7 +1427,8 @@ public:
     DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescription(DgnAttachmentCR);
     DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescriptionAsJson(DgnAttachmentCR);
     DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentIdPath(DgnAttachmentCR);
-    DGNDBSYNC_EXPORT Utf8String ComputeElementIdPath(DgnV8EhCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8ElementIdPath(DgnV8EhCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8ElementIdPath(DgnV8Api::DisplayPath const&);
     DGNDBSYNC_EXPORT void ComputeXSAInfo(Utf8StringR idPath, Utf8StringR v8AttachmentJson, DgnV8EhCR eh, DgnAttachmentCP att);
 
     DgnCategoryId GetExtractionCategoryId(V8NamedViewType);
@@ -1447,7 +1448,7 @@ public:
                                                                            SyncInfo::V8ElementMapping const& originalElementMapping,
                                                                            DgnV8Api::ElementHandle& eh,
                                                                            DgnCategoryId categoryId, GeometryBuilder& builder,
-                                                                           Utf8StringCR sourceIdPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel) // <-- Needed by ExternalSourceAspect
+                                                                           Utf8StringCR sourceIdPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel); // <-- Needed by ExternalSourceAspect
 
     DGNDBSYNC_EXPORT virtual bool _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,

@@ -869,6 +869,8 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
             bmap<DgnV8Api::ElementId,                          
                 bmap<DgnCategoryId, GeometryBuilderPtr>>>    T_BuilderMap;
 
+    typedef
+        bmap<Bentley::DgnModelRefP, bmap<DgnV8Api::ElementId, Utf8String>> T_SourceIdPathMap;
 
     struct ModelRefInfo
         {
@@ -887,6 +889,7 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
     DEFINE_T_SUPER(SimplifyViewDrawGeom)
 
     T_BuilderMap                                m_builders;
+    T_SourceIdPathMap                           m_idPaths;
     ResolvedModelMapping const&                 m_parentModelMapping;
     ResolvedModelMapping const&                 m_masterModelMapping;
     Bentley::DgnModelRefP                       m_currentModelRef;
@@ -1060,8 +1063,12 @@ Bentley::StatusInt  AddToBuilder(GeometricPrimitivePtr& primitive, Render::Geome
     if (!primitive.IsValid())
         return Bentley::BSIERROR;
 
-    auto&               byattachment = m_builders[m_currentModelRef];
     auto                elementRef = m_context->GetCurrDisplayPath()->GetHeadElem();
+
+    if (nullptr != elementRef)
+        m_idPaths[m_currentModelRef][elementRef->GetElementId()] = m_converter.ComputeV8ElementIdPath(*m_context->GetCurrDisplayPath());
+
+    auto&               byattachment = m_builders[m_currentModelRef];
     auto&               byelement = byattachment[nullptr == elementRef ? 0 : elementRef->GetElementId()];
     GeometryBuilderPtr& builder = byelement[geometryParams.GetCategoryId()];
     if (!builder.IsValid())
@@ -1236,13 +1243,15 @@ bool CreateOrUpdateDrawingGraphics()
 
             if (m_converter.IsUpdating())
                 v8ElementsByAttachment.insert(originalElementMapping);
+
+            Utf8StringCR sourceIdPath = m_idPaths[modelRef][byElement.first];
             
             bset<DgnCategoryId>     seenCategories;
             for (auto& bycategory : byElement.second)
                 {
                 modified = true;
                 seenCategories.insert(bycategory.first);
-                DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, v8eh, bycategory.first, *bycategory.second, modelRefInfo.m_attachmentInfo, m_masterModelMapping);
+                DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, v8eh, bycategory.first, *bycategory.second, sourceIdPath, modelRefInfo.m_attachmentInfo, m_masterModelMapping);
                 if (DgnDbStatus::Success != status)
                     {
                     BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");

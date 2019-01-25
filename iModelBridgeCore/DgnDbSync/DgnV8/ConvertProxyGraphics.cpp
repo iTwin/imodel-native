@@ -297,7 +297,8 @@ Converter::V8NamedViewType Converter::GetV8NamedViewTypeOfFirstAttachment(DgnV8M
 DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping, 
                                                          SyncInfo::V8ElementSource const& attachmentSource,
                                                          SyncInfo::V8ElementMapping const& originalElementMapping, DgnV8Api::ElementHandle& v8eh,
-                                                         DgnCategoryId categoryId, GeometryBuilder& builder, Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel)
+                                                         DgnCategoryId categoryId, GeometryBuilder& builder, 
+                                                         Utf8StringCR sourceIdPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel) // <-- Needed by ExternalSourceAspect
     {
     // The "orignal" element is the 3-D element that was sectioned/projected/rendered
 
@@ -403,7 +404,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     if (IsUpdating())
         {
-        auto existingDrawingGraphicId = GetSyncInfo().FindExtractedGraphic(attachmentSource, originalElementMapping, categoryId, model, originalElementMapping.m_elementId, elementClassId);
+        auto existingDrawingGraphicId = GetSyncInfo().FindExtractedGraphic(attachmentSource, originalElementMapping, categoryId, model, sourceIdPath, elementClassId);
         if (existingDrawingGraphicId.IsValid())
             {
             // We already have a graphic for this element. Update it.
@@ -425,7 +426,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     if (DgnDbStatus::Success != status)
         return status;
 
-    GetSyncInfo().InsertExtractedGraphic(attachmentSource, originalElementMapping, categoryId, drawingGraphic->GetElementId(), masterModel.GetDgnModel(), attachmentInfo);
+    GetSyncInfo().InsertExtractedGraphic(attachmentSource, originalElementMapping, categoryId, drawingGraphic->GetElementId(), masterModel.GetDgnModel(), sourceIdPath, attachmentInfo);
 
     if (v8eh.IsValid())
         {

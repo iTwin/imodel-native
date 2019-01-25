@@ -877,7 +877,7 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bool includeSourceState)
     {
-    Utf8PrintfString str("%-16.16s %8.8s %-32.32s %-8.8s", "Kind", "Scope", "Scope Element Class", "SourceId");
+    Utf8PrintfString str("%-16.16s %8.8s %-32.32s %-32.32s", "Kind", "Scope", "Scope Element Class", "SourceId");
     if (includeSourceState)
         {
         // TBD
@@ -896,7 +896,7 @@ Utf8String iModelExternalSourceAspect::FormatForDump(DgnDbR db, bool includeProp
     {
     auto scopeEl = db.Elements().GetElement(GetScope());
     auto scopeClass = scopeEl.IsValid()? scopeEl->GetElementClass()->GetFullName(): "?";
-    Utf8PrintfString str("%-16.16s %8.0llx %-32.32s %-8.8s", GetKind().c_str(), GetScope().GetValueUnchecked(), scopeClass, GetSourceId().c_str());
+    Utf8PrintfString str("%-16.16s %8.0llx %-32.32s %-32.32s", GetKind().c_str(), GetScope().GetValueUnchecked(), scopeClass, GetSourceId().c_str());
     if (includeSourceState)
         {
         // TBD
@@ -934,7 +934,10 @@ void iModelExternalSourceAspect::Dump(DgnElementCR el, Utf8CP loggingCategory, N
 
     ILogger* logger = loggingCategory? LoggingManager::GetLogger(loggingCategory): nullptr;
 
-    outDump(logger, sev, Utf8PrintfString("Element ID: %llx Class: %s Code: %s", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName(), el.GetCode().GetValueUtf8CP()));
+    GeometrySource const* geom = el.ToGeometrySource();
+    Utf8String catid = geom? Utf8PrintfString("Category: %llu", geom->GetCategoryId().GetValue()): Utf8String();
+
+    outDump(logger, sev, Utf8PrintfString("Element ID: 0x%llx Class: %s Code: %s %s", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName(), el.GetCode().GetValueUtf8CP(), catid.c_str()));
 
     outDump(logger, sev, GetDumpHeaders(includeProperties, includeSourceState));
     for (auto const& aspect : aspects)

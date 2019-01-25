@@ -2136,10 +2136,11 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
 +---------------+---------------+---------------+---------------+---------------+------*/
  BentleyStatus  Converter::WriteV8ElementExternalSourceAspect(DgnElementR el, SyncInfo::V8ElementExternalSourceAspectData const& elprov)
     {
-    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::GetAspect(el, elprov.m_v8Id);
+    auto sourceId = !elprov.m_v8IdPath.empty()? elprov.m_v8IdPath: SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(elprov.m_v8Id);
+    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::GetAspect(el, sourceId);
     if (aspect.IsValid())
         {
-        BeAssert(aspect.GetV8ElementId() == elprov.m_v8Id);
+        BeAssert(!elprov.m_v8IdPath.empty() || aspect.GetV8ElementId() == elprov.m_v8Id);
         aspect.Update(elprov.m_prov);
         return BSISUCCESS;
         }

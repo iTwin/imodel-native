@@ -1325,13 +1325,13 @@ SyncInfo::ElementIterator::Entry SyncInfo::ElementIterator::begin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::DrawingGraphicExternalSourceAspect SyncInfo::DrawingGraphicExternalSourceAspect::CreateAspect(DgnModelCR bimDrawingModel, DgnV8Api::ElementId v8AttachmentId, Utf8StringCR propsJson, DgnDbR db) 
+SyncInfo::DrawingGraphicExternalSourceAspect SyncInfo::DrawingGraphicExternalSourceAspect::CreateAspect(DgnModelCR bimDrawingModel, Utf8StringCR idPath, Utf8StringCR propsJson, DgnDbR db) 
     {
     auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
         return DrawingGraphicExternalSourceAspect(nullptr);
 
-    auto instance = CreateInstance(bimDrawingModel.GetModeledElementId(), KindToString(Kind::ProxyGraphic), FormatSourceId(v8AttachmentId), nullptr, *aspectClass);
+    auto instance = CreateInstance(bimDrawingModel.GetModeledElementId(), KindToString(Kind::ProxyGraphic), idPath, nullptr, *aspectClass);
     auto aspect = DrawingGraphicExternalSourceAspect(instance.get());
 
     if (!propsJson.empty())
@@ -1350,7 +1350,7 @@ SyncInfo::DrawingGraphicExternalSourceAspect SyncInfo::DrawingGraphicExternalSou
 BentleyStatus SyncInfo::InsertExtractedGraphic(V8ElementSource const& attachment, 
                                                V8ElementSource const& originalElement, 
                                                DgnCategoryId categoryId, DgnElementId extractedGraphic,
-                                               DgnModelCR bimDrawingModel, Utf8StringCR attachmentInfo) // <-- this is for new external source aspect
+                                               DgnModelCR bimDrawingModel, Utf8StringCR idPathOptional, Utf8StringCR attachmentInfo) // <-- this is for new external source aspect
     {
     if (!originalElement.IsValid() || !categoryId.IsValid() || !extractedGraphic.IsValid())
         {
@@ -1360,7 +1360,8 @@ BentleyStatus SyncInfo::InsertExtractedGraphic(V8ElementSource const& attachment
 
     if (m_converter._WantProvenanceInBim())
         {
-        auto aspect = DrawingGraphicExternalSourceAspect::CreateAspect(bimDrawingModel, attachment.m_v8ElementId, attachmentInfo, *GetDgnDb());
+        Utf8String idPath = !idPathOptional.empty()? idPathOptional: DrawingGraphicExternalSourceAspect::FormatSourceId(attachment.m_v8ElementId);
+        auto aspect = DrawingGraphicExternalSourceAspect::CreateAspect(bimDrawingModel, idPath, attachmentInfo, *GetDgnDb());
         auto graphicEl = GetDgnDb()->Elements().GetForEdit<DgnElement>(extractedGraphic);
         aspect.AddAspect(*graphicEl);
         return graphicEl->Update().IsValid()? BSISUCCESS: BSIERROR;
@@ -1425,11 +1426,8 @@ BentleyStatus SyncInfo::DeleteExtractedGraphicsCategory(V8ElementSource const& a
 // @bsimethod                                     Sam.Wilson      1/19
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnElementId SyncInfo::DrawingGraphicExternalSourceAspect::FindDrawingGraphicBySource (DgnModelCR drawingModel, 
-    DgnV8Api::ElementId attachmentElementId, DgnCategoryId drawingGraphicCategory, DgnElementId original3DElementId, 
-    DgnClassId elementClassId, DgnDbR db)
+    Utf8StringCR idPath, DgnCategoryId drawingGraphicCategory, DgnClassId elementClassId, DgnDbR db)
     {
-    auto selByDGRE = db.GetPreparedECSqlStatement("SELECT 1 FROM " BIS_SCHEMA(BIS_REL_DrawingGraphicRepresentsElement) " WHERE TargetECInstanceId=?");
-
     auto ecclass = db.Schemas().GetClass(elementClassId);
     Utf8PrintfString ecsql(
         "SELECT dg.ECInstanceId FROM %s dg, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
@@ -1439,18 +1437,13 @@ DgnElementId SyncInfo::DrawingGraphicExternalSourceAspect::FindDrawingGraphicByS
     int col=1;
     stmt->BindId(col++, drawingModel.GetModelId());
     stmt->BindId(col++, drawingGraphicCategory);
-    stmt->BindText(col++, FormatSourceId(attachmentElementId).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-    while (BE_SQLITE_ROW == stmt->Step())
+    stmt->BindText(col++, idPath.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW == stmt->Step())
         {
-        if (!original3DElementId.IsValid())
-            return stmt->GetValueId<DgnElementId>(0);
-
-        selByDGRE->Reset();
-        selByDGRE->BindId(1, original3DElementId);
-        if (BE_SQLITE_ROW == selByDGRE->Step())
-            return stmt->GetValueId<DgnElementId>(0);
+        auto eid = stmt->GetValueId<DgnElementId>(0);
+        BeAssert((BE_SQLITE_DONE == stmt->Step()) && "There should be only one ProxyGraphic XSA on a DrawingGraphic element with a given category");
+        return eid;
         }
-
     return DgnElementId();
     }
 
@@ -1461,12 +1454,12 @@ DgnElementId SyncInfo::FindExtractedGraphic(V8ElementSource const& attachment,
                                             V8ElementSource const& originalElement, 
                                             DgnCategoryId categoryId,               
                                             DgnModelCR scope_bimDrawingModel, // <-- this is for new external source aspect
-                                            DgnElementId physicalElementRepresented, // <-- this is for new external source aspect
+                                            Utf8StringCR idPath, // <-- this is for new external source aspect
                                             DgnClassId elementClassId) // <-- this is for new external source aspect
     {
     if (m_converter._WantProvenanceInBim())
         {
-        return DrawingGraphicExternalSourceAspect::FindDrawingGraphicBySource(scope_bimDrawingModel, attachment.m_v8ElementId, categoryId, physicalElementRepresented, elementClassId, *GetDgnDb());
+        return DrawingGraphicExternalSourceAspect::FindDrawingGraphicBySource(scope_bimDrawingModel, idPath, categoryId, elementClassId, *GetDgnDb());
         }
 
     CachedStatementPtr stmt = nullptr;
@@ -1916,9 +1909,9 @@ bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetExternalSourceAspectIds(DgnElem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::GetAspect(DgnElementR el, DgnV8Api::ElementId v8Id)
+SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::GetAspect(DgnElementR el, Utf8StringCR sourceId)
     {
-    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Element, FormatSourceId(v8Id));
+    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Element, sourceId);
     if (ids.size() == 0)
         return V8ElementExternalSourceAspect(nullptr);
     BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
@@ -1928,9 +1921,9 @@ SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::GetAspect(DgnElementCR el, DgnV8Api::ElementId v8Id)
+SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::GetAspect(DgnElementCR el, Utf8StringCR sourceId)
     {
-    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Element, FormatSourceId(v8Id));
+    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Element, sourceId);
     if (ids.size() == 0)
         return V8ElementExternalSourceAspect(nullptr);
     BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
