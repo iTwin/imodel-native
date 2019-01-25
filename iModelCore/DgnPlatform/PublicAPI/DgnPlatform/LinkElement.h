@@ -99,7 +99,7 @@ public:
 
     static LinkModelPtr Create(CreateParams const& params) { return new LinkModel(params); }
 
-    //! Gets the LinkModel by Id. If the model is not loaded, it loads it, but does not fill it with contained elements. 
+    //! Gets the LinkModel by Id. If the model is not loaded, it loads it, but does not fill it with contained elements.
     static LinkModelPtr Get(Dgn::DgnDbCR dgndb, DgnModelId id) { return dgndb.Models().Get<LinkModel>(id); }
 
     //! Query the DgnClassId of the dgn.LinkModel ECClass in the specified DgnDb.
@@ -123,37 +123,37 @@ protected:
 
 public:
     //! Add the link to a source element
-    //! @param[in] sourceElementId Id of the host element. 
+    //! @param[in] sourceElementId Id of the host element.
     //! @remarks The source may contain one or more links. It's also possible that there may be links that aren't in any source element at all
     DGNPLATFORM_EXPORT BentleyStatus AddToSource(DgnElementId sourceElementId) const;
 
     //! Add the link to a source element
     //! @param[in] dgndb DgnDb
     //! @param[in] linkId DgnElementId of the link
-    //! @param[in] sourceElementId DgnElementId of the source element. 
+    //! @param[in] sourceElementId DgnElementId of the source element.
     //! @remarks The source may contain one or more links. It's also possible that there may be links that aren't in any source element at all
     DGNPLATFORM_EXPORT static BentleyStatus AddToSource(DgnDbR dgndb, DgnElementId linkId, DgnElementId sourceElementId);
 
     //! Returns true if the supplied element is one of the sources of this link
-    //! @param[in] sourceElementId Id of the host element. 
+    //! @param[in] sourceElementId Id of the host element.
     DGNPLATFORM_EXPORT bool IsFromSource(DgnElementId sourceElementId) const;
 
-    //! Returns true if the supplied element is one of the sources of the supplied link 
+    //! Returns true if the supplied element is one of the sources of the supplied link
     //! @param[in] dgndb DgnDb
     //! @param[in] linkId DgnElementId of the link
-    //! @param[in] sourceElementId DgnElementId of the source element. 
+    //! @param[in] sourceElementId DgnElementId of the source element.
     DGNPLATFORM_EXPORT static bool IsFromSource(DgnDbR dgndb, DgnElementId linkId, DgnElementId sourceElementId);
 
     //! Removes this link from a source element
     //! @param[in] sourceElementId Id of the source element. If invalid id is passed in, removes the specified link from all hosts.
-    //! @remarks The removed links are NOT deleted. Use @ref DgnElement::Delete to delete the link. 
+    //! @remarks The removed links are NOT deleted. Use @ref DgnElement::Delete to delete the link.
     DGNPLATFORM_EXPORT BentleyStatus RemoveFromSource(DgnElementId sourceElementId) const;
 
     //! Removes this link from a source element
     //! @param[in] dgndb DgnDb
     //! @param[in] linkId DgnElementId of the link
     //! @param[in] sourceElementId Id of the source element. If invalid id is passed in, removes the specified link from all hosts.
-    //! @remarks The removed links are NOT deleted. Use @ref DgnElement::Delete to delete the link. 
+    //! @remarks The removed links are NOT deleted. Use @ref DgnElement::Delete to delete the link.
     DGNPLATFORM_EXPORT static BentleyStatus RemoveFromSource(DgnDbR dgndb, DgnElementId linkId, DgnElementId sourceElementId);
 
     //! Query all the source elements that contain this link
@@ -232,7 +232,7 @@ public:
             ecSql.append(" WHERE ");
             ecSql.append(whereClause);
             }
-            
+
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
         BeAssert(stmt.IsValid());
 
@@ -257,7 +257,7 @@ public:
         }
 
     //! Removes all links from the specified source
-    //! @remarks The removed links are NOT deleted. Use @ref DgnElement::Delete to delete the link. 
+    //! @remarks The removed links are NOT deleted. Use @ref DgnElement::Delete to delete the link.
     static BentleyStatus RemoveAllFromSource(DgnDbR dgndb, DgnElementId sourceElementId)
         {
         return LinkElement::DoRemoveAllFromSource(dgndb, sourceElementId, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName(),
@@ -304,7 +304,7 @@ private:
     Utf8String m_description;
 
 protected:
-    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
@@ -345,7 +345,7 @@ public:
     //! Insert the UrlLink in the DgnDb
     DGNPLATFORM_EXPORT UrlLinkCPtr Insert();
 
-    //! Update the persistent state of the UrlLink in the DgnDb from this modified copy of it. 
+    //! Update the persistent state of the UrlLink in the DgnDb from this modified copy of it.
     DGNPLATFORM_EXPORT UrlLinkCPtr Update();
 
     //! Query the UrlLink-s by it's properties
@@ -387,7 +387,7 @@ protected:
 
     explicit RepositoryLink(CreateParams const& params) : T_Super(params) {}
 
-    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
@@ -419,11 +419,11 @@ public:
     //! Set the RepositoryGuid property value
     void SetRepositoryGuid(BeSQLite::BeGuid g) {m_repositoryGuid = g;}
 
-    //! Get the Document Properties for this InformationPartitionElement. Document Properties provide additional information about 
+    //! Get the Document Properties for this InformationPartitionElement. Document Properties provide additional information about
     //! the document to which this link refers.
     ECN::AdHocJsonValueCR GetDocumentProperties() const {return GetJsonProperties(json_prop_namespace_DocumentProperties());}
 
-    //! Set the Document Properties of this InformationPartitionElement. Document Properties 
+    //! Set the Document Properties of this InformationPartitionElement. Document Properties
     void SetDocumentProperties(JsonValueCR value) {SetJsonProperties(json_prop_namespace_DocumentProperties(), value);}
 };
 
@@ -447,14 +447,14 @@ public:
 
     explicit CreateParams(Dgn::DgnElement::CreateParams const& params, Utf8CP name = nullptr, Utf8CP description = nullptr) : T_Super(params)
         {
-        m_name.AssignOrClear(name); 
+        m_name.AssignOrClear(name);
         m_description.AssignOrClear(description);
         }
 
     //! Constructor
     //! @param[in] linkModel Model that should contain the link
-    //! @param[in] name Name used to create the embedded file. 
-    //! @param[in] label Label to identify the link. 
+    //! @param[in] name Name used to create the embedded file.
+    //! @param[in] label Label to identify the link.
     //! @param[in] description Description of the link
     //! @see DbEmbeddedFileTable for details on embedding file in a DgnDb
     DGNPLATFORM_EXPORT CreateParams(LinkModelR linkModel, Utf8CP name, Utf8CP label = nullptr, Utf8CP description = nullptr);
@@ -465,7 +465,7 @@ private:
     Utf8String m_description;
 
 protected:
-    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
@@ -484,7 +484,7 @@ public:
     //! Insert the EmbeddedFileLink in the DgnDb
     DGNPLATFORM_EXPORT EmbeddedFileLinkCPtr Insert();
 
-    //! Update the persistent state of the EmbeddedFileLink in the DgnDb from this modified copy of it. 
+    //! Update the persistent state of the EmbeddedFileLink in the DgnDb from this modified copy of it.
     DGNPLATFORM_EXPORT EmbeddedFileLinkCPtr Update();
 
     //! Query the EmbeddedFileLink-s by it's properties
@@ -531,7 +531,7 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LinkPartition, LinkPartition, LinkPartitionHandler, InformationPartition, DGNPLATFORM_EXPORT)
     };
-    
+
     //! The handler for UrlLink elements
     struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : InformationContent
     {

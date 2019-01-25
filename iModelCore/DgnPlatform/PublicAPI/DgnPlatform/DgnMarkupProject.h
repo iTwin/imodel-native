@@ -22,22 +22,22 @@
 * project file. See DgnMarkupProject::GetAssociation. You can use the stored relative filename
 * to find the original project. After re-opening a DgnMarkupProject, you should call the DgnMarkupProject::CheckAssociation
 * function to be sure that the given DgnDb is in fact associated with the DgnMarkupProject. This check is based on the project's BeGuid.
-* 
+*
 * @section DgnMarkupProjectGroup_Redlines Markups and Redlines
 *
 * A "markup" is an annotation applied to a DgnDb. A markup has text properties but no graphics.
-* 
+*
 * A "redline" is an annotation applied to a DgnDb or view that has both text and graphics.
 * Redline graphics are stored in models within a DgnMarkupProject. There are two types of models that hold redlines, RedlineModel and SpatialRedlineModel.
 * A redline model must be created or opened in order to store redlines.
 *
 * @section DgnMarkupProjectGroup_SpatialRedlines Physical vs. non-physical redlines.
-* Suppose you want to draw redlines  on top of a map. The extent of the map is so great that no single view will show it very well. 
-* You want to be able to zoom in and out and pan around and draw your redlines at any location in the map. Therefore, you want the redline 
-* view to show you a live view of the map, combined with a live view of the redline model. In this case, you need a "physical" redline 
-* model and view. It's called "physical" because in this case the redline model itself is a (3-D) SpatialModel, and the associated 
-* ViewController is derived from SpatialViewController. In the normal (non-physical) redline case, the redline view shows you a 
-* static image of a view of the DgnDb or some other static image. The redline model in that case is a (2-D) SheetModel, and the 
+* Suppose you want to draw redlines  on top of a map. The extent of the map is so great that no single view will show it very well.
+* You want to be able to zoom in and out and pan around and draw your redlines at any location in the map. Therefore, you want the redline
+* view to show you a live view of the map, combined with a live view of the redline model. In this case, you need a "physical" redline
+* model and view. It's called "physical" because in this case the redline model itself is a (3-D) SpatialModel, and the associated
+* ViewController is derived from SpatialViewController. In the normal (non-physical) redline case, the redline view shows you a
+* static image of a view of the DgnDb or some other static image. The redline model in that case is a (2-D) SheetModel, and the
 * associated redline view is a SheetViewController.
 */
 
@@ -99,7 +99,7 @@ struct MarkupDomain : Dgn::DgnDomain
 
 //=======================================================================================
 //! Represents annotations that mark up (a picture of) something.
-//! A Redline may be (but does not have to be) associated with a view of a BIM. 
+//! A Redline may be (but does not have to be) associated with a view of a BIM.
 //! You can create and store a LinkElement to record such an association if you wish.
 // @bsiclass                                                    Sam.Wilson      05/13
 //=======================================================================================
@@ -172,7 +172,7 @@ public:
     //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
     //! @param[in] doc      The Redline element
     //! @return a new, non-persisetnt RedlineModel object or an invalid handle if \a doc is invalid
-    DGNPLATFORM_EXPORT static RedlineModelPtr Create(DgnDbStatus* createStatus, Redline& doc); 
+    DGNPLATFORM_EXPORT static RedlineModelPtr Create(DgnDbStatus* createStatus, Redline& doc);
 
     //! Save an image to display in this redline model.
     //! @param texture the persistent DgnTexture element holding the image data
@@ -202,7 +202,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : ViewDefinition2d
         explicit RedlineViewDefinition(CreateParams const& params) : T_Super(params) {}
 
         //! Construct a new RedlineViewDefinition prior to inserting it
-        RedlineViewDefinition(DefinitionModelR model, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) : 
+        RedlineViewDefinition(DefinitionModelR model, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
                 T_Super(model, name, QueryClassId(model.GetDgnDb()), baseModelId, categories, displayStyle) {}
 
 
@@ -244,7 +244,7 @@ public:
     DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, RedlineViewDefinitionR rdlViewDef);
     DGNPLATFORM_EXPORT RedlineViewController(RedlineViewDefinition const& rdlViewDef);
     DGNPLATFORM_EXPORT ~RedlineViewController();
-    
+
     DGNPLATFORM_EXPORT void OnClose(RedlineModel& targetModel);
     DGNPLATFORM_EXPORT void OnOpen(RedlineModel& targetModel);
 #endif // DOCUMENTATION_GENERATOR
@@ -267,14 +267,14 @@ struct RedlineElementHandler : Document
 //! Displays a SpatialRedlineModel in conjunction with the display of another view controller.
 //!@remarks
 //! SpatialRedlineViewController is a normal Orthographic 3D view in most respects, and its SpatialRedlineModel is its target model.
-//! 
+//!
 //! SpatialRedlineViewController is unusual in that it also tries work in sync with another view controller.
 //! This other controller is called the "subject view controller." It must be be supplied in the SpatialRedlineViewController constructor.
-//! A SpatialRedlineViewController actually has no view parameters of its own. Instead, it adopts the view parameters of the subject view controller on the fly. 
+//! A SpatialRedlineViewController actually has no view parameters of its own. Instead, it adopts the view parameters of the subject view controller on the fly.
 //! SpatialRedlineViewController overrides _DrawView to draw its own SpatialRedlineModel. It then forwards the draw request to the subject view controller.
 //! A SpatialRedlineViewController handles most viewing-related queries by applying them to itself and then forwarding them to the subject view controller, so that
 //! the two view controllers are always in sync.
-//! 
+//!
 //! <h4>Locating and Editing</h4>
 //! Locates and edits are normally directed to the SpatialRedlineModel, since that is the normal target model of a SpatialRedlineViewController.
 //! If an app wants to re-direct locates and/or edits to the target of the subject view controller instead, it should SpatialRedlineViewController::SetTargetModel
@@ -330,7 +330,7 @@ public:
 };
 
 //=======================================================================================
-//! Holds "redline" graphics and other annotations for a physical view of a subject DgnDb. 
+//! Holds "redline" graphics and other annotations for a physical view of a subject DgnDb.
 //! This type of redline model is displayed simultaneously with view of the subject project by SpatialRedlineViewController.
 //! The subject view is live, not a static image.
 //! A SpatialRedlineModel has the same units and coordinate system as the target model of the view of the subject project.
@@ -387,7 +387,7 @@ public:
 };
 
 //=======================================================================================
-//! A DgnMarkupProject project is a type of DgnDb that holds markups of various kinds, including redlines and punch lists. 
+//! A DgnMarkupProject project is a type of DgnDb that holds markups of various kinds, including redlines and punch lists.
 //! @ingroup DgnMarkupProjectGroup
 // @bsiclass
 //=======================================================================================
@@ -413,7 +413,7 @@ public:
     DGNPLATFORM_EXPORT static void ComputeDgnProjectFileName(BeFileNameR markupProjectName, BeFileNameCR dgnProjectName);
 
     //! Open and existing DgnMarkupProject file.
-    //! @param[out] status BE_SQLITE_OK if the DgnMarkupProject file was successfully opened or a non-zero error code if the project could not be opened or is not a markup project. May be NULL. 
+    //! @param[out] status BE_SQLITE_OK if the DgnMarkupProject file was successfully opened or a non-zero error code if the project could not be opened or is not a markup project. May be NULL.
     //! @param[in] filename The name of the file from which the DgnMarkupProject is to be opened. Must be a valid filename.
     //! @param[in] openParams Parameters for opening the database file
     //! will never access any element data, you can skip that step. However, generally it is preferable to load the DgnFile when opening the project.
@@ -421,7 +421,7 @@ public:
     DGNPLATFORM_EXPORT static DgnMarkupProjectPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
     //! Create and open a new DgnMarkupProject file.
-    //! @param[out] status \a BE_SQLITE_OK if the DgnMarkupProject file was successfully created or a non-zero error code if the project could not be created. May be NULL. 
+    //! @param[out] status \a BE_SQLITE_OK if the DgnMarkupProject file was successfully created or a non-zero error code if the project could not be created. May be NULL.
     //! @param[in] filename The name of the file for the new DgnMarkupProject. The directory must be writable.
     //! @param[in] params Parameters that control aspects of the newly created DgnMarkupProject
     //! @return a reference counted pointer to the newly created DgnMarkupProject. Its IsValid() method will be false if the open failed for any reason.
@@ -467,7 +467,7 @@ private:
     DgnElementId m_linkedElementId;
 
 protected:
-    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
@@ -485,7 +485,7 @@ public:
     //! Insert the MarkupExternalLink in the DgnDb
     DGNPLATFORM_EXPORT MarkupExternalLinkCPtr Insert();
 
-    //! Update the persistent state of the MarkupExternalLink in the DgnDb from this modified copy of it. 
+    //! Update the persistent state of the MarkupExternalLink in the DgnDb from this modified copy of it.
     DGNPLATFORM_EXPORT MarkupExternalLinkCPtr Update();
 
     //! Set the linked element id
@@ -533,7 +533,7 @@ public:
     //! Insert the MarkupExternalLinkGroup in the DgnDb
     DGNPLATFORM_EXPORT MarkupExternalLinkGroupCPtr Insert();
 
-    //! Update the persistent state of the MarkupExternalLinkGroup in the DgnDb from this modified copy of it. 
+    //! Update the persistent state of the MarkupExternalLinkGroup in the DgnDb from this modified copy of it.
     DGNPLATFORM_EXPORT MarkupExternalLinkGroupCPtr Update();
 
     //! Get the schema name for the MarkupExternalLinkGroup class

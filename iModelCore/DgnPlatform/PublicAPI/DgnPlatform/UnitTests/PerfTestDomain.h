@@ -39,14 +39,14 @@
 #define PTEST_TEST_ELEMENT_IntegerProperty2 "TestIntegerProperty2"
 #define PTEST_TEST_ELEMENT_IntegerProperty3 "TestIntegerProperty3"
 #define PTEST_TEST_ELEMENT_IntegerProperty4 "TestIntegerProperty4"
-#define PTEST_TEST_ELEMENT_DoubleProperty1 "TestDoubleProperty1" 
-#define PTEST_TEST_ELEMENT_DoubleProperty2 "TestDoubleProperty2" 
-#define PTEST_TEST_ELEMENT_DoubleProperty3 "TestDoubleProperty3" 
-#define PTEST_TEST_ELEMENT_DoubleProperty4 "TestDoubleProperty4" 
-#define PTEST_TEST_ELEMENT_PointProperty1 "TestPointProperty1"  
-#define PTEST_TEST_ELEMENT_PointProperty2 "TestPointProperty2"  
-#define PTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"  
-#define PTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
+#define PTEST_TEST_ELEMENT_DoubleProperty1 "TestDoubleProperty1"
+#define PTEST_TEST_ELEMENT_DoubleProperty2 "TestDoubleProperty2"
+#define PTEST_TEST_ELEMENT_DoubleProperty3 "TestDoubleProperty3"
+#define PTEST_TEST_ELEMENT_DoubleProperty4 "TestDoubleProperty4"
+#define PTEST_TEST_ELEMENT_PointProperty1 "TestPointProperty1"
+#define PTEST_TEST_ELEMENT_PointProperty2 "TestPointProperty2"
+#define PTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"
+#define PTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"
 
 #define PTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
 #define PTEST_CLASS_TestPhysicalType "TestPhysicalType"
@@ -203,7 +203,7 @@ struct CN : SUPERCN                                                             
                                                                                                                                             \
     Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;        \
     void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;                                                               \
-    void _CopyFrom(Dgn::DgnElementCR el) override {/*TBD*/BeAssert("false");}                                                               \
+    void _CopyFrom(Dgn::DgnElementCR el, CopyFromOptions const&) override {/*TBD*/BeAssert("false");}                                                               \
   public:                                                                                                                                   \
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(PTEST_SCHEMA_NAME, # CN)); }    \
     static CN ## Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);                                            \

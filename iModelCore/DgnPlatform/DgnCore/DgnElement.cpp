@@ -355,9 +355,9 @@ void DefinitionElement::_FromJson(JsonValueR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DefinitionElement::_CopyFrom(DgnElementCR el)
+void DefinitionElement::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
 
     auto& other = static_cast<DefinitionElementCR>(el);
     m_isPrivate = other.m_isPrivate;
@@ -839,6 +839,8 @@ struct OnInsertedCaller
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_OnInserted(DgnElementP copiedFrom) const
     {
+    UnloadAutoHandledProperties(); // See "avoid incomplete NavigationProperty values"
+
     if (copiedFrom)
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
@@ -975,6 +977,14 @@ struct OnUpdateAppliedCaller
     OnUpdateAppliedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
     DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnAppliedUpdate(m_updated, m_original);}
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnUpdateFinished() const
+    {
+    UnloadAutoHandledProperties(); // See "avoid incomplete NavigationProperty values"
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -1252,7 +1262,7 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
 static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem)
     {
     ECClassCP eclass = elem.GetElementClass();
-    
+
     Utf8StringCR autoHandledProps = elem.GetDgnDb().Elements().GetAutoHandledPropertiesSelectECSql(*eclass);
     if (autoHandledProps.empty())
         return;
@@ -1570,7 +1580,7 @@ void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importe
 void DgnElement::CopyForCloneFrom(DgnElementCR src)
     {
     DgnCode code = GetCode();
-    _CopyFrom(src);
+    _CopyFrom(src, CopyFromOptions());
     m_code = code;
     }
 
@@ -1643,7 +1653,7 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_CopyFrom(DgnElementCR other)
+void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
     {
     if (&other == this)
         return;
@@ -1656,27 +1666,30 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     m_jsonProperties = other.m_jsonProperties;
     // don't copy FederationGuid
 
-    // Copy the auto-handled EC properties
-    ElementAutoHandledPropertiesECInstanceAdapter ecOther(other, true);
-    if (ecOther.IsValid())
+    if (opts.copyEcPropertyData)
         {
-        bool sameClass = (GetElementClassId() == other.GetElementClassId());
-        // Note that we are NOT necessarily going to call _SetPropertyValue on each property.
-        // If the subclass needs to validate specific auto-handled properties even during copying, then it
-        // must override _CopyFrom and validate after the copy is done.
-        // TRICKY: If copying between elements of the same class, don't load my auto-handled properties at the outset. That will typically lead me to allocate a smaller
-        //          buffer for what I have now (if anything) and then have to realloc it to accommodate the other element's buffer.
-        //          Instead, wait and let CopyFromBuffer tell me the *exact* size to allocate.
-        ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this, !sameClass, ecOther.CalculateBytesUsed());
-        if (ecThis.IsValid()) // this might not have auto-handled props if this and other are instances of different classes
+        // Copy the auto-handled EC properties
+        ElementAutoHandledPropertiesECInstanceAdapter ecOther(other, true);
+        if (ecOther.IsValid())
             {
-            if (!sameClass)
-                ecThis.CopyDataBuffer(ecOther, true);
-            else
-                ecThis.CopyFromBuffer(ecOther);
+            bool sameClass = (GetElementClassId() == other.GetElementClassId());
+            // Note that we are NOT necessarily going to call _SetPropertyValue on each property.
+            // If the subclass needs to validate specific auto-handled properties even during copying, then it
+            // must override _CopyFrom and validate after the copy is done.
+            // TRICKY: If copying between elements of the same class, don't load my auto-handled properties at the outset. That will typically lead me to allocate a smaller
+            //          buffer for what I have now (if anything) and then have to realloc it to accommodate the other element's buffer.
+            //          Instead, wait and let CopyFromBuffer tell me the *exact* size to allocate.
+            ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this, !sameClass, ecOther.CalculateBytesUsed());
+            if (ecThis.IsValid()) // this might not have auto-handled props if this and other are instances of different classes
+                {
+                if (!sameClass)
+                    ecThis.CopyDataBuffer(ecOther, true);
+                else
+                    ecThis.CopyFromBuffer(ecOther);
 
-            if (nullptr != m_ecPropertyData)
-                m_flags.m_propState = DgnElement::PropState::Dirty;
+                if (nullptr != m_ecPropertyData)
+                    m_flags.m_propState = DgnElement::PropState::Dirty;
+                }
             }
         }
     }
@@ -1863,9 +1876,9 @@ void GeometricElement::CopyFromGeometrySource(GeometrySourceCR src)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement2d::_CopyFrom(DgnElementCR el)
+void GeometricElement2d::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto src = el.ToGeometrySource2d();
     if (nullptr != src)
         {
@@ -1881,9 +1894,9 @@ void GeometricElement2d::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement3d::_CopyFrom(DgnElementCR el)
+void GeometricElement3d::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto src = el.ToGeometrySource3d();
     if (nullptr != src)
         {
@@ -1917,7 +1930,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::CopyForEdit() const
+DgnElementPtr DgnElement::CopyForEditInternal(CopyFromOptions const& opts) const
     {
     DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parent.m_id, m_parent.m_relClassId, GetFederationGuid());
     createParams.SetElementId(GetElementId());
@@ -1929,8 +1942,16 @@ DgnElementPtr DgnElement::CopyForEdit() const
 #else
     BeAssert(typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
 #endif
-    newEl->_CopyFrom(*this);
+    newEl->_CopyFrom(*this, opts);
     return newEl;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnElement::CopyForEdit() const
+    {
+    return CopyForEditInternal(CopyFromOptions());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4573,3 +4594,13 @@ void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bri
     BeAssert(IsJobSubject(jobSubject));
     }
 
+/*
+    avoid incomplete NavigationProperty values
+
+    When iModel.js does an insert and supplies JSON properties, we allow the caller to specify NavigationProperty values that contain only the
+    target element ID and omit the relClassName. In that case, we would have to do an ECSql query in order to get the relClassName from the
+    ec tables. To make sure that happens and to avoid having an incomplete NavigationProperty value in the cache, we discard the entire set
+    of auto-handled property values from memory, so that the next request will be fulfilled by an ECSql query.
+
+    This problem can also crop up in an update, so we discard cached properties after updating, too.
+*/

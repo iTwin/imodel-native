@@ -56,7 +56,7 @@ public:
 
         bool IsValid() const { return !m_provider.empty(); }
         Json::Value   ToJson() const;
-        void FromJson(JsonValueCR value);  
+        void FromJson(JsonValueCR value);
     };
 
 protected:
@@ -70,7 +70,7 @@ protected:
     Utf8String ToJson() const;
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs, CopyFromOptions const&) override;
     explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
     virtual DisplayStyle2dCP _ToDisplayStyle2d() const {return nullptr;}
     virtual DisplayStyle3dCP _ToDisplayStyle3d() const {return nullptr;}
@@ -173,7 +173,7 @@ public:
     //! @param[in] model The DefinitionModel to contain the DisplayStyle2d
     //! @param[in] name The name of the DisplayStyle2d. Must be unique across all DisplayStyles
     DisplayStyle2d(DefinitionModelR model, Utf8StringCR name="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
-    
+
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle2d));}//!< @private
 };
 
@@ -198,7 +198,7 @@ public:
             ColorDef m_aboveColor;      //!< the color to draw the ground plane if the view shows the ground from above
             ColorDef m_belowColor;      //!< the color to draw the ground plane if the view shows the ground from below
         };
-            
+
         struct SkyBox
         {
             struct Image
@@ -224,7 +224,7 @@ public:
             bool m_enabled = false;
             bool m_twoColor = false;
         };
-       
+
         GroundPlane m_groundPlane;
         SkyBox m_skybox;
 
@@ -243,7 +243,7 @@ protected:
 
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs, CopyFromOptions const&) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
     DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
@@ -326,7 +326,7 @@ protected:
 
     bool EqualState(ModelSelectorCR other) const {return m_models==other.m_models;}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
@@ -384,7 +384,7 @@ protected:
 
     bool EqualState(CategorySelectorCR other) const;
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
@@ -401,7 +401,7 @@ public:
     CategorySelector(DefinitionModelR model, Utf8StringCR name) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
     //! Get the name of this CategorySelector
-    Utf8String GetName() const {return GetCode().GetValue().GetUtf8();} 
+    Utf8String GetName() const {return GetCode().GetValue().GetUtf8();}
 
     //! Get the set of currently displayed DgnCategories
     DgnCategoryIdSet const& GetCategories() const {return m_categories;}
@@ -437,7 +437,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewDefinition, DefinitionElement);
     friend struct ViewElementHandler::View;
-    friend struct ViewController;                
+    friend struct ViewController;
     friend struct DgnViewport;
 
 public:
@@ -466,7 +466,7 @@ protected:
 
     static bool IsValidCode(DgnCodeCR code);
 
-    explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector);} 
+    explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector);}
 
     DGNPLATFORM_EXPORT virtual BentleyStatus _ValidateState();
     DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionR);
@@ -478,7 +478,7 @@ protected:
     void _OnInserted(DgnElementP copiedFrom) const override {ClearState(); T_Super::_OnInserted(copiedFrom);}
     void _OnUpdateFinished() const override {ClearState(); T_Super::_OnUpdateFinished();}
     void _OnDeleted() const override {DeleteThumbnail(); T_Super::_OnDeleted();}
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
@@ -529,7 +529,7 @@ public:
 
     //! Determine whether two ViewDefinitions are "equal", including their unsaved state
     bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
-    
+
     Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());} //!< Get description
     DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(prop_Description(), value.c_str());} //!< Set description
 
@@ -539,13 +539,13 @@ public:
     /** @name ViewDefinition Details */
     /** @{ */
 
-    //! Get the current value of a view detail 
+    //! Get the current value of a view detail
     JsonValueCR GetDetail(Utf8CP name) const {return GetDetails()[name];}
 
-    //! Change the value of a view detail 
+    //! Change the value of a view detail
     void SetDetail(Utf8CP name, JsonValueCR value) {GetDetailsR()[name] = value;}
 
-    //! Remove a view detail 
+    //! Remove a view detail
     void RemoveDetail(Utf8CP name) {GetDetailsR().removeMember(name);}
     /** @} */
 
@@ -661,7 +661,7 @@ public:
     TemplateViewDefinition2dP ToTemplateView2dP() {return const_cast<TemplateViewDefinition2dP>(ToTemplateView2d());}
     TemplateViewDefinition3dP ToTemplateView3dP() {return const_cast<TemplateViewDefinition3dP>(ToTemplateView3d());}
 
-    //! Get the CategorySelector for this ViewDefinition. 
+    //! Get the CategorySelector for this ViewDefinition.
     //! @note this is a non-const method and may only be called on a writeable copy of a ViewDefinition.
     DGNPLATFORM_EXPORT CategorySelectorR GetCategorySelector();
     DgnElementId GetCategorySelectorId() const {return m_categorySelectorId;}
@@ -952,7 +952,7 @@ protected:
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void SaveCamera();
     DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const& inFrustum) override;
     DGNPLATFORM_EXPORT DPoint3d _GetTargetPoint() const override;
@@ -981,7 +981,7 @@ public:
     bool IsEyePointAbove(double elevation) const {return !IsCameraOn() ? (GetZVector().z > 0) : (GetEyePoint().z > elevation);}//!< private
     DGNPLATFORM_EXPORT DPoint3d ComputeEyePoint(Frustum const& frust) const;//!< private
 
-    explicit ViewDefinition3d(CreateParams const& params) : T_Super(params), m_cameraOn(params.m_cameraOn), m_origin(params.m_origin), m_extents(params.m_extents), 
+    explicit ViewDefinition3d(CreateParams const& params) : T_Super(params), m_cameraOn(params.m_cameraOn), m_origin(params.m_origin), m_extents(params.m_extents),
                                                         m_rotation(params.m_rotation), m_cameraDef(params.m_cameraDef) {if (params.m_displayStyle.IsValid()) SetDisplayStyle3d(*params.m_displayStyle);}
 
     DisplayStyle3dR GetDisplayStyle3d() {return (DisplayStyle3dR) GetDisplayStyle();}
@@ -997,11 +997,11 @@ public:
     bool IsCameraOn() const {return m_cameraOn;}
 
     //! Turn the camera off for this view. After this call, the camera parameters in this view definition are ignored and views that use it will
-    //! display with an orthographic (infinite focal length) projection of the view volume from the view direction. 
+    //! display with an orthographic (infinite focal length) projection of the view volume from the view direction.
     //! @note To turn the camera back on, call LookAt
     void TurnCameraOff() {m_cameraOn = false;}
 
-    //! Turn the camera on for this view.  This should be used onl after the camera parameters have been set for this view. 
+    //! Turn the camera on for this view.  This should be used onl after the camera parameters have been set for this view.
     //! for internal use only -- generally LookAt should be used.
     void TurnCameraOn() {m_cameraOn = true;}
 
@@ -1151,7 +1151,7 @@ protected:
     DgnElementId m_modelSelectorId;
     mutable ModelSelectorPtr m_modelSelector;
 
-    DGNPLATFORM_EXPORT BentleyStatus _ValidateState() override; 
+    DGNPLATFORM_EXPORT BentleyStatus _ValidateState() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
@@ -1160,7 +1160,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     void _OnInserted(DgnElementP copiedFrom) const override {m_modelSelector=nullptr; T_Super::_OnInserted(copiedFrom);}
     void _OnUpdateFinished() const override {m_modelSelector=nullptr; T_Super::_OnUpdateFinished();}
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     bool _ViewsModel(DgnModelId modelId) override {return GetModelSelector().ContainsModel(modelId);}
     SpatialViewDefinitionCP _ToSpatialView() const override {return this;}
@@ -1236,7 +1236,7 @@ protected:
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el, CopyFromOptions const&) override;
     ViewDefinition2dCP _ToView2d() const override final {return this;}
     DPoint3d _GetOrigin() const override {return DPoint3d::From(m_origin.x, m_origin.y);}
     void _SetExtents(DVec3dCR delta) override {m_delta.x = delta.x; m_delta.y = delta.y;}

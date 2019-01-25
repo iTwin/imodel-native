@@ -88,7 +88,7 @@ DgnDbStatus AnnotationFrameStyle::_ReadSelectParams(BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void AnnotationFrameStyle::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void AnnotationFrameStyle::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
 #if defined (TOFROM_JSON)
@@ -169,9 +169,9 @@ void dgn_ElementHandler::AnnotationFrameStyleHandler::_RegisterPropertyAccessors
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void AnnotationFrameStyle::_CopyFrom(DgnElementCR src)
+void AnnotationFrameStyle::_CopyFrom(DgnElementCR src, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(src);
+    T_Super::_CopyFrom(src, opts);
 
     AnnotationFrameStyleCP rhs = dynamic_cast<AnnotationFrameStyleCP>(&src);
     if (nullptr == rhs)
@@ -375,7 +375,7 @@ BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(FB::AnnotationFra
 BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(FB::AnnotationFrameStyleSetters& setters, AnnotationFrameStylePropertyBagCR data, FlatBufEncodeOptions options)
     {
     bool writeIfDefault = isEnumFlagSet(FlatBufEncodeOptions::SettersAreOverrides, options);
-    
+
     appendRealSetter(setters, data, AnnotationFrameStyleProperty::CloudBulgeFactor, FB::AnnotationFrameStyleProperty_CloudBulgeFactor, DEFAULT_CLOUDBULGEFACTOR_VALUE, writeIfDefault);
     appendRealSetter(setters, data, AnnotationFrameStyleProperty::CloudDiameterFactor, FB::AnnotationFrameStyleProperty_CloudDiameterFactor, DEFAULT_CLOUDDIAMETERFACTOR_VALUE, writeIfDefault);
     appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::FillColorType, FB::AnnotationFrameStyleProperty_FillColorType, DEFAULT_FILLCOLOR_TYPE_VALUE, writeIfDefault);
@@ -390,7 +390,7 @@ BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(FB::AnnotationFra
     appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeWeight, FB::AnnotationFrameStyleProperty_StrokeWeight, DEFAULT_STROKEWEIGHT_VALUE, writeIfDefault);
     appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::Type, FB::AnnotationFrameStyleProperty_Type, DEFAULT_TYPE_VALUE, writeIfDefault);
     appendRealSetter(setters, data, AnnotationFrameStyleProperty::VerticalPadding, FB::AnnotationFrameStyleProperty_VerticalPadding, DEFAULT_VERTICALPADDING_VALUE, writeIfDefault);
-    
+
     return SUCCESS;
     }
 
@@ -400,7 +400,7 @@ BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(FB::AnnotationFra
 BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationFrameStyleCR style, FlatBufEncodeOptions options)
     {
     FlatBufferBuilder encoder;
-    
+
     // I prefer to ensure encoders write default values instead of it being unknown later if it's really a default value, or if the encoder missed it and it's bad data.
     TemporaryForceDefaults forceDefaults(encoder, true);
 
@@ -419,7 +419,7 @@ BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(bvector<Byte>& bu
 
     if (!setters.empty())
         fbStyle.add_setters(settersOffset);
-    
+
     encoder.Finish(fbStyle.Finish());
 
     //.............................................................................................
@@ -454,7 +454,7 @@ BentleyStatus AnnotationFrameStylePersistence::DecodeFromFlatBuf(AnnotationFrame
             case FB::AnnotationFrameStyleProperty_VerticalPadding: data.SetRealProperty(AnnotationFrameStyleProperty::VerticalPadding, setter.realValue()); break;
             }
         }
-    
+
     return SUCCESS;
     }
 
@@ -464,7 +464,7 @@ BentleyStatus AnnotationFrameStylePersistence::DecodeFromFlatBuf(AnnotationFrame
 BentleyStatus AnnotationFrameStylePersistence::DecodeFromFlatBuf(AnnotationFrameStyleR style, ByteCP buffer, size_t numBytes)
     {
     style.m_data.ClearAllProperties();
-    
+
     auto fbStyle = GetRoot<FB::AnnotationFrameStyle>(buffer);
 
     PRECONDITION(fbStyle->has_majorVersion(), ERROR);

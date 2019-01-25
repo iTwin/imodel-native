@@ -19,17 +19,17 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler 
+namespace dgn_ElementHandler
 {
-    struct Element; 
-    struct InformationCarrier; 
+    struct Element;
+    struct InformationCarrier;
     struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
-    struct Document; struct Drawing; struct SectionDrawing;  
+    struct Document; struct Drawing; struct SectionDrawing;
     struct DriverBundle;
     struct Definition; struct PhysicalType; struct GraphicalType2d; struct SpatialLocationType; struct TemplateRecipe2d; struct TemplateRecipe3d;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct InformationRecordPartition; struct PhysicalPartition; struct SpatialLocationPartition;
-    struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
-    struct Geometric3d; struct Physical; struct SpatialLocation; 
+    struct Geometric2d; struct Annotation2d; struct DrawingGraphic;
+    struct Geometric3d; struct Physical; struct SpatialLocation;
     struct Role;
 };
 
@@ -331,13 +331,13 @@ public:
 
     //! Make a persistent copy of a specified Physical element, along with all of its children.
     //! If the source element is a group, this function will optionally import all of its members (recursively). See SetCopyGroups.
-    //! When importing children, if the child element's model has already been imported, this function will import the child into the copy of that model. 
-    //! If the child element's model has not already been imported, then this function will import the child into its parent's model. 
+    //! When importing children, if the child element's model has already been imported, this function will import the child into the copy of that model.
+    //! If the child element's model has not already been imported, then this function will import the child into its parent's model.
     //! The same strategy is used to choose the destination model of group members.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
     //! @param[in] destModel    The model where the instance is to be inserted
     //! @param[in] sourceElement The element that is to be copied
-    //! @note Parent elements must be imported before child elements. The parent of the new element will 
+    //! @note Parent elements must be imported before child elements. The parent of the new element will
     //!       be the element in the destination db to which the source parent has been remapped, or it will be invalid if the parent has not been remapped.
     //! @return a new element if successful
     DGNPLATFORM_EXPORT DgnElementCPtr ImportElement(DgnDbStatus* stat, DgnModelR destModel, DgnElementCR sourceElement);
@@ -359,7 +359,7 @@ struct AutoHandledPropertiesCollection
     static bmap<ECN::ECClassCP, bvector<ECN::ECPropertyCP>> s_orphanCustomHandledProperties;
 
     AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
-    
+
     static void DetectOrphanCustomHandledProperty(DgnDbR db, ECN::ECClassCR);
     DGNPLATFORM_EXPORT static bool IsOrphanCustomHandledProperty(ECN::ECPropertyCR);     // used by imodeljs node addon
 
@@ -468,7 +468,7 @@ public:
 
 /**
 * @addtogroup ElementCopying DgnElement Copying and Importing
-* 
+*
 * There are 3 basic reasons why you would want to make a copy of an element, and there is a function for each one:
 *   1. DgnElement::Clone makes a copy of an element, suitable for inserting into the Db.
 *   2. DgnElement::Import makes a copy of an element in a source Db, suitable for inserting into a different Db. It remaps any IDs stored in the element or its aspects.
@@ -479,7 +479,7 @@ public:
 *
 */
 
-/** 
+/**
 * @addtogroup ElementCopyVirtualFunctions DgnElement Copy and Importing - Virtual Functions
 *
 * A DgnElement subclass will normally override a few virtual functions to support @ref ElementCopying.
@@ -488,9 +488,9 @@ public:
 * DgnElement defines several virtual functions that control copying and importing.
 *   * DgnElement::_CopyFrom must copy member variables from source element. It is used in many different copying operations.
 *   * DgnElement::_Clone must make a copy of an element, suitable for inserting into the DgnDb.
-*   * DgnElement::_CloneForImport must make a copy of an element in a source DgnDb, suitable for inserting into a target DgnDb. 
+*   * DgnElement::_CloneForImport must make a copy of an element in a source DgnDb, suitable for inserting into a target DgnDb.
 *   * DgnElement::_RemapIds must remap any IDs stored in the element's member variables or its aspects.
-* 
+*
 * If you define a new subclass of DgnElement, you may need to override one or more of these virtual methods.
 *
 * If subclass ...|It must override ...
@@ -498,26 +498,26 @@ public:
 * Defines new member variables|DgnElement::_CopyFrom to copy them.
 * Defines new member variables that stored IDs of any kind|DgnElement::_RemapIds to relocate them to the destination DgnDb.
 * Stores some of its data in Aspects|DgnElement::_Clone and DgnElement::_CloneForImport, as described below.
-* 
+*
 * Normally, there is no need to override _Clone, as the base class implementation will work for subclasses, as it calls _CopyFrom.
 *
 * If you don't use Aspects, then normally, you won't need to override _Clone and _CloneForImport.
 *
 * <h2>The Central role of _CopyFrom</h2>
 *
-* _Clone, _CloneForImport, and CopyForEdit all call _CopyFrom to do one specific part of the copying work: copying the member variables. 
-* _CopyFrom must make a straight, faithful copy of the C++ element struct's member variables only. It must be quick. 
-* It should not load data from the Db. 
+* _Clone, _CloneForImport, and CopyForEdit all call _CopyFrom to do one specific part of the copying work: copying the member variables.
+* _CopyFrom must make a straight, faithful copy of the C++ element struct's member variables only. It must be quick.
+* It should not load data from the Db.
 *
-* Note that the _CopyFrom method copies <em>only</em> member variables. It must not try to read from the Db. 
-* The _CopyFrom method handle only custom-handled properties. It must not try to copy or modify auto-handled properties or 
+* Note that the _CopyFrom method copies <em>only</em> member variables. It must not try to read from the Db.
+* The _CopyFrom method handle only custom-handled properties. It must not try to copy or modify auto-handled properties or
 * user properties. Those properties are handled by the base class.
 *
 * <h2>Copying and Importing Aspects</h2>
 *
-* A subclass of DgnElement that stores some of its data in Aspects must take care of copying and importing those Aspects. 
-* Specifically, an element subclass should override _Clone and _CloneForImport. 
-*   * Its _Clone method should call super and then copy its aspects. 
+* A subclass of DgnElement that stores some of its data in Aspects must take care of copying and importing those Aspects.
+* Specifically, an element subclass should override _Clone and _CloneForImport.
+*   * Its _Clone method should call super and then copy its aspects.
 *   * Its _CloneForImport method should call super, then copy over its aspects, and then tell the copied Aspects to remap their IDs.
 *
 * @note If a DgnElement subclass overrides any of the virtual methods mentioned above, then the corresponding ECClass should also specify @ref ElementRestrictions
@@ -529,7 +529,7 @@ public:
 /**
 * @addtogroup ElementRestrictions DgnElement Restrictions
 *
-* Element restrictions specify what operations may be applied to an element when its handler is not present. 
+* Element restrictions specify what operations may be applied to an element when its handler is not present.
 * Restrictions are specified in the ECSchema definition of an Element subclass.
 *
 * <b><em>If a DgnElement subclasss needs to do validation, then the corresponding dgn.Element ECClass should specify restrictions.</em></b>
@@ -545,19 +545,19 @@ public:
 * A DgnElement may have two kinds of properties: Class-defined properties and user-defined properties.
 *
 * <h2>User-Defined Properties</h2>
-* The user or application may add properties that are not defined by the ECClass to a particular instance. 
+* The user or application may add properties that are not defined by the ECClass to a particular instance.
 * User-defined properties are stored together in Json format in the JsonProperties of an element. ECSQL select statements may
 * query User Properties using ECSQL's JSON functions.
-* 
+*
 * <h2>Class-Defined Properties</h2>
-* Properties that are defined by the ECClass are defined for every instance. 
+* Properties that are defined by the ECClass are defined for every instance.
 *
 * Class-defined properties may be queried by name in ECSQL select statements.
 * See DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue for how to get and set class-defined property values in C++.
-* Note that, while all class-defined properties are defined for every instance, the actual value of a property on a particular element may be NULL, 
+* Note that, while all class-defined properties are defined for every instance, the actual value of a property on a particular element may be NULL,
 * if the property definition permits NULLs.
 *
-* When a subclass of dgn.Element defines a property, it specifies whether the handling of that property is to be done autmatically by the 
+* When a subclass of dgn.Element defines a property, it specifies whether the handling of that property is to be done autmatically by the
 * platform or must be done using custom logic supplied by a DgnElement subclass.
 *
 * <h3>Auto-Handled Properties</h3>
@@ -569,7 +569,7 @@ public:
 *
 * <h4>Validating Auto-Handled Properties</h4>
 * The domain schema can specify some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
-* Beyond that, to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
+* Beyond that, to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides
 * _OnInsert and _OnUpdate methods to check property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 *
 * <h3>Custom Properties</h3>
@@ -581,13 +581,13 @@ public:
 * Finally, the subclass must override DgnElement::_CopyFrom and possibly other virtual methods to support copying and importing of its custom-handled properties.
 * An element subclass that defines custom-handled properties <em>must</em> specify @ref ElementRestrictions.
 * @note A class that has custom-handled properties must override DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue to provide access to those properties, even if it also define special custom access methods for them.
-* 
+*
 * @see @ref ElementRestrictions
 * @see @ref PAGE_ElementOverview
 */
 
 //=======================================================================================
-//! An instance of a DgnElement in memory. 
+//! An instance of a DgnElement in memory.
 //!
 //! For details on writing an element handler and a DgnElement subclass, see
 //! - @ref PAGE_CustomElement
@@ -633,7 +633,7 @@ public:
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetCode(DgnCode code) {m_code = code;}                 //!< Set the DgnCode for elements created with this CreateParams
-        void SetIsLoadingElement(bool value) { m_isLoadingElement = value; }  //!< Set the m_isLoadingElement flag for elements that are being loaded 
+        void SetIsLoadingElement(bool value) { m_isLoadingElement = value; }  //!< Set the m_isLoadingElement flag for elements that are being loaded
         void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetModelId(DgnModelId modelId) {m_modelId = modelId;}  //!< @private
@@ -645,9 +645,9 @@ public:
     //! Property filter to be use when comparing elements
     struct ComparePropertyFilter
     {
-        enum Ignore 
+        enum Ignore
         {
-            None      = 0, 
+            None      = 0,
             WriteOnly = 0x02,  //! Ignore properties such as LastMod
             ElementId = 0x10,  //! Ignore ElementIds
         };
@@ -665,9 +665,9 @@ public:
     //! Property filter to be used when setting properties
     struct SetPropertyFilter
     {
-        enum Ignore 
+        enum Ignore
         {
-            None          = 0, 
+            None          = 0,
             Bootstrapping = 0x01,  //! Don't set properties that are specified in DgnElement::CreateParams, plus ElementId
             WriteOnly     = 0x02,  //! Don't set properties such as LastMod
             Null          = 0x08,  //! Don't set the property if the supplied value is null
@@ -717,12 +717,12 @@ public:
         static const uint64_t SetCategory = Move << 1; //!< Change element category. "SetCategory"
         static const uint64_t SetGeometry = SetCategory << 1; //!< Change element geometry. "SetGeometry"
 
-        static const uint64_t Reserved_1 = SetGeometry << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_6 = Reserved_5 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_1 = SetGeometry << 1; //!< Reserved for future use
+        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_6 = Reserved_5 << 1; //!< Reserved for future use
 
         static const uint64_t NextAvailable = Reserved_6 << 1; //!< Subclasses can add new actions beginning with this value
 
@@ -970,7 +970,7 @@ public:
         DGNPLATFORM_EXPORT static DgnDbStatus SetAspect(DgnElementR el, ECN::IECInstanceR properties, BeSQLite::EC::ECInstanceId id);
 
         //! Get the specified type of generic multi aspect, if any, from an element, with the intention of modifying the aspect's properties.
-        //! @note Call Update on the host element after modifying the properties of the instance. 
+        //! @note Call Update on the host element after modifying the properties of the instance.
         //! @note Do not free the returned instance!
         //! @note Call this method only if you intend to modify the aspect.
         //! @param el   The host element
@@ -1020,7 +1020,7 @@ public:
             Insert,         //!< The Element is being inserted into the Db
             Update,         //!< Some aspect of the Element's content has changed.
             TempDraw,       //!< A tool wants to draw the Element temporarily (the Element may not be persistent)
-            BulkInsert,     //!< An application is creating a large number of Elements 
+            BulkInsert,     //!< An application is creating a large number of Elements
             Other           //!< An unspecified reason
         };
 
@@ -1088,7 +1088,7 @@ public:
         //! Schedule a generic unique aspect to be inserted or updated on the specified element.
         //! @param el   The host element
         //! @param instance The instance that holds the properties of the aspect that are to be written
-        //! @param keyClass Optional. To support polymorphism, specify a base class as the keyClass when setting an aspect that is an instance of some class derived from it. Then, you will 
+        //! @param keyClass Optional. To support polymorphism, specify a base class as the keyClass when setting an aspect that is an instance of some class derived from it. Then, you will
         //! be able to pass the base class to GetAspect and get the stored aspect, regardless of what particular derived class it happens to be.
         //! @return non-zero error status if the specified aspect cannot be set
         DGNPLATFORM_EXPORT static DgnDbStatus SetAspect(DgnElementR el, ECN::IECInstanceR instance, ECN::ECClassCP keyClass = nullptr);
@@ -1100,7 +1100,7 @@ public:
         DGNPLATFORM_EXPORT static ECN::IECInstanceCP GetAspect(DgnElementCR el, ECN::ECClassCR ecclass);
 
         //! Get the specified type of generic unique aspect, if any, from an element, with the intention of modifying the aspect's properties.
-        //! @note Call Update on the host element after modifying the properties of the instance. 
+        //! @note Call Update on the host element after modifying the properties of the instance.
         //! @note Do not free the returned instance!
         //! @param el   The host element
         //! @param ecclass The type of aspect to look for
@@ -1108,7 +1108,7 @@ public:
         DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
         };
 
-    struct RelatedElement 
+    struct RelatedElement
         {
         DgnElementId m_id;
         DgnClassId m_relClassId;
@@ -1169,7 +1169,7 @@ protected:
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
     void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
     void InvalidateCode() {m_code = DgnCode();} //!< @private
-    
+
     //! A utility function to set up CreateParams from the properties of the specified instance. The input properties must include Model, CodeAuthority, CodeNamespace, and CodeValue.
     //! The value of CodeNamespace may be the empty string. If CodeNamespace is the empty string, then the value of CodeValue may be null. CodeValue may not be the empty string.
     //! The class is taken from the class of the instance.
@@ -1186,6 +1186,8 @@ protected:
     void CopyForCloneFrom(DgnElementCR src);
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
+
+    void UnloadAutoHandledProperties() const;
 
     //! Invoked when loading an element from the database, to allow subclasses to extract their custom-handled property values
     //! from the SELECT statement. The parameters are those which are marked in the schema with the CustomHandledProperty CustomAttribute.
@@ -1217,12 +1219,12 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
     //! Called whenever the JsonProperties of this element are loaded. You can override this method if you have internal state derived from JsonProperties.
-    //! @note If you override this method, you @em must call T_Super::_OnLoadedJsonProperties() 
+    //! @note If you override this method, you @em must call T_Super::_OnLoadedJsonProperties()
     virtual void _OnLoadedJsonProperties() {}
 
-    //! Called before the JsonProperties of this element are saved as a Json string. 
+    //! Called before the JsonProperties of this element are saved as a Json string.
     //! You can override this method to store internal state into JsonProperties before they are saved.
-    //! @note If you override this method, you @em must call T_Super::_OnSaveJsonProperties() 
+    //! @note If you override this method, you @em must call T_Super::_OnSaveJsonProperties()
     virtual void _OnSaveJsonProperties() {}
 
      //! argument for _BindWriteParams
@@ -1250,7 +1252,7 @@ protected:
     //! Called after a DgnElement was successfully imported into the database.
     //! @note If you override this method, you @em must call T_Super::_OnImported.
     virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const {}
-    
+
     //! Called after a change representing addition of a DgnElement was applied to the database
     //! @note If you override this method, you @em must call T_Super::_OnAppliedAdd.
     DGNPLATFORM_EXPORT virtual void _OnAppliedAdd() const;
@@ -1270,7 +1272,7 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
 
-    //! Called on the replacement element, after a DgnElement was successfully updated, but before the data is 
+    //! Called on the replacement element, after a DgnElement was successfully updated, but before the data is
     //! copied into the original element and before its parent is notified.
     //! The replacement element will be in its post-updated state and the original element is supplied.
     //! @note If you override this method, you @em must call T_Super::_OnUpdated.
@@ -1278,7 +1280,7 @@ protected:
 
     //! Called after a DgnElement was successfully updated from a replacement element and it now holds the data from the replacement.
     //! @note If you override this method, you @em must call T_Super::_OnUpdateFinished.
-    virtual void _OnUpdateFinished() const {}
+    DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const;
 
     //! Called after a change set representing an update to this DgnElement was applied to the database. In the case of an undo, the element will be in its original (pre-change, post-undo) state.
     //! @note If you override this method, you @em must call T_Super::_OnAppliedUpdate.
@@ -1421,14 +1423,20 @@ protected:
     //! @remarks If no CreateParams are supplied, a new DgnCode will be generated for the cloned element - it will \em not be copied from this element's DgnCode.
     DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
 
+    struct CopyFromOptions
+        {
+        bool copyEcPropertyData = true;
+        };
+
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
+    //! @param[in] opts   Copying options
     //! @note If you override this method, you @b must call T_Super::_CopyFrom, forwarding its status (that is, only return DgnDbStatus::Success if both your
     //! implementation and your superclass succeed.)
     //! @note Implementers should be aware that your element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
     //! @note If this element's data holds any IDs, it must also override _RemapIds. Also see _AdjustPlacementForImport
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source);
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source, CopyFromOptions const&);
 
     //! Make a (near) duplicate of yourself in memory, in preparation for copying from another element that <em>may be</em> in a different DgnDb.
     //! This base class implementation calls _CopyFrom and then _RemapIds and _AdjustPlacementForImport
@@ -1522,6 +1530,8 @@ protected:
     //! The m_code field is copied \em only when cloning between two different DgnDbs, as it is never correct for two elements to have the same code.
     CreateParams GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const;
 
+    DgnElementPtr CopyForEditInternal(CopyFromOptions const& opts) const;
+
 public:
     BE_JSON_NAME(id)
     BE_JSON_NAME(classFullName)
@@ -1540,7 +1550,7 @@ public:
     bool IsCustomHandledProperty(ECN::ECPropertyCR) const;
     Utf8String GetInfoString(Utf8CP delimiter) const {return _GetInfoString(delimiter);}
 
-    //! @name Dynamic casting to subclasses of DgnElement 
+    //! @name Dynamic casting to subclasses of DgnElement
     //! @{
     GeometrySourceCP ToGeometrySource() const {return _ToGeometrySource();} //!< more efficient substitute for dynamic_cast<GeometrySourceCP>(el)
     DGNPLATFORM_EXPORT GeometrySource2dCP ToGeometrySource2d() const;
@@ -1554,7 +1564,7 @@ public:
     AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
     DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
-    
+
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
     GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(ToGeometrySource3d());} //!< more efficient substitute for dynamic_cast<GeometrySource3dP>(el)
@@ -1595,7 +1605,7 @@ public:
     //! @param[in] source The other element whose content is copied into this element.
     //! @note This method @b does @b not change the DgnClassId, DgnModel or DgnElementId of this DgnElement. If the type of @a source is different
     //! than this element, then all of the data from subclasses in common are copied and the remaining data on this DgnElement are unchanged.
-    void CopyFrom(DgnElementCR source) {_CopyFrom(source);}
+    void CopyFrom(DgnElementCR source) {_CopyFrom(source, CopyFromOptions());}
 
     //! Make a writable copy of this DgnElement so that the copy may be edited. Also see @ref ElementCopying.
     //! @return a DgnElementPtr that holds the editable copy of this element.
@@ -1805,7 +1815,7 @@ public:
     //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
     DGNPLATFORM_EXPORT RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const;
 
-    //! @name JsonProperties 
+    //! @name JsonProperties
     //! @{
     //! Get the current value of a set of Json Properties on this element
     ECN::AdHocJsonValueCR GetJsonProperties(Utf8CP nameSpace) const {return m_jsonProperties.GetMember(nameSpace);}
@@ -1824,7 +1834,7 @@ public:
 
     /** @} */
 
-    //! @name Properties 
+    //! @name Properties
     //! @{
     //! Get the index of the property
     //! @param[out] index       The index of the property in the ECClass
@@ -1905,7 +1915,7 @@ public:
     //! @param[in] elementId The DgnElementId that identifies the target element
     //! @param[in] relClassId Optional. The relationship class that defines the navigation property.
     //! @note Passing an invalid elementId will cause a null value to be set.
-    DgnDbStatus SetPropertyValue(Utf8CP propertyName, DgnElementId elementId, DgnClassId relClassId = DgnClassId()) 
+    DgnDbStatus SetPropertyValue(Utf8CP propertyName, DgnElementId elementId, DgnClassId relClassId = DgnClassId())
         {return SetPropertyValue(propertyName, (BeSQLite::EC::ECInstanceId)(elementId.GetValueUnchecked()), relClassId);}
     //! Set an ECNavigationProperty by name
     //! @param[in] propertyName The name of the navigation property
@@ -1941,8 +1951,8 @@ public:
         return access.IsValid()? _GetPropertyValue(value, access, aidx): DgnDbStatus::WrongClass;
         }
 
-    //! Set the value of a property. 
-    //! @note This function does not write to the bim. The caller must call Update to write the element and all of 
+    //! Set the value of a property.
+    //! @note This function does not write to the bim. The caller must call Update to write the element and all of
     //! its modified property to the DgnDb. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param accessString The access string that identifies the property. @see GetPropertyIndex
@@ -1954,8 +1964,8 @@ public:
         return access.IsValid()? _SetPropertyValue(access, value, aidx): DgnDbStatus::WrongClass;
         }
 
-    //! Set the value of a property. 
-    //! @note This function does not write to the bim. The caller must call Update to write the element and all of 
+    //! Set the value of a property.
+    //! @note This function does not write to the bim. The caller must call Update to write the element and all of
     //! its modified property to the DgnDb. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param propIndex The index of the property. @see GetPropertyIndex
@@ -1971,7 +1981,7 @@ public:
     //! @param instance The source of the properties that are to be copied to this element
     //! @param filter   Optional. The properties to exclude.
     //! @return non-zero error status if any property could not be set. Note that some properties might be set while others are not in case of error.
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValues(ECN::IECInstanceCR instance, SetPropertyFilter const& filter 
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValues(ECN::IECInstanceCR instance, SetPropertyFilter const& filter
                                                      = SetPropertyFilter(SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping));
 
     //! Given a property index, will insert size number of empty array items at the given index
@@ -2140,7 +2150,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         //! Constructor from base params. Chiefly for internal use.
         //! @param[in]      params   The base element parameters
         //! @param[in]      category The category to which the element belongs
-        //! @return 
+        //! @return
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) {}
     };
 
@@ -2250,7 +2260,7 @@ protected:
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
@@ -2336,7 +2346,7 @@ protected:
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
@@ -2377,7 +2387,7 @@ protected:
 
 //=======================================================================================
 //! An abstract base class for elements that occupy real world 3-dimensional space
-//! It is uncommon for the GeometryStream of a SpatialElement to contain display-oriented metadata. 
+//! It is uncommon for the GeometryStream of a SpatialElement to contain display-oriented metadata.
 //! Instead, display-oriented settings should come from the SubCategories that classify the geometry in the GeometryStream.
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    12/15
@@ -2617,7 +2627,7 @@ public:
         _OnMemberRemoved(member);
         return DgnDbStatus::Success;
         }
-    
+
     //! Returns true if this group has the specified member
     bool HasMember(T const& member) const
         {
@@ -2650,7 +2660,7 @@ protected:
 
 //=======================================================================================
 //! A Document is an InformationContentElement that identifies the content of a document.
-//! The realized form of a document is called a DocumentCarrier (different class than Document). 
+//! The realized form of a document is called a DocumentCarrier (different class than Document).
 //! For example, a will is a legal document.  The will published into a PDF file is an ElectronicDocumentCopy.
 //! The will printed onto paper is a PrintedDocumentCopy.
 //! In this example, the Document only identifies, names, and tracks the content of the will.
@@ -2711,7 +2721,7 @@ public:
 };
 
 //=======================================================================================
-//! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
+//! An InformationCarrierElement is a proxy for an information carrier in the physical world.
 //! For example, the arrangement of ink on a paper document or an electronic file is an information carrier.
 //! The content is tracked separately from the carrier.
 //! @see InformationContentElement
@@ -2769,7 +2779,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -3138,7 +3148,7 @@ public:
 };
 
 //=======================================================================================
-//! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
+//! An InformationCarrierElement is a proxy for an information carrier in the physical world.
 //! For example, the arrangement of ink on a paper document or an electronic file is an information carrier.
 //! The content is tracked separately from the carrier.
 //! @see InformationContentElement
@@ -3179,7 +3189,7 @@ public:
     //! @return a new, non-persistent Subject element or an invalid value if any of the arguments are invalid
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SubjectPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
-    //! Creates a new child Subject of the specified parent Subject and inserts it into the DgnDb 
+    //! Creates a new child Subject of the specified parent Subject and inserts it into the DgnDb
     //! @param parentSubject    The parent of the new Subject
     //! @param name             The name of the new Subject
     //! @param description      The description of the new Subject
@@ -3365,8 +3375,8 @@ private:
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_undisplayedSet;
     mutable BeMutex m_mutex;
-    mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
-    mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
+    mutable ClassInfoMap m_classInfos;      // information about custom-handled properties
+    mutable T_ClassParamsMap m_classParams; // information about custom-handled properties
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
     mutable std::map<uint64_t, std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>> m_jsonSelectAdapterCache;
 
@@ -3406,7 +3416,7 @@ public:
     ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
     //! @private
     ECSqlClassInfo& FindClassInfo(DgnClassId classId) const;
-    
+
     //! @private
     BeSQLite::EC::JsonECSqlSelectAdapter const& GetJsonSelectAdapter(BeSQLite::EC::ECSqlStatement const& stmt) const;
 
@@ -3535,7 +3545,7 @@ public:
     bool IsUndisplayed(DgnElementId) const;
     void SetUndisplayed(DgnElementId, bool isUndisplayed); //!< @private
 
-    //! Set the maximum number of elements to be held by the "Most Recentley Used" element cache for this DgnDb. 
+    //! Set the maximum number of elements to be held by the "Most Recentley Used" element cache for this DgnDb.
     //! @param newMax The maximum number of elements to be held in the element MRU cache. After this many elements are in memory,
     //! the least recently used element is discarded. Set to 0 to disable MRU cache.
     //! @note If there are currently more than newMax elements in memory, the oldest ones are removed until the size is newMax.
@@ -3611,7 +3621,7 @@ struct ElementAssemblyUtil
 struct DgnEditElementCollector
 {
 protected:
-     bvector<DgnElementP> m_elements; // The editable elements in the set. We manage their refcounts as we add and remove them 
+     bvector<DgnElementP> m_elements; // The editable elements in the set. We manage their refcounts as we add and remove them
      bmap<DgnElementId,DgnElementP> m_ids; // The Elements in the set that have IDs. Child elements will always have IDs. Some top-level elements may not have an Id.
 
      DGNPLATFORM_EXPORT void EmptyAll();
@@ -3639,16 +3649,16 @@ public:
     //! @return true if the collections are equivalent
     DGNPLATFORM_EXPORT bool Equals(DgnEditElementCollector const& other, DgnElement::ComparePropertyFilter const& filter) const;
 
-    //! Add the specified editable copy of an element to the collection. 
+    //! Add the specified editable copy of an element to the collection.
     //! @param el  The editable copy to be added
-    //! @return The element that is in the collection. 
+    //! @return The element that is in the collection.
     DGNPLATFORM_EXPORT DgnElementPtr AddElement(DgnElementR el);
 
-    //! Add editable copies of the children of an element to the collection. 
+    //! Add editable copies of the children of an element to the collection.
     //! @param el  The parent element to be queried
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
     DGNPLATFORM_EXPORT void AddChildren(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max());
-    
+
     //! Add an element and editable copies of its children to the collection
     //! @param el       The parent element to be added and queried
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
@@ -3659,7 +3669,7 @@ public:
     //! @param el  The element to be edited
     //! @return The element that is in the collection or nullptr if the element could not be copied for edit.
     DgnElementPtr EditElement(DgnElementCR el) {auto ee = el.CopyForEdit(); if (ee.IsValid()) return AddElement(*ee); else return nullptr;}
-    
+
     //! Add an editable copy of the specified element and its children to the collection.
     //! @param el       The element to be added
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
@@ -3672,14 +3682,14 @@ public:
     //! Remove the specified editable copy of an element from the collection.
     //! @param el  The editable copy of an element in the collection
     //! @note \a el must be the editable copy of the element that is in this collection.
-    //! @see FindElementById 
+    //! @see FindElementById
     DGNPLATFORM_EXPORT void RemoveElement(DgnElementR el);
 
     //! Remove an element's children (by Id) from the collection.
     //! @param el  The parent element to query.
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
     DGNPLATFORM_EXPORT void RemoveChildren(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max());
-    
+
     //! Remove the specified editable copy of an element and its children (by Id) from the collection.
     //! @param el  The editable copy of the parent element to remove and to query.
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
@@ -3694,7 +3704,7 @@ public:
     //! Get an iterator pointing to the end of the collection
     bvector<DgnElementP>::const_iterator end() const {return m_elements.end();}
 
-    //! Insert or update all elements in the collection. Elements with valid ElementIds are updated. Elements with no ElementIds are inserted. 
+    //! Insert or update all elements in the collection. Elements with valid ElementIds are updated. Elements with no ElementIds are inserted.
     //! @param[out] anyInserts  Optional. If not null, then true is returned if any element in the collection had to be inserted.
     //! @return non-zero error status if any insert or update fails. In that case some elements in the collection may not be written.
     DGNPLATFORM_EXPORT DgnDbStatus Write(bool* anyInserts = nullptr);
@@ -3712,9 +3722,9 @@ public:
 //=======================================================================================
 struct DgnElementTransformer
 {
-    DGNPLATFORM_EXPORT static DgnDbStatus ApplyTransformTo(DgnElementR el, Transform const& t); 
+    DGNPLATFORM_EXPORT static DgnDbStatus ApplyTransformTo(DgnElementR el, Transform const& t);
 
-    template<typename COLL> static DgnDbStatus ApplyTransformToAll(COLL& collection, Transform const& t) 
+    template<typename COLL> static DgnDbStatus ApplyTransformToAll(COLL& collection, Transform const& t)
         {
         for (auto& item : collection)
             {

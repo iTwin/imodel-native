@@ -65,7 +65,7 @@ DgnDbStatus DgnTexture::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnTexture::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void DgnTexture::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
     if (!m_descr.empty())
@@ -107,9 +107,9 @@ void DgnTexture::_FromJson(JsonValueR props)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnTexture::_CopyFrom(DgnElementCR src)
+void DgnTexture::_CopyFrom(DgnElementCR src, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(src);
+    T_Super::_CopyFrom(src, opts);
     auto tx = dynamic_cast<DgnTextureCP>(&src);
     BeAssert(nullptr != tx);
     if (nullptr != tx)
@@ -159,7 +159,7 @@ DgnTextureId DgnTexture::ImportTexture(DgnImportContext& context, DgnTextureId s
     auto destTextureElem = sourceTexture->Import(nullptr, context.GetDestinationDb().GetDictionaryModel(), context);
     if (!destTextureElem.IsValid())
         return DgnTextureId();
-    
+
     DgnTextureCP destTexture = dynamic_cast<DgnTextureCP>(destTextureElem.get());
     if (nullptr == destTexture)
         {
@@ -188,7 +188,7 @@ DgnTextureId DgnImportContext::_RemapTextureId(DgnTextureId source)
 void dgn_ElementHandler::Texture::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
-    
+
     params.RegisterPropertyAccessors(layout, PROP_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {

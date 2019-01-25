@@ -35,7 +35,7 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeometryPart::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void DgnGeometryPart::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
     JsonUtils::DRange3dToJson(out[json_bbox()], m_bbox);
@@ -119,9 +119,9 @@ DgnDbStatus DgnGeometryPart::WriteGeometryStream()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeometryPart::_CopyFrom(DgnElementCR element)
+void DgnGeometryPart::_CopyFrom(DgnElementCR element, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(element);
+    T_Super::_CopyFrom(element, opts);
 
     DgnGeometryPartCP otherPart = element.ToGeometryPart();
     if (nullptr != otherPart)
@@ -241,18 +241,18 @@ void dgn_ElementHandler::GeometryPart::_RegisterPropertyAccessors(ECSqlClassInfo
     return DgnDbStatus::Success;                                     \
     }
 
-    params.RegisterPropertyAccessors(layout, DgnGeometryPart::prop_BBoxLow(), 
+    params.RegisterPropertyAccessors(layout, DgnGeometryPart::prop_BBoxLow(),
         GETBBOXPROP(value.SetPoint3d(bbox.low)),
         SETBBOXPROP(bbox.low = value.GetPoint3d()));
 
-    params.RegisterPropertyAccessors(layout, DgnGeometryPart::prop_BBoxHigh(), 
+    params.RegisterPropertyAccessors(layout, DgnGeometryPart::prop_BBoxHigh(),
         GETBBOXPROP(value.SetPoint3d(bbox.high)),
         SETBBOXPROP(bbox.high = value.GetPoint3d()));
 
 #undef GETBBOXPROP
 #undef SETBBOXPROP
 
-    params.RegisterPropertyAccessors(layout, DgnGeometryPart::prop_GeometryStream(), 
+    params.RegisterPropertyAccessors(layout, DgnGeometryPart::prop_GeometryStream(),
         [](ECValueR, DgnElementCR)
             {
             return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface

@@ -25,7 +25,7 @@ DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCategory::_ToJson(JsonValueR val, JsonValueCR opts) const 
+void DgnCategory::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_rank()] = (int) m_rank;
@@ -59,9 +59,9 @@ void DgnCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCategory::_CopyFrom(DgnElementCR el)
+void DgnCategory::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto other = dynamic_cast<DgnCategoryCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr != other)
@@ -168,7 +168,7 @@ SpatialCategoryCPtr SpatialCategory::Insert(DgnSubCategory::Appearance const& ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategoryId DgnCategory::GetDefaultSubCategoryId(DgnCategoryId catId)
     {
-    // hackity hacky hack - assume sequential assignment of element Ids and that the default sub-category is the next 
+    // hackity hacky hack - assume sequential assignment of element Ids and that the default sub-category is the next
     return catId.IsValid() ? DgnSubCategoryId(catId.GetValueUnchecked() + 1) : DgnSubCategoryId();
     }
 
@@ -215,7 +215,7 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnSubCategory::_ToJson(JsonValueR val, JsonValueCR opts) const 
+void DgnSubCategory::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
 
@@ -254,9 +254,9 @@ void DgnSubCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnSubCategory::_CopyFrom(DgnElementCR el)
+void DgnSubCategory::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto other = dynamic_cast<DgnSubCategoryCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr != other)
@@ -465,11 +465,11 @@ Json::Value DgnSubCategory::Appearance::ToJson() const
 bool DgnSubCategory::Appearance::operator==(Appearance const& other) const
     {
     return m_invisible==other.m_invisible &&
-           m_color==other.m_color && 
-           m_weight==other.m_weight && 
-           m_style==other.m_style && 
-           m_displayPriority==other.m_displayPriority && 
-           m_material==other.m_material && 
+           m_color==other.m_color &&
+           m_weight==other.m_weight &&
+           m_style==other.m_style &&
+           m_displayPriority==other.m_displayPriority &&
+           m_material==other.m_material &&
            m_transparency==other.m_transparency;
     }
 
@@ -551,7 +551,7 @@ void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer)
         BeAssert(nullptr != dynamic_cast<DgnCategoryCP>(&original));
 
         // When we import a Category, we currently import all of its SubCategories too.
-        // If we decide to change this policy and wait until the caller asks for a SubCategory, 
+        // If we decide to change this policy and wait until the caller asks for a SubCategory,
         // we must change GeometryStreamIO::Import to call RemapSubCategory, rather than FindSubCategory.
         for (ElementIteratorEntryCR srcSubCategory : DgnSubCategory::MakeIterator(importer.GetSourceDb(), DgnCategoryId(original.GetElementId().GetValue())))
             importer.RemapSubCategory(GetCategoryId(), srcSubCategory.GetId<DgnSubCategoryId>());
@@ -601,7 +601,7 @@ DgnCategoryId DgnCategory::ImportCategory(DgnCategoryId srcCatId, DgnImportConte
 
         return dstCatId;
         }
-    
+
     //  No such Category in the destination. Ask the source Category to import itself.
     auto importedElem = srcCat->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
     return importedElem.IsValid()? DgnCategoryId(importedElem->GetElementId().GetValue()): DgnCategoryId();
@@ -630,7 +630,7 @@ DgnSubCategoryId DgnSubCategory::ImportSubCategory(DgnSubCategoryId srcSubCatId,
         importer.AddSubCategory(srcSubCatId, dstSubCatId);
         return dstSubCatId;
         }
-    
+
     //  No such SubCategory in the destination. Ask the source SubCategory to import itself.
     BeAssert(!srcSubCat->IsDefaultSubCategory() && "DgnCategory::_OnImported should have remapped the default SubCategory");
 
@@ -794,7 +794,7 @@ void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& pa
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, DgnCategory::prop_Rank(), 
+    params.RegisterPropertyAccessors(layout, DgnCategory::prop_Rank(),
         [] (ECValueR value, DgnElementCR elIn)
             {
             DgnCategory const& el = (DgnCategory const&) elIn;
@@ -836,7 +836,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, DgnSubCategory::prop_Properties(), 
+    params.RegisterPropertyAccessors(layout, DgnSubCategory::prop_Properties(),
         [] (ECValueR value, DgnElementCR elIn)
             {
             auto const& el = (DgnSubCategory const&) elIn;

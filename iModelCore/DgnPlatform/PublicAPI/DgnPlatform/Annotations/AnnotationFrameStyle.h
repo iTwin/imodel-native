@@ -73,7 +73,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AnnotationFrameStylePropertyBag : AnnotationPrope
 {
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)
-    
+
 protected:
     DGNPLATFORM_EXPORT bool _IsIntegerProperty(T_Key) const override;
     DGNPLATFORM_EXPORT bool _IsRealProperty(T_Key) const override;
@@ -84,7 +84,7 @@ public:
     AnnotationFrameStylePropertyBagR operator=(AnnotationFrameStylePropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
     static AnnotationFrameStylePropertyBagPtr Create() { return new AnnotationFrameStylePropertyBag(); }
     AnnotationFrameStylePropertyBagPtr Clone() const { return new AnnotationFrameStylePropertyBag(*this); }
-    
+
     bool HasProperty(AnnotationFrameStyleProperty key) const { return T_Super::HasProperty((T_Key)key); }
     void ClearProperty(AnnotationFrameStyleProperty key) { T_Super::ClearProperty((T_Key)key); }
     T_Integer GetIntegerProperty(AnnotationFrameStyleProperty key) const { return T_Super::GetIntegerProperty((T_Key)key); }
@@ -119,7 +119,7 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source, CopyFromOptions const&) override;
     DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
@@ -133,7 +133,7 @@ public:
     explicit AnnotationFrameStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationFrameStylePtr Create(DgnDbR db) { return new AnnotationFrameStyle(db); }
     AnnotationFrameStylePtr CreateCopy() const { return MakeCopy<AnnotationFrameStyle>(); }
-    
+
     Utf8String GetName() const { return GetCode().GetValue().GetUtf8(); }
     void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
     Utf8StringCR GetDescription() const { return m_description; }

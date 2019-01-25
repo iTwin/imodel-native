@@ -16,11 +16,11 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //    *** ONLY FOR FOR AUTO-HANDLED PROPERTY I/O AND SOME INTERNAL OPERATIONS ***
 //
 //  !! Misuse of this class could potentially bypass validation and violate the API guarantees!
-//  !! In particular, this interface does NOT call m_element._Get/SetPropertyValue. 
+//  !! In particular, this interface does NOT call m_element._Get/SetPropertyValue.
 //  !! It reads and writes the ECDBuffer memory directly. That is a valid and necessary
 //  !! optimization for proeprty load/store and for internal, low-level property access.
 //
-// ***TRICKY*** ElementAutoHandledPropertiesECInstanceAdapter objects are ALWAYs put on the stack 
+// ***TRICKY*** ElementAutoHandledPropertiesECInstanceAdapter objects are ALWAYs put on the stack
 //              They are never ref-counted. However, since this class inherits from IECInstance
 //              it appears to be ref-counted, and some EC functions will add a reference to instances
 //              of this class as a result. We defeat that by always adding an initial reference
@@ -61,7 +61,7 @@ private:
     ECN::ECObjectsStatus _EvaluateCalculatedProperty(ECN::ECValueR evaluatedValue, ECN::ECValueCR existingValue, ECN::PropertyLayoutCR propLayout) const override { BeDataAssert(false); return ECN::ECObjectsStatus::Error; }
     ECN::ECObjectsStatus _UpdateCalculatedPropertyDependents(ECN::ECValueCR calculatedValue, ECN::PropertyLayoutCR propLayout) override;
 
-    bool _AcquireData(bool) const override 
+    bool _AcquireData(bool) const override
         {
         BeAssert((DgnElement::PropState::Unknown != m_element.m_flags.m_propState) && (DgnElement::PropState::NotFound != m_element.m_flags.m_propState));
         return true;
@@ -82,12 +82,12 @@ private:
     ECN::ECObjectsStatus _CopyFromBuffer(ECN::ECDBufferCR source) override;
     ECN::ClassLayoutCR _GetClassLayout() const override {return *m_layout;}
 
-    // IECInstance 
+    // IECInstance
     ECDBuffer*      _GetECDBuffer() const override {return const_cast<ElementAutoHandledPropertiesECInstanceAdapter*>(this);}
     Utf8String      _GetInstanceId() const override {return m_element.GetElementId().ToString();}
     ECObjectsStatus _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
         {return GetIsNullValueFromMemory (isNull, propertyIndex, useArrayIndex, arrayIndex);}
-    ECObjectsStatus _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override 
+    ECObjectsStatus _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
         {return GetValueFromMemory(v, propertyIndex, useArrayIndex, arrayIndex);}
     ECObjectsStatus _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override
         {return SetValueToMemory(propertyIndex, v, useArrayIndex, arrayIndex);}
@@ -109,7 +109,7 @@ private:
 public:
     ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, bool loadProperties, size_t initialAllocation = 0);
     ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, ECClassCR, ECN::ClassLayoutCR, bool loadProperties, size_t initialAllocation = 0);
-    
+
     bool IsValid() const {return (nullptr != m_eclass) && (DgnElement::PropState::NotFound != m_element.m_flags.m_propState);}
 
     BeSQLite::EC::ECInstanceUpdater* GetUpdater();
@@ -123,6 +123,8 @@ public:
         {return _RemoveArrayElement(propertyIndex, index);}
     ECObjectsStatus ClearArray (uint32_t propIdx)
         {return _ClearArray(propIdx);}
+
+    void FreeAll() {_FreeAllocation();}
 };
 
 //=======================================================================================

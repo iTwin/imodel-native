@@ -93,7 +93,7 @@ DgnDbStatus MarkupExternalLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void MarkupExternalLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void MarkupExternalLink::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
     if (m_linkedElementId.IsValid())
@@ -113,9 +113,9 @@ void MarkupExternalLink::_FromJson(JsonValueR val)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/2016
 //---------------------------------------------------------------------------------------
-void MarkupExternalLink::_CopyFrom(DgnElementCR other)
+void MarkupExternalLink::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(other);
+    T_Super::_CopyFrom(other, opts);
 
     MarkupExternalLinkCP otherLink = dynamic_cast<MarkupExternalLinkCP> (&other);
     if (otherLink)
@@ -202,7 +202,7 @@ void MarkupDomain::_OnSchemaImported(DgnDbR db) const
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialRedlineViewController::SpatialRedlineViewController(SpatialRedlineModel& rdlModel, SpatialViewController& subjectView, OrthographicViewDefinition& redlineViewDef, bvector<SpatialRedlineModelP> const& otherRdlsToView)
-    : 
+    :
     T_Super(redlineViewDef),
     m_subjectView(subjectView),
     m_otherRdlsInView(otherRdlsToView)
@@ -226,7 +226,7 @@ SpatialRedlineViewController::~SpatialRedlineViewController()
 void SpatialRedlineViewController::SynchWithSubjectViewController()
     {
 #if defined (NEEDS_WORK_TARGET_MODEL)
-    // There can only be one set of view flags. It will be used to initialize the viewport and qv. 
+    // There can only be one set of view flags. It will be used to initialize the viewport and qv.
     // *** EXPERIMENTAL: Here, I force a couple of flags to suit the redline view better. Does this cause too much of a change in the subject view??
     m_viewFlags = m_subjectView.GetViewFlags();
     m_viewFlags.m_weights = true;
@@ -315,7 +315,7 @@ void SpatialRedlineViewController::_SetRotation(RotMatrixCR rot)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_StoreState() const 
+void SpatialRedlineViewController::_StoreState() const
     {
     m_subjectView._StoreState();
     }
@@ -361,7 +361,7 @@ void SpatialRedlineViewController::_DrawView(ViewContextR context)
     {
     //  Draw subject model
         {
-        //  set up to draw subject model 
+        //  set up to draw subject model
         m_targetModelIsInSubjectView = true;   // causes GetTargetModel to return subject view's target model
 
         //  draw subject model using *this* view controller
@@ -388,7 +388,7 @@ RedlineViewController::RedlineViewController(RedlineViewDefinition const& rdlVie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineViewController::~RedlineViewController() 
+RedlineViewController::~RedlineViewController()
     {
     }
 
@@ -401,7 +401,7 @@ static void supplyDefaultExtension(BeFileName& fn, WCharCP defaultExt)
     fn.ParseName(&dev, &dir, &name, &ext);
 
     if (ext.empty()) ext = defaultExt;
-    
+
     fn.BuildName(dev.c_str(), dir.c_str(), name.c_str(), ext.c_str());
     }
 
@@ -713,7 +713,7 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     DefinitionModelR dictionary = db.GetDictionaryModel();
     RefCountedPtr<DisplayStyle2d> displayStyle = new DisplayStyle2d(dictionary);
     displayStyle->SetBackgroundColor(ColorDef::White());
-    RedlineViewDefinitionPtr view = new RedlineViewDefinition(dictionary, redline->GetCode().GetValueUtf8().c_str(), 
+    RedlineViewDefinitionPtr view = new RedlineViewDefinition(dictionary, redline->GetCode().GetValueUtf8().c_str(),
                                                               model.GetModelId(), *new CategorySelector(dictionary, redline->GetCode().GetValueUtf8().c_str()), *displayStyle);
 
     //  The view always has the same name as the redline and its model
@@ -851,7 +851,7 @@ SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(Spatial
 
     //  The physical redline view is always exactly the same as the subject DgnDb view. Start it off with a copy of the subject view's settings.
     //  Note: we route the view settings through Json to avoid problems in the case where dgnView is not exactly the same type as this view controller.
-    //  We know it's a sub-class of SpatialViewController, and so it has all of the properties that we care about. 
+    //  We know it's a sub-class of SpatialViewController, and so it has all of the properties that we care about.
     Json::Value json;
     subjectView._StoreToDefinition(json);
     controller->_LoadFromDefinition(json);
@@ -1001,7 +1001,7 @@ void dgn_ElementHandler::MarkupExternalLinkHandler::_RegisterPropertyAccessors(E
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, MARKUPEXTERNALLINK_LinkedElementId, 
+    params.RegisterPropertyAccessors(layout, MARKUPEXTERNALLINK_LinkedElementId,
         [](ECValueR value, DgnElementCR elIn)
             {
             auto const& el = (MarkupExternalLink const&)elIn;

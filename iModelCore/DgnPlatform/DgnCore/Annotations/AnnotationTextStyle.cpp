@@ -89,7 +89,7 @@ DgnDbStatus AnnotationTextStyle::_ReadSelectParams(BeSQLite::EC::ECSqlStatement&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void AnnotationTextStyle::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void AnnotationTextStyle::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
 #if defined (TOFROM_JSON)
@@ -170,14 +170,14 @@ void dgn_ElementHandler::AnnotationTextStyleHandler::_RegisterPropertyAccessors(
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void AnnotationTextStyle::_CopyFrom(DgnElementCR src)
+void AnnotationTextStyle::_CopyFrom(DgnElementCR src, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(src);
-    
+    T_Super::_CopyFrom(src, opts);
+
     AnnotationTextStyleCP rhs = dynamic_cast<AnnotationTextStyleCP>(&src);
     if (nullptr == rhs)
         return;
-    
+
     m_description = rhs->m_description;
     m_data = rhs->m_data;
     }
@@ -354,7 +354,7 @@ size_t AnnotationTextStyle::QueryCount(DgnDbR db)
     CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_AnnotationTextStyle));
     if (!select.IsValid())
         return 0;
-    
+
     if (BE_SQLITE_ROW != select->Step())
         return 0;
 
@@ -464,7 +464,7 @@ BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationText
     appendRealSetter(setters, data, AnnotationTextStyleProperty::SuperScriptOffsetFactor, FB::AnnotationTextStyleProperty_SuperScriptOffsetFactor, DEFAULT_SUPERSCRIPTOFFSETFACTOR_VALUE, writeIfDefault);
     appendRealSetter(setters, data, AnnotationTextStyleProperty::SuperScriptScale, FB::AnnotationTextStyleProperty_SuperScriptScale, DEFAULT_SUPERSCRIPTSCALE_VALUE, writeIfDefault);
     appendRealSetter(setters, data, AnnotationTextStyleProperty::WidthFactor, FB::AnnotationTextStyleProperty_WidthFactor, DEFAULT_WIDTHFACTOR_VALUE, writeIfDefault);
-    
+
     return SUCCESS;
     }
 
@@ -474,18 +474,18 @@ BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationText
 BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationTextStyleCR style, FlatBufEncodeOptions options)
     {
     FlatBufferBuilder encoder;
-    
+
     // I prefer to ensure encoders write default values instead of it being unknown later if it's really a default value, or if the encoder missed it and it's bad data.
     TemporaryForceDefaults forceDefaults(encoder, true);
 
     //.............................................................................................
     FB::AnnotationTextStyleSetters setters;
     POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data, options), ERROR);
-    
+
     FB::AnnotationTextStyleSetterVectorOffset settersOffset;
     if (!setters.empty())
         settersOffset = encoder.CreateVectorOfStructs(setters);
-    
+
     //.............................................................................................
     FB::AnnotationTextStyleBuilder fbStyle(encoder);
     fbStyle.add_majorVersion(CURRENT_MAJOR_VERSION);
@@ -493,7 +493,7 @@ BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buf
 
     if (!setters.empty())
         fbStyle.add_setters(settersOffset);
-    
+
     encoder.Finish(fbStyle.Finish());
 
     //.............................................................................................
@@ -529,7 +529,7 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
             case FB::AnnotationTextStyleProperty_WidthFactor: data.SetRealProperty(AnnotationTextStyleProperty::WidthFactor, setter.realValue()); break;
             }
         }
-    
+
     return SUCCESS;
     }
 
@@ -539,7 +539,7 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
 BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextStyleR style, ByteCP buffer, size_t numBytes)
     {
     style.m_data.ClearAllProperties();
-    
+
     auto fbStyle = GetRoot<FB::AnnotationTextStyle>(buffer);
 
     PRECONDITION(fbStyle->has_majorVersion(), ERROR);

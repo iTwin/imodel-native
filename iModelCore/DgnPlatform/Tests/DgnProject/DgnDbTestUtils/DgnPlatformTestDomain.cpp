@@ -246,9 +246,9 @@ DgnDbStatus TestElement::_DeleteInDb() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestElement::_CopyFrom(DgnElementCR el)
+void TestElement::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto testEl = dynamic_cast<TestElement const*>(&el);
     if (nullptr != testEl)
         {

@@ -29,7 +29,7 @@ DPoint3d ViewDefinition3d::ComputeEyePoint(Frustum const& frustum) const
     double pseudoCameraHalfAngle = 22.5;         // Somewhat arbitrily chosen to match Luxology.
     double diagonal = frustum.GetCorner(NPC_LeftBottomRear).Distance(frustum.GetCorner(NPC_RightTopRear));
     double focalLength = diagonal / (2.0 * atan(pseudoCameraHalfAngle * msGeomConst_radiansPerDegree));
-    
+
     return DPoint3d::FromSumOf(frustum.GetCorner(NPC_LeftBottomRear), .5, frustum.GetCorner(NPC_RightTopRear), .5, delta, focalLength / delta.Magnitude());
     }
 
@@ -72,9 +72,9 @@ using namespace EnvironmentJson;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle3d::_CopyFrom(DgnElementCR el) 
+void DisplayStyle3d::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto other = static_cast<DisplayStyle3d const*>(&el);
     m_environment = other->m_environment;
     }
@@ -87,7 +87,7 @@ void DisplayStyle3d::_OnLoadedJsonProperties()
     T_Super::_OnLoadedJsonProperties();
 
     JsonValueCR env = GetStyle(json_environment());
-    
+
     JsonValueCR ground = env[json_ground()];
     JsonValueCR elevationJson = ground[GroundPlaneJson::json_elevation()];
 
@@ -121,7 +121,7 @@ void DisplayStyle3d::_OnLoadedJsonProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle3d::_OnSaveJsonProperties() 
+void DisplayStyle3d::_OnSaveJsonProperties()
     {
     T_Super::_OnSaveJsonProperties();
 
@@ -144,7 +144,7 @@ void DisplayStyle3d::_OnSaveJsonProperties()
     sky[SkyBoxJson::json_nadirColor()] = m_environment.m_skybox.m_nadirColor.GetValue();
     sky[SkyBoxJson::json_skyColor()] = m_environment.m_skybox.m_skyColor.GetValue();
     env[json_sky()] = sky;
-    
+
     SetStyle(json_environment(), env);
     }
 

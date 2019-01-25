@@ -37,7 +37,7 @@ namespace dgn_ElementHandler
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2016
 //---------------------------------------------------------------------------------------
-DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model) const 
+DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model) const
     {
     if (nullptr == dynamic_cast<LinkModelCP>(&model))
         {
@@ -117,7 +117,7 @@ BentleyStatus LinkElement::AddToSource(DgnElementId sourceElementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-// static 
+// static
 BentleyStatus LinkElement::AddToSource(DgnDbR dgndb, DgnElementId linkId, DgnElementId sourceElementId)
     {
     if (!sourceElementId.IsValid())
@@ -160,7 +160,7 @@ bool LinkElement::IsFromSource(DgnElementId sourceElementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-// static 
+// static
 bool LinkElement::IsFromSource(DgnDbR dgndb, DgnElementId linkId, DgnElementId sourceElementId)
     {
     if (!sourceElementId.IsValid())
@@ -196,7 +196,7 @@ BentleyStatus LinkElement::RemoveFromSource(DgnElementId sourceElementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-// static 
+// static
 BentleyStatus LinkElement::RemoveFromSource(DgnDbR dgndb, DgnElementId linkId, DgnElementId sourceElementId)
     {
     if (!sourceElementId.IsValid())
@@ -292,7 +292,7 @@ DgnDbStatus UrlLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void UrlLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void UrlLink::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
     out[json_url()] = m_url;
@@ -315,9 +315,9 @@ void UrlLink::_FromJson(JsonValueR val)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-void UrlLink::_CopyFrom(DgnElementCR other)
+void UrlLink::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(other);
+    T_Super::_CopyFrom(other, opts);
 
     UrlLinkCP otherLink = dynamic_cast<UrlLinkCP> (&other);
     if (otherLink)
@@ -339,13 +339,13 @@ DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullp
 
     if (url)
         whereClause.append(URLLINK_Url "=?");
-        
+
     if (label)
         whereClause.empty() ? whereClause.append(URLLINK_UserLabel "=?") : whereClause.append(" AND " URLLINK_UserLabel "=?");
 
-    if (description) 
+    if (description)
         whereClause.empty() ? whereClause.append(URLLINK_Description "=?") : whereClause.append(" AND " URLLINK_Description " =?");
-        
+
     if (!whereClause.empty())
         {
         ecSql.append(" WHERE ");
@@ -453,7 +453,7 @@ DgnDbStatus RepositoryLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                    10/2017
 //---------------------------------------------------------------------------------------
-void RepositoryLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void RepositoryLink::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
     if (m_repositoryGuid.IsValid())
@@ -473,9 +473,9 @@ void RepositoryLink::_FromJson(JsonValueR val)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                    10/2017
 //---------------------------------------------------------------------------------------
-void RepositoryLink::_CopyFrom(DgnElementCR other)
+void RepositoryLink::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(other);
+    T_Super::_CopyFrom(other, opts);
 
     RepositoryLinkCP otherLink = dynamic_cast<RepositoryLinkCP> (&other);
     if (otherLink)
@@ -541,7 +541,7 @@ DgnDbStatus EmbeddedFileLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void EmbeddedFileLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void EmbeddedFileLink::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
     out[json_name()] = m_name;
@@ -564,9 +564,9 @@ void EmbeddedFileLink::_FromJson(JsonValueR val)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-void EmbeddedFileLink::_CopyFrom(DgnElementCR other)
+void EmbeddedFileLink::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(other);
+    T_Super::_CopyFrom(other, opts);
 
     EmbeddedFileLinkCP otherLink = dynamic_cast<EmbeddedFileLinkCP> (&other);
     if (otherLink)
@@ -613,7 +613,7 @@ DgnElementIdSet EmbeddedFileLink::Query(DgnDbCR dgndb, Utf8CP name /* = nullptr 
     int bindIndex = 1;
     if (name)
         stmt->BindText(bindIndex++, (0 == *name) ? nullptr : name, IECSqlBinder::MakeCopy::No);
-    
+
     if (label)
         stmt->BindText(bindIndex++, (0 == *label) ? nullptr : label, IECSqlBinder::MakeCopy::No);
 
@@ -630,7 +630,7 @@ BentleyStatus LinkElement::DoRemoveAllFromSource(DgnDbR dgndb, DgnElementId sour
     {
     BeAssert(sourceElementId.IsValid());
 
-    // Note: We have to work around the ECSql limitation of not allowing JOIN clauses with DELETE statements. 
+    // Note: We have to work around the ECSql limitation of not allowing JOIN clauses with DELETE statements.
 
     Utf8CP ecSqlFmt = "DELETE FROM ONLY " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE InVirtualSet(?, TargetECInstanceId)";
     Utf8PrintfString ecSql(ecSqlFmt, schemaName, className);
@@ -655,7 +655,7 @@ BentleyStatus LinkElement::DoRemoveAllFromSource(DgnDbR dgndb, DgnElementId sour
 //---------------------------------------------------------------------------------------
 BentleyStatus LinkElement::DoPurgeOrphaned(DgnDbCR dgndb, Utf8CP schemaName, Utf8CP className, DgnElementIdSet const& unusedIds)
     {
-    // Note: We have to work around the ECSql limitation of not allowing JOIN clauses with DELETE statements. 
+    // Note: We have to work around the ECSql limitation of not allowing JOIN clauses with DELETE statements.
 
     if (unusedIds.empty())
         return SUCCESS;
@@ -684,7 +684,7 @@ BentleyStatus LinkElement::DoPurgeOrphaned(DgnDbCR dgndb, Utf8CP schemaName, Utf
 void dgn_ElementHandler::UrlLinkHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
-    
+
     params.RegisterPropertyAccessors(layout, URLLINK_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
@@ -724,7 +724,7 @@ void dgn_ElementHandler::UrlLinkHandler::_RegisterPropertyAccessors(ECSqlClassIn
 void dgn_ElementHandler::EmbeddedFileLinkHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
-    
+
     params.RegisterPropertyAccessors(layout, EMBEDDEDFILELINK_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
@@ -764,7 +764,7 @@ void dgn_ElementHandler::EmbeddedFileLinkHandler::_RegisterPropertyAccessors(ECS
 void dgn_ElementHandler::RepositoryLinkHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
-    
+
     params.RegisterPropertyAccessors(layout, REPOLINK_RepositoryGuid,
         [] (ECValueR value, DgnElementCR elIn)
             {

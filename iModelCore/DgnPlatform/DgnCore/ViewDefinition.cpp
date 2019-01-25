@@ -284,7 +284,7 @@ void ViewDefinition::SetAuxiliaryCoordinateSystem(DgnElementId acsId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CategorySelectorR ViewDefinition::GetCategorySelector()
     {
-    BeAssert (!IsPersistent()); // you can only call this on a writeable copy 
+    BeAssert (!IsPersistent()); // you can only call this on a writeable copy
     return getThreadSafe<CategorySelector>(m_dgndb, GetCategorySelectorId(), m_categorySelector);
     }
 
@@ -293,7 +293,7 @@ CategorySelectorR ViewDefinition::GetCategorySelector()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayStyleR ViewDefinition::GetDisplayStyle()
     {
-    BeAssert (!IsPersistent()); // you can only call this on a writeable copy 
+    BeAssert (!IsPersistent()); // you can only call this on a writeable copy
     return getThreadSafe<DisplayStyle>(m_dgndb, GetDisplayStyleId(), m_displayStyle);
     }
 
@@ -302,7 +302,7 @@ DisplayStyleR ViewDefinition::GetDisplayStyle()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ModelSelectorR SpatialViewDefinition::GetModelSelector()
     {
-    BeAssert (!IsPersistent()); // you can only call this on a writeable copy 
+    BeAssert (!IsPersistent()); // you can only call this on a writeable copy
     return getThreadSafe<ModelSelector>(m_dgndb, GetModelSelectorId(), m_modelSelector);
     }
 
@@ -347,7 +347,7 @@ BentleyStatus ViewDefinition::_ValidateState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const 
+void ViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_categorySelectorId()] = m_categorySelectorId.ToHexStr();
@@ -370,9 +370,9 @@ void ViewDefinition::_FromJson(JsonValueR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::_CopyFrom(DgnElementCR el)
+void ViewDefinition::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
 
     auto& other = static_cast<ViewDefinitionCR>(el);
     m_categorySelectorId = other.m_categorySelectorId;
@@ -463,7 +463,7 @@ DgnDbStatus ViewDefinition2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+void ViewDefinition2d::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     JsonUtils::DPoint2dToJson(val[json_origin()], m_origin);
@@ -494,9 +494,9 @@ void ViewDefinition2d::_FromJson(JsonValueR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition2d::_CopyFrom(DgnElementCR el)
+void ViewDefinition2d::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto const& other = (ViewDefinition2d const&) el;
     m_baseModelId = other.m_baseModelId;
     m_origin = other.m_origin;
@@ -612,9 +612,9 @@ bool ViewDefinition::Entry::IsSheetView() const {return isEntryOfClass<SheetView
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::_CopyFrom(DgnElementCR in)
+void CategorySelector::_CopyFrom(DgnElementCR in, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(in);
+    T_Super::_CopyFrom(in, opts);
     auto const& other = (CategorySelector const&) in;
     m_categories = other.m_categories;
     }
@@ -647,7 +647,7 @@ DgnDbStatus CategorySelector::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void CategorySelector::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
     Json::Value categories(Json::arrayValue);
@@ -660,7 +660,7 @@ void CategorySelector::_ToJson(JsonValueR out, JsonValueCR opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::_FromJson(JsonValueR val) 
+void CategorySelector::_FromJson(JsonValueR val)
     {
     T_Super::_FromJson(val);
     m_categories.clear();
@@ -747,9 +747,9 @@ DgnDbStatus CategorySelector::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_CopyFrom(DgnElementCR rhsElement)
+void ModelSelector::_CopyFrom(DgnElementCR rhsElement, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(rhsElement);
+    T_Super::_CopyFrom(rhsElement, opts);
 
     auto const& rhs = (ModelSelector const&)rhsElement;
     m_models = rhs.m_models;
@@ -859,7 +859,7 @@ DgnDbStatus ModelSelector::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void ModelSelector::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
     Json::Value models(Json::arrayValue);
@@ -872,7 +872,7 @@ void ModelSelector::_ToJson(JsonValueR out, JsonValueCR opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_FromJson(JsonValueR val) 
+void ModelSelector::_FromJson(JsonValueR val)
     {
     T_Super::_FromJson(val);
 
@@ -921,7 +921,7 @@ bool ViewDefinition3d::_EqualState(ViewDefinitionR in)
 
     if (IsCameraOn() != other.IsCameraOn())
         return false;
-    
+
     // if camera is off, don't compare cameras
     if (IsCameraOn() && !m_cameraDef.IsEqual(other.m_cameraDef))
         return false;
@@ -954,12 +954,12 @@ DgnDbStatus ViewDefinition3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value ViewDefinition3d::Camera::ToJson() const 
+Json::Value ViewDefinition3d::Camera::ToJson() const
     {
-    Json::Value val; 
-    val[json_lens()] = JsonUtils::FromAngle(m_lensAngle); 
-    val[json_focusDist()] = m_focusDistance; 
-    JsonUtils::DPoint3dToJson(val[json_eye()], m_eyePoint); 
+    Json::Value val;
+    val[json_lens()] = JsonUtils::FromAngle(m_lensAngle);
+    val[json_focusDist()] = m_focusDistance;
+    JsonUtils::DPoint3dToJson(val[json_eye()], m_eyePoint);
     return val;
     }
 
@@ -969,8 +969,8 @@ Json::Value ViewDefinition3d::Camera::ToJson() const
 ViewDefinition3d::Camera ViewDefinition3d::Camera::FromJson(JsonValueCR val)
     {
     Camera camera;
-    camera.SetLensAngle(JsonUtils::ToAngle(val[json_lens()])); 
-    camera.SetFocusDistance(val[json_focusDist()].asDouble()); 
+    camera.SetLensAngle(JsonUtils::ToAngle(val[json_lens()]));
+    camera.SetFocusDistance(val[json_focusDist()].asDouble());
     JsonUtils::DPoint3dFromJson(camera.m_eyePoint, val[json_eye()]);
     return camera;
     }
@@ -978,13 +978,13 @@ ViewDefinition3d::Camera ViewDefinition3d::Camera::FromJson(JsonValueCR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition3d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+void ViewDefinition3d::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_cameraOn()] = m_cameraOn;
     JsonUtils::DPoint3dToJson(val[json_origin()], m_origin);
     JsonUtils::DPoint3dToJson(val[json_extents()], m_extents);
-    
+
     YawPitchRollAngles angles;
     YawPitchRollAngles::TryFromRotMatrix(angles, m_rotation);
     val[json_angles()] = JsonUtils::YawPitchRollToJson(angles);
@@ -1006,7 +1006,7 @@ void ViewDefinition3d::_FromJson(JsonValueR val)
 
     if (val.isMember(json_extents()))
         m_extents = JsonUtils::ToDVec3d(val[json_extents()]);
-    
+
     if (val.isMember(json_angles()))
         m_rotation = JsonUtils::YawPitchRollFromJson(val[json_angles()]).ToRotMatrix();
 
@@ -1017,9 +1017,9 @@ void ViewDefinition3d::_FromJson(JsonValueR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition3d::_CopyFrom(DgnElementCR el)
+void ViewDefinition3d::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
 
     auto const& other = (ViewDefinition3d const&) el;
     m_origin = other.m_origin;
@@ -1116,7 +1116,7 @@ DgnDbStatus SpatialViewDefinition::_OnInsert()
     {
     if (!GetModelSelector().GetElementId().IsValid())
         {
-        DgnDbStatus stat; 
+        DgnDbStatus stat;
         m_modelSelector->Insert(&stat);
         if (DgnDbStatus::Success != stat)
             return stat;
@@ -1129,9 +1129,9 @@ DgnDbStatus SpatialViewDefinition::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewDefinition::_CopyFrom(DgnElementCR el)
+void SpatialViewDefinition::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto& other = static_cast<SpatialViewDefinitionCR>(el);
 
     m_modelSelectorId = other.m_modelSelectorId;
@@ -1185,7 +1185,7 @@ DgnDbStatus SpatialViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const 
+void SpatialViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_modelSelectorId()] = m_modelSelectorId.ToHexStr();
@@ -1294,9 +1294,9 @@ void DisplayStyle::DropSubCategoryOverride(DgnSubCategoryId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle::_CopyFrom(DgnElementCR el)
+void DisplayStyle::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
 
     auto& other = static_cast<DisplayStyleCR>(el);
 
@@ -1346,7 +1346,7 @@ Utf8String DisplayStyle::ToJson() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayStyle::EqualState(DisplayStyleR other) 
+bool DisplayStyle::EqualState(DisplayStyleR other)
     {
     _OnSaveJsonProperties();
     other._OnSaveJsonProperties();
@@ -1831,7 +1831,7 @@ ViewportStatus ViewDefinition3d::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPo
     double frontDist = frontDistIn ? *frontDistIn : GetFrontDistance();
     DVec3d delta     = extentsIn   ? DVec3d::From(fabs(extentsIn->x),fabs(extentsIn->y),GetExtents().z) : GetExtents();
 
-    frontDist = std::max(frontDist, MinimumFrontDistance()); 
+    frontDist = std::max(frontDist, MinimumFrontDistance());
     backDist  = std::max(backDist, focusDist+(.5*DgnUnits::OneMeter()));
 
     if (backDist < focusDist) // make sure focus distance is in front of back distance.
@@ -1842,7 +1842,7 @@ ViewportStatus ViewDefinition3d::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPo
 
     if (frontDist < MinimumFrontDistance())
         frontDist = MinimumFrontDistance();
-         
+
     BeAssert(backDist > frontDist);
     delta.z =(backDist - frontDist);
 
@@ -2001,7 +2001,7 @@ void ViewDefinition::_AdjustAspectRatio(double windowAspect)
 
     if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
         return;
-    
+
     DVec3d oldDelta = extents;
     if (viewAspect > windowAspect)
         extents.y = extents.x / windowAspect;
@@ -2028,7 +2028,7 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, prop_DisplayStyle(), 
+    params.RegisterPropertyAccessors(layout, prop_DisplayStyle(),
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
@@ -2066,7 +2066,7 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, prop_CategorySelector(), 
+    params.RegisterPropertyAccessors(layout, prop_CategorySelector(),
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
@@ -2110,7 +2110,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             if (!VALUE.ConvertToPrimitiveType(ECN::PRIMITIVETYPE_Double))               \
                 return DgnDbStatus::BadArg;
 
-    params.RegisterPropertyAccessors(layout, prop_Origin(), 
+    params.RegisterPropertyAccessors(layout, prop_Origin(),
         [](ECValueR value, DgnElementCR el)
             {
             GET_POINT(viewDef.GetOrigin());
@@ -2121,7 +2121,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_POINT(viewDef.SetOrigin(value.GetPoint3d()));
             });
 
-    params.RegisterPropertyAccessors(layout, prop_Extents(), 
+    params.RegisterPropertyAccessors(layout, prop_Extents(),
         [](ECValueR value, DgnElementCR el)
             {
             GET_POINT(viewDef.GetExtents());
@@ -2132,7 +2132,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_POINT(viewDef.SetExtents(DVec3d::From(value.GetPoint3d())));
             });
 
-    params.RegisterPropertyAccessors(layout, prop_Yaw(), 
+    params.RegisterPropertyAccessors(layout, prop_Yaw(),
         [](ECValueR value, DgnElementCR el)
             {
             GET_DOUBLE(angles.GetYaw().Degrees());
@@ -2165,7 +2165,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_DOUBLE(angles.SetRoll(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
 
-    params.RegisterPropertyAccessors(layout, prop_EyePoint(), 
+    params.RegisterPropertyAccessors(layout, prop_EyePoint(),
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
@@ -2180,7 +2180,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, prop_LensAngle(), 
+    params.RegisterPropertyAccessors(layout, prop_LensAngle(),
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
@@ -2195,7 +2195,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, prop_FocusDistance(), 
+    params.RegisterPropertyAccessors(layout, prop_FocusDistance(),
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
@@ -2210,7 +2210,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, prop_IsCameraOn(), 
+    params.RegisterPropertyAccessors(layout, prop_IsCameraOn(),
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
@@ -2244,7 +2244,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             if (!VALUE.ConvertToPrimitiveType(ECN::PRIMITIVETYPE_Double))               \
                 return DgnDbStatus::BadArg;
 
-    params.RegisterPropertyAccessors(layout, prop_BaseModel(), 
+    params.RegisterPropertyAccessors(layout, prop_BaseModel(),
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition2dCR viewDef = (ViewDefinition2dCR)el;
@@ -2261,7 +2261,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, prop_RotationAngle(), 
+    params.RegisterPropertyAccessors(layout, prop_RotationAngle(),
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition2dCR viewDef = (ViewDefinition2dCR)el;
@@ -2276,7 +2276,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::Success;
             });
 
-    params.RegisterPropertyAccessors(layout, prop_Origin(), 
+    params.RegisterPropertyAccessors(layout, prop_Origin(),
         [](ECValueR value, DgnElementCR el)
             {
             GET_POINT2d(viewDef.GetOrigin2d());
@@ -2287,7 +2287,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             SET_POINT2d(viewDef.SetOrigin2d(value.GetPoint2d()));
             });
 
-    params.RegisterPropertyAccessors(layout, prop_Extents(), 
+    params.RegisterPropertyAccessors(layout, prop_Extents(),
         [](ECValueR value, DgnElementCR el)
             {
             GET_POINT2d(viewDef.GetDelta2d());
@@ -2309,7 +2309,7 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayout
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, prop_ModelSelector(), 
+    params.RegisterPropertyAccessors(layout, prop_ModelSelector(),
         [](ECValueR value, DgnElementCR el)
             {
             SpatialViewDefinitionCR viewDef = (SpatialViewDefinitionCR)el;

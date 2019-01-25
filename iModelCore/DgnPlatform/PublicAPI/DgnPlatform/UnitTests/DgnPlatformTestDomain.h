@@ -31,14 +31,14 @@
 #define DPTEST_TEST_ELEMENT_IntegerProperty2 "TestIntegerProperty2"
 #define DPTEST_TEST_ELEMENT_IntegerProperty3 "TestIntegerProperty3"
 #define DPTEST_TEST_ELEMENT_IntegerProperty4 "TestIntegerProperty4"
-#define DPTEST_TEST_ELEMENT_DoubleProperty1 "TestDoubleProperty1" 
-#define DPTEST_TEST_ELEMENT_DoubleProperty2 "TestDoubleProperty2" 
-#define DPTEST_TEST_ELEMENT_DoubleProperty3 "TestDoubleProperty3" 
-#define DPTEST_TEST_ELEMENT_DoubleProperty4 "TestDoubleProperty4" 
-#define DPTEST_TEST_ELEMENT_PointProperty1 "TestPointProperty1"  
-#define DPTEST_TEST_ELEMENT_PointProperty2 "TestPointProperty2"  
-#define DPTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"  
-#define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
+#define DPTEST_TEST_ELEMENT_DoubleProperty1 "TestDoubleProperty1"
+#define DPTEST_TEST_ELEMENT_DoubleProperty2 "TestDoubleProperty2"
+#define DPTEST_TEST_ELEMENT_DoubleProperty3 "TestDoubleProperty3"
+#define DPTEST_TEST_ELEMENT_DoubleProperty4 "TestDoubleProperty4"
+#define DPTEST_TEST_ELEMENT_PointProperty1 "TestPointProperty1"
+#define DPTEST_TEST_ELEMENT_PointProperty2 "TestPointProperty2"
+#define DPTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"
+#define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"
 
 #define DPTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
@@ -105,7 +105,7 @@ struct TestElement : Dgn::PhysicalElement
 {
     friend struct TestElementHandler;
 
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement) 
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement)
 public:
     TestElement(CreateParams const& params);
 
@@ -121,12 +121,12 @@ protected:
     Dgn::DgnDbStatus _DeleteInDb() const override;
     Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    void _CopyFrom(Dgn::DgnElementCR el) override;
+    void _CopyFrom(Dgn::DgnElementCR el, CopyFromOptions const& opts) override;
 
 public:
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
     static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
-    
+
     // This Create function allows you to create a subclass of TestElement in the case where the subclass does not have its own handler
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, ECN::ECClassCR, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode="");
 
@@ -137,7 +137,7 @@ public:
     // This Create function sets the element's geometry to a shape
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode, double shapeSize);
 
-    // Create element with display params 
+    // Create element with display params
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::Render::GeometryParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnCode elementCode, double shapeSize);
     static RefCountedPtr<TestElement> CreateWithoutGeometry(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
 
@@ -179,7 +179,7 @@ struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
 //=======================================================================================
 struct TestElement2d : Dgn::AnnotationElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::AnnotationElement2d) 
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::AnnotationElement2d)
 
 public:
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME)); }

@@ -53,7 +53,7 @@ public:
         //! @param[in] height the height of the image
         //! @param[in] width the width of the image
         //! @param[in] flags optional flags
-        CreateParams(DefinitionModelR model, Utf8StringCR name, Render::ImageSourceCR data, uint32_t width, uint32_t height, Utf8StringCR descr="", Flags flags=Flags::None) : 
+        CreateParams(DefinitionModelR model, Utf8StringCR name, Render::ImageSourceCR data, uint32_t width, uint32_t height, Utf8StringCR descr="", Flags flags=Flags::None) :
                 T_Super(model.GetDgnDb(), model.GetModelId(), QueryDgnClassId(model.GetDgnDb()), CreateCode(model, name)), m_data(data), m_width(width), m_height(height), m_flags(flags), m_descr(descr) {}
     };
 
@@ -69,11 +69,11 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DgnCode _GenerateDefaultCode() const override { return DgnCode::CreateEmpty(); }
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
-    
+
 public:
     BE_JSON_NAME(description)
     BE_JSON_NAME(data)

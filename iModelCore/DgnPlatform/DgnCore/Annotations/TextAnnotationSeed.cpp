@@ -71,7 +71,7 @@ DgnDbStatus TextAnnotationSeed::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationSeed::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void TextAnnotationSeed::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
 #if defined (TOFROM_JSON)
@@ -152,9 +152,9 @@ void dgn_ElementHandler::TextAnnotationSeedHandler::_RegisterPropertyAccessors(E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationSeed::_CopyFrom(DgnElementCR src)
+void TextAnnotationSeed::_CopyFrom(DgnElementCR src, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(src);
+    T_Super::_CopyFrom(src, opts);
 
     TextAnnotationSeedCP rhs = dynamic_cast<TextAnnotationSeedCP>(&src);
     if (nullptr == rhs)
@@ -189,7 +189,7 @@ static void setIntegerValue(TextAnnotationSeedPropertyBagR data, TextAnnotationS
 //     {
 //     if (data.HasProperty(key))
 //         return data.GetRealProperty(key);
-//     
+//
 //     return defaultValue;
 //     }
 // static void setRealValue(TextAnnotationSeedPropertyBagR data, TextAnnotationSeedProperty key, TextAnnotationSeedPropertyBag::T_Real defaultValue, TextAnnotationSeedPropertyBag::T_Real value)
@@ -206,11 +206,11 @@ static void setIntegerValue(TextAnnotationSeedPropertyBagR data, TextAnnotationS
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_FRAMESTYLEID_VALUE = 0;
 DgnElementId TextAnnotationSeed::GetFrameStyleId() const { return DgnElementId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE)); }
 void TextAnnotationSeed::SetFrameStyleId(DgnElementId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE, value.GetValue()); }
-    
+
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_LEADERSTYLEID_VALUE = 0;
 DgnElementId TextAnnotationSeed::GetLeaderStyleId() const { return DgnElementId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE)); }
 void TextAnnotationSeed::SetLeaderStyleId(DgnElementId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE, value.GetValue()); }
-    
+
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_TEXTSTYLEID_VALUE = 0;
 DgnElementId TextAnnotationSeed::GetTextStyleId() const { return DgnElementId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE)); }
 void TextAnnotationSeed::SetTextStyleId(DgnElementId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE, value.GetValue()); }
@@ -328,7 +328,7 @@ BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(FB::TextAnnotationS
 BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, TextAnnotationSeedCR style, FlatBufEncodeOptions options)
     {
     FlatBufferBuilder encoder;
-    
+
     // I prefer to ensure encoders write default values instead of it being unknown later if it's really a default value, or if the encoder missed it and it's bad data.
     TemporaryForceDefaults forceDefaults(encoder, true);
 
@@ -344,10 +344,10 @@ BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(bvector<Byte>& buff
     FB::TextAnnotationSeedBuilder fbStyle(encoder);
     fbStyle.add_majorVersion(CURRENT_MAJOR_VERSION);
     fbStyle.add_minorVersion(CURRENT_MINOR_VERSION);
-    
+
     if (!setters.empty())
         fbStyle.add_setters(settersOffset);
-    
+
     encoder.Finish(fbStyle.Finish());
 
     //.............................................................................................
@@ -371,7 +371,7 @@ BentleyStatus TextAnnotationSeedPersistence::DecodeFromFlatBuf(TextAnnotationSee
             case FB::TextAnnotationSeedProperty_TextStyleId: data.SetIntegerProperty(TextAnnotationSeedProperty::TextStyleId, setter.integerValue()); break;
             }
         }
-    
+
     return SUCCESS;
     }
 
@@ -381,7 +381,7 @@ BentleyStatus TextAnnotationSeedPersistence::DecodeFromFlatBuf(TextAnnotationSee
 BentleyStatus TextAnnotationSeedPersistence::DecodeFromFlatBuf(TextAnnotationSeedR style, ByteCP buffer, size_t numBytes)
     {
     style.m_data.ClearAllProperties();
-    
+
     auto fbStyle = GetRoot<FB::TextAnnotationSeed>(buffer);
 
     PRECONDITION(fbStyle->has_majorVersion(), ERROR);

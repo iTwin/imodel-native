@@ -83,7 +83,7 @@ DgnDbStatus AnnotationLeaderStyle::_ReadSelectParams(BeSQLite::EC::ECSqlStatemen
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void AnnotationLeaderStyle::_ToJson(JsonValueR out, JsonValueCR opts) const 
+void AnnotationLeaderStyle::_ToJson(JsonValueR out, JsonValueCR opts) const
     {
     T_Super::_ToJson(out, opts);
 #if defined (TOFROM_JSON)
@@ -164,9 +164,9 @@ void dgn_ElementHandler::AnnotationLeaderStyleHandler::_RegisterPropertyAccessor
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void AnnotationLeaderStyle::_CopyFrom(DgnElementCR src)
+void AnnotationLeaderStyle::_CopyFrom(DgnElementCR src, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(src);
+    T_Super::_CopyFrom(src, opts);
 
     AnnotationLeaderStyleCP rhs = dynamic_cast<AnnotationLeaderStyleCP>(&src);
     if (nullptr == rhs)
@@ -370,7 +370,7 @@ BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(FB::AnnotationLe
 BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationLeaderStyleCR style, FlatBufEncodeOptions options)
     {
     FlatBufferBuilder encoder;
-    
+
     // I prefer to ensure encoders write default values instead of it being unknown later if it's really a default value, or if the encoder missed it and it's bad data.
     TemporaryForceDefaults forceDefaults(encoder, true);
 
@@ -381,7 +381,7 @@ BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(bvector<Byte>& b
     FB::AnnotationLeaderStyleSetterVectorOffset settersOffset;
     if (!setters.empty())
         settersOffset = encoder.CreateVectorOfStructs(setters);
-    
+
     //.............................................................................................
     FB::AnnotationLeaderStyleBuilder fbStyle(encoder);
     fbStyle.add_majorVersion(CURRENT_MAJOR_VERSION);
@@ -389,7 +389,7 @@ BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(bvector<Byte>& b
 
     if (!setters.empty())
         fbStyle.add_setters(settersOffset);
-    
+
     encoder.Finish(fbStyle.Finish());
 
     //.............................................................................................
@@ -419,7 +419,7 @@ BentleyStatus AnnotationLeaderStylePersistence::DecodeFromFlatBuf(AnnotationLead
             case FB::AnnotationLeaderStyleProperty_TerminatorWeight: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorWeight, setter.integerValue()); break;
             }
         }
-    
+
     return SUCCESS;
     }
 
@@ -429,7 +429,7 @@ BentleyStatus AnnotationLeaderStylePersistence::DecodeFromFlatBuf(AnnotationLead
 BentleyStatus AnnotationLeaderStylePersistence::DecodeFromFlatBuf(AnnotationLeaderStyleR style, ByteCP buffer, size_t numBytes)
     {
     style.m_data.ClearAllProperties();
-    
+
     auto fbStyle = GetRoot<FB::AnnotationLeaderStyle>(buffer);
 
     PRECONDITION(fbStyle->has_majorVersion(), ERROR);

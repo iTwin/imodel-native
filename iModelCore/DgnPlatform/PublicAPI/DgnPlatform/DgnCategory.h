@@ -103,7 +103,7 @@ public:
         double GetTransparency() const {return m_transparency;}
         DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
         bool IsEqual(Appearance const& other) const {return *this==other;}
-        DGNPLATFORM_EXPORT void FromJson(JsonValueCR); //!< initialize this appearance from a previously saved json 
+        DGNPLATFORM_EXPORT void FromJson(JsonValueCR); //!< initialize this appearance from a previously saved json
         DGNPLATFORM_EXPORT Json::Value ToJson() const;   //!< convert this appearance to a json value
         void RelocateToDestinationDb(DgnImportContext&);
     };
@@ -200,14 +200,14 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
-    
+
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
     static CreateParams CreateParamsFromECInstance(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus*);
 
@@ -301,7 +301,7 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
@@ -310,7 +310,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
-    
+
     DgnDbStatus _SetParentId(DgnElementId, DgnClassId) override {return DgnDbStatus::InvalidParent;}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_rank) + m_descr.length());}
 
@@ -339,7 +339,7 @@ public:
     //! Looks up the DgnCategoryId of a category by code.
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnDbR db, DgnCodeCR code);
 
-    //! Gets a DgnCategory by ID. 
+    //! Gets a DgnCategory by ID.
     //! @note It is better to use DrawingCategory::Get or SpatialCategory::Get if the type of category is known
     static DgnCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<DgnCategory>(categoryId);}
 
@@ -358,7 +358,7 @@ public:
 
     //! Get a string containing the list of characters that may NOT appear in category codes.
     static Utf8CP GetIllegalCharacters() {return "<>\\/.\"?*|,='&\n\t";}
-    
+
     //! Determine whether the supplied name is a valid category or sub-category name
     DGNPLATFORM_EXPORT static bool IsValidName(Utf8StringCR name);
 };
@@ -396,7 +396,7 @@ public:
     //! @return The persistent DrawingCategory, or nullptr if insert failed.
     DGNPLATFORM_EXPORT DrawingCategoryCPtr Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status=nullptr);
     //! Updates this DrawingCategory in the DgnDb and returns the updated persistent DrawingCategory
-    DrawingCategoryCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DrawingCategory>(*this, status);} 
+    DrawingCategoryCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DrawingCategory>(*this, status);}
 
     //! Make an iterator over all DrawingCategory elements in the specified DgnDb
     //! @param[in] db Iterate DrawingCategory elements in this DgnDb
@@ -444,7 +444,7 @@ public:
     //! @return The persistent SpatialCategory, or nullptr if insert failed.
     DGNPLATFORM_EXPORT SpatialCategoryCPtr Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status=nullptr);
     //! Updates this SpatialCategory in the DgnDb and returns the updated persistent SpatialCategory
-    SpatialCategoryCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<SpatialCategory>(*this, status);} 
+    SpatialCategoryCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<SpatialCategory>(*this, status);}
 
     //! Make an iterator over all SpatialCategory elements in the specified DgnDb
     //! @param[in] db Iterate SpatialCategory elements in this DgnDb

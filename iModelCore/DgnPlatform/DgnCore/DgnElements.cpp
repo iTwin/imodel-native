@@ -10,12 +10,12 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-// Most Recently Used cache of DgnElements for a DgnDb. Holds the N most recently used 
-// elements for a DgnDb. As a newer element is added, the least recently used one is dropped 
+// Most Recently Used cache of DgnElements for a DgnDb. Holds the N most recently used
+// elements for a DgnDb. As a newer element is added, the least recently used one is dropped
 // if the cache holds more than the maximum size.
 // @bsiclass                                                    Keith.Bentley   12/17
 //=======================================================================================
-struct ElementMRU 
+struct ElementMRU
 {
     struct ElemEntry : NonCopyableClass
     {
@@ -36,14 +36,14 @@ struct ElementMRU
     void MoveToFront(EntryList::iterator it) {m_list.splice(m_list.begin(), m_list, it);}
 
     // add an element to the front of the MRU cache.
-    void AddElement(DgnElementCR el) 
+    void AddElement(DgnElementCR el)
         {
         if (0 == m_maxSize)
             return;
-    
+
         uint64_t id = el.GetElementId().GetValue();
         auto iter = m_map.find(id);
-        if (iter != m_map.end()) 
+        if (iter != m_map.end())
             {
             iter->second->m_el = &el;
             MoveToFront(iter->second);
@@ -56,11 +56,11 @@ struct ElementMRU
         }
 
     // look for the element in the MRU cache. If found, move it to most recent
-    DgnElementCP FindElement(DgnElementId eid) 
+    DgnElementCP FindElement(DgnElementId eid)
         {
         auto id = eid.GetValue();
         auto iter = m_map.find(id);
-        if (iter == m_map.end()) 
+        if (iter == m_map.end())
             return nullptr;
 
         MoveToFront(iter->second);
@@ -68,11 +68,11 @@ struct ElementMRU
         }
 
     // drop an element from MRU cache.
-    bool DropElement(DgnElementId eid) 
+    bool DropElement(DgnElementId eid)
         {
         auto id = eid.GetValue();
         auto iter = m_map.find(id);
-        if (iter == m_map.end()) 
+        if (iter == m_map.end())
             return false;
 
         m_list.erase(iter->second);
@@ -81,9 +81,9 @@ struct ElementMRU
         }
 
     // purge MRU cache until it is less than the maximum size.
-    void Purge() 
+    void Purge()
         {
-        while (m_map.size() > m_maxSize) 
+        while (m_map.size() > m_maxSize)
             {
             m_map.erase(m_list.back().m_id);
             m_list.pop_back();
@@ -96,9 +96,9 @@ END_BENTLEY_DGN_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::~DgnElements() 
+DgnElements::~DgnElements()
     {
-    Destroy(); 
+    Destroy();
     BeAssert(0 == m_extant);       // make sure nobody has any DgnElements around from this DgnDb
     }
 
@@ -114,7 +114,7 @@ void DgnElements::Destroy()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::SetCacheSize(uint32_t newSize) 
+void DgnElements::SetCacheSize(uint32_t newSize)
     {
     BeMutexHolder _v_v(m_mutex);
     m_mruCache->SetMaxSize(newSize);
@@ -123,7 +123,7 @@ void DgnElements::SetCacheSize(uint32_t newSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::ClearCache() 
+void DgnElements::ClearCache()
     {
     BeMutexHolder _v_v(m_mutex);
     m_mruCache->Clear();
@@ -173,12 +173,12 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DgnElement(CreateParams const& params) :  m_elementId(params.m_id), 
-    m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
+DgnElement::DgnElement(CreateParams const& params) :  m_elementId(params.m_id),
+    m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
     m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parent(params.m_parentId, params.m_parentId.IsValid() ? params.m_parentRelClassId : DgnClassId()),
     m_userLabel(params.m_userLabel), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0), m_structInstances(nullptr)
     {
-#if !defined (NDEBUG)    
+#if !defined (NDEBUG)
     auto& elements = GetDgnDb().Elements();
     BeMutexHolder lock(elements.GetMutex());
     ++elements.m_extant;  // only for detecting leaks
@@ -192,10 +192,9 @@ DgnElement::~DgnElement()
     {
     ClearAllAppData();
 
-    if (nullptr != m_ecPropertyData)
-        bentleyAllocator_free(m_ecPropertyData);
+    UnloadAutoHandledProperties();
 
-#if !defined (NDEBUG)    
+#if !defined (NDEBUG)
     auto& elements = GetDgnDb().Elements();
     BeMutexHolder lock(elements.GetMutex());
     --elements.m_extant;
@@ -237,7 +236,7 @@ void dgn_TxnTable::Element::_OnAppliedAdd(BeSQLite::Changes::Change const& chang
 
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueUInt64());
 
-    // We need to load this element, since filled models need to register it 
+    // We need to load this element, since filled models need to register it
     DgnElementCPtr el = m_txnMgr.GetDgnDb().Elements().GetElement(elementId);
     BeAssert(el.IsValid());
     el->_OnAppliedAdd();
@@ -255,14 +254,14 @@ void dgn_TxnTable::Element::_OnAppliedDelete(BeSQLite::Changes::Change const& ch
 
     // see if we have this element in memory, if so call its _OnDelete method.
     DgnElementPtr el = const_cast<DgnElementP>(m_txnMgr.GetDgnDb().Elements().FindLoadedElement(elementId));
-    if (el.IsValid()) 
+    if (el.IsValid())
         el->_OnAppliedDelete(); // Note: this MUST be a DgnElementPtr, since we can't call _OnAppliedDelete with an element with a zero ref count
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnAppliedUpdate(BeSQLite::Changes::Change const& change) 
+void dgn_TxnTable::Element::_OnAppliedUpdate(BeSQLite::Changes::Change const& change)
     {
     if (!m_txnMgr.IsInAbandon())
         AddChange(change, ChangeType::Update);
@@ -331,10 +330,10 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId,  bool makePersis
 
     DgnCode code(stmt->GetValueId<CodeSpecId>(Column::CodeSpec), stmt->GetValueId<DgnElementId>(Column::CodeScope), stmt->GetValueText(Column::CodeValue));
 
-    DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
-                    stmt->GetValueId<DgnClassId>(Column::ClassId), 
+    DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId),
+                    stmt->GetValueId<DgnClassId>(Column::ClassId),
                     code,
-                    stmt->GetValueText(Column::UserLabel), 
+                    stmt->GetValueText(Column::UserLabel),
                     stmt->GetValueId<DgnElementId>(Column::ParentId),
                     stmt->GetValueId<DgnClassId>(Column::ParentRelClassId),
                     stmt->GetValueGuid(Column::FederationGuid));
@@ -426,7 +425,7 @@ DateTime ElementIteratorEntry::GetLastModifyTime() const {return m_statement->Ge
 ElementAspectIterator DgnElement::MakeAspectIterator() const
     {
     ElementAspectIterator iterator;
-    iterator.Prepare(GetDgnDb(), 
+    iterator.Prepare(GetDgnDb(),
         "SELECT ECInstanceId,ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " WHERE Element.Id=:ElementIdParam1 UNION "
         "SELECT ECInstanceId,ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)  " WHERE Element.Id=:ElementIdParam2",
         0 /* Index of ECInstanceId */);
@@ -500,7 +499,9 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
     if (DgnDbStatus::Success != (stat = element._InsertInDb()))
         return nullptr;
 
-    DgnElementPtr newElement = element.CopyForEdit();
+    DgnElement::CopyFromOptions opts;
+    opts.copyEcPropertyData = false;
+    DgnElementPtr newElement = element.CopyForEditInternal(opts);
     AddToPool(*newElement);
 
     newElement->_OnInserted(&element);
@@ -533,7 +534,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
         return nullptr;
         }
 
-    if (!element.GetModel().IsValid())      
+    if (!element.GetModel().IsValid())
         {
         stat = DgnDbStatus::BadModel; // they gave us an element with an invalid ModelId
         return nullptr;
@@ -584,11 +585,13 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     BeAssert(0 != original.GetRefCount());
     BeAssert(original.IsPersistent());
 
-    (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
+    DgnElement::CopyFromOptions opts;
+    opts.copyEcPropertyData = false;
+    (*const_cast<DgnElementP>(&original))._CopyFrom(replacement, opts);    // copy new data into original element
 
     //Make sure copy over the m_federationGuid as its not copied during _CopyFrom()
     (*const_cast<DgnElementP>(&original)).m_federationGuid = replacement.m_federationGuid;
-    original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
+    original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics and all elements a chance to unload auto-handled properties.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -842,7 +845,7 @@ Utf8StringCR DgnElements::GetSelectEcPropsECSql(ECSqlClassInfo& classInfo, ECN::
     if (props.empty())
         return classInfo.m_selectEcProps = "";
 
-    classInfo.m_selectEcProps = Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter", 
+    classInfo.m_selectEcProps = Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter",
                                                             props.c_str(), ecclass.GetECSqlName().c_str());
     return classInfo.m_selectEcProps;
     }
@@ -878,7 +881,7 @@ ECSqlClassInfo& DgnElements::FindClassInfo(DgnClassId classId) const
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      06/2018
-+---------------+---------------+---------------+---------------+---------------+------*/    
++---------------+---------------+---------------+---------------+---------------+------*/
 JsonECSqlSelectAdapter const& DgnElements::GetJsonSelectAdapter(BeSQLite::EC::ECSqlStatement const& stmt) const
     {
     auto it = m_jsonSelectAdapterCache.find(stmt.GetHashCode());
@@ -888,7 +891,7 @@ JsonECSqlSelectAdapter const& DgnElements::GetJsonSelectAdapter(BeSQLite::EC::EC
     // As the adapter is cached, we can avoid that the member names are copied into the generated JSON. Instead
     // the generated JSON objects reference the member names held by the adapter.
     // Note: Must make sure the JSON objects don't live longer than the adapter.
-    std::unique_ptr<JsonECSqlSelectAdapter> adapter = std::make_unique<JsonECSqlSelectAdapter>(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString), 
+    std::unique_ptr<JsonECSqlSelectAdapter> adapter = std::make_unique<JsonECSqlSelectAdapter>(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString),
                                                                    false); // don't make copy of member names for every JSON as the adapter is cached.
     JsonECSqlSelectAdapter* adapterP = adapter.get();
     m_jsonSelectAdapterCache[stmt.GetHashCode()] = std::move(adapter);

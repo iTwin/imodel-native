@@ -78,7 +78,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStylePropertyBag : AnnotationProper
 {
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)
-    
+
 protected:
     DGNPLATFORM_EXPORT bool _IsIntegerProperty(T_Key) const override;
     DGNPLATFORM_EXPORT bool _IsRealProperty(T_Key) const override;
@@ -89,7 +89,7 @@ public:
     AnnotationTextStylePropertyBagR operator=(AnnotationTextStylePropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
     static AnnotationTextStylePropertyBagPtr Create() { return new AnnotationTextStylePropertyBag(); }
     AnnotationTextStylePropertyBagPtr Clone() const { return new AnnotationTextStylePropertyBag(*this); }
-    
+
     bool HasProperty(AnnotationTextStyleProperty key) const { return T_Super::HasProperty((T_Key)key); }
     void ClearProperty(AnnotationTextStyleProperty key) { T_Super::ClearProperty((T_Key)key); }
     T_Integer GetIntegerProperty(AnnotationTextStyleProperty key) const { return T_Super::GetIntegerProperty((T_Key)key); }
@@ -112,7 +112,7 @@ typedef DgnElementId AnnotationTextStyleId;
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStyle : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_AnnotationTextStyle, DefinitionElement);
-    
+
 private:
     friend struct AnnotationTextStylePersistence;
     friend struct TextStyleInterop;
@@ -127,7 +127,7 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
     DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
@@ -137,7 +137,7 @@ protected:
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationTextStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
-    
+
     explicit AnnotationTextStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
     explicit AnnotationTextStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationTextStylePtr Create(DgnDbR db) { return new AnnotationTextStyle(db); }
@@ -147,7 +147,7 @@ public:
     void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
-    
+
     DGNPLATFORM_EXPORT AnnotationColorType GetColorType() const;
     DGNPLATFORM_EXPORT void SetColorType(AnnotationColorType);
     DGNPLATFORM_EXPORT ColorDef GetColorValue() const;
@@ -200,11 +200,11 @@ public:
         DEFINE_T_SUPER(ECSqlStatementEntry);
         friend struct ECSqlStatementIterator<Entry>;
         friend struct AnnotationTextStyle;
-    
+
     private:
         Entry() : T_Super(nullptr) {}
         Entry(BeSQLite::EC::ECSqlStatement* stmt) : T_Super(stmt) {}
-    
+
     public:
         DgnElementId GetElementId() const { return m_statement->GetValueId<DgnElementId>(0); }
         Utf8CP GetName() const { return m_statement->GetValueText(1); }
