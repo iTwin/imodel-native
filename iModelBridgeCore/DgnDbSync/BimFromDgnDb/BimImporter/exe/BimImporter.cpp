@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/exe/BimImporter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,8 +11,14 @@
 #include <Windows.h>
 #endif
 
-#include <BimTeleporter/BisJson1Importer.h>
+#include <DgnView/DgnViewAPI.h>
+#include <DgnView/DgnViewLib.h>
+
+#include <BimFromDgnDb/BimFromDgnDb.h>
+#include <BimFromDgnDb/BimFromJson.h>
+#include <Logging/bentleylogging.h>
 #include "BimImporter.h"
+
 #include <folly/futures/Future.h>
 #include <folly/ProducerConsumerQueue.h>
 #include <folly/BeFolly.h>
@@ -28,10 +34,10 @@ USING_NAMESPACE_BENTLEY_EC
                                 va_end (args);                  \
                                 }
 
-static WCharCP s_configFileName = L"BimTeleporter.logging.config.xml";
+static WCharCP s_configFileName = L"BimUpgrader.logging.config.xml";
 #define BIM_EXT L"bim"
 
-BEGIN_BIM_TELEPORTER_NAMESPACE
+BEGIN_BIM_FROM_DGNDB_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -87,11 +93,11 @@ BentleyStatus BimImporter::GetLogConfigurationFilename(BeFileName& configFile, W
     {
     WString programBasename = BeFileName::GetFileNameWithoutExtension(argv0);
 
-    if (SUCCESS == getEnv(configFile, L"BENTLEY_BIMTELEPORTER_LOGGING_CONFIG"))
+    if (SUCCESS == getEnv(configFile, L"BENTLEY_BIMUPGRADER_LOGGING_CONFIG"))
         {
         if (configFile.DoesPathExist())
             {
-            _PrintMessage(L"%ls configuring logging with %s (Set by BENTLEY_BIMTELEPORTER_LOGGING_CONFIG environment variable.)\n", programBasename.c_str(), configFile.GetName());
+            _PrintMessage(L"%ls configuring logging with %s (Set by BENTLEY_BIMUPGRADER_LOGGING_CONFIG environment variable.)\n", programBasename.c_str(), configFile.GetName());
             return SUCCESS;
             }
         }
@@ -102,7 +108,7 @@ BentleyStatus BimImporter::GetLogConfigurationFilename(BeFileName& configFile, W
 
     if (BeFileName::DoesPathExist(configFile))
         {
-        _PrintMessage(L"%ls configuring logging using %ls. Override by setting BENTLEY_BIMTELEPORTER_LOGGING_CONFIG in environment.\n", programBasename.c_str(), configFile.GetName());
+        _PrintMessage(L"%ls configuring logging using %ls. Override by setting BENTLEY_BIMUPGRADER_LOGGING_CONFIG in environment.\n", programBasename.c_str(), configFile.GetName());
         return SUCCESS;
         }
 
@@ -194,6 +200,9 @@ BentleyStatus BimImporter::_Initialize(int argc, WCharCP argv[])
         }
     InitLogging(argv[0]);
 
+    //m_host->SetProgressMeter(new PrintfProgressMeter());
+    DgnPlatformLib::Initialize(*this, false);
+
     return SUCCESS;
 
     }
@@ -221,8 +230,7 @@ Usage: %ls -i|--input= -o|--output= \
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Muhammad.Zaighum                  05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus BimImporter::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath)
+BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName jsonFilePath)
     {
     Utf8String fileContent;
 
@@ -255,37 +263,37 @@ BentleyStatus BimImporter::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileN
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbPtr BimImporter::CreateNewBim()
-    {
-    Utf8String subjectName(m_outputPath.GetFileNameWithoutExtension());
-
-    DbResult dbStatus;
-    Dgn::CreateDgnDbParams params;
-    params.SetOverwriteExisting(true);
-    params.SetRootSubjectName(subjectName.c_str());
-
-    DgnDbPtr dgndb = DgnDb::CreateDgnDb(&dbStatus, m_outputPath, params);
-
-    if (!dgndb.IsValid())
-        {
-        // Report Error
-        return dgndb;
-        }
-
-    return dgndb;
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 L10N::SqlangFiles BimImporter::_SupplySqlangFiles()
     {
     BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     sqlangFile.AppendToPath(L"sqlang");
-    sqlangFile.AppendToPath(L"BisJson1Importer_en-US.sqlang.db3");
+    sqlangFile.AppendToPath(L"BimFromJson_en-US.sqlang.db3");
 
     return L10N::SqlangFiles(sqlangFile);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+folly::Future<bool> ReadJsonFile(BeFileName inputFileName, BimFromJson* importer)
+    {
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=] ()
+        {
+        Json::Value jsonInput;
+        ReadJsonInputFromFile(jsonInput, inputFileName);
+
+        for (Json::Value::iterator iter = jsonInput.begin(); iter != jsonInput.end(); iter++)
+            {
+            Json::Value& entry = *iter;
+            if (entry.isNull())
+                continue;
+            importer->AddToQueue(entry.toStyledString().c_str());
+            }
+
+        return true;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -319,27 +327,25 @@ int BimImporter::Run(int argc, WCharCP argv[])
         return _PrintUsage(argv[0]);
         }
 
-    Json::Value jsonInput;
-    ReadJsonInputFromFile(jsonInput, m_inputFileName);
-
     BimFromJson importer(m_outputPath.GetName());
-    
-    for (Json::Value::iterator iter = jsonInput.begin(); iter != jsonInput.end(); iter++)
+    if (!importer.CreateBim())
         {
-        Json::Value& entry = *iter;
-        if (entry.isNull())
-            continue;
-        importer.AddToQueue(entry.toStyledString().c_str());
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("BimImporter")->fatal("Failed to create bim.  Aborting");
+        return -1;
         }
+
+    auto future = ReadJsonFile(m_inputFileName, &importer);
+    importer.ImportJson(future);
+
     return 0;
     }
-END_BIM_TELEPORTER_NAMESPACE
+END_BIM_FROM_DGNDB_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, wchar_t const* argv[])
     {
-    BentleyApi::Dgn::BimTeleporter::BimImporter app;
+    BentleyApi::Dgn::BimFromDgnDb::BimImporter app;
     return app.Run(argc, argv);
     }

@@ -1,0 +1,67 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: BimFromDgnDb/Tests/Tests.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+programName = BimUpgraderTests
+baseDir =   $(_MakeFilePath)
+
+BEGTEST_INPUT=$(baseDir)
+ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hopefully by the time permissive is Microsoft's default, Vancouver will have patched header files.
+
+%include mdl.mki
+
+
+dirToSearch = $(BuildContext)SubParts/UnitTests/include
+%include cincapnd.mki
+
+# We don't want to run the test from the build location because the dependencies are not there.
+GUNITTEST_NOEXEC = 1
+
+BEGTEST_NAME=$(programName)
+BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+
+TestsHeaders = $(baseDir)DgnDbCreator.h
+
+# Let all stand-alone tests share the same gtestmain and TestFixture objects.
+o = $(OutputRootDir)build/BimUpgrader/$(programName)/
+
+always:
+    !~@mkdir $(o)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)gtestmain.obj               : $(BEGTEST_INPUT)gtestmain.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(programName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib
+GUNITTEST_PATH      = $(o)
+GUNITTEST_SYMB      = $(o)
+GTEST_MAIN_IS_SUPPLIED = 1
+
+LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+
+%include $(SharedMki)gunittest.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
+
+#$(BuildContext)Delivery/$(programName).logging.config.xml : $(baseDir)logging.config.xml
+#    $(LinkFirstDepToFirstTarget)
+
+#$(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
+#    $(LinkFirstDepToFirstTarget)
+
