@@ -128,6 +128,15 @@ TEST_F(ECExpressionsToECSqlConverterTests, DisplayLabelFieldWithSlashes)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, PropertiesAsFunctionArguments)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("some_function(this.PropertyName, \"test\")");
+    ASSERT_STREQ("some_function([this].[PropertyName], 'test')", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, IsOfClassFunctionSpecialCase)
