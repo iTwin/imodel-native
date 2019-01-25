@@ -1103,16 +1103,17 @@ bool  IsElementChanged(SyncInfo::V8ElementMapping& elementMapping, DgnV8Api::Edi
         }
     else if (IChangeDetector::ChangeType::Update == syncInfoSearch.m_changeType)
         {
-        Utf8String attachInfo = att? m_converter.ComputeV8AttachmentPathDescriptionAsJson(*att): "";
-
-        m_converter.UpdateMappingInSyncInfo(syncInfoSearch.GetExistingElementId(), v8eh, m_parentModelMapping, m_masterModelMapping, attachInfo);
+        Utf8String attachInfo, sourceIdPath;
+        m_converter.ComputeXSAInfo(sourceIdPath, attachInfo, v8eh, att);
+        m_converter.UpdateMappingInSyncInfo(syncInfoSearch.GetExistingElementId(), v8eh, m_parentModelMapping, m_masterModelMapping, sourceIdPath, attachInfo);
         elementMapping = syncInfoSearch.m_v8ElementMapping;
         m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
         }
     else
         {
-        Utf8String attachInfo = att? m_converter.ComputeV8AttachmentPathDescriptionAsJson(*att): "";
-        elementMapping = m_converter.RecordMappingInSyncInfo(m_parentModelMapping.GetDgnModel().GetModeledElementId(), v8eh, m_parentModelMapping, m_masterModelMapping, attachInfo);
+        Utf8String attachInfo, sourceIdPath;
+        m_converter.ComputeXSAInfo(sourceIdPath, attachInfo, v8eh, att);
+        elementMapping = m_converter.RecordMappingInSyncInfo(m_parentModelMapping.GetDgnModel().GetModeledElementId(), v8eh, m_parentModelMapping, m_masterModelMapping, sourceIdPath, attachInfo);
         }
     return true;
     }

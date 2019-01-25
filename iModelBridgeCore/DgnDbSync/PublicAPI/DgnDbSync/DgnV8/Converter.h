@@ -1427,6 +1427,8 @@ public:
     DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescription(DgnAttachmentCR);
     DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescriptionAsJson(DgnAttachmentCR);
     DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentIdPath(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeElementIdPath(DgnV8EhCR);
+    DGNDBSYNC_EXPORT void ComputeXSAInfo(Utf8StringR idPath, Utf8StringR v8AttachmentJson, DgnV8EhCR eh, DgnAttachmentCP att);
 
     DgnCategoryId GetExtractionCategoryId(V8NamedViewType);
     DGNDBSYNC_EXPORT virtual DgnCategoryId _GetExtractionCategoryId(DgnAttachmentCR);
@@ -1445,7 +1447,8 @@ public:
                                                                            SyncInfo::V8ElementMapping const& originalElementMapping,
                                                                            DgnV8Api::ElementHandle& eh,
                                                                            DgnCategoryId categoryId, GeometryBuilder& builder,
-                                                                           Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel); // <-- this is for new external source aspect
+                                                                           Utf8StringCR sourceIdPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel) // <-- Needed by ExternalSourceAspect
+
     DGNDBSYNC_EXPORT virtual bool _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
@@ -1835,10 +1838,12 @@ public:
                                            IChangeDetector::SearchResults const& updatePlan, bool isParentElement = true);
     
     //! This function can be used to record a mapping from a V8 element to an existing BIM element. Rarely used.
-    SyncInfo::V8ElementMapping RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, Utf8StringCR propsJson);
+    SyncInfo::V8ElementMapping RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, 
+        Utf8StringCR sourceIdPath, Utf8StringCR propsJson); // <-- Needed for ExternalSourceAspect
 
     //! This function can be used to update the provenance data stored in an existing SyncInfo mapping. Rarely used.
-    SyncInfo::V8ElementMapping UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, Utf8StringCR propsJson);
+    SyncInfo::V8ElementMapping UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, 
+        Utf8StringCR sourceIdPath, Utf8StringCR propsJson); // <-- Needed for ExternalSourceAspect
 
     //! Convenience method to create a new, non-persistent element.
     static DgnElementPtr CreateNewElement(DgnDbApi::DgnModel&, DgnClassId, DgnCategoryId, DgnCode, Utf8CP label = nullptr);

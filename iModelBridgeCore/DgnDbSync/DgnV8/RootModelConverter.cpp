@@ -464,6 +464,45 @@ Utf8String Converter::ComputeV8AttachmentIdPath(DgnAttachmentCR att)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeElementIdPath(DgnV8EhCR eh)
+    {
+    Utf8String path;
+    auto attachment = eh.GetModelRef()->AsDgnAttachmentCP();
+    if (nullptr != attachment)
+        {
+        path = ComputeV8AttachmentIdPath(*attachment);
+        path.append("/");
+        }
+    path.append(SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(eh.GetElementId()));
+    return path;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::ComputeXSAInfo(Utf8StringR idPath, Utf8StringR v8AttachmentJson, DgnV8EhCR eh, DgnAttachmentCP att)
+    {
+    // If the element is *known* to be a DgnAttachment, then format it.
+    if (nullptr != att)
+        {
+        idPath = ComputeV8AttachmentIdPath(*att);
+        v8AttachmentJson = ComputeV8AttachmentPathDescriptionAsJson(*att);
+        return;
+        }
+
+    // This is normal element. It may be in an attached model.
+    idPath = ComputeElementIdPath(eh);
+
+    att = eh.GetModelRef()->AsDgnAttachmentCP();
+    if (nullptr != att)
+        v8AttachmentJson = ComputeV8AttachmentPathDescriptionAsJson(*att);
+    else
+        v8AttachmentJson.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type jtype)
