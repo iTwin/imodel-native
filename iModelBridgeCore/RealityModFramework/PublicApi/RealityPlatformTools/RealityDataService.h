@@ -612,7 +612,7 @@ public:
         { 
         m_validRequestString = false; 
         m_requestType = HttpRequestType::GET_Request; 
-        m_sort = false; 
+        // m_sort = false; 
         }
 
     REALITYDATAPLATFORM_EXPORT void SetFilter(RDSFilter const& filter);
