@@ -140,7 +140,7 @@ CharCP          iModelBridgeLdClient::GetSDKKey(WebServices::UrlProvider::Enviro
             
         case WebServices::UrlProvider::Perf:
         default:
-            return NULL;
+            return "mob-6829cc02-a35a-4c16-ab59-1483ccfff249";
         }
     }
 
