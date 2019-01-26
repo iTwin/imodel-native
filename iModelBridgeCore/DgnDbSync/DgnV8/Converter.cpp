@@ -1052,7 +1052,6 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
             }
 
         PhysicalPartitionPtr ed = PhysicalPartition::Create(parentSubject, partitionCode.GetValueUtf8CP());
-        ed->SetUserLabel(ConverterDataStrings::GetString(ConverterDataStrings::PhysicalPartitionUserLabel()).c_str());
         PhysicalPartitionCPtr partition = ed->InsertT<PhysicalPartition>();
         if (!partition.IsValid())
             {
@@ -2137,10 +2136,11 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
 +---------------+---------------+---------------+---------------+---------------+------*/
  BentleyStatus  Converter::WriteV8ElementExternalSourceAspect(DgnElementR el, SyncInfo::V8ElementExternalSourceAspectData const& elprov)
     {
-    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::GetAspect(el, elprov.m_v8Id);
+    auto sourceId = !elprov.m_v8IdPath.empty()? elprov.m_v8IdPath: SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(elprov.m_v8Id);
+    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::GetAspect(el, sourceId);
     if (aspect.IsValid())
         {
-        BeAssert(aspect.GetV8ElementId() == elprov.m_v8Id);
+        BeAssert(!elprov.m_v8IdPath.empty() || aspect.GetV8ElementId() == elprov.m_v8Id);
         aspect.Update(elprov.m_prov);
         return BSISUCCESS;
         }
@@ -2475,7 +2475,7 @@ DgnV8Api::FindInstancesScopePtr Converter::CreateFindInstancesScope(DgnV8EhCR v8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementMapping Converter::RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm)
+SyncInfo::V8ElementMapping Converter::RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, Utf8StringCR sourceIdPath, Utf8StringCR propsJson)
     {
     SyncInfo::ElementProvenance newProv(v8eh, GetSyncInfo(), StableIdPolicy::ById);
     SyncInfo::V8ElementMapping mapping(bimElementId, v8eh, v8mm.GetV8ModelSyncInfoId(), newProv);
@@ -2484,7 +2484,7 @@ SyncInfo::V8ElementMapping Converter::RecordMappingInSyncInfo(DgnElementId bimEl
     if (_WantProvenanceInBim())
         {
         auto el = v8mm.GetDgnModel().GetDgnDb().Elements().GetElement(bimElementId)->CopyForEdit();
-        SyncInfo::V8ElementExternalSourceAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), newProv);
+        SyncInfo::V8ElementExternalSourceAspectData elprov(scope.GetDgnModel().GetModelId(), sourceIdPath, newProv, propsJson);
         WriteV8ElementExternalSourceAspect(*el, elprov);
         el->Update();
         }
@@ -2495,7 +2495,7 @@ SyncInfo::V8ElementMapping Converter::RecordMappingInSyncInfo(DgnElementId bimEl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementMapping Converter::UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm)
+SyncInfo::V8ElementMapping Converter::UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, Utf8StringCR sourceIdPath, Utf8StringCR propsJson)
     {
     SyncInfo::ElementProvenance newProv(v8eh, GetSyncInfo(), StableIdPolicy::ById);
     SyncInfo::V8ElementMapping mapping(bimElementId, v8eh, v8mm.GetV8ModelSyncInfoId(), newProv);
@@ -2504,7 +2504,7 @@ SyncInfo::V8ElementMapping Converter::UpdateMappingInSyncInfo(DgnElementId bimEl
     if (_WantProvenanceInBim())
         {
         auto el = v8mm.GetDgnModel().GetDgnDb().Elements().GetElement(bimElementId)->CopyForEdit();
-        SyncInfo::V8ElementExternalSourceAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), newProv);
+        SyncInfo::V8ElementExternalSourceAspectData elprov(scope.GetDgnModel().GetModelId(), sourceIdPath, newProv, propsJson);
         WriteV8ElementExternalSourceAspect(*el, elprov);
         el->Update();
         }
@@ -2797,7 +2797,8 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
 
     // NB! The "scope" for this conversion must be an object in the BIM that coresponds to the *source* model that contains
     //     the v8 element. We may decide to write the element itself to a different model.
-    SyncInfo::V8ElementExternalSourceAspectData elprov(v8mm.GetDgnModel().GetModelId(), v8eh.GetElementId(), csearch.m_currentElementProvenance);
+    auto scopeId = conversionResults.m_scope.IsValid()? conversionResults.m_scope.GetDgnModel().GetModelId(): v8mm.GetDgnModel().GetModelId();
+    SyncInfo::V8ElementExternalSourceAspectData elprov(scopeId, v8eh.GetElementId(), csearch.m_currentElementProvenance, conversionResults.m_jsonProps);
 
     if (IChangeDetector::ChangeType::Update == csearch.m_changeType)
         {
