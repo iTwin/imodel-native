@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/IModelClientForBridges.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/Fwk/IModelClientForBridges.h>
@@ -409,5 +409,40 @@ StatusInt IModelClientBase::AcquireLocks(LockRequest& req, DgnDbR db)
         }
     while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && SleepBeforeRetry());
 
+    return ERROR;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       IModelClientBase::RestoreBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName, BeSQLite::BeBriefcaseId briefcaseId)
+    {
+    iModel::Hub::iModelInfoPtr ri = GetIModelInfo();
+    if (ri == nullptr)
+        return BSIERROR;
+
+    auto progress = getHttpProgressMeter();
+    auto result = m_client->RestoreBriefcase(*ri, briefcaseId, bcFileName, true,
+        [](BeFileName baseDirectory, iModelInfoCR iModelInfo, BriefcaseInfoCR briefcaseInfo)
+        {
+        if (baseDirectory.IsDirectory())
+            baseDirectory.AppendToPath(BeFileName(briefcaseInfo.GetFileName()));
+        return baseDirectory;
+        }, progress)->GetResult();
+        
+    if (result.IsSuccess())
+        {
+        auto createdPath = result.GetValue()->GetLocalPath();
+        if (!createdPath.EqualsI(bcFileName))
+            {
+            BeAssert(false);
+            m_lastServerError = Error(Error::Id::InvalidBriefcase);
+            return BSIERROR;
+            }
+        return SUCCESS;
+        }
+
+    m_lastServerError = result.GetError();
     return ERROR;
     }
