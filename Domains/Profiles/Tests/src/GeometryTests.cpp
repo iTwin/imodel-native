@@ -276,6 +276,10 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium wider top centered", 6.0, 4.0, 4.0, -1.0));
     InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium bigger top offset", 2.0, 4.0, 4.0, 6.0));
 
+    InsertProfileGeometry<RegularPolygonProfile> (RegularPolygonProfile::CreateParams (GetModel(), "Regular polygon - 3 side", 3, 4.0), true);
+    InsertProfileGeometry<RegularPolygonProfile> (RegularPolygonProfile::CreateParams (GetModel(), "Regular polygon - 6 side", 6, 4.0));
+    InsertProfileGeometry<RegularPolygonProfile> (RegularPolygonProfile::CreateParams (GetModel(), "Regular polygon - 16 side", 16, 4.0));
+
         {
         LShapeProfilePtr wideL = InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "L 6x3 (for DoubleL)", 6.0, 3.0, 1.0, 0.5), true);
         InsertProfileGeometry<DoubleLShapeProfile> (DoubleLShapeProfile::CreateParams (GetModel(), "DoubleL 6x3 LLBB", 0.25, wideL->GetElementId(), DoubleLShapeProfileType::LLBB));
