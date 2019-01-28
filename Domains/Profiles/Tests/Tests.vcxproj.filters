@@ -95,6 +95,9 @@
     <ClCompile Include="src\TTShapeProfileTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
+    <ClCompile Include="src\RegularPolygonProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\TestHost.h">
