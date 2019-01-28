@@ -359,7 +359,7 @@ TEST_F (TShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertRes
 TEST_F (TShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlangeWithSlope_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "T_NonZeroFlangeSlope", 10.0, 20.0, 1.0, 1.0, INFINITY);
-    params.flangeSlope = Angle::FromRadians ((PI / 180.0) * 5.0);
+    params.webSlope = Angle::FromRadians ((PI / 180.0) * 1.0);
 
     TShapeProfilePtr profilePtr = CreateProfile (params);
 
@@ -495,6 +495,51 @@ TEST_F (TShapeProfileTestCase, Insert_FlangeSlopeOf90Degrees_FailedInsert)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (TShapeProfileTestCase, Insert_InvalidWebEdgeRadius_FailedInsert)
+    {
+    CreateParams params (GetModel(), "T", 10.0, 10.0, 1.0, 1.0, 0.0, 0.0, Angle::FromRadians (0.0), INFINITY);
+
+    TestParameterToBeFiniteAndPositive (params, params.webEdgeRadius, "WebEdgeRadius", true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (TShapeProfileTestCase, Insert_WebEdgeRadiusAgainstWebThickness_CorrectInsertResult)
+    {
+    CreateParams params (GetModel(), "T", 10.0, 10.0, 1.0, 1.0, 0.0, 0.0, Angle::FromRadians (0.0), INFINITY);
+
+    params.webEdgeRadius = 0.5;
+    EXPECT_SUCCESS_Insert (params) << "Web edge radius should be less or equal to half of the web thickness.";
+
+    params.webEdgeRadius = 0.5 + 0.0000001;
+    EXPECT_FAIL_Insert (params) << "Web edge radius should be less or equal to half of the web thickness.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (TShapeProfileTestCase, Insert_WebEdgeRadiusAgainstWebFace_CorrectInsertResult)
+    {
+    CreateParams params (GetModel(), "T", 10.0, 10.0, 1.0, 1.0, 0.0, 0.0, Angle::FromRadians (0.0), INFINITY);
+
+    params.webThickness = 4.0;
+    params.webEdgeRadius = 2.0;
+    EXPECT_SUCCESS_Insert (params) << "Web edge radius should be less or equal to half of the web thickness.";
+
+    params.flangeThickness = 7.0;
+    EXPECT_FAIL_Insert (params) << "Web edge radius should be less or equal to half of web face length.";
+
+    params.webEdgeRadius = 1.5;
+    EXPECT_SUCCESS_Insert (params) << "Web edge radius should be less or equal to half of web face length.";
+
+    params.webEdgeRadius = BeNumerical::BeNextafter (1.5, INFINITY);
+    EXPECT_FAIL_Insert (params) << "Web edge radius should be less or equal to web face length.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TShapeProfileTestCase, Insert_InvalidWebSlope_FailedInsert)
@@ -524,22 +569,3 @@ TEST_F (TShapeProfileTestCase, Insert_WebSlopeOf45Degrees_SuccessfulInsert)
     params.flangeSlope = Angle::FromRadians (BeNumerical::BeNextafter (PI / 4.0, INFINITY));
     EXPECT_FAIL_Insert (params) << "Web slope should be such, that the slope height should be less or equal to half of inner flange face length.";
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-//TEST_F (TShapeProfileTestCase, Insert_WebSlopeOf90Degrees_FailedInsert)
-//    {
-//    // Can't use DBL_MAX as it will assert in geometry generation
-//    double const flangeWidth = DBL_MAX / 4.0;
-//    CreateParams params (GetModel(), "T", flangeWidth, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, INFINITY);
-//
-//    params.webSlope = 0.0;
-//    EXPECT_SUCCESS_Insert (params) << "Profile should succeed to insert.";
-//
-//    params.webSlope = PI / 2.0;
-//    EXPECT_FAIL_Insert (params) << "Web slope should be less than 90 degrees.";
-//
-//    params.flangeSlope = PI / 2.0 - PI / 10000;
-//    EXPECT_SUCCESS_Insert (params) << "Web slope should be less than 90 degrees.";
-//    }

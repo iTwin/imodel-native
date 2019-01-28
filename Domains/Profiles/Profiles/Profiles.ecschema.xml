@@ -348,7 +348,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="SideCount" typeName="int" description="Count of sides (edges) the polygon is made of. Value cannot be less than 3 (triangle)." />
+        <ECProperty propertyName="SideCount" typeName="long" description="Count of sides (edges) the polygon is made of. Value cannot be less than 3 or greater than 32." />
         <ECProperty propertyName="SideLength" typeName="double" description="Constant length of each polygon side (edge)." />
     </ECEntityClass>
 

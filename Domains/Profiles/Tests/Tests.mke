@@ -59,11 +59,17 @@ $(o)LShapeProfileTests.obj              : $(BEGTEST_INPUT)LShapeProfileTests.cpp
 
 $(o)TShapeProfileTests.obj              : $(BEGTEST_INPUT)TShapeProfileTests.cpp ${MultiCompileDepends}
 
+$(o)TTShapeProfileTests.obj             : $(BEGTEST_INPUT)TTShapeProfileTests.cpp ${MultiCompileDepends}
+
 $(o)ZShapeProfileTests.obj              : $(BEGTEST_INPUT)ZShapeProfileTests.cpp ${MultiCompileDepends}
 
 $(o)CircleProfileTests.obj              : $(BEGTEST_INPUT)CircleProfileTests.cpp ${MultiCompileDepends}
 
 $(o)HollowCircleProfileTests.obj        : $(BEGTEST_INPUT)HollowCircleProfileTests.cpp ${MultiCompileDepends}
+
+$(o)TrapeziumProfileTests.obj           : $(BEGTEST_INPUT)TrapeziumProfileTests.cpp ${MultiCompileDepends}
+
+$(o)RegularPolygonProfileTests.obj      : $(BEGTEST_INPUT)RegularPolygonProfileTests.cpp ${MultiCompileDepends}
 
 $(o)EllipseProfileTests.obj             : $(BEGTEST_INPUT)EllipseProfileTests.cpp ${MultiCompileDepends}
 
