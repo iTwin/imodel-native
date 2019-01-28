@@ -121,6 +121,9 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 
     // Tell the bridge to generate schemas
     _MakeSchemaChanges();
+    //We will need import the provenance schema
+    bool madeChanges;
+    ImportElementAspectSchema(madeChanges, false, *db);
 
     auto jobsubj = _InitializeJob();
     if (!jobsubj.IsValid())
@@ -1092,3 +1095,42 @@ bool iModelBridge::TestFeatureFlag(CharCP ff)
     iModelBridgeLdClient::GetInstance(GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
     return flagVal;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridge::ImportElementAspectSchema(bool& madeChanges, bool force, DgnDbR dgndb)
+    {
+    if (!TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim) && !force)
+        return SUCCESS;
+
+    BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemaPathname.AppendToPath(L"ECSchemas/Application/SourceInfo.ecschema.xml");
+
+    if (!schemaPathname.DoesPathExist())
+        {
+        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
+        return BSIERROR;
+        }
+
+    ECN::ECSchemaPtr schema;
+    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(dgndb.GetSchemaLocater());
+    ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schema, schemaPathname.GetName(), *schemaContext);
+
+    // CreateSearchPathSchemaFileLocater
+    if (ECN::SchemaReadStatus::Success != status)
+        {
+        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
+        return BSIERROR;
+        }
+
+    bvector<ECN::ECSchemaCP> schemas;
+    schemas.push_back(schema.get());
+    if (SchemaStatus::Success != dgndb.ImportV8LegacySchemas(schemas))
+        return BSIERROR;
+
+    madeChanges = true;
+    return BSISUCCESS;
+    }
+    

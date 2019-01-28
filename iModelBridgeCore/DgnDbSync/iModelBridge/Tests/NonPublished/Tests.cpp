@@ -227,7 +227,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector nullChangeDetector(syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector nullChangeDetector(&syncInfo);
         // put the two scope items into syncinfo to start with.
         // Note that I don't have to create elements in order to put records into syncinfo. These records will
         // just serve as "scopes" to partition the items that I will "convert" below.
@@ -246,7 +246,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
 
         // verify that the item does not exist in the BIM or in syncinfo
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
@@ -301,7 +301,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     // Now update the BIM, based on this new input
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
 
         // Verify that change detector sees the change and updates the bim and syncinfo
         // Note that, since this item has no ID, it will look like it's new.
@@ -340,7 +340,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     if (true)
         {
         // verify that a second item does not exist in the BIM or in syncinfo
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope1, itemKind, i1NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
         }
@@ -352,7 +352,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
         changeDetector._OnScopeSkipped(scope1);
 
         // verify that the item does not exist in the BIM or in syncinfo
@@ -397,7 +397,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     // Now update the BIM, based on this new input
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
         changeDetector._OnScopeSkipped(scope1);
 
         // Verify that change detector sees the change and updates the bim and syncinfo
@@ -425,7 +425,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     if (true)
         {
         // verify that a second item does not exist in the BIM or in syncinfo
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
         changeDetector._OnScopeSkipped(scope1);
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope2, itemKind, i1WithId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
@@ -593,9 +593,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         {
         EXPECT_TRUE(!m_expect.findJobSubject);
 
-        // register the document. This then becomes the scope for all of my items.
-        iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
-
+        
         // Set up the model and category that my superclass's DoTest method uses
         DgnCode partitionCode = PhysicalPartition::CreateCode(*GetDgnDbR().Elements().GetRootSubject(), "PhysicalModel");
         if (!GetDgnDbR().Elements().QueryElementIdByCode(partitionCode).IsValid())
@@ -613,7 +611,13 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
             DgnV8FileProvenance::CreateTable(GetDgnDbR());
         if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceModel))
             DgnV8ModelProvenance::CreateTable(GetDgnDbR());
-        return subjectObj->InsertT<Subject>();
+        SubjectCPtr subj =  subjectObj->InsertT<Subject>();
+
+        // register the document. This then becomes the scope for all of my items.
+        iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName(), nullptr,
+            "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(subj->GetElementId().GetValue()));
+        
+        return subj;
         }
 
     BentleyStatus _ConvertToBim(SubjectCR jobSubject) override
@@ -718,7 +722,7 @@ DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db, Utf
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
     {
-    Utf8CP itemKind = "";   // we don't use kinds in this test
+    Utf8CP itemKind = "ItemKind";   // we don't use kinds in this test
 
     auto change = changeDetector._DetectChange(m_docScopeId, itemKind, item, nullptr, m_jobTransChanged);
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
@@ -749,8 +753,14 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
 
     iModelBridgeSyncInfoFile::ChangeDetectorPtr changeDetector = GetSyncInfo().GetChangeDetectorFor(*this);
 
-    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetector, _GetParams().GetInputFileName());
-    m_docScopeId = docLink.m_syncInfoRecord.GetROWID();
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetector, _GetParams().GetInputFileName(), nullptr,
+        "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
+
+    bool useNewAspect = TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim);
+    if (!useNewAspect)
+        m_docScopeId = docLink.m_syncInfoRecord.GetROWID();
+    else
+        m_docScopeId = docLink.m_element->GetElementId().GetValue();
 
     Transform _newTrans, _oldTrans;
     m_jobTransChanged = DetectSpatialDataTransformChange(_newTrans, _oldTrans, *changeDetector, m_docScopeId, "JT", "JT");

@@ -150,9 +150,9 @@ BentleyStatus BimFromJsonImpl::ImportJson(folly::ProducerConsumerQueue<BentleyB0
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
     {
-    auto jsonString = entry.toStyledString();
     if (m_file.IsOpen())
         {
+        auto jsonString = entry.toStyledString();
         m_file.Write(nullptr, jsonString.c_str(), static_cast<uint32_t>(jsonString.size()));
         }
 

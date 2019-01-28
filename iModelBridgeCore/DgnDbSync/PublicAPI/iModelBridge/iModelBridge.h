@@ -1052,6 +1052,8 @@ public:
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
 
+    IMODEL_BRIDGE_EXPORT BentleyStatus  ImportElementAspectSchema(bool& madeChanges, bool force, DgnDbR dgndb);
+
     //! @name Feature Flags
     //! @{
 

@@ -82,7 +82,7 @@ BentleyStatus   iModelBridgeLdClient::Close()
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeLdClient::~iModelBridgeLdClient()
     {
-    Close();
+    //Close();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,14 +132,15 @@ CharCP          iModelBridgeLdClient::GetSDKKey(WebServices::UrlProvider::Enviro
     switch (environment)
         {
         case WebServices::UrlProvider::Dev:
-            return "mob-e6ea1207-0646-42a1-90e9-21ce02b3d03f";
+            return "mob-5b88b541-4a7a-47a9-89b0-898aca1177f2";
         case WebServices::UrlProvider::Qa:
             return "mob-6829cc02-a35a-4c16-ab59-1483ccfff249";
         case WebServices::UrlProvider::Release:
-            return "mob-b32e5416-cf05-4c75-bfca-64492e14d6ab";
+            return "mob-58a19902-b563-4299-8aee-83289f871e49";
+            
         case WebServices::UrlProvider::Perf:
         default:
-            return NULL;
+            return "mob-6829cc02-a35a-4c16-ab59-1483ccfff249";
         }
     }
 
