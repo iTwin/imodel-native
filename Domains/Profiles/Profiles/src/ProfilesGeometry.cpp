@@ -1000,6 +1000,36 @@ IGeometryPtr ProfilesGeometry::CreateTrapezium (TrapeziumProfile const& profile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateRegularPolygon (RegularPolygonProfile const& profile)
+    {
+    uint64_t const sideCount = profile.GetSideCount();
+    double const sideLength = profile.GetSideLength();
+    Angle const theta = Angle::FromRadians ((PI * 2.0) / (double)sideCount);
+
+    // Position the first corner at the very top (along YAxis)
+    Angle currentAngle = Angle::FromRadians (PI / 2.0);
+
+    bvector<ICurvePrimitivePtr> curves ((size_t)sideCount);
+    for (uint64_t i = 0; i < sideCount; ++i)
+        {
+        double const x1 = sideLength * currentAngle.Cos();
+        double const y1 = sideLength * currentAngle.Sin();
+
+        currentAngle = currentAngle + theta;
+
+        double const x2 = sideLength * currentAngle.Cos();
+        double const y2 = sideLength * currentAngle.Sin();
+
+        ICurvePrimitivePtr linePtr = ICurvePrimitive::CreateLine (DPoint3d::From (x1, y1), DPoint3d::From (x2, y2));
+        curves.push_back (linePtr);
+        }
+
+    return createGeometryFromPrimitiveArray (curves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * 'singleProfile' passed by reference and not directly retrieved from 'doubleProfile'
 * because of support for geometry update case (see Profile::UpdateGeometry()).
 * @bsimethod                                                                     01/2019
