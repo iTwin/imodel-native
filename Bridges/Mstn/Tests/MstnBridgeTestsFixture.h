@@ -38,8 +38,6 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     int64_t AddLine(BentleyApi::BeFileName& inputFile, int count = 1);
 
-    int64_t AddModel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR modelName);
-
     struct DbFileInfo
         {
         BentleyApi::Dgn::DgnDbPtr m_db;
@@ -62,3 +60,19 @@ struct MstnBridgeTestsFixture : ::testing::Test
                                    BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid, 
                                    BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid);
     };
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct SynchInfoTests : public MstnBridgeTestsFixture, public ::testing::WithParamInterface<WString>
+{
+    int64_t AddModel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR modelName);
+    int64_t AddNamedView (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR viewName);
+    int64_t AddLevel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR levelName);
+
+    void ValidateNamedViewSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId);
+    void ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId);
+    void ValidateModelSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId);
+    void ValidateLevelSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId);
+};
+
