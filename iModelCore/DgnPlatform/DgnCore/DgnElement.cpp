@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElement.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -2556,14 +2556,19 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     {
     // We know the key class and the ID of an instance, if it exists. See if such an instance actually exists.
     // Note that we must use the key class, not the actual class of this (which we might be about to write and which be a different subclass from the existing stored aspect).
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId, ECClassId FROM %s WHERE Element.Id=?", GetFullEcSqlKeyClassName().c_str()).c_str());
+    //CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId, ECClassId FROM %s WHERE Element.Id=?", GetFullEcSqlKeyClassName().c_str()).c_str());
+    CachedStatementPtr stmt = el.GetDgnDb().GetCachedStatement(Utf8PrintfString("SELECT Id, ECClassId from bis_ElementUniqueAspect WHERE ECClassId in ( SELECT ClassId from ec_cache_ClassHierarchy WHERE BaseClassId = ?) AND ElementId =? ").c_str());
     if (stmt == nullptr)
         {
         BeAssert(stmt != nullptr);
         return ECInstanceKey();
         }
 
-    if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
+    if (DbResult::BE_SQLITE_OK != stmt->BindId(1, GetKeyECClassId(el.GetDgnDb())))
+        return ECInstanceKey();
+
+    //if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
+    if (DbResult::BE_SQLITE_OK != stmt->BindId(2, el.GetElementId()))
         return ECInstanceKey();
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -4167,10 +4172,13 @@ DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECI
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::UniqueAspect::QueryActualClass(ECClassId& classId, Dgn::DgnElementCR el, Utf8CP schemaName, Utf8CP className)
     {
-    auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECClassId FROM [%s].[%s] WHERE Element.Id=?", schemaName, className).c_str());
+    //auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECClassId FROM [%s].[%s] WHERE Element.Id=?", schemaName, className).c_str());
+    CachedStatementPtr stmt = el.GetDgnDb().GetCachedStatement(Utf8PrintfString("SELECT ECClassId from bis_ElementUniqueAspect WHERE ECClassId in ( SELECT ClassId from ec_cache_ClassHierarchy WHERE BaseClassId = ?) AND ElementId =? ").c_str());
+
     if (!stmt.IsValid())
         return DgnDbStatus::BadSchema;
-    stmt->BindId(1, el.GetElementId());
+    stmt->BindId(1, el.GetDgnDb().Schemas().GetClassId(schemaName, className));
+    stmt->BindId(2, el.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::NotFound;
     classId = stmt->GetValueId<ECClassId>(0);
@@ -4182,7 +4190,9 @@ DgnDbStatus DgnElement::UniqueAspect::QueryActualClass(ECClassId& classId, Dgn::
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::GenericUniqueAspect::_LoadProperties(Dgn::DgnElementCR el)
     {
-    QueryAndSetActualClass(el);
+    DgnDbStatus status = QueryAndSetActualClass(el);
+    if (DgnDbStatus::Success != status)
+        return status;
 
     auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE Element.Id=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
     if (!stmt.IsValid())
