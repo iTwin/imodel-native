@@ -162,4 +162,70 @@ void CenterLineCShapeProfile::SetGirth (double value)
     SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_Girth, ECN::ECValue (value));
     }
 
+DgnDbStatus CenterLineCShapeProfile::_OnInsert()
+    {
+    DgnDbStatus status (T_Super::_OnInsert());
+
+    if (DgnDbStatus::Success == status)
+        {
+        if (false == CreateCenterLineGeometry())
+            {
+            return DgnDbStatus::NoGeometry;
+            }
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CenterLineCShapeProfile::_OnUpdate (DgnElement const& original)
+    {
+    DgnDbStatus status (T_Super::_OnUpdate(original));
+
+    if (DgnDbStatus::Success == status)
+        {
+        if (false == CreateCenterLineGeometry())
+            {
+            return DgnDbStatus::NoGeometry;
+            }
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CenterLineCShapeProfile::CreateCenterLineGeometry()
+    {
+    IGeometryPtr geometryPtr = _CreateCenterLineGeometry();
+    
+    if (geometryPtr.IsNull())
+        {
+        return false;
+        }
+    
+    //?? SetCenterLine(*geometryPtr);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CenterLineCShapeProfile::_CreateCenterLineGeometry() const
+    {
+    return ProfilesGeometry::CreateCenterLineForCShape(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CenterLineCShapeProfile::_UpdateCenterLineGeometry(Profile const& relatedProfile) const
+    {
+    return nullptr;
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE

@@ -31,7 +31,6 @@ public:
     public:
         PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName);
         PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double wallThickness, double girth = 0.0, double filletRadius = 0.0);
-
     public:
         //! Required properties
         double flangeWidth = 0.0;
@@ -49,12 +48,21 @@ protected:
     virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateGeometry() const override;
 
+    bool CreateCenterLineGeometry();
+
+    virtual IGeometryPtr _CreateCenterLineGeometry() const;
+    virtual IGeometryPtr _UpdateCenterLineGeometry(Profile const& relatedProfile) const;
+
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineCShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CenterLineCShapeProfile)
 
     PROFILES_EXPORT static CenterLineCShapeProfilePtr Create (CreateParams const& params) { return new CenterLineCShapeProfile (params); }
 
+protected:
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElement const& original) override;
 public:
     PROFILES_EXPORT double GetFlangeWidth() const;
     PROFILES_EXPORT void SetFlangeWidth (double value);

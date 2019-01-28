@@ -97,7 +97,6 @@ IGeometryPtr CenterLineLShapeProfile::_CreateGeometry() const
     return ProfilesGeometry::CreateCenterLineLShape (*this);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
