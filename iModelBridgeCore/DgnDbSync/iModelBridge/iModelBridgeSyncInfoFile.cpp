@@ -1098,6 +1098,6 @@ iModelExternalSourceAspect::SourceState iModelBridgeSyncInfoFile::SourceState::G
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeSyncInfoFile::SourceState::SourceState(iModelExternalSourceAspect::SourceState aspectState)
     {
-    m_hash = aspectState.m_hash;
-    m_lmt = iModelExternalSourceAspect::DoubleFromString(aspectState.m_lastModHash.c_str());
+    m_hash = aspectState.m_checksum;
+    m_lmt = iModelExternalSourceAspect::DoubleFromString(aspectState.m_version.c_str());
     }
