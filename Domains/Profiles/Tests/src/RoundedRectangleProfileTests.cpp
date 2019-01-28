@@ -172,10 +172,10 @@ TEST_F (RoundedRectangleProfileTestCase, Insert_RoundingRadiusEqualsHalfWidth_Su
     double const halfWidth = params.width / 2.0;
 
     params.roundingRadius = halfWidth;
-    EXPECT_SUCCESS_Insert (params) << "Rounding radius should be less or equal to half of width.";
+    EXPECT_FAIL_Insert (params) << "Rounding radius should be less than half of width.";
 
-    params.roundingRadius = BeNumerical::BeNextafter (halfWidth, INFINITY);
-    EXPECT_FAIL_Insert (params) << "Rounding radius should be less or equal to half of width.";
+    params.roundingRadius = BeNumerical::BeNextafter (halfWidth, 0.0);
+    EXPECT_SUCCESS_Insert (params) << "Rounding radius should be less than half of width.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -188,8 +188,8 @@ TEST_F (RoundedRectangleProfileTestCase, Insert_RoundingRadiusEqualsHalfDepth_Su
     double const halfDepth = params.depth / 2.0;
 
     params.roundingRadius = halfDepth;
-    EXPECT_SUCCESS_Insert (params) << "Rounding radius should be less or equal to half of depth.";
+    EXPECT_FAIL_Insert (params) << "Rounding radius should be less than half of depth.";
 
-    params.roundingRadius = BeNumerical::BeNextafter (halfDepth, INFINITY);
-    EXPECT_FAIL_Insert (params) << "Rounding radius should be less or equal to half of depth.";
+    params.roundingRadius = BeNumerical::BeNextafter (halfDepth, 0.0);
+    EXPECT_SUCCESS_Insert (params) << "Rounding radius should be less than half of depth.";
     }

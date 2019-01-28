@@ -75,10 +75,11 @@ bool RoundedRectangleProfile::ValidateRoundingRadius() const
     {
     double const roundingRadius = GetRoundingRadius();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (roundingRadius);
-    bool const isLessOrEqualToHalfWidth = roundingRadius <= GetWidth() / 2.0;
-    bool const isLessOrEqualToHalfDepth = roundingRadius <= GetDepth() / 2.0;
+    bool const isLessThanHalfWidth = ProfilesProperty::IsLess (roundingRadius, GetWidth() / 2.0);
+    bool const isLessThanHalfDepth = ProfilesProperty::IsLess (roundingRadius, GetDepth() / 2.0);
+    // Note: use a CapsuleProfile if you want "fully" rounded corners
 
-    return isPositive && isLessOrEqualToHalfWidth && isLessOrEqualToHalfDepth;
+    return isPositive && isLessThanHalfWidth && isLessThanHalfDepth;
     }
 
 /*---------------------------------------------------------------------------------**//**

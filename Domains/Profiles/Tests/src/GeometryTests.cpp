@@ -261,11 +261,8 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
 
     InsertProfileGeometry<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "Rectangle", 6.0, 4.0), true);
     InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle", 4.0, 6.0, 0.5));
-    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 6.0, 4.0, 2.0));
-    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 4.0, 6.0, 2.0));
-
-    InsertProfileGeometry<CapsuleProfile> (CapsuleProfile::CreateParams (GetModel(), "Capsule", 6.0, 4.0), true);
-    InsertProfileGeometry<CapsuleProfile> (CapsuleProfile::CreateParams (GetModel(), "Capsule", 4.0, 6.0));
+    InsertProfileGeometry<CapsuleProfile> (CapsuleProfile::CreateParams (GetModel(), "Capsule 6x4", 6.0, 4.0));
+    InsertProfileGeometry<CapsuleProfile> (CapsuleProfile::CreateParams (GetModel(), "Capsule 4x6", 4.0, 6.0));
 
     InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle", 4.0, 6.0, 0.5), true);
     InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_OuterRadius", 4.0, 6.0, 0.5, 0.0, 0.5));
