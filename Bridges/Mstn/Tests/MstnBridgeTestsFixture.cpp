@@ -219,26 +219,7 @@ int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile, int n
     return elementId;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mayuresh.Kanade                 01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-int64_t MstnBridgeTestsFixture::AddModel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR modelName)
-{
-    Bentley::WString wModelName (modelName.c_str ());
-    int64_t modelId = 0;
-    DgnV8Api::ModelId modelid;
-    ScopedDgnv8Host testHost;
-    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost ();
-    if (adoptHost)
-        testHost.Init ();
-    {
-        V8FileEditor v8editor;
-        v8editor.Open (inputFile);
-        v8editor.AddModel (modelid, wModelName.c_str ());
-    }
-    modelId = modelid;
-    return modelId;        
-}
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
@@ -396,3 +377,190 @@ BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementBy
     elementId = estmt.GetValueId<DgnElementId>(0);
     return BentleyApi::BentleyStatus::BSISUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t SynchInfoTests::AddModel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR modelName)
+{
+    Bentley::WString wModelName (modelName.c_str ());
+    int64_t modelId = 0;
+    DgnV8Api::ModelId modelid;
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost ();
+    if (adoptHost)
+        testHost.Init ();
+    {
+        V8FileEditor v8editor;
+        v8editor.Open (inputFile);
+        v8editor.AddModel (modelid, wModelName.c_str ());
+    }
+    modelId = modelid;
+    return modelId;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t SynchInfoTests::AddNamedView (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR viewName)
+{
+    Bentley::WString wViewName (viewName.c_str ());
+    int64_t viewElementId = 0;
+    DgnV8Api::ElementId elementId;
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost ();
+    if (adoptHost)
+        testHost.Init ();
+    {
+        V8FileEditor v8editor;
+        v8editor.Open (inputFile);
+        v8editor.AddView (elementId, wViewName.c_str ());
+    }
+    viewElementId = elementId;
+    return viewElementId;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t SynchInfoTests::AddLevel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR levelName)
+{
+    Bentley::WString wLavelName (levelName.c_str ());
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost ();
+    int64_t levelid;
+    if (adoptHost)
+        testHost.Init ();
+    {
+        DgnV8Api::LevelId id;
+        V8FileEditor v8editor;
+        v8editor.Open (inputFile);
+        v8editor.AddLevel (id, wLavelName);
+        levelid = id;
+    }
+    return levelid;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SynchInfoTests::ValidateNamedViewSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId)
+{
+    DbFileInfo info (dbFile);
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare (*info.m_db, "SELECT kind,SourceId,Properties FROM "
+        BIS_SCHEMA (BIS_CLASS_ViewDefinition) " AS v,"
+        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+        " WHERE (sourceInfo.Element.Id=v.ECInstanceId) AND (sourceInfo.SourceId = ?)");
+    estmt.BindInt64 (1, srcId);
+
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
+    BentleyApi::Utf8String kind, properties, viewName;
+    int64_t id;
+    rapidjson::Document json;
+
+    kind = estmt.GetValueText (0);
+    ASSERT_TRUE (kind.Equals ("ViewDefinition"));
+
+    id = estmt.GetValueId<int64_t> (1);
+    ASSERT_TRUE (id == srcId);
+
+    properties = estmt.GetValueText (2);
+    json.Parse (properties.c_str ());
+    viewName = json["v8ViewName"].GetString ();
+    ASSERT_TRUE (viewName.Equals ("TestView"));
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SynchInfoTests::ValidateLevelSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId)
+{
+    DbFileInfo info (dbFile);
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare (*info.m_db, "SELECT kind,SourceId,Properties FROM "
+        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo WHERE (sourceInfo.SourceId = ?)");
+    estmt.BindInt64 (1, srcId);
+
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
+    BentleyApi::Utf8String kind, properties, levelName;
+    int64_t id;
+    rapidjson::Document json;
+
+    kind = estmt.GetValueText (0);
+    ASSERT_TRUE (kind.Equals ("Level"));
+
+    id = estmt.GetValueId<int64_t> (1);
+    ASSERT_TRUE (id == srcId);
+
+    properties = estmt.GetValueText (2);
+    json.Parse (properties.c_str ());
+    levelName = json["v8LevelName"].GetString ();
+    ASSERT_TRUE (levelName.Equals ("TestLevel"));
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt1;
+    estmt1.Prepare (*info.m_db, "SELECT * FROM "
+        BIS_SCHEMA (BIS_CLASS_Category) " AS c WHERE (c.CodeValue = ?)");
+
+    estmt1.BindText (1, levelName.c_str (), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt1.Step ());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SynchInfoTests::ValidateModelSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId)
+{
+    DbFileInfo info (dbFile);
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare (*info.m_db, "SELECT kind,SourceId,Properties FROM "
+        BIS_SCHEMA (BIS_CLASS_Model) " AS m,"
+        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+        " WHERE (sourceInfo.Element.Id=m.ModeledElement.Id) AND (sourceInfo.SourceId = ?)");
+    estmt.BindInt64 (1, srcId);
+
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
+    BentleyApi::Utf8String kind, properties, modelName;
+    int64_t id;
+    rapidjson::Document json;
+
+    kind = estmt.GetValueText (0);
+    ASSERT_TRUE (kind.Equals ("Model"));
+
+    id = estmt.GetValueId<int64_t> (1);
+    ASSERT_TRUE (id == srcId);
+
+    properties = estmt.GetValueText (2);
+    json.Parse (properties.c_str ());
+    modelName = json["v8ModelName"].GetString ();
+    ASSERT_TRUE (modelName.Equals ("TestModel"));
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SynchInfoTests::ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId)
+{
+    DbFileInfo info (dbFile);
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare (*info.m_db, "SELECT kind,SourceId FROM "
+        BIS_SCHEMA (BIS_CLASS_GeometricElement3d) " AS g,"
+        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+        " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
+    estmt.BindInt64 (1, srcId);
+
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
+    BentleyApi::Utf8String kind, properties, modelName;
+    int64_t id;
+
+    kind = estmt.GetValueText (0);
+    ASSERT_TRUE (kind.Equals ("Element"));
+
+    id = estmt.GetValueId<int64_t> (1);
+    ASSERT_TRUE (id == srcId);
+}
+

@@ -30,4 +30,6 @@ struct V8FileEditor
     // Geometry
     void AddLine(DgnV8Api::ElementId* eid = nullptr, DgnV8ModelP v8model = nullptr, DPoint3d offset = DPoint3d::FromZero());
     void AddModel (DgnV8Api::ModelId& modelid, Bentley::WStringCR modelName);
+    void AddView (DgnV8Api::ElementId& elementId, Bentley::WStringCR viewName);
+    void AddLevel (DgnV8Api::LevelId& levelid, Bentley::WStringCR levelName);
     };
