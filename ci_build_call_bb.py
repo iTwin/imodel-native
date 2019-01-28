@@ -1,4 +1,4 @@
-import argparse, json, os, sys, time
+import argparse, json, os, subprocess, sys, time
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def doubleToTimeString(start, end):
@@ -51,6 +51,7 @@ def main():
             os.environ['SUBMIN_V'] = version[3].rjust(2, '0')
 
         noArch = False
+        bbEnv = None
 
         if 'bdf' == args.action:
             # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
@@ -79,6 +80,10 @@ def main():
         elif 'createnugets' == args.action:
             action = 'savenuget --noStream'
         elif 'createinstallers' == args.action:
+            # Build agents are non-admin services... not sure how to support WIX ICE validators yet...
+            bbEnv = os.environ.copy()
+            bbEnv['INSTALLER_SKIP_VALIDATION'] = '1'
+
             action = 'buildinstallset'
         
         if os.name == 'nt':
@@ -99,7 +104,7 @@ def main():
         
         print(cmd)
         cmdStartTime = time.time()
-        status = os.system(cmd)
+        status = subprocess.call(cmd, shell=True, env=(bbEnv if bbEnv else os.environ))
         callTimes[stratConfig['name']] = doubleToTimeString(cmdStartTime, time.time())
         
         # On Linux, `bash` seems to return 256 on an error, regardless of what the SH script actually returns.
