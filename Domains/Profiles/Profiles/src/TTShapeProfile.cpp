@@ -111,9 +111,9 @@ bool TTShapeProfile::ValidateWebThickness() const
     {
     double const webThickness = GetWebThickness();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (webThickness);
-    bool const isLessThanFlangeWidth = ProfilesProperty::IsLess (webThickness, GetFlangeWidth());
+    bool const fitsInFlange = ProfilesProperty::IsLess (webThickness * 2.0 + GetWebSpacing(), GetFlangeWidth());
 
-    return isPositive && isLessThanFlangeWidth;
+    return isPositive && fitsInFlange;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -123,7 +123,7 @@ bool TTShapeProfile::ValidateWebSpacing() const
     {
     double const webSpacing = GetWebSpacing();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (webSpacing);
-    bool const fitsInFlange = ProfilesProperty::IsLessOrEqual (webSpacing, GetFlangeWidth() - GetWebThickness() * 2.0);
+    bool const fitsInFlange = ProfilesProperty::IsLess (webSpacing, GetFlangeWidth() - GetWebThickness() * 2.0);
 
     return isPositive && fitsInFlange;
     }
