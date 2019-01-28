@@ -36,6 +36,7 @@ public:
     static IGeometryPtr CreateRoundedRectangle (RoundedRectangleProfile const& profile);
     static IGeometryPtr CreateHollowRectangle (HollowRectangleProfile const& profile);
     static IGeometryPtr CreateTrapezium (TrapeziumProfile const& profile);
+    static IGeometryPtr CreateCapsule (CapsuleProfile const& profile);
     static IGeometryPtr CreateRegularPolygon (RegularPolygonProfile const& profile);
     static IGeometryPtr CreateDoubleLShape (DoubleLShapeProfile const& doubleProfile, LShapeProfile const& singleProfile);
     static IGeometryPtr CreateDoubleCShape (DoubleCShapeProfile const& doubleProfile, CShapeProfile const& singleProfile);
