@@ -71,6 +71,8 @@ $(o)TrapeziumProfileTests.obj           : $(BEGTEST_INPUT)TrapeziumProfileTests.
 
 $(o)RegularPolygonProfileTests.obj      : $(BEGTEST_INPUT)RegularPolygonProfileTests.cpp ${MultiCompileDepends}
 
+$(o)CapsuleProfileTests.obj             : $(BEGTEST_INPUT)CapsuleProfileTests.cpp ${MultiCompileDepends}
+
 $(o)EllipseProfileTests.obj             : $(BEGTEST_INPUT)EllipseProfileTests.cpp ${MultiCompileDepends}
 
 $(o)RectangleProfileTests.obj           : $(BEGTEST_INPUT)RectangleProfileTests.cpp ${MultiCompileDepends}
