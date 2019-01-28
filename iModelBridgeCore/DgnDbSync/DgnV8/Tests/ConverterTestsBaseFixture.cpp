@@ -678,7 +678,7 @@ DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Ap
         estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
                       BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
                       XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.SourceId AS INT) = ?)");
+                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.Identifier AS INT) = ?)");
         estmt.BindInt64(1, eV8Id);
 
         DbResult status = estmt.Step();

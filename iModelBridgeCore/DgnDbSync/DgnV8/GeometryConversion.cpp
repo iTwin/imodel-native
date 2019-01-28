@@ -955,7 +955,7 @@ Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
         return "";
         }
     auto aspect = SyncInfo::GeomPartExternalSourceAspect::GetAspect(*geomPart);
-    return aspect.IsValid()? aspect.GetSourceId(): "";
+    return aspect.IsValid()? aspect.GetIdentifier(): "";
     }
 
 /*---------------------------------------------------------------------------------**//**

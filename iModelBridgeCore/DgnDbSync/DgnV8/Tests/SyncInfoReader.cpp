@@ -88,7 +88,7 @@ void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, SyncInfo::V
             auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT g.ECInstanceId FROM "
                           BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
                           XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo "
-                          "WHERE (sourceInfo.Element.Id = g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ? )"
+                          "WHERE (sourceInfo.Element.Id = g.ECInstanceId) AND ( CAST(sourceInfo.Identifier AS INTEGER) = ? )"
                             );
                      
             estmt->BindInt64 (1, v8ElementId);
@@ -101,7 +101,7 @@ void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, SyncInfo::V
             auto estmt = m_dgndb->GetPreparedECSqlStatement("SELECT COUNT (*) FROM "
                           BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
                           XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-                          " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND ( CAST(sourceInfo.SourceId AS INTEGER) = ?)");
+                          " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND ( CAST(sourceInfo.Identifier AS INTEGER) = ?)");
             estmt->BindInt64(1, v8ElementId);
             ASSERT_EQ(BE_SQLITE_ROW, estmt->Step());
             int aspectCount = estmt->GetValueId<int>(0);

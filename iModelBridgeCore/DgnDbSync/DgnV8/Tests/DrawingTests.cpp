@@ -1167,6 +1167,14 @@ struct SheetCompositionTests : public ConverterTestBaseFixture
     void AnalyzeProxyGraphics(std::vector<BentleyApi::DRange3d>& dgRanges, DrawingModelR drawingModel);
     void FindSheetModelSource(DgnV8Api::ModelId& v8SheetModelId, DgnDbR db, DgnModelId sheetModelId);
     void AnalyzeDrawingModels(std::vector<DgnElementId>& drawingElementIds, int& attachmentAspectCount, DgnDbR db);
+    void CheckExtractedDrawingGraphics(
+        Utf8CP expectedSeetName,
+        Utf8CP expectedDrawingUserLabel,
+        int expectedDrawingElementCount,
+        int expectedAttachmentAspectCount,
+        int expectedDrawingGraphicCount,
+        DgnV8Api::ModelId expectedV8SheetModelId
+        );
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1241,7 +1249,7 @@ TEST_F (SheetCompositionTests, HasDrawingBoundary)
 void SheetCompositionTests::FindSheetModelSource(DgnV8Api::ModelId& v8SheetModelId, DgnDbR db, DgnModelId sheetModelId)
     {
     auto selSheetModelSourceId = db.GetPreparedECSqlStatement(
-        "SELECT x.SourceId from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
+        "SELECT x.Identifer from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
         " WHERE x.Element.Id=? and x.Kind='Model'");
     selSheetModelSourceId->BindId(1, sheetModelId);
     ASSERT_EQ(BE_SQLITE_ROW, selSheetModelSourceId->Step());
@@ -1285,7 +1293,7 @@ void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<BentleyApi::DRange3
 
     // Find all ExternalSourceAspects on all DrawingGraphics in the DrawingModel
     auto selGraphics = db.GetPreparedECSqlStatement(
-        "SELECT x.SourceId, x.Scope.Id, dg.ECInstanceId, x.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_DrawingGraphic) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
+        "SELECT x.Identifer, x.Scope.Id, dg.ECInstanceId, x.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_DrawingGraphic) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
         " WHERE dg.Model.Id=? and x.Kind='ProxyGraphic'");
     selGraphics->BindId(1, drawingModel.GetModelId());
     
@@ -1315,22 +1323,15 @@ void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<BentleyApi::DRange3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SheetCompositionTests, ExtractedDrawingGraphics)
+void SheetCompositionTests::CheckExtractedDrawingGraphics(
+    Utf8CP expectedSeetName,
+    Utf8CP expectedDrawingUserLabel,
+    int expectedDrawingElementCount,
+    int expectedAttachmentAspectCount,
+    int expectedDrawingGraphicCount,
+    DgnV8Api::ModelId expectedV8SheetModelId
+    )
     {
-    m_params.SetWantProvenanceInBim(true);
-
-    LineUpFiles (L"HasDrawingBoundary.bim", L"DVTest_Case1.dgn", true);
-    m_wantCleanUp = false;
-
-    static constexpr Utf8CP expectedSeetName = "Section_Case1";
-    static constexpr Utf8CP expectedDrawingUserLabel = "Section_Case1";
-
-    int expectedDrawingElementCount = 1;
-    int expectedAttachmentAspectCount = 4;
-    int expectedDrawingGraphicCount = 7;
-
-    DgnV8Api::ModelId expectedV8SheetModelId = 219;
-
     std::vector<BentleyApi::DRange3d> dgRanges;
     if (true)
         {
@@ -1379,7 +1380,7 @@ TEST_F (SheetCompositionTests, ExtractedDrawingGraphics)
         V8FileEditor v8editor;
         v8editor.Open(m_v8FileName);
 
-        auto selSheetModelSourceId = db->GetPreparedECSqlStatement("SELECT x.SourceId from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
+        auto selSheetModelSourceId = db->GetPreparedECSqlStatement("SELECT x.Identifer from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
                                                         " WHERE x.Element.Id=? and x.Kind='Model'");
         selSheetModelSourceId->BindId(1, sheetModel->GetModeledElementId());
         ASSERT_EQ(BE_SQLITE_ROW, selSheetModelSourceId->Step());
@@ -1429,4 +1430,26 @@ TEST_F (SheetCompositionTests, ExtractedDrawingGraphics)
             ASSERT_TRUE(dgRangesAfterUpdate[i].IsEqual(dgRanges[i], 1.0e-10)) << "No change expected in the range of an DrawingGraphic";
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, ExtractedDrawingGraphics)
+    {
+    m_params.SetWantProvenanceInBim(true);
+
+    LineUpFiles (L"HasDrawingBoundary.bim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = false;
+
+    static constexpr Utf8CP expectedSeetName = "Section_Case1";
+    static constexpr Utf8CP expectedDrawingUserLabel = "Section_Case1";
+
+    int expectedDrawingElementCount = 1;
+    int expectedAttachmentAspectCount = 4;
+    int expectedDrawingGraphicCount = 7;
+
+    DgnV8Api::ModelId expectedV8SheetModelId = 219;
+
+
     }

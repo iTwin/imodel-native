@@ -103,7 +103,7 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
 #ifdef TEST_EXTERNAL_SOURCE_ASPECT
     {
     // TODO - must filter on scope
-    // auto findAspect = converter.GetDgnDb().GetPreparedECSqlStatement("Select * from SourceInfo.SourceElementInfo where (SourceId=? and Kind='Element')");
+    // auto findAspect = converter.GetDgnDb().GetPreparedECSqlStatement("Select * from " XTRN_SRC_ASPCT_FullClassName " where (Identifier=? and Kind='Element')");
     // findAspect->BindInt64(1, v8eh.GetElementId());
     }
 #endif

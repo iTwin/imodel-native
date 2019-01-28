@@ -732,7 +732,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
             if (existingViewId.IsValid())
                 {
                 v8ViewName = aspect.GetV8ViewName();
-                lastModified = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_lastModHash.c_str());
+                lastModified = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_version.c_str());
                 }
             }
         else

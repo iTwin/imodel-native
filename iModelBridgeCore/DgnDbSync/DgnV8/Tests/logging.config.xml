@@ -100,4 +100,8 @@
     </category>
     -->
 
+    <category name="ECObjectsNative">
+        <priority value="error"/>
+    </category>
+
 </log4j:configuration>
