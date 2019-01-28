@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateAPI/Formatting/FormattingParsing.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,7 +46,7 @@ public:
     bool IsDigit() { return (m_len == 1) && (m_patt == FormatConstant::NumberSymbol()); }
     bool IsSign() { return (m_len == 1) && (m_patt == FormatConstant::SignSymbol()); }
     bool IsSpace() { return (m_len == 1) && (m_patt == FormatConstant::SpaceSymbol()); }
-    bool IsPoint() { return (m_len == 1) && (m_patt == '.'); }
+    bool IsSeparator(Utf8Char const dec = '.', Utf8Char const thous = ',') { return (m_len == 1) && (m_patt == dec || m_patt == thous); }
     bool IsBar() { return (m_len == 1) && (m_patt == '/'); }
     bool IsExponent() {return (m_len == 1) && (m_patt == 'x'); }
 
@@ -77,7 +77,6 @@ private:
 public:
     NumberGrabber() : NumberGrabber(nullptr) {}
     NumberGrabber(Utf8CP input, size_t start = 0) : m_input(input), m_start(start), m_next(start), m_type(ParsingSegmentType::NotNumber) {}
-    UNITS_EXPORT  size_t Grab(Utf8CP input=nullptr, size_t start = 0);
     ParsingSegmentType GetType() const { return m_type; }
     size_t GetStartIndex() const { return m_start; }
     size_t GetNextIndex() const { return m_next; }
@@ -85,6 +84,14 @@ public:
     double GetReal() const { return m_dval; }
     bool IsEndOfLine() const { return (m_type == ParsingSegmentType::EndOfLine); }
     size_t GetLength() const { return (m_type == ParsingSegmentType::NotNumber)? 0 : m_next - m_start; }
+
+    //! Given an input string and a starting index, this Number Grabber will contain the resulting value.
+    //! @param[in] input  The string to extract a value from.
+    //! @param[in] start  The index to start parsing the string.
+    //! @param[in] decimalSep   The character expected to represent decimal separation
+    //! @param[in] thousandSep  The character expected to represent thousands separation
+    //! @return The length of the value extracted.
+    UNITS_EXPORT  size_t Grab(Utf8CP input = nullptr, size_t start = 0, Utf8Char const decimalSep = '.', Utf8Char const thousandSep = ',');
 };
 
 //=======================================================================================
@@ -101,9 +108,9 @@ private:
     int m_ival;
     double m_dval;
 
-    UNITS_EXPORT void Init(size_t start);
+    void Init(size_t start);
 public:
-    FormatParsingSegment() { Init(0); }
+    FormatParsingSegment() : m_start(0), m_type(ParsingSegmentType::NotNumber), m_ival(0), m_dval(0.0), m_unit(nullptr) {}
     UNITS_EXPORT FormatParsingSegment(NumberGrabberCR ng);
     UNITS_EXPORT FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit = nullptr, FormatCP format=nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
     ParsingSegmentType GetType() { return m_type; }

@@ -2,7 +2,7 @@
 |
 |     $Source: src/Formatting/FormatParsing.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
@@ -352,7 +352,17 @@ void CursorScanPoint::ProcessNext(Utf8CP input)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-size_t NumberGrabber::Grab(Utf8CP input, size_t start)
+// The following method makes a few assumptions about the ordering of the different pieces of the input string when extacting the number.
+//    1.  Skips all whitespace at the beginning of the string
+//    2.  Checks for a sign character.
+//    3.  Iterates through any digits until a non-digit char is hit
+//    4.  Checks for a "bar" char, signifies a fractional number.
+//       a) 
+//    5.  Checks for decimal or thousands separator
+//       a)  Iterates through any further digits after separator
+//    6.  Checks for exponent
+//  TODO: Finish This
+size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep, Utf8Char const thousandSep)
     {
     if (!Utf8String::IsNullOrEmpty(input))
         {
@@ -369,22 +379,22 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
         return 0;
         }
 
-    m_type = ParsingSegmentType::NotNumber;
-    int ival = 0;
-    int fval = 0;
-    int eval = 0;
-    int denom = 0;
+    m_type = ParsingSegmentType::NotNumber; // Reset this as a non-number until determined otherwise.
+    int ival = 0; // integer value
+    int fval = 0; // floating point value
+    int eval = 0; // exponent value
+    int denom = 0; // denominator value
     double dval = 0.0;
-    int iCount = 0;
-    int fCount = 0;
-    int eCount = 0;
-    int dCount = 0;  // denominator
-    int sign = 0;
-    bool point = false;
-    bool  expMark = false;
+    int iCount = 0; // integer digit count
+    int fCount = 0; // floating point digit count - number of numbers after decimal separator
+    int eCount = 0; // exponent digit count
+    int dCount = 0;  // denominator digit count
+    int sign = 0; // 0 or 1 means a positive number, -1 means the number is negative
+    bool point = false; // decimal separator exists
+    bool  expMark = false; // exponent exists
 
-    int expSign = 0;
-    bool num = false;
+    int expSign = 0; // exponent sign
+    bool num = false; // set to true if the input has any numbers - determined by checking if iCount and fCount are > 0.
 
     Utf8Char c;
 
@@ -392,7 +402,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
     if (csp.IsSign())  // the sign character can be expected at the start
         {
         c = csp.GetAscii();
-        sign = (c == '-') ? -1 : 1;
+        sign = (c == FormatConstant::SignSymbol()) ? -1 : 1; // Only checks for the negative sign because a positive sign doesn't change anything so it is skipped.
         ++m_next;
         csp.Iterate(m_input);
         }
@@ -435,18 +445,41 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
         }
 
 
-    if (csp.IsPoint()) // we can expect a decimal point which can actually come by itself
-        {              // or can be followed by more digits
-        point = true;
-        ++m_next;
-        csp.Iterate(m_input);
-        while (csp.IsDigit())    // if there any digits - they will be accumulated in the fraction
+    while (csp.IsSeparator(decimalSep, thousandSep)) // we can expect a decimal point which can actually come by itself
+        {                   // or can be followed by more digits
+        if (csp.GetAscii() == decimalSep)
             {
-            int d = (int)(csp.GetAscii() - '0');
-            fval = fval * 10 + d;
-            fCount++;
+            point = true;
             ++m_next;
             csp.Iterate(m_input);
+            while (csp.IsDigit())    // if there any digits - they will be accumulated in the fraction
+                {
+                int d = (int) (csp.GetAscii() - '0');
+                fval = fval * 10 + d;
+                fCount++;
+                ++m_next;
+                csp.Iterate(m_input);
+                }
+            if (csp.IsSeparator(decimalSep, thousandSep))
+                {
+                ival = ival * (int)(pow(10, fCount)) + fval;
+                iCount = iCount + fCount;
+                fval = 0;
+                fCount = 0;
+                }
+            }
+        else
+            {
+            ++m_next;
+            csp.Iterate(m_input);
+            while (csp.IsDigit())    // if there any digits - they will be accumulated in the int part
+                {
+                int d = (int) (csp.GetAscii() - '0');
+                ival = ival * 10 + d;
+                iCount++;
+                ++m_next;
+                csp.Iterate(m_input);
+                }
             }
         }
     if (csp.IsExponent())
@@ -512,7 +545,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-    void FormatParsingSegment::Init(size_t start)
+void FormatParsingSegment::Init(size_t start)
     {
     m_start = start;
     m_vect.clear();
@@ -526,11 +559,11 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
+FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng) : FormatParsingSegment()
     {
-    if (ng.GetType() == ParsingSegmentType::NotNumber)
-        Init(ng.GetStartIndex());
-    else
+    m_start = ng.GetStartIndex();
+
+    if (ng.GetType() != ParsingSegmentType::NotNumber)
         {
         m_start = ng.GetStartIndex();
         m_vect.clear();
@@ -706,9 +739,17 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
         return;
         }
 
+    Utf8Char decSep = '.';
+    Utf8Char thousSep = ',';
+    if (m_format != nullptr && m_format->GetNumericSpec() != nullptr)
+        {
+        decSep = m_format->GetNumericSpec()->GetDecimalSeparator();
+        thousSep = m_format->GetNumericSpec()->GetThousandSeparator();
+        }
+
     while (!ng.IsEndOfLine())
         {
-        ng.Grab(m_input, ind);
+        ng.Grab(m_input, ind, decSep, thousSep);
         if (ng.GetLength() > 0)  // a number is detected
             {
             if (!m_symbs.empty())
