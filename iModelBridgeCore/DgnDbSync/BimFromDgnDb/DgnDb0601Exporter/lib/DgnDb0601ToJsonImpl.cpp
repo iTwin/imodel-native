@@ -305,10 +305,11 @@ void DgnDb0601ToJsonImpl::LogPerformanceMessage(StopWatch& stopWatch, Utf8CP des
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-void DgnDb0601ToJsonImpl::SendToQueue(Utf8CP json)
+void DgnDb0601ToJsonImpl::SendToQueue(Json::Value& json, bool doReplace)
     {
-    Utf8String jsonStr(json);
-    jsonStr.ReplaceAll("dgn.", "BisCore.");
+    Utf8String jsonStr = Json::FastWriter::ToString(json);
+    if (doReplace)
+        jsonStr.ReplaceAll("dgn.", "BisCore.");
     (QueueJson)(jsonStr.c_str());
     }
 
@@ -556,7 +557,7 @@ void DgnDb0601ToJsonImpl::CalculateEntities()
         auto entry = Json::Value(Json::ValueType::objectValue);
         int64_t id = stmt.GetValueInt64(0);
         entry["elementCount"] = id;
-        (QueueJson) (entry.toStyledString().c_str());
+        SendToQueue(entry);
         }
     }
 
@@ -594,7 +595,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportFonts()
         Base64Utilities::Encode(str, data.data(), rawSize);
         row["Base64EncodedData"] = str.c_str();
         row["Base64EncodedSize"] = str.SizeInBytes();
-        (QueueJson) (entry.toStyledString().c_str());
+        SendToQueue(entry);
         }
 
     Statement stmt2;
@@ -622,7 +623,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportFonts()
         Utf8String str;
         Base64Utilities::Encode(str, data, dataSize);
         row["Metadata"] = str.c_str();
-        (QueueJson) (entry.toStyledString().c_str());
+        SendToQueue(entry);
         }
     return SUCCESS;
     }
@@ -671,7 +672,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportLineStyles()
         row[JSON_INSTANCE_ID] = IdToString(id).c_str();
         row["Name"] = stmt.GetValueText(1);
         row["StrData"] = stmt.GetValueText(2);
-        (QueueJson) (entry.toStyledString().c_str());
+        SendToQueue(entry);
         }
 
     return SUCCESS;
@@ -725,7 +726,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportAuthorities()
         else
             row["Name"] = authority->GetName().c_str();
         row["Properties"] = stmt.GetValueText(1);
-        (QueueJson)(entry.toStyledString().c_str());
+        SendToQueue(entry);
         }
 
     // Need to make some "fake" authorities that were added in BisCore
@@ -774,7 +775,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreateCodeSpec(uint8_t codeSpecType, Utf8CP na
     row[JSON_INSTANCE_ID] = IdToString(m_nextAvailableId.GetValue()).c_str();
 
     m_authorityIds[name] = IdToString(m_nextAvailableId.GetValue());
-    (QueueJson)(entry.toStyledString().c_str());
+    SendToQueue(entry);
     return m_nextAvailableId;
     }
 
@@ -886,7 +887,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreateDisplayStyle(ViewControllerCP vc, Utf8CP
             }
         }
     MakeNavigationProperty(row, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
-    (QueueJson)(displayStyle.toStyledString().c_str());
+    SendToQueue(displayStyle);
 
     return m_nextAvailableId;
     }
@@ -920,7 +921,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreateCategorySelector(ViewControllerCR vc, Ut
                 entry[JSON_CLASSNAME] = "BisCore.SpatialCategory";
                 codeSpec["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
                 }
-            (QueueJson) (out.toStyledString().c_str());
+            SendToQueue(out);
             }
 
         for (DgnSubCategoryId subCatId : DgnSubCategory::QuerySubCategories(*m_dgndb, id))
@@ -957,7 +958,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreateCategorySelector(ViewControllerCR vc, Ut
             }
         row["Categories"].append(category);
         }
-    (QueueJson)(categorySelector.toStyledString().c_str());
+    SendToQueue(categorySelector);
     return categorySelectorId;
     }
 
@@ -983,7 +984,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreateModelSelector(ViewControllerCR vc, Utf8C
         row["Models"].append(model);
         }
     MakeNavigationProperty(row, "DefinitionModel", m_jobDefinitionModelId.GetValue());
-    (QueueJson)(modelSelector.toStyledString().c_str());
+    SendToQueue(modelSelector);
     return m_nextAvailableId;
     }
 
@@ -1010,7 +1011,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreateDrawingElement(Utf8CP name)
     obj[BIS_ELEMENT_PROP_CodeValue] = name;
     obj["UserLabel"] = name;
     MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, codeNS.c_str());
-    (QueueJson)(drawingElement.toStyledString().c_str());
+    SendToQueue(drawingElement);
     return m_nextAvailableId;
     }
 
@@ -1040,7 +1041,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreateSheetElement(DgnModelCR model)
     obj["Height"] = model.ToSheetModel()->GetSize().y;
     obj["Width"] = model.ToSheetModel()->GetSize().x;
 
-    (QueueJson)(sheetElement.toStyledString().c_str());
+    SendToQueue(sheetElement);
     return m_nextAvailableId;
     }
 
@@ -1159,7 +1160,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportViews()
             else if (view->GetElementClass()->Is(m_sheetViewDefinitionClass))
                 obj[JSON_CLASSNAME] = "BisCore.SheetViewDefinition";
             }
-        (QueueJson)(row.toStyledString().c_str());
+        SendToQueue(row);
         }
         return SUCCESS;
     }
@@ -1249,7 +1250,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportCategories(Utf8CP tableName, Utf8CP bis
             m_mappedDrawingCategories[categoryId] = DgnCategoryId(m_nextAvailableId.GetValue());
             }
         MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeSpec, bisAuthorityStr);
-        (QueueJson) (entry.toStyledString().c_str());
+        SendToQueue(entry);
 
         for (DgnSubCategoryId subCatId : DgnSubCategory::QuerySubCategories(*m_dgndb, categoryId))
             {
@@ -1268,7 +1269,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportCategories(Utf8CP tableName, Utf8CP bis
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus DgnDb0601ToJsonImpl::ExportUnits() const
+BentleyStatus DgnDb0601ToJsonImpl::ExportUnits()
     {
     auto firstModel = m_dgndb->Models().GetModel(m_dgndb->Models().QueryFirstModelId());
     if (firstModel != nullptr)
@@ -1289,7 +1290,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportUnits() const
                 units["masterUnit"] = "USSurvey";
             else
                 units["masterUnit"] = "Undefined";
-            (QueueJson) (units.toStyledString().c_str());
+            SendToQueue(units);
             }
         }
 
@@ -1299,7 +1300,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportUnits() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus DgnDb0601ToJsonImpl::ExportSchemas() const
+BentleyStatus DgnDb0601ToJsonImpl::ExportSchemas()
     {
     bvector<Utf8String> knownSchemas = {"Bentley_Standard_Classes", "Bentley_Standard_CustomAttributes", "CoreCustomAttributes", "ECDbMap", "ECDbFileInfo", "ECDbSystem","ECDb_FileInfo", "ECDb_System", "EditorCustomAttributes", "Generic", "MetaSchema", "dgn", "PointCloud", "Raster", "ThreeMx", "ECv3ConversionAttributes"};
     ECSchemaCP dgnSchema = m_dgndb->Schemas().GetECSchema("dgn");
@@ -1325,7 +1326,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportSchemas() const
         }
     auto entryCount = Json::Value(Json::ValueType::objectValue);
     entryCount["schemaCount"] = schemaCount;
-    (QueueJson) (entryCount.toStyledString().c_str());
+    SendToQueue(entryCount);
 
     auto entry = Json::Value(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_Schema;
@@ -1437,7 +1438,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportSchemas() const
             schemas.append(schemaJson);
             }
         }
-    (QueueJson) (entry.toStyledString().c_str());
+    SendToQueue(entry);
 
     return SUCCESS;
     }
@@ -1461,7 +1462,7 @@ DgnElementId DgnDb0601ToJsonImpl::InitListModel(Utf8CP name)
     m_nextAvailableId = DgnElementId(m_nextAvailableId.GetValue() + 1);
     obj[JSON_INSTANCE_ID] = IdToString(partitionId.GetValue()).c_str();
     m_insertedModels[DgnModelId(partitionId.GetValue())] = partitionId;
-    (QueueJson)(entry.toStyledString().c_str());
+    SendToQueue(entry);
     return partitionId;
     }
 
@@ -1502,7 +1503,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreateDefinitionModel(Utf8CP modelName)
 
     m_nextAvailableId = DgnElementId(m_nextAvailableId.GetValue() + 1);
     obj[JSON_INSTANCE_ID] = IdToString(definitionModelId.GetValue()).c_str();
-    (QueueJson) (entry.toStyledString().c_str());
+    SendToQueue(entry);
     return definitionModelId;
     }
 
@@ -1730,7 +1731,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportModel(Utf8CP schemaName, Utf8CP classNa
             m_insertedModels[model->GetModelId()] = DgnElementId(m_dgndb->GetDictionaryModel().GetModelId().GetValue());
             }
 
-        (QueueJson)(entry.toStyledString().c_str());
+        SendToQueue(entry);
 
         }
     return SUCCESS;
@@ -2094,7 +2095,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElements(Json::Value& entry, Utf8CP sch
         entry[JSON_OBJECT_KEY] = obj;
         m_insertedElements[element->GetElementId()] = 1;
         if (sendToQueue)
-            SendToQueue(entry.toStyledString().c_str());
+            SendToQueue(entry, true);
         }
     return SUCCESS;
     }
@@ -2134,7 +2135,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportTimelines()
         obj.clear();
         obj["Label"] = statement->GetValueText(0);
         MakeNavigationProperty(obj, "Plan", planId);
-        (QueueJson) (baseline.toStyledString().c_str());
+        SendToQueue(baseline);
         }
     return SUCCESS;
     }
@@ -2190,7 +2191,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportExtraTables(Utf8CP alias, Utf8CP classN
         MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeScope, m_jobDefinitionModelId);
 
         entry[JSON_OBJECT_KEY] = obj;
-        (QueueJson) (entry.toStyledString().c_str());
+        SendToQueue(entry);
 
         }
     return SUCCESS;
@@ -2292,7 +2293,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
         obj.removeMember("$ECClassLabel");
         obj.removeMember("$ECInstanceLabel");
         entry[JSON_OBJECT_KEY] = obj;
-        SendToQueue(entry.toStyledString().c_str());
+        SendToQueue(entry, true);
 
         }
     return SUCCESS;
@@ -2327,7 +2328,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportTextAnnotationData()
         Utf8String str;
         Base64Utilities::Encode(str, data, dataSize);
         row["TextAnnotation"] = str.c_str();
-        (QueueJson) (entry.toStyledString().c_str());
+        SendToQueue(entry);
         }
 
     return SUCCESS;
@@ -2375,7 +2376,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreateSubjectElement(Utf8CP subjectName)
     subject[JSON_INSTANCE_ID] = IdToString(m_nextAvailableId.GetValue()).c_str();
     subject["Label"] = subjectName;
     subject["Parent"] = -1;
-    (QueueJson)(entry.toStyledString().c_str());
+    SendToQueue(entry);
 
     return m_nextAvailableId;
     }
@@ -2424,7 +2425,7 @@ DgnElementId DgnDb0601ToJsonImpl::CreatePartitionElement(Utf8CP partitionName, U
     if (subject.IsValid())
         partition["Subject"] = IdToString(subject.GetValue()).c_str();
     partition["PartitionType"] = partitionType;
-    (QueueJson)(entry.toStyledString().c_str());
+    SendToQueue(entry);
 
     return m_nextAvailableId;
     }
@@ -2455,7 +2456,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportNamedGroups()
         group["MemberPriority"] = stmt.GetValueInt(2);
         groups.append(group);
         }
-    (QueueJson)(elemGroupsMembers.toStyledString().c_str());
+    SendToQueue(elemGroupsMembers);
     return SUCCESS;
     }
 
@@ -2485,7 +2486,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementHasLinks()
         group["LinkId"] = IdToString(stmt.GetValueId<DgnElementId>(1).GetValue()).c_str();
         groups.append(group);
         }
-    (QueueJson) (elemHasLinks.toStyledString().c_str());
+    SendToQueue(elemHasLinks);
     return SUCCESS;
     }
 
@@ -2561,7 +2562,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportLinkTables(Utf8CP schemaName, Utf8CP cl
         relationship["TargetId"] = IdToString(targetId.GetValue()).c_str();
         relationships.append(relationship);
         }
-    (QueueJson)(elemRefersToElem.toStyledString().c_str());
+    SendToQueue(elemRefersToElem);
     return SUCCESS;
     }
 
@@ -2601,7 +2602,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportPropertyData()
     Utf8String value;
     if (BE_SQLITE_ROW == m_dgndb->QueryProperty(value, DgnProjectProperty::Extents()))
         propData["projectExtents"] = value;
-    (QueueJson) (entry.toStyledString().c_str());
+    SendToQueue(entry);
 
     return SUCCESS;
     }
@@ -2633,7 +2634,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportEmbeddedFiles()
         if (fileType.EqualsI("ExtraFile"))
             fileType = Utf8String(BeFileName::GetExtension(WString(file.GetNameUtf8(), BentleyCharEncoding::Utf8).c_str()));
         fileData["type"] = fileType.c_str();
-        (QueueJson) (entry.toStyledString().c_str());
+        SendToQueue(entry);
         }
 
     return SUCCESS;
