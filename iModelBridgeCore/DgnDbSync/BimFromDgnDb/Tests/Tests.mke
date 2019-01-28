@@ -13,10 +13,6 @@ ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hope
 
 %include mdl.mki
 
-
-dirToSearch = $(BuildContext)SubParts/UnitTests/include
-%include cincapnd.mki
-
 # We don't want to run the test from the build location because the dependencies are not there.
 GUNITTEST_NOEXEC = 1
 
