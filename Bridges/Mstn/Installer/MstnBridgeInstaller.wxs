@@ -20,8 +20,8 @@
             <Directory Id="MstnBridgeRegistryEntriesDir">
                 <Component Id="MstnBridgeRegistryEntries" Guid="{500E802A-1128-465B-8032-C528F90B66EC}" Win64="$(var.COMPONENT_WIN64)" Feature="DefaultFeature">
                     <RegistryKey Root="HKLM" Key="Software\Bentley\iModelBridges\IModelBridgeForMstn" >
-                        <RegistryValue Name="BridgeLibraryPath" Type="string" Value="[INSTALLDIR]DgnV8BridgeB02.dll" KeyPath="yes"/>
-                        <RegistryValue Name="AffinityLibraryPath" Type="string" Value="[INSTALLDIR]DgnV8BridgeB02.dll"/>
+                        <RegistryValue Name="BridgeLibraryPath" Type="string" Value="[INSTALLDIR]DgnV8BridgeM02.dll" KeyPath="yes"/>
+                        <RegistryValue Name="AffinityLibraryPath" Type="string" Value="[INSTALLDIR]DgnV8BridgeM02.dll"/>
                         <RegistryValue Name="BridgeAssetsDir" Type="string" Value="[INSTALLDIR]Assets"/>
                         <RegistryValue Name="iModelFrameWorkExe" Type="string" Value="[INSTALLDIR]iModelBridgeFwk.exe"/>
                         <RegistryValue Name="IsPowerPlatformBased" Type="string" Value="false"/>

@@ -17,7 +17,7 @@ def main():
     defaultConfigFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ci_build_config.json')
 
     argParser = argparse.ArgumentParser(description="Runs BB commands based on a JSON config file.")
-    argParser.add_argument("action",                                    help='One of pull|build|bdf|checkunused|createnugets')
+    argParser.add_argument("action",                                    help='One of pull|build|bdf|checkunused|createnugets|createinstallers')
     argParser.add_argument("-c", "--config", default=defaultConfigFile, help='Path to configuration file')
     argParser.add_argument("-a", "--arch",                              help='Limits actions to strategies enabled for given arch')
     argParser.add_argument("-b", "--bdfdir",                            help='(bdf) Directory to write BDF files to -or- (pull) Directory where BDF files are stored')
@@ -78,6 +78,8 @@ def main():
             noArch = True
         elif 'createnugets' == args.action:
             action = 'savenuget --noStream'
+        elif 'createinstallers' == args.action:
+            action = 'buildinstallset'
         
         if os.name == 'nt':
             bbCmd = 'bb'

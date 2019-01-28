@@ -67,7 +67,7 @@ BentleyApi::BeFileName  MstnBridgeTestsFixture::GetOutputFileName(BentleyApi::WC
 BentleyApi::BeFileName MstnBridgeTestsFixture::GetDgnv8BridgeDllName()
     {
     auto fileName = BentleyApi::Desktop::FileSystem::GetExecutableDir();
-    fileName.AppendToPath(L"Dgnv8BridgeB02.dll");
+    fileName.AppendToPath(L"Dgnv8BridgeM02.dll");
     return fileName;
     }
 
