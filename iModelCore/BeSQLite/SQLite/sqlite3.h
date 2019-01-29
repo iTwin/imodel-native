@@ -123,9 +123,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.26.0"
-#define SQLITE_VERSION_NUMBER 3026000
-#define SQLITE_SOURCE_ID      "2018-10-29 17:08:27 de72a773dd3ad58a7f2233e1fc06bf60deb8892a2719ea8e9b42e7d592c1alt1"
+#define SQLITE_VERSION        "3.27.0"
+#define SQLITE_VERSION_NUMBER 3027000
+#define SQLITE_SOURCE_ID      "2019-01-29 11:42:43 7ee3cd5b2cdf8db35f70400b3df58f7c421c78ae77c50f22b0ee22d5a303alt1"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -823,6 +823,15 @@ struct sqlite3_io_methods {
 ** file space based on this hint in order to help writes to the database
 ** file run faster.
 **
+** <li>[[SQLITE_FCNTL_SIZE_LIMIT]]
+** The [SQLITE_FCNTL_SIZE_LIMIT] opcode is used by in-memory VFS that
+** implements [sqlite3_deserialize()] to set an upper bound on the size
+** of the in-memory database.  The argument is a pointer to a [sqlite3_int64].
+** If the integer pointed to is negative, then it is filled in with the
+** current limit.  Otherwise the limit is set to the larger of the value
+** of the integer pointed to and the current database size.  The integer
+** pointed to is set to the new limit.
+**
 ** <li>[[SQLITE_FCNTL_CHUNK_SIZE]]
 ** The [SQLITE_FCNTL_CHUNK_SIZE] opcode is used to request that the VFS
 ** extends and truncates the database file in chunks of a size specified
@@ -1131,6 +1140,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE  33
 #define SQLITE_FCNTL_LOCK_TIMEOUT           34
 #define SQLITE_FCNTL_DATA_VERSION           35
+#define SQLITE_FCNTL_SIZE_LIMIT             36
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -2017,6 +2027,7 @@ struct sqlite3_mem_methods {
 ** is invoked.
 **
 ** <dl>
+** [[SQLITE_DBCONFIG_LOOKASIDE]]
 ** <dt>SQLITE_DBCONFIG_LOOKASIDE</dt>
 ** <dd> ^This option takes three additional arguments that determine the 
 ** [lookaside memory allocator] configuration for the [database connection].
@@ -2039,6 +2050,7 @@ struct sqlite3_mem_methods {
 ** memory is in use leaves the configuration unchanged and returns 
 ** [SQLITE_BUSY].)^</dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_FKEY]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FKEY</dt>
 ** <dd> ^This option is used to enable or disable the enforcement of
 ** [foreign key constraints].  There should be two additional arguments.
@@ -2049,6 +2061,7 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the FK enforcement setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_TRIGGER]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_TRIGGER</dt>
 ** <dd> ^This option is used to enable or disable [CREATE TRIGGER | triggers].
 ** There should be two additional arguments.
@@ -2059,6 +2072,7 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the trigger setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER</dt>
 ** <dd> ^This option is used to enable or disable the two-argument
 ** version of the [fts3_tokenizer()] function which is part of the
@@ -2072,6 +2086,7 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the new setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION</dt>
 ** <dd> ^This option is used to enable or disable the [sqlite3_load_extension()]
 ** interface independently of the [load_extension()] SQL function.
@@ -2089,7 +2104,7 @@ struct sqlite3_mem_methods {
 ** be a NULL pointer, in which case the new setting is not reported back.
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_MAINDBNAME</dt>
+** [[SQLITE_DBCONFIG_MAINDBNAME]] <dt>SQLITE_DBCONFIG_MAINDBNAME</dt>
 ** <dd> ^This option is used to change the name of the "main" database
 ** schema.  ^The sole argument is a pointer to a constant UTF8 string
 ** which will become the new schema name in place of "main".  ^SQLite
@@ -2098,6 +2113,7 @@ struct sqlite3_mem_methods {
 ** until after the database connection closes.
 ** </dd>
 **
+** [[SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE]] 
 ** <dt>SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE</dt>
 ** <dd> Usually, when a database in wal mode is closed or detached from a 
 ** database handle, SQLite checks if this will mean that there are now no 
@@ -2111,7 +2127,7 @@ struct sqlite3_mem_methods {
 ** have been disabled - 0 if they are not disabled, 1 if they are.
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_ENABLE_QPSG</dt>
+** [[SQLITE_DBCONFIG_ENABLE_QPSG]] <dt>SQLITE_DBCONFIG_ENABLE_QPSG</dt>
 ** <dd>^(The SQLITE_DBCONFIG_ENABLE_QPSG option activates or deactivates
 ** the [query planner stability guarantee] (QPSG).  When the QPSG is active,
 ** a single SQL query statement will always use the same algorithm regardless
@@ -2127,7 +2143,7 @@ struct sqlite3_mem_methods {
 ** following this call.
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_TRIGGER_EQP</dt>
+** [[SQLITE_DBCONFIG_TRIGGER_EQP]] <dt>SQLITE_DBCONFIG_TRIGGER_EQP</dt>
 ** <dd> By default, the output of EXPLAIN QUERY PLAN commands does not 
 ** include output for any operations performed by trigger programs. This
 ** option is used to set or clear (the default) a flag that governs this
@@ -2139,7 +2155,7 @@ struct sqlite3_mem_methods {
 ** it is not disabled, 1 if it is.  
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_RESET_DATABASE</dt>
+** [[SQLITE_DBCONFIG_RESET_DATABASE]] <dt>SQLITE_DBCONFIG_RESET_DATABASE</dt>
 ** <dd> Set the SQLITE_DBCONFIG_RESET_DATABASE flag and then run
 ** [VACUUM] in order to reset a database back to an empty database
 ** with no schema and no content. The following process works even for
@@ -2158,6 +2174,18 @@ struct sqlite3_mem_methods {
 ** Because resetting a database is destructive and irreversible, the
 ** process requires the use of this obscure API and multiple steps to help
 ** ensure that it does not happen by accident.
+**
+** [[SQLITE_DBCONFIG_DEFENSIVE]] <dt>SQLITE_DBCONFIG_DEFENSIVE</dt>
+** <dd>The SQLITE_DBCONFIG_DEFENSIVE option activates or deactivates the
+** "defensive" flag for a database connection.  When the defensive
+** flag is enabled, language features that allow ordinary SQL to 
+** deliberately corrupt the database file are disabled.  The disabled
+** features include but are not limited to the following:
+** <ul>
+** <li> The [PRAGMA writable_schema=ON] statement.
+** <li> Writes to the [sqlite_dbpage] virtual table.
+** <li> Direct writes to [shadow tables].
+** </ul>
 ** </dd>
 ** </dl>
 */
@@ -2171,7 +2199,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_QPSG           1007 /* int int* */
 #define SQLITE_DBCONFIG_TRIGGER_EQP           1008 /* int int* */
 #define SQLITE_DBCONFIG_RESET_DATABASE        1009 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1009 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_DEFENSIVE             1010 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1010 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
@@ -2972,9 +3001,9 @@ SQLITE_API int sqlite3_set_authorizer(
 ** time is in units of nanoseconds, however the current implementation
 ** is only capable of millisecond resolution so the six least significant
 ** digits in the time are meaningless.  Future versions of SQLite
-** might provide greater resolution on the profiler callback.  The
-** sqlite3_profile() function is considered experimental and is
-** subject to change in future versions of SQLite.
+** might provide greater resolution on the profiler callback.  Invoking
+** either [sqlite3_trace()] or [sqlite3_trace_v2()] will cancel the
+** profile callback.
 */
 SQLITE_API SQLITE_DEPRECATED void *sqlite3_trace(sqlite3*,
    void(*xTrace)(void*,const char*), void*);
@@ -3609,9 +3638,24 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** on this hint by avoiding the use of [lookaside memory] so as not to
 ** deplete the limited store of lookaside memory. Future versions of
 ** SQLite may act on this hint differently.
+**
+** [[SQLITE_PREPARE_NORMALIZE]] <dt>SQLITE_PREPARE_NORMALIZE</dt>
+** <dd>The SQLITE_PREPARE_NORMALIZE flag is a no-op. This flag used
+** to be required for any prepared statement that wanted to use the
+** [sqlite3_normalized_sql()] interface.  However, the
+** [sqlite3_normalized_sql()] interface is now available to all
+** prepared statements, regardless of whether or not they use this
+** flag.
+**
+** [[SQLITE_PREPARE_NO_VTAB]] <dt>SQLITE_PREPARE_NO_VTAB</dt>
+** <dd>The SQLITE_PREPARE_NO_VTAB flag causes the SQL compiler
+** to return an error (error code SQLITE_ERROR) if the statement uses
+** any virtual tables.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
+#define SQLITE_PREPARE_NORMALIZE               0x02
+#define SQLITE_PREPARE_NO_VTAB                 0x04
 
 /*
 ** CAPI3REF: Compiling An SQL Statement
@@ -3769,6 +3813,11 @@ SQLITE_API int sqlite3_prepare16_v3(
 ** ^The sqlite3_expanded_sql(P) interface returns a pointer to a UTF-8
 ** string containing the SQL text of prepared statement P with
 ** [bound parameters] expanded.
+** ^The sqlite3_normalized_sql(P) interface returns a pointer to a UTF-8
+** string containing the normalized SQL text of prepared statement P.  The
+** semantics used to normalize a SQL statement are unspecified and subject
+** to change.  At a minimum, literal values will be replaced with suitable
+** placeholders.
 **
 ** ^(For example, if a prepared statement is created using the SQL
 ** text "SELECT $abc,:xyz" and if parameter $abc is bound to integer 2345
@@ -3784,14 +3833,16 @@ SQLITE_API int sqlite3_prepare16_v3(
 ** bound parameter expansions.  ^The [SQLITE_OMIT_TRACE] compile-time
 ** option causes sqlite3_expanded_sql() to always return NULL.
 **
-** ^The string returned by sqlite3_sql(P) is managed by SQLite and is
-** automatically freed when the prepared statement is finalized.
+** ^The strings returned by sqlite3_sql(P) and sqlite3_normalized_sql(P)
+** are managed by SQLite and are automatically freed when the prepared
+** statement is finalized.
 ** ^The string returned by sqlite3_expanded_sql(P), on the other hand,
 ** is obtained from [sqlite3_malloc()] and must be free by the application
 ** by passing it to [sqlite3_free()].
 */
 SQLITE_API const char *sqlite3_sql(sqlite3_stmt *pStmt);
 SQLITE_API char *sqlite3_expanded_sql(sqlite3_stmt *pStmt);
+SQLITE_API const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Determine If An SQL Statement Writes The Database
@@ -6281,6 +6332,9 @@ struct sqlite3_module {
   int (*xSavepoint)(sqlite3_vtab *pVTab, int);
   int (*xRelease)(sqlite3_vtab *pVTab, int);
   int (*xRollbackTo)(sqlite3_vtab *pVTab, int);
+  /* The methods above are in versions 1 and 2 of the sqlite_module object.
+  ** Those below are for version 3 and greater. */
+  int (*xShadowName)(const char*);
 };
 
 /*
@@ -7203,6 +7257,7 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_OPTIMIZATIONS           15
 #define SQLITE_TESTCTRL_ISKEYWORD               16  /* NOT USED */
 #define SQLITE_TESTCTRL_SCRATCHMALLOC           17  /* NOT USED */
+#define SQLITE_TESTCTRL_INTERNAL_FUNCTIONS      17
 #define SQLITE_TESTCTRL_LOCALTIME_FAULT         18
 #define SQLITE_TESTCTRL_EXPLAIN_STMT            19  /* NOT USED */
 #define SQLITE_TESTCTRL_ONCE_RESET_THRESHOLD    19
@@ -8615,6 +8670,7 @@ SQLITE_API int sqlite3_vtab_config(sqlite3*, int op, ...);
 ** can use to customize and optimize their behavior.
 **
 ** <dl>
+** [[SQLITE_VTAB_CONSTRAINT_SUPPORT]]
 ** <dt>SQLITE_VTAB_CONSTRAINT_SUPPORT
 ** <dd>Calls of the form
 ** [sqlite3_vtab_config](db,SQLITE_VTAB_CONSTRAINT_SUPPORT,X) are supported,
@@ -9384,7 +9440,7 @@ struct sqlite3_rtree_query_info {
   sqlite3_int64 iRowid;             /* Rowid for current entry */
   sqlite3_rtree_dbl rParentScore;   /* Score of parent node */
   int eParentWithin;                /* Visibility of parent node */
-  int eWithin;                      /* OUT: Visiblity */
+  int eWithin;                      /* OUT: Visibility */
   sqlite3_rtree_dbl rScore;         /* OUT: Write the score here */
   /* The following fields are only available in 3.8.11 and later */
   sqlite3_value **apSqlParam;       /* Original SQL values of parameters */
@@ -9955,7 +10011,7 @@ SQLITE_API int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 ** sqlite3changeset_next() is called on the iterator or until the 
 ** conflict-handler function returns. If pnCol is not NULL, then *pnCol is 
 ** set to the number of columns in the table affected by the change. If
-** pbIncorrect is not NULL, then *pbIndirect is set to true (1) if the change
+** pbIndirect is not NULL, then *pbIndirect is set to true (1) if the change
 ** is an indirect change, or false (0) otherwise. See the documentation for
 ** [sqlite3session_indirect()] for a description of direct and indirect
 ** changes. Finally, if pOp is not NULL, then *pOp is set to one of 
@@ -11189,12 +11245,8 @@ struct Fts5PhraseIter {
 **
 **   Usually, output parameter *piPhrase is set to the phrase number, *piCol
 **   to the column in which it occurs and *piOff the token offset of the
-**   first token of the phrase. The exception is if the table was created
-**   with the offsets=0 option specified. In this case *piOff is always
-**   set to -1.
-**
-**   Returns SQLITE_OK if successful, or an error code (i.e. SQLITE_NOMEM) 
-**   if an error occurs.
+**   first token of the phrase. Returns SQLITE_OK if successful, or an error
+**   code (i.e. SQLITE_NOMEM) if an error occurs.
 **
 **   This API can be quite slow if used with an FTS5 table created with the
 **   "detail=none" or "detail=column" option. 
@@ -11483,11 +11535,11 @@ struct Fts5ExtensionApi {
 **            the tokenizer substitutes "first" for "1st" and the query works
 **            as expected.
 **
-**       <li> By adding multiple synonyms for a single term to the FTS index.
-**            In this case, when tokenizing query text, the tokenizer may 
-**            provide multiple synonyms for a single term within the document.
-**            FTS5 then queries the index for each synonym individually. For
-**            example, faced with the query:
+**       <li> By querying the index for all synonyms of each query term
+**            separately. In this case, when tokenizing query text, the
+**            tokenizer may provide multiple synonyms for a single term 
+**            within the document. FTS5 then queries the index for each 
+**            synonym individually. For example, faced with the query:
 **
 **   <codeblock>
 **     ... MATCH 'first place'</codeblock>
@@ -11511,7 +11563,7 @@ struct Fts5ExtensionApi {
 **            "place".
 **
 **            This way, even if the tokenizer does not provide synonyms
-**            when tokenizing query text (it should not - to do would be
+**            when tokenizing query text (it should not - to do so would be
 **            inefficient), it doesn't matter if the user queries for 
 **            'first + place' or '1st + place', as there are entries in the
 **            FTS index corresponding to both forms of the first token.
