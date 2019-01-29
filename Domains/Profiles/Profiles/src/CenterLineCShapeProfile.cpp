@@ -41,7 +41,7 @@ CenterLineCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 CenterLineCShapeProfile::CenterLineCShapeProfile(CreateParams const& params)
     : T_Super (params)
     {
-    if (false != params.m_isLoadingElement)
+    if (params.m_isLoadingElement)
         {
         return;
         }
@@ -207,7 +207,7 @@ bool CenterLineCShapeProfile::CreateCenterLineGeometry()
         return false;
         }
     
-    //?? SetCenterLine(*geometryPtr);
+    SetCenterLine(*geometryPtr);
 
     return true;
     }
@@ -217,7 +217,7 @@ bool CenterLineCShapeProfile::CreateCenterLineGeometry()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr CenterLineCShapeProfile::_CreateCenterLineGeometry() const
     {
-    return ProfilesGeometry::CreateCenterLineForCShape(*this);
+    return ProfilesGeometry::CreateCenterLineForCShape (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

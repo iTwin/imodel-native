@@ -1193,7 +1193,7 @@ static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDept
         topLine, topleftArc, leftLine, bottomleftArc, bottomLine,
         };
 
-    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
+    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_None);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1228,11 +1228,11 @@ static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDept
         bottomGirthArc, bottomGirthLine,
         };
 
-    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
+    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_None);
     }
 
 
-IGeometryPtr ProfilesGeometry::CreateCenterLineForCShape(CenterLineCShapeProfile const& profile)
+IGeometryPtr ProfilesGeometry::CreateCenterLineForCShape (CenterLineCShapeProfile const& profile)
     {
     double const halfWidth = profile.GetFlangeWidth() / 2.0;
     double const halfDepth = profile.GetDepth() / 2.0;
