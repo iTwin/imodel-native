@@ -304,13 +304,14 @@ protected:
     int64_t m_syncInfoImportJobRowId {};        // <-- temporary, until we get rid of syncinfo
     SubjectCPtr m_jobSubject;
     DgnV8Api::ModelId m_v8MasterModel {};
+    Transform m_v8MasterModelTransform;
     DgnModelId m_masterModel;
-    Transform m_transform;
+    Transform m_jobTransform;
     SyncInfo::ImportJob::Type m_type {};
 public:
     ResolvedImportJob() {}
-    ResolvedImportJob(SubjectCR s, DgnModelId masterModel, DgnV8Api::ModelId v8MasterModel, TransformCR tr, SyncInfo::ImportJob::Type typ, int64_t sijid = 0) : 
-        m_jobSubject(&s), m_masterModel(masterModel), m_v8MasterModel(v8MasterModel), m_transform(tr), m_type(typ), m_syncInfoImportJobRowId(sijid) {}
+    ResolvedImportJob(SubjectCR s, TransformCR jtr, DgnModelId masterModel, DgnV8Api::ModelId v8MasterModel, TransformCR v8tr, SyncInfo::ImportJob::Type typ, int64_t sijid = 0) : 
+        m_jobSubject(&s), m_masterModel(masterModel), m_v8MasterModel(v8MasterModel), m_v8MasterModelTransform(v8tr), m_jobTransform(jtr), m_type(typ), m_syncInfoImportJobRowId(sijid) {}
     ResolvedImportJob(SubjectCR s) : m_jobSubject(&s) {}
 
     bool IsValid() const {return m_jobSubject.IsValid();}
@@ -319,6 +320,10 @@ public:
     DgnV8Api::ModelId GetV8MasterModelId() const { return m_v8MasterModel; }
     void SetV8MasterModelId(DgnV8Api::ModelId mm) { m_v8MasterModel = mm; }
 
+    //! Get The *v8 master model* transform
+    TransformCR GetV8MasterModelTransform() const {return m_v8MasterModelTransform;}
+    void SetV8MasterModelTransform(TransformCR t) {m_v8MasterModelTransform=t;}
+
     //! Get the iModel model that was created for the master model
     DgnModelId GetMasterModelId() const { return m_masterModel; }
     void SetMasterModelId(DgnModelId mm) { m_masterModel = mm; }
@@ -326,9 +331,9 @@ public:
     //! Get the job subject
     SubjectCR GetSubject() const {BeAssert(IsValid()); return *m_jobSubject;}
 
-    //! Get The transform
-    TransformCR GetTransform() const {return m_transform;}
-    void SetTransform(TransformCR t) {m_transform=t;}
+    //! Get The *job* transform
+    TransformCR GetJobTransform() const {return m_jobTransform;}
+    void SetJobTransform(TransformCR t) {m_jobTransform=t;}
 
     //! Get the type of converter that created this job
     SyncInfo::ImportJob::Type GetConverterType() const {return m_type;}

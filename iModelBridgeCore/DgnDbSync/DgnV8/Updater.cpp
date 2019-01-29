@@ -79,7 +79,7 @@ ResolvedImportJob Converter::GetResolvedImportJob(SyncInfo::ImportJob const& imp
         return ResolvedImportJob();
         }
 
-    return ResolvedImportJob(*jobSubject, mm.GetModelId(), mm.GetV8ModelId().GetValue(), importJob.GetTransform(), importJob.GetType(), importJob.GetRowId());
+    return ResolvedImportJob(*jobSubject, importJob.GetTransform(), mm.GetModelId(), mm.GetV8ModelId().GetValue(), m_rootTrans, importJob.GetType(), importJob.GetRowId());
     }
 
 /*---------------------------------------------------------------------------------**//**

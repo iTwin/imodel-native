@@ -200,7 +200,7 @@ BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
         }
 
     SyncInfo::V8ModelMapping syncInfoModelMapping;
-    GetSyncInfo().FindModel(&syncInfoModelMapping, *GetRootModelP(), &m_importJob.GetTransform(), GetCurrentIdPolicy());
+    GetSyncInfo().FindModel(&syncInfoModelMapping, *GetRootModelP(), &m_importJob.GetV8MasterModelTransform(), GetCurrentIdPolicy());
     m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping, nullptr);
     _AddResolvedModelMapping(m_rootModelMapping);
     return BSISUCCESS;
@@ -219,12 +219,15 @@ void SpatialConverterBase::ApplyJobTransformToRootTrans()
 
     m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
 
-    if (!Converter::IsTransformEqualWithTolerance(jobTrans,m_importJob.GetTransform()))
+    if (!Converter::IsTransformEqualWithTolerance(jobTrans,m_importJob.GetJobTransform()))
         {
-        m_importJob.SetTransform(jobTrans);
+        m_importJob.SetJobTransform(jobTrans);
         if (_WantProvenanceInBim())
             {
-            BeAssert(false && "TBD");
+            auto ed = m_importJob.GetSubject().MakeCopy<Subject>();
+            auto aspect = SyncInfo::BridgeJobletExternalSourceAspect::GetAspect(*ed, m_importJob.GetV8MasterModelId());
+            aspect.SetTransform(jobTrans);
+            ed->Update();
             }
         else
             {
@@ -617,8 +620,9 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
 
     // 6. Now that we have the root model's syncinfo id, we can define the syncinfo part of the importjob.
 	m_importJob.SetV8MasterModelId(m_rootModelRef->GetModelId());
+    m_importJob.SetV8MasterModelTransform(m_rootTrans);
 	m_importJob.SetMasterModelId(m_rootModelMapping.GetDgnModel().GetModelId());
-	m_importJob.SetTransform(BentleyApi::Transform::FromIdentity());
+	m_importJob.SetJobTransform(BentleyApi::Transform::FromIdentity());
 	m_importJob.SetConverterType(jtype);
     if (_WantProvenanceInBim())
         {

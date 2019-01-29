@@ -692,6 +692,9 @@ struct SyncInfo
         //! Create a new aspect in memory.
         DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect CreateAspect(DgnModelId masterModel, DgnV8Api::ModelId v8MasterModelId, ConverterType, Converter&);
         
+        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect GetAspect(SubjectCR subj, DgnV8Api::ModelId v8Id);
+        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect GetAspect(SubjectR subj, DgnV8Api::ModelId v8Id);
+
         DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindAspectBySourceId(Utf8StringCR bridgeName, DgnV8ModelCR masterModel, ConverterType, Converter& converter);
         DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindSoleAspectForV8MasterFile(Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, ConverterType converterType, Converter& converter);
 
