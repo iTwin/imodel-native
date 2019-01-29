@@ -144,7 +144,10 @@ struct ViewGenerator final
                 //Casts are needed for shared columns to make sure shared columns behave the same as unshared columns.
                 //Shared columns are of type BLOB which behaves differently in terms of type conversions prior to comparisons
                 //(see https://sqlite.org/datatype3.html#type_conversions_prior_to_comparison)
-                static bool RequiresCast(SingleColumnDataPropertyMap const& propMap) { return propMap.GetColumn().IsShared() && propMap.GetColumnDataType() != DbColumn::Type::Any && propMap.GetColumnDataType() != DbColumn::Type::Blob; }
+                bool RequiresCast(SingleColumnDataPropertyMap const& propMap) const
+                    { 
+                    return m_context.GetViewType() == ViewType::ECClassView && propMap.GetColumn().IsShared() && propMap.GetColumnDataType() != DbColumn::Type::Any && propMap.GetColumnDataType() != DbColumn::Type::Blob;
+                    }
 
             public:
                 ToSqlVisitor(Context const& ctx, DbTable const& tableFilter, Utf8StringCR classIdentifier) : IPropertyMapVisitor(), m_context(ctx), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier) {}

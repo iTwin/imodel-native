@@ -796,9 +796,10 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         viewContext.AddViewColumnName(relationMap.GetTargetECClassIdPropMap()->GetAccessString());
         }
 
-    auto toSql = [] (NativeSqlBuilder& sqlBuilder, DbColumn const& col, Utf8CP tableQualifier = nullptr)
+    auto toSql = [&ctx] (NativeSqlBuilder& sqlBuilder, DbColumn const& col, Utf8CP tableQualifier = nullptr)
         {
-        const bool requiresCast = col.IsShared();
+  
+        const bool requiresCast = ctx.GetViewType() == ViewType::ECClassView && col.IsShared();
         if (requiresCast)
             sqlBuilder.Append("CAST(");
 
