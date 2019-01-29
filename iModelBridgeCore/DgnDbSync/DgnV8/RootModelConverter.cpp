@@ -190,7 +190,6 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
     {
-    // Look up the root model in syncinfo, using the ID saved in the ImportJob record. We can't use GetModelForDgnV8Model, because m_rootTrans might have changed.
     auto rootBimModel = GetDgnDb().Models().GetModel(m_importJob.GetMasterModelId());
     if (!rootBimModel.IsValid())
         {
@@ -200,7 +199,32 @@ BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
         }
 
     SyncInfo::V8ModelMapping syncInfoModelMapping;
-    GetSyncInfo().FindModel(&syncInfoModelMapping, *GetRootModelP(), &m_importJob.GetV8MasterModelTransform(), GetCurrentIdPolicy());
+    if (!_WantProvenanceInBim())
+        {
+        // Look up the root model in syncinfo, using the ID saved in the ImportJob record. We can't use GetModelForDgnV8Model, because m_rootTrans might have changed.
+        auto status = GetSyncInfo().GetModelBySyncInfoId(syncInfoModelMapping, SyncInfo::V8ModelSyncInfoId(m_importJob.GetSyncInfoImportJobRowId()));
+        if (BSISUCCESS != status)
+            {
+            BeAssert(false);
+            ReportError(IssueCategory::CorruptData(), Issue::Error(), "ImportJob has bad V8ModelSyncInfoId");
+            return BSIERROR;
+            }
+        }
+    else
+        {
+        // Assume that the root model in syncinfo is the first entry for this file and v8 model id.
+        SyncInfo::ModelIterator it(*m_dgndb, "V8FileSyncInfoId=? AND V8Id=?");
+        it.GetStatement()->BindInt(1, GetV8FileSyncInfoIdFromAppData(*m_rootFile).GetValue());
+        it.GetStatement()->BindInt(2, m_importJob.GetV8MasterModelId());
+        auto entry = it.begin();
+        if (entry == it.end())
+            {
+            BeAssert(false);
+            return BSIERROR;
+            }
+        syncInfoModelMapping = entry.GetMapping();
+        }
+
     m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping, nullptr);
     _AddResolvedModelMapping(m_rootModelMapping);
     return BSISUCCESS;
