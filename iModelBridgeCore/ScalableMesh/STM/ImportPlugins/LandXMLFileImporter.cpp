@@ -1,0 +1,577 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: STM/ImportPlugins/LandXMLFileImporter.cpp $
+|    $RCSfile: LandXMLFileImporter.cpp,v $
+|   $Revision: 1.28 $
+|       $Date: 2011/08/26 18:45:58 $
+|     $Author: Raymond.Gauthier $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#include <ScalableMeshPCH.h>
+#include "../ImagePPHeaders.h"
+#include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
+#include <ScalableMesh/Import/Plugin/SourceV0.h>
+
+#include <ScalableMesh/Plugin/IScalableMeshPolicy.h>
+
+#include <ScalableMesh/Type/IScalableMeshPoint.h>
+#include <ScalableMesh/Type/IScalableMeshLinear.h>
+#include <ScalableMesh/Type/IScalableMeshTIN.h>
+
+#include <TerrainModel/Formats/LandXMLImporter.h>
+#include "..\Stores\SMStoreUtils.h"
+#include <STMInternal/Foundations/PrivateStringTools.h>
+
+#include "CivilDTMHelpers.h"
+
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
+USING_NAMESPACE_BENTLEY_SCALABLEMESH
+
+using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin;
+
+
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+namespace Plugin { namespace V0 {
+
+// Borrow some functionalities from civil dtm import module
+InputExtractorBase* CreateCivilDTMPointExtractor (const PointHandler& handler);
+InputExtractorBase* CreateCivilDTMLinearExtractor (const LinearHandler& handler);
+
+}} // END namespace Plugin::V0
+END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+namespace { //BEGIN UNAMED NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @description     
+* @bsiclass                                                 Raymond.Gauthier   08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+struct Surface
+    {
+private:
+    struct                          Impl;
+    typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<Impl>      
+                                    ImplPtr;
+
+    ImplPtr                         m_implP;
+    WString                      m_name;
+
+public:
+    explicit                        Surface                        (BcDTMR   dtm,
+                                                                    const WChar*         name);
+
+    explicit                        Surface                        (const WChar*         name);
+
+    // Use default copy behavior
+
+    bool                            IsInitialized                  () const { return 0 != m_implP.get(); }
+
+    const WString&               GetName                        () const { return m_name; }
+
+    BcDTM&                         GetDTM                         () const;
+
+    void                            Close                          ();
+
+    void                            Assign                         (BcDTMR   dtmP);
+
+    bool                            HasTIN                         () const;
+
+    PointHandler&                   GetPointHandler                ();
+    LinearHandler&                  GetLinearHandler               ();
+    TINAsLinearHandler&             GetTINLinearHandler            ();
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @description     
+* @bsiclass                                                 Raymond.Gauthier   08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+struct Surface::Impl : public BENTLEY_NAMESPACE_NAME::RefCountedBase
+    {
+  public:  // OPERATOR_NEW_KLUDGE
+    void * operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
+    void operator delete(void *rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
+    void * operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
+    void operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
+
+
+    CivilDTMWrapper             m_dtm;
+    PointHandler                m_pointHandler;
+    LinearHandler               m_linearHandler;
+    TINAsLinearHandler          m_tinLinearHandler;
+
+    explicit                    Impl                           (BcDTMR dtm)
+        :   m_dtm(dtm),
+            m_pointHandler(m_dtm.Get(), CivilImportedTypes::GetInstance().points),
+            m_linearHandler(m_dtm.Get(), CivilImportedTypes::GetInstance().linears),
+            m_tinLinearHandler(m_dtm.Get(), CivilImportedTypes::GetInstance().tinLinears)
+        {
+        }
+    };
+
+
+Surface::Surface(BcDTMR       dtm,
+                        const WChar*             name)
+    :   m_implP(new Impl(dtm)),
+        m_name(name)
+    {
+    }
+
+Surface::Surface (const WChar* name)
+    :   m_name(name)
+    {
+    }
+
+BcDTM& Surface::GetDTM  () const 
+    {
+    assert(0 != m_implP.get());
+    return m_implP->m_dtm.Get();
+    }
+
+void Surface::Close ()
+    {
+    m_implP = 0;
+    }
+
+void Surface::Assign (BcDTMR  dtm)
+    {
+    assert(0 == m_implP.get());
+    m_implP = new Impl(dtm);
+    }
+
+bool Surface::HasTIN () const { return m_implP->m_dtm.HasTIN(); }
+
+PointHandler& Surface::GetPointHandler () { return m_implP->m_pointHandler; }
+LinearHandler& Surface::GetLinearHandler () { return m_implP->m_linearHandler; }
+TINAsLinearHandler& Surface::GetTINLinearHandler () { return m_implP->m_tinLinearHandler; }
+
+#define FILE_MINUS_GCS_UNIT_DIFF_PRECISION 0.00000001
+/*---------------------------------------------------------------------------------**//**
+* @description     
+* @bsiclass                                                 Jean-Francois.Cote   02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+class LandXMLSource : public SourceMixinBase<LandXMLSource>
+    {
+private:
+    typedef vector<Surface>             SurfaceList;
+    friend class LandXMLFileCreator;
+
+    BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporterPtr m_landImporterP;
+    SurfaceList                             m_surfaces; 
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description  
+    * @bsimethod                                                Jean-Francois.Cote   02/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    explicit        LandXMLSource  (BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter& landImporter) 
+        :   m_landImporterP(&landImporter)
+        { 
+        TerrainInfoList const& landSurfaceList = m_landImporterP->GetTerrains();
+
+        for(TerrainInfoList::const_iterator itr(landSurfaceList.begin()); itr != landSurfaceList.end(); ++itr)
+            {
+            m_surfaces.push_back(Surface(itr->GetName().c_str()));
+            }
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description  
+    * @bsimethod                                                Jean-Francois.Cote   02/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual void                        _Close                                         () override
+        {
+        m_landImporterP = NULL;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description   
+    * @bsimethod                                                Jean-Francois.Cote   02/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    double GetFileUnitToMeterScale(bool& unitFound) const
+        {
+        FileUnit fileUnit = m_landImporterP->GetFileUnit();    
+        unitFound = true;
+
+        switch (fileUnit)
+            {
+            case FileUnit::Unknown:
+                unitFound = false;
+                return 1.0;                
+                break;
+            case FileUnit::Millimeter:
+                return 0.001;
+                break;
+            case FileUnit::Centimeter:
+                return 0.01;
+                break;
+            case FileUnit::Meter:
+                return 1.0;                
+                break;
+            case FileUnit::Kilometer:
+                return 1000;
+                break;
+            case FileUnit::Inch:
+                return 0.02540000;
+                break;
+            case FileUnit::Foot:
+                return 0.3048000;
+                break;
+            case FileUnit::USSurveyFoot:
+                return 1200.0 / 3937.0;
+                break;
+            case FileUnit::Mile:
+                return 1609.3440;
+                break;
+            default:
+                unitFound = false;
+                assert(!"Unknown LandXML unit");                
+                break;
+            }
+        return 1.0;
+        }
+    
+    
+
+    virtual ContentDescriptor           _CreateDescriptor                              () const override       
+        {
+        ContentDescriptor contentDesc(L"");
+
+        GCS fileGcs(GetGCSFactory().Create(Unit::GetMeter()));
+        
+        GeoCoordinates::BaseGCSPtr gcsPtr(m_landImporterP->GetGCS());
+
+        SMStatus status = S_ERROR;
+
+        bool fileUnitToMetersFound;
+        double fileUnitToMeters = GetFileUnitToMeterScale(fileUnitToMetersFound);
+        
+        if (gcsPtr.IsValid())
+            {                                   
+            fileGcs = GetGCSFactory().Create(gcsPtr, status);
+
+            if (status == S_SUCCESS)
+                {             
+                double metersToFileUnit = gcsPtr->UnitsFromMeters();
+                
+                //OpenRoad ConceptStation might create LandXML with unit different then the GCS unit for backcompatibility with PowerInroads SS2, 
+                //thus the local unit transform.
+                if (fileUnitToMetersFound && fabs(1 / metersToFileUnit - fileUnitToMeters) > FILE_MINUS_GCS_UNIT_DIFF_PRECISION)
+                    {                                                                         
+                    double localToGlobalTransformScale = fileUnitToMeters * metersToFileUnit;
+
+                    TransfoModel transfoModel(TransfoModel::CreateScalingFrom(localToGlobalTransformScale));
+                    TransfoModel invTransfoModel(TransfoModel::CreateScalingFrom(1 / localToGlobalTransformScale));
+                    LocalTransform localTransform(LocalTransform::CreateFrom(transfoModel, invTransfoModel));
+                    fileGcs.SetLocalTransform(localTransform);
+                    }
+                }
+            }
+                
+        if (status != S_SUCCESS)
+            {             
+            WCharCP fileUnitStr = m_landImporterP->GetFileUnitString();
+            fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, fileUnitToMeters));
+            }                              
+        
+        for (auto& surface : m_surfaces)
+            {  
+            contentDesc.push_back(ILayerDescriptor::CreateLayerDescriptor(surface.GetName().c_str(),
+                                       DataTypeSet
+                                            (
+                                            LinearTypeTi32Pi32Pq32Gi32_3d64fCreator().Create(), 
+                                            PointType3d64fCreator().Create(),
+                                            TINTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator().Create()
+                                            ), 
+                                        fileGcs,
+                                        0,
+                                        ScalableMeshData::GetNull()));                
+            }        
+
+        return contentDesc;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description  
+    * @bsimethod                                                  Raymond.Gauthier   08/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual const WChar*             _GetType                                       () const override
+        {
+        return L"Land XML";
+        }
+
+
+public:
+    uint32_t                                GetSurfaceCount                                () const 
+        {
+        return (uint32_t)m_surfaces.size();
+        }
+
+    Surface*                            FindSurfaceFor                                    (uint32_t                    layer)
+        {
+        if (m_surfaces.size() < layer)
+            return 0;
+              
+        if (m_surfaces[layer].IsInitialized())
+            return &m_surfaces[layer];
+
+        // Load stuff      
+        ImportedTerrain importedSurface = m_landImporterP->ImportTerrain(m_surfaces[layer].GetName().GetWCharCP());
+        if(importedSurface.GetTerrain() == NULL)
+            return NULL;
+
+        m_surfaces[layer].Assign(*importedSurface.GetTerrain());
+        return &m_surfaces[layer];
+        }
+
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description      
+* @bsiclass                                                 Jean-Francois.Cote   02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+class LandXMLFileCreator : public LocalFileSourceCreatorBase
+    {
+    virtual ExtensionFilter             _GetExtensions                                 () const override
+        {
+        return L"*.xml";
+        }    
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description      
+    * @bsimethod                                                 Jean-Francois.Cote   02/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual bool                        _Supports                                      (const LocalFileSourceRef&       sourceRef) const override
+        {
+        if (!DefaultSupports(sourceRef))
+            return false;
+
+        // Look for the element by the name LandXML and at the same moment, check if this file contains at least one surface
+        BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporterPtr landImporterP(BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
+
+        return landImporterP->GetTerrains().size() > 0;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description     
+    * @bsimethod                                                Raymond.Gauthier   08/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual SourceBase*                _Create                                         (const LocalFileSourceRef&       sourceRef,
+                                                                                        Log&                     log) const override
+        {  
+        BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporterPtr landImporterP(BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
+        return new LandXMLSource(*landImporterP);
+        }
+    };
+
+const SourceRegistry::AutoRegister<LandXMLFileCreator> s_RegisterLandXMLFile;
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description      
+* @bsiclass                                                 Jean-Francois.Cote   02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+class LandXMLPointExtractorCreator : public InputExtractorCreatorMixinBase<LandXMLSource>
+    {
+    virtual bool                                _Supports                          (const DataType&         pi_rType) const override
+        {
+        return pi_rType.GetFamily() == PointTypeFamilyCreator().Create();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description  
+    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual RawCapacities                       _GetOutputCapacities               (LandXMLSource&                  sourceBase,
+                                                                                    const Source&                   source,
+                                                                                    const ExtractionQuery&         selection) const override
+        {
+        Surface* surfaceP = sourceBase.FindSurfaceFor(selection.GetLayer());
+        if (0 == surfaceP || !surfaceP->GetPointHandler().ComputeCounts())
+            return RawCapacities(0);
+
+        return RawCapacities (surfaceP->GetPointHandler().GetMaxPointCount()*sizeof(DPoint3d));
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description  
+    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual InputExtractorBase*                 _Create                            (LandXMLSource&                  sourceBase,
+                                                                                    const Source&                   source,
+                                                                                    const ExtractionQuery&          selection,
+                                                                                    const ExtractionConfig&         config,
+                                                                                    Log&                     log) const override
+        {
+        using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::V0;
+
+        Surface* surfaceP = sourceBase.FindSurfaceFor(selection.GetLayer());
+        if (0 == surfaceP || !surfaceP->GetPointHandler().ComputeCounts())
+            return 0;
+
+        // Borrow extractor from the civil dtm import module as it does exactly what we need
+        return CreateCivilDTMPointExtractor(surfaceP->GetPointHandler());
+        }
+    };
+
+const ExtractorRegistry::AutoRegister<LandXMLPointExtractorCreator> s_RegisterLandXMLPointImporter;
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description      
+* @bsiclass                                                 Jean-Francois.Cote   02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+class LandXMLLinearExtractorCreator : public InputExtractorCreatorMixinBase<LandXMLSource>
+    {
+    virtual bool                                _Supports                          (const DataType&                 pi_rType) const override
+        {
+        return pi_rType.GetFamily() == LinearTypeFamilyCreator().Create();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description  
+    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual RawCapacities                       _GetOutputCapacities               (LandXMLSource&                  sourceBase,
+                                                                                    const Source&                   source,
+                                                                                    const ExtractionQuery&          selection) const override
+        {
+        Surface* surfaceP = sourceBase.FindSurfaceFor(selection.GetLayer());
+        if (0 == surfaceP || !surfaceP->GetLinearHandler().ComputeCounts())
+            return RawCapacities(0, 0);
+
+        return RawCapacities (surfaceP->GetLinearHandler().GetMaxLinearCount()*sizeof(ISMStore::FeatureHeader),
+                              surfaceP->GetLinearHandler().GetMaxPointCount()*sizeof(DPoint3d));
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description  
+    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual InputExtractorBase*                 _Create                            (LandXMLSource&                  sourceBase,
+                                                                                    const Source&                   source,
+                                                                                    const ExtractionQuery&          selection,
+                                                                                    const ExtractionConfig&         config,
+                                                                                    Log&                     log) const override
+        {
+        using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::V0;
+
+        Surface* surfaceP = sourceBase.FindSurfaceFor(selection.GetLayer());
+        if (0 == surfaceP || !surfaceP->GetLinearHandler().ComputeCounts())
+            return 0;
+
+        // Borrow extractor from the civil dtm import module as it does exactly what we need
+        return CreateCivilDTMLinearExtractor(surfaceP->GetLinearHandler());
+        }
+    };
+
+const ExtractorRegistry::AutoRegister<LandXMLLinearExtractorCreator> s_RegisterLandXMLFeatureImporter;
+
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description   
+* @bsiclass                                                  Raymond.Gauthier   10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+class EmptyLandXMLLinearExtractor : public InputExtractorBase
+    {
+private:
+    enum 
+        {
+        DG_Header,
+        DG_XYZ,
+        };
+
+    PODPacketProxy<byte>            m_headerPacket;
+    PODPacketProxy<byte>            m_pointPacket;
+
+    virtual void                    _Assign                            (PacketGroup&     dst) override
+        {
+        m_headerPacket.AssignTo(dst[DG_Header]);
+        m_pointPacket.AssignTo(dst[DG_XYZ]);
+        }
+
+    virtual void                    _Read                              () override
+        {
+        m_headerPacket.SetSize(0);
+        m_pointPacket.SetSize(0);
+        }
+
+    virtual bool                    _Next                              () override
+        {
+        return false;
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description      
+* @bsiclass                                                 Jean-Francois.Cote   02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+class LandXMLTINExtractorCreator : public InputExtractorCreatorMixinBase<LandXMLSource>
+    {
+    virtual bool                                _Supports                          (const DataType&                 pi_rType) const override
+        {
+        return pi_rType.GetFamily() == TINTypeFamilyCreator().Create();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description  
+    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual RawCapacities                       _GetOutputCapacities               (LandXMLSource&                  sourceBase,
+                                                                                    const Source&                   source,
+                                                                                    const ExtractionQuery&          selection) const override
+        {
+        Surface* surfaceP = sourceBase.FindSurfaceFor(selection.GetLayer());
+        if (0 == surfaceP || !surfaceP->HasTIN() || !surfaceP->GetTINLinearHandler().ComputeCounts())
+            return RawCapacities(0, 0);
+
+        return RawCapacities (surfaceP->GetTINLinearHandler().GetMaxLinearCount()*sizeof(ISMStore::FeatureHeader),
+                              surfaceP->GetTINLinearHandler().GetMaxPointCount()*sizeof(DPoint3d));
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description  
+    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual InputExtractorBase*                 _Create                            (LandXMLSource&                  sourceBase,
+                                                                                    const Source&                   source,
+                                                                                    const ExtractionQuery&          selection,
+                                                                                    const ExtractionConfig&         config,
+                                                                                    Log&                     log) const override
+        {
+        using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::V0;
+
+        Surface* surfaceP = sourceBase.FindSurfaceFor(selection.GetLayer());
+        if (0 == surfaceP)
+            return 0;
+
+        if (!surfaceP->HasTIN())
+            return new EmptyLandXMLLinearExtractor;
+
+        if (!surfaceP->GetTINLinearHandler().ComputeCounts())
+            return 0;
+
+        // Borrow extractor from the civil dtm import module as it does exactly what we need
+        return CreateCivilDTMLinearExtractor(surfaceP->GetTINLinearHandler());
+        }
+    };
+
+const ExtractorRegistry::AutoRegister<LandXMLTINExtractorCreator> s_RegisterLandXMLTINLinearImporter;
+
+} //END UNAMED NAMESPACE
