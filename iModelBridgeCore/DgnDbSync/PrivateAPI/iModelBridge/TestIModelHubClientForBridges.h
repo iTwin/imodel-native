@@ -2,7 +2,7 @@
 |
 |  $Source: PrivateAPI/iModelBridge/TestIModelHubClientForBridges.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/Fwk/IModelClientForBridges.h>
@@ -194,7 +194,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
 
     StatusInt Push(Utf8CP comment) override {return JustCaptureRevision(comment);}
     StatusInt PullMergeAndPush(Utf8CP comment) override {return JustCaptureRevision(comment);}
-
+    StatusInt RestoreBriefcase (BeFileNameCR, Utf8CP, BeSQLite::BeBriefcaseId) override {return ERROR;}
     virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment)
         {
         BeAssert(db != nullptr);

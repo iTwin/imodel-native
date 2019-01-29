@@ -1092,7 +1092,7 @@ bool iModelBridge::HoldsSchemaLock(DgnDbR db)
 bool iModelBridge::TestFeatureFlag(CharCP ff)
     {
     bool flagVal = false;
-    iModelBridgeLdClient::GetInstance(GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
+    iModelBridgeLdClient::GetInstance((WebServices::UrlProvider::Environment)GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
     return flagVal;
     }
 
