@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Source/RulesDriven/RulesDrivenECPresentation.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+RulesDrivenECPresentationObjs =
+%include Rules/Rules.mki
+%include RulesEngine/RulesEngine.mki
+
+#--------------------------------------------------------------------------------------
+# Merge Objects
+#--------------------------------------------------------------------------------------
+ECPresentationObjs + $(RulesDrivenECPresentationObjs)
