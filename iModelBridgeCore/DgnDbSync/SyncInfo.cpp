@@ -519,6 +519,12 @@ ResolvedImportJob Converter::FindSoleImportJobForFile(DgnV8FileR rootFile)
     {
     if (_WantProvenanceInBim())
         {
+        if (!GetRepositoryLinkFromAppData(rootFile).IsValid())
+            {
+            _GetV8FileIntoSyncInfo(rootFile, _GetIdPolicy(rootFile)); // TRICKY: Before looking for models, register the root file in syncinfo. This starts the process of populating m_v8files. Do NOT CALL GetV8FileSyncInfoId as that will fail to populate m_v8Files in some cases.
+            WriteRepositoryLink(rootFile);
+            }
+
         DgnElementId jobSubjectId;
         DgnModelId masterModelId;
         SyncInfo::BridgeJobletExternalSourceAspect aspect(nullptr);
@@ -2191,10 +2197,6 @@ std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId>
 std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> SyncInfo::BridgeJobletExternalSourceAspect::FindSoleAspectForV8MasterFile(Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, ConverterType converterType, Converter& converter)
     {
     auto v8MasterFileRepositoryLinkId = converter.GetRepositoryLinkFromAppData(v8MasterFile);
-    if (!v8MasterFileRepositoryLinkId.IsValid())
-        {
-        v8MasterFileRepositoryLinkId = converter.WriteRepositoryLink(v8MasterFile);
-        }
 
     // Look for all Subject elements that a) have the specified Subject.Bridge name, and b) have a 'Joblet' XSA.
     // Then pick the one that identifies a master model that itself was sourced from the specified v8 master file.
