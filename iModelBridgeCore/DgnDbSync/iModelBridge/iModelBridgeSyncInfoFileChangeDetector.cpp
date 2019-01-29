@@ -568,7 +568,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::iMod
                 double lmt = item._GetLastModifiedTime();
                 if (!forceChange && (0 != lmt))
                     {
-                    double previousLmt = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_lastModHash.c_str());
+                    double previousLmt = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_version.c_str());
                     if (previousLmt == lmt)
                         return Results(ChangeType::Unchanged, rec, SourceState(lmt, ""));
                     }

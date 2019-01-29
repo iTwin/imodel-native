@@ -146,7 +146,7 @@ ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttac
         {
         auto sel = GetDgnDb().GetPreparedECSqlStatement(
             "SELECT d.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_Drawing) " d, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
-            " WHERE Kind='Element' AND Scope.Id=? AND SourceId=? AND x.Element.Id=d.ECInstanceId");
+            " WHERE x.Kind='Element' AND x.Scope.Id=? AND x.Identifier=? AND x.Element.Id=d.ECInstanceId");
         sel->BindId(1, parentModel.GetDgnModel().GetModeledElementId());
         sel->BindText(2, ComputeV8AttachmentIdPath(v8Attachment).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
         if (BE_SQLITE_ROW == sel->Step())

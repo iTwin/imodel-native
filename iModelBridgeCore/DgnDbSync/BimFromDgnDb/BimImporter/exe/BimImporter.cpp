@@ -289,7 +289,7 @@ folly::Future<bool> ReadJsonFile(BeFileName inputFileName, BimFromJson* importer
             Json::Value& entry = *iter;
             if (entry.isNull())
                 continue;
-            importer->AddToQueue(entry.toStyledString().c_str());
+            importer->AddToQueue(entry.ToString().c_str());
             }
 
         return true;

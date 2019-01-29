@@ -46,11 +46,11 @@
 #define XTRN_SRC_ASPCT_CLASS                    "ExternalSourceAspect"
 #define XTRN_SRC_ASPCT_FULLCLASSNAME            XTRN_SRC_ASPCT_SCHEMA(XTRN_SRC_ASPCT_CLASS)
 #define XTRN_SRC_ASPCT_Scope                    "Scope"
-#define XTRN_SRC_ASPCT_SourceId                 "SourceId"
+#define XTRN_SRC_ASPCT_Identifier               "Identifier"
 #define XTRN_SRC_ASPCT_Kind                     "Kind"
-#define XTRN_SRC_ASPCT_LastModHash              "LastModHash"
-#define XTRN_SRC_ASPCT_Hash                     "Hash"
-#define XTRN_SRC_ASPCT_Properties               "Properties"
+#define XTRN_SRC_ASPCT_Version                  "Version"
+#define XTRN_SRC_ASPCT_Checksum                 "Checksum"
+#define XTRN_SRC_ASPCT_JsonProperties           "JsonProperties"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

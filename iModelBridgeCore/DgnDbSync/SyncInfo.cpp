@@ -1431,7 +1431,7 @@ DgnElementId SyncInfo::DrawingGraphicExternalSourceAspect::FindDrawingGraphicByS
     auto ecclass = db.Schemas().GetClass(elementClassId);
     Utf8PrintfString ecsql(
         "SELECT dg.ECInstanceId FROM %s dg, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
-        " WHERE dg.Model.Id=? AND dg.Category.Id=? AND x.Element.Id=dg.ECInstanceId AND x.Kind='ProxyGraphic' AND x.SourceId=?",
+        " WHERE dg.Model.Id=? AND dg.Category.Id=? AND x.Element.Id=dg.ECInstanceId AND x.Kind='ProxyGraphic' AND x.Identifer=?",
         ecclass? ecclass->GetFullName(): BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
     auto stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     int col=1;
@@ -1521,8 +1521,8 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
     auto desiredCategoryClassId = converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, (Level::Type::Spatial == ltype)? BIS_CLASS_SpatialCategory: BIS_CLASS_DrawingCategory);
     
     auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT x.Element.Id, x.Properties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_SubCategory) " e"
-        " WHERE (x.Element.Id=e.ECInstanceId AND x.Scope.Id=? AND x.Kind=? AND x.SourceId=? AND json_extract(x.Properties, '$.v8ModelId') = ?)");
+        "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_SubCategory) " e"
+        " WHERE (x.Element.Id=e.ECInstanceId AND x.Scope.Id=? AND x.Kind=? AND x.Identifer=? AND json_extract(x.JsonProperties, '$.v8ModelId') = ?)");
     aspectStmt->BindId(1, repositoryLinkId);
     aspectStmt->BindText(2, KindToString(Kind::Level), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     aspectStmt->BindText(3, v8LevelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -1887,11 +1887,11 @@ void SyncInfo::V8ElementExternalSourceAspect::AssertMatch(DgnElementCR el, DgnV8
 
     Utf8String provLastMod;
     iModelExternalSourceAspect::DoubleToString(provLastMod, elprov.m_lastModified);
-    BeAssert(ss.m_lastModHash == provLastMod);
+    BeAssert(ss.m_version == provLastMod);
 
     Utf8String provHash;
     iModelExternalSourceAspect::HexStrFromBytes(provHash, elprov.m_hash.m_buffer);
-    BeAssert(ss.m_hash.Equals(provHash));
+    BeAssert(ss.m_checksum.Equals(provHash));
     }
 #endif
 
@@ -1900,7 +1900,7 @@ void SyncInfo::V8ElementExternalSourceAspect::AssertMatch(DgnElementCR el, DgnV8
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetExternalSourceAspectIds(DgnElementCR el, ExternalSourceAspect::Kind kind, Utf8StringCR sourceId)
     {
-    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=? AND SourceId=?)");
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=? AND Identifier=?)");
     sel->BindId(1, el.GetElementId());
     sel->BindText(2, ExternalSourceAspect::KindToString(kind), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -1990,8 +1990,8 @@ SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect:
 void SyncInfo::V8ElementExternalSourceAspect::Update(ElementProvenance const& prov)
     {
     SourceState ss;
-    iModelExternalSourceAspect::HexStrFromBytes(ss.m_hash, prov.m_hash.m_buffer);
-    DoubleToString(ss.m_lastModHash, prov.m_lastModified);
+    iModelExternalSourceAspect::HexStrFromBytes(ss.m_checksum, prov.m_hash.m_buffer);
+    DoubleToString(ss.m_version, prov.m_lastModified);
     SetSourceState(ss); 
     }
 
@@ -2001,7 +2001,7 @@ void SyncInfo::V8ElementExternalSourceAspect::Update(ElementProvenance const& pr
 DgnV8Api::ElementId SyncInfo::V8ElementExternalSourceAspect::GetV8ElementId() const
     {
     int64_t id = 0;
-    sscanf(GetSourceId().c_str(), "%lld", &id);
+    sscanf(GetIdentifier().c_str(), "%lld", &id);
     return id;
     }
 
@@ -2055,7 +2055,7 @@ Utf8String SyncInfo::V8ModelExternalSourceAspect::GetV8ModelName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId SyncInfo::V8ModelExternalSourceAspect::GetV8ModelId() const
     {
-    return atoi(GetSourceId().c_str());
+    return atoi(GetIdentifier().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2135,7 +2135,7 @@ SyncInfo::BridgeJobletExternalSourceAspect::ConverterType SyncInfo::BridgeJoblet
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId SyncInfo::BridgeJobletExternalSourceAspect::GetMasterModelId() const
     {
-    return atoi(GetSourceId().c_str());
+    return atoi(GetIdentifier().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2202,7 +2202,7 @@ void SyncInfo::ViewDefinitionExternalSourceAspect::Update(DgnV8ViewInfoCR viewIn
         }
 
     iModelExternalSourceAspect::SourceState ss;
-    DoubleToString(ss.m_lastModHash, viewInfo.GetElementRef()->GetLastModified());
+    DoubleToString(ss.m_version, viewInfo.GetElementRef()->GetLastModified());
     SetSourceState(ss);
 
     auto json = GetProperties();

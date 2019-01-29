@@ -412,7 +412,7 @@ BentleyStatus ElementAspectReader::_Read(Json::Value& aspect)
 
     if (DgnDbStatus::Success != stat)
         {
-        GetLogger().errorv("Failed to add ElementAspect to Element");
+        GetLogger().errorv("Failed to add ElementAspect to Element.\n%s", aspect.toStyledString().c_str());
         return ERROR;
         }
 

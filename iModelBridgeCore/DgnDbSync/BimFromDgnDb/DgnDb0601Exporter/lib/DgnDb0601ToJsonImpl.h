@@ -108,7 +108,7 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         void LogMessage(BimFromDgnDbLoggingSeverity severity, Utf8CP message, ...);
         void LogMessage(BimFromDgnDbLoggingSeverity severity, WCharCP message, ...);
         void LogPerformanceMessage(StopWatch& stopWatch, Utf8CP message, ...);
-        void SendToQueue(Utf8CP json);
+        void SendToQueue(Json::Value& json, bool doReplace = false);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, BeInt64Id id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, uint64_t id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, Utf8CP id);
@@ -149,8 +149,8 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         DgnElementId CreateDrawingElement(Utf8CP name);
         DgnElementId CreateSheetElement(DgnModelCR model);
         DgnElementId CreateDefinitionModel(Utf8CP modelName);
-        BentleyStatus ExportUnits() const;
-        BentleyStatus ExportSchemas() const;
+        BentleyStatus ExportUnits();
+        BentleyStatus ExportSchemas();
         DgnElementId InitListModel(Utf8CP name);
         BentleyStatus InitDrawingListModel();
         BentleyStatus InitSheetListModel();

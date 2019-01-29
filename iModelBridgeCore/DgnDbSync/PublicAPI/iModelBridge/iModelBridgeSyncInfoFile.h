@@ -301,8 +301,8 @@ struct iModelExternalSourceAspect
 
     struct SourceState
         {
-        Utf8String m_hash;
-        Utf8String m_lastModHash;
+        Utf8String m_checksum;
+        Utf8String m_version;
         };
 
     RefCountedPtr<ECN::IECInstance> m_instance;
@@ -316,7 +316,7 @@ struct iModelExternalSourceAspect
 
     IMODEL_BRIDGE_EXPORT Utf8String GetKind() const;
     IMODEL_BRIDGE_EXPORT DgnElementId GetScope() const;
-    IMODEL_BRIDGE_EXPORT Utf8String GetSourceId() const;
+    IMODEL_BRIDGE_EXPORT Utf8String GetIdentifier() const;
     IMODEL_BRIDGE_EXPORT SourceState GetSourceState() const;
     IMODEL_BRIDGE_EXPORT rapidjson::Document GetProperties() const;
 
@@ -350,7 +350,7 @@ struct iModelExternalSourceAspect
         BeSQLite::EC::ECInstanceId aspectId;
         };
 
-    //! Look up the ElementId of the element that contains an aspect with the specified Scope, Kind, and SourceId. Also returns the aspect's instanceid.
+    //! Look up the ElementId of the element that contains an aspect with the specified Scope, Kind, and Identifier. Also returns the aspect's instanceid.
     IMODEL_BRIDGE_EXPORT static ElementAndAspectId FindElementBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
 
     IMODEL_BRIDGE_EXPORT static ElementAndAspectId FindElementByHash(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
