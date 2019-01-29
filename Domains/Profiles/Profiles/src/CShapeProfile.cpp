@@ -135,7 +135,7 @@ bool CShapeProfile::ValidateFlangeThickness() const
     {
     double const flangeThickness = GetFlangeThickness();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (flangeThickness);
-    bool const isLessThanHalfDepth = flangeThickness < GetDepth() / 2.0;
+    bool const isLessThanHalfDepth = ProfilesProperty::IsLess (flangeThickness, GetDepth() / 2.0);
 
     return isPositive && isLessThanHalfDepth;
     }
@@ -147,7 +147,7 @@ bool CShapeProfile::ValidateWebThickness() const
     {
     double const webThickness = GetWebThickness();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (webThickness);
-    bool const isLessThanHalfFlangeWidth = webThickness < GetFlangeWidth();
+    bool const isLessThanHalfFlangeWidth = ProfilesProperty::IsLess (webThickness, GetFlangeWidth());
 
     return isPositive && isLessThanHalfFlangeWidth;
     }
@@ -162,8 +162,8 @@ bool CShapeProfile::ValidateFilletRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
-    bool const fitsInFlange = filletRadius <= GetFlangeInnerFaceLength() / 2.0;
-    bool const fitsInWeb = filletRadius <= GetWebInnerFaceLength() / 2.0 - GetFlangeSlopeHeight();
+    bool const fitsInFlange = ProfilesProperty::IsLessOrEqual (filletRadius, GetFlangeInnerFaceLength() / 2.0);
+    bool const fitsInWeb = ProfilesProperty::IsLessOrEqual (filletRadius, GetWebInnerFaceLength() / 2.0 - GetFlangeSlopeHeight());
 
     return isPositive && fitsInFlange && fitsInWeb;
     }
@@ -178,8 +178,8 @@ bool CShapeProfile::ValidteFlangeEdgeRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeEdgeRadius);
-    bool const fitsInFlangeWidth = flangeEdgeRadius <= GetFlangeInnerFaceLength() / 2.0;
-    bool const fitsInFlangeThickness = flangeEdgeRadius <= GetFlangeThickness() / 2.0;
+    bool const fitsInFlangeWidth = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeInnerFaceLength() / 2.0);
+    bool const fitsInFlangeThickness = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeThickness() / 2.0);
 
     return isPositive && fitsInFlangeWidth && fitsInFlangeThickness;
     }
@@ -194,8 +194,8 @@ bool CShapeProfile::ValidateFlangeSlope() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeSlope);
-    bool const isLessThanHalfPi = flangeSlope < PI / 2.0;
-    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetWebInnerFaceLength() / 2.0;
+    bool const isLessThanHalfPi = ProfilesProperty::IsLess (flangeSlope, PI / 2.0);
+    bool const slopeHeightFitsInWeb = ProfilesProperty::IsLessOrEqual (GetFlangeSlopeHeight(), GetWebInnerFaceLength() / 2.0);
 
     return isPositive && isLessThanHalfPi && slopeHeightFitsInWeb;
     }

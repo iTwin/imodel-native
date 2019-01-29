@@ -82,8 +82,8 @@ bool HollowRectangleProfile::ValidateWallThickness() const
     {
     double const wallThickness = GetWallThickness();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (wallThickness);
-    bool const isLessThanHalfWidth = wallThickness < GetWidth() / 2.0;
-    bool const isLessThanHalfDepth = wallThickness < GetDepth() / 2.0;
+    bool const isLessThanHalfWidth = ProfilesProperty::IsLess (wallThickness, GetWidth() / 2.0);
+    bool const isLessThanHalfDepth = ProfilesProperty::IsLess (wallThickness, GetDepth() / 2.0);
 
     return isPositive && isLessThanHalfWidth && isLessThanHalfDepth;
     }
@@ -98,8 +98,8 @@ bool HollowRectangleProfile::ValidateInnerFilletRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (innerRadius);
-    bool const fitsInWidth = innerRadius <= GetWidth() / 2.0 - GetWallThickness();
-    bool const fitsInDepth = innerRadius <= GetDepth() / 2.0 - GetWallThickness();
+    bool const fitsInWidth = ProfilesProperty::IsLessOrEqual (innerRadius, GetWidth() / 2.0 - GetWallThickness());
+    bool const fitsInDepth = ProfilesProperty::IsLessOrEqual (innerRadius, GetDepth() / 2.0 - GetWallThickness());
 
     return isPositive && fitsInWidth && fitsInDepth;
     }
@@ -114,9 +114,9 @@ bool HollowRectangleProfile::ValidateOuterFilletRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (outerRadius);
-    bool const fitsInWidth = outerRadius <= GetWidth() / 2.0;
-    bool const fitsInDepth = outerRadius <= GetDepth() / 2.0;
-    bool const doesNotIntersectWithInnerCorners = outerRadius - GetInnerFilletRadius() < (2.0 + std::sqrt (2.0)) * GetWallThickness();
+    bool const fitsInWidth = ProfilesProperty::IsLessOrEqual (outerRadius, GetWidth() / 2.0);
+    bool const fitsInDepth = ProfilesProperty::IsLessOrEqual (outerRadius, GetDepth() / 2.0);
+    bool const doesNotIntersectWithInnerCorners = ProfilesProperty::IsLess (outerRadius - GetInnerFilletRadius(), (2.0 + std::sqrt (2.0)) * GetWallThickness());
 
     return isPositive && fitsInWidth && fitsInDepth && doesNotIntersectWithInnerCorners;
     }
