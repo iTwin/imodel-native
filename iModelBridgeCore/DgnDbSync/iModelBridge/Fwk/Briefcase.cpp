@@ -354,8 +354,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
         if (BSISUCCESS != m_client->RestoreBriefcase(m_briefcaseName, m_briefcaseBasename.c_str(), briefcaseId))
             return BSIERROR;
         }
-    
-    if (BSISUCCESS != m_client->AcquireBriefcase(m_briefcaseName, m_briefcaseBasename.c_str()))
+    else if (BSISUCCESS != m_client->AcquireBriefcase(m_briefcaseName, m_briefcaseBasename.c_str()))
         {
         if (Error::Id::iModelDoesNotExist == m_client->GetLastError().GetId())
             {
