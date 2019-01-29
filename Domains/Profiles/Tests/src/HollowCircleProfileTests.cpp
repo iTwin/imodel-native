@@ -148,7 +148,7 @@ TEST_F (HollowCircleProfileTestCase, Insert_WallThicknessEqualToRadius_FailedIns
     params.wallThickness = params.radius;
     EXPECT_FAIL_Insert (params) << "Wall thickness should be less than radius.";
 
-    params.wallThickness = BeNumerical::BeNextafter (params.radius, 0.0);
+    params.wallThickness = params.radius - TESTS_EPSILON;
     EXPECT_SUCCESS_Insert (params) << "Wall thickness should be less than radius.";
     }
 
