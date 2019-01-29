@@ -1,0 +1,11 @@
+{
+    "changedInstance":{
+        "change":"Deleted",
+        "instanceAfterChange":{
+            "instanceId":"68ca8b44-aa81-4484-b20e-1d7513dc2169",
+            "schemaName":"S3MX",
+            "className":"RealityData",
+            "properties":{}
+        }
+    }
+}
