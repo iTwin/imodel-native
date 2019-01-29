@@ -2,11 +2,11 @@
 |
 |     $Source: Profiles/src/PublicAPI/StandardProfileAspect.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+//__PUBLISH_SECTION_START__
 #include "ProfilesDefinitions.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE

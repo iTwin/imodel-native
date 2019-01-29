@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+//__PUBLISH_SECTION_START__
 #include "ProfilesDefinitions.h"
 #include "ParametricProfile.h"
 
