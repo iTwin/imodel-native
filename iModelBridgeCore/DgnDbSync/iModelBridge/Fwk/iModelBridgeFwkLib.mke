@@ -1,0 +1,88 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iModelBridge/Fwk/iModelBridgeFwkLib.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName = iModelBridgeFwkLib
+o = $(OutputRootDir)Build/$(appName)/
+
+nameToDefine = __IMODEL_BRIDGE_FWK_BUILD__
+%include cdefapnd.mki
+
+always:
+    ~mkdir $(o)
+
+iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+RegistryDir = $(baseDir)Registry/
+
+iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+
+dirToSearch  = $(iModelBridgePrivateAPISrc)
+%include cincapnd.mki
+
+#--------------------------------------------------------------------------------------
+#   Compile the source
+#--------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)iModelBridgeFwk$(oext): $(baseDir)iModelBridgeFwk.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+
+$(o)Briefcase$(oext): $(baseDir)Briefcase.cpp $(DgnDbServerDepends) $(iModelBridgeAPISrc)iModelBridgeFwk.h $(iModelBridgePrivateAPISrc)iModelBridge/Fwk/IModelClientForBridges.h ${MultiCompileDepends}
+
+$(o)IModelClientForBridges$(oext): $(baseDir)IModelClientForBridges.cpp $(BuildContext)PublicAPI/WebServices/iModelHub/Client/ClientHelper.h $(iModelBridgePrivateAPISrc)iModelBridge/Fwk/IModelClientForBridges.h $(DgnDbServerDepends) ${MultiCompileDepends}
+
+$(o)iModelBridgeRegistry$(oext): $(RegistryDir)iModelBridgeRegistry.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+
+$(o)iModelBridgeRegistryUtils$(oext): $(RegistryDir)iModelBridgeRegistryUtils.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+
+$(o)cpl_spawn$(oext): $(RegistryDir)cpl_spawn.cpp $(RegistryDir)cpl_spawn.h ${MultiCompileDepends}
+
+$(o)Decrypt$(oext): $(baseDir)Decrypt.cpp $(baseDir)Decrypt.h ${MultiCompileDepends}
+
+$(o)iModelBridgeFwkDmsOptions$(oext): $(baseDir)iModelBridgeFwkDmsOptions.cpp  $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+
+$(o)OidcSignInManager$(oext): $(baseDir)OidcSignInManager.cpp  $(baseDir)OidcSignInManager.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)bentleylog4cxx$(stlibext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+
+%if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
+LINKER_LIBRARIES  + Crypt32.lib
+%endif
+
+%include $(sharedMki)linkLibrary.mki
+
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
