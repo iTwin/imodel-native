@@ -1038,6 +1038,16 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
             }
         }
 
+    if (!m_briefcaseName.DoesPathExist())
+        {
+        BeSQLite::BeBriefcaseId briefcaseId = GetBriefcaseId();
+        if (GetBriefcaseId().IsValid())
+            {
+            if (BSISUCCESS != m_client->RestoreBriefcase(m_briefcaseName, m_briefcaseBasename.c_str(), briefcaseId))
+                return BSIERROR;
+            }
+        }
+
     return BSISUCCESS;
     }
 
@@ -1219,7 +1229,7 @@ static RepositoryStatus acquireSharedLocks(DgnDbR db)
 DbResult iModelBridgeFwk::SaveBriefcaseId()
     {
     DbResult rc;
-    auto db = DgnDb::OpenDgnDb(&rc, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly, BeSQLite::DefaultTxn::Exclusive));
+    auto db = DgnDb::OpenDgnDb(&rc, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
     if (!db.IsValid())
         {
         return rc;
@@ -1660,7 +1670,7 @@ BentleyStatus   iModelBridgeFwk::ImportDgnProvenance(bool& madeChanges)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
     {
-    if (!m_jobEnvArgs.m_wantProvenanceInBim)
+    if (!(m_jobEnvArgs.m_wantProvenanceInBim || m_bridge->TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim)))
         return BSISUCCESS;
 
     if (m_briefcaseDgnDb->Schemas().ContainsSchema(XTRN_SRC_ASPCT_ECSCHEMA_NAME))
