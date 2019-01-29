@@ -1,0 +1,112 @@
+#--------------------------------------------------------------------------------------                                                                                       
+#
+#     $Source: ThreeMxSchema/ThreeMxReaderLegacy.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/ThreeMxReader : $(_MakeFilePath)../PublicAPI/ThreeMxReader
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#-----------------------------------------------------------
+# Root directory
+#-----------------------------------------------------------
+SrcThreeMxSchema                 = $(_MakeFilePath)
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+ThreeMxSchemaPublicApiSrc        = $(SrcThreeMxSchema)../PublicAPI/ThreeMxReader/
+
+#-----------------------------------------------------------
+# Source directories
+#-----------------------------------------------------------
+SrcMrMesh                       = $(SrcThreeMxSchema)MrMesh/
+SrcThreeMxReaderLegacy          = $(SrcThreeMxSchema)ReaderLegacy/
+SrcOpenCtm                      = $(SrcThreeMxSchema)OpenCtm/
+SrcLibLzma                      = $(SrcOpenCtm)LibLzma/
+
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcThreeMxSchema)ThreeMxReaderLegacy.mki
+%include $(CompileOptionsMki)
+
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+threeMxSchemaDepends         = $(_MakeFileSpec)   \
+                               $(ThreeMxSchemaPublicApiSrc)ThreeMxReader.h         
+                             
+# Third-party section of this library.
+%include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
+     
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+#----------------------------------------------------------------------
+#   ThreeMX Reader
+#----------------------------------------------------------------------
+$(o)openCtm$(oext)                  : $(SrcOpenCtm)openCtm.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends} 
+
+$(o)stream$(oext)                   : $(SrcOpenCtm)stream.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)compressMG1$(oext)              : $(SrcOpenCtm)compressMG1.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)compressMG2$(oext)              : $(SrcOpenCtm)compressMG2.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)compressRAW$(oext)              : $(SrcOpenCtm)compressRAW.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+#$(o)Alloc$(oext)                    : $(SrcLibLzma)Alloc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+#$(o)LzmaDec$(oext)                  : $(SrcLibLzma)LzmaDec.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+#$(o)LzmaEnc$(oext)                  : $(SrcLibLzma)LzmaEnc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+#$(o)LzFind$(oext)                   : $(SrcLibLzma)LzFind.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+#$(o)LzmaLib$(oext)                  : $(SrcLibLzma)LzmaLib.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList) 
+
+%include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
+
+$(o)ThreeMxReaderLegacy$(oext)      : $(SrcThreeMxReaderLegacy)ThreeMxReaderLegacy.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+
+objs + $(o)ThreeMxReaderLegacy$(oext)
+
+CCPchOpts =
+CPchOpts =
+
+#--------------------------------------------------------------------------------------
+#   Build the library                                                                                     
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(objs)
+DLM_OBJECT_DEST             = $(o)
+#DLM_OBJECT_PCH              = $(o)ThreeMxSchemaInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+
+LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)  \
+                                $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
+                                $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
+
+
+%include $(sharedMki)LinkLibrary.mki
+
