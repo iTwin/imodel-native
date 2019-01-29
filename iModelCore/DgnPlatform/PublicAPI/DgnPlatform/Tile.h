@@ -25,13 +25,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tree);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Content);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(NodeMap);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(AnimationNodeMap);
 
 DEFINE_REF_COUNTED_PTR(Cache);
 DEFINE_REF_COUNTED_PTR(Tree);
 DEFINE_REF_COUNTED_PTR(Content);
 DEFINE_REF_COUNTED_PTR(Loader);
-DEFINE_REF_COUNTED_PTR(NodeMap);
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
@@ -53,7 +52,7 @@ public:
     static BeFileName GetCacheFileName(BeFileNameCR baseName);
 
     static BeSQLite::PropertySpec GetVersionSpec() { return BeSQLite::PropertySpec("binaryFormatVersion", "elementTileCache"); }
-    static Utf8CP GetCurrentVersion();
+    static Utf8String GetCurrentVersion();
 
     static RealityData::CachePtr Create(DgnDbCR db);
 };
@@ -237,7 +236,6 @@ public:
     virtual bool CompressMeshQuantization() const { return false; }                             // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
     virtual uint64_t GetNodeId(DgnElementId id) const;
 
-
     struct PtrComparator
     {
         using is_transparent = std::true_type;
@@ -249,6 +247,32 @@ public:
     };
 };
 
+//=======================================================================================
+// For a TileTree generated with a schedule script, maps element IDs to the animation
+// nodes containing them.
+// Node IDs (referred to as "batch IDs" in the schedule script json) begin at 1 - an
+// ID of 0 does not refer to any node.
+// Nodes which have cutting planes or transforms applied to them cannot be batched with
+// geometry belonging to other nodes. Nodes which have only symbology/visibility
+// overrides applied to them can be batched together.
+// @bsistruct                                                   Paul.Connelly   01/19
+//=======================================================================================
+struct AnimationNodeMap
+{
+private:
+    uint32_t                    m_maxNodeIndex = 0;
+    bmap<uint64_t, uint32_t>    m_elemIdToNodeIndex;
+    bset<uint32_t>              m_discreteNodeIndices;
+public:
+    void Populate(DisplayStyleCR style, DgnModelId modelId);
+
+    bool IsEmpty() const { return m_elemIdToNodeIndex.empty(); }
+    uint32_t GetMaxNodeIndex() const { return m_maxNodeIndex; }
+    uint32_t GetNodeIndex(uint64_t elemId) const;
+    uint32_t GetDiscreteNodeIndex(uint64_t elemId) const;
+    uint32_t GetNodeIndex(DgnElementId elemId) const { return GetNodeIndex(elemId.GetValueUnchecked()); }
+    void Clear() { m_maxNodeIndex = 0; m_elemIdToNodeIndex.clear(); m_discreteNodeIndices.clear(); }
+};
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/18
@@ -317,7 +341,7 @@ private:
     Id m_id;
     bool m_is3d;
     RootTile m_rootTile;
-    NodeMapPtr m_nodeMap;
+    AnimationNodeMap m_nodeMap;
 protected:
     Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile);
 
@@ -335,7 +359,8 @@ public:
     Render::SystemR GetRenderSystem() const { return m_renderSystem; }
     TransformCR GetLocation() const { return m_location; }
     RealityData::CacheP GetCache() const { return m_cache.get(); }
-    uint64_t GetElementNodeId(DgnElementId elementId) const;
+    uint64_t GetDiscreteNodeId(DgnElementId elementId) const;
+    AnimationNodeMapCR GetAnimationNodeMap() const { return m_nodeMap; }
 
 
     bool Is3d() const { return m_is3d; }

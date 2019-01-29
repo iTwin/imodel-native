@@ -6,7 +6,7 @@
 
     <Part Name="MstnBridgePRG" PrgOutputDir="MstnBridge">
         <SubProduct ProductName="MstnBridge"/>
-        <SubProduct ProductName="MstnBridgeTests"/>
+        <SubPart PartName="RunMstnBridgeTests"/>
     </Part>
 
     <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">

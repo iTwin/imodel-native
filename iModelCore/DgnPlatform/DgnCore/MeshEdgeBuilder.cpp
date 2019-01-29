@@ -256,11 +256,13 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
     {
+    // Do not produce visible edges if polyface already has edge chains.
+    bool hasEdgeChains = nullptr != builderPolyface && 0 != builderPolyface->m_polyface.GetEdgeChainCount();
     for (auto& edge : m_edgeMap)
         {
         if (edge.second.m_visible)
             {
-            if (nullptr == builderPolyface || !m_options.CreateEdgeChains())
+            if (!hasEdgeChains && !m_options.CreateEdgeChains())
                 edges.m_visible.push_back(edge.second.m_edge);
             }
         else

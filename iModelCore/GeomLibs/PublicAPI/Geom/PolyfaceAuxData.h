@@ -60,7 +60,7 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
         //! @param [in] values The input values at each polyface vertex. A single value
         //! per vertex for scalar data and 3 values per vertex for vector data (typically displacement).
         //! the value data is consumed so should be passed with std::move().
-        Data(T_Data input, bvector<T_Data>&& values) : m_input(input), m_values(values) { }
+        Data(T_Data input, bvector<T_Data>&& values) : m_input(input), m_values(std::move(values)) { }
         };
 
     private:
@@ -76,7 +76,7 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
         //! @param [in] name string representing the channel name.
         //! @param [in] inputName string representing the channel input name.
         //! @param [in] data channel data.  This is consumed and should be passed with std::move().
-                                T_PolyfaceAuxChannel(DataType dataType, Utf8CP name, Utf8CP inputName, bvector<DataPtr> const&& data) : m_dataType(dataType), m_name(name), m_inputName(inputName), m_data(data) { }
+                                T_PolyfaceAuxChannel(DataType dataType, Utf8CP name, Utf8CP inputName, bvector<DataPtr>&& data) : m_dataType(dataType), m_name(name), m_inputName(inputName), m_data(std::move(data)) { }
 
     DataType                    GetDataType() const         { return (DataType) m_dataType; }                                                   //! Return the channel data type.
     Utf8StringCR                GetName() const             { return m_name; }                                                                  //! Return the data name.
@@ -181,7 +181,7 @@ struct PolyfaceAuxData : RefCountedBase
                                             //! Constructor for PolyfaceAuxData.
                                             //! @param [in] indices index array for all channels.  This is consumed and should be passed with std::move().
                                             //! @param [in] channels The channel array.  This is consumed and should be passed with std::move().
-                                            PolyfaceAuxData(bvector<int32_t>&& indices, Channels&& channels) : m_indices(indices), m_channels(channels) { }
+                                            PolyfaceAuxData(bvector<int32_t>&& indices, Channels&& channels) : m_indices(std::move(indices)), m_channels(std::move(channels)) { }
     PolyfaceAuxDataPtr                      CreateForVisitor() const;                                  //! Create a new PolyfaceAuxData appropriate for use by a PolyfaceVisitor.
     void                                    AdvanceVisitorToNextFace(PolyfaceAuxDataCR parent, uint32_t i0, uint32_t numItem, uint32_t numWrap);  //! Advance PolyfaceAuxData for visitor to next face.
 
