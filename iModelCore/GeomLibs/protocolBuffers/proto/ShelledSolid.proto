@@ -1,0 +1,5 @@
+message ShelledSolid
+{
+required ISurface BoundingSurface = 1;
+}
+

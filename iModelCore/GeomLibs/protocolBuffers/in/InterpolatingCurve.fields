@@ -1,0 +1,64 @@
+PRIMITIVE InterpolatingCurve
+<def name=SUMMARY>Poles, knots, and weights for a curve interpolated through given points.
+</def>
+<def name=Interface_BaseList>IGeometry, IPrimitiveCurve</def>
+
+
+<def name=MEMBERS>
+<value  ItemType=int
+        ItemTagName=EndConditionCode
+        ItemSemanticName=EndConditionCode
+        ItemParamName=endConditionCode
+        ItemMemberName=mEndConditionCode
+        ItemDescription="end condition selector. See the CurveEndCondition class for allowed values and their meanings."
+        ScaleMode=None
+        />
+
+<value  ItemType=int
+        ItemTagName=KnotCode
+        ItemSemanticName=KnotCode
+        ItemParamName=knotCode
+        ItemMemberName=mKnotCode
+        ItemDescription="knot selection.  See the CurveKnotCondition class for allowed values and their meanings."
+        ScaleMode=None
+        />
+
+<value  ItemType=DVector3d
+        ItemTagName=StartVector
+        ItemSemanticName=StartVector
+        ItemParamName=startVector
+        ItemMemberName=mStartVector
+        ItemDescription="vector applied for start condition.   Particular meaning depends on end condition code."
+        ScaleMode=Length
+        />
+
+
+<value  ItemType=DVector3d
+        ItemTagName=EndVector
+        ItemSemanticName=EndVector
+        ItemParamName=endVector
+        ItemMemberName=mEndVector
+        ItemDescription="vector applied for end condition.  Particular meaning depends on end condition code."
+        ScaleMode=Length
+        />
+
+<list   ItemType=DPoint3d
+        ItemTagName=xyz
+        ItemSemanticName=Point
+        ItemParamName=Point
+        ListName=mPoint
+        ItemDescription="Point coordinates in along curve"
+        ScaleMode=Length
+        />
+
+<list   ItemType=double
+        ItemTagName=knot
+        ItemSemanticName=Knot
+        ItemParamName=Knot
+        ListName=mKnot
+        ItemDescription="knot value at corresponding curve point"
+        ScaleMode=None
+        />
+</def>
+
+END_PRIMITIVE

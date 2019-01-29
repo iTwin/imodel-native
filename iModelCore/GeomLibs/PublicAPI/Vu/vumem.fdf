@@ -1,0 +1,32 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/Vu/vumem.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+@nodoc
+@description Pull one node from the free node pool.
+@param graphP IN OUT graph header
+@return pointer to allocated node
+@group "VU Memory Management"
+@bsimethod                                                    BentleySystems  11/04
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP VuP             vu_allocateVuNode
+(
+VuSetP graphP
+);
+
+
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+
