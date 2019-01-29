@@ -517,6 +517,18 @@ BentleyStatus SyncInfo::FindImportJobByV8RootModelId(ImportJob& importJob, SyncI
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedImportJob Converter::FindSoleImportJobForFile(DgnV8FileR rootFile)
     {
+    if (_WantProvenanceInBim())
+        {
+        DgnElementId jobSubjectId;
+        DgnModelId masterModelId;
+        SyncInfo::BridgeJobletExternalSourceAspect aspect(nullptr);
+        std::tie(aspect, jobSubjectId, masterModelId) = SyncInfo::BridgeJobletExternalSourceAspect::FindSoleAspectForV8MasterFile(_GetParams().GetBridgeRegSubKeyUtf8(), rootFile, SyncInfo::BridgeJobletExternalSourceAspect::ConverterType::RootModel, *this);
+        if (!aspect.IsValid())
+            return ResolvedImportJob();
+        auto subj = GetDgnDb().Elements().Get<Subject>(jobSubjectId);
+        return ResolvedImportJob(*subj, aspect.GetMasterModelId(), aspect.GetV8MasterModelId(), aspect.GetTransform(), (SyncInfo::ImportJob::Type)aspect.GetConverterType());
+        }
+
     SyncInfo::V8FileProvenance provenance = m_syncInfo.FindFile(rootFile);
     if (!provenance.IsValid())
         return ResolvedImportJob();
@@ -554,6 +566,18 @@ ResolvedImportJob Converter::FindSoleImportJobForFile(DgnV8FileR rootFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedImportJob Converter::FindImportJobForModel(DgnV8ModelR rootModel)
     {
+    if (_WantProvenanceInBim())
+        {
+        DgnElementId jobSubjectId;
+        DgnModelId masterModelId;
+        SyncInfo::BridgeJobletExternalSourceAspect aspect(nullptr);
+        std::tie(aspect, jobSubjectId, masterModelId) = SyncInfo::BridgeJobletExternalSourceAspect::FindAspectBySourceId(_GetParams().GetBridgeRegSubKeyUtf8(), rootModel, SyncInfo::BridgeJobletExternalSourceAspect::ConverterType::RootModel, *this);
+        if (!jobSubjectId.IsValid())
+            return ResolvedImportJob();
+        auto subj = GetDgnDb().Elements().Get<Subject>(jobSubjectId);
+        return ResolvedImportJob(*subj, aspect.GetMasterModelId(), aspect.GetV8MasterModelId(), aspect.GetTransform(), (SyncInfo::ImportJob::Type)aspect.GetConverterType());
+        }
+
     auto fsid = GetV8FileSyncInfoId(*rootModel.GetDgnFileP());
     if (!fsid.IsValid())
         return ResolvedImportJob();
@@ -708,8 +732,16 @@ BentleyStatus SyncInfo::InsertImportJob(ImportJob const& importJob)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::UpdateImportJob(ImportJob const& importJob)
+BentleyStatus SyncInfo::UpdateImportJob(int64_t rowid, TransformCR t)
     {
+    ImportJobIterator iter(*GetDgnDb(), "ROWID=?");
+    iter.GetStatement()->BindInt64(1, rowid);
+    auto i = iter.begin();
+    if (i == iter.end())
+        return BSIERROR;
+    ImportJob importJob;
+    importJob.FromSelect(*iter.GetStatement());
+    importJob.SetTransform(t);
     return (BE_SQLITE_DONE == importJob.Update(*m_dgndb))? BSISUCCESS: BSIERROR;
     }
 
@@ -1431,7 +1463,7 @@ DgnElementId SyncInfo::DrawingGraphicExternalSourceAspect::FindDrawingGraphicByS
     auto ecclass = db.Schemas().GetClass(elementClassId);
     Utf8PrintfString ecsql(
         "SELECT dg.ECInstanceId FROM %s dg, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
-        " WHERE dg.Model.Id=? AND dg.Category.Id=? AND x.Element.Id=dg.ECInstanceId AND x.Kind='ProxyGraphic' AND x.Identifer=?",
+        " WHERE dg.Model.Id=? AND dg.Category.Id=? AND x.Element.Id=dg.ECInstanceId AND x.Kind='ProxyGraphic' AND x.Identifier=?",
         ecclass? ecclass->GetFullName(): BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
     auto stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     int col=1;
@@ -1522,7 +1554,7 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
     
     auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_SubCategory) " e"
-        " WHERE (x.Element.Id=e.ECInstanceId AND x.Scope.Id=? AND x.Kind=? AND x.Identifer=? AND json_extract(x.JsonProperties, '$.v8ModelId') = ?)");
+        " WHERE (x.Element.Id=e.ECInstanceId AND x.Scope.Id=? AND x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.v8ModelId') = ?)");
     aspectStmt->BindId(1, repositoryLinkId);
     aspectStmt->BindText(2, KindToString(Kind::Level), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     aspectStmt->BindText(3, v8LevelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -1959,6 +1991,16 @@ SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::Get
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId SyncInfo::V8ModelExternalSourceAspect::FindModelBySourceId(DgnElementId scopeId, DgnV8Api::ModelId v8ModelId, TransformCR t, DgnDbR db)
+    {
+    auto identifier = SyncInfo::V8ModelExternalSourceAspect::FormatSourceId(v8ModelId);
+    auto ei = FindElementBySourceId(db, scopeId, KindToString(Kind::Model), identifier);
+    return DgnModelId(ei.elementId.GetValueUnchecked());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::CreateAspect(V8ElementExternalSourceAspectData const& provdata, DgnDbR db) 
@@ -2075,14 +2117,13 @@ void SyncInfo::V8ModelExternalSourceAspect::AssertMatch(V8ModelMapping const& ma
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(DgnV8ModelCR masterModel, ConverterType converterType, Converter& converter) 
+SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(DgnModelId masterModelId, DgnV8Api::ModelId v8MasterModelId, ConverterType converterType, Converter& converter) 
     {
     auto aspectClass = GetAspectClass(converter.GetDgnDb());
     if (nullptr == aspectClass)
         return BridgeJobletExternalSourceAspect(nullptr);
     
-    DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*masterModel.GetDgnFileP());
-    auto instance = CreateInstance(repositoryLinkId, KindToString(Kind::BridgeJoblet), FormatSourceId(masterModel), nullptr, *aspectClass);
+    auto instance = CreateInstance(DgnElementId(masterModelId.GetValue()), KindToString(Kind::BridgeJoblet), FormatSourceId(v8MasterModelId), nullptr, *aspectClass);
     
     BridgeJobletExternalSourceAspect aspect(instance.get());
     
@@ -2093,6 +2134,71 @@ SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceA
     aspect.SetProperties(json);
 
     return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> SyncInfo::BridgeJobletExternalSourceAspect::FindAspectBySourceId(Utf8StringCR bridgeName, DgnV8ModelCR v8MasterModel, ConverterType converterType, Converter& converter)
+    {
+    // Look for a Subject element that a) has the specified Subject.Bridge name, and b) has a 'Joblet' XSA on with a source identifier that matches the v8MasterModel's ID.
+    // Note that no two subjects can have the same bridge name and the same Joblet XSA. That combination must be unique.
+    auto sel = converter.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT x.Scope.Id, x.Element.Id, x.ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_Subject) " s"
+        " WHERE (x.Element.Id=s.ECInstanceId AND x.Kind=? AND x.Identifier=? AND json_extract(s.JsonProperties, '$.Subject.Job.Bridge') = ? AND json_extract(x.JsonProperties, '$.type') = ?)");
+    sel->BindText(1, KindToString(Kind::BridgeJoblet), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    sel->BindText(2, FormatSourceId(v8MasterModel).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    sel->BindText(3, bridgeName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    sel->BindInt(4, (int)converterType);
+    if (BE_SQLITE_ROW != sel->Step())
+        return std::make_tuple(BridgeJobletExternalSourceAspect(nullptr), DgnElementId(), DgnModelId());
+
+    auto masterModelId = sel->GetValueId<DgnModelId>(0);            // x.Scope.Id   -- The master model in the BIM is the *scope* of the XSA
+    auto subjectElemId = sel->GetValueId<DgnElementId>(1);          // x.Element.Id -- The subject element in the BIM is the owner of the XSA
+    auto aspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(2); // x.ECInstanceId
+
+    auto subject = converter.GetDgnDb().Elements().GetElement(subjectElemId);
+    auto aspect = BridgeJobletExternalSourceAspect(GetAspect(*subject, aspectId).m_instance.get());
+
+    return std::make_tuple(aspect, subjectElemId, masterModelId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> SyncInfo::BridgeJobletExternalSourceAspect::FindSoleAspectForV8MasterFile(Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, ConverterType converterType, Converter& converter)
+    {
+    auto v8MasterFileRepositoryLinkId = converter.GetRepositoryLinkFromAppData(v8MasterFile);
+    if (!v8MasterFileRepositoryLinkId.IsValid())
+        {
+        v8MasterFileRepositoryLinkId = converter.WriteRepositoryLink(v8MasterFile);
+        }
+
+    // Look for all Subject elements that a) have the specified Subject.Bridge name, and b) have a 'Joblet' XSA.
+    // Then pick the one that identifies a master model that itself was sourced from the specified v8 master file.
+    auto sel = converter.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT x.Scope.Id, x.Element.Id, x.ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_Subject) " s"
+        " WHERE (x.Element.Id=s.ECInstanceId AND x.Kind=? AND json_extract(s.JsonProperties, '$.Subject.Job.Bridge') = ? AND json_extract(x.JsonProperties, '$.type') = ?)");
+    sel->BindText(1, KindToString(Kind::BridgeJoblet), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    sel->BindText(2, bridgeName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    sel->BindInt(3, (int)converterType);
+    while (BE_SQLITE_ROW == sel->Step())
+        {
+        auto jobMasterModelId = sel->GetValueId<DgnModelId>(0);            // x.Scope.Id   -- The master model in the BIM is the *scope* of the XSA
+        auto jobSubjectElemId = sel->GetValueId<DgnElementId>(1);          // x.Element.Id -- The subject element in the BIM is the owner of the XSA
+        auto jobletAspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(2); // x.ECInstanceId
+
+        auto jobSubject = converter.GetDgnDb().Elements().GetElement(jobSubjectElemId);
+        auto jobletAspect = BridgeJobletExternalSourceAspect(GetAspect(*jobSubject, jobletAspectId).m_instance.get());
+
+        // *** NEEDS WORK: this joblet logic has to know that a model XSA is scoped to a RepositoryLink AND that the master model's XSA has no transform
+        auto masterModelAspect = V8ModelExternalSourceAspect::FindModelBySourceId(v8MasterFileRepositoryLinkId, jobletAspect.GetV8MasterModelId(), Transform::FromIdentity(), converter.GetDgnDb()); 
+        if (masterModelAspect.IsValid())
+            {
+            return std::make_tuple(jobletAspect, jobSubjectElemId, jobMasterModelId);
+            }
+        }
+    return std::make_tuple(BridgeJobletExternalSourceAspect(nullptr), DgnElementId(), DgnModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2133,7 +2239,7 @@ SyncInfo::BridgeJobletExternalSourceAspect::ConverterType SyncInfo::BridgeJoblet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8Api::ModelId SyncInfo::BridgeJobletExternalSourceAspect::GetMasterModelId() const
+DgnV8Api::ModelId SyncInfo::BridgeJobletExternalSourceAspect::GetV8MasterModelId() const
     {
     return atoi(GetIdentifier().c_str());
     }

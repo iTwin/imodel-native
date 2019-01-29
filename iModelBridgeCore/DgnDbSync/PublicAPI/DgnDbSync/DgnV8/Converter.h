@@ -301,30 +301,44 @@ struct ResolvedModelMapping
 struct ResolvedImportJob
 {
 protected:
-    SyncInfo::ImportJob m_mapping;
+    int64_t m_syncInfoImportJobRowId {};        // <-- temporary, until we get rid of syncinfo
     SubjectCPtr m_jobSubject;
+    DgnV8Api::ModelId m_v8MasterModel {};
+    DgnModelId m_masterModel;
+    Transform m_transform;
+    SyncInfo::ImportJob::Type m_type {};
 public:
     ResolvedImportJob() {}
-    ResolvedImportJob(SyncInfo::ImportJob const& j, SubjectCR s) : m_mapping(j), m_jobSubject(&s) {}
+    ResolvedImportJob(SubjectCR s, DgnModelId masterModel, DgnV8Api::ModelId v8MasterModel, TransformCR tr, SyncInfo::ImportJob::Type typ, int64_t sijid = 0) : 
+        m_jobSubject(&s), m_masterModel(masterModel), m_v8MasterModel(v8MasterModel), m_transform(tr), m_type(typ), m_syncInfoImportJobRowId(sijid) {}
     ResolvedImportJob(SubjectCR s) : m_jobSubject(&s) {}
 
     bool IsValid() const {return m_jobSubject.IsValid();}
 
-    void FromSelect(BeSQLite::Statement& stmt) {m_mapping.FromSelect(stmt); /* WIP_IMPORT_JOB -- resolve the subject */}
+    //! Get the V8 master model for this job
+    DgnV8Api::ModelId GetV8MasterModelId() const { return m_v8MasterModel; }
+    void SetV8MasterModelId(DgnV8Api::ModelId mm) { m_v8MasterModel = mm; }
 
-    SyncInfo::ImportJob& GetImportJob() {return m_mapping;}
-
-    //! Get the root model for this job
-    SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const { return m_mapping.GetV8ModelSyncInfoId(); }
+    //! Get the iModel model that was created for the master model
+    DgnModelId GetMasterModelId() const { return m_masterModel; }
+    void SetMasterModelId(DgnModelId mm) { m_masterModel = mm; }
 
     //! Get the job subject
     SubjectCR GetSubject() const {BeAssert(IsValid()); return *m_jobSubject;}
 
+    //! Get The transform
+    TransformCR GetTransform() const {return m_transform;}
+    void SetTransform(TransformCR t) {m_transform=t;}
+
     //! Get the type of converter that created this job
-    SyncInfo::ImportJob::Type GetConverterType() const {return m_mapping.GetType();}
+    SyncInfo::ImportJob::Type GetConverterType() const {return m_type;}
+    void SetConverterType(SyncInfo::ImportJob::Type t) {m_type;}
 
     //! Get the name prefix that is used by this job
-    Utf8StringCR GetNamePrefix() const { return m_mapping.GetPrefix(); }
+    Utf8StringCR GetNamePrefix() const { return ""; }
+
+    int64_t GetSyncInfoImportJobRowId() const {return m_syncInfoImportJobRowId;}
+    void SetSyncInfoImportJobRowId(int64_t v) {m_syncInfoImportJobRowId=v;}
 
 };
 

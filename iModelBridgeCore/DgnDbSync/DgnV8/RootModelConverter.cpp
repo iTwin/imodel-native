@@ -191,21 +191,16 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
 BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
     {
     // Look up the root model in syncinfo, using the ID saved in the ImportJob record. We can't use GetModelForDgnV8Model, because m_rootTrans might have changed.
-    SyncInfo::V8ModelMapping syncInfoModelMapping;
-    auto status = GetSyncInfo().GetModelBySyncInfoId(syncInfoModelMapping, m_importJob.GetV8ModelSyncInfoId());
-    if (BSISUCCESS != status)
-        {
-        BeAssert(false);
-        ReportError(IssueCategory::CorruptData(), Issue::Error(), "ImportJob has bad V8ModelSyncInfoId");
-        return BSIERROR;
-        }
-    auto rootBimModel = GetDgnDb().Models().GetModel(syncInfoModelMapping.GetModelId());
+    auto rootBimModel = GetDgnDb().Models().GetModel(m_importJob.GetMasterModelId());
     if (!rootBimModel.IsValid())
         {
         BeAssert(false);
         ReportError(IssueCategory::CorruptData(), Issue::Error(), "V8ModelMapping has bad DgnModelId");
         return BSIERROR;
         }
+
+    SyncInfo::V8ModelMapping syncInfoModelMapping;
+    GetSyncInfo().FindModel(&syncInfoModelMapping, *GetRootModelP(), &m_importJob.GetTransform(), GetCurrentIdPolicy());
     m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping, nullptr);
     _AddResolvedModelMapping(m_rootModelMapping);
     return BSISUCCESS;
@@ -224,10 +219,17 @@ void SpatialConverterBase::ApplyJobTransformToRootTrans()
 
     m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
 
-    if (!Converter::IsTransformEqualWithTolerance(jobTrans,m_importJob.GetImportJob().GetTransform()))
+    if (!Converter::IsTransformEqualWithTolerance(jobTrans,m_importJob.GetTransform()))
         {
-        m_importJob.GetImportJob().SetTransform(jobTrans);
-        GetSyncInfo().UpdateImportJob(m_importJob.GetImportJob()); // update syncinfo to record the new baseline
+        m_importJob.SetTransform(jobTrans);
+        if (_WantProvenanceInBim())
+            {
+            BeAssert(false && "TBD");
+            }
+        else
+            {
+            GetSyncInfo().UpdateImportJob(m_importJob.GetSyncInfoImportJobRowId(), jobTrans); // update syncinfo to record the new baseline
+            }
         }
     }
 
@@ -587,12 +589,6 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
     JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());
 
-    if (_WantProvenanceInBim())
-        {
-        auto aspect = SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(*GetRootModelP(), (SyncInfo::BridgeJobletExternalSourceAspect::ConverterType)jtype, *this);
-        aspect.AddAspect(*ed);
-        }
-
     SubjectCPtr jobSubject = ed->InsertT<Subject>();
     if (!jobSubject.IsValid())
         return ImportJobCreateStatus::FailedInsertFailure;
@@ -620,17 +616,33 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     m_rootModelMapping = GetModelForDgnV8Model(*m_rootModelRef->GetDgnModelP(), m_rootTrans);
 
     // 6. Now that we have the root model's syncinfo id, we can define the syncinfo part of the importjob.
-    SyncInfo::ImportJob importJob;
-    importJob.SetV8ModelSyncInfoId(m_rootModelMapping.GetV8ModelSyncInfoId());
-    importJob.SetPrefix(_GetNamePrefix());
-    importJob.SetType(jtype);
-    importJob.SetSubjectId(jobSubject->GetElementId());
-    importJob.SetTransform(BentleyApi::Transform::FromIdentity());
-    if (BSISUCCESS != GetSyncInfo().InsertImportJob(importJob))
-        return ImportJobCreateStatus::FailedExistingRoot;
+	m_importJob.SetV8MasterModelId(m_rootModelRef->GetModelId());
+	m_importJob.SetMasterModelId(m_rootModelMapping.GetDgnModel().GetModelId());
+	m_importJob.SetTransform(BentleyApi::Transform::FromIdentity());
+	m_importJob.SetConverterType(jtype);
+    if (_WantProvenanceInBim())
+        {
+		auto ed = m_importJob.GetSubject().CopyForEdit();
+        auto aspect = SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(m_rootModelMapping.GetDgnModel().GetModelId(), m_rootModelMapping.GetV8ModelId().GetValue(), 
+                                                                                    (SyncInfo::BridgeJobletExternalSourceAspect::ConverterType)jtype, *this);
+        aspect.AddAspect(*ed);
+		if (!ed->Update().IsValid())
+            return ImportJobCreateStatus::FailedInsertFailure;
+		}
+    else
+        {
+        SyncInfo::ImportJob importJob;
+        importJob.SetV8ModelSyncInfoId(m_rootModelMapping.GetV8ModelSyncInfoId());
+        importJob.SetPrefix(_GetNamePrefix());
+        importJob.SetType(jtype);
+        importJob.SetSubjectId(jobSubject->GetElementId());
+        importJob.SetTransform(BentleyApi::Transform::FromIdentity());
+        if (BSISUCCESS != GetSyncInfo().InsertImportJob(importJob))
+            return ImportJobCreateStatus::FailedExistingRoot;
 
-    m_importJob.GetImportJob() = importJob;     // Update the syncinfo part of the import job
-
+        m_importJob.SetSyncInfoImportJobRowId(importJob.GetRowId());
+        }
+        		
     return ImportJobCreateStatus::Success;
     }
 
@@ -895,7 +907,7 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
         {
         auto importJob = FindSoleImportJobForFile(*m_rootFile);
         if (importJob.IsValid())
-            return GetSyncInfo().GetV8ModelIdFromV8ModelSyncInfoId(importJob.GetV8ModelSyncInfoId());
+            return importJob.GetV8MasterModelId();
         }
 
     if (!IsV8Format(*m_rootFile))

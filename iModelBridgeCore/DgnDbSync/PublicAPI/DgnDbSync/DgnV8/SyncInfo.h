@@ -671,6 +671,8 @@ struct SyncInfo
         DGNDBSYNC_EXPORT Transform GetTransform() const;
         DGNDBSYNC_EXPORT Utf8String GetV8ModelName() const;
 
+        DGNDBSYNC_EXPORT static DgnModelId FindModelBySourceId(DgnElementId scopeId, DgnV8Api::ModelId, TransformCR t, DgnDbR);
+
 
         #ifdef TEST_EXTERNAL_SOURCE_ASPECT
         void AssertMatch(V8ModelMapping const&);
@@ -678,25 +680,30 @@ struct SyncInfo
         };
 
     //! Marker for a Subject that represents a Bridge "joblet", that is, a combination of bridge and master file/model.
+    //! The Scope is the BIM Model element. That is what links this subject's aspect to the master model.
     struct BridgeJobletExternalSourceAspect : ExternalSourceAspect
         {
         enum class ConverterType {RootModel=0, TiledFile=1}; //!< persistent data. do not change!
 
-      private:
         BridgeJobletExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
-      public:
         static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return FormatV8ModelId(v8Id);}
         static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}
 
-        //! Create a new aspect in memory. Caller must call AddAspect, passing in the model element that is to have this aspect.
-        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect CreateAspect(DgnV8ModelCR masterModel, ConverterType, Converter&);
+        //! Create a new aspect in memory.
+        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect CreateAspect(DgnModelId masterModel, DgnV8Api::ModelId v8MasterModelId, ConverterType, Converter&);
         
+        DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindAspectBySourceId(Utf8StringCR bridgeName, DgnV8ModelCR masterModel, ConverterType, Converter& converter);
+        DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindSoleAspectForV8MasterFile(Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, ConverterType converterType, Converter& converter);
+
+        DGNDBSYNC_EXPORT Utf8String GetBridgeName() const;
+
         //! Update the root transform
         DGNDBSYNC_EXPORT void SetTransform(TransformCR);
         //! Get the root transform
         DGNDBSYNC_EXPORT Transform GetTransform() const;
 
-        DGNDBSYNC_EXPORT DgnV8Api::ModelId GetMasterModelId() const;
+        DgnModelId GetMasterModelId() const {return DgnModelId(GetScope().GetValueUnchecked());}
+        DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8MasterModelId() const;
         DGNDBSYNC_EXPORT ConverterType GetConverterType() const;
         };
 
@@ -731,6 +738,7 @@ struct SyncInfo
         static BentleyStatus FindById(ImportJob&, DgnDbCR, SyncInfo::V8ModelSyncInfoId);
         static void CreateTable(BeSQLite::Db&);
 
+        int64_t GetRowId() const {return m_ROWID;}
         SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const { return m_v8RootModel; }
         void SetV8ModelSyncInfoId(SyncInfo::V8ModelSyncInfoId i) {m_v8RootModel=i;}
         Type GetType() const {return m_type;}
@@ -1187,8 +1195,7 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus InsertImportJob(ImportJob const& importJob);
 
     //! Update the import job's transform, prefix, and subjectid.
-    //! @param importJob    The importJob info to update
-    DGNDBSYNC_EXPORT BentleyStatus UpdateImportJob(ImportJob const& importJob);
+    DGNDBSYNC_EXPORT BentleyStatus UpdateImportJob(int64_t rowId, TransformCR);
     //! @}
     };
 
