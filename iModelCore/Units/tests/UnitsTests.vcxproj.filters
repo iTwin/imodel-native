@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Performance">
+      <UniqueIdentifier>{47b049d3-ec94-4a7c-87d8-3b064bd7a292}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published">
+      <UniqueIdentifier>{51eb4f6a-0622-45a5-9c01-ad0c33c5dff1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestFixture">
+      <UniqueIdentifier>{27a0fec8-23b9-4007-adaa-e636913c9b6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published\Formatting">
+      <UniqueIdentifier>{3b5e6a24-0361-46f3-a103-1f811d577c95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestFixture\Formatting">
+      <UniqueIdentifier>{f63a7185-22f7-4217-afc3-3880c4f2ef28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published\Units">
+      <UniqueIdentifier>{47b3f72a-e1e6-4943-8cdf-45e4b32e7716}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published\Quantity">
+      <UniqueIdentifier>{111d958b-f3b3-4e13-a90e-318b71482d3f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ConversionData\complex.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ConversionData\unitcomparisondata.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ConversionData\ConversionsBetweenAllOldUnits.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ConversionData\NeededUnits.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="BuildTests.mke" />
+    <None Include="ConversionData.prewire.mke" />
+    <None Include="Prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Performance\UnitsPerformanceTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\QuantityTestFixture.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\UnitsTestFixture.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\UnitsTestFixture.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\UnitsTests.cpp">
+      <Filter>Published\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\UnitRegistryTests.cpp">
+      <Filter>Published\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\UnitConversionTests.cpp">
+      <Filter>Published\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\UnitNameMappingsTests.cpp">
+      <Filter>Published\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\QuantityTests.cpp">
+      <Filter>Published\Quantity</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\FormattingTestFixture.cpp">
+      <Filter>TestFixture\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FormattingTests.cpp">
+      <Filter>Published\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\LocaleTests.cpp">
+      <Filter>Published\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\CompositeValueTests.cpp">
+      <Filter>Published\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FormatTests.cpp">
+      <Filter>Published\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\NumericFormatSpecTests.cpp">
+      <Filter>Published\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\MappingTests.cpp">
+      <Filter>Published\Formatting</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TestFixture\UnitsTestFixture.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\QuantityTestFixture.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="FormattingTestsPch.h" />
+    <ClInclude Include="TestFixture\FormattingTestFixture.h">
+      <Filter>TestFixture\Formatting</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\UnitsTests.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,18 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: tests/ConversionData.prewire.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+conversionDataSource  = $(SrcRoot)Units/tests/ConversionData/
+
+# Wire in conversion data
+always:
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)ConversionData=$(conversionDataSource)*.csv"
+
+
+# Expose seed data as assets needed by ECObjects unit tests
+BEGTEST_ASSETS     + $(ContextDeliveryDir)ConversionData/
