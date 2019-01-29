@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/Briefcase.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeFwk.h>
@@ -384,7 +384,7 @@ bool iModelBridgeFwk::Briefcase_IsBriefcase()
     BeAssert(!m_briefcaseName.empty());
     DbResult fileStatus;
 
-    DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
+    DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
     DgnDbPtr dgndb = DgnDb::OpenDgnDb(&fileStatus, m_briefcaseName, openParams);
 
     if (!dgndb.IsValid())
@@ -652,7 +652,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireExclusiveLocks()
     if (m_modelsInserted.empty())
         return BSISUCCESS;
 
-    DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
+    DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly, BeSQLite::DefaultTxn::Exclusive);
     auto db = DgnDb::OpenDgnDb(nullptr, m_briefcaseName, openParams);
     if (!db.IsValid())
         {

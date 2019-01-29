@@ -1219,7 +1219,7 @@ static RepositoryStatus acquireSharedLocks(DgnDbR db)
 DbResult iModelBridgeFwk::SaveBriefcaseId()
     {
     DbResult rc;
-    auto db = DgnDb::OpenDgnDb(&rc, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    auto db = DgnDb::OpenDgnDb(&rc, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly, BeSQLite::DefaultTxn::Exclusive));
     if (!db.IsValid())
         {
         return rc;
@@ -1563,7 +1563,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
         // another briefcase pushed schema changes after this briefcase last pulled.
         // If so, then we have to pull before re-trying.
         GetLogger().infov("SchemaUpgrade failed. Pulling.");
-        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
+        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
         oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
         m_briefcaseDgnDb = DgnDb::OpenDgnDb(&dbres, m_briefcaseName, oparams);
         Briefcase_PullMergePush("");    // TRICKY Only Briefcase_PullMergePush contains the mergeschemachanges logic. Briefcase_PullAndMerge does not.
