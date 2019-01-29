@@ -2264,3 +2264,21 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
 
     return *m_registry;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::BeBriefcaseId iModelBridgeFwk::GetBriefcaseId()
+    {
+    if (!m_useIModelHub)
+        return BeSQLite::BeBriefcaseId();
+
+    if (m_iModelHubArgs->m_briefcaseId.IsValid())
+        return m_iModelHubArgs->m_briefcaseId;
+
+    uint32_t bcid;
+    if (BE_SQLITE_ROW != m_stateDb.QueryProperty(&bcid, sizeof(bcid), s_briefcaseIdPropSpec))
+        return BeSQLite::BeBriefcaseId();
+
+    return BeSQLite::BeBriefcaseId(bcid);
+    }
