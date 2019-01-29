@@ -1119,16 +1119,9 @@ RealityData::CachePtr Cache::Create(DgnDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP Cache::GetCurrentVersion()
+Utf8String Cache::GetCurrentVersion()
     {
-    // Increment this when the binary tile format changes...
-    // We changed the cache db schema shortly after creating imodel02 branch - so version history restarts at same time.
-    // 0: Initial version following db schema change
-    // 1: Packed feature table
-    // 2: Texture atlas for rastter text
-    // 3: Re-enable polyface decimation
-    // 4: Constrain tile tree ranges to intersection of model extents + project extents; embed uniform feature index into vertex tables.
-    return "4";
+    return Tile::IO::IModelTile::Version::Current().ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1173,43 +1166,67 @@ bool Cache::ValidateData() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t AnimationNodeMap::GetNodeIndex(uint64_t elemId) const
+    {
+    auto found = m_elemIdToNodeIndex.find(elemId);
+    return m_elemIdToNodeIndex.end() != found ? found->second : 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t AnimationNodeMap::GetDiscreteNodeIndex(uint64_t elemId) const
+    {
+    auto index = GetNodeIndex(elemId);
+    return 0 != index && m_discreteNodeIndices.end() != m_discreteNodeIndices.find(index) ? index : 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tree::LoadNodeMapFromAnimation()
+void AnimationNodeMap::Populate(DisplayStyleCR style, DgnModelId modelId)
     {
-    GetDbMutex().lock();
-    auto displayStyle = m_db.Elements().Get<DisplayStyle>(m_id.GetAnimationSourceId());
-    GetDbMutex().unlock();
+    Clear();
 
-    if (!displayStyle.IsValid())
-        return;
-
-    auto schedule = displayStyle->GetStyle("scheduleScript");
+    auto schedule = style.GetStyle("scheduleScript");
     if (schedule.isNull())
         return;
 
-    m_nodeMap = new NodeMap();
     for (auto& modelTimeline : schedule)
         {
-        if (modelTimeline["modelId"].asUInt64() == GetModelId().GetValue())
+        if (modelTimeline["modelId"].asUInt64() == modelId.GetValue())
             {
-            uint64_t nodeIndex = 0;
             auto& elementTimelines = modelTimeline["elementTimelines"];
             for (auto& elementTimeline : elementTimelines)
                 {
-                nodeIndex++;
-                if (elementTimeline.isMember("elementIds") &&                                                                                                                                            
-                    (elementTimeline.isMember("transformTimeline") || elementTimeline.isMember("cuttingPlaneTimeline")))
+                if (elementTimeline.isMember("elementIds"))
                     {
                     auto& elementIds = elementTimeline["elementIds"];
+                    auto nodeIndex = elementTimeline["batchId"].asUInt();
+                    BeAssert(0 != nodeIndex);
+                    m_maxNodeIndex = std::max(nodeIndex, m_maxNodeIndex);
                     for (auto& elementId : elementIds)
-                       m_nodeMap->Insert(elementId.asUInt64(), nodeIndex);
+                        m_elemIdToNodeIndex.Insert(elementId.asUInt64(), nodeIndex);
+
+                    if (elementTimeline.isMember("transformTimeline") || elementTimeline.isMember("cuttingPlaneTimeline"))
+                        m_discreteNodeIndices.insert(nodeIndex);
                     }
                 }
             }
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tree::LoadNodeMapFromAnimation()
+    {
+    auto displayStyle = m_db.Elements().Get<DisplayStyle>(m_id.GetAnimationSourceId());
+    if (displayStyle.IsValid())
+        m_nodeMap.Populate(*displayStyle, GetModelId());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
@@ -1473,20 +1490,14 @@ Loader::~Loader()
     //
     }
 
-uint64_t Loader::GetNodeId(DgnElementId id) const { return m_tree.GetElementNodeId(id); }
+uint64_t Loader::GetNodeId(DgnElementId id) const { return m_tree.GetDiscreteNodeId(id); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t Tree::GetElementNodeId(DgnElementId elementId) const 
+uint64_t Tree::GetDiscreteNodeId(DgnElementId elementId) const 
     { 
-    if (m_nodeMap.IsValid())
-        {
-        auto found = m_nodeMap->find(elementId.GetValue()); 
-        return found == m_nodeMap->end() ? 0 : found->second; 
-        }
-    else 
-        return 0;
+    return m_nodeMap.GetDiscreteNodeIndex(elementId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1699,6 +1710,33 @@ Loader::State Loader::ReadFromCache()
                 DropFromDb(*cache);
                 return State::NotFound;
                 }
+
+// #define DEBUG_DUMP_TILE_BYTES
+#if defined(DEBUG_DUMP_TILE_BYTES)
+            // We have some tests in iModel.js front-end which want to validate tile content.
+            // They want the bytes as a Uint8Array.
+            auto filename = GetTree().GetDgnDb().GetFileName();
+            WString cacheKey(m_cacheKey.c_str(), true);
+            cacheKey.ReplaceAll(L"/", L"_");
+            filename.append(cacheKey);
+            filename.append(L".json");
+
+            Utf8String jsonStr = "[";
+            for (size_t i = 0; i < bytes.size(); i++)
+                {
+                if (0 == i % 20)
+                    jsonStr.append("\n ");
+
+                Utf8PrintfString hex(" 0x%02x,", bytes[i]);
+                jsonStr.append(hex);
+                }
+
+            jsonStr.append("\n]");
+
+            BeFile file;
+            file.Create(filename.c_str(), true);
+            file.Write(nullptr, jsonStr.c_str(), static_cast<uint32_t>(jsonStr.size()));
+#endif
 
             m_content = new Content(std::move(bytes));
             }
@@ -1932,7 +1970,7 @@ bool GeometryLoader::GenerateGeometry()
     double minRangeDiagonalSq = s_minRangeBoxSize * tolerance;
     minRangeDiagonalSq *= minRangeDiagonalSq;
 
-    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(tolerance);
+    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(tolerance, true);
     facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false); // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
 
     Transform transformFromDgn;

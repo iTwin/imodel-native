@@ -756,7 +756,9 @@ public:
     
     Feature GetFeature() const { return m_params.IsValid() ? Feature(GetEntityId(), m_params->GetSubCategoryId(), m_params->GetClass()) : Feature(); }
 
-    static IFacetOptionsPtr CreateFacetOptions(double chordTolerance);
+    static IFacetOptionsPtr CreateFacetOptions(double chordTolerance, bool wantEdgeChains);
+
+    static bool WantPolylineEdges(uint32_t lineWeight, bool is3d);
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }

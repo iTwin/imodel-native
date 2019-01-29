@@ -345,19 +345,48 @@ ENUM_IS_FLAGS(DgnTile::Flags);
 //=======================================================================================
 struct IModelTile
 {
-    enum Version : uint32_t { Version = 0 };
+    // Describes the version of the tile format. The front-end which receives the tile data uses this information to interpret the contents.
+    // The front-end code that receives the tile data may not be up to date with the current format version produced by the back-end. In this case:
+    //  - If the front-end recognizes the major version, it is able to read the tile data regardless of the minor version. It may skip any data introduced
+    //  by a newer minor version than the version it understands.
+    //  - If the major version in the tile data is greater than any major version recognized by the front-end, it cannot read the tile data.
+    // Changes to major version should therefore be rare.
+    // Any changes to the tile format must be documented and accompanied by a corresponding bump in either the current major or current minor version number.
+    struct Version
+    {
+        uint16_t    m_major;
+        uint16_t    m_minor;
+
+        explicit constexpr Version(uint16_t v_maj, uint16_t v_min) : m_major(v_maj), m_minor(v_min) { }
+        uint32_t ToUint32() const { return (m_major << 0x10) | m_minor; }
+        Utf8String ToString() const { return Utf8PrintfString("%08x", ToUint32()); }
+
+        // Version history:
+        //  1: Introduction of major-minor versioning.
+        static constexpr uint16_t CurrentMajor() { return 1; }
+
+        // Version history:
+        //  1: Introduction of major-minor versioning.
+        //  2: Added animation group IDs.
+        //  3: Moved aux channels from vertex table to separate table.
+        //  4: Fixed duplication of polyline and simple edges.
+        static constexpr uint16_t CurrentMinor() { return 4; }
+
+        static constexpr Version Current() { return Version(CurrentMajor(), CurrentMinor()); }
+    };
 
     enum class WriteStatus { Success, Error, Aborted };
 
     struct Header : TileHeader
     {
+        uint32_t                headerLength;   // size of this header in bytes.
         Tile::Content::Metadata metadata;
-        uint32_t                length;
+        uint32_t                tileLength;     // size of entire tile data in bytes, including this header.
 
         bool Read(StreamBufferR buffer)
             {
-            if (TileHeader::Read(buffer) && IsValid() && buffer.Read(metadata.m_flags) && buffer.Read(metadata.m_contentRange) && buffer.Read(metadata.m_tolerance)
-                && buffer.Read(metadata.m_numElementsIncluded) && buffer.Read(metadata.m_numElementsExcluded) && buffer.Read(length))
+            if (TileHeader::Read(buffer) && IsValid() && buffer.Read(headerLength) && buffer.Read(metadata.m_flags) && buffer.Read(metadata.m_contentRange) && buffer.Read(metadata.m_tolerance)
+                && buffer.Read(metadata.m_numElementsIncluded) && buffer.Read(metadata.m_numElementsExcluded) && buffer.Read(tileLength))
                 return true;
 
             Invalidate();

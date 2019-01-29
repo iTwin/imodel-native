@@ -109,18 +109,18 @@ struct SingularGeometry : Geometry
 protected:
     using Geometry::Geometry;
 
-    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
+    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode, ViewContextCR context) const;
 
     virtual PolyfaceList _GetPolyfaces(IFacetOptionsR, ViewContextR) = 0;
     virtual StrokesList _GetStrokes(IFacetOptionsR, ViewContextR) { return StrokesList(); }
 
     PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context) override
         {
-        return _GetPolyfaces(*CreateFacetOptions(chordTolerance, normalMode), context);
+        return _GetPolyfaces(*CreateFacetOptions(chordTolerance, normalMode, context), context);
         }
     StrokesList _GetStrokes(double chordTolerance, ViewContextR context) override
         {
-        return _GetStrokes(*CreateFacetOptions(chordTolerance, NormalMode::Never), context);
+        return _GetStrokes(*CreateFacetOptions(chordTolerance, NormalMode::Never, context), context);
         }
 };
 
@@ -1570,9 +1570,21 @@ size_t Geometry::GetFacetCount(IFacetOptionsR options) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Geometry::WantPolylineEdges(uint32_t lineWeight, bool is3d)
+    {
+    // Polyline edges are much more expensive than simple edges, especially when they include extra triangles at joints to produce rounded corners.
+    // Simple segment edges are cheaper, but do not have rounded corners and do not exhibit continuous line patterns across segments.
+    // In 3d, only generate polyline edges if the edges are sufficiently wide.
+    constexpr uint32_t widthThreshold3d = 5;
+    return !is3d || lineWeight >= widthThreshold3d;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance)
+IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance, bool wantEdgeChains)
     {
     static double       s_defaultAngleTolerance = msGeomConst_piOver2;
     IFacetOptionsPtr    opts = IFacetOptions::Create();
@@ -1584,7 +1596,7 @@ IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance)
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
     opts->SetNormalsRequired(true);
-    opts->SetEdgeChainsRequired(true);
+    opts->SetEdgeChainsRequired(wantEdgeChains);
 
     // Avoid Parasolid concurrency bottlenecks.
     opts->SetIgnoreHiddenBRepEntities(true);
@@ -1596,9 +1608,10 @@ IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IFacetOptionsPtr SingularGeometry::CreateFacetOptions(double chordTolerance, NormalMode normalMode) const
+IFacetOptionsPtr SingularGeometry::CreateFacetOptions(double chordTolerance, NormalMode normalMode, ViewContextCR context) const
     {
-    auto facetOptions = Geometry::CreateFacetOptions(chordTolerance / GetTransform().ColumnXMagnitude());
+    bool wantEdgeChains = Geometry::WantPolylineEdges(GetDisplayParams().GetLineWidth(), context.Is3dView());
+    auto facetOptions = Geometry::CreateFacetOptions(chordTolerance / GetTransform().ColumnXMagnitude(), wantEdgeChains);
     bool normalsRequired = false;
 
     switch (normalMode)
@@ -2361,10 +2374,9 @@ size_t TextStringGeometry::_GetFacetCount(FacetCounter& counter) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IFacetOptionsPtr GlyphCache::CreateFacetOptions(double chordTolerance)
     {
-    auto opts = Geometry::CreateFacetOptions(chordTolerance);
+    auto opts = Geometry::CreateFacetOptions(chordTolerance, false);
     opts->SetParamsRequired(false);
     opts->SetNormalsRequired(false);
-    opts->SetEdgeChainsRequired(false);
     return opts;
     }
 
