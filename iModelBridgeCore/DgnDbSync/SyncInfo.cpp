@@ -528,7 +528,7 @@ ResolvedImportJob Converter::FindSoleImportJobForFile(DgnV8FileR rootFile)
         DgnElementId jobSubjectId;
         DgnModelId masterModelId;
         SyncInfo::BridgeJobletExternalSourceAspect aspect(nullptr);
-        std::tie(aspect, jobSubjectId, masterModelId) = SyncInfo::BridgeJobletExternalSourceAspect::FindSoleAspectForV8MasterFile(_GetParams().GetBridgeRegSubKeyUtf8(), rootFile, SyncInfo::BridgeJobletExternalSourceAspect::ConverterType::RootModel, *this);
+        std::tie(aspect, jobSubjectId, masterModelId) = SyncInfo::BridgeJobletExternalSourceAspect::FindSoleAspectForV8MasterFile(_GetParams().GetBridgeRegSubKeyUtf8(), rootFile, *this);
         if (!aspect.IsValid())
             return ResolvedImportJob();
         auto subj = GetDgnDb().Elements().Get<Subject>(jobSubjectId);
@@ -577,7 +577,7 @@ ResolvedImportJob Converter::FindImportJobForModel(DgnV8ModelR rootModel)
         DgnElementId jobSubjectId;
         DgnModelId masterModelId;
         SyncInfo::BridgeJobletExternalSourceAspect aspect(nullptr);
-        std::tie(aspect, jobSubjectId, masterModelId) = SyncInfo::BridgeJobletExternalSourceAspect::FindAspectBySourceId(_GetParams().GetBridgeRegSubKeyUtf8(), rootModel, SyncInfo::BridgeJobletExternalSourceAspect::ConverterType::RootModel, *this);
+        std::tie(aspect, jobSubjectId, masterModelId) = SyncInfo::BridgeJobletExternalSourceAspect::FindAspectBySourceId(_GetParams().GetBridgeRegSubKeyUtf8(), rootModel, *this);
         if (!jobSubjectId.IsValid())
             return ResolvedImportJob();
         auto subj = GetDgnDb().Elements().Get<Subject>(jobSubjectId);
@@ -2167,17 +2167,16 @@ SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> SyncInfo::BridgeJobletExternalSourceAspect::FindAspectBySourceId(Utf8StringCR bridgeName, DgnV8ModelCR v8MasterModel, ConverterType converterType, Converter& converter)
+std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> SyncInfo::BridgeJobletExternalSourceAspect::FindAspectBySourceId(Utf8StringCR bridgeName, DgnV8ModelCR v8MasterModel, Converter& converter)
     {
     // Look for a Subject element that a) has the specified Subject.Bridge name, and b) has a 'Joblet' XSA on with a source identifier that matches the v8MasterModel's ID.
     // Note that no two subjects can have the same bridge name and the same Joblet XSA. That combination must be unique.
     auto sel = converter.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT x.Scope.Id, x.Element.Id, x.ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_Subject) " s"
-        " WHERE (x.Element.Id=s.ECInstanceId AND x.Kind=? AND x.Identifier=? AND json_extract(s.JsonProperties, '$.Subject.Job.Bridge') = ? AND json_extract(x.JsonProperties, '$.type') = ?)");
+        " WHERE (x.Element.Id=s.ECInstanceId AND x.Kind=? AND x.Identifier=? AND json_extract(s.JsonProperties, '$.Subject.Job.Bridge') = ?)");
     sel->BindText(1, KindToString(Kind::BridgeJoblet), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     sel->BindText(2, FormatSourceId(v8MasterModel).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     sel->BindText(3, bridgeName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-    sel->BindInt(4, (int)converterType);
     if (BE_SQLITE_ROW != sel->Step())
         return std::make_tuple(BridgeJobletExternalSourceAspect(nullptr), DgnElementId(), DgnModelId());
 
@@ -2194,7 +2193,7 @@ std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> SyncInfo::BridgeJobletExternalSourceAspect::FindSoleAspectForV8MasterFile(Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, ConverterType converterType, Converter& converter)
+std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> SyncInfo::BridgeJobletExternalSourceAspect::FindSoleAspectForV8MasterFile(Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, Converter& converter)
     {
     auto v8MasterFileRepositoryLinkId = converter.GetRepositoryLinkFromAppData(v8MasterFile);
 
@@ -2202,10 +2201,9 @@ std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId>
     // Then pick the one that identifies a master model that itself was sourced from the specified v8 master file.
     auto sel = converter.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT x.Scope.Id, x.Element.Id, x.ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_Subject) " s"
-        " WHERE (x.Element.Id=s.ECInstanceId AND x.Kind=? AND json_extract(s.JsonProperties, '$.Subject.Job.Bridge') = ? AND json_extract(x.JsonProperties, '$.type') = ?)");
+        " WHERE (x.Element.Id=s.ECInstanceId AND x.Kind=? AND json_extract(s.JsonProperties, '$.Subject.Job.Bridge') = ?)");
     sel->BindText(1, KindToString(Kind::BridgeJoblet), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     sel->BindText(2, bridgeName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-    sel->BindInt(3, (int)converterType);
     while (BE_SQLITE_ROW == sel->Step())
         {
         auto jobMasterModelId = sel->GetValueId<DgnModelId>(0);            // x.Scope.Id   -- The master model in the BIM is the *scope* of the XSA
