@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <!-- Note: To use csmap, include either GeoCoordData or GeoCoordDataMinimal as a subpart as well as CSMap -->
+    <!-- NB: In a directory symlink operation, two directories cannot be symlinked to the same destination. (For example, you
+             cannot "merge" the contents of two dirs by specifying the same ProductDirectoryName).
+             
+             Because we need to support both a "minimal" delivery and a "full" delivery of the CS files, AND because they must
+             be delivered to the same ProductDirectory, AND because we absolutely do not want to burden consumers of a given
+             CSMap part with trying to figure out which part they really need (and praying that no one else has specified the
+             *other* part, therefore making a mess of everything!) we explicitly list each dir binding, and wildcard the file bindings.
+
+             IMPORTANT: If new CS *subdirs* are added the repository and the delivery, then these bindings must be updated as well!
+     -->
+
+
+    <Part Name="GeoCoordData" BentleyBuildMakeFile="GeoCoordData.mke">
+<!--        <RequiredRepository>bsitools-wix_3.0.5419.0</RequiredRepository> -->
+        <SubPart PartName="PrebuiltGeoCoordData" PartFile="csmap_data" Repository="thirdparty-csmap_data_2017A"/>
+        <SubPart PartName="GeoCoordDataMinimal"/>
+        <Bindings>
+            <Files Feature="GeoCoordAssets" FeatureDefault="Yes" ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord" SubPartDirectory="GeoCoordData">
+                Delivery/GeoCoordData/coordsys.dty.xml
+                Delivery/GeoCoordData/UserOverrideGeodeticTransformSeed.asc
+            </Files>
+
+<!--             <MergeModules ProductDirectoryName="CSMapMergeModules">Install/GeoCoordDataMergeModule.msm</MergeModules> -->
+        </Bindings>
+    </Part>
+
+    <Part Name="GeoCoordDataMinimal">
+        <SubPart PartName="PrebuiltGeoCoordDataMinimal" PartFile="csmap_data" Repository="thirdparty-csmap_data_2017A"/>
+    </Part>
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="csmap" />
+            <VendorNotices>Delivery/csmap-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="CsmapCompiler" BMakeFile="DictionarySources/compiler.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="csmapStatic"/>
+    </Part>
+
+    <Part Name="csmapStatic" BentleyBuildMakeFile="csmap.mke" BMakeOptions="+dCREATE_STATIC_LIBRARIES">
+        <SubPart PartName="PublicAPI"/>
+        <!-- This MKE file can also produce a shared library with MFC support; you will need to create another part if you want that. -->
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)BeCsmapStatic$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)BeCsmapStatic$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+
+</BuildContext>
