@@ -13,26 +13,73 @@ def doubleToTimeString(start, end):
     return str(d/(60.0*60.0)) + " hour(s)"
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
-def main():
-    defaultConfigFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ci_build_config.json')
+def getBBCmd():
+    if os.name == 'nt':
+        return 'bb'
+    elif os.name == 'posix':
+        return 'bash $SRCROOT/bsicommon/BuildAgentScripts/unix_runBB.sh'
+        
+    sys.stderr.write('Unknown OS name "' + os.name + '".\n')
+    sys.exit(1)
 
-    argParser = argparse.ArgumentParser(description="Runs BB commands based on a JSON config file.")
-    argParser.add_argument("action",                                    help='One of pull|build|bdf|checkunused|createnugets|createinstallers')
-    argParser.add_argument("-c", "--config", default=defaultConfigFile, help='Path to configuration file')
-    argParser.add_argument("-a", "--arch",                              help='Limits actions to strategies enabled for given arch')
-    argParser.add_argument("-b", "--bdfdir",                            help='(bdf) Directory to write BDF files to -or- (pull) Directory where BDF files are stored')
-    argParser.add_argument("-v", "--verbosity", default='3')
-
-    args = argParser.parse_args()
-    args.action = args.action.lower()
-
-    with open(args.config, 'r') as configFile:
-        config = json.load(configFile)
-
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+def callForPull(args, config):
     callTimes = {}
     status = 0
 
-    totalTimeStart = time.time()
+    allArchs = []
+    allStrats = []
+
+    # If a single architecture is requested, use only it and filter (still support multiple strategies).
+    # Otherwise glom the architectures together.
+
+    if args.arch:
+        allArchs.append(args.arch)
+
+    for stratConfig in config['strategies']:
+        if args.arch and (not args.arch.lower() in stratConfig['archs'].lower().split('+')):
+            continue
+        
+        if not args.arch:
+            for arch in stratConfig['archs'].split('+'):
+                if not arch in allArchs:
+                    allArchs.append(arch)
+
+        strat = stratConfig['name']
+        
+        if stratConfig['augments']:
+            strat += ';' + stratConfig['augments']
+        
+        strat += ';' + config['pull_augment']
+
+        allStrats.append(strat)
+
+    cmd = getBBCmd() + ' -v {0} -a "{1}" -s "{2}" pull'.format(
+        args.verbosity,
+        '+'.join(allArchs),
+        '+'.join(allStrats))
+    
+    if args.bdfdir:
+        # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
+        cmd += ' -r ' + os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
+
+    print(cmd)
+    cmdStartTime = time.time()
+    status = subprocess.call(cmd, shell=True)
+    callTimes['Seed Pull'] = doubleToTimeString(cmdStartTime, time.time())
+    
+    # On Linux, `bash` seems to return 256 on an error, regardless of what the SH script actually returns.
+    # Linux + VSTS agent only expects error codes 0..255.
+    # I don't think the actual code is important here, so remap to 0/1.
+    if status != 0:
+        status = 1
+
+    return (callTimes, status)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+def callEachStrategy(args, config):
+    callTimes = {}
+    status = 0
 
     for stratConfig in config['strategies']:
         if args.arch and not args.arch.lower() in stratConfig['archs'].lower().split('+'):
@@ -57,13 +104,6 @@ def main():
             # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
             bdfPath = os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
             action = 'taglist -f ' + bdfPath
-        elif 'pull' == args.action:
-            action = 'pull'
-            if args.bdfdir:
-                # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
-                action += ' -r ' + os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
-            if config['pull_augment']:
-                bbStrats += ';' + config['pull_augment']
         elif 'build' == args.action:
             action = 'build'
         elif 'checkunused' == args.action:
@@ -81,22 +121,15 @@ def main():
             action = 'savenuget --noStream'
         elif 'createinstallers' == args.action:
             # Build agents are non-admin services... not sure how to support WIX ICE validators yet...
+            print("WARNING: SKIPPING WIX INSTALLER ICE VALIDATION")
             bbEnv = os.environ.copy()
             bbEnv['INSTALLER_SKIP_VALIDATION'] = '1'
 
             action = 'buildinstallset'
         
-        if os.name == 'nt':
-            bbCmd = 'bb'
-        elif os.name == 'posix':
-            bbCmd = 'bash $SRCROOT/bsicommon/BuildAgentScripts/unix_runBB.sh'
-        else:
-            sys.stderr.write('Unknown OS name "' + os.name + '".\n')
-            sys.exit(1)
-
         archArg = ('-a ' + (args.arch if args.arch else stratConfig['archs'])) if not noArch else ''
 
-        cmd = bbCmd + ' -v {0} -s "{1}" {2} {3}'.format(
+        cmd = getBBCmd() + ' -v {0} -s "{1}" {2} {3}'.format(
             args.verbosity,
             bbStrats,
             archArg,
@@ -113,6 +146,33 @@ def main():
         if status != 0:
             status = 1
             break
+
+    return (callTimes, status)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+def main():
+    defaultConfigFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ci_build_config.json')
+
+    argParser = argparse.ArgumentParser(description="Runs BB commands based on a JSON config file.")
+    argParser.add_argument("action",                                    help='One of pull|build|bdf|checkunused|createnugets|createinstallers')
+    argParser.add_argument("-c", "--config", default=defaultConfigFile, help='Path to configuration file')
+    argParser.add_argument("-a", "--arch",                              help='Limits actions to strategies enabled for given arch')
+    argParser.add_argument("-b", "--bdfdir",                            help='(bdf) Directory to write BDF files to -or- (pull) Directory where BDF files are stored')
+    argParser.add_argument("-v", "--verbosity", default='3')
+
+    args = argParser.parse_args()
+    args.action = args.action.lower()
+
+    with open(args.config, 'r') as configFile:
+        config = json.load(configFile)
+
+    totalTimeStart = time.time()
+
+    # Utilize BB's multi-strategy/architecture optimizations during a pull.
+    if 'pull' == args.action:
+        (callTimes, status) = callForPull(args, config)
+    else:
+        (callTimes, status) = callEachStrategy(args, config)
     
     print('--------------------------------------------------')
     for cmd in callTimes:
