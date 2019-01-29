@@ -664,7 +664,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireExclusiveLocks()
     if (m_modelsInserted.empty())
         return BSISUCCESS;
 
-    DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly, BeSQLite::DefaultTxn::Exclusive);
+    DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
     auto db = DgnDb::OpenDgnDb(nullptr, m_briefcaseName, openParams);
     if (!db.IsValid())
         {
