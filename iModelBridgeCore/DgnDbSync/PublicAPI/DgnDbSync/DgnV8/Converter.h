@@ -337,7 +337,7 @@ public:
 
     //! Get the type of converter that created this job
     SyncInfo::ImportJob::Type GetConverterType() const {return m_type;}
-    void SetConverterType(SyncInfo::ImportJob::Type t) {m_type;}
+    void SetConverterType(SyncInfo::ImportJob::Type t) {m_type=t;}
 
     //! Get the name prefix that is used by this job
     Utf8StringCR GetNamePrefix() const { return ""; }
