@@ -24,3 +24,14 @@ JsonUpdaterTests.Options
     # at com.bentley.unittest.BeAndroidTestRunner.runTest(BeAndroidTestRunner.java:63)
     # at android.test.InstrumentationTestRunner.onStart(InstrumentationTestRunner.java:560)
     # at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:1932)
+
+# CASTING shared column have been removed. These need to be removed.
+# https://bentleycs.visualstudio.com/iModelTechnologies/_workitems/edit/67079
+#==================================================================<<<
+ECSqlStatementTestFixture.BindToNumericProps
+ECSqlToSqlGenerationTests.CastForSharedColumns
+ECSqlToSqlGenerationTests.SharedColumnCastingForBinaryAndGeometryProps
+ECSqlToSqlGenerationTests.NavPropSharedColumnCasting
+ECSqlToSqlGenerationTests.LinkTableSharedColumnCasting
+DbMappingTestFixture.SharedColumnCasting
+#==================================================================>>>

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ViewGenerator.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -796,9 +796,10 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         viewContext.AddViewColumnName(relationMap.GetTargetECClassIdPropMap()->GetAccessString());
         }
 
-    auto toSql = [] (NativeSqlBuilder& sqlBuilder, DbColumn const& col, Utf8CP tableQualifier = nullptr)
+    auto toSql = [&ctx] (NativeSqlBuilder& sqlBuilder, DbColumn const& col, Utf8CP tableQualifier = nullptr)
         {
-        const bool requiresCast = col.IsShared();
+  
+        const bool requiresCast = ctx.GetViewType() == ViewType::ECClassView && col.IsShared();
         if (requiresCast)
             sqlBuilder.Append("CAST(");
 
