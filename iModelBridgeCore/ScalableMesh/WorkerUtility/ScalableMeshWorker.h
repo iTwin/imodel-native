@@ -87,11 +87,13 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
 #endif
         virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
 
+        
         BeFileName m_taskFolderName;
         BeFileName m_startingIndexTask;       
         uint16_t   m_nbExtraWorkers;
         Utf8String m_workerProcessName;
         bool       m_useGroupingStrategy;
+        bool       m_startAsService;
         uint32_t   m_groupingSize;
 
         WString GetArgValueW(WCharCP arg);
@@ -104,6 +106,7 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
             {
             m_nbExtraWorkers = 0;
             m_useGroupingStrategy = false;
+            m_startAsService = false;
             m_groupingSize = 20000;
             }
         

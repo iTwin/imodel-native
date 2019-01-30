@@ -316,11 +316,12 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
 /*---------------------------------------------------NEEDS_WORK_MST : Duplicate from ATP Code - END-----------------------------------------------------------*/
 
 
-TaskScheduler::TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers, bool useGroupingStrategy, uint32_t groupingSize)
+TaskScheduler::TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers, bool useGroupingStrategy, uint32_t groupingSize, bool startAsService)
     {
     m_taskFolderName = taskFolderName;
     m_nbWorkers = nbWorkers;
     m_useGroupingStrategy = useGroupingStrategy;
+    m_startAsService = startAsService;
     m_groupingSize = groupingSize; 
     }
 
@@ -336,137 +337,160 @@ void TaskScheduler::Start()
 
         //! Move to the next directory entry
         BENTLEYDLL_EXPORT StatusInt ToNext();
-*/            
+*/         
 
-    clock_t duration = clock();
-    
     BeDuration sleeper(BeDuration::FromSeconds(0.1));
+    BeDuration listenSleeper(BeDuration::FromSeconds(5));
+
+    bool listenForNewTask = true;    
+
+    clock_t duration = clock();            
     
+    while (listenForNewTask)
+        {                                
+        bool isThereTaskAvailable = true;
     
-    bool isThereTaskAvailable = true;
-
-    while (isThereTaskAvailable)
-        { 
-        isThereTaskAvailable = false;
-
-        BeDirectoryIterator dirIter(m_taskFolderName);
-
-        BeFileName name;
-        bool isDir;
-        
-        for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())        
-            {                                
-            if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
-                {                
-                isThereTaskAvailable = true;
-                
-                struct _stat64i32 buffer;
-
-                if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
-                                
-                BeFileName lockFileName(name);
-                lockFileName.AppendString(L".lock");
-
-                FILE* lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW);
-
-                if (lockFile == nullptr)
-                    continue;
-                                
-                //struct _stat64i32 buffer;
-
-                if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
-                                
-                FILE* file = nullptr;
-                
-                //errno_t err = _wfopen_s(&file, name, L"abN+");
-                errno_t err = 0;
-                file = _wfsopen(name, L"ab+", _SH_DENYRW);
-                
-                if (file == nullptr) continue;
-
-                if (err != 0)
-                    {
-                    assert(file == nullptr);
-                    continue;
-                    }
-
-                //If first char is equal to 0 the file has already been process
-                char startingChar = 0;
-                size_t readSize = fread(&startingChar, 1, 1, file);
-                //assert(readSize == 1);
-
-                if (startingChar == 0 || readSize == 0)
-                    {
-                    fclose(file);
-                    continue;
-                    }
-
-                ProcessTask(file);
-             
-
-                fclose(file);
-
-                while (0 != _wremove(name))
-                    {                    
-					}
-
-                fclose(lockFile);
-
-                while (0 != _wremove(lockFileName))
-                    {
-			        sleeper.Sleep();
-                    }                                
-                }
-
-            }          
-        
-        if (!isThereTaskAvailable)
-            {
-            BeFileName testPlanLockFile(m_taskFolderName);
-
-            testPlanLockFile.AppendString(L"\\Tasks.xml.Plan.lock");
-
-            FILE* lockFile = _wfsopen(testPlanLockFile.c_str(), L"ab+", _SH_DENYRW);
-
-            if (lockFile == nullptr)
-                {
-                isThereTaskAvailable = true;
-                continue;
-                }
+        while (isThereTaskAvailable)
+            { 
+            isThereTaskAvailable = false;
 
             BeDirectoryIterator dirIter(m_taskFolderName);
 
             BeFileName name;
             bool isDir;
-
-            bool needExecuteTaskPlan = true;
-
-            for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())
-                {
+        
+            for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())        
+                {                                
                 if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
-                    {
-                    needExecuteTaskPlan = false;
-                    break;
+                    {                
+                    isThereTaskAvailable = true;
+                
+                    struct _stat64i32 buffer;
+
+                    if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
+                                
+                    BeFileName lockFileName(name);
+                    lockFileName.AppendString(L".lock");
+
+                    FILE* lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW);
+
+                    if (lockFile == nullptr)
+                        continue;
+                                
+                    //struct _stat64i32 buffer;
+
+                    if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
+                                
+                    FILE* file = nullptr;
+                
+                    //errno_t err = _wfopen_s(&file, name, L"abN+");
+                    errno_t err = 0;
+                    file = _wfsopen(name, L"ab+", _SH_DENYRW);
+                
+                    if (file == nullptr) continue;
+
+                    if (err != 0)
+                        {
+                        assert(file == nullptr);
+                        continue;
+                        }
+
+                    //If first char is equal to 0 the file has already been process
+                    char startingChar = 0;
+                    size_t readSize = fread(&startingChar, 1, 1, file);
+                    //assert(readSize == 1);
+
+                    if (startingChar == 0 || readSize == 0)
+                        {
+                        fclose(file);
+                        continue;
+                        }
+
+                    ProcessTask(file);
+             
+
+                    fclose(file);
+
+                    while (0 != _wremove(name))
+                        {                    
+					    }
+
+                    fclose(lockFile);
+
+                    while (0 != _wremove(lockFileName))
+                        {
+			            sleeper.Sleep();
+                        }                                
                     }
+
+                }          
+        
+            if (!isThereTaskAvailable)
+                {
+                BeFileName testPlanFile(m_taskFolderName);
+
+                testPlanFile.AppendString(L"\\Tasks.xml.Plan");
+
+                struct _stat64i32 buffer;
+
+                //No task plan, no more task to execute
+                if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) 
+                    continue;
+
+                BeFileName testPlanLockFile(m_taskFolderName);
+
+                testPlanLockFile.AppendString(L"\\Tasks.xml.Plan.lock");
+
+                FILE* lockFile = _wfsopen(testPlanLockFile.c_str(), L"ab+", _SH_DENYRW);
+
+                if (lockFile == nullptr)
+                    {
+                    isThereTaskAvailable = true;
+                    continue;
+                    }
+
+                BeDirectoryIterator dirIter(m_taskFolderName);
+
+                BeFileName name;
+                bool isDir;
+
+                bool needExecuteTaskPlan = true;
+
+                for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())
+                    {
+                    if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
+                        {
+                        needExecuteTaskPlan = false;
+                        break;
+                        }
+                    }
+
+                StatusInt status = SUCCESS;
+            
+                if (needExecuteTaskPlan)            
+                    status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
+
+                fclose(lockFile);
+            
+                if (status == SUCCESS_TASK_PLAN_COMPLETE)
+                    break;           
+
+                isThereTaskAvailable = true;
                 }
 
-            StatusInt status = SUCCESS;
-            
-            if (needExecuteTaskPlan)            
-                status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
-
-            fclose(lockFile);
-            
-            if (status == SUCCESS_TASK_PLAN_COMPLETE)
-                break;           
-
-            isThereTaskAvailable = true;
+            sleeper.Sleep();
             }
 
-        sleeper.Sleep();
+        if (m_startAsService)
+            {
+            listenSleeper.Sleep();
+            }
+        else
+            {
+            listenForNewTask = false;
+            }        
         }
-
-
+    
     double totalDuration = (double)(clock() - duration) / CLOCKS_PER_SEC;
 
     m_sourceCreatorWorkerPtr = nullptr;
