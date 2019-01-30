@@ -491,7 +491,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
     
     bvector<GenerationTaskPtr> generationTasks;
 
+    //Explicitly open the sql file to improve speed when 3SM is located on network drive
+    StatusInt status = OpenSqlFiles(true, false);
+    assert(status == SUCCESS);
+
     GetGenerationTasks(generationTasks, maxGroupSize);
+        
+    CloseSqlFiles();
 
     uint64_t totalNodes = 0;
     uint64_t totalStichableNodes = 0;
