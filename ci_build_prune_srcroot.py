@@ -2,7 +2,7 @@ import datetime, os, shutil, time
 
 pruneList = [
 #       Dir to prune (in SrcRoot)       Valid date
-    [   os.path.join('bin', 'mrsid'),   None    ]
+    [   os.path.join('bin', 'mrsid'),   datetime.datetime(2019, 1, 31)    ]
 ]
 
 for pruneData in pruneList:
