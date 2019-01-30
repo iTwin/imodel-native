@@ -3,16 +3,22 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <!-- The delivers the "Napi/napi.h" source files. -->
-    <Part Name="VendorAPI" BentleyBuildMakeFile="prewire.mke" >
+    <Part Name="VendorAPI" BentleyBuildMakeFile="prewire-api.mke">
         <SubPart PartName="BentleyLib" PartFile="iModelCore/Bentley/Bentley"/>
         <Bindings>
             <VendorAPI Domain="Napi"/>
         </Bindings>
     </Part>
 
+    <Part Name="node-lib" BentleyBuildMakeFile="prewire-lib.mke" OnlyPlatforms="x64">
+        <Bindings>
+            <Files Required="false" SubPartDirectory="nodelib">Delivery/node.lib</Files>
+        </Bindings>
+    </Part>
+
     <Part Name="napi-lib" BentleyBuildMakeFile="node-addon-lib.mke">
         <SubPart PartName="VendorAPI"/>
-        <SubPart PartName="node-lib" PartFile="node-addon-api" Repository="Thirdparty-node-addon-api" />
+        <SubPart PartName="node-lib"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)napi$(stlibext)</Libs>
         </Bindings>
