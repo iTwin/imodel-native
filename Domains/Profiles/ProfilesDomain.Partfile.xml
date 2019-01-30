@@ -72,8 +72,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ProfilesDoc" BentleyBuildMakeFile="Doxygen\ProfilesDoc.mke">
-        <SubPart PartName="ProfilesPublicAPI" />
+    <Part Name="ProfilesDoc" BentleyBuildMakeFile="Profiles\Documentation\ProfilesDoc.mke">
         <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <Bindings>
             <PublicAPI Domain="Profiles" />

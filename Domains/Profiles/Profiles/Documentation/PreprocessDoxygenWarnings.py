@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: Doxygen/PreprocessDoxygenWarnings.py $
+#     $Source: Profiles/Documentation/PreprocessDoxygenWarnings.py $
 #
 #  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #

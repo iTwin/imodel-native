@@ -61,6 +61,9 @@
     <Filter Include="Src\PrivateAPI">
       <UniqueIdentifier>{cbb8ca08-5bdd-4bbe-a4df-ba775fe41629}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Documentation">
+      <UniqueIdentifier>{3bde4058-3515-4454-90b7-47dbe5d6c894}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ProfilesDomainDLL.mke">
@@ -71,6 +74,18 @@
     </None>
     <None Include="ProfilesDomainDLL.prewire.mke">
       <Filter>Mke</Filter>
+    </None>
+    <None Include="Documentation\DisplayDoxygenWarnings.py">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="Documentation\PreprocessDoxygenWarnings.py">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="Documentation\ProfilesDoc.mke">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="Documentation\ProfilesDoc.remarks.md">
+      <Filter>Documentation</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

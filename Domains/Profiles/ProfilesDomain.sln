@@ -22,8 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{25990648-5
 		Docs\Profiles.cmap = Docs\Profiles.cmap
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Doxygen", "Doxygen\Doxygen.vcxproj", "{E5AF2156-5E8E-41B3-B4F6-8B50C29B9D9C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -48,14 +46,6 @@ Global
 		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Release|x64.Build.0 = Release|x64
 		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Release|x86.ActiveCfg = Release|Win32
 		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Release|x86.Build.0 = Release|Win32
-		{E5AF2156-5E8E-41B3-B4F6-8B50C29B9D9C}.Debug|x64.ActiveCfg = Debug|x64
-		{E5AF2156-5E8E-41B3-B4F6-8B50C29B9D9C}.Debug|x64.Build.0 = Debug|x64
-		{E5AF2156-5E8E-41B3-B4F6-8B50C29B9D9C}.Debug|x86.ActiveCfg = Debug|Win32
-		{E5AF2156-5E8E-41B3-B4F6-8B50C29B9D9C}.Debug|x86.Build.0 = Debug|Win32
-		{E5AF2156-5E8E-41B3-B4F6-8B50C29B9D9C}.Release|x64.ActiveCfg = Release|x64
-		{E5AF2156-5E8E-41B3-B4F6-8B50C29B9D9C}.Release|x64.Build.0 = Release|x64
-		{E5AF2156-5E8E-41B3-B4F6-8B50C29B9D9C}.Release|x86.ActiveCfg = Release|Win32
-		{E5AF2156-5E8E-41B3-B4F6-8B50C29B9D9C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

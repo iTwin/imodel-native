@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: Doxygen/DisplayDoxygenWarnings.py $
+#     $Source: Profiles/Documentation/DisplayDoxygenWarnings.py $
 #
 #  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #

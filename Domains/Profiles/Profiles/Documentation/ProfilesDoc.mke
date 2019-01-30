@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#     $Source: Doxygen/ProfilesDoc.mke $
+#     $Source: Profiles/Documentation/ProfilesDoc.mke $
 #
 #  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -70,7 +70,7 @@ always:
     !~@mkdir ${PublishApiOutput}
 
 always:
-    ~linkdir "$(DOXYGEN_INPUT)include = $(_MakeFilePath)..\Profiles\src\PublicAPI
+    ~linkdir "$(DOXYGEN_INPUT)include = $(_MakeFilePath)..\src\PublicAPI
 
 $(PublishApiStamp) : $[@wildcard $(DOXYGEN_INPUT)include\*]
     $(msg)
