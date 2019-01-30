@@ -752,7 +752,7 @@
     <Product Name="iModelConsole">
         <SubPart PartName="iModelConsoleExe-Windows"/>
         <SubPart PartName="iModelConsoleExe-Linux"/>
-         <SubPart PartName="iModelConsoleExe-MacOS"/>
+        <SubPart PartName="iModelConsoleExe-MacOS"/>
         <Directories DirectoryListName="iModelConsoleDirList" />
     </Product>
 
@@ -771,6 +771,7 @@
     <Part Name="iModelConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="iModelConsole/iModelConsole.mke" >
         <SubPart PartName="DgnPlatformDll"/>
         <SubPart PartName="DgnPlatformSqlang"/>
+        <SubPart PartName="napi-stub"  Repository="imodel02" PartFile="node-addon-api/node-addon-api"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">
                 Delivery/iModelConsole$(exeext)

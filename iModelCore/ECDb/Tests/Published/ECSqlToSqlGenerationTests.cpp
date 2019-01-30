@@ -110,6 +110,123 @@ TEST_F(ECSqlToSqlGenerationTests, SharedColumnCastingForBinaryAndGeometryProps)
 
 }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                     1/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlToSqlGenerationTests, IndexOnSharedColumnIsUsedBySQLite)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IndexOnSharedColumnIsUsedBySQLite.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                  <ECEntityClass typeName="Parent" modifier="None">
+                    <ECCustomAttributes>
+                      <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                      </ClassMap>
+                      <ShareColumns xmlns="ECDbMap.02.00">
+                        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                        <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>
+                      </ShareColumns>
+                      <DbIndexList xmlns="ECDbMap.02.00">
+                        <Indexes>
+                          <DbIndex>
+                            <IsUnique>False</IsUnique>
+                            <Name>ix_parent_ps1ps2</Name>
+                            <Properties>
+                              <string>PS1</string>
+                              <string>PS2</string>
+                            </Properties>
+                          </DbIndex>
+                          <DbIndex>
+                            <IsUnique>False</IsUnique>
+                            <Name>ix_parent_ps3</Name>
+                            <Properties>
+                              <string>PS3</string>
+                            </Properties>
+                          </DbIndex>
+                        </Indexes>
+                      </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="PS1" typeName="string"/>
+                    <ECProperty propertyName="PS2" typeName="string"/>
+                    <ECProperty propertyName="PS3" typeName="string"/>
+                  </ECEntityClass>
+            </ECSchema>)xml")));
+    
+    const int detailColumn = 3;
+    m_ecdb.SaveChanges();
+    {
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=?"));
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
+    ASSERT_STREQ("SEARCH TABLE ts_Parent USING INDEX ix_parent_ps1ps2 (ps1=?)", sqlStmt.GetValueText(detailColumn));
+    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+    }
+
+    {
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps2=?"));
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+    ASSERT_STREQ("SCAN TABLE ts_Parent", sqlStmt.GetValueText(detailColumn));
+    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+    }
+
+    {
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps3=?"));
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+    ASSERT_STREQ("SEARCH TABLE ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
+    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+    }
+
+    {
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=? and ps2=?"));
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+    ASSERT_STREQ("SEARCH TABLE ts_Parent USING INDEX ix_parent_ps1ps2 (ps1=? AND ps2=?)", sqlStmt.GetValueText(detailColumn));
+    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+    }
+
+    {
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps2=? and ps3=?"));
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+    ASSERT_STREQ("SEARCH TABLE ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
+    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+    }
+
+    {
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=? and ps3=?"));
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+    ASSERT_STREQ("SEARCH TABLE ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
+    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+    }
+
+    {
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=? and ps2=? and ps3=?"));
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+    ASSERT_STREQ("SEARCH TABLE ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
+    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+    }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     10/17
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -47,7 +47,7 @@ rem Process the source
 make sqlite3.c
 
 rem Copy to bentley source tree
-set BeSqlOutRoot=%SrcRoot%BeSQLite\SQLite\
+set BeSqlOutRoot=%SrcRoot%imodel02\iModelCore\BeSQLite\SQLite\
 copy sqlite3.c %BeSqlOutRoot%
 copy shell.c %BeSqlOutRoot%
 copy sqlite3.h %BeSqlOutRoot%
