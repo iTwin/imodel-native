@@ -171,7 +171,7 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
     // (Note that OpenDgnDb will also merge in any pending schema changes that were recently pulled from iModelHub.)
 
     madeSchemaChanges = false;
-    auto db = DgnDb::OpenDgnDb(&dbres, dbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    auto db = DgnDb::OpenDgnDb(&dbres, dbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive));
     if (!db.IsValid())
         {
         if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
@@ -179,7 +179,7 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
 
         // We must do a schema upgrade.
         // Probably, the bridge registered some required domains, and they must be imported
-        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
+        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
         oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
         db = DgnDb::OpenDgnDb(&dbres, dbName, oparams);
         if (!db.IsValid())
@@ -1092,7 +1092,7 @@ bool iModelBridge::HoldsSchemaLock(DgnDbR db)
 bool iModelBridge::TestFeatureFlag(CharCP ff)
     {
     bool flagVal = false;
-    iModelBridgeLdClient::GetInstance(GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
+    iModelBridgeLdClient::GetInstance((WebServices::UrlProvider::Environment)GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
     return flagVal;
     }
 
