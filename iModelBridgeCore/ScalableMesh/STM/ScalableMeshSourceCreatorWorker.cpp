@@ -34,9 +34,9 @@ StatusInt IScalableMeshSourceCreatorWorker::CreateTaskPlan() const
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateTaskPlan();
     }
 
-StatusInt IScalableMeshSourceCreatorWorker::CreateGenerationTasks() const
+StatusInt IScalableMeshSourceCreatorWorker::CreateGenerationTasks(uint32_t maxGroupSize) const
     {
-    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateGenerationTasks();
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateGenerationTasks(maxGroupSize);
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::ExecuteNextTaskInTaskPlan() const
@@ -173,7 +173,7 @@ IScalableMeshSourceCreatorWorker::Impl::~Impl()
     CachedDataEventTracer::GetInstance()->analyze(::_getpid());
 #endif	
     }
-
+   
 HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
     {
     if (m_pDataIndex.GetPtr() == nullptr)
@@ -465,22 +465,21 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
     }
 
 
-void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks)
+void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks, uint32_t maxGroupSize)
     {   
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
     HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> rootNode(pDataIndex->GetRootNode());
     
     IScalableMeshNodePtr meshRootNode(new ScalableMeshNode<DPoint3d>(rootNode));
-            
-    uint64_t pointThreshold = 20000; 
+                
     int childrenGroupingSize = 0;     
     int nbResolutions = (int)(pDataIndex->GetDepth() + 1);
 
-    GroupNodes(toExecuteTasks, meshRootNode, pointThreshold, childrenGroupingSize, nbResolutions);
+    GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions);
     }
 
-StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks()
+StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize)
     {
     BeFileName taskDirectory(m_scmFileName);
 
@@ -492,7 +491,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks()
     
     bvector<GenerationTaskPtr> generationTasks;
 
-    GetGenerationTasks(generationTasks);
+    //Explicitly open the sql file to improve speed when 3SM is located on network drive
+    StatusInt status = OpenSqlFiles(true, false);
+    assert(status == SUCCESS);
+
+    GetGenerationTasks(generationTasks, maxGroupSize);
+        
+    CloseSqlFiles();
 
     uint64_t totalNodes = 0;
     uint64_t totalStichableNodes = 0;
@@ -801,8 +806,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>>     nodesToMesh;
     bvector<RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>>> ptsNeighbors;
-    
-        
+
+    SMMeshDataToLoad meshDataToLoad;
+
+    meshDataToLoad.m_features = true;
+    meshDataToLoad.m_graph = true;
+            
     do
         {
         assert(pChildNode != nullptr);
@@ -829,17 +838,21 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         assert(tileIds.size() > 0);
 
         xmlStatus = pChildNode->GetAttributeStringValue(attrStr, "stitchIds");
-        assert(xmlStatus == BEXML_Success);
-        //assert(pChildNode->GetNextSibling() == nullptr);
+        assert(xmlStatus == BEXML_Success || xmlStatus == BEXML_AttributeNotFound);
 
-        //TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
+        if (xmlStatus == BEXML_Success)
+            {        
+            //assert(pChildNode->GetNextSibling() == nullptr);
 
-        idAttrs.clear();
-        BeStringUtilities::ParseArguments(idAttrs, attrStr.c_str(), L",");
+            //TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
 
-        for (auto& idStr : idAttrs)
-            {
-            stitchTileIds.push_back(BeStringUtilities::ParseUInt64(Utf8String(idStr).c_str()));                
+            idAttrs.clear();
+            BeStringUtilities::ParseArguments(idAttrs, attrStr.c_str(), L",");
+
+            for (auto& idStr : idAttrs)
+                {
+                stitchTileIds.push_back(BeStringUtilities::ParseUInt64(Utf8String(idStr).c_str()));                
+                }
             }
 
         bool needFiltering; 
@@ -849,9 +862,16 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
         //Load all the nodes created during the indexing step. 
         
-        //TBD_G : Need lock file?
-        OpenSqlFiles(true, true);
+        //TBD_G : Need lock file?        
+        StatusInt status = OpenSqlFiles(true, true);
+        assert(status == SUCCESS);
 
+        bool dbOpResult = m_smDb->StartTransaction();
+        assert(dbOpResult == true);
+
+        dbOpResult = m_smSisterDb->StartTransaction();
+        assert(dbOpResult == true);
+		
         for (auto& tileId : tileIds)
             {            
             HPMBlockID blockID(tileId);
@@ -862,14 +882,51 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 meshNode->NeedToLoadNeighbors(true);
             else
                 meshNode->NeedToLoadNeighbors(false);
-
+        
             meshNode->Load();
-
+            meshNode->LoadData(&meshDataToLoad);
             ptsNeighbors.push_back(meshNode->GetPointsPtr());
+                        
             nodesToMesh.push_back(meshNode);            
             }
+        
+        dbOpResult = m_smDb->CommitTransaction();
+        assert(dbOpResult == true);    
+        
+        dbOpResult = m_smSisterDb->CommitTransaction();
+        assert(dbOpResult == true);
 
         CloseSqlFiles();
+
+        for (auto& node : nodesToMesh)
+            {
+            vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> subNodes(node->GetSubNodes());
+            
+
+            for (auto& subNode : subNodes)
+                {         
+                bool found = false;
+
+                if (subNode.GetPtr() == nullptr)
+                    {
+                    found = true;
+                    }
+                else
+                    {
+                    for (auto& generatedNode : generatedNodes)
+                        {
+                        if (generatedNode.GetPtr() == subNode.GetPtr())
+                            found = true;
+                        }    
+                    }
+
+                if (!found)
+                    {
+                    found = found;
+                    }
+                }
+            }
+            
                     
         if (needFiltering)
             {
@@ -924,8 +981,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                  
         pChildNode = pChildNode->GetNextSibling();
         } while (pChildNode != nullptr);
-    
-
+            
     //Flush all the data on disk
     OpenSqlFiles(false, true);
 
@@ -961,6 +1017,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     pSqliteStore->SaveSisterFiles();
 
     fclose(lockFile);
+
+
+    assert(SMMemoryPool::GetInstance()->GetCurrentlyUsed() == 0);
         
     return SUCCESS;
     }
@@ -1515,6 +1574,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
 
     GetTaskPlanFileName(taskPlanFileName);
 
+    struct _stat64i32 buffer;
+
+    //If task plan doesn't exist. 
+    if (_wstat(taskPlanFileName.c_str(), &buffer) != 0)
+        return SUCCESS_TASK_PLAN_COMPLETE;                
+
     FILE* file = nullptr;
 
     file = _wfsopen(taskPlanFileName.c_str(), L"ab+", _SH_DENYRW);
@@ -1542,7 +1607,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
     assert(pXmlDom.IsValid());
 
     BeXmlNodeP pXmlTaskPlanNode(pXmlDom->GetRootElement());
-
+	
+	assert(pXmlTaskPlanNode != nullptr);
+    
     assert(Utf8String(pXmlTaskPlanNode->GetName()).CompareTo("taskPlan") == 0);
 
     BeXmlNodeP pTaskNode = pXmlTaskPlanNode->GetFirstChild();

@@ -6,7 +6,7 @@
 //:>       $Date: 2011/04/27 17:17:56 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <windows.h> //for showing info.
@@ -42,6 +42,12 @@
 #ifndef DEFAULT_VIEW_DEPENDENT_METRIC 
     #define DEFAULT_VIEW_DEPENDENT_METRIC HFLOAT_MAX
 #endif
+
+/*
+#ifndef SM_CLOUD_GROUPING_OPTIMIZATION
+    #define SM_CLOUD_GROUPING_OPTIMIZATION
+#endif
+*/
 
 /**----------------------------------------------------------------------------
  Initiates a filtering of the node. Ther filtering process
@@ -493,9 +499,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 			}
 		}
 	}
+
+#ifndef SM_CLOUD_GROUPING_OPTIMIZATION
 	SMMemoryPool::GetInstance()->RemoveItem(pParentMeshNode->m_pointsPoolItemId, pParentMeshNode->GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)pParentMeshNode->m_SMIndex);
 	parentPointsPtr = 0;
 	pParentMeshNode->m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+#endif
 
 	if (polylines.size() > 0)
 	{
@@ -673,7 +682,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 #endif
 	}
 
-    
+#ifndef SM_CLOUD_GROUPING_OPTIMIZATION    
     //Flushing tiles to disk during filtering result in less tiles being flushed sequentially at the end of the generation process, leading to potential huge performance gain.
     for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
         {
@@ -682,6 +691,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
             subNodes[indexNodes]->Discard();
             }
         }
+#endif
     
 
 	return true;

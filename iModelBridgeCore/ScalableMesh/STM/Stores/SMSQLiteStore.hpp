@@ -803,20 +803,24 @@ int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreCompressedBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
-{
+    {
+    assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
+
     if (m_dataType == SMStoreDataType::Texture)
-    {
+        {
         return StoreTextureCompressed(DataTypeArray, maxCountData, blockID);
-    }
+        }
     else
-    {
+        {
         assert(!"Unsupported type");
         return HPMBlockID();
+        }
     }
-}
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
+    assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
+
     assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::Cesium3DTiles);
 
     if (m_smSQLiteFile.get() != m_dataStorePtr->GetSQLiteFilePtr(m_dataType).get())
@@ -944,7 +948,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
     }
 
 template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
-    {
+    {    
     assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::Cesium3DTiles);
     
     return GetBlockDataCount(blockID, m_dataType);    
@@ -962,6 +966,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             return 1;
             break;
         case SMStoreDataType::LinearFeature:
+            assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             m_smSQLiteFile->GetNumberOfFeaturePoints(blockID.m_integerID);
             break;
         case SMStoreDataType::Points:
@@ -971,16 +976,20 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             blockDataCount = m_nodeHeader->m_nbFaceIndexes;
             break;
         case SMStoreDataType::TriUvIndices:
+            assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             blockDataCount = m_smSQLiteFile->GetNumberOfUVIndices(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         case SMStoreDataType::Texture:
+            assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             blockDataCount = m_smSQLiteFile->GetTextureByteCount(blockID.m_integerID);
             if (blockDataCount > 0) blockDataCount += 3 * sizeof(int);
             break;
         case SMStoreDataType::TextureCompressed:
+            assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             blockDataCount = m_smSQLiteFile->GetTextureCompressedByteCount(blockID.m_integerID);
             break;
         case SMStoreDataType::UvCoords:
+            assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             blockDataCount = m_smSQLiteFile->GetNumberOfUVs(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         case SMStoreDataType::DiffSet:
@@ -1008,15 +1017,19 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         }
         break;
         case SMStoreDataType::Skirt:
+            assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             blockDataCount = m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         case SMStoreDataType::ClipDefinition:
+            assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             blockDataCount = m_smSQLiteFile->GetClipPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         case SMStoreDataType::CoveragePolygon:
+            assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             blockDataCount = m_smSQLiteFile->GetCoveragePolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         case SMStoreDataType::CoverageName:
+            assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             blockDataCount = m_smSQLiteFile->GetCoverageNameByteCount(blockID.m_integerID) > 0 ? 1 : 0;
             break;
 #ifdef WIP_MESH_IMPORT
@@ -1100,6 +1113,9 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
 template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
+    assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
+
+
     if (!blockID.IsValid() || maxCountData == 0) return 0;
     
 #if 0 
@@ -1334,6 +1350,8 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
 
 template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
+    assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
+
     size_t uncompressedSize = 0;
     this->GetCompressedBlock(DataTypeArray, uncompressedSize, blockID);
     assert(uncompressedSize <= maxCountData*sizeof(DATATYPE));
@@ -1342,6 +1360,8 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
 template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
     {
+    assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
+
         {
             SharedTransaction trans(m_smSQLiteFile, false);
             switch (m_dataType)

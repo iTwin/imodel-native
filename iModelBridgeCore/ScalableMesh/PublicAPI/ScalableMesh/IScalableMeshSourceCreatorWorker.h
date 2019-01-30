@@ -66,7 +66,7 @@ struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator
                                                                                    uint32_t                nbWorkers,
                                                                                    StatusInt&              status);
 
-        BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateGenerationTasks() const;
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize) const;
                 
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateTaskPlan() const;
 

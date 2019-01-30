@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_IMAGEPP
 
 
-#define TRACE_ON 1
+//#define TRACE_ON
 
 
 BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
@@ -265,7 +265,19 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             m_useGroupingStrategy = true;            
             continue;
             }
-       
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"-groupingSize=") || argv[iArg] == wcsstr(argv[iArg], L"-gs="))
+            {
+            m_groupingSize = BeStringUtilities::Wtoi(GetArgValueW(argv[iArg]).c_str());            
+            continue;
+            }                        
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"-startAsService") || argv[iArg] == wcsstr(argv[iArg], L"-ss"))
+            {
+            m_startAsService = true;            
+            continue;
+            }
+               
         fwprintf(stderr, L"Unrecognized command line option: %ls\n", argv[iArg]);
         return PrintUsage(argv[0]);
         }
@@ -331,7 +343,7 @@ void ScalableMeshWorker::Start()
             }
         }    
 
-    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers, m_useGroupingStrategy);
+    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers, m_useGroupingStrategy, m_groupingSize, m_startAsService);
 
     taskScheduler.Start();
     }
