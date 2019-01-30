@@ -729,6 +729,9 @@ struct TextureMapping
         bool AlmostEqual(Trans2x3 const& rhs) const;
 
         Transform GetTransform() const;
+
+        Json::Value ToJson() const;
+        static Trans2x3 FromJson(JsonValueCR);
     };
 
     //=======================================================================================
@@ -803,7 +806,18 @@ public:
     TextureMapping::ProjectionInfo const* GetProjection() const { return HasProjection() ? &m_projection : nullptr; }
 
     void Clear() { m_type = Type::None; }
-    void SetTransform(TextureMapping::Trans2x3 const& transform) { m_type = Type::Transform; m_transform = transform; }
+    void SetTransform(TextureMapping::Trans2x3 const& transform)
+        {
+        if (!transform.IsIdentity())
+            {
+            m_type = Type::Transform;
+            m_transform = transform;
+            }
+        else
+            {
+            Clear();
+            }
+        }
     void SetProjection(TextureMapping::ProjectionInfo const& projection) { m_type = Type::Projection; m_projection = projection; }
 
     bool IsEquivalent(MaterialUVDetailCR rhs) const;
@@ -1327,7 +1341,7 @@ public:
     void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency; m_resolved = false;}
     void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority; m_resolved = false;} // Set display priority (2d only).
     void SetMaterialId(RenderMaterialId materialId) {m_appearanceOverrides.m_material = true; m_materialId = materialId;}
-    void SetMaterial(RenderMaterialId materialId, MaterialUVDetailCR detail) { SetMaterialId(materialId); m_materialUVDetail = detail; }
+    void SetMaterialUVDetail(MaterialUVDetailCR detail) {m_materialUVDetail = detail;}
     void SetPatternParams(PatternParamsP patternParams) {m_pattern = patternParams;}
 
     //! @cond DONTINCLUDEINDOC
@@ -1340,7 +1354,7 @@ public:
     void SetLineColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_color = false;}
     void SetWeightToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_weight = false;}
     void SetLineStyleToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_style = false;}
-    void SetMaterialToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_material = false; m_materialUVDetail.Clear();}
+    void SetMaterialToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_material = false;}
     void SetFillColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_fill = false;}
 
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
@@ -1398,11 +1412,7 @@ public:
 
     //! Get render material.
     RenderMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId;}
-    MaterialUVDetailCP GetMaterialUVDetail() const
-        {
-        BeAssert(m_appearanceOverrides.m_material || m_resolved);
-        return !m_materialUVDetail.HasDetail() ? &m_materialUVDetail : nullptr;
-        }
+    MaterialUVDetailCR GetMaterialUVDetail() const {return m_materialUVDetail;}
 
     //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
@@ -1454,6 +1464,7 @@ private:
     TexturePtr m_lineTexture;
     MaterialPtr m_material;
     GradientSymbPtr m_gradient;
+    MaterialUVDetail m_materialUVDetail;
 
 public:
 
@@ -1504,6 +1515,7 @@ public:
 
     //! Get the render material.
     MaterialP GetMaterial() const {return m_material.get();}
+    MaterialUVDetailCR GetMaterialUVDetail() const {return m_materialUVDetail;}
 
     //@}
 
@@ -1549,7 +1561,7 @@ public:
 
     //! Set the render material.
     void SetMaterial(MaterialP material) {m_material = material;}
-
+    void SetMaterialUVDetail(MaterialUVDetailCR detail) {m_materialUVDetail = detail;}
     //@}
 
     static GraphicParams FromSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, LinePixels linePixels=LinePixels::Solid)

@@ -565,6 +565,28 @@ bool Render::TextureMapping::Trans2x3::AlmostEqual(Trans2x3 const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::TextureMapping::Trans2x3::ToJson() const
+    {
+    Json::Value json;
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 3; j++)
+            json[i][j] = m_val[i][j];
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TextureMapping::Trans2x3 Render::TextureMapping::Trans2x3::FromJson(JsonValueCR json)
+    {
+    return Trans2x3(json[0][0].asDouble(), json[0][1].asDouble(), json[0][2].asDouble(),
+                    json[1][0].asDouble(), json[1][1].asDouble(), json[1][2].asDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Render::MaterialUVDetail::IsEquivalent(MaterialUVDetailCR rhs) const
     {
     if (m_type != rhs.m_type)
