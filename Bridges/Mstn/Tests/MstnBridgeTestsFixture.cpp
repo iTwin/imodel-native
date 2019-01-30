@@ -357,10 +357,12 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
 BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, int64_t srcElementId)
     {
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    //[AffanK] SourceId is mapped to Blob and contain "616" as text so compare it with text.
+    //         SQLite will not do any implict conversion as SourceId is sharedColumn and of type BLOB
     estmt.Prepare(*m_db, "SELECT sourceInfo.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
                   SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
-                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
+                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = CAST(? AS TEXT))");
     estmt.BindInt64(1, srcElementId);
     if (BE_SQLITE_ROW != estmt.Step())
         return BentleyApi::BentleyStatus::BSIERROR;
