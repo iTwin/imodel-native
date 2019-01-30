@@ -61,6 +61,7 @@ static Utf8CP const JSON_TYPE_Texture = "Texture";
 static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
+static Utf8CP const JSON_TYPE_TimeSpan = "TimeSpan";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
 static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
@@ -2202,18 +2203,8 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportExtraTables(Utf8CP alias, Utf8CP classN
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects()
     {
-    if (ERROR == ExportElementAspects(m_elementMultiAspectClass->GetId()))
-        return ERROR;
-    return ExportElementAspects(m_elementUniqueAspectClass->GetId());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            01/2019
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId)
-    {
     Statement stmt;
-    Utf8PrintfString sql("WITH RECURSIVE DerivedClasses(ClassId) AS ( VALUES (%" PRIu64 ") UNION SELECT ec_ClassHasBaseClasses.ClassId FROM ec_ClassHasBaseClasses, DerivedClasses WHERE ec_ClassHasBaseClasses.BaseClassId=DerivedClasses.ClassId ) SELECT DerivedClasses.ClassId FROM DerivedClasses", classId.GetValue());
+    Utf8PrintfString sql("SELECT DISTINCT ECClassId from _dgn_ElementAspect");
     if (BE_SQLITE_OK != (stmt.Prepare(*m_dgndb, sql.c_str())))
         {
         LogMessage(BimFromDgnDbLoggingSeverity::LOG_ERROR, "Unable to prepare statement to retrieve element aspect classes");
@@ -2237,6 +2228,8 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
     ECClassCP ecClass = m_dgndb->Schemas().GetECClass(classId);
 
     if (ecClass->GetName().Equals("ElementExternalKey"))
+        return SUCCESS;
+    if (ecClass->GetName().Equals("Timeline"))
         return SUCCESS;
 
     Utf8PrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
@@ -2274,11 +2267,12 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
             Utf8String tmp = obj["$ECClassKey"].asString();
             obj[JSON_CLASSNAME] = tmp.c_str();
             }
-        if (obj[JSON_CLASSNAME].asString().Equals("Planning.Timeline"))
+        
+        if (obj[JSON_CLASSNAME].asString().Equals("Planning.TimeSpan"))
             {
-            MakeNavigationProperty(obj, "Plan", IdToString(obj["PlanId"].asCString()).c_str());
-            obj.removeMember("PlanId");
-            obj[JSON_TYPE_KEY] = JSON_TYPE_Baseline;
+            MakeNavigationProperty(obj, "Baseline", IdToString(obj["TimelineId"].asCString()).c_str());
+            obj.removeMember("TimelineId");
+            entry[JSON_TYPE_KEY] = JSON_TYPE_TimeSpan;
             }
         if (obj.isMember("ElementId"))
             MakeNavigationProperty(obj, "Element", IdToString(obj["ElementId"].asCString()).c_str());
@@ -2443,20 +2437,19 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportNamedGroups()
         return ERROR;
         }
 
-    auto elemGroupsMembers = Json::Value(Json::ValueType::objectValue);
-    elemGroupsMembers[JSON_TYPE_KEY] = JSON_TYPE_ElementGroupsMembers;
-    elemGroupsMembers[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::arrayValue);
-    elemGroupsMembers[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
-    auto& groups = elemGroupsMembers[JSON_OBJECT_KEY];
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        Json::Value group(Json::ValueType::objectValue);
+        auto elemGroupsMembers = Json::Value(Json::ValueType::objectValue);
+        elemGroupsMembers[JSON_TYPE_KEY] = JSON_TYPE_ElementGroupsMembers;
+        elemGroupsMembers[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
+        elemGroupsMembers[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
+        auto& group = elemGroupsMembers[JSON_OBJECT_KEY];
+
         group["GroupId"] = IdToString(stmt.GetValueId<DgnElementId>(0).GetValue()).c_str();
         group["MemberId"] = IdToString(stmt.GetValueId<DgnElementId>(1).GetValue()).c_str();
         group["MemberPriority"] = stmt.GetValueInt(2);
-        groups.append(group);
+        SendToQueue(elemGroupsMembers);
         }
-    SendToQueue(elemGroupsMembers);
     return SUCCESS;
     }
 
@@ -2474,19 +2467,19 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementHasLinks()
         return ERROR;
         }
 
-    auto elemHasLinks = Json::Value(Json::ValueType::objectValue);
-    elemHasLinks[JSON_TYPE_KEY] = JSON_TYPE_ElementHasLinks;
-    elemHasLinks[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::arrayValue);
-    elemHasLinks[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
-    auto& groups = elemHasLinks[JSON_OBJECT_KEY];
+
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        Json::Value group(Json::ValueType::objectValue);
+        auto elemHasLinks = Json::Value(Json::ValueType::objectValue);
+        elemHasLinks[JSON_TYPE_KEY] = JSON_TYPE_ElementHasLinks;
+        elemHasLinks[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
+        elemHasLinks[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
+        auto& group = elemHasLinks[JSON_OBJECT_KEY];
+
         group["ElementId"] = IdToString(stmt.GetValueId<DgnElementId>(0).GetValue()).c_str();
         group["LinkId"] = IdToString(stmt.GetValueId<DgnElementId>(1).GetValue()).c_str();
-        groups.append(group);
+        SendToQueue(elemHasLinks);
         }
-    SendToQueue(elemHasLinks);
     return SUCCESS;
     }
 
@@ -2511,10 +2504,10 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportConstraint(ECClassId constraintClassId,
         }
     else if (constraintClass->Is(m_elementAspectClass))
         {
-        if (m_insertedAspects.end() == m_insertedAspects.find(constraintId))
-            {
-            ExportElementAspects(constraintClassId, constraintId);
-            }
+        //if (m_insertedAspects.end() == m_insertedAspects.find(constraintId))
+        //    {
+        //    ExportElementAspects(constraintClassId, constraintId);
+        //    }
         }
     return SUCCESS;
     }
@@ -2539,19 +2532,20 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportLinkTables(Utf8CP schemaName, Utf8CP cl
         return ERROR;
         }
 
-    auto elemRefersToElem = Json::Value(Json::ValueType::objectValue);
-    elemRefersToElem[JSON_TYPE_KEY] = JSON_TYPE_LinkTable;
-    elemRefersToElem[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::arrayValue);
-    elemRefersToElem[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
-    auto& relationships = elemRefersToElem[JSON_OBJECT_KEY];
     while (BE_SQLITE_ROW == stmt->Step())
         {
+        auto entry = Json::Value(Json::ValueType::objectValue);
+        entry[JSON_TYPE_KEY] = JSON_TYPE_LinkTable;
+        entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
+        entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
+        auto&  relationship = entry[JSON_OBJECT_KEY];
+        relationship.clear();
+
         ECInstanceId sourceId = stmt->GetValueId<ECInstanceId>(1);
         ECInstanceId targetId = stmt->GetValueId<ECInstanceId>(3);
         ExportConstraint(stmt->GetValueId<ECClassId>(2), sourceId);
         ExportConstraint(stmt->GetValueId<ECClassId>(4), targetId);
 
-        Json::Value relationship(Json::ValueType::objectValue);
         ECClassCP relClass = m_dgndb->Schemas().GetECClass(stmt->GetValueId<ECClassId>(0));
         relationship["Schema"] = relClass->GetSchema().GetName().c_str();
         if (nullptr == newClassName)
@@ -2560,9 +2554,8 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportLinkTables(Utf8CP schemaName, Utf8CP cl
             relationship["Class"] = newClassName;
         relationship["SourceId"] = IdToString(sourceId.GetValue()).c_str();
         relationship["TargetId"] = IdToString(targetId.GetValue()).c_str();
-        relationships.append(relationship);
+        SendToQueue(entry);
         }
-    SendToQueue(elemRefersToElem);
     return SUCCESS;
     }
 
