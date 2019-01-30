@@ -48,9 +48,10 @@ public:
     //! @private
     Dgn::DgnDbStatus UpdateGeometry (Profile const& relatedProfile);
 
-private:
-    bool CreateGeometry();
+protected:
+    virtual bool CreateGeometry();
 
+private:
     virtual IGeometryPtr _CreateGeometry() const { return nullptr; }
     virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const { return nullptr; }
 

@@ -43,26 +43,20 @@ public:
         };
 
 protected:
-    explicit CenterLineCShapeProfile(CreateParams const& params);
+    explicit CenterLineCShapeProfile (CreateParams const& params);
 
     virtual bool _Validate() const override;
-    virtual IGeometryPtr _CreateGeometry() const override;
-
+    virtual IGeometryPtr _CreateGeometry () const override;
+    virtual bool CreateGeometry () override;
     bool CreateCenterLineGeometry();
 
     virtual IGeometryPtr _CreateCenterLineGeometry() const;
-    virtual IGeometryPtr _UpdateCenterLineGeometry(Profile const& relatedProfile) const;
-
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineCShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CenterLineCShapeProfile)
 
     PROFILES_EXPORT static CenterLineCShapeProfilePtr Create (CreateParams const& params) { return new CenterLineCShapeProfile (params); }
-
-protected:
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElement const& original) override;
 public:
     PROFILES_EXPORT double GetFlangeWidth() const;
     PROFILES_EXPORT void SetFlangeWidth (double value);

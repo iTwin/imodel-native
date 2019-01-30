@@ -1,6 +1,6 @@
-                                                                            /*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/src/HollowCircleProfileTests.cpp $
+|     $Source: Tests/src/CapsuleProfileTests.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,81 +13,81 @@ USING_NAMESPACE_BENTLEY_PROFILES
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct HollowCircleProfileTestCase : ProfileValidationTestCase<HollowCircleProfile>
+struct CapsuleProfileTestCase : ProfileValidationTestCase<CapsuleProfile>
     {
 public:
-    typedef HollowCircleProfile::CreateParams CreateParams;
+    typedef CapsuleProfile::CreateParams CreateParams;
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Create_MinimalCreateParams_ValidInstance)
+TEST_F (CapsuleProfileTestCase, Create_MinimalCreateParams_ValidInstance)
     {
-    CreateParams params (GetModel(), "HollowCircle");
+    CreateParams params (GetModel(), "Capsule");
 
-    HollowCircleProfilePtr profilePtr = CreateProfile (params);
+    CapsuleProfilePtr profilePtr = CreateProfile (params);
     EXPECT_TRUE (profilePtr.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
+TEST_F (CapsuleProfileTestCase, Insert_ValidCreateParams_SuccessfulInsert)
     {
-    CreateParams requiredParams (GetModel(), "HollowCircle", 10.0, 1.0);
+    CreateParams requiredParams (GetModel(), "Capsule", 10.0, 6.0);
     EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Insert_EmptyCreateParams_FailedInsert)
+TEST_F (CapsuleProfileTestCase, Insert_EmptyCreateParams_FailedInsert)
     {
-    CreateParams params (GetModel(), "HollowCircle");
+    CreateParams params (GetModel(), "Capsule");
     EXPECT_FAIL_Insert (params) << "Profile should fail with empty create parameters.";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
+TEST_F (CapsuleProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
     {
-    CreateParams params (GetModel(), "HollowCircle", 1.0, 2.0);
+    CreateParams params (GetModel(), "Capsule", 1.0, 2.0);
 
-    HollowCircleProfilePtr profilePtr = CreateProfile (params);
+    CapsuleProfilePtr profilePtr = CreateProfile (params);
     ASSERT_TRUE (profilePtr.IsValid());
 
-    EXPECT_EQ ("HollowCircle", profilePtr->GetName());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetRadius());
-    EXPECT_DOUBLE_EQ (2.0, profilePtr->GetWallThickness());
+    EXPECT_EQ ("Capsule", profilePtr->GetName());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWidth());
+    EXPECT_DOUBLE_EQ (2.0, profilePtr->GetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
+TEST_F (CapsuleProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     {
     CreateParams createParams (GetModel(), nullptr, INFINITY, INFINITY);
 
-    HollowCircleProfilePtr profilePtr = CreateProfile (createParams);
+    CapsuleProfilePtr profilePtr = CreateProfile (createParams);
     ASSERT_TRUE (profilePtr.IsValid());
 
-    profilePtr->SetName ("HollowCircle");
-    profilePtr->SetRadius (1.0);
-    profilePtr->SetWallThickness (2.0);
+    profilePtr->SetName ("Capsule");
+    profilePtr->SetWidth (1.0);
+    profilePtr->SetDepth (2.0);
 
-    EXPECT_EQ ("HollowCircle", profilePtr->GetName());
-    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetRadius());
-    EXPECT_DOUBLE_EQ (2.0, profilePtr->GetWallThickness());
+    EXPECT_EQ ("Capsule", profilePtr->GetName());
+    EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWidth());
+    EXPECT_DOUBLE_EQ (2.0, profilePtr->GetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Insert_InvalidProfileName_FailedInsert)
+TEST_F (CapsuleProfileTestCase, Insert_InvalidProfileName_FailedInsert)
     {
-    CreateParams params (GetModel(), nullptr, 10.0, 1.0);
+    CreateParams params (GetModel(), nullptr, 10.0, 6.0);
 
     params.name = nullptr;
     EXPECT_FAIL_Insert (params) << "Profile name cannot be null.";
@@ -99,66 +99,62 @@ TEST_F (HollowCircleProfileTestCase, Insert_InvalidProfileName_FailedInsert)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Insert_ValidProfileName_SuccessfulInsert)
+TEST_F (CapsuleProfileTestCase, Insert_ValidProfileName_SuccessfulInsert)
     {
-    CreateParams params (GetModel(), nullptr, 10.0, 1.0);
+    CreateParams params (GetModel(), nullptr, 10.0, 6.0);
 
-    params.name = "HollowCircle";
+    params.name = "Capsule";
     EXPECT_SUCCESS_Insert (params) << "Profile name should be non empty.";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Insert_InvalidRadius_FailedInsert)
+TEST_F (CapsuleProfileTestCase, Insert_InvalidWidth_FailedInsert)
     {
-    CreateParams params (GetModel(), "HollowCircle", INFINITY, 1.0);
+    CreateParams params (GetModel(), "Capsule", INFINITY, 6.0);
 
-    TestParameterToBeFiniteAndPositive (params, params.radius, "Radius", false);
+    TestParameterToBeFiniteAndPositive (params, params.width, "Width", false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Insert_ValidRadius_SuccessfulInsert)
+TEST_F (CapsuleProfileTestCase, Insert_ValidWidth_SuccessfulInsert)
     {
-    CreateParams params (GetModel(), "HollowCircle", INFINITY, 1.0);
+    CreateParams params (GetModel(), "Capsule", INFINITY, 6.0);
 
-    params.radius = 10.0;
-    EXPECT_SUCCESS_Insert (params) << "Radius should be positive value.";
+    params.width = 10.0;
+    EXPECT_SUCCESS_Insert (params) << "Width should be positive value.";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Insert_InvalidWallThickness_FailedInsert)
+TEST_F (CapsuleProfileTestCase, Insert_InvalidDepth_FailedInsert)
     {
-    CreateParams params (GetModel(), "HollowCircle", 10.0, INFINITY);
+    CreateParams params (GetModel(), "Capsule", 10.0, INFINITY);
 
-    TestParameterToBeFiniteAndPositive (params, params.wallThickness, "WallThickness", false);
+    TestParameterToBeFiniteAndPositive (params, params.depth, "Depth", false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Insert_WallThicknessEqualToRadius_FailedInsert)
+TEST_F (CapsuleProfileTestCase, Insert_WidthEqualToDepth_FailedInsert)
     {
-    CreateParams params (GetModel(), "HollowCircle", 10.0, INFINITY);
+    CreateParams params (GetModel(), "Capsule", 10.0, 10.0);
 
-    params.wallThickness = params.radius;
-    EXPECT_FAIL_Insert (params) << "Wall thickness should be less than radius.";
-
-    params.wallThickness = params.radius - TESTS_EPSILON;
-    EXPECT_SUCCESS_Insert (params) << "Wall thickness should be less than radius.";
+    EXPECT_FAIL_Insert (params) << "Width cannot be equal to Depth (use a CircleProfile in such case)";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HollowCircleProfileTestCase, Insert_ValidWallThickness_SuccessfulInsert)
+TEST_F (CapsuleProfileTestCase, Insert_ValidDepth_SuccessfulInsert)
     {
-    CreateParams params (GetModel(), "HollowCircle", 10.0, INFINITY);
+    CreateParams params (GetModel(), "Capsule", 10.0, INFINITY);
 
-    params.wallThickness = 1.0;
-    EXPECT_SUCCESS_Insert (params) << "Radius should be positive value.";
+    params.depth = 6.0;
+    EXPECT_SUCCESS_Insert (params) << "Depth should be positive value.";
     }

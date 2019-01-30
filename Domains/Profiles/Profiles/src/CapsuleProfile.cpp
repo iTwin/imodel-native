@@ -6,11 +6,65 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
+#include <ProfilesInternal\ProfilesGeometry.h>
+#include <ProfilesInternal\ProfilesProperty.h>
 #include <Profiles\CapsuleProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (CapsuleProfileHandler)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CapsuleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CapsuleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , width (width)
+    , depth (depth)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CapsuleProfile::CapsuleProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetWidth (params.width);
+    SetDepth (params.depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CapsuleProfile::_Validate() const
+    {
+    if (!T_Super::_Validate())
+        return false;
+
+    bool const isWidthValid = ProfilesProperty::IsGreaterThanZero (GetWidth());
+    bool const isDepthValid = ProfilesProperty::IsGreaterThanZero (GetDepth());
+    bool const isOfCapsuleShape = !BeNumerical::IsEqual (GetWidth(), GetDepth());
+
+    return isWidthValid && isDepthValid && isOfCapsuleShape;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CapsuleProfile::_CreateGeometry() const
+    {
+    return ProfilesGeometry::CreateCapsule (*this);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018

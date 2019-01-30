@@ -180,7 +180,7 @@ TEST_F (HollowRectangleProfileTestCase, Insert_WallThicknessEqualsHalfWidth_Fail
     params.wallThickness = halfWidth;
     EXPECT_FAIL_Insert (params) << "Wall thickness should be less than half of width.";
 
-    params.wallThickness = BeNumerical::BeNextafter (halfWidth, 0.0);
+    params.wallThickness = halfWidth - TESTS_EPSILON;
     EXPECT_SUCCESS_Insert (params) << "Wall thickness should be less than half of width.";
     }
 
@@ -196,7 +196,7 @@ TEST_F (HollowRectangleProfileTestCase, Insert_WallThicknessEqualsHalfDepth_Fail
     params.wallThickness = halfDepth;
     EXPECT_FAIL_Insert (params) << "Wall thickness should be less than half of depth.";
 
-    params.wallThickness = BeNumerical::BeNextafter (halfDepth, 0.0);
+    params.wallThickness = halfDepth - TESTS_EPSILON;
     EXPECT_SUCCESS_Insert (params) << "Wall thickness should be less than half of depth.";
     }
 
@@ -222,7 +222,7 @@ TEST_F (HollowRectangleProfileTestCase, Insert_InnerFilletRadiusFitsWidth_Succes
     params.innerFilletRadius = maxRadius;
     EXPECT_SUCCESS_Insert (params) << "Inner fillet radius should be less than half width minus wall thickness";
 
-    params.innerFilletRadius = BeNumerical::BeNextafter (maxRadius, INFINITY);
+    params.innerFilletRadius = maxRadius + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Inner fillet radius should be less than half width minus wall thickness";
     }
 
@@ -238,7 +238,7 @@ TEST_F (HollowRectangleProfileTestCase, Insert_InnerFilletRadiusFitsDepth_Succes
     params.innerFilletRadius = maxRadius;
     EXPECT_SUCCESS_Insert (params) << "Inner fillet radius should be less than half depth minus wall thickness";
 
-    params.innerFilletRadius = BeNumerical::BeNextafter (maxRadius, INFINITY);
+    params.innerFilletRadius = maxRadius + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Inner fillet radius should be less than half depth minus wall thickness";
     }
 
@@ -265,7 +265,7 @@ TEST_F (HollowRectangleProfileTestCase, Insert_OuterFilletRadiusIntersectsWithIn
     params.outerFilletRadius = maxOuterRadius;
     EXPECT_FAIL_Insert (params) << "Outer fillet radius should be such that the filleted outer corner doesn't intersect with the inner corner";
 
-    params.outerFilletRadius = BeNumerical::BeNextafter (maxOuterRadius, 0.0);
+    params.outerFilletRadius = maxOuterRadius - TESTS_EPSILON;
     EXPECT_SUCCESS_Insert (params) << "Outer fillet radius should be such that the filleted outer corner doesn't intersect with the inner corner";
     }
 
@@ -284,7 +284,7 @@ TEST_F (HollowRectangleProfileTestCase, Insert_OuterFilletEqualsHalfWidth_Succes
     params.outerFilletRadius = maxOuterRadius;
     EXPECT_SUCCESS_Insert (params) << "Outer fillet radius should be less than half width";
 
-    params.outerFilletRadius = BeNumerical::BeNextafter (maxOuterRadius, INFINITY);
+    params.outerFilletRadius = maxOuterRadius + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Outer fillet radius should be less than half width";
     }
 
@@ -303,6 +303,6 @@ TEST_F (HollowRectangleProfileTestCase, Insert_OuterFilletRadiusEqualsHalfDepth_
     params.outerFilletRadius = maxOuterRadius;
     EXPECT_SUCCESS_Insert (params) << "Outer fillet radius should be less than half depth";
 
-    params.outerFilletRadius = BeNumerical::BeNextafter (maxOuterRadius, INFINITY);
+    params.outerFilletRadius = maxOuterRadius + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Outer fillet radius should be less than half depth";
     }

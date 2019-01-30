@@ -51,7 +51,7 @@ bool RegularPolygonProfile::_Validate() const
     if (!T_Super::_Validate())
         return false;
 
-    bool const isSideCountValid = GetSideCount() >= 3 && GetSideCount() <= 32;
+    bool const isSideCountValid = ProfilesProperty::IsGreaterOrEqual (GetSideCount(), 3) && ProfilesProperty::IsLessOrEqual (GetSideCount(), 32);
     bool const isSideLengthValid = ProfilesProperty::IsGreaterThanZero (GetSideLength());
 
     return isSideCountValid && isSideLengthValid;

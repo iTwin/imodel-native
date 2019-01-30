@@ -74,7 +74,7 @@ bool SchifflerizedLShapeProfile::ValidateThickness() const
     double const thickness = GetThickness();
     bool const isPossitive = ProfilesProperty::IsGreaterThanZero (thickness);
     // Maximum thickness is calculated as if LegBendOffset is 0
-    bool const fitsBetweenLegs = thickness < GetLegLength() / std::sqrt (3.0);
+    bool const fitsBetweenLegs = ProfilesProperty::IsLess (thickness, GetLegLength() / std::sqrt (3.0));
 
     return isPossitive && fitsBetweenLegs;
     }

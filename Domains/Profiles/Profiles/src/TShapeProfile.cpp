@@ -96,7 +96,7 @@ bool TShapeProfile::ValidateFlangeThickness() const
     {
     double const flangeThickness = GetFlangeThickness();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (flangeThickness);
-    bool const isLessThanDepth = flangeThickness < GetDepth();
+    bool const isLessThanDepth = ProfilesProperty::IsLess (flangeThickness, GetDepth());
 
     return isPositive && isLessThanDepth;
     }
@@ -108,7 +108,7 @@ bool TShapeProfile::ValidateWebThickness() const
     {
     double const webThickness = GetWebThickness();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (webThickness);
-    bool const isLessThanFlangeWidth = webThickness < GetFlangeWidth();
+    bool const isLessThanFlangeWidth = ProfilesProperty::IsLess (webThickness, GetFlangeWidth());
 
     return isPositive && isLessThanFlangeWidth;
     }
@@ -123,8 +123,8 @@ bool TShapeProfile::ValidateFilletRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
-    bool const fitsInFlange = filletRadius <= GetFlangeInnerFaceLength() / 2.0 - GetWebSlopeHeight();
-    bool const fitsInWeb = filletRadius <= GetWebFaceLength() / 2.0 - GetFlangeSlopeHeight();
+    bool const fitsInFlange = ProfilesProperty::IsLessOrEqual (filletRadius, GetFlangeInnerFaceLength() / 2.0 - GetWebSlopeHeight());
+    bool const fitsInWeb = ProfilesProperty::IsLessOrEqual (filletRadius, GetWebFaceLength() / 2.0 - GetFlangeSlopeHeight());
 
     return isPositive && fitsInFlange && fitsInWeb;
     }
@@ -139,8 +139,8 @@ bool TShapeProfile::ValidateFlangeEdgeRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeEdgeRadius);
-    bool const fitsInFlangeLength = flangeEdgeRadius <= GetFlangeInnerFaceLength() / 2.0;
-    bool const fitsInFlangeThickness = flangeEdgeRadius <= GetFlangeThickness() / 2.0;
+    bool const fitsInFlangeLength = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeInnerFaceLength() / 2.0);
+    bool const fitsInFlangeThickness = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeThickness() / 2.0);
 
     return isPositive && fitsInFlangeLength && fitsInFlangeThickness;
     }
@@ -155,8 +155,8 @@ bool TShapeProfile::ValidateFlangeSlope() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeSlope);
-    bool const isLessThanHalfPi = flangeSlope < PI / 2.0;
-    bool const slopeHeightFitsInWeb = GetFlangeSlopeHeight() <= GetWebFaceLength() / 2.0;
+    bool const isLessThanHalfPi = ProfilesProperty::IsLess (flangeSlope, PI / 2.0);
+    bool const slopeHeightFitsInWeb = ProfilesProperty::IsLessOrEqual (GetFlangeSlopeHeight(), GetWebFaceLength() / 2.0);
 
     return isPositive && isLessThanHalfPi && slopeHeightFitsInWeb;
     }
@@ -171,8 +171,8 @@ bool TShapeProfile::ValidateWebEdgeRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (webEdgeRadius);
-    bool const fitsInWebLength = webEdgeRadius <= GetWebFaceLength() / 2.0;
-    bool const fitsInWebThickness = webEdgeRadius <= GetWebThickness() / 2.0;
+    bool const fitsInWebLength = ProfilesProperty::IsLessOrEqual (webEdgeRadius, GetWebFaceLength() / 2.0);
+    bool const fitsInWebThickness = ProfilesProperty::IsLessOrEqual (webEdgeRadius, GetWebThickness() / 2.0);
 
     return isPositive && fitsInWebLength && fitsInWebThickness;
     }
@@ -187,8 +187,8 @@ bool TShapeProfile::ValidateWebSlope() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (webSlope);
-    bool const isLessThanHalfPi = webSlope < PI / 2.0;
-    bool const slopeHeightFitsInFlange = GetWebSlopeHeight() <= GetFlangeInnerFaceLength() / 2.0;
+    bool const isLessThanHalfPi = ProfilesProperty::IsLess (webSlope, PI / 2.0);
+    bool const slopeHeightFitsInFlange = ProfilesProperty::IsLessOrEqual (GetWebSlopeHeight(), GetFlangeInnerFaceLength() / 2.0);
 
     return isPositive && isLessThanHalfPi && slopeHeightFitsInFlange;
     }

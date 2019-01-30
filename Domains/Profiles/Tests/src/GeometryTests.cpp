@@ -27,7 +27,7 @@ protected:
 
     template<typename T>
     RefCountedPtr<T> InsertProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow = false);
-
+    void InsertProfileGeometry_1(CenterLineCShapeProfile::CreateParams const& createParams, bool placeInNewRow);
     DgnCategoryId GetCategoryId() { return m_categoryId; }
     PhysicalModel& GetPhysicalModel() { return *m_physicalModelPtr; }
 
@@ -107,6 +107,20 @@ RefCountedPtr<T> GeometryTestCase::InsertProfileGeometry (typename T::CreatePara
     InsertPhysicalElement (profilePtr, placeInNewRow);
 
     return profilePtr;
+    }
+
+
+void GeometryTestCase::InsertProfileGeometry_1 (CenterLineCShapeProfile::CreateParams const& createParams, bool placeInNewRow)
+    {
+    CenterLineCShapeProfilePtr profilePtr = CenterLineCShapeProfile::Create(createParams);
+
+    BeAssert(profilePtr.IsValid());
+
+    DgnDbStatus status;
+    profilePtr->Insert(&status);
+    BeAssert(status == DgnDbStatus::Success && "Failed to insert Profile");
+
+    InsertPhysicalElement(profilePtr, placeInNewRow);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -237,6 +251,9 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_SlopeAndRoundings", 3.5, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
 
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape not rounded, with girth", 3.5, 10.0, 1.0, 1.3, 0.0), true);
+
+    InsertProfileGeometry_1(CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape not rounded, with girth", 3.5, 10.0, 1.0, 1.3, 0.0), true);
+
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape not rounded, with max girth", 3.5, 10.0, 1.0, 10.0 / 2 - 0.01, 0.0));
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape not rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.0));
     InsertProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams(GetModel(), "CenterLineCShape rounded, with min girth", 3.5, 10.0, 1.0, 1.17, 0.17));
@@ -261,8 +278,8 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
 
     InsertProfileGeometry<RectangleProfile> (RectangleProfile::CreateParams (GetModel(), "Rectangle", 6.0, 4.0), true);
     InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle", 4.0, 6.0, 0.5));
-    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 6.0, 4.0, 2.0));
-    InsertProfileGeometry<RoundedRectangleProfile> (RoundedRectangleProfile::CreateParams (GetModel(), "RoundedRectangle_MaxRadius", 4.0, 6.0, 2.0));
+    InsertProfileGeometry<CapsuleProfile> (CapsuleProfile::CreateParams (GetModel(), "Capsule 6x4", 6.0, 4.0));
+    InsertProfileGeometry<CapsuleProfile> (CapsuleProfile::CreateParams (GetModel(), "Capsule 4x6", 4.0, 6.0));
 
     InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle", 4.0, 6.0, 0.5), true);
     InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_OuterRadius", 4.0, 6.0, 0.5, 0.0, 0.5));

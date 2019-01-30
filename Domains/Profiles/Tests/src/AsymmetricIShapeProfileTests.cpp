@@ -378,8 +378,8 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopAndBottomFlangeThicknessGreat
     params.bottomFlangeThickness = halfDepth;
     EXPECT_FAIL_Insert (params) << "Top flange thickness added with bottom flange thickness should be less than depth.";
 
-    params.topFlangeThickness = BeNumerical::BeNextafter (halfDepth, 0.0);
-    params.bottomFlangeThickness = BeNumerical::BeNextafter (halfDepth, 0.0);
+    params.topFlangeThickness = halfDepth - TESTS_EPSILON;
+    params.bottomFlangeThickness = halfDepth - TESTS_EPSILON;
     EXPECT_SUCCESS_Insert (params) << "Top flange thickness added with bottom flange thickness should be less than depth.";
     }
 
@@ -464,7 +464,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeFilletRadiusAgainstTheF
     EXPECT_DOUBLE_EQ (0.5, profilePtr->GetTopFlangeInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Top flange fillet radius should be less or equal to half of the inner face of the top flange.";
 
-    params.topFlangeFilletRadius = BeNumerical::BeNextafter (0.5, INFINITY);
+    params.topFlangeFilletRadius = 0.5 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Top flange fillet radius should be less or equal to half of the inner face of the top flange.";
     }
 
@@ -480,7 +480,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeFilletRadiusAgainstT
     EXPECT_DOUBLE_EQ (0.5, profilePtr->GetBottomFlangeInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Bottom flange fillet radius should be less or equal to half of the inner face of the bottom flange.";
 
-    params.bottomFlangeFilletRadius = BeNumerical::BeNextafter (0.5, INFINITY);
+    params.bottomFlangeFilletRadius = 0.5 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Bottom flange fillet radius should be less or equal to half of the inner face of the bottom flange.";
     }
 
@@ -496,7 +496,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeFilletRadiusAgainstTheW
     EXPECT_DOUBLE_EQ (0.5, profilePtr->GetWebInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Top flange fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
 
-    params.topFlangeFilletRadius = BeNumerical::BeNextafter (0.5, INFINITY);
+    params.topFlangeFilletRadius = 0.5 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Top flange fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
     }
 
@@ -512,7 +512,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeFilletRadiusAgainstT
     EXPECT_DOUBLE_EQ (0.5, profilePtr->GetWebInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Bottom flange fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
 
-    params.bottomFlangeFilletRadius = BeNumerical::BeNextafter (0.5, INFINITY);
+    params.bottomFlangeFilletRadius = 0.5 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Bottom flange fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
     }
 
@@ -535,7 +535,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeFilletRadiusAgainstTheW
     params.topFlangeFilletRadius = maximumFilletRadiusForWeb;
     EXPECT_SUCCESS_Insert (params) << "Top flange fillet radius should be less or equal to half of the inner face of the web minus top flange slope height.";
 
-    params.topFlangeFilletRadius = BeNumerical::BeNextafter (maximumFilletRadiusForWeb, INFINITY);
+    params.topFlangeFilletRadius = maximumFilletRadiusForWeb + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Top flange fillet radius should be less or equal to half of the inner face of the web minus top flange slope height.";
     }
 
@@ -558,7 +558,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeFilletRadiusAgainstT
     params.bottomFlangeFilletRadius = maximumFilletRadiusForWeb;
     EXPECT_SUCCESS_Insert (params) << "Bottom flange fillet radius should be less or equal to half of the inner face of the web minus bottom flange slope height.";
 
-    params.bottomFlangeFilletRadius = BeNumerical::BeNextafter (maximumFilletRadiusForWeb, INFINITY);
+    params.bottomFlangeFilletRadius = maximumFilletRadiusForWeb + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Bottom flange fillet radius should be less or equal to half of the inner face of the web minus bottom flange slope height.";
     }
 
@@ -592,7 +592,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeEdgeRadiusAgainstFlange
     params.topFlangeEdgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Top flange edge radius should be less or equal to half of the top flange thickness.";
 
-    params.topFlangeEdgeRadius = BeNumerical::BeNextafter (0.5, INFINITY);
+    params.topFlangeEdgeRadius = 0.5 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Top flange edge radius should be less or equal to half of the top flange thickness.";
     }
 
@@ -606,7 +606,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeEdgeRadiusAgainstFla
     params.bottomFlangeEdgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Bottom flange edge radius should be less or equal to half of the bottom flange thickness.";
 
-    params.bottomFlangeEdgeRadius = BeNumerical::BeNextafter (0.5, INFINITY);
+    params.bottomFlangeEdgeRadius = 0.5 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Bottom flange edge radius should be less or equal to half of the bottom flange thickness.";
     }
 
@@ -627,7 +627,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeEdgeRadiusAgainstInnerF
     params.topFlangeEdgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Top flange edge radius should be less or equal to inner top flange face length.";
 
-    params.topFlangeEdgeRadius = BeNumerical::BeNextafter (0.5, INFINITY);
+    params.topFlangeEdgeRadius = 0.5 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Top flange edge radius should be less or equal to inner top flange face length.";
     }
 
@@ -648,7 +648,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeEdgeRadiusAgainstInn
     params.bottomFlangeEdgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Bottom flange edge radius should be less or equal to inner bottom flange face length.";
 
-    params.bottomFlangeEdgeRadius = BeNumerical::BeNextafter (0.5, INFINITY);
+    params.bottomFlangeEdgeRadius = 0.5 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Bottom flange edge radius should be less or equal to inner bottom flange face length.";
     }
 
@@ -689,7 +689,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeSlopeOf45Degrees_Succes
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetTopFlangeSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Top flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
 
-    params.topFlangeSlope = Angle::FromRadians (BeNumerical::BeNextafter (PI / 4.0, INFINITY));
+    params.topFlangeSlope = Angle::FromRadians (PI / 4.0 + TESTS_EPSILON);
     EXPECT_FAIL_Insert (params) << "Top flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
     }
 
@@ -710,7 +710,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeSlopeOf45Degrees_Suc
     EXPECT_DOUBLE_EQ (4.0, profilePtr->GetBottomFlangeSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Bottom flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
 
-    params.bottomFlangeSlope = Angle::FromRadians (BeNumerical::BeNextafter (PI / 4.0, INFINITY));
+    params.bottomFlangeSlope = Angle::FromRadians (PI / 4.0 + TESTS_EPSILON);
     EXPECT_FAIL_Insert (params) << "Bottom flange slope should be such, that the slope height should be less or equal to half of inner web face length.";
     }
 

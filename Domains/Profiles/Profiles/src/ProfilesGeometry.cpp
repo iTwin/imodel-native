@@ -1000,6 +1000,50 @@ IGeometryPtr ProfilesGeometry::CreateTrapezium (TrapeziumProfile const& profile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* If capsules depth is greater than width - construct horizontal capsule and simply
+* rotate the geometry by 90 degrees.
+* NOTE: By doing so, size of the geometry doesn't change - the transformation matrix
+* is stored in the DB anyway.
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateCapsule (CapsuleProfile const& profile)
+    {
+    double halfWidth = profile.GetWidth() / 2.0;
+    double halfDepth = profile.GetDepth() / 2.0;
+
+    bool const needsRotation = BeNumerical::IsLess (halfWidth, halfDepth);
+    if (needsRotation)
+        std::swap (halfWidth, halfDepth);
+
+    DPoint3d const topLeft = { -halfWidth + halfDepth, halfDepth, 0.0 };
+    DPoint3d const topRight = { halfWidth - halfDepth, halfDepth, 0.0 };
+
+    DPoint3d const bottomRight = { halfWidth - halfDepth, -halfDepth, 0.0 };
+    DPoint3d const bottomLeft = { -halfWidth + halfDepth, -halfDepth, 0.0 };
+
+    DPoint3d const middleLeft = { -halfWidth, 0.0, 0.0 };
+    DPoint3d const middleRight = { halfWidth, 0.0, 0.0 };
+
+    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (topLeft, topRight);
+    ICurvePrimitivePtr rightArc = ICurvePrimitive::CreateArc (DEllipse3d::FromPointsOnArc (topRight, middleRight, bottomRight));
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
+    ICurvePrimitivePtr leftArc = ICurvePrimitive::CreateArc (DEllipse3d::FromPointsOnArc (bottomLeft, middleLeft, topLeft));
+
+    bvector<ICurvePrimitivePtr> orderedCurves = { topLine, rightArc, bottomLine, leftArc };
+    IGeometryPtr geometryPtr = createGeometryFromPrimitiveArray (orderedCurves);
+
+    if (needsRotation)
+        {
+        DMatrix4d rotation = DMatrix4d::From (RotMatrix::FromVectorAndRotationAngle (DVec3d::From (0.0, 0.0, 1.0), PI / 2.0));
+        Transform transform;
+        transform.InitFrom (rotation);
+        geometryPtr->TryTransformInPlace (transform);
+        }
+
+    return geometryPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateRegularPolygon (RegularPolygonProfile const& profile)

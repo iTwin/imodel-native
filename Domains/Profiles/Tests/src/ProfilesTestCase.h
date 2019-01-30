@@ -10,6 +10,8 @@
 #include <DgnView\DgnViewLib.h>
 #include <Profiles\ProfilesApi.h>
 
+#define TESTS_EPSILON 0.000000000000001
+
 #define EXPECT_SUCCESS_Insert(createParams) EXPECT_EQ (DgnDbStatus::Success, InsertAndUpdateElement (createParams))
 #define EXPECT_FAIL_Insert(createParams) EXPECT_EQ (DgnDbStatus::ValidationFailed, InsertAndUpdateElement (createParams))
 

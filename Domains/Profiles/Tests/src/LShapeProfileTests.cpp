@@ -274,7 +274,7 @@ TEST_F (LShapeProfileTestCase, Insert_ThicknessEqualToWidth_FailedInsert)
     params.thickness = params.width;
     EXPECT_FAIL_Insert (params) << "Thickness should be less than the width.";
 
-    params.thickness = BeNumerical::BeNextafter (params.width, 0.0);
+    params.thickness = params.width - TESTS_EPSILON;
     EXPECT_SUCCESS_Insert (params) << "Thickness should be less than the width.";
     }
 
@@ -288,7 +288,7 @@ TEST_F (LShapeProfileTestCase, Insert_ThicknessEqualToDepth_FailedInsert)
     params.thickness = params.depth;
     EXPECT_FAIL_Insert (params) << "Thickness should be less than the depth.";
 
-    params.thickness = BeNumerical::BeNextafter (params.depth, 0.0);
+    params.thickness = params.depth - TESTS_EPSILON;
     EXPECT_SUCCESS_Insert (params) << "Thickness should be less than the depth.";
     }
 
@@ -317,7 +317,7 @@ TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlange_CorrectInsert
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetFlangeInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
 
-    params.filletRadius = BeNumerical::BeNextafter (1.0, INFINITY);
+    params.filletRadius = 1.0 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange.";
     }
 
@@ -335,7 +335,7 @@ TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheWeb_CorrectInsertRes
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWebInnerFaceLength() / 2.0);
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
 
-    params.filletRadius = BeNumerical::BeNextafter (1.0, INFINITY);
+    params.filletRadius = 1.0 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web (when flange slope is zero).";
     }
 
@@ -358,7 +358,7 @@ TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheFlangeWithSlope_Corr
     params.filletRadius = maximumFilletRadiusForFlange;
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange minus web slope height.";
 
-    params.filletRadius = BeNumerical::BeNextafter (maximumFilletRadiusForFlange, INFINITY);
+    params.filletRadius = maximumFilletRadiusForFlange + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the flange minus web slope height.";
     }
 
@@ -381,7 +381,7 @@ TEST_F (LShapeProfileTestCase, Insert_FilletRadiusAgainstTheWebWithSlope_Correct
     params.filletRadius = maximumFilletRadiusForWeb;
     EXPECT_SUCCESS_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web minus flange slope height.";
 
-    params.filletRadius = BeNumerical::BeNextafter (maximumFilletRadiusForWeb, INFINITY);
+    params.filletRadius = maximumFilletRadiusForWeb + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Fillet radius should be less or equal to half of the inner face of the web minus flange slope height.";
     }
 
@@ -405,7 +405,7 @@ TEST_F (LShapeProfileTestCase, Insert_EdgeRadiusAgainstThickness_CorrectInsertRe
     params.edgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the thickness.";
 
-    params.edgeRadius = BeNumerical::BeNextafter (0.5, INFINITY);
+    params.edgeRadius = 0.5 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to half of the thickness.";
     }
 
@@ -426,7 +426,7 @@ TEST_F (LShapeProfileTestCase, Insert_EdgeRadiusAgainstInnerFlangeFace_CorrectIn
     params.edgeRadius = 1.0;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of inner flange face length.";
 
-    params.edgeRadius = BeNumerical::BeNextafter (1.0, INFINITY);
+    params.edgeRadius = 1.0 + TESTS_EPSILON;
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to half of inner flange face length.";
     }
 
@@ -458,7 +458,7 @@ TEST_F (LShapeProfileTestCase, Insert_LegSlopeOf30Degrees_SuccessfulInsert)
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetVerticalLegSlopeHeight());
     EXPECT_SUCCESS_Insert (params) << "Leg slope should be such, that the slope height should be less or equal to half of inner web and flange face lengths.";
 
-    params.legSlope = Angle::FromRadians (BeNumerical::BeNextafter (angle, INFINITY));
+    params.legSlope = Angle::FromRadians (angle + TESTS_EPSILON);
     EXPECT_FAIL_Insert (params) << "Leg slope should be such, that the slope height should be less or equal to half of inner web and flange face lengths.";
     }
 

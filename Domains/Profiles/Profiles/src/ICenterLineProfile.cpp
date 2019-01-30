@@ -28,7 +28,7 @@ void ICenterLineProfile::SetCenterLine(IGeometry const& val)
     ECN::ECValue ecValue;
     ecValue.SetIGeometry(val);
 
-    (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ICenterLineProfile_CenterLine, ecValue);
+    (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue (PRF_PROP_ICenterLineProfile_CenterLine, ecValue);
     }
 
 

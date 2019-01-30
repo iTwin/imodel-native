@@ -131,8 +131,8 @@ bool LShapeProfile::ValidateThickness() const
     {
     double const thickness = GetThickness();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (thickness);
-    bool const isLessThanWidth = thickness < GetWidth();
-    bool const isLessThanDepth = thickness < GetDepth();
+    bool const isLessThanWidth = ProfilesProperty::IsLess (thickness, GetWidth());
+    bool const isLessThanDepth = ProfilesProperty::IsLess (thickness, GetDepth());
 
     return isPositive && isLessThanDepth && isLessThanWidth;
     }
@@ -150,8 +150,8 @@ bool LShapeProfile::ValidateFilletRadius() const
     double const availableFlangeLength = GetFlangeInnerFaceLength() / 2.0 - GetVerticalLegSlopeHeight();
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
-    bool const isLessThanAvailableWebLength = filletRadius <= availableWebLength;
-    bool const isLessThanAvailableFlangeLength = filletRadius <= availableFlangeLength;
+    bool const isLessThanAvailableWebLength = ProfilesProperty::IsLessOrEqual (filletRadius, availableWebLength);
+    bool const isLessThanAvailableFlangeLength = ProfilesProperty::IsLessOrEqual (filletRadius, availableFlangeLength);
 
     return isPositive && isLessThanAvailableFlangeLength && isLessThanAvailableWebLength;
     }
@@ -166,8 +166,8 @@ bool LShapeProfile::ValidateEdgeRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (edgeRadius);
-    bool const isLessThanHalfThickness = edgeRadius <= GetThickness() / 2.0;
-    bool const isLessThanAvailableFlangeLength = edgeRadius <= GetFlangeInnerFaceLength() / 2.0;
+    bool const isLessThanHalfThickness = ProfilesProperty::IsLessOrEqual (edgeRadius, GetThickness() / 2.0);
+    bool const isLessThanAvailableFlangeLength = ProfilesProperty::IsLessOrEqual (edgeRadius, GetFlangeInnerFaceLength() / 2.0);
 
     return isPositive && isLessThanHalfThickness && isLessThanAvailableFlangeLength;
     }
@@ -182,9 +182,9 @@ bool LShapeProfile::ValidateLegSlope() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (legSlope);
-    bool const isLessThan90Degrees = legSlope < PI / 2.0;
-    bool const slopeHeightIsLessThanAvailableFlangeLength = GetVerticalLegSlopeHeight() <= GetFlangeInnerFaceLength() / 2.0;
-    bool const slopeHeightIsLessThanAvailableWebLength = GetHorizontalLegSlopeHeight() <= GetWebInnerFaceLength() / 2.0;
+    bool const isLessThan90Degrees = ProfilesProperty::IsLess (legSlope, PI / 2.0);
+    bool const slopeHeightIsLessThanAvailableFlangeLength = ProfilesProperty::IsLessOrEqual (GetVerticalLegSlopeHeight(), GetFlangeInnerFaceLength() / 2.0);
+    bool const slopeHeightIsLessThanAvailableWebLength = ProfilesProperty::IsLessOrEqual (GetHorizontalLegSlopeHeight(), GetWebInnerFaceLength() / 2.0);
 
     return isPositive && isLessThan90Degrees && slopeHeightIsLessThanAvailableFlangeLength && slopeHeightIsLessThanAvailableWebLength;
     }

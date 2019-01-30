@@ -72,7 +72,7 @@ bool HollowCircleProfile::ValidateWallThickness() const
     {
     double const wallThickness = GetWallThickness();
     bool const isPositive = ProfilesProperty::IsGreaterThanZero (wallThickness);
-    bool const isLessThanRadius = wallThickness < GetRadius();
+    bool const isLessThanRadius = ProfilesProperty::IsLess (wallThickness, GetRadius());
 
     return isPositive && isLessThanRadius;
     }
