@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewContext.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -810,6 +810,7 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
     m_categoryId            = rhs.m_categoryId;
     m_subCategoryId         = rhs.m_subCategoryId;
     m_materialId            = rhs.m_materialId;
+    m_materialUVDetail      = rhs.m_materialUVDetail;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
     m_weight                = rhs.m_weight;       
@@ -837,6 +838,7 @@ GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     m_categoryId            = rhs.m_categoryId;
     m_subCategoryId         = rhs.m_subCategoryId;
     m_materialId            = rhs.m_materialId;
+    m_materialUVDetail      = rhs.m_materialUVDetail;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
     m_weight                = rhs.m_weight;
@@ -914,8 +916,9 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
     if (m_appearanceOverrides.m_material != other.m_appearanceOverrides.m_material)
         return false;
 
-    if (m_appearanceOverrides.m_material && (m_materialId != other.m_materialId))
-        return false;
+    if (m_appearanceOverrides.m_material)
+        if (m_materialId != other.m_materialId || !m_materialUVDetail.IsEquivalent(other.m_materialUVDetail))
+            return false;
 
     // Don't compare m_styleInfo unless sub-category appearance override is set...
     if (m_appearanceOverrides.m_style != other.m_appearanceOverrides.m_style)

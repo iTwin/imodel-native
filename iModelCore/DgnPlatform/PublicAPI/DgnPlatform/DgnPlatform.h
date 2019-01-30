@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -381,6 +381,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(MaterialUVDetail)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(TextureMapping)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)

@@ -696,12 +696,49 @@ struct TextureMapping
         FrontProject      = 8, //<! Only valid for lights.
     };
 
+    //=======================================================================================
+    //! A 2x3 2d transform applied to UV parameters.
+    // @bsistruct                                                   Paul.Connelly   01/19
+    //=======================================================================================
     struct Trans2x3
     {
         double m_val[2][3];
         Trans2x3() {}
-        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
+        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12)
+            {
+            m_val[0][0] = t00;
+            m_val[0][1] = t01;
+            m_val[0][2] = t02;
+            m_val[1][0] = t10;
+            m_val[1][1] = t11;
+            m_val[1][2] = t12;
+            }
+
+        static Trans2x3 FromIdentity() { return Trans2x3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0); }
+        void InitIdentity() { *this = FromIdentity(); }
+        bool IsIdentity() const
+            {
+            return 1.0 == m_val[0][0] && 0.0 == m_val[0][1] && 0.0 == m_val[0][2]
+                && 0.0 == m_val[1][0] && 1.0 == m_val[1][1] && 0.0 == m_val[1][2];
+            }
+
+        static Trans2x3 FromProduct(Trans2x3 const& lhs, Trans2x3 const& rhs);
+        void InitProduct(Trans2x3 const& lhs, Trans2x3 const& rhs) { *this = FromProduct(lhs, rhs); }
+        void MultiplyBy(Trans2x3 const& rhs) { InitProduct(*this, rhs); }
+
+        bool AlmostEqual(Trans2x3 const& rhs) const;
+
         Transform GetTransform() const;
+    };
+
+    //=======================================================================================
+    //! Parameters controlling the material projection.
+    // @bsistruct                                                   Paul.Connelly   01/19
+    //=======================================================================================
+    struct ProjectionInfo
+    {
+        // ###TODO: These are just placeholders for now...
+        DVec3d m_offset, m_scale, m_rotation;
     };
 
     struct Params
@@ -711,7 +748,7 @@ struct TextureMapping
         Mode m_mapMode;
         bool m_worldMapping;
 
-        explicit Params(Mode mode=Mode::Parametric, Trans2x3 const& trans=Trans2x3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0), double weight=1.0, bool worldMapping=false)
+        explicit Params(Mode mode=Mode::Parametric, Trans2x3 const& trans=Trans2x3::FromIdentity(), double weight=1.0, bool worldMapping=false)
             : m_textureMat2x3(trans), m_textureWeight(weight), m_mapMode(mode), m_worldMapping(worldMapping) { }
 
         void SetMode(Mode val) {m_mapMode=val;}
@@ -733,6 +770,43 @@ public:
     bool IsValid() const { return m_texture.IsValid(); }
     TextureCP GetTexture() const { return m_texture.get(); }
     Params const& GetParams() const { return m_params; }
+};
+
+//=======================================================================================
+//! Additional parameters controlling how a material's UV params are computed.
+//! For materials using one of the projection TextureMapping modes, a ProjectionInfo is
+//! required.
+//! For non-projection mapping modes, an optional transform can be supplied.
+//! when computing UV params, a base transform is computed from the material properties.
+//! That transform is then multiplied by the MaterialUVDetail's own transform if defined.
+//! The UV params are then multiplied by the final transform.
+// @bsistruct                                                   Paul.Connelly   01/19
+//=======================================================================================
+struct MaterialUVDetail
+{
+private:
+    enum class Type { None, Transform, Projection };
+    Type    m_type;
+    union
+        {
+        TextureMapping::Trans2x3        m_transform;
+        TextureMapping::ProjectionInfo  m_projection;
+        };
+public:
+    MaterialUVDetail() : m_type(Type::None) { }
+
+    bool HasTransform() const { return Type::Transform == m_type; }
+    bool HasProjection() const { return Type::Projection == m_type; }
+    bool HasDetail() const { return Type::None != m_type; }
+
+    TextureMapping::Trans2x3 const* GetTransform() const { return HasTransform() ? &m_transform : nullptr; }
+    TextureMapping::ProjectionInfo const* GetProjection() const { return HasProjection() ? &m_projection : nullptr; }
+
+    void Clear() { m_type = Type::None; }
+    void SetTransform(TextureMapping::Trans2x3 const& transform) { m_type = Type::Transform; m_transform = transform; }
+    void SetProjection(TextureMapping::ProjectionInfo const& projection) { m_type = Type::Projection; m_projection = projection; }
+
+    bool IsEquivalent(MaterialUVDetailCR rhs) const;
 };
 
 //=======================================================================================
@@ -1212,6 +1286,7 @@ private:
     DgnCategoryId m_categoryId; //!< the Category Id on which the geometry is drawn.
     DgnSubCategoryId m_subCategoryId; //!< the SubCategory Id that controls the appearance of subsequent geometry.
     RenderMaterialId m_materialId; //!< render material Id.
+    MaterialUVDetail m_materialUVDetail;
     int32_t m_elmPriority = 0; //!< display priority (applies to 2d only)
     int32_t m_netPriority = 0; //!< net display priority for element/category (applies to 2d only)
     uint32_t m_weight = 0;
@@ -1252,6 +1327,7 @@ public:
     void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency; m_resolved = false;}
     void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority; m_resolved = false;} // Set display priority (2d only).
     void SetMaterialId(RenderMaterialId materialId) {m_appearanceOverrides.m_material = true; m_materialId = materialId;}
+    void SetMaterial(RenderMaterialId materialId, MaterialUVDetailCR detail) { SetMaterialId(materialId); m_materialUVDetail = detail; }
     void SetPatternParams(PatternParamsP patternParams) {m_pattern = patternParams;}
 
     //! @cond DONTINCLUDEINDOC
@@ -1264,7 +1340,7 @@ public:
     void SetLineColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_color = false;}
     void SetWeightToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_weight = false;}
     void SetLineStyleToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_style = false;}
-    void SetMaterialToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_material = false;}
+    void SetMaterialToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_material = false; m_materialUVDetail.Clear();}
     void SetFillColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_fill = false;}
 
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
@@ -1322,6 +1398,11 @@ public:
 
     //! Get render material.
     RenderMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId;}
+    MaterialUVDetailCP GetMaterialUVDetail() const
+        {
+        BeAssert(m_appearanceOverrides.m_material || m_resolved);
+        return !m_materialUVDetail.HasDetail() ? &m_materialUVDetail : nullptr;
+        }
 
     //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
