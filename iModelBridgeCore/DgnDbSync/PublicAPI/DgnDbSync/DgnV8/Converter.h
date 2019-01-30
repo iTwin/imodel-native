@@ -1236,6 +1236,7 @@ public:
     //! Look up the ImportJob that was created by a prior run of the converter for this V8 file, assuming that there is only one. This method
     //! fails if there is no ImportJob or if there is more than one ImportJob.
     ResolvedImportJob FindSoleImportJobForFile(DgnV8FileR rootFile);
+    ResolvedImportJob FindImportJobFromAspect(DgnV8FileR, DgnV8Api::ModelId const*);
 
     //! Look up the ImportJob that was created by a prior run of the converter for this V8 model, if any.
     ResolvedImportJob FindImportJobForModel(DgnV8ModelR rootModel);

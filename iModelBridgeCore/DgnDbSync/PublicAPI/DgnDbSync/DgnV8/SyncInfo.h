@@ -671,7 +671,7 @@ struct SyncInfo
         DGNDBSYNC_EXPORT Transform GetTransform() const;
         DGNDBSYNC_EXPORT Utf8String GetV8ModelName() const;
 
-        DGNDBSYNC_EXPORT static DgnModelId FindModelBySourceId(DgnElementId scopeId, DgnV8Api::ModelId, TransformCR t, DgnDbR);
+        // DGNDBSYNC_EXPORT static DgnModelId FindModelBySourceId(DgnElementId scopeId, DgnV8Api::ModelId, TransformCR t, DgnDbR);
 
 
         #ifdef TEST_EXTERNAL_SOURCE_ASPECT
@@ -695,8 +695,8 @@ struct SyncInfo
         DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect GetAspect(SubjectCR subj, DgnV8Api::ModelId v8Id);
         DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect GetAspect(SubjectR subj, DgnV8Api::ModelId v8Id);
 
-        DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindAspectBySourceId(Utf8StringCR bridgeName, DgnV8ModelCR masterModel, Converter& converter);
-        DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindSoleAspectForV8MasterFile(Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, Converter& converter);
+        // DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindAspectBySourceId(Utf8StringCR bridgeName, DgnV8ModelCR masterModel, Converter& converter);
+        DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindAspect(Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, DgnV8Api::ModelId const*, Converter& converter);
 
         DGNDBSYNC_EXPORT Utf8String GetBridgeName() const;
 

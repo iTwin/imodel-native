@@ -151,7 +151,6 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
 
-    BeAssert(!GetRepositoryLinkFromAppData(*GetRootV8File()).IsValid());
     WriteRepositoryLink(*GetRootV8File());  // Find the RepositoryLink element for the root file now. This is the order in which the older converter did it.
 
     m_importJob = FindImportJobForModel(*GetRootModelP());
