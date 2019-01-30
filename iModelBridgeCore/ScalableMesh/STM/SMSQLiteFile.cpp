@@ -506,6 +506,17 @@ DbResult SMSQLiteFile::CreateTables()
 
     DbResult result;
     result = m_database->CreateNewDb(filename);
+    if (result == BE_SQLITE_ERROR_FileExists)
+        {
+        //  TFS#976802 in the case where we create a new Reality Mesh through ProjectWise, an empty file is created locally by PW.
+        //  we must remove the file, because CreateNewDb will return BE_SQLITE_ERROR_FileExists which will cause assert and crash.
+        BeFileName beFileName;
+        beFileName.SetNameUtf8(filename);
+        if (BeFileName::DoesPathExist (beFileName))
+            remove (filename);
+
+        result = m_database->CreateNewDb(filename);
+        }
 
     if (result == BE_SQLITE_ERROR_AlreadyOpen) 
         return true;
