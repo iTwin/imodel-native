@@ -362,8 +362,8 @@ BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementBy
     estmt.Prepare(*m_db, "SELECT sourceInfo.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
                   SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
-                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = CAST(? AS TEXT))");
-    estmt.BindInt64(1, srcElementId);
+                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
+    estmt.BindText(1, Utf8PrintfString("%lld", srcElementId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     if (BE_SQLITE_ROW != estmt.Step())
         return BentleyApi::BentleyStatus::BSIERROR;
     elementId = estmt.GetValueId<DgnElementId>(0);
