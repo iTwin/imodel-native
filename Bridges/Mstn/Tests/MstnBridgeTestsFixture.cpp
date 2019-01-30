@@ -371,7 +371,7 @@ BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementBy
                   BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
                   XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
                   " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.Identifier = ?)");
-    estmt.BindInt64(1, srcElementId);
+    estmt.BindText(1, Utf8PrintfString("%lld", srcElementId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     if (BE_SQLITE_ROW != estmt.Step())
         return BentleyApi::BentleyStatus::BSIERROR;
     elementId = estmt.GetValueId<DgnElementId>(0);
@@ -453,7 +453,7 @@ void SynchInfoTests::ValidateNamedViewSynchInfo (BentleyApi::BeFileName& dbFile,
                   BIS_SCHEMA (BIS_CLASS_ViewDefinition) " AS v,"
         XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
         " WHERE (sourceInfo.Element.Id=v.ECInstanceId) AND (sourceInfo.Identifier = ?)");
-    estmt.BindInt64 (1, srcId);
+    estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
     BentleyApi::Utf8String kind, properties, viewName;
@@ -482,7 +482,7 @@ void SynchInfoTests::ValidateLevelSynchInfo (BentleyApi::BeFileName& dbFile, int
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(*info.m_db, "SELECT kind, Identifier, JsonProperties FROM "
                   XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo WHERE (sourceInfo.Identifier = ?)");
-    estmt.BindInt64 (1, srcId);
+    estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
     BentleyApi::Utf8String kind, properties, levelName;
@@ -520,7 +520,7 @@ void SynchInfoTests::ValidateModelSynchInfo (BentleyApi::BeFileName& dbFile, int
         BIS_SCHEMA (BIS_CLASS_Model) " AS m,"
         XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
         " WHERE (sourceInfo.Element.Id=m.ModeledElement.Id) AND (sourceInfo.Identifier = ?)");
-    estmt.BindInt64 (1, srcId);
+    estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
     BentleyApi::Utf8String kind, properties, modelName;
@@ -551,7 +551,7 @@ void SynchInfoTests::ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, i
         BIS_SCHEMA (BIS_CLASS_GeometricElement3d) " AS g,"
         XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
         " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.Identifier = ?)");
-    estmt.BindInt64 (1, srcId);
+    estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
     BentleyApi::Utf8String kind, properties, modelName;
