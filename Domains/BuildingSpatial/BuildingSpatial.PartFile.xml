@@ -10,5 +10,12 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/BuildingSpatial*.xml</Files>
         </Bindings>
     </Part>
+
+    <Part Name="BuildingSpatialApi" BentleyBuildMakeFile="BuildingSpatialApi.prewire.mke">
+        <SubPart PartName="SpatialCompositionElements" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
+        <Bindings>
+            <PublicAPI Domain="BuildingSpatial"/>
+        </Bindings>
+    </Part>
     
 </BuildContext>

@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: BuildingSpatialApi.prewire.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/BuildingSpatial/Elements : $(_MakeFilePath)Elements/PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingSpatial/Domain : $(_MakeFilePath)Domain/PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
