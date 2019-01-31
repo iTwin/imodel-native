@@ -27,28 +27,39 @@ public:
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (CircleProfile)
 
     public:
+        //! Minimal constructor that initializes all members to zero.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        //! Full constructor to initialize members.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double radius);
 
     public:
-        //! Required properties
-        double radius = 0.0;
+        //! @beginGroup
+        double radius = 0.0; //!< The radius of the circle.
+        //! @endGroup
         };
 
 protected:
-    explicit CircleProfile (CreateParams const& params);
+    explicit CircleProfile (CreateParams const& params); //!< @private
 
-    virtual bool _Validate() const override;
-    virtual IGeometryPtr _CreateGeometry() const override;
+    virtual bool _Validate() const override; //!< @private
+    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CircleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CircleProfile)
 
+    //! Creates an instance of CircleProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of CircleProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static CircleProfilePtr Create (CreateParams const& params) { return new CircleProfile (params); }
 
-    PROFILES_EXPORT double GetRadius() const;
-    PROFILES_EXPORT void SetRadius (double value);
+    PROFILES_EXPORT double GetRadius() const; //!< Get the value of @ref CreateParams.radius "Radius"
+    PROFILES_EXPORT void SetRadius (double value); //!< Set the value for @ref CreateParams.radius "Radius"
 
     }; // CircleProfile
 

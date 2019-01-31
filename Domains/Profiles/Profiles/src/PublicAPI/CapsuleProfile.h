@@ -27,32 +27,45 @@ public:
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (CapsuleProfile)
 
     public:
+        //! Minimal constructor that initializes all members to zero.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        //! Full constructor to initialize members.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth);
 
     public:
-        //! Required properties
-        double width = 0.0;
-        double depth = 0.0;
+        //! @beginGroup
+        double width = 0.0; //!< Extent of the capsule in the direction of the x-axis.
+        double depth = 0.0; //!< Extent of the capsule in the direction of the y-axis.
+        //! @endGroup
         };
 
 protected:
-    explicit CapsuleProfile (CreateParams const& params);
+    explicit CapsuleProfile (CreateParams const& params); //!< @private
 
-    virtual bool _Validate() const override;
-    virtual IGeometryPtr _CreateGeometry() const override;
+    virtual bool _Validate() const override; //!< @private
+    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CapsuleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CapsuleProfile)
 
+    //! Creates an instance of CapsuleProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of CapsuleProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static CapsuleProfilePtr Create (CreateParams const& params) { return new CapsuleProfile (params); }
 
-    PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth (double value);
+    //! @beginGroup
+    PROFILES_EXPORT double GetWidth() const; //!< Get the value of @ref CreateParams.width "Width"
+    PROFILES_EXPORT void SetWidth (double value); //!< Set the value for @ref CreateParams.width "Width"
 
-    PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth (double value);
+    PROFILES_EXPORT double GetDepth() const; //!< Get the value of @ref CreateParams.depth "Depth"
+    PROFILES_EXPORT void SetDepth (double value); //!< Set the value for @ref CreateParams.depth "Depth"
+    //! @endGroup
 
     }; // CapsuleProfile
 

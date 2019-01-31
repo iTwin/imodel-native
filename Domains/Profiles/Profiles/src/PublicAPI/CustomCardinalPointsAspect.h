@@ -40,10 +40,10 @@ struct CustomCardinalPointsAspect : Dgn::DgnElement::UniqueAspect
     DGNASPECT_DECLARE_MEMBERS (PRF_SCHEMA_NAME, PRF_CLASS_CustomCardinalPointsAspect, Dgn::DgnElement::UniqueAspect);
 
 protected:
-    virtual Dgn::DgnDbStatus _LoadProperties (Dgn::DgnElementCR el) override;
-    virtual Dgn::DgnDbStatus _UpdateProperties (Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) override;
-    virtual Dgn::DgnDbStatus _GetPropertyValue (ECN::ECValueR value, Utf8CP propertyName, Dgn::PropertyArrayIndex const& arrayIndex) const override;
-    virtual Dgn::DgnDbStatus _SetPropertyValue (Utf8CP propertyName, ECN::ECValueCR value, Dgn::PropertyArrayIndex const& arrayIndex) override;
+    virtual Dgn::DgnDbStatus _LoadProperties (Dgn::DgnElementCR el) override; //!< @private
+    virtual Dgn::DgnDbStatus _UpdateProperties (Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) override; //!< @private
+    virtual Dgn::DgnDbStatus _GetPropertyValue (ECN::ECValueR value, Utf8CP propertyName, Dgn::PropertyArrayIndex const& arrayIndex) const override; //!< @private
+    virtual Dgn::DgnDbStatus _SetPropertyValue (Utf8CP propertyName, ECN::ECValueCR value, Dgn::PropertyArrayIndex const& arrayIndex) override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CustomCardinalPointsAspect)

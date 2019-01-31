@@ -45,37 +45,41 @@ public:
         };
 
 protected:
-    explicit DerivedProfile (CreateParams const& params);
+    explicit DerivedProfile (CreateParams const& params); //!< @private
 
-    virtual bool _Validate() const override;
+    virtual bool _Validate() const override; //!< @private
 
 private:
-    virtual IGeometryPtr _CreateGeometry() const override;
-    virtual IGeometryPtr _UpdateGeometry (Profile const& baseProfile) const override;
+    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
+    virtual IGeometryPtr _UpdateGeometry (Profile const& baseProfile) const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DerivedProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (DerivedProfile)
 
+    //! Creates an instance of DerivedProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of DerivedProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static DerivedProfilePtr Create (CreateParams const& params) { return new DerivedProfile (params); }
 
 public:
-    PROFILES_EXPORT SinglePerimeterProfilePtr GetBaseProfile() const;
-    PROFILES_EXPORT Dgn::DgnElementId GetBaseProfileId() const;
-    PROFILES_EXPORT void SetBaseProfile (SinglePerimeterProfile const& baseProfile);
-    PROFILES_EXPORT void SetBaseProfile (Dgn::DgnElementId const& baseProfileId);
+    PROFILES_EXPORT SinglePerimeterProfilePtr GetBaseProfile() const; //!< Get the value of @ref CreateParams.baseProfile "BaseProfile"
+    PROFILES_EXPORT Dgn::DgnElementId GetBaseProfileId() const; //!< Get the value of @ref CreateParams.baseProfileId "BaseProfileId"
+    PROFILES_EXPORT void SetBaseProfile (SinglePerimeterProfile const& baseProfile); //!< Set the value for @ref CreateParams.baseProfile "BaseProfile"
+    PROFILES_EXPORT void SetBaseProfile (Dgn::DgnElementId const& baseProfileId); //!< Set the value for @ref CreateParams.baseProfile "BaseProfile"
 
-    PROFILES_EXPORT DPoint2d GetOffset() const;
-    PROFILES_EXPORT void SetOffset (DPoint2d const& value);
+    PROFILES_EXPORT DPoint2d GetOffset() const; //!< Get the value of @ref CreateParams.offset "Offset"
+    PROFILES_EXPORT void SetOffset (DPoint2d const& value); //!< Set the value for @ref CreateParams.offset "Offset"
 
-    PROFILES_EXPORT DPoint2d GetScale() const;
-    PROFILES_EXPORT void SetScale (DPoint2d const& value);
+    PROFILES_EXPORT DPoint2d GetScale() const; //!< Get the value of @ref CreateParams.scale "Scale"
+    PROFILES_EXPORT void SetScale (DPoint2d const& value); //!< Set the value for @ref CreateParams.scale "Scale"
 
-    PROFILES_EXPORT Angle GetRotation() const;
-    PROFILES_EXPORT void SetRotation (Angle const& value);
+    PROFILES_EXPORT Angle GetRotation() const; //!< Get the value of @ref CreateParams.rotation "Rotation"
+    PROFILES_EXPORT void SetRotation (Angle const& value); //!< Set the value for @ref CreateParams.rotation "Rotation"
 
-    PROFILES_EXPORT bool GetMirrorAboutYAxis() const;
-    PROFILES_EXPORT void SetMirrorAboutYAxis (bool value);
+    PROFILES_EXPORT bool GetMirrorAboutYAxis() const; //!< Get the value of @ref CreateParams.mirrorAboutYAxis "MirrorAboutYAxis"
+    PROFILES_EXPORT void SetMirrorAboutYAxis (bool value); //!< Set the value for @ref CreateParams.mirrorAboutYAxis "MirrorAboutYAxis"
 
     }; // DerivedProfile
 

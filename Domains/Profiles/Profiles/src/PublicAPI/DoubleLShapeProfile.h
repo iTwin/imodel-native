@@ -53,32 +53,36 @@ public:
         };
 
 protected:
-    explicit DoubleLShapeProfile (CreateParams const& params);
+    explicit DoubleLShapeProfile (CreateParams const& params); //!< @private
 
-    virtual bool _Validate() const override;
+    virtual bool _Validate() const override; //!< @private
 
 private:
     bool ValidateType() const;
 
-    virtual IGeometryPtr _CreateGeometry() const override;
-    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override;
+    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
+    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleLShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (DoubleLShapeProfile)
 
+    //! Creates an instance of DoubleLShapeProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of DoubleLShapeProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static DoubleLShapeProfilePtr Create (CreateParams const& params) { return new DoubleLShapeProfile (params); }
 
 public:
-    PROFILES_EXPORT double GetSpacing() const;
-    PROFILES_EXPORT void SetSpacing (double value);
+    PROFILES_EXPORT double GetSpacing() const; //!< Get the value of @ref CreateParams.spacing "Spacing"
+    PROFILES_EXPORT void SetSpacing (double value); //!< Set the value for @ref CreateParams.spacing "Spacing"
 
-    PROFILES_EXPORT DoubleLShapeProfileType GetType() const;
-    PROFILES_EXPORT void SetType (DoubleLShapeProfileType value);
+    PROFILES_EXPORT DoubleLShapeProfileType GetType() const; //!< Get the value of @ref CreateParams.type "Type"
+    PROFILES_EXPORT void SetType (DoubleLShapeProfileType value); //!< Set the value for @ref CreateParams.type "Type"
 
-    PROFILES_EXPORT LShapeProfilePtr GetSingleProfile() const;
-    PROFILES_EXPORT void SetSingleProfile (LShapeProfile const& singleProfile);
-    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId);
+    PROFILES_EXPORT LShapeProfilePtr GetSingleProfile() const; //!< Get the value of @ref CreateParams.singleProfile "SingleProfile"
+    PROFILES_EXPORT void SetSingleProfile (LShapeProfile const& singleProfile); //!< Set the value for @ref CreateParams.singleProfile "SingleProfile"
+    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId); //!< Set the value for @ref CreateParams.singleProfile "SingleProfile"
 
     }; // DoubleLShapeProfile
 

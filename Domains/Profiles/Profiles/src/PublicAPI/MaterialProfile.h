@@ -37,7 +37,7 @@ public:
         };
 
 protected:
-    explicit MaterialProfile (CreateParams const& params);
+    explicit MaterialProfile (CreateParams const& params); //!< @private
 
     virtual bool _Validate() const;
 
@@ -45,13 +45,17 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (MaterialProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (MaterialProfile)
 
+    //! Creates an instance of MaterialProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of MaterialProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static MaterialProfilePtr Create (CreateParams const& params) { return new MaterialProfile (params); }
 
-    PROFILES_EXPORT ProfileCPtr GetProfile() const;
-    PROFILES_EXPORT void SetProfile (Dgn::DgnElementId const& profileId);
+    PROFILES_EXPORT ProfileCPtr GetProfile() const; //!< Get the value of @ref CreateParams.profile "Profile"
+    PROFILES_EXPORT void SetProfile (Dgn::DgnElementId const& profileId); //!< Set the value for @ref CreateParams.profile "Profile"
 
-    PROFILES_EXPORT Dgn::PhysicalMaterialCPtr GetMaterial() const;
-    PROFILES_EXPORT void SetMaterial (Dgn::DgnElementId const& materialId);
+    PROFILES_EXPORT Dgn::PhysicalMaterialCPtr GetMaterial() const; //!< Get the value of @ref CreateParams.material "Material"
+    PROFILES_EXPORT void SetMaterial (Dgn::DgnElementId const& materialId); //!< Set the value for @ref CreateParams.material "Material"
     }; // MaterialProfile
 
 //=======================================================================================

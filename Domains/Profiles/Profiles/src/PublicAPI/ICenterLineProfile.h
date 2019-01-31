@@ -21,11 +21,14 @@ protected:
     virtual ~ICenterLineProfile() = default;
 
 public:
-    PROFILES_EXPORT IGeometryPtr GetCenterLine () const;
-    PROFILES_EXPORT double GetWallThickness () const;
+    PROFILES_EXPORT IGeometryPtr GetCenterLine() const;
+
+    PROFILES_EXPORT double GetWallThickness() const;
     PROFILES_EXPORT void SetWallThickness (double value);
+
 protected:
     PROFILES_EXPORT void SetCenterLine(IGeometry const& val);
+
     }; // ICenterLineProfile
 
 END_BENTLEY_PROFILES_NAMESPACE

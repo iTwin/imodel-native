@@ -29,20 +29,24 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (BentPlateProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (BentPlateProfile)
 
+    //! Creates an instance of BentPlateProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of BentPlateProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static BentPlateProfilePtr Create (CreateParams const& params) { return new BentPlateProfile (params); }
 
 public:
-    PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth (double value);
+    PROFILES_EXPORT double GetWidth() const; //!< Get the value of @ref CreateParams.width "Width"
+    PROFILES_EXPORT void SetWidth (double value); //!< Set the value for @ref CreateParams.width "Width"
 
-    PROFILES_EXPORT double GetBendAngle() const;
-    PROFILES_EXPORT void SetBendAngle (double value);
+    PROFILES_EXPORT double GetBendAngle() const; //!< Get the value of @ref CreateParams.bendAngle "BendAngle"
+    PROFILES_EXPORT void SetBendAngle (double value); //!< Set the value for @ref CreateParams.bendAngle "BendAngle"
 
-    PROFILES_EXPORT double GetBendRadius() const;
-    PROFILES_EXPORT void SetBendRadius (double value);
+    PROFILES_EXPORT double GetBendRadius() const; //!< Get the value of @ref CreateParams.bendRadius "BendRadius"
+    PROFILES_EXPORT void SetBendRadius (double value); //!< Set the value for @ref CreateParams.bendRadius "BendRadius"
 
-    PROFILES_EXPORT double GetBendOffset() const;
-    PROFILES_EXPORT void SetBendOffset (double value);
+    PROFILES_EXPORT double GetBendOffset() const; //!< Get the value of @ref CreateParams.bendOffset "BendOffset"
+    PROFILES_EXPORT void SetBendOffset (double value); //!< Set the value for @ref CreateParams.bendOffset "BendOffset"
 
     }; // BentPlateProfile
 

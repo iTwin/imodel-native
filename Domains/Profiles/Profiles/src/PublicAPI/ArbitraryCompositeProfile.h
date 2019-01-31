@@ -66,29 +66,33 @@ public:
         };
 
 protected:
-    explicit ArbitraryCompositeProfile (CreateParams const& params);
+    explicit ArbitraryCompositeProfile (CreateParams const& params); //!< @private
 
-    virtual bool _Validate() const override;
+    virtual bool _Validate() const override; //!< @private
 
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _InsertInDb() override;
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _LoadFromDb() override;
-    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _InsertInDb() override; //!< @private
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override; //!< @private
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _LoadFromDb() override; //!< @private
+    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override; //!< @private
 
 private:
     bool ValidateComponent (ArbitraryCompositeProfileComponent const& component, int componentIndex) const;
 
-    virtual IGeometryPtr _CreateGeometry() const override;
-    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override;
+    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
+    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryCompositeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (ArbitraryCompositeProfile)
 
+    //! Creates an instance of ArbitraryCompositeProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of ArbitraryCompositeProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static ArbitraryCompositeProfilePtr Create (CreateParams const& params) { return new ArbitraryCompositeProfile (params); }
 
-    PROFILES_EXPORT ComponentVector GetComponents() const;
-    PROFILES_EXPORT void SetComponents (ComponentVector const& components);
+    PROFILES_EXPORT ComponentVector GetComponents() const; //!< Get the value of @ref CreateParams.components "Components"
+    PROFILES_EXPORT void SetComponents (ComponentVector const& components); //!< Set the value for @ref CreateParams.components "Components"
 
 private:
     ComponentVector m_components;

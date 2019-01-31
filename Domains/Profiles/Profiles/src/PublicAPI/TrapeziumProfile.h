@@ -27,42 +27,54 @@ public:
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (TrapeziumProfile)
 
     public:
+        //! Minimal constructor that initializes all members to zero.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        //! Full constructor to initialize members.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double topWidth, double bottomWidth,
                                                double depth, double topOffset);
 
     public:
-        //! Required properties
-        double topWidth = 0.0;
-        double bottomWidth = 0.0;
-        double depth = 0.0;
-        double topOffset = 0.0;
+        //! @beginGroup
+        double topWidth = 0.0; //!< Extent of the top line measured along the implicit x-axis.
+        double bottomWidth = 0.0; //!< Extent of the bottom line measured along the implicit x-axis.
+        double depth = 0.0; //!< Extent of the distance between the parallel bottom and top lines measured along the implicit y-axis.
+        double topOffset = 0.0; //!< Offset from the beginning of the top line to the bottom line, measured along the implicit x-axis.
+        //! @endGroup
         };
 
 protected:
-    explicit TrapeziumProfile (CreateParams const& params);
+    explicit TrapeziumProfile (CreateParams const& params); //!< @private
 
-    virtual bool _Validate() const override;
-    virtual IGeometryPtr _CreateGeometry() const override;
+    virtual bool _Validate() const override; //!< @private
+    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (TrapeziumProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (TrapeziumProfile)
 
+    //! Creates an instance of TrapeziumProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of TrapeziumProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static TrapeziumProfilePtr Create (CreateParams const& params) { return new TrapeziumProfile (params); }
 
-public:
-    PROFILES_EXPORT double GetTopWidth() const;
-    PROFILES_EXPORT void SetTopWidth (double value);
+    //! @beginGroup
+    PROFILES_EXPORT double GetTopWidth() const; //!< Get the value of @ref CreateParams.topWidth "TopWidth"
+    PROFILES_EXPORT void SetTopWidth (double value); //!< Set the value for @ref CreateParams.topWidth "TopWidth"
 
-    PROFILES_EXPORT double GetBottomWidth() const;
-    PROFILES_EXPORT void SetBottomWidth (double value);
+    PROFILES_EXPORT double GetBottomWidth() const; //!< Get the value of @ref CreateParams.bottomWidth "BottomWidth"
+    PROFILES_EXPORT void SetBottomWidth (double value); //!< Set the value for @ref CreateParams.bottomWidth "BottomWidth"
 
-    PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth (double value);
+    PROFILES_EXPORT double GetDepth() const; //!< Get the value of @ref CreateParams.depth "Depth"
+    PROFILES_EXPORT void SetDepth (double value); //!< Set the value for @ref CreateParams.depth "Depth"
 
-    PROFILES_EXPORT double GetTopOffset() const;
-    PROFILES_EXPORT void SetTopOffset (double value);
+    PROFILES_EXPORT double GetTopOffset() const; //!< Get the value of @ref CreateParams.topOffset "TopOffset"
+    PROFILES_EXPORT void SetTopOffset (double value); //!< Set the value for @ref CreateParams.topOffset "TopOffset"
+    //! @endGroup
 
     }; // TrapeziumProfile
 

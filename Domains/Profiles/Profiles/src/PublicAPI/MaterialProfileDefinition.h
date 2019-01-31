@@ -32,8 +32,8 @@ public:
 protected:
     virtual bool _Validate() const = 0;
 
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override; //!< @private
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override; //!< @private
     }; // MaterialProfileDefinition
 
 //=======================================================================================

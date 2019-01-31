@@ -38,27 +38,31 @@ public:
         };
 
 protected:
-    explicit DoubleCShapeProfile (CreateParams const& params);
+    explicit DoubleCShapeProfile (CreateParams const& params); //!< @private
 
-    virtual bool _Validate() const override;
+    virtual bool _Validate() const override; //!< @private
 
 private:
-    virtual IGeometryPtr _CreateGeometry() const override;
-    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override;
+    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
+    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleCShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (DoubleCShapeProfile)
 
+    //! Creates an instance of DoubleCShapeProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of DoubleCShapeProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static DoubleCShapeProfilePtr Create (CreateParams const& params) { return new DoubleCShapeProfile (params); }
 
 public:
-    PROFILES_EXPORT double GetSpacing() const;
-    PROFILES_EXPORT void SetSpacing (double value);
+    PROFILES_EXPORT double GetSpacing() const; //!< Get the value of @ref CreateParams.spacing "Spacing"
+    PROFILES_EXPORT void SetSpacing (double value); //!< Set the value for @ref CreateParams.spacing "Spacing"
 
-    PROFILES_EXPORT CShapeProfilePtr GetSingleProfile() const;
-    PROFILES_EXPORT void SetSingleProfile (CShapeProfile const& singleProfile);
-    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId);
+    PROFILES_EXPORT CShapeProfilePtr GetSingleProfile() const; //!< Get the value of @ref CreateParams.singleProfile "SingleProfile"
+    PROFILES_EXPORT void SetSingleProfile (CShapeProfile const& singleProfile); //!< Set the value for @ref CreateParams.singleProfile "SingleProfile"
+    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId); //!< Set the value for @ref CreateParams.singleProfile "SingleProfile"
 
     }; // DoubleCShapeProfile
 

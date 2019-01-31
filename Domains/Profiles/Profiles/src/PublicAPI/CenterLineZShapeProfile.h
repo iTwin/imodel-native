@@ -29,20 +29,24 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineZShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CenterLineZShapeProfile)
 
+    //! Creates an instance of CenterLineZShapeProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of CenterLineZShapeProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static CenterLineZShapeProfilePtr Create (CreateParams const& params) { return new CenterLineZShapeProfile (params); }
 
 public:
-    PROFILES_EXPORT double GetFlangeWidth() const;
-    PROFILES_EXPORT void SetFlangeWidth (double value);
+    PROFILES_EXPORT double GetFlangeWidth() const; //!< Get the value of @ref CreateParams.flangeWidth "FlangeWidth"
+    PROFILES_EXPORT void SetFlangeWidth (double value); //!< Set the value for @ref CreateParams.flangeWidth "FlangeWidth"
 
-    PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth (double value);
+    PROFILES_EXPORT double GetDepth() const; //!< Get the value of @ref CreateParams.depth "Depth"
+    PROFILES_EXPORT void SetDepth (double value); //!< Set the value for @ref CreateParams.depth "Depth"
 
-    PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius (double value);
+    PROFILES_EXPORT double GetFilletRadius() const; //!< Get the value of @ref CreateParams.filletRadius "FilletRadius"
+    PROFILES_EXPORT void SetFilletRadius (double value); //!< Set the value for @ref CreateParams.filletRadius "FilletRadius"
 
-    PROFILES_EXPORT double GetGirth() const;
-    PROFILES_EXPORT void SetGirth (double value);
+    PROFILES_EXPORT double GetGirth() const; //!< Get the value of @ref CreateParams.girth "Girth"
+    PROFILES_EXPORT void SetGirth (double value); //!< Set the value for @ref CreateParams.girth "Girth"
 
     }; // CenterLineZShapeProfile
 

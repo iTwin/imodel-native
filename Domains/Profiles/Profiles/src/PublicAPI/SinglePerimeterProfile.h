@@ -27,8 +27,8 @@ struct SinglePerimeterProfile : Profile
 protected:
     explicit SinglePerimeterProfile (CreateParams const& params) : T_Super (params) {}
 
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override;
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override; //!< @private
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (SinglePerimeterProfile)

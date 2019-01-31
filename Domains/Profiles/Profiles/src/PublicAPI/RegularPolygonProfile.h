@@ -27,32 +27,43 @@ public:
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (RegularPolygonProfile)
 
     public:
+        //! Minimal constructor that initializes all members to zero.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        //! Full constructor to initialize members.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, uint64_t sideCount, double sideLength);
 
     public:
-        //! Required properties
-        uint64_t sideCount = 0;
-        double sideLength = 0.0;
+        //! @beginGroup
+        uint64_t sideCount = 0; //!< Count of sides (edges) the polygon is made of. @details Value cannot be less than 3 or greater than 32.
+        double sideLength = 0.0; //!< Constant length of each polygon side (edge).
+        //! @endGroup
         };
 
 protected:
-    explicit RegularPolygonProfile (CreateParams const& params);
+    explicit RegularPolygonProfile (CreateParams const& params); //!< @private
 
-    virtual bool _Validate() const override;
-    virtual IGeometryPtr _CreateGeometry() const override;
+    virtual bool _Validate() const override; //!< @private
+    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (RegularPolygonProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (RegularPolygonProfile)
 
+    //! Creates an instance of RegularPolygonProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of RegularPolygonProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static RegularPolygonProfilePtr Create (CreateParams const& params) { return new RegularPolygonProfile (params); }
 
-    PROFILES_EXPORT uint64_t GetSideCount() const;
-    PROFILES_EXPORT void SetSideCount (uint64_t value);
+    PROFILES_EXPORT uint64_t GetSideCount() const; //!< Get the value of @ref CreateParams.sideCount "SideCount"
+    PROFILES_EXPORT void SetSideCount (uint64_t value); //!< Set the value for @ref CreateParams.sideCount "SideCount"
 
-    PROFILES_EXPORT double GetSideLength() const;
-    PROFILES_EXPORT void SetSideLength (double value);
+    PROFILES_EXPORT double GetSideLength() const; //!< Get the value of @ref CreateParams.sideLength "SideLength"
+    PROFILES_EXPORT void SetSideLength (double value); //!< Set the value for @ref CreateParams.sideLength "SideLength"
 
     }; // RegularPolygonProfile
 

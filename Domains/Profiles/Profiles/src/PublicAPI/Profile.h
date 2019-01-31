@@ -34,14 +34,14 @@ public:
         };
 
 protected:
-    explicit Profile (CreateParams const& params);
+    explicit Profile (CreateParams const& params); //!< @private
 
     virtual bool _Validate() const;
 
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
-    PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override;
-    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override; //!< @private
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override; //!< @private
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override; //!< @private
+    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override; //!< @private
 
 public:
     //! @private
@@ -60,10 +60,10 @@ public:
 
     PROFILES_EXPORT Dgn::DgnDbStatus Validate() const;
 
-    PROFILES_EXPORT Utf8String GetName() const;
-    PROFILES_EXPORT void SetName (Utf8String val);
+    PROFILES_EXPORT Utf8String GetName() const; //!< Get the value of @ref CreateParams.name "Name"
+    PROFILES_EXPORT void SetName (Utf8String val); //!< Set the value for @ref CreateParams.name "Name"
 
-    PROFILES_EXPORT IGeometryPtr GetShape() const;
+    PROFILES_EXPORT IGeometryPtr GetShape() const; //!< Get the value of @ref CreateParams.shape "Shape"
 
 private:
     void SetShape (IGeometry const& val);
