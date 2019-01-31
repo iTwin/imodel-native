@@ -347,8 +347,56 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     pDataStore->Register(index->m_smID);
 
     // Destination coordinates will be ECEF
-    static GeoCoordinates::BaseGCSPtr destinationGCS = GeoCoordinates::BaseGCS::CreateGCS(L"ll84");
+    // Create a WGS84 GCS to convert the WGS84 Lat/Long to ECEF/XYZ
+    WString warningMsg;
+    StatusInt warning;
+    auto destinationGCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
+    destinationGCS->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
 
+    Transform ecefTrans;
+    if(sourceGCS.IsValid())
+        {
+        destinationGCS->SetVerticalDatumCode(sourceGCS->GetVerticalDatumCode());
+
+
+        DRange3d range = index->GetContentExtent();
+        DPoint3d origin = DPoint3d::FromInterpolate(range.low, .5, range.high);
+        //origin.z = 0; // always use ground plane
+
+
+        GeoPoint originLatLong, yLatLong, tempLatLong;
+        sourceGCS->LatLongFromCartesian(originLatLong, origin);
+        sourceGCS->LatLongFromCartesian(yLatLong, DPoint3d::FromSumOf(origin, DPoint3d::From(0.0, 1.0, 0.0)));         // Arbitrarily 10 meters in Y direction will be used to calculate y axis of transform.
+
+        tempLatLong = originLatLong;
+        sourceGCS->LatLongFromLatLong(originLatLong, tempLatLong, *destinationGCS);
+        tempLatLong = yLatLong;
+        sourceGCS->LatLongFromLatLong(yLatLong, tempLatLong, *destinationGCS);
+
+        DPoint3d ecefOrigin, ecefY;
+        destinationGCS->XYZFromLatLong(ecefOrigin, originLatLong);
+        destinationGCS->XYZFromLatLong(ecefY, yLatLong);
+
+        //ecefY = DPoint3d::FromSumOf(ecefOrigin, DPoint3d::From(0.0, 10.0, 0.0));
+
+        RotMatrix rMatrix = RotMatrix::FromIdentity();
+        DVec3d zVector, yVector;
+        zVector.Normalize((DVec3dCR)ecefOrigin);
+        yVector.NormalizedDifference(ecefY, ecefOrigin);
+
+        double product = yVector.x*zVector.x + yVector.y*zVector.y + yVector.z*zVector.z;
+        product;
+
+        rMatrix.SetColumn(yVector, 1);
+        rMatrix.SetColumn(zVector, 2);
+        rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
+
+        ecefTrans = Transform::From(rMatrix, ecefOrigin);
+        }
+    else 
+        {
+        ecefTrans.InverseOf(smTransform);
+        }
 
     SMIndexMasterHeader<DRange3d> oldMasterHeader;
     index->GetDataStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
@@ -366,7 +414,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     strategy->SetOldMasterHeader(oldMasterHeader);
     strategy->SetClipInfo(coverageID, isClipBoundary);
     //strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
-    strategy->SetRootTransform(ecefTransform);
+    strategy->SetRootTransform(ecefTrans);
     strategy->AddGroup(rootNodeGroup.get());
     index->SetRootNodeGroup(rootNodeGroup);
 
@@ -539,8 +587,12 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     if (status != SUCCESS || textureInfo->IsUsingBingMap())
         outputTexture = false;
 
+    DRange3d range = ((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()))->GetContentExtent();
+    DPoint3d center = DPoint3d::FromInterpolate(range.low, .5, range.high);
+    Transform dbToTileLocal = Transform::From(DPoint3d::From(-center.x, -center.y, -center.z));
+
     Transform smTransform = meshP->GetReprojectionTransform();
-    smTransform = smTransform.FromProduct(dbToTile, smTransform);
+    smTransform = smTransform.FromProduct(dbToTileLocal, smTransform);
 
     status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, tileToECEF, smTransform, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
     SMNodeGroupPtr rootTileset = mesh->GetMainIndexP()->GetRootNodeGroup();
