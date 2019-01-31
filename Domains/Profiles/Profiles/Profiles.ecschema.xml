@@ -144,7 +144,7 @@
         <ECProperty propertyName="BottomFlangeSlope" typeName="double" description="Slope of the upper faces of the bottom flange. Non-zero in case of of tapered bottom flange, 0 in case of parallel bottom flange, default 0 if not specified." />
     </ECEntityClass>
 
-    <ECEntityClass typeName="LShapeProfile" modifier="Sealed" description="An L-shaped Profile similar to rolled steel L-shapes.">
+    <ECEntityClass typeName="LShapeProfile" modifier="Sealed" description="An L-shaped Profile (also refered as Angle) similar to rolled steel L-shapes.">
         <BaseClass>ParametricProfile</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
@@ -158,15 +158,15 @@
         <ECProperty propertyName="LegSlope" typeName="double" description="Slope of the inner faces of the legs. Non-zero in case of tapered legs, 0 in case of perpendicular legs, default 0 if not specified." />
     </ECEntityClass>
 
-    <ECEntityClass typeName="SchifflerizedLShapeProfile" modifier="Sealed" description="">
+    <ECEntityClass typeName="SchifflerizedLShapeProfile" modifier="Sealed" description="An L-shaped Profile (also refered as Angle) with legs bent at 15 degree angle, making the angle between the legs equal to 60 degrees.">
         <BaseClass>ParametricProfile</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="LegLength" typeName="double" description="" />
-        <ECProperty propertyName="Thickness" typeName="double" description="" />
+        <ECProperty propertyName="LegLength" typeName="double" description="Leg length. Both vertical and horizontal legs are defined wiht equal length." />
+        <ECProperty propertyName="Thickness" typeName="double" description="Constant wall thickness of profile." />
         <!-- Optional properties -->
-        <ECProperty propertyName="LegBendOffset" typeName="double" description="" />
+        <ECProperty propertyName="LegBendOffset" typeName="double" description="Offset defining where legs are bent. Offset is measured from start of the angle where the legs join." />
         <ECProperty propertyName="FilletRadius" typeName="double" description="Fillet radius between legs. 0 if sharp-edged, default 0 if not specified." />
         <ECProperty propertyName="EdgeRadius" typeName="double" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
     </ECEntityClass>
@@ -357,8 +357,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Width" typeName="double" description="" />
-        <ECProperty propertyName="Depth" typeName="double" description="" />
+        <ECProperty propertyName="Width" typeName="double" description="Extent of the capsule in the direction of the x-axis." />
+        <ECProperty propertyName="Depth" typeName="double" description="Extent of the capsule in the direction of the y-axis." />
     </ECEntityClass>
 
     <!-- Arbitrary single perimeter profile classes -->
