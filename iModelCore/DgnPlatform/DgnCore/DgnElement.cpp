@@ -1645,6 +1645,10 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
         cloneElem->_RemapIds(importer);
         cloneElem->_AdjustPlacementForImport(importer);
         }
+    else if (GetParentId().IsValid())
+        {
+        cloneElem->SetParentId(importer.FindElementId(GetParentId()), GetParentRelClassId());
+        }
 
     stat = DgnDbStatus::Success;
     return cloneElem;

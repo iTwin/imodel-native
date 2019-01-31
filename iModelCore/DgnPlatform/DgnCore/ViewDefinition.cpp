@@ -386,8 +386,12 @@ void ViewDefinition::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::_RemapIds(DgnImportContext& importContext)
     {
-    m_categorySelectorId = importContext.FindElementId(m_categorySelectorId);
-    m_displayStyleId = importContext.FindElementId(m_displayStyleId);
+    if (importContext.IsBetweenDbs())
+        {
+        m_categorySelectorId = importContext.FindElementId(m_categorySelectorId);
+        m_displayStyleId = importContext.FindElementId(m_displayStyleId);
+        }
+
     T_Super::_RemapIds(importContext);
     }
 
@@ -624,11 +628,15 @@ void CategorySelector::_CopyFrom(DgnElementCR in, CopyFromOptions const& opts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CategorySelector::_RemapIds(DgnImportContext& importContext)
     {
-    DgnCategoryIdSet remappedCategories;
-    for (auto const& category: m_categories)
-        remappedCategories.insert(importContext.FindCategory(category));
+    if (importContext.IsBetweenDbs())
+        {
+        DgnCategoryIdSet remappedCategories;
+        for (auto const& category: m_categories)
+            remappedCategories.insert(importContext.FindCategory(category));
 
-    m_categories = remappedCategories;
+        m_categories = remappedCategories;
+        }
+
     T_Super::_RemapIds(importContext);
     }
 
@@ -760,11 +768,15 @@ void ModelSelector::_CopyFrom(DgnElementCR rhsElement, CopyFromOptions const& op
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ModelSelector::_RemapIds(DgnImportContext& importContext)
     {
-    DgnModelIdSet remappedModels;
-    for (auto const& model: m_models)
-        remappedModels.insert(importContext.FindModelId(model));
+    if (importContext.IsBetweenDbs())
+        {
+        DgnModelIdSet remappedModels;
+        for (auto const& model: m_models)
+            remappedModels.insert(importContext.FindModelId(model));
 
-    m_models = remappedModels;
+        m_models = remappedModels;
+        }
+
     T_Super::_RemapIds(importContext);
     }
 
@@ -1143,7 +1155,9 @@ void SpatialViewDefinition::_CopyFrom(DgnElementCR el, CopyFromOptions const& op
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewDefinition::_RemapIds(DgnImportContext& importContext)
     {
-    m_modelSelectorId = importContext.FindElementId(m_modelSelectorId);
+    if (importContext.IsBetweenDbs())
+        m_modelSelectorId = importContext.FindElementId(m_modelSelectorId);
+
     T_Super::_RemapIds(importContext);
     }
 
