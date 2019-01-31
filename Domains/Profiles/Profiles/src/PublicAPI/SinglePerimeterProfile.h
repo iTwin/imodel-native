@@ -13,7 +13,7 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //! @defgroup GROUP_SinglePerimeterProfiles Single Perimeter Profiles
-//! TODO Karolis: Add description
+//! Group of Profile's that are defined by a single outer perimiter.
 
 //=======================================================================================
 //! A Profile with a single outer perimiter.
@@ -38,7 +38,6 @@ public:
 
 //=======================================================================================
 //! Handler for SinglePerimeterProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SinglePerimeterProfileHandler : ProfileHandler

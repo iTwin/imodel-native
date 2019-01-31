@@ -34,7 +34,6 @@ public:
 
 //=======================================================================================
 //! Handler for ArbitraryShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ArbitraryShapeProfileHandler : SinglePerimeterProfileHandler

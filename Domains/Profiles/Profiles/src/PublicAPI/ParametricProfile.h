@@ -13,7 +13,7 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //! @defgroup GROUP_ParametricProfiles Parametric Profiles
-//! TODO Karolis: Add description
+//! Group of SinglePerimeterProfile's that are is guaranteed to have the center of the bounding box at (0, 0).
 
 //=======================================================================================
 //! A SinglePerimeterProfile that is guaranteed to have the center of the bounding box at (0, 0).
@@ -35,7 +35,6 @@ public:
 
 //=======================================================================================
 //! Handler for ParametricProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ParametricProfileHandler : SinglePerimeterProfileHandler

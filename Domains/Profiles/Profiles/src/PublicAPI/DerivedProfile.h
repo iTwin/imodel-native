@@ -82,7 +82,6 @@ public:
 
 //=======================================================================================
 //! Handler for DerivedProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DerivedProfileHandler : SinglePerimeterProfileHandler

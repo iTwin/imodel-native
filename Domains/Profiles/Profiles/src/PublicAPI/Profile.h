@@ -13,6 +13,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A resource defining one or more 2D areas that may have voids.
+//! @ingroup GROUP_Profiles
 //=======================================================================================
 struct Profile : Dgn::DefinitionElement
     {

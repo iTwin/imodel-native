@@ -13,10 +13,10 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //! @defgroup GROUP_CompositeProfiles Composite Profiles
-//! TODO Karolis: Add description
+//! Group of Profile's that are comprised of multiple SinglePerimeterProfile's.
 
 //=======================================================================================
-//! A Profile comprised of multiple SinglePerimeterProfiles.
+//! A Profile comprised of multiple SinglePerimeterProfile's.
 //! @ingroup GROUP_CompositeProfiles
 //=======================================================================================
 struct CompositeProfile : Profile

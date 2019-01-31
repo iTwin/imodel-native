@@ -55,11 +55,10 @@ public:
     PROFILES_EXPORT void SetMaterial (Dgn::DgnElementId const& materialId);
     }; // MaterialProfile
 
-   //=======================================================================================
-   //! Handler for MaterialProfile class
-   //! @ingroup GROUP_Profiles
-   //! @private
-   //=======================================================================================
+//=======================================================================================
+//! Handler for MaterialProfile class
+//! @private
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE MaterialProfileHandler : MaterialProfileDefinitionHandler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_MaterialProfile, MaterialProfile, MaterialProfileHandler, MaterialProfileDefinitionHandler, PROFILES_EXPORT)

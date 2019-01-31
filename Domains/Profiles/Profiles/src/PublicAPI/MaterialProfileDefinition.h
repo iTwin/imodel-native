@@ -12,7 +12,7 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //! @defgroup GROUP_MaterialProfiles MaterialProfile Classes
-//! TODO Karolis: Add description
+//! Classes defining a Material and Profile pair.
 
 //=======================================================================================
 //! A resource defining Material and Profile pair.
@@ -38,7 +38,6 @@ protected:
 
 //=======================================================================================
 //! Handler for MaterialProfileDefinition class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE MaterialProfileDefinitionHandler : Dgn::dgn_ElementHandler::Definition
