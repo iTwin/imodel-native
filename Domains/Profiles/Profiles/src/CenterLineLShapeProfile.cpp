@@ -161,4 +161,40 @@ void CenterLineLShapeProfile::SetGirth (double value)
     SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Girth, ECN::ECValue (value));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CenterLineLShapeProfile::CreateGeometry()
+    {
+    if (!T_Super::CreateGeometry())
+        return false;
+
+    return CreateCenterLineGeometry();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CenterLineLShapeProfile::CreateCenterLineGeometry()
+    {
+    IGeometryPtr geometryPtr = _CreateCenterLineGeometry();
+    
+    if (geometryPtr.IsNull())
+        {
+        return false;
+        }
+    
+    SetCenterLine(*geometryPtr);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CenterLineLShapeProfile::_CreateCenterLineGeometry() const
+    {
+    return ProfilesGeometry::CreateCenterLineForLShape (*this);
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE

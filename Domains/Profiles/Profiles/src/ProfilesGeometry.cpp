@@ -1299,9 +1299,74 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineForCShape (CenterLineCShapeProfil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createCenterLineForLShape (double halfWidth, double halfDepth, double wallThickness, double filletRadius)
+    {
+    double halfWallThickness = wallThickness / 2.0;
+
+    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth, 0.0 };
+    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
+    DPoint3d const br_Apex = { halfWidth, -(halfDepth - halfWallThickness), 0.0 };
+    
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine(tl_Apex, bl_Apex);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine(bl_Apex, br_Apex);
+    ICurvePrimitivePtr bottomleftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
+
+    bvector<ICurvePrimitivePtr> curves =
+        {
+        leftLine, bottomleftArc, bottomLine,
+        };
+
+    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createCenterLineForLShape(double halfWidth, double halfDepth, double wallThickness, double filletRadius, double girth)
+    {
+    double halfWallThickness = wallThickness / 2.0;
+
+    DPoint3d const tr_Girth = { -(halfWidth - girth), halfDepth - halfWallThickness, 0.0 };
+    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth - halfWallThickness, 0.0 };
+    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
+    DPoint3d const br_Apex = { halfWidth - halfWallThickness, -(halfDepth - halfWallThickness), 0.0 };
+    DPoint3d const br_Girth = { (halfWidth - halfWallThickness), -(halfDepth - girth), 0.0 };
+
+    ICurvePrimitivePtr topGirthLine = ICurvePrimitive::CreateLine(tr_Girth, tl_Apex);
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine(tl_Apex, bl_Apex);
+    ICurvePrimitivePtr topLeftArc = createArcBetweenLines(topGirthLine, leftLine, filletRadius);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine(bl_Apex, br_Apex);
+    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
+    ICurvePrimitivePtr rightGirthLine = ICurvePrimitive::CreateLine(br_Apex, br_Girth);
+    ICurvePrimitivePtr bottomRightArc = createArcBetweenLines(bottomLine, rightGirthLine, filletRadius);
+
+    bvector<ICurvePrimitivePtr> curves =
+        {
+        topGirthLine, topLeftArc, leftLine, bottomLeftArc, bottomLine, bottomRightArc, rightGirthLine, 
+        };
+
+    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateCenterLineForLShape(CenterLineLShapeProfile const& profile)
     {
-    return nullptr;
+    double const halfWidth = profile.GetWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const wallThickness = profile.GetWallThickness();
+    double const filletRadius = profile.GetFilletRadius();
+    double const girth = profile.GetGirth();
+
+    if (BeNumerical::IsEqualToZero(girth))
+        {
+        return createCenterLineForLShape(halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0);
+        }
+    else
+        {
+        return createCenterLineForLShape(halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0, girth);
+        }
     }
 
 

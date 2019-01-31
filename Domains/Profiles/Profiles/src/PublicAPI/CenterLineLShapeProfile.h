@@ -47,7 +47,10 @@ protected:
 
     virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateGeometry() const override;
+    virtual bool CreateGeometry() override;
+    bool CreateCenterLineGeometry();
 
+    virtual IGeometryPtr _CreateCenterLineGeometry() const;
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineLShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CenterLineLShapeProfile)
