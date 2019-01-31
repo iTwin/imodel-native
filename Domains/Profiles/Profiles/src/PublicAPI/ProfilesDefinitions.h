@@ -262,6 +262,17 @@ END_BENTLEY_PROFILES_NAMESPACE
     /** @return On success - readonly instance of an inserted _name_, nullptr otherwise. */ \
     PROFILES_EXPORT _name_##CPtr Insert (Dgn::DgnDbStatus* pStatus = nullptr) { return GetDgnDb().Elements().Insert< _name_ > (*this, pStatus); }
 
+//-----------------------------------------------------------------------------------------
+// Macro to declare T_Super and internal constructor for CreateParams
+//-----------------------------------------------------------------------------------------
+#define DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS(_name_) \
+public:                                                     \
+/** @private */                                             \
+DEFINE_T_SUPER(_name_::T_Super::CreateParams);              \
+/** @private */                                             \
+explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+
 
 //-----------------------------------------------------------------------------------------
 // Define standard typedefs (P, CP, R, CR) in the Profiles namespace
