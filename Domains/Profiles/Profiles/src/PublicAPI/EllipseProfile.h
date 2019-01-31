@@ -14,7 +14,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! 
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct EllipseProfile : ParametricProfile
     {
@@ -60,7 +60,6 @@ public:
 
 //=======================================================================================
 //! Handler for EllipseProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE EllipseProfileHandler : ParametricProfileHandler

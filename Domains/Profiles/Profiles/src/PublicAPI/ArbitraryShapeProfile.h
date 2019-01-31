@@ -13,8 +13,8 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
-//! 
-//! @ingroup GROUP_Profiles
+//! TODO Karolis: Add description
+//! @ingroup GROUP_SinglePerimeterProfiles
 //=======================================================================================
 struct ArbitraryShapeProfile : SinglePerimeterProfile
     {

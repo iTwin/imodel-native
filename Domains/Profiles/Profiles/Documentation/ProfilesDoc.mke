@@ -90,24 +90,24 @@ always:
 $(OUT_DOXYGEN_ARTIFACTS)doxygen.cfg : $(PublishApiStamp) $(DOXYGEN_CONFIG_FILES) $(_MakeFileSpec)
     $(msg)
     > $(OUT_DOXYGEN_ARTIFACTS)doxygen.cfg
-    @INCLUDE = $(BENTLEY_DOXYGEN_CONFIG)
-    @INCLUDE = $(BENTLEY_DOXYGEN_ALIASES)
-    PROJECT_NAME        = "Profiles SDK"
-    WARN_LOGFILE        = $(DOXYGEN_WARN_LOGFILE)
-    QUIET               = $(DOXYGEN_QUIET)
-    INPUT               = $(PublishApiOutput) $(_MakeFilePath)ProfilesDoc.remarks.md
-    USE_MDFILE_AS_MAINPAGE = ProfilesDoc.remarks.md
-    OUTPUT_DIRECTORY    = $(OUT_ROOT)
-    HTML_OUTPUT         = $(DOCS_FOLDER_NAME)
-    INCLUDE_PATH        = $(PublishApiOutput)
-    DOT_PATH            =
-    SEARCHENGINE        = NO
-    GENERATE_HTML       = YES
-    GENERATE_XML        = NO
-    GENERATE_HTMLHELP   = NO
-    HHC_LOCATION        =
-    ENABLED_SECTIONS    = BENTLEY_SDK_Profiles $(DOXYGEN_TARGET_PLATFORM)
-    FILE_PATTERNS       = *.h
+    @INCLUDE                = $(BENTLEY_DOXYGEN_CONFIG)
+    @INCLUDE                = $(BENTLEY_DOXYGEN_ALIASES)
+    PROJECT_NAME            = "Profiles SDK"
+    WARN_LOGFILE            = $(DOXYGEN_WARN_LOGFILE)
+    QUIET                   = $(DOXYGEN_QUIET)
+    INPUT                   = $(PublishApiOutput) $(_MakeFilePath)ProfilesDoc.remarks.md
+    USE_MDFILE_AS_MAINPAGE  = ProfilesDoc.remarks.md
+    OUTPUT_DIRECTORY        = $(OUT_ROOT)
+    HTML_OUTPUT             = $(DOCS_FOLDER_NAME)
+    INCLUDE_PATH            = $(PublishApiOutput)
+    DOT_PATH                =
+    SEARCHENGINE            = NO
+    GENERATE_HTML           = YES
+    GENERATE_XML            = NO
+    GENERATE_HTMLHELP       = NO
+    HHC_LOCATION            =
+    ENABLED_SECTIONS        = BENTLEY_SDK_Profiles $(DOXYGEN_TARGET_PLATFORM)
+    FILE_PATTERNS           = *.h
     <
     !$(doxygenCmd) $(OUT_DOXYGEN_ARTIFACTS)doxygen.cfg
     ~time

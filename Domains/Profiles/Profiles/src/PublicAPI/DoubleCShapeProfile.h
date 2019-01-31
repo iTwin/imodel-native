@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A CompositeProfile comprised of back-to-back Cs.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_CompositeProfiles
 //=======================================================================================
 struct DoubleCShapeProfile : CompositeProfile
     {
@@ -65,7 +65,6 @@ public:
 
 //=======================================================================================
 //! Handler for DoubleCShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DoubleCShapeProfileHandler : CompositeProfileHandler

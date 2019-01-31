@@ -13,7 +13,6 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A resource defining one or more 2D areas that may have voids.
-//! @ingroup GROUP_Profiles
 //=======================================================================================
 struct Profile : Dgn::DefinitionElement
     {
@@ -74,8 +73,7 @@ private:
     }; // Profile
 
 //=======================================================================================
-//! Handler for Profile class
-//! @ingroup GROUP_Profiles
+//! Handler for Profile class.
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ProfileHandler : Dgn::dgn_ElementHandler::Definition

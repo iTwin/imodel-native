@@ -12,9 +12,9 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-//=======================================================================================
+//=======================================================================================/
 //! An I shaped Profile similar to rolled steel I-shapes.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct IShapeProfile : ParametricProfile
     {
@@ -96,7 +96,6 @@ public:
 
 //=======================================================================================
 //! Handler for IShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IShapeProfileHandler : ParametricProfileHandler

@@ -14,8 +14,8 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
-//! 
-//! @ingroup GROUP_Profiles
+//! TODO Karolis: Add description
+//! @ingroup GROUP_SinglePerimeterProfiles
 //=======================================================================================
 struct ArbitraryCenterLineProfile : ArbitraryShapeProfile, ICenterLineProfile
     {
@@ -35,7 +35,6 @@ public:
 
 //=======================================================================================
 //! Handler for ArbitraryCenterLineProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ArbitraryCenterLineProfileHandler : ArbitraryShapeProfileHandler

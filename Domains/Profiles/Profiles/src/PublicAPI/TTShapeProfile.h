@@ -14,7 +14,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A TT-shaped Profile similar to double-tee concrete shapes.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct TTShapeProfile : ParametricProfile
     {
@@ -114,7 +114,6 @@ public:
 
 //=======================================================================================
 //! Handler for TTShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TTShapeProfileHandler : ParametricProfileHandler

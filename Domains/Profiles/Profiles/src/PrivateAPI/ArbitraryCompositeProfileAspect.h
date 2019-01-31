@@ -25,7 +25,6 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! geometry transformations for it. This data structure cannot be implemented by a relationship
 //! class because we allow multiple references to the same profile with different transformations
 //! e.g. same LShapeProfile used to form a 4 angle profile
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct ArbitraryCompositeProfileAspect : Dgn::DgnElement::MultiAspect
@@ -64,7 +63,6 @@ public:
 
 //=======================================================================================
 //! Handler for ArbitraryCompositeProfileAspect class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ArbitraryCompositeProfileAspectHandler : Dgn::dgn_AspectHandler::Aspect

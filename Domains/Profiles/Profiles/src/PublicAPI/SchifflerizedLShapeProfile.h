@@ -13,8 +13,8 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
-//! 
-//! @ingroup GROUP_Profiles
+//! TODO Karolis: Add description
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct SchifflerizedLShapeProfile : ParametricProfile
     {
@@ -80,7 +80,6 @@ public:
 
 //=======================================================================================
 //! Handler for SchifflerizedLShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SchifflerizedLShapeProfileHandler : ParametricProfileHandler

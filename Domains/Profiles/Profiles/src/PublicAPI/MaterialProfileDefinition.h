@@ -11,6 +11,9 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
+//! @defgroup GROUP_MaterialProfiles MaterialProfile Classes
+//! TODO Karolis: Add description
+
 //=======================================================================================
 //! A resource defining Material and Profile pair.
 //! @ingroup GROUP_MaterialProfiles

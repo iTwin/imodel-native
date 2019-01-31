@@ -12,9 +12,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
+//! @defgroup GROUP_SinglePerimeterProfiles Single Perimeter Profiles
+//! TODO Karolis: Add description
+
 //=======================================================================================
 //! A Profile with a single outer perimiter.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_SinglePerimeterProfiles
 //=======================================================================================
 struct SinglePerimeterProfile : Profile
     {

@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! 
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_CompositeProfiles
 //=======================================================================================
 struct ArbitraryCompositeProfileComponent
     {
@@ -42,7 +42,7 @@ private:
 
 //=======================================================================================
 //! A Profile comprised of multiple SinglePerimeterProfiles.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_CompositeProfiles
 //=======================================================================================
 struct ArbitraryCompositeProfile : CompositeProfile
     {
@@ -98,7 +98,6 @@ private:
 
 //=======================================================================================
 //! Handler for ArbitraryCompositeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ArbitraryCompositeProfileHandler : CompositeProfileHandler

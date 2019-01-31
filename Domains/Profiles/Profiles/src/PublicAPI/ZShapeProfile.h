@@ -14,7 +14,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A Z-shaped Profile similar to rolled steel Z-shapes.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct ZShapeProfile : ParametricProfile
     {
@@ -96,7 +96,6 @@ public:
 
 //=======================================================================================
 //! Handler for ZShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ZShapeProfileHandler : ParametricProfileHandler

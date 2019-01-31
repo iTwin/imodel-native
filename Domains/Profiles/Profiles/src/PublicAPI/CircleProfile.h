@@ -14,7 +14,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! 
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct CircleProfile : ParametricProfile
     {
@@ -55,7 +55,6 @@ public:
 
 //=======================================================================================
 //! Handler for CircleProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CircleProfileHandler : ParametricProfileHandler

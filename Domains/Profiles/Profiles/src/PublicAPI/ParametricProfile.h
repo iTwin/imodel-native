@@ -12,9 +12,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
+//! @defgroup GROUP_ParametricProfiles Parametric Profiles
+//! TODO Karolis: Add description
+
 //=======================================================================================
 //! A SinglePerimeterProfile that is guaranteed to have the center of the bounding box at (0, 0).
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct ParametricProfile : SinglePerimeterProfile
     {

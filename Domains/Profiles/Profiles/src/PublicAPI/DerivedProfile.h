@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 //! This class represents a SinglePerimeterProfile that has been converted into a different
 //! shape via a matrix transform. Usage outside of IFC compatability is not recommended.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_SinglePerimeterProfiles
 //=======================================================================================
 struct DerivedProfile : SinglePerimeterProfile
     {

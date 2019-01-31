@@ -14,7 +14,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A C shaped Profile similar to rolled steel C-shapes.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct CShapeProfile : ParametricProfile
     {
@@ -99,7 +99,6 @@ public:
 
 //=======================================================================================
 //! Handler for CShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CShapeProfileHandler : ParametricProfileHandler

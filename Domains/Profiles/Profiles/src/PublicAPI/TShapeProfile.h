@@ -14,7 +14,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A T-shaped Profile similar to rolled steel T-shapes.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct TShapeProfile : ParametricProfile
     {
@@ -107,7 +107,6 @@ public:
 
 //=======================================================================================
 //! Handler for TShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TShapeProfileHandler : ParametricProfileHandler
