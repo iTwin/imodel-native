@@ -24,10 +24,7 @@ struct AsymmetricIShapeProfile : ParametricProfile
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        //! @private
-        DEFINE_T_SUPER(AsymmetricIShapeProfile::T_Super::CreateParams);
-        //! @private
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (AsymmetricIShapeProfile)
 
     public:
         //! Minimal constructor that initializes all members to zero.

@@ -22,7 +22,7 @@ struct MaterialProfileDefinition : Dgn::DefinitionElement
     {
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_MaterialProfileDefinition, Dgn::DefinitionElement);
     friend struct MaterialProfileDefinitionHandler;
-    
+
 protected:
     MaterialProfileDefinition (CreateParams const& params);
 
