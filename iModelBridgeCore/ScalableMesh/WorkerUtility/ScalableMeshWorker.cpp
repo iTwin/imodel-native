@@ -277,6 +277,19 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             m_startAsService = true;            
             continue;
             }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"-resultFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-rf="))
+            {
+            BeFileName::FixPathName(m_resultFolderName, GetArgValueW(argv[iArg]).c_str());
+            if (!BeFileName::DoesPathExist(m_resultFolderName.c_str()))
+                {
+                fwprintf(stderr, L"%ls is not an existing folder\n", m_resultFolderName.c_str());
+                return PrintUsage(argv[0]);
+                }
+
+            continue;
+            }
+
                
         fwprintf(stderr, L"Unrecognized command line option: %ls\n", argv[iArg]);
         return PrintUsage(argv[0]);
@@ -343,7 +356,7 @@ void ScalableMeshWorker::Start()
             }
         }    
 
-    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers, m_useGroupingStrategy, m_groupingSize, m_startAsService);
+    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers, m_useGroupingStrategy, m_groupingSize, m_startAsService, m_resultFolderName);
 
     taskScheduler.Start();
     }

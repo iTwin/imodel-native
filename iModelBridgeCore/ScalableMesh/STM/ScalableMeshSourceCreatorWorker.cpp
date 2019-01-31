@@ -34,9 +34,9 @@ StatusInt IScalableMeshSourceCreatorWorker::CreateTaskPlan() const
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateTaskPlan();
     }
 
-StatusInt IScalableMeshSourceCreatorWorker::CreateGenerationTasks(uint32_t maxGroupSize) const
+StatusInt IScalableMeshSourceCreatorWorker::CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName) const
     {
-    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateGenerationTasks(maxGroupSize);
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateGenerationTasks(maxGroupSize, jobName, smFileName);
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::ExecuteNextTaskInTaskPlan() const
@@ -479,7 +479,7 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<Generati
     GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions);
     }
 
-StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize)
+StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
     {
     BeFileName taskDirectory(m_scmFileName);
 
@@ -525,7 +525,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
         
         BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
-        workerNode->AddAttributeStringValue("type", "generate");
+        workerNode->AddAttributeStringValue("type", "generate");                
+        workerNode->AddAttributeStringValue("jobName", jobName.c_str());
+        workerNode->AddAttributeStringValue("smName", smFileName.c_str());
 
         /*
          IScalableMeshNodePtr     m_groupRootNode;

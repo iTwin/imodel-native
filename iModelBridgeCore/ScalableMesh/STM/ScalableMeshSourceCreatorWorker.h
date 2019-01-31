@@ -74,7 +74,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         virtual                             ~Impl();
 
         
-        StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize);
+        StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName);
         
         StatusInt                    CreateMeshTasks();        
 

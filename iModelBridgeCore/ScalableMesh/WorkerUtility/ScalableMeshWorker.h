@@ -95,6 +95,7 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
         bool       m_useGroupingStrategy;
         bool       m_startAsService;
         uint32_t   m_groupingSize;
+        BeFileName m_resultFolderName;
 
         WString GetArgValueW(WCharCP arg);
         Utf8String GetArgValue(WCharCP arg);        

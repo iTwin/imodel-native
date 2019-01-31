@@ -18,6 +18,28 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE    
 
+
+struct TaskProcessingStat
+    {
+    double m_durationInSeconds;
+    WorkerTaskType m_taskType;
+    };
+
+struct JobProcessingStat
+    {
+
+    JobProcessingStat()
+        {
+        m_startTime = clock();
+        m_stopTime = clock();
+        }
+
+    clock_t m_startTime;
+    clock_t m_stopTime;
+
+    bvector<TaskProcessingStat> m_processedTasks;
+    };
+
 struct TaskScheduler
     {
 
@@ -28,12 +50,18 @@ struct TaskScheduler
         bool       m_useGroupingStrategy;        
         uint32_t   m_groupingSize; 
         bool       m_startAsService;
+        BeFileName m_resultFolderName;
 
+        bmap<WString, JobProcessingStat> m_jobProcessingStat;         
         IScalableMeshSourceCreatorWorkerPtr m_sourceCreatorWorkerPtr;
+        
+        JobProcessingStat& GetJobStat(const WString& jobName);
 
-        void GetScalableMeshFileName(BeFileName& smFileName) const;
+        void OutputJobStat();
 
-        IScalableMeshSourceCreatorWorkerPtr GetSourceCreatorWorker();
+        void GetScalableMeshFileName(BeFileName& smFileNameAbsolutePath, const BeFileName& smFileName) const;
+
+        IScalableMeshSourceCreatorWorkerPtr GetSourceCreatorWorker(const BeFileName& smFileName);
 
         bool ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t);
 
@@ -54,7 +82,7 @@ struct TaskScheduler
     
     public:
     
-        TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers, bool useGroupingStrategy, uint32_t groupingSize, bool startAsService);
+        TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers, bool useGroupingStrategy, uint32_t groupingSize, bool startAsService, const BeFileName& resultFolderName);
 
         virtual ~TaskScheduler();
 
