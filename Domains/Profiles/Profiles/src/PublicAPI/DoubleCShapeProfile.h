@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A CompositeProfile comprised of back-to-back Cs.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_CompositeProfiles
 //=======================================================================================
 struct DoubleCShapeProfile : CompositeProfile
     {
@@ -25,8 +25,7 @@ struct DoubleCShapeProfile : CompositeProfile
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(DoubleCShapeProfile::T_Super::CreateParams);
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (DoubleCShapeProfile)
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, CShapeProfile const& singleProfile);
@@ -65,7 +64,6 @@ public:
 
 //=======================================================================================
 //! Handler for DoubleCShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DoubleCShapeProfileHandler : CompositeProfileHandler

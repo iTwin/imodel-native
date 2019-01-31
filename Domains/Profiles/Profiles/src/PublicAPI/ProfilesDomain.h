@@ -11,6 +11,9 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
+//! @defgroup GROUP_Profiles Base Profile Classes
+//! Base classes of Profiles Domain.
+
 //=======================================================================================
 //! The DgnDomain for the Profiles schema.
 //! @ingroup GROUP_Profiles

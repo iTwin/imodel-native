@@ -13,7 +13,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! 
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_Aspects
 //=======================================================================================
 struct CustomCardinalPoint
     {
@@ -30,7 +30,7 @@ public:
 
 //=======================================================================================
 //! 
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_Aspects
 //=======================================================================================
 struct CustomCardinalPointsAspect : Dgn::DgnElement::UniqueAspect
     {
@@ -53,7 +53,6 @@ public:
 
 //=======================================================================================
 //! Handler for CustomCardinalPointsAspect class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CustomCardinalPointsAspectHandler : Dgn::dgn_AspectHandler::Aspect

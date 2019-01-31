@@ -14,7 +14,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! An L-shaped Profile similar to rolled steel L-shapes.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct LShapeProfile : ParametricProfile
     {
@@ -24,8 +24,7 @@ struct LShapeProfile : ParametricProfile
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(LShapeProfile::T_Super::CreateParams);
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (LShapeProfile)
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
@@ -94,7 +93,6 @@ public:
 
 //=======================================================================================
 //! Handler for LShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LShapeProfileHandler : ParametricProfileHandler

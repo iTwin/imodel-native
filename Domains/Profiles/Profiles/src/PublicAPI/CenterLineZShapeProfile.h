@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A Z-shaped Profile with rounded corners, similar to cold-formed steel Z-shapes
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct CenterLineZShapeProfile : ParametricProfile, ICenterLineProfile
     {
@@ -48,7 +48,6 @@ public:
 
 //=======================================================================================
 //! Handler for CenterLineZShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CenterLineZShapeProfileHandler : ParametricProfileHandler

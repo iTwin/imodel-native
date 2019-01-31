@@ -11,9 +11,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
+//! @defgroup GROUP_Aspects Profile Aspects
+//! Aspects used to extend or attach additional information to Profiles
+
 //=======================================================================================
 //! 
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_Aspects
 //=======================================================================================
 struct StandardProfileAspect : Dgn::DgnElement::UniqueAspect
     {
@@ -36,7 +39,6 @@ public:
 
 //=======================================================================================
 //! Handler for StandardProfileAspect class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE StandardProfileAspectHandler : Dgn::dgn_AspectHandler::Aspect

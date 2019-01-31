@@ -13,8 +13,8 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
-//! 
-//! @ingroup GROUP_Profiles
+//! TODO Karolis: Add description
+//! @ingroup GROUP_SinglePerimeterProfiles
 //=======================================================================================
 struct ArbitraryShapeProfile : SinglePerimeterProfile
     {
@@ -34,7 +34,6 @@ public:
 
 //=======================================================================================
 //! Handler for ArbitraryShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ArbitraryShapeProfileHandler : SinglePerimeterProfileHandler

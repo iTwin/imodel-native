@@ -25,8 +25,7 @@ struct MaterialProfile : MaterialProfileDefinition
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER (MaterialProfileDefinition::CreateParams);
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (MaterialProfile)
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, 
@@ -55,11 +54,10 @@ public:
     PROFILES_EXPORT void SetMaterial (Dgn::DgnElementId const& materialId);
     }; // MaterialProfile
 
-   //=======================================================================================
-   //! Handler for MaterialProfile class
-   //! @ingroup GROUP_Profiles
-   //! @private
-   //=======================================================================================
+//=======================================================================================
+//! Handler for MaterialProfile class
+//! @private
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE MaterialProfileHandler : MaterialProfileDefinitionHandler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_MaterialProfile, MaterialProfile, MaterialProfileHandler, MaterialProfileDefinitionHandler, PROFILES_EXPORT)

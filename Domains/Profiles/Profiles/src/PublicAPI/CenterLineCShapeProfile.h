@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! A C shaped Profile with rounded corners, similar to cold-formed steel C-shapes.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct CenterLineCShapeProfile : ParametricProfile, ICenterLineProfile
     {
@@ -25,8 +25,7 @@ struct CenterLineCShapeProfile : ParametricProfile, ICenterLineProfile
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(CenterLineCShapeProfile::T_Super::CreateParams);
-        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (CenterLineCShapeProfile)
 
     public:
         PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName);
@@ -73,7 +72,6 @@ public:
 
 //=======================================================================================
 //! Handler for CenterLineCShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CenterLineCShapeProfileHandler : ParametricProfileHandler

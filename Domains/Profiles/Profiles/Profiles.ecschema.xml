@@ -136,7 +136,7 @@
         <ECProperty propertyName="BottomFlangeThickness" typeName="double" description="Flange thickness of the bottom flange." />
         <ECProperty propertyName="WebThickness" typeName="double" description="Web thickness of the I-shape. The web is centred on the x-axis and the y-axis of the position coordinate system." />
         <!-- Optional properties -->
-        <ECProperty propertyName="TopFlangeFilletRadius" typeName="double" descriptin="The fillet radius between the web and the top flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="TopFlangeFilletRadius" typeName="double" description="The fillet radius between the web and the top flange. 0 if sharp-edged, default 0 if not specified." />
         <ECProperty propertyName="TopFlangeEdgeRadius" typeName="double" description="Radius of the lower edges of the top flange. 0 if sharp-edged, default 0 if not specified." />
         <ECProperty propertyName="TopFlangeSlope" typeName="double" description="Slope of the lower faces of the top flange. Non-zero in case of of tapered top flange, 0 in case of parallel top flange, default 0 if not specified." />
         <ECProperty propertyName="BottomFlangeFilletRadius" typeName="double" description="The fillet radius between the web and the bottom flange. 0 if sharp-edged, default 0 if not specified." />

@@ -11,6 +11,9 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
+//! @defgroup GROUP_MaterialProfiles MaterialProfile Classes
+//! Classes defining a Material and Profile pair.
+
 //=======================================================================================
 //! A resource defining Material and Profile pair.
 //! @ingroup GROUP_MaterialProfiles
@@ -19,7 +22,7 @@ struct MaterialProfileDefinition : Dgn::DefinitionElement
     {
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_MaterialProfileDefinition, Dgn::DefinitionElement);
     friend struct MaterialProfileDefinitionHandler;
-    
+
 protected:
     MaterialProfileDefinition (CreateParams const& params);
 
@@ -35,7 +38,6 @@ protected:
 
 //=======================================================================================
 //! Handler for MaterialProfileDefinition class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE MaterialProfileDefinitionHandler : Dgn::dgn_ElementHandler::Definition

@@ -220,26 +220,58 @@ END_BENTLEY_PROFILES_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
-#define DECLARE_PROFILES_QUERYCLASS_METHODS(_name_)                                             \
-    static Dgn::DgnClassId QueryClassId (Dgn::DgnDb const& db, Utf8CP pClassName = PRF_CLASS_##_name_) \
-        { return Dgn::DgnClassId (db.Schemas().GetClassId (PRF_SCHEMA_NAME, pClassName)); }            \
-    static ECN::ECClassCP QueryClass (Dgn::DgnDb const& db, Utf8CP pClassName = PRF_CLASS_##_name_)    \
+#define DECLARE_PROFILES_QUERYCLASS_METHODS(_name_)                                                     \
+    /** Query the `DgnClassId` associated with _name_. */                                               \
+    /** @param[in] db Instance of the `DgnDb` to retrieve the `DgnClassId` from. */                     \
+    /** @param[in] pClassName name of the class to retrieve, default value - PRF_CLASS_##_name_. */     \
+    static Dgn::DgnClassId QueryClassId (Dgn::DgnDb const& db, Utf8CP pClassName = PRF_CLASS_##_name_)  \
+        { return Dgn::DgnClassId (db.Schemas().GetClassId (PRF_SCHEMA_NAME, pClassName)); }             \
+    /** Query the `ECClass` associated with _name_. */                                                  \
+    /** @param[in] db Instance of the `DgnDb` to retrieve the `ECClass` from. */                        \
+    /** @param[in] pClassName name of the class to retrieve, default value - PRF_CLASS_##_name_. */     \
+    static ECN::ECClassCP QueryClass (Dgn::DgnDb const& db, Utf8CP pClassName = PRF_CLASS_##_name_)     \
         { return (db.Schemas().GetClass (PRF_SCHEMA_NAME, pClassName)); }
 
 //-----------------------------------------------------------------------------------------
 // Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
 //-----------------------------------------------------------------------------------------
 #define DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(_name_)                                                                                   \
+    /** Get an readonly instance of a _name_ from the `DgnDb`. */                                                                           \
+    /** @param[in] db Instance of the `DgnDb` to retrieve the _name_ from. */                                                               \
+    /** @param[in] id Id of the _name_ to retrieve. */                                                                                      \
     PROFILES_EXPORT static _name_##CPtr Get       (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().Get< _name_ > (id); } \
+    /** Get an editable instance of a _name_ from the DgnDb. */                                                                             \
+    /** @param[in] db Instance of the DgnDb to retrieve the _name_ from. */                                                                 \
+    /** @param[in] id Id of the _name_ to retrieve. */                                                                                      \
+    /** @return If _name_ with given ID exists in `DgnDb` a readonly instance of it is returned, nullptr otherwise. */                      \
     PROFILES_EXPORT static _name_##Ptr  GetForEdit (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< _name_ > (id); }
 
-#define DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS(_name_) \
-    DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (_name_)           \
-    PROFILES_EXPORT        _name_##CPtr Update (Dgn::DgnDbStatus* pStatus = nullptr) { return GetDgnDb().Elements().Update< _name_ > (*this, pStatus); }
+#define DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS(_name_)                                            \
+    DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (_name_)                                                      \
+    /** Performs a database `Update` operation on the instance. */                                          \
+    /** @details Updates the persistent state of a _name_ in the `DgnDb` from this modified copy of it. */  \
+    /** @param[in] pStatus Status of the operation. */                                                      \
+    /** @return On success - readonly instance of an updated _name_, otherwise a nullptr. */                \
+    PROFILES_EXPORT _name_##CPtr Update (Dgn::DgnDbStatus* pStatus = nullptr) { return GetDgnDb().Elements().Update< _name_ > (*this, pStatus); }
 
-#define DECLARE_PROFILES_ELEMENT_BASE_METHODS(_name_)         \
-    DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS (_name_) \
-    PROFILES_EXPORT        _name_##CPtr Insert (Dgn::DgnDbStatus* pStatus = nullptr) { return GetDgnDb().Elements().Insert< _name_ > (*this, pStatus); }
+#define DECLARE_PROFILES_ELEMENT_BASE_METHODS(_name_)                                       \
+    DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS (_name_)                               \
+    /** Performs a database `Insert` operation on the instance. */                          \
+    /** Inserts this _name_ into the `DgnDb`. */                                            \
+    /** @param[in] pStatus Status of the operation. */                                      \
+    /** @return On success - readonly instance of an inserted _name_, nullptr otherwise. */ \
+    PROFILES_EXPORT _name_##CPtr Insert (Dgn::DgnDbStatus* pStatus = nullptr) { return GetDgnDb().Elements().Insert< _name_ > (*this, pStatus); }
+
+//-----------------------------------------------------------------------------------------
+// Macro to declare T_Super and internal constructor for CreateParams
+//-----------------------------------------------------------------------------------------
+#define DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS(_name_) \
+public:                                                     \
+/** @private */                                             \
+DEFINE_T_SUPER(_name_::T_Super::CreateParams);              \
+/** @private */                                             \
+explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
 
 
 //-----------------------------------------------------------------------------------------

@@ -13,7 +13,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! 
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct ICenterLineProfile : NonCopyableClass
     {

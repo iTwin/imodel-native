@@ -12,9 +12,9 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-//=======================================================================================
+//=======================================================================================/
 //! An I shaped Profile similar to rolled steel I-shapes.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct IShapeProfile : ParametricProfile
     {
@@ -24,8 +24,7 @@ struct IShapeProfile : ParametricProfile
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(IShapeProfile::T_Super::CreateParams);
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (IShapeProfile)
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
@@ -96,7 +95,6 @@ public:
 
 //=======================================================================================
 //! Handler for IShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IShapeProfileHandler : ParametricProfileHandler

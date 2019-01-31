@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! 
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct HollowRectangleProfile : ParametricProfile, ICenterLineProfile
     {
@@ -25,8 +25,7 @@ struct HollowRectangleProfile : ParametricProfile, ICenterLineProfile
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(HollowRectangleProfile::T_Super::CreateParams);
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (HollowRectangleProfile)
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
@@ -78,7 +77,6 @@ public:
 
 //=======================================================================================
 //! Handler for HollowRectangleProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE HollowRectangleProfileHandler : ParametricProfileHandler

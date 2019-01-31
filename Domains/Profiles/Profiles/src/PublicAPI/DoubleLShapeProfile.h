@@ -14,20 +14,20 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
-//! 
-//! @ingroup GROUP_Profiles
+//! TODO Karolis: add description
+//! @ingroup GROUP_CompositeProfiles
 //=======================================================================================
 enum class DoubleLShapeProfileType : int32_t
 {
-    LLBB = 0, // Long Legs Back to Back
-    SLBB = 1, // Short Legs Back to Back
+    LLBB = 0, //!< Long Legs Back to Back
+    SLBB = 1, //!< Short Legs Back to Back
 
 }; // DoubleLShapeProfileType
 
 
 //=======================================================================================
 //! A CompositeProfile comprised of back-to-back Ls with the horizontal legs at the top of the Profile.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_CompositeProfiles
 //=======================================================================================
 struct DoubleLShapeProfile : CompositeProfile
     {
@@ -37,8 +37,7 @@ struct DoubleLShapeProfile : CompositeProfile
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(DoubleLShapeProfile::T_Super::CreateParams);
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (DoubleLShapeProfile)
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, LShapeProfile const& singleProfile,
@@ -85,7 +84,6 @@ public:
 
 //=======================================================================================
 //! Handler for DoubleLShapeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DoubleLShapeProfileHandler : CompositeProfileHandler

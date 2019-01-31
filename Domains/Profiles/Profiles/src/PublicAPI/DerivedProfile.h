@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 //! This class represents a SinglePerimeterProfile that has been converted into a different
 //! shape via a matrix transform. Usage outside of IFC compatability is not recommended.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_SinglePerimeterProfiles
 //=======================================================================================
 struct DerivedProfile : SinglePerimeterProfile
     {
@@ -25,8 +25,7 @@ struct DerivedProfile : SinglePerimeterProfile
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(DerivedProfile::T_Super::CreateParams);
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (DerivedProfile)
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, Dgn::DgnElementId const& baseProfileId);
@@ -82,7 +81,6 @@ public:
 
 //=======================================================================================
 //! Handler for DerivedProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DerivedProfileHandler : SinglePerimeterProfileHandler

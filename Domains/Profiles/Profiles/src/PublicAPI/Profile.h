@@ -23,8 +23,7 @@ struct Profile : Dgn::DefinitionElement
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(Profile::T_Super::CreateParams);
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (Profile)
 
     public:
         virtual ~CreateParams() = default;
@@ -75,8 +74,7 @@ private:
     }; // Profile
 
 //=======================================================================================
-//! Handler for Profile class
-//! @ingroup GROUP_Profiles
+//! Handler for Profile class.
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ProfileHandler : Dgn::dgn_ElementHandler::Definition

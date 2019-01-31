@@ -15,7 +15,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
 //! 
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_CompositeProfiles
 //=======================================================================================
 struct ArbitraryCompositeProfileComponent
     {
@@ -42,7 +42,7 @@ private:
 
 //=======================================================================================
 //! A Profile comprised of multiple SinglePerimeterProfiles.
-//! @ingroup GROUP_Profiles
+//! @ingroup GROUP_CompositeProfiles
 //=======================================================================================
 struct ArbitraryCompositeProfile : CompositeProfile
     {
@@ -55,8 +55,7 @@ public:
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(ArbitraryCompositeProfile::T_Super::CreateParams);
-        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (ArbitraryCompositeProfile)
 
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, ComponentVector const& components);
@@ -98,7 +97,6 @@ private:
 
 //=======================================================================================
 //! Handler for ArbitraryCompositeProfile class
-//! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ArbitraryCompositeProfileHandler : CompositeProfileHandler
