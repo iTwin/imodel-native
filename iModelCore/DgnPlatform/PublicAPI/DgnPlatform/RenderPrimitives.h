@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RenderPrimitives.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,6 +18,7 @@
 
 BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(SurfaceMaterial);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Triangle);
@@ -86,6 +87,46 @@ struct GeometryOptions
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/19
+//=======================================================================================
+enum class ComparePurpose
+{
+    Merge,  //!< ignores category, subcategory, class, and considers colors equivalent if both have or both lack transparency
+    Strict  //!< compares all members
+};
+
+//=======================================================================================
+//! Describes material properties of a surface associated with a DisplayParams.
+// @bsistruct                                                   Paul.Connelly   01/19
+//=======================================================================================
+struct SurfaceMaterial
+{
+    friend struct DisplayParams;
+private:
+    MaterialPtr         m_material;
+    GradientSymbCPtr    m_gradient;
+    TextureMapping      m_textureMapping;
+
+    SurfaceMaterial(MaterialP mat, GradientSymbCP grad, TextureMappingCP tex) : m_material(mat), m_gradient(grad)
+        {
+        if (nullptr != tex)
+            m_textureMapping = *tex;
+        }
+public:
+    SurfaceMaterial() { }
+    explicit SurfaceMaterial(TextureMappingCR textureMapping, GradientSymbCP gradient = nullptr) : m_gradient(gradient), m_textureMapping(textureMapping) { }
+    SurfaceMaterial(MaterialR material, TextureMapping::Trans2x3 const* transform = nullptr);
+
+    bool IsValid() const { return m_textureMapping.IsValid() || m_material.IsValid(); }
+    bool IsEqualTo(SurfaceMaterialCR, ComparePurpose) const;
+    bool IsLessThan(SurfaceMaterialCR, ComparePurpose) const;
+
+    MaterialP GetMaterial() const { return m_material.get(); }
+    TextureMappingCR GetTextureMapping() const { return m_textureMapping; }
+    GradientSymbCP GetGradient() const { return m_gradient.get(); }
+};
+
+//=======================================================================================
 //! Describes the appearance of a Geometry.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
@@ -99,9 +140,7 @@ private:
     Type                m_type;
     DgnCategoryId       m_categoryId;
     DgnSubCategoryId    m_subCategoryId;
-    MaterialPtr         m_material; // meshes only
-    GradientSymbCPtr    m_gradient;
-    TextureMapping      m_textureMapping; // only if m_material is null (e.g. gradients, glyph bitmaps)
+    SurfaceMaterial     m_surfaceMaterial;
     ColorDef            m_lineColor = ColorDef::White(); // all types of geometry (edge color for meshes)
     ColorDef            m_fillColor = ColorDef::White(); // meshes only
     uint32_t            m_width = 0; // linear and mesh (edges)
@@ -123,14 +162,13 @@ private:
     DisplayParams(ColorDef lineColor, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) { InitText(lineColor, catId, subCatId, geomClass); }
     DisplayParams(ColorDef lineColor, uint32_t width, LinePixels px, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
         { InitLinear(lineColor, width, px, cat, sub, gc); }
-    DisplayParams(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels px, MaterialP mat, GradientSymbCP grad, TextureMappingCP tx,
-        FillFlags ff, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
-        { InitMesh(lineColor, fillColor, width, px, mat, grad, tx, ff, cat, sub, gc); }
+    DisplayParams(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels px, SurfaceMaterialCR mat, FillFlags ff, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
+        { InitMesh(lineColor, fillColor, width, px, mat, ff, cat, sub, gc); }
 
     void InitGeomParams(DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitText(ColorDef lineColor, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitLinear(ColorDef lineColor, uint32_t width, LinePixels, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
-    void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, MaterialP, GradientSymbCP, TextureMappingCP, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
+    void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, SurfaceMaterialCR, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
 public:
     Type GetType() const { return m_type; }
     ColorDef GetFillColorDef() const { return m_fillColor; }
@@ -138,9 +176,9 @@ public:
     ColorDef GetLineColorDef() const { return m_lineColor; }
     uint32_t GetLineColor() const { return GetLineColorDef().GetValue(); }
 
-    TextureMappingCR GetTextureMapping() const { return m_material.IsValid() ? m_material->GetTextureMapping() : m_textureMapping; }
-    MaterialP GetMaterial() const { return m_material.get(); }
-    GradientSymbCP GetGradient() const { return m_gradient.get(); }
+    SurfaceMaterialCR GetSurfaceMaterial() const { return m_surfaceMaterial; }
+    bool IsTextured() const { return m_surfaceMaterial.GetTextureMapping().IsValid(); }
+
     uint32_t GetLineWidth() const { return m_width; }
     LinePixels GetLinePixels() const { return m_linePixels; }
     FillFlags GetFillFlags() const { return m_fillFlags; }
@@ -152,17 +190,10 @@ public:
     bool IgnoresLighting() const { return m_ignoreLighting; }
     bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
-    bool IsTextured() const { return GetTextureMapping().IsValid(); }
     bool HasBlankingFill() const { return FillFlags::Blanking == (GetFillFlags() & FillFlags::Blanking); }
 
     RegionEdgeType GetRegionEdgeType() const;
     bool WantRegionOutline() const { return RegionEdgeType::Outline == GetRegionEdgeType(); }
-
-    enum class ComparePurpose
-    {
-        Merge,  //!< ignores category, subcategory, class, and considers colors equivalent if both have or both lack transparency
-        Strict  //!< compares all members
-    };
 
     DGNPLATFORM_EXPORT bool IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
     DGNPLATFORM_EXPORT bool IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
@@ -505,7 +536,7 @@ struct MeshBuilderMap
                 return !m_hasNormals;
 
             BeAssert(m_params.IsValid() && rhs.m_params.IsValid());
-            return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
+            return m_params->IsLessThan(*rhs.m_params, ComparePurpose::Merge);
             }
     };
 private:

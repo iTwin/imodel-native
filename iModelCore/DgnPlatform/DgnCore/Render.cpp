@@ -513,12 +513,20 @@ double TileSizeAdjuster::Compute(Render::TargetCR target, double curMod) const
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::TextureMapping::Transform(Trans2x3 const& transform)
+    {
+    m_params.m_textureMat2x3.InitProduct(m_params.m_textureMat2x3, transform);
+    }
+
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform Render::TextureMapping::Trans2x3::GetTransform() const
     {
-    Transform transform = Transform::FromIdentity();
+    auto transform = Transform::FromIdentity();
 
     for (size_t i=0; i<2; ++i)
         {

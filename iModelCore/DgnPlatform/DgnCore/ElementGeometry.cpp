@@ -1683,12 +1683,12 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
     //                          So we need a way to check for that case as we can't call GetMaterial
     //                          when !useMaterial because GeometryParams::Resolve hasn't been called...
     bool useMaterial = is3d && !elParams.IsMaterialFromSubCategoryAppearance();
-
-    if (useMaterial)
+    auto trans2x3 = elParams.GetMaterialUVDetail().GetTransform();
+    if (useMaterial || nullptr != trans2x3)
         {
         FlatBufferBuilder fbb;
 
-        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial && elParams.GetMaterialId().IsValid() ? elParams.GetMaterialId().GetValueUnchecked() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
+        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial && elParams.GetMaterialId().IsValid() ? elParams.GetMaterialId().GetValueUnchecked() : 0, nullptr, nullptr, 0.0, 0.0, 0.0, reinterpret_cast<FB::Trans2x3 const*>(trans2x3));
         fbb.Finish(mloc);
 
         Append(Operation(OpCode::Material, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementTileTree.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -1555,7 +1555,7 @@ bool Root::SolidPrimitivePartMap::Key::operator<(Key const& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Root::SolidPrimitivePartMap::Key::IsEqual(Key const& rhs) const
     {
-    return m_displayParams->IsEqualTo(*rhs.m_displayParams, DisplayParams::ComparePurpose::Merge)
+    return m_displayParams->IsEqualTo(*rhs.m_displayParams, ComparePurpose::Merge)
         && m_solidPrimitive->IsSameStructureAndGeometry(*rhs.m_solidPrimitive, s_solidPrimitivePartCompareTolerance);
     }
 
@@ -2426,7 +2426,7 @@ void GlyphDeferralManager::AddDeferredGlyphsToBuilderMap(MeshBuilderMap& builder
 
         uint32_t fillColor = displayParams->GetFillColor();
         for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*deferredGlyph.m_polyface.m_polyface); visitor->AdvanceToNextFace(); /**/)
-            meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), db, deferredGlyph.m_geom->GetFeature(), hasTexture, fillColor, nullptr != deferredGlyph.m_polyface.m_polyface->GetNormalCP(), nullptr);
+            meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetSurfaceMaterial().GetTextureMapping(), db, deferredGlyph.m_geom->GetFeature(), hasTexture, fillColor, nullptr != deferredGlyph.m_polyface.m_polyface->GetNormalCP(), nullptr);
 
         meshBuilder.EndPolyface();
         }
@@ -2634,7 +2634,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP(), &auxData);
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetSurfaceMaterial().GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP(), &auxData);
         m_contentRange.Extend(visitor->Point());
         }
 

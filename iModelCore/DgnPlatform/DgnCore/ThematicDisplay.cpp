@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ThematicDisplay.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -59,7 +59,7 @@ static FPoint2d    computeTextureParam (double value, double margin)
 +---------------+---------------+---------------+---------------+---------------+------*/
 GradientSymbCPtr getThematicGradient(Render::Primitives::DisplayParamsCR displayParams, PolyfaceAuxChannelCR channel)
     {
-    GradientSymbCPtr    gradient = displayParams.GetGradient();
+    GradientSymbCPtr    gradient = displayParams.GetSurfaceMaterial().GetGradient();
 
     if (gradient.IsValid() && gradient->GetThematicSettings().IsValid())
         return gradient;

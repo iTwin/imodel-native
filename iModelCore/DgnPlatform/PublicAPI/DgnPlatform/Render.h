@@ -722,9 +722,13 @@ struct TextureMapping
                 && 0.0 == m_val[1][0] && 1.0 == m_val[1][1] && 0.0 == m_val[1][2];
             }
 
-        static Trans2x3 FromProduct(Trans2x3 const& lhs, Trans2x3 const& rhs);
+        DGNPLATFORM_EXPORT static Trans2x3 FromProduct(Trans2x3 const& lhs, Trans2x3 const& rhs);
         void InitProduct(Trans2x3 const& lhs, Trans2x3 const& rhs) { *this = FromProduct(lhs, rhs); }
         void MultiplyBy(Trans2x3 const& rhs) { InitProduct(*this, rhs); }
+
+        static Trans2x3 FromRotation(Angle angle) { return FromRotationAndScale(angle, nullptr); }
+        static Trans2x3 FromScale(DPoint2dCR scale) { return FromRotationAndScale(Angle::FromRadians(0.0), &scale); }
+        DGNPLATFORM_EXPORT static Trans2x3 FromRotationAndScale(Angle angle, DPoint2dCP scale);
 
         bool AlmostEqual(Trans2x3 const& rhs) const;
 
@@ -756,7 +760,7 @@ struct TextureMapping
 
         void SetMode(Mode val) {m_mapMode=val;}
         void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
-        void SetTransform(Trans2x3* val) {m_textureMat2x3 = nullptr != val ? *val : Trans2x3();} //<! Set Texture 2x3 transform
+        void SetTransform(Trans2x3 const* val) {m_textureMat2x3 = nullptr != val ? *val : Trans2x3();} //<! Set Texture 2x3 transform
         void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
 
         BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
@@ -773,6 +777,7 @@ public:
     bool IsValid() const { return m_texture.IsValid(); }
     TextureCP GetTexture() const { return m_texture.get(); }
     Params const& GetParams() const { return m_params; }
+    void Transform(Trans2x3 const& transform);
 };
 
 //=======================================================================================

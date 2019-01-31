@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RenderMaterial.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -174,6 +174,33 @@ Render::TextureMapping::Trans2x3 RenderingAsset::TextureMap::GetTransform() cons
         }
 
     return trans;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TextureMapping::Trans2x3 Render::TextureMapping::Trans2x3::FromRotationAndScale(Angle angle, DPoint2dCP pScale)
+    {
+    Trans2x3 tf;
+    double cosA = angle.Cos();
+    double sinA = angle.Sin();
+
+    static double s_minScale = 1.0E-10;
+    DPoint2d scale = nullptr != pScale ? *pScale : DPoint2d::From(1.0, 1.0);
+    if (fabs(scale.x) < s_minScale)
+        scale.x = scale.x < 0.0 ? -s_minScale : s_minScale;
+
+    if (fabs(scale.y) < s_minScale)
+        scale.y = scale.y < 0.0 ? -s_minScale : s_minScale;
+
+    tf.m_val[0][0] = cosA / scale.x;
+    tf.m_val[0][1] = sinA / scale.x;
+    tf.m_val[1][0] = sinA / scale.y;
+    tf.m_val[1][1] = -cosA / scale.y;
+
+    tf.m_val[0][2] = tf.m_val[1][2] = 0.0;
+
+    return tf;
     }
 
 /*---------------------------------------------------------------------------------**//**

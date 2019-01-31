@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/MeshTile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define CLASSIFICATION_WIP
@@ -1152,8 +1152,8 @@ struct ICustomTilesetPublisher
     virtual void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& tileToECEF, const Transform& dbToTile) = 0;
     };
 
-#define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
-#define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
+#define COMPARE_VALUES_TOLERANCE(val0, val1, tol) { if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false; }
+#define COMPARE_VALUES(val0, val1) { if (val0 < val1) return true; if (val0 > val1) return false; }
 
 // static utility methods
 // @bsistruct                                                   Ray.Bentley     08/2016
