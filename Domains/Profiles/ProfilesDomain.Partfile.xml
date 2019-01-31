@@ -3,26 +3,27 @@
 
     <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
     <!-- <Part Name="ProfilesDomainWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
-        <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
-        <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
-        <SubProduct ProductName="ProfilesDomainTested"/>
+        <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="Gist" PartFile="Gist" Repository="Gist" />
+        <SubProduct ProductName="ProfilesDomainTested" />
     </Part> -->
 
     <Product Name="ProfilesDomainSDK">
-        <SubPart PartName="ProfilesDomainDLL"/>
-        <Directories DirectoryListName="ProfilesSDKDirs"/>
+        <SubPart PartName="ProfilesDomainDLL" />
+        <SubPart PartName="ProfilesDoc" />
+        <Directories DirectoryListName="ProfilesSDKDirs" />
     </Product>
 
     <Product Name="ProfilesDomainTested">
-        <SubProduct ProductName="ProfilesDomainSDK"/>
-        <SubPart PartName="RunProfilesTests"/>
-        <Directories DirectoryListName="ProfilesSDKDirs"/>
-        <Directories DirectoryListName="ProfilesTestsDirs"/>
+        <SubProduct ProductName="ProfilesDomainSDK" />
+        <SubPart PartName="RunProfilesTests" />
+        <Directories DirectoryListName="ProfilesSDKDirs" />
+        <Directories DirectoryListName="ProfilesTestsDirs" />
     </Product>
 
     <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/ProfilesDomainDLL.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
-        <SubPart PartName="ProfilesPublicAPI"/>
+        <SubPart PartName="ProfilesPublicAPI" />
         <Bindings>
             <Libs>
                 Delivery/$(libprefix)Profiles$(libext)
@@ -35,11 +36,11 @@
 
     <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles/ProfilesDomainDll.prewire.mke" ApiNumber="B02">
         <Bindings>
-            <PublicAPI Domain="Profiles"/>
+            <PublicAPI Domain="Profiles" />
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/Profiles.ecschema.xml
             </Files>
-            <Directory SourceName="PublicAPI/Profiles" ProductDirectoryName="ProfilesDomainIncludes" />
+            <Directory SourceName="PublicAPI/Profiles" ProductDirectoryName="ProfilesIncludes" />
         </Bindings>
     </Part>
 
@@ -47,10 +48,10 @@
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
-        <SubPart PartName="ProfilesDomainDLL"/>
+        <SubPart PartName="ProfilesDomainDLL" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)ProfilesTests.exe</Assemblies>
-            <Files ProductDirectoryName="ProfilesDomainRoot">
+            <Files ProductDirectoryName="ProfilesRoot">
                 Delivery/ProfilesTests.logging.config.xml
                 Delivery/ignore_list.txt
             </Files>
@@ -63,10 +64,20 @@
     <Part Name="RunProfilesTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
           BentleyBuildMakeOptions="-dGTEST_PRODUCT=ProfilesDomainTested\ -dGTEST_NAME=ProfilesTests" ExcludeLibType="Static">
         <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest" />
-        <SubPart PartName="ProfilesTests"/>
+        <SubPart PartName="ProfilesTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">
                 Delivery/Gtest/Logs/ProfilesTests.log
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ProfilesDoc" BentleyBuildMakeFile="Profiles\Documentation\ProfilesDoc.mke">
+        <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Bindings>
+            <PublicAPI Domain="Profiles" />
+            <Files ProductDirectoryName="ProfilesDocs">
+                Delivery/Docs/*
             </Files>
         </Bindings>
     </Part>
@@ -80,22 +91,24 @@
     <ProductDirectoryList ListName="ProfilesTestsDirs">
         <ProductDirectory Name="VendorNotices"                  Deliver="false" />
         <ProductDirectory Name="Libs"                           Deliver="false" />
-        <ProductDirectory Name="ProfilesDomainIncludes"         Deliver="false" />
+        <ProductDirectory Name="ProfilesIncludes"               Deliver="false" />
         <ProductDirectory Name="UnitTests-Assets"               Deliver="false" />
         <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false" />
         <ProductDirectory Name="UnitTests-Objects"              Deliver="false" />
     </ProductDirectoryList>
 
     <ProductDirectoryList ListName="ProfilesSDKDirs">
-        <ProductDirectory Name="ProfilesDomainRoot"              Path=""/>
-        <ProductDirectory Name="Assemblies"                      RelativeTo="ProfilesDomainRoot" Path=""/>
-        <ProductDirectory Name="Assemblies"                      LibType="static" Deliver="false"/>
-        <ProductDirectory Name="Libs"                            RelativeTo="ProfilesDomainRoot" Path=""/>
-        <ProductDirectory Name="Assets"                          RelativeTo="ProfilesDomainRoot" Path="Assets"/>
-        <ProductDirectory Name="Assets"                          LibType="static" Deliver="false" />
-        <ProductDirectory Name="ProfilesDomainIncludes"          RelativeTo="ProfilesDomainRoot" Path="Include/Profiles"/>
-        <ProductDirectory Name="VendorNotices"                   RelativeTo="ProfilesDomainRoot" Path="VendorNotices"/>
-        <ProductDirectory Name="VendorNotices"                   LibType="static" RelativeTo="ProfilesDomainRoot" Path="VendorNotices"/>
+        <ProductDirectory Name="ProfilesRoot"                   Path="" />
+        <ProductDirectory Name="Libs"                           RelativeTo="ProfilesRoot" Path="" />
+        <ProductDirectory Name="Assemblies"                     RelativeTo="ProfilesRoot" Path="" />
+        <ProductDirectory Name="ProfilesIncludes"               RelativeTo="ProfilesRoot" Path="Include/Profiles" />
+        <ProductDirectory Name="ProfilesDocs"                   RelativeTo="ProfilesRoot" Path="Docs" />
+        <ProductDirectory Name="VendorNotices"                  RelativeTo="ProfilesRoot" Path="VendorNotices" />
+        <ProductDirectory Name="Assets"                         RelativeTo="ProfilesRoot" Path="Assets" />
+
+        <ProductDirectory Name="VendorNotices"                  LibType="static" Deliver="false" />
+        <ProductDirectory Name="Assets"                         LibType="static" Deliver="false" />
+        <ProductDirectory Name="Assemblies"                     LibType="static" Deliver="false" />
     </ProductDirectoryList>
 
 </BuildContext>

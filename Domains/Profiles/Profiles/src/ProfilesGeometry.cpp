@@ -1237,7 +1237,7 @@ static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDept
         topLine, topleftArc, leftLine, bottomleftArc, bottomLine,
         };
 
-    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_None);
+    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1247,13 +1247,13 @@ static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDept
     {
     double halfWallThickness = wallThickness / 2.0;
 
-    DPoint3d const tr_Apex = { halfWidth, halfDepth - halfWallThickness, 0.0 };
+    DPoint3d const tr_Apex = { halfWidth - halfWallThickness, halfDepth - halfWallThickness, 0.0 };
     DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth - halfWallThickness, 0.0 };
     DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
-    DPoint3d const br_Apex = { halfWidth, -(halfDepth - halfWallThickness), 0.0 };
+    DPoint3d const br_Apex = { halfWidth - halfWallThickness, -(halfDepth - halfWallThickness), 0.0 };
 
-    DPoint3d const tr_Girth = { halfWidth - halfWallThickness, halfDepth - girth - halfWallThickness, 0.0 };
-    DPoint3d const br_Girth = { -(halfWidth - halfWallThickness), -(halfDepth - girth - halfWallThickness), 0.0 };
+    DPoint3d const tr_Girth = { halfWidth - halfWallThickness, halfDepth - girth, 0.0 };
+    DPoint3d const br_Girth = { halfWidth - halfWallThickness, -(halfDepth - girth), 0.0 };
 
     ICurvePrimitivePtr topGirthLine = ICurvePrimitive::CreateLine (tr_Girth, tr_Apex);
     ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (tr_Apex, tl_Apex);
@@ -1272,10 +1272,12 @@ static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDept
         bottomGirthArc, bottomGirthLine,
         };
 
-    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_None);
+    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateCenterLineForCShape (CenterLineCShapeProfile const& profile)
     {
     double const halfWidth = profile.GetFlangeWidth() / 2.0;
@@ -1294,6 +1296,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineForCShape (CenterLineCShapeProfil
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateCenterLineForLShape(CenterLineLShapeProfile const& profile)
     {
     return nullptr;

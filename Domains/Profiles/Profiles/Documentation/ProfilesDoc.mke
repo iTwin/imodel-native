@@ -1,0 +1,130 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: Profiles/Documentation/ProfilesDoc.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------
+#   Configuration files for Doxygen
+#----------------------------------------------------------------------------------------
+BENTLEY_DOXYGEN_CONFIG      = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.cfg
+BENTLEY_DOXYGEN_ALIASES     = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen-html-aliases.cfg
+
+DOXYGEN_CONFIG_FILES        = $(BENTLEY_DOXYGEN_CONFIG)
+DOXYGEN_CONFIG_FILES        + $(BENTLEY_DOXYGEN_ALIASES)
+DOXYGEN_CONFIG_FILES        + $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.css
+
+#----------------------------------------------------------------------------------------
+#   Configure platform-specific macros for Doxygen @cond statements
+#----------------------------------------------------------------------------------------
+DOXYGEN_TARGET_PLATFORM = BENTLEY_SDK_Windows
+
+#----------------------------------------------------------------------------------------
+#   Configure verbose setting for PublishAPI.py and Doxygen
+#----------------------------------------------------------------------------------------
+%if defined (VERBOSE)
+    PUBLISH_VERBOSE = -v6
+    DOXYGEN_QUIET = NO
+%else
+    PUBLISH_VERBOSE = -v3       # INFO_LEVEL_VeryInterestings
+    DOXYGEN_QUIET = YES
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Subdirectory macros
+#----------------------------------------------------------------------------------------
+DOCS_FOLDER_NAME                = Docs
+DOXYGEN_ARTIFACTS_FOLDER_NAME   = DoxygenArtifacts
+
+#----------------------------------------------------------------------------------------
+#   Output directory macros
+#----------------------------------------------------------------------------------------
+OUT_ROOT                = $(OutputRootDir)build\ProfilesDocs\\
+OUT_DOCS                = $(OUT_ROOT)$(DOCS_FOLDER_NAME)\\
+OUT_DOXYGEN_ARTIFACTS   = $(OUT_ROOT)$(DOXYGEN_ARTIFACTS_FOLDER_NAME)\\
+
+DOXYGEN_INPUT           = $(OUT_DOXYGEN_ARTIFACTS)DoxygenInput\\
+PublishApiInput         = $(OUT_DOXYGEN_ARTIFACTS)PublishApiInput\\
+PublishApiOutput        = $(OUT_DOXYGEN_ARTIFACTS)PublishApiOutput\\
+PublishApiStamp         = $(PublishApiOutput)PublishApi.stamp
+DOXYGEN_WARN_LOGFILE    = $(OUT_DOXYGEN_ARTIFACTS)doxygen-warnings.txt
+
+#----------------------------------------------------------------------------------------
+#   Handle "clean" of all output files
+#----------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) ${OUT_DOXYGEN_ARTIFACTS}
+
+    %return
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Run PublishApi to get sample code inserted and macros expanded
+#----------------------------------------------------------------------------------------
+always:
+    !~@mkdir ${PublishApiInput}
+    !~@mkdir ${PublishApiOutput}
+
+always:
+    ~linkdir "$(DOXYGEN_INPUT)include = $(_MakeFilePath)..\src\PublicAPI
+
+$(PublishApiStamp) : $[@wildcard $(DOXYGEN_INPUT)include\*]
+    $(msg)
+    PublishAPI.py $(PUBLISH_VERBOSE) -o${PublishApiOutput} -d${DOXYGEN_INPUT}\include -s$(PublishApiStamp) -x$(TARGET_PLATFORM) --insertFileDir=$(BuildContext)SubParts/Extractions
+
+#----------------------------------------------------------------------------------------
+#   Gather Doxygen inputs
+#----------------------------------------------------------------------------------------
+always:
+    !~@mkdir ${DOXYGEN_INPUT}
+    !~@mkdir ${OUT_DOCS}
+    ~linkdir "$(DOXYGEN_INPUT)overview = ${PublishApiOutput}"
+
+#----------------------------------------------------------------------------------------
+#   Run Doxygen
+#----------------------------------------------------------------------------------------
+$(OUT_DOXYGEN_ARTIFACTS)doxygen.cfg : $(PublishApiStamp) $(DOXYGEN_CONFIG_FILES) $(_MakeFileSpec)
+    $(msg)
+    > $(OUT_DOXYGEN_ARTIFACTS)doxygen.cfg
+    @INCLUDE = $(BENTLEY_DOXYGEN_CONFIG)
+    @INCLUDE = $(BENTLEY_DOXYGEN_ALIASES)
+    PROJECT_NAME        = "Profiles SDK"
+    WARN_LOGFILE        = $(DOXYGEN_WARN_LOGFILE)
+    QUIET               = $(DOXYGEN_QUIET)
+    INPUT               = $(PublishApiOutput) $(_MakeFilePath)ProfilesDoc.remarks.md
+    USE_MDFILE_AS_MAINPAGE = ProfilesDoc.remarks.md
+    OUTPUT_DIRECTORY    = $(OUT_ROOT)
+    HTML_OUTPUT         = $(DOCS_FOLDER_NAME)
+    INCLUDE_PATH        = $(PublishApiOutput)
+    DOT_PATH            =
+    SEARCHENGINE        = NO
+    GENERATE_HTML       = YES
+    GENERATE_XML        = NO
+    GENERATE_HTMLHELP   = NO
+    HHC_LOCATION        =
+    ENABLED_SECTIONS    = BENTLEY_SDK_Profiles $(DOXYGEN_TARGET_PLATFORM)
+    FILE_PATTERNS       = *.h
+    <
+    !$(doxygenCmd) $(OUT_DOXYGEN_ARTIFACTS)doxygen.cfg
+    ~time
+
+always:
+    @$(_MakeFilePath)PreprocessDoxygenWarnings.py "$(DOXYGEN_WARN_LOGFILE)" > "$(DOXYGEN_WARN_LOGFILE)"
+
+%if $[@readfile $(DOXYGEN_WARN_LOGFILE)] != " "
+    %warn ********************
+    %warn * DOXYGEN Warnings *
+    %warn ********************
+    always:
+        @$(_MakeFilePath)DisplayDoxygenWarnings.py "$(DOXYGEN_WARN_LOGFILE)"
+
+    %warn ********************
+    %error DOXYGEN warnings treated as build error
+%endif
+
+always:
+    @CreateSymLinks.py -d"$(BuildContext)Delivery\Docs=$(OUT_DOCS)"

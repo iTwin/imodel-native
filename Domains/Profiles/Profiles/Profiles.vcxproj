@@ -52,6 +52,10 @@
     <IncludePath>$(Profiles_PublicAPI);$(Profiles_PrivateAPI);$(Profiles_VendorAPI);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="Documentation\DisplayDoxygenWarnings.py" />
+    <None Include="Documentation\PreprocessDoxygenWarnings.py" />
+    <None Include="Documentation\ProfilesDoc.mke" />
+    <None Include="Documentation\ProfilesDoc.remarks.md" />
     <None Include="ProfilesDomainDLL.mke" />
     <None Include="ProfilesDomainDLL.mki" />
     <None Include="ProfilesDomainDLL.prewire.mke" />

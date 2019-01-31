@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+//__PUBLISH_SECTION_START__
 #include "ProfilesDefinitions.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -22,9 +22,10 @@ protected:
 
 public:
     PROFILES_EXPORT IGeometryPtr GetCenterLine () const;
-    PROFILES_EXPORT void SetCenterLine (IGeometry const& val);
     PROFILES_EXPORT double GetWallThickness () const;
     PROFILES_EXPORT void SetWallThickness (double value);
+protected:
+    PROFILES_EXPORT void SetCenterLine(IGeometry const& val);
     }; // ICenterLineProfile
 
 END_BENTLEY_PROFILES_NAMESPACE

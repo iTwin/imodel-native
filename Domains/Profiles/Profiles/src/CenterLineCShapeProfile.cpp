@@ -39,7 +39,7 @@ CenterLineCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 CenterLineCShapeProfile::CenterLineCShapeProfile(CreateParams const& params)
-    : T_Super (params)
+     : T_Super (params)
     {
     if (params.m_isLoadingElement)
         {
