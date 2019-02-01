@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/SchemaManagerTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -2042,7 +2042,7 @@ TEST_F(SchemaManagerTests, Formats)
 
     assertFormat(*schema, "Format2", "Format 2", "Nice format 2",
                  JsonValue(R"json({"roundFactor":0.3, "type": "Scientific", "scientificType": "ZeroNormalized", "showSignOption": "NegativeParentheses", "formatTraits": ["keepSingleZero", "showUnitLabel", "prependUnitLabel"], "precision": 4, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "*"})json"),
-                 JsonValue(R"json({"spacer":" ", "includeZero": true, "units": [
+                 JsonValue(R"json({"includeZero": true, "units": [
                               { "name": "MyMeter", "label": "m" },
                               { "name": "MM", "label": "mm" }]})json"));
 
