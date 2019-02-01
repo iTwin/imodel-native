@@ -817,7 +817,7 @@ iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementByHash(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR hash)
     {
-    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Hash=?)");
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Checksum=?)");
     sel->BindId(1, scopeId);
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, hash.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
