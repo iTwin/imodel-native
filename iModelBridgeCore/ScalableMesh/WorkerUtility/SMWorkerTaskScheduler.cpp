@@ -2,6 +2,7 @@
 #include "ScalableMeshWorker.h"
 #include "SMWorkerTaskScheduler.h"
 
+#include <ctime> 
 #include <process.h>
 
 #include <Bentley\BeDirectoryIterator.h>
@@ -559,11 +560,11 @@ void TaskScheduler::OutputJobStat()
 
         if (durationFile != nullptr)
             {
-            double duration = (double)(jobStat.second.m_stopTime - jobStat.second.m_startTime) / CLOCKS_PER_SEC;
-            fwprintf(durationFile, L"StartTime,StopTime,Duration\r\n");
-            fwprintf(durationFile, L"%i,%i,%.5f\r\n\r\n", jobStat.second.m_startTime, jobStat.second.m_stopTime, duration);
+            time_t duration = jobStat.second.m_stopTime - jobStat.second.m_startTime;
+            fwprintf(durationFile, L"StartTime,StopTime,Duration (seconds)\r\n");
+            fwprintf(durationFile, L"%lli,%lli,%lli\r\n\r\n", jobStat.second.m_startTime, jobStat.second.m_stopTime, duration);
 
-            fwprintf(durationFile, L"TaskType,Duration\r\n");
+            fwprintf(durationFile, L"TaskType,Duration (seconds)\r\n");
 
             for (auto& task : jobStat.second.m_processedTasks)
                 {
@@ -775,7 +776,7 @@ bool TaskScheduler::ProcessTask(FILE* file)
     taskStat.m_durationInSeconds = (double)(clock() - startTime) / CLOCKS_PER_SEC;
 
     jobStat.m_processedTasks.push_back(taskStat);
-    jobStat.m_stopTime = clock();
+    time(&jobStat.m_stopTime);
 
     //Write 0 at the beginning of the task file to ensue no other worker processes this task.
     fseek(file, 0, SEEK_SET);
