@@ -285,7 +285,7 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
 
     DbResult result;
 
-    SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
+    SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
     DgnDb::OpenParams openParams(mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
 
     db = DgnDb::OpenDgnDb(&result, pathname, openParams);
