@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/CustomFunctions.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -1701,12 +1701,9 @@ CustomFunctionsInjector::CustomFunctionsInjector(IConnectionManagerCR connection
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsInjector::~CustomFunctionsInjector()
     {
-    for (Utf8StringCR connectionId : m_handledConnectionIds)
-        {
-        IConnectionPtr connection = m_connections.GetConnection(connectionId.c_str());
-        if (connection.IsValid())
-            Unregister(*connection);
-        }
+    for (IConnectionCP connection : m_handledConnections)
+        Unregister(*connection);
+
     DestroyFunctions();
     m_connections.DropListener(*this);
     }
@@ -1761,21 +1758,21 @@ void CustomFunctionsInjector::DestroyFunctions()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomFunctionsInjector::Register(IConnectionCR connection)
+void CustomFunctionsInjector::Register(IConnectionCR connection, bool primary)
     {
+    BeSQLite::DbCR db = primary ? connection.GetECDb() : connection.GetDb();
     for (ScalarFunction* func : m_scalarFunctions)
         {
-        DbResult result = (DbResult)connection.GetDb().AddFunction(*func);
+        DbResult result = (DbResult)db.AddFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
             BeAssert(false);
             NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE)->errorv("Failed to add custom function '%s'. Result = %d", func->GetName(), (int)result);
             }
         }
-
     for (AggregateFunction* func : m_aggregateFunctions)
         {
-        DbResult result = (DbResult)connection.GetDb().AddFunction(*func);
+        DbResult result = (DbResult)db.AddFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
             BeAssert(false);
@@ -1787,14 +1784,15 @@ void CustomFunctionsInjector::Register(IConnectionCR connection)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomFunctionsInjector::Unregister(IConnectionCR connection)
+void CustomFunctionsInjector::Unregister(IConnectionCR connection, bool primary)
     {
     if (!connection.IsOpen())
         return;
 
+    BeSQLite::DbCR db = primary ? connection.GetECDb() : connection.GetDb();
     for (ScalarFunction* func : m_scalarFunctions)
         {
-        DbResult result = (DbResult)connection.GetDb().RemoveFunction(*func);
+        DbResult result = (DbResult)db.RemoveFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
             BeAssert(false);
@@ -1803,13 +1801,34 @@ void CustomFunctionsInjector::Unregister(IConnectionCR connection)
         }
     for (AggregateFunction* func : m_aggregateFunctions)
         {
-        DbResult result = (DbResult)connection.GetDb().RemoveFunction(*func);
+        DbResult result = (DbResult)db.RemoveFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
             BeAssert(false);
             NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE)->errorv("Failed to remove custom function '%s'. Result = %d", func->GetName(), (int)result);
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CustomFunctionsInjector::Handles(IConnectionCR connection) const
+    {
+    return m_handledConnections.end() != m_handledConnections.find(&connection);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis				01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CustomFunctionsInjector::HandlesPrimaryConnection(Utf8StringCR connectionId) const
+    {
+    for (IConnectionCP conn : m_handledConnections)
+        {
+        if (conn->GetId() == connectionId)
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1820,7 +1839,10 @@ void CustomFunctionsInjector::OnConnection(IConnectionCR connection)
     if (Handles(connection))
         return;
 
-    m_handledConnectionIds.insert(connection.GetId());
+    if (!HandlesPrimaryConnection(connection.GetId()))
+        Register(connection, true);
+
+    m_handledConnections.insert(&connection);
     Register(connection);
     }
 
@@ -1831,7 +1853,17 @@ void CustomFunctionsInjector::_OnConnectionEvent(ConnectionEvent const& evt)
     {
     if (ConnectionEventType::Closed == evt.GetEventType())
         {
-        Unregister(evt.GetConnection());
-        m_handledConnectionIds.erase(evt.GetConnection().GetId());
+        bvector<IConnectionCP> toErase;
+        for (IConnectionCP conn : m_handledConnections)
+            {
+            if (conn->GetId() != evt.GetConnection().GetId())
+                continue;
+
+            Unregister(*conn);
+            toErase.push_back(conn);
+            }
+        for (IConnectionCP conn : toErase)
+            m_handledConnections.erase(conn);
+        Unregister(evt.GetConnection(), true);
         }
     }
