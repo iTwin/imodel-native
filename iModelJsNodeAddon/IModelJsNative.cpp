@@ -3073,7 +3073,6 @@ Napi::Value NativeECSqlValue::GetArrayIterator(Napi::CallbackInfo const& info)
     return NativeECSqlValueIterator::New(info.Env(), m_ecsqlValue->GetArrayIterable(), *m_ecdb);
     }
 
-
 //=======================================================================================
 // Projects the ECSqlStatement class into JS.
 //! @bsiclass
@@ -3111,6 +3110,8 @@ public:
           InstanceMethod("getBinder", &NativeECSqlStatement::GetBinder),
           InstanceMethod("step", &NativeECSqlStatement::Step),
           InstanceMethod("stepForInsert", &NativeECSqlStatement::StepForInsert),
+          InstanceMethod("stepAsync", &NativeECSqlStatement::StepAsync),
+          InstanceMethod("stepForInsertAsync", &NativeECSqlStatement::StepForInsertAsync),
           InstanceMethod("getColumnCount", &NativeECSqlStatement::GetColumnCount),
           InstanceMethod("getValue", &NativeECSqlStatement::GetValue)
         });
@@ -3159,7 +3160,7 @@ public:
 
     Napi::Value Reset(Napi::CallbackInfo const& info)
         {
-        if (m_stmt == nullptr)
+        if (!m_stmt->IsPrepared())
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         ECSqlStatus status = m_stmt->Reset();
@@ -3173,7 +3174,7 @@ public:
 
     Napi::Value ClearBindings(Napi::CallbackInfo const& info)
         {
-        if (m_stmt == nullptr)
+        if (!m_stmt->IsPrepared())
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         auto status = m_stmt->ClearBindings();
@@ -3182,7 +3183,7 @@ public:
 
     Napi::Value GetBinder(Napi::CallbackInfo const& info)
         {
-        if (m_stmt == nullptr)
+        if (!m_stmt->IsPrepared())
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlStatement is not prepared.", Env().Undefined());
 
         if (info.Length() != 1)
@@ -3204,7 +3205,7 @@ public:
 
     Napi::Value Step(Napi::CallbackInfo const& info)
         {
-        if (m_stmt == nullptr)
+        if (!m_stmt->IsPrepared())
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         DbResult status = m_stmt->Step();
@@ -3213,7 +3214,7 @@ public:
 
     Napi::Value StepForInsert(Napi::CallbackInfo const& info)
         {
-        if (m_stmt == nullptr)
+        if (!m_stmt->IsPrepared())
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         ECInstanceKey key;
@@ -3227,9 +3228,21 @@ public:
         return ret;
         }
 
+    void StepAsync(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_FUNCTION(0, responseCallback, );
+        JsInterop::StepAsync(responseCallback, *m_stmt, false);
+        }
+
+    void StepForInsertAsync(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_FUNCTION(0, responseCallback, );
+        JsInterop::StepAsync(responseCallback, *m_stmt, true);
+        }
+
     Napi::Value GetColumnCount(Napi::CallbackInfo const& info)
         {
-        if (m_stmt == nullptr)
+        if (!m_stmt->IsPrepared())
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlStatement is not prepared.", Env().Undefined());
 
         int colCount = m_stmt->GetColumnCount();
@@ -3238,7 +3251,7 @@ public:
 
     Napi::Value GetValue(Napi::CallbackInfo const& info)
         {
-        if (m_stmt == nullptr)
+        if (!m_stmt->IsPrepared())
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlStatement is not prepared.", Env().Undefined());
 
         REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
@@ -3297,6 +3310,7 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             InstanceMethod("bindGuid", &NativeSqliteStatement::BindGuid),
             InstanceMethod("clearBindings", &NativeSqliteStatement::ClearBindings),
             InstanceMethod("step", &NativeSqliteStatement::Step),
+            InstanceMethod("stepAsync", &NativeSqliteStatement::StepAsync),
             InstanceMethod("reset", &NativeSqliteStatement::Reset),
             InstanceMethod("getColumnCount", &NativeSqliteStatement::GetColumnCount),
             InstanceMethod("getColumnType", &NativeSqliteStatement::GetColumnType),
@@ -3563,6 +3577,12 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             return Napi::Number::New(Env(), (int) status);
             }
 
+        void StepAsync(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_FUNCTION(0, responseCallback, );
+            JsInterop::StepAsync(responseCallback, *m_stmt);
+            }
+
         Napi::Value GetColumnCount(Napi::CallbackInfo const& info)
             {
             if (m_stmt == nullptr)
@@ -3677,6 +3697,102 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             return Napi::Number::New(Env(), (int) status);
             }
     };
+
+//=======================================================================================
+// @bsistruct                                                   Affan.Khan   01/19
+//=======================================================================================
+struct ECSqlStepWorker : Napi::AsyncWorker
+{
+private:
+    ECSqlStatement& m_stmt;
+    int m_status;
+    ECInstanceKey m_instanceKey;
+    bool m_stepForInsert;
+    void Execute() override
+        {
+        if (m_stmt.IsPrepared()) 
+            {
+            if (m_stepForInsert)
+                m_status = m_stmt.Step(m_instanceKey);
+            else
+                m_status = m_stmt.Step();
+            }
+        else
+            {
+            m_status = (int) BE_SQLITE_MISUSE;
+            }
+        }
+
+
+    void OnOK() override
+        {
+        if (m_stepForInsert)
+            {
+            Napi::Object retval = Napi::Object::New(Env());
+            retval.Set(Napi::String::New(Env(), "status"), Napi::Number::New(Env(), (int)m_status));
+            if (BE_SQLITE_DONE == m_status)
+                retval.Set(toJsString(Env(), "id"), toJsString(Env(), m_instanceKey.GetInstanceId()));
+
+            Callback().MakeCallback(Receiver().Value(), {retval});
+            }
+        else 
+            {
+            Napi::Number retval = Napi::Number::New(Env(), (int)m_status);
+            Callback().MakeCallback(Receiver().Value(), {retval});
+            }
+        }
+public:
+    ECSqlStepWorker( Napi::Function& callback, ECSqlStatement& stmt, bool stepForInsert)
+        : Napi::AsyncWorker(callback), m_stmt(stmt), m_stepForInsert(stepForInsert)
+        {
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan     01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::StepAsync(Napi::Function& callback, ECSqlStatement& stmt, bool stepForInsert)
+    {
+    auto worker = new ECSqlStepWorker(callback, stmt, stepForInsert);
+    worker->Queue();
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Affan.Khan   01/19
+//=======================================================================================
+struct SqliteStepWorker : Napi::AsyncWorker
+{
+private:
+    Statement& m_stmt;
+    int m_status;
+    void Execute() override
+        {
+        if (m_stmt.IsPrepared()) 
+            m_status = m_stmt.Step();
+        else
+            m_status = (int) BE_SQLITE_MISUSE;
+        }
+
+    void OnOK() override
+        {
+        auto retval = Napi::Number::New(Env(), (int)m_status);
+        Callback().MakeCallback(Receiver().Value(), {retval});
+        }
+public:
+    SqliteStepWorker( Napi::Function& callback, Statement& stmt)
+        : Napi::AsyncWorker(callback), m_stmt(stmt)
+        {
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan     01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::StepAsync(Napi::Function& callback, Statement& stmt)
+    {
+    auto worker = new SqliteStepWorker(callback, stmt);
+    worker->Queue();
+    }
 
 //=======================================================================================
 // A request to generate a snap point given an element and additional parameters.

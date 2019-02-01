@@ -19,10 +19,42 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ECPresentationUtils.h" />
+    <ClInclude Include="ECSchemaXmlContextUtils.h" />
+    <ClInclude Include="IModelJsNative.h" />
+    <ClInclude Include="suppress_warnings.h" />
     <ClInclude Include="UlasClient.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ECPresentationUtils.cpp" />
+    <ClCompile Include="ECSchemaXmlContextUtils.cpp" />
+    <ClCompile Include="IModelJsNative.cpp" />
+    <ClCompile Include="JsInterop.cpp" />
+    <ClCompile Include="JsInteropBriefcaseManager.cpp" />
+    <ClCompile Include="JsInteropDgnDb.cpp" />
+    <ClCompile Include="JsInteropTiles.cpp" />
+    <ClCompile Include="TestUtils.cpp" />
     <ClCompile Include="UlasClient.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="imodeljs-nodeaddonapi.package.version.h.template" />
+    <None Include="IModelJsNative.mke" />
+    <None Include="IModelJsNative_input_libs.mki" />
+    <None Include="installnativeplatform.bat" />
+    <None Include="installnativeplatformLinux.sh" />
+    <None Include="installnativeplatformMacOS.sh" />
+    <None Include="makePackages.mke" />
+    <None Include="makePackages.py" />
+    <None Include="makePackgeVersionHeaderFile.py" />
+    <None Include="package.json.template" />
+    <None Include="README-Private.md" />
+    <None Include="README-Public.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="iModelJsNodeAddon.PartFile.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="package_version.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3DDE7AD3-D599-4F9A-B155-97FBC3BDEEBD}</ProjectGuid>

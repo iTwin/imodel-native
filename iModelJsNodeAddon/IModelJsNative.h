@@ -142,6 +142,9 @@ public:
     static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == MainThreadId(); }
 
     static Tile::TreePtr FindTileTree(GeometricModelR, Tile::Tree::Id const&);
+
+    static void StepAsync(Napi::Function& callback, Statement& stmt);
+    static void StepAsync(Napi::Function& callback, ECSqlStatement& stmt, bool stepForInsert);
 };
 
 //=======================================================================================
