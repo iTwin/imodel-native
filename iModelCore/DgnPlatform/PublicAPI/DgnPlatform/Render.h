@@ -698,6 +698,7 @@ struct TextureMapping
 
     //=======================================================================================
     //! A 2x3 2d transform applied to UV parameters.
+    //! See RenderingAsset::Trans2x3Builder.
     // @bsistruct                                                   Paul.Connelly   01/19
     //=======================================================================================
     struct Trans2x3
@@ -721,14 +722,6 @@ struct TextureMapping
             return 1.0 == m_val[0][0] && 0.0 == m_val[0][1] && 0.0 == m_val[0][2]
                 && 0.0 == m_val[1][0] && 1.0 == m_val[1][1] && 0.0 == m_val[1][2];
             }
-
-        DGNPLATFORM_EXPORT static Trans2x3 FromProduct(Trans2x3 const& lhs, Trans2x3 const& rhs);
-        void InitProduct(Trans2x3 const& lhs, Trans2x3 const& rhs) { *this = FromProduct(lhs, rhs); }
-        void MultiplyBy(Trans2x3 const& rhs) { InitProduct(*this, rhs); }
-
-        static Trans2x3 FromRotation(Angle angle) { return FromRotationAndScale(angle, nullptr); }
-        static Trans2x3 FromScale(DPoint2dCR scale) { return FromRotationAndScale(Angle::FromRadians(0.0), &scale); }
-        DGNPLATFORM_EXPORT static Trans2x3 FromRotationAndScale(Angle angle, DPoint2dCP scale);
 
         bool AlmostEqual(Trans2x3 const& rhs) const;
 
@@ -777,7 +770,7 @@ public:
     bool IsValid() const { return m_texture.IsValid(); }
     TextureCP GetTexture() const { return m_texture.get(); }
     Params const& GetParams() const { return m_params; }
-    void Transform(Trans2x3 const& transform);
+    void SetTransform(Trans2x3 const& transform) { m_params.m_textureMat2x3 = transform; }
 };
 
 //=======================================================================================
@@ -785,9 +778,9 @@ public:
 //! For materials using one of the projection TextureMapping modes, a ProjectionInfo is
 //! required.
 //! For non-projection mapping modes, an optional transform can be supplied.
-//! when computing UV params, a base transform is computed from the material properties.
-//! That transform is then multiplied by the MaterialUVDetail's own transform if defined.
-//! The UV params are then multiplied by the final transform.
+//! when computing UV params, a base 2d transform is computed from the material properties.
+//! If the MaterialUVDetail defines its own transform, it overrides the material's
+//! computed transform.
 // @bsistruct                                                   Paul.Connelly   01/19
 //=======================================================================================
 struct MaterialUVDetail

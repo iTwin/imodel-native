@@ -461,7 +461,7 @@ SurfaceMaterial::SurfaceMaterial(MaterialR material, TextureMapping::Trans2x3 co
     {
     m_textureMapping = material.GetTextureMapping();
     if (m_textureMapping.IsValid() && nullptr != transform)
-        m_textureMapping.Transform(*transform);
+        m_textureMapping.SetTransform(*transform);
     }
 
 /*---------------------------------------------------------------------------------**//**

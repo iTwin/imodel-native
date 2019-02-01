@@ -513,14 +513,6 @@ double TileSizeAdjuster::Compute(Render::TargetCR target, double curMod) const
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::TextureMapping::Transform(Trans2x3 const& transform)
-    {
-    m_params.m_textureMat2x3.InitProduct(m_params.m_textureMat2x3, transform);
-    }
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -537,23 +529,6 @@ Transform Render::TextureMapping::Trans2x3::GetTransform() const
     transform.form3d[0][3] = m_val[0][2];
     transform.form3d[1][3] = m_val[1][2];
     return transform;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::TextureMapping::Trans2x3 Render::TextureMapping::Trans2x3::FromProduct(Trans2x3 const& a, Trans2x3 const& b)
-    {
-    Trans2x3 ab;
-    ab.m_val[0][2] = a.m_val[0][2] + a.m_val[0][0] * b.m_val[0][2] + a.m_val[0][1] * b.m_val[1][2];
-    ab.m_val[1][2] = a.m_val[1][2] + a.m_val[1][0] * b.m_val[0][2] + a.m_val[1][1] * b.m_val[1][2];
-    for (int i = 0; i < 2; i++)
-        {
-        ab.m_val[0][i] = a.m_val[0][0] * b.m_val[0][i] + a.m_val[0][1] * b.m_val[1][i];
-        ab.m_val[1][i] = a.m_val[1][0] * b.m_val[0][i] + a.m_val[1][1] * b.m_val[1][i];
-        }
-
-    return ab;
     }
 
 /*---------------------------------------------------------------------------------**//**

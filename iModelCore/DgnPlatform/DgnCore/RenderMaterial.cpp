@@ -53,7 +53,7 @@ DPoint2d RenderingAsset::TextureMap::GetOffset() const {return getDPoint2dValue(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-double RenderingAsset::TextureMap::GetUnitScale(Units units) const
+double RenderingAsset::TextureMap::GetUnitScale(Units units)
     {
     switch (units)
         {
@@ -119,88 +119,79 @@ RenderingAsset::TextureMap::Units RenderingAsset::TextureMap::GetUnits() const
 //---------------------------------------------------------------------------------------
 Render::TextureMapping::Trans2x3 RenderingAsset::TextureMap::GetTransform() const
     {
-    Render::TextureMapping::Trans2x3 trans;
-
-    for (size_t i=0; i<2; i++)
-        {
-        for (size_t j=0; j<3; j++)
-            trans.m_val[i][j] = (i==j) ? 1.0 : 0.0;
-        }
-    
-    double angleRadians= Angle::DegreesToRadians(GetDouble(RENDER_MATERIAL_PatternAngle, 0.0));
-    double cosAngle = cos(angleRadians);
-    double sinAngle = sin(angleRadians);
-    bool xFlip = GetBool(RENDER_MATERIAL_PatternFlipU, false);
-    bool yFlip = GetBool(RENDER_MATERIAL_PatternFlipV, false);
-    DPoint2d scale = GetScale();
-    DPoint2d offset = GetOffset();
-    static double s_minScale = 1.0E-10;
- 
-    Units units = GetUnits();
-    if (Units::Relative != units)
-        scale.Scale(GetUnitScale(units));
-
-    if (fabs(scale.x) < s_minScale)
-        scale.x = s_minScale;
-
-    if (fabs(scale.y) < s_minScale)
-        scale.y = s_minScale;
-
-    if (xFlip)
-        scale.x = -scale.x;
-
-    if (yFlip)
-        scale.y = -scale.y;
-
-    if (Render::TextureMapping::Mode::ElevationDrape == GetMode())
-        {
-        trans.m_val[0][0] = cosAngle / scale.x;
-        trans.m_val[0][1] = sinAngle / scale.x;
-        trans.m_val[0][2] = -(offset.x * trans.m_val[0][0] + offset.y * trans.m_val[0][1]);
-
-        trans.m_val[1][0] = sinAngle / scale.y;
-        trans.m_val[1][1] = -cosAngle / scale.y;
-        trans.m_val[1][2] = 1.0 - (offset.x * trans.m_val[1][0] + offset.y * trans.m_val[1][1]);
-        }
-    else
-        {
-        trans.m_val[0][0] = cosAngle / scale.x;
-        trans.m_val[0][1] = sinAngle / scale.x;
-        trans.m_val[0][2] = offset.x;
-
-        trans.m_val[1][0] =  sinAngle / scale.y;
-        trans.m_val[1][1] = -cosAngle / scale.y;
-        trans.m_val[1][2] = offset.y;
-        }
-
-    return trans;
+    Trans2x3Builder builder(*this);
+    return builder.Build();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/19
+* @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TextureMapping::Trans2x3 Render::TextureMapping::Trans2x3::FromRotationAndScale(Angle angle, DPoint2dCP pScale)
+RenderingAsset::Trans2x3Builder::Trans2x3Builder(RenderingAsset::TextureMap const& map)
     {
-    Trans2x3 tf;
-    double cosA = angle.Cos();
-    double sinA = angle.Sin();
+    m_angle = Angle::FromDegrees(map.GetDouble(RENDER_MATERIAL_PatternAngle, 0.0));
+    m_scale = map.GetScale();
+    m_offset = map.GetOffset();
+    m_mode = map.GetMode();
+    m_units = map.GetUnits();
 
-    static double s_minScale = 1.0E-10;
-    DPoint2d scale = nullptr != pScale ? *pScale : DPoint2d::From(1.0, 1.0);
+    if (map.GetBool(RENDER_MATERIAL_PatternFlipU, false))
+        FlipU();
+
+    if (map.GetBool(RENDER_MATERIAL_PatternFlipV, false))
+        FlipV();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+RenderingAsset::Trans2x3Builder::Trans2x3Builder(Mode mode, Units units)
+    {
+    m_scale = DPoint2d::From(1.0, 1.0);
+    m_offset = DPoint2d::From(0.0, 0.0);
+    m_angle = Angle::FromRadians(0.0);
+    m_mode = mode;
+    m_units = units;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TextureMapping::Trans2x3 RenderingAsset::Trans2x3Builder::Build() const
+    {
+    auto trans = Render::TextureMapping::Trans2x3::FromIdentity();
+
+    DPoint2d scale = m_scale;
+    if (Units::Relative != m_units)
+        scale.Scale(RenderingAsset::TextureMap::GetUnitScale(m_units));
+
+    static constexpr double s_minScale = 1.0E-10;
     if (fabs(scale.x) < s_minScale)
         scale.x = scale.x < 0.0 ? -s_minScale : s_minScale;
 
     if (fabs(scale.y) < s_minScale)
         scale.y = scale.y < 0.0 ? -s_minScale : s_minScale;
 
-    tf.m_val[0][0] = cosA / scale.x;
-    tf.m_val[0][1] = sinA / scale.x;
-    tf.m_val[1][0] = sinA / scale.y;
-    tf.m_val[1][1] = -cosA / scale.y;
+    double angleRadians = m_angle.Radians();
+    double cosAngle = cos(angleRadians);
+    double sinAngle = sin(angleRadians);
 
-    tf.m_val[0][2] = tf.m_val[1][2] = 0.0;
+    trans.m_val[0][0] = cosAngle / scale.x;
+    trans.m_val[0][1] = sinAngle / scale.x;
+    trans.m_val[1][0] =  sinAngle / scale.y;
+    trans.m_val[1][1] = -cosAngle / scale.y;
 
-    return tf;
+    if (Mode::ElevationDrape == m_mode)
+        {
+        trans.m_val[0][2] = -(m_offset.x * trans.m_val[0][0] + m_offset.y * trans.m_val[0][1]);
+        trans.m_val[1][2] = 1.0 - (m_offset.x * trans.m_val[1][0] + m_offset.y * trans.m_val[1][1]);
+        }
+    else
+        {
+        trans.m_val[0][2] = m_offset.x;
+        trans.m_val[1][2] = m_offset.y;
+        }
+
+    return trans;
     }
 
 /*---------------------------------------------------------------------------------**//**

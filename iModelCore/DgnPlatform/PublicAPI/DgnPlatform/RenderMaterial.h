@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RenderMaterial.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <json/value.h>
+#include "Render.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -97,7 +98,7 @@ public:
         DGNPLATFORM_EXPORT DgnTextureId GetTextureId() const;
         DGNPLATFORM_EXPORT double GetPatternWeight() const;
         Type GetType() const {return m_type;}
-        DGNPLATFORM_EXPORT double GetUnitScale(Units units) const;
+        DGNPLATFORM_EXPORT static double GetUnitScale(Units units);
         DgnTextureId Relocate(DgnImportContext& context);
         double GetDouble(Utf8CP name, double defaultVal) const {return m_value[name].asDouble(defaultVal);}
         bool GetBool(Utf8CP name, bool defaultVal) const {return m_value[name].asBool(defaultVal);}
@@ -119,6 +120,31 @@ public:
     bool IsValid() const {return !isNull();}
 
     DGNPLATFORM_EXPORT TextureMap GetPatternMap() const;
+
+    //=======================================================================================
+    //! Helper class for constructing a Render::TextureMapping::Trans2x3 from scratch or
+    //! from a RenderingAsset::TextureMap.
+    // @bsistruct                                                   Paul.Connelly   02/19
+    //=======================================================================================
+    struct Trans2x3Builder
+    {
+        using Units = RenderingAsset::TextureMap::Units;
+        using Mode = Render::TextureMapping::Mode;
+
+        DPoint2d    m_scale;
+        DPoint2d    m_offset;
+        Angle       m_angle;
+        Units       m_units;
+        Mode        m_mode;
+
+        DGNPLATFORM_EXPORT explicit Trans2x3Builder(Mode mode = Mode::Parametric, Units units = Units::Meters);
+        DGNPLATFORM_EXPORT explicit Trans2x3Builder(RenderingAsset::TextureMap const&);
+
+        void FlipU() { m_scale.x *= -1.0; }
+        void FlipV() { m_scale.y *= -1.0; }
+
+        DGNPLATFORM_EXPORT Render::TextureMapping::Trans2x3 Build() const;
+    };
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
