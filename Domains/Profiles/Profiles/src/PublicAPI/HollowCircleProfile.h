@@ -48,7 +48,7 @@ protected:
     explicit HollowCircleProfile (CreateParams const& params);
 
     virtual bool _Validate() const override; //!< @private
-    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
+    virtual IGeometryPtr _CreateShapeGeometry() const override; //!< @private
 
 private:
     bool ValidateWallThickness() const;

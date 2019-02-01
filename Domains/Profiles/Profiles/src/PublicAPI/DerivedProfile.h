@@ -67,8 +67,8 @@ protected:
     virtual bool _Validate() const override; //!< @private
 
 private:
-    virtual IGeometryPtr _CreateGeometry() const override;
-    virtual IGeometryPtr _UpdateGeometry (Profile const& baseProfile) const override;
+    virtual IGeometryPtr _CreateShapeGeometry() const override;
+    virtual IGeometryPtr _UpdateShapeGeometry (Profile const& baseProfile) const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DerivedProfile)

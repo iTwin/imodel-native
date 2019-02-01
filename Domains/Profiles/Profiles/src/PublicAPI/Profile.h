@@ -51,8 +51,8 @@ protected:
     virtual bool CreateGeometry();
 
 private:
-    virtual IGeometryPtr _CreateGeometry() const { return nullptr; }
-    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const { return nullptr; }
+    virtual IGeometryPtr _CreateShapeGeometry() const { return nullptr; }
+    virtual IGeometryPtr _UpdateShapeGeometry (Profile const& relatedProfile) const { return nullptr; }
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (Profile)
@@ -70,7 +70,6 @@ private:
 
 private:
     bool m_geometryUpdated;
-
     }; // Profile
 
 //=======================================================================================

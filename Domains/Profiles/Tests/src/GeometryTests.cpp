@@ -35,7 +35,7 @@ protected:
 
 private:
     void InsertPhysicalElement (ProfilePtr profilePtr, bool placeInNewRow);
-    void InsertPhysicalElementForCenterLineProfile(ProfilePtr profilePtr, IGeometryPtr centerLineGeom, bool placeInNewRow);
+    void InsertPhysicalElementForCenterLineProfile (ProfilePtr profilePtr, IGeometryPtr centerLineGeom, bool placeInNewRow);
 
     Render::GeometryParams const& GetGeometryParams() const { return m_geometryParams; }
     Render::GeometryParams const& GetGeometryParamsForCenterLineShape() const { return m_centerLineShapeGeometryParams; }
@@ -133,10 +133,10 @@ void GeometryTestCase::InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::
     {
     CenterLineCShapeProfilePtr profilePtr = CenterLineCShapeProfile::Create(createParams);
 
-    BeAssert(profilePtr.IsValid());
+    BeAssert (profilePtr.IsValid());
 
     DgnDbStatus status;
-    profilePtr->Insert(&status);
+    profilePtr->Insert (&status);
     BeAssert(status == DgnDbStatus::Success && "Failed to insert Profile");
 
     InsertPhysicalElementForCenterLineProfile (profilePtr, profilePtr->GetCenterLine(), placeInNewRow);
@@ -149,15 +149,15 @@ void GeometryTestCase::InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryTestCase::InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams const& createParams, bool placeInNewRow)
     {
-    CenterLineLShapeProfilePtr profilePtr = CenterLineLShapeProfile::Create(createParams);
+    CenterLineLShapeProfilePtr profilePtr = CenterLineLShapeProfile::Create (createParams);
 
-    BeAssert(profilePtr.IsValid());
+    BeAssert (profilePtr.IsValid());
 
     DgnDbStatus status;
-    profilePtr->Insert(&status);
+    profilePtr->Insert (&status);
     BeAssert(status == DgnDbStatus::Success && "Failed to insert Profile");
 
-    InsertPhysicalElementForCenterLineProfile(profilePtr, profilePtr->GetCenterLine(), placeInNewRow);
+    InsertPhysicalElementForCenterLineProfile (profilePtr, profilePtr->GetCenterLine(), placeInNewRow);
     }
 
 
@@ -198,7 +198,7 @@ static DPoint3d offsetProfilePlacement (IGeometryPtr& geometryPtr, bool placeInN
 
     return offset;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * Creates a PhysicalElement, assings Profile geometry to it and offsets it in world
 * space.
@@ -210,6 +210,8 @@ void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, bool placeI
     physicaleElementPtr->SetUserLabel (profilePtr->GetName().c_str());
 
     GeometrySource* pGeometrySource = physicaleElementPtr->ToGeometrySourceP();
+    pGeometrySource->SetCategoryId(GetCategoryId());
+
     IGeometryPtr profileGeometryPtr = profilePtr->GetShape();
 
     Placement3d elementPlacement;
@@ -233,36 +235,36 @@ void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, bool placeI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryTestCase::InsertPhysicalElementForCenterLineProfile(ProfilePtr profilePtr, IGeometryPtr centerLineGeom, bool placeInNewRow)
     {
-    PhysicalElementPtr physicaleElementPtr = GenericPhysicalObject::Create(GetPhysicalModel(), GetCategoryId());
-    physicaleElementPtr->SetUserLabel(profilePtr->GetName().c_str());
+    PhysicalElementPtr physicaleElementPtr = GenericPhysicalObject::Create (GetPhysicalModel(), GetCategoryId());
+    physicaleElementPtr->SetUserLabel (profilePtr->GetName().c_str());
 
     GeometrySource* pGeometrySource = physicaleElementPtr->ToGeometrySourceP();
     IGeometryPtr profileGeometryPtr = profilePtr->GetShape();
     DRange3d range = {0};
-    BeAssert(profileGeometryPtr->TryGetRange(range));
+    BeAssert(profileGeometryPtr->TryGetRange (range));
 
     Placement3d elementPlacement;
-    elementPlacement.GetOriginR() = offsetProfilePlacement(profileGeometryPtr, placeInNewRow);
-    physicaleElementPtr->SetPlacement(elementPlacement);
+    elementPlacement.GetOriginR() = offsetProfilePlacement (profileGeometryPtr, placeInNewRow);
+    physicaleElementPtr->SetPlacement (elementPlacement);
 
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*pGeometrySource);
-    builder->Append(GetGeometryParamsForCenterLineShape());
-    builder->Append(*profileGeometryPtr);
+    GeometryBuilderPtr builder = GeometryBuilder::Create (*pGeometrySource);
+    builder->Append (GetGeometryParamsForCenterLineShape());
+    builder->Append (*profileGeometryPtr);
 
     if (centerLineGeom.IsValid())
         {
-        Transform translation = Transform::From(DPoint3d::From(range.low.x * -1.0, range.low.y * -1.0));
-        BeAssert(centerLineGeom->TryTransformInPlace(translation));
+        Transform translation = Transform::From (DPoint3d::From(range.low.x * -1.0, range.low.y * -1.0));
+        BeAssert (centerLineGeom->TryTransformInPlace (translation));
 
-        builder->Append(GetGeometryParamsForCenterLine());
-        builder->Append(*centerLineGeom);
+        builder->Append (GetGeometryParamsForCenterLine());
+        builder->Append (*centerLineGeom);
         }
 
-    builder->Finish(*pGeometrySource);
+    builder->Finish (*pGeometrySource);
 
     DgnDbStatus insertStatus;
-    physicaleElementPtr->Insert(&insertStatus);
-    ASSERT_TRUE(insertStatus == DgnDbStatus::Success);
+    physicaleElementPtr->Insert (&insertStatus);
+    ASSERT_TRUE (insertStatus == DgnDbStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**

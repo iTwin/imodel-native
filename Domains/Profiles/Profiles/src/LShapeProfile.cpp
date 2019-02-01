@@ -72,7 +72,7 @@ bool LShapeProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr LShapeProfile::_CreateGeometry() const
+IGeometryPtr LShapeProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateLShape (*this);
     }

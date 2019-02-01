@@ -94,7 +94,7 @@ bool DerivedProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr DerivedProfile::_CreateGeometry() const
+IGeometryPtr DerivedProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateDerivedShape (*this, *GetBaseProfile());
     }
@@ -102,7 +102,7 @@ IGeometryPtr DerivedProfile::_CreateGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr DerivedProfile::_UpdateGeometry (Profile const& baseProfile) const
+IGeometryPtr DerivedProfile::_UpdateShapeGeometry (Profile const& baseProfile) const
     {
     if (SinglePerimeterProfile const* pBaseProfile = dynamic_cast<SinglePerimeterProfile const*> (&baseProfile))
         return ProfilesGeometry::CreateDerivedShape (*this, *pBaseProfile);

@@ -12,7 +12,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * Creates geometry of an arc between the two lines with the given radius. First line
-* should end where the second line starts. First lines end point is adjusted to the 
+* should end where the second line starts. First lines end point is adjusted to the
 * start point of the arc, second lines start point is adjusted to the end of the arc. If
 * arc radius is zero returns null, without adjusting start and end points for lines
 * @bsimethod                                                                     12/2018
@@ -646,7 +646,7 @@ static IGeometryPtr createCenterLineLShape(double halfWidth, double halfDepth, d
 
     ICurvePrimitivePtr innerBottomLine = ICurvePrimitive::CreateLine(br_innerApex, bl_innerApex);
     ICurvePrimitivePtr innerBottomRightArcLine = createArcBetweenLines(innerRightGirthLine, innerBottomLine, innerFilletRadius);
-    
+
     ICurvePrimitivePtr innerLeftLine = ICurvePrimitive::CreateLine(bl_innerApex, tl_innerApex);
     ICurvePrimitivePtr innerBottomLeftArcLine = createArcBetweenLines(innerBottomLine, innerLeftLine, innerFilletRadius);
 
@@ -1147,8 +1147,8 @@ IGeometryPtr ProfilesGeometry::CreateDoubleCShape (DoubleCShapeProfile const& do
 
 /*---------------------------------------------------------------------------------**//**
 * 'updatedProfilePtr' is used to update composite geometry when one of the referenced
-* profiles was updated (from _UpdateGeometry()). 'updatedProfilePtr' might be null if
-* the geometry is being created for the first time (from _CreateGeometry()).
+* profiles was updated (from _UpdateShapeGeometry()). 'updatedProfilePtr' might be null if
+* the geometry is being created for the first time (from _CreateShapeGeometry()).
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateArbitraryCompositeShape (ArbitraryCompositeProfile const& profile, SinglePerimeterProfileCPtr updatedProfilePtr)
@@ -1267,7 +1267,7 @@ static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDept
 
     bvector<ICurvePrimitivePtr> curves =
         {
-        topGirthLine, topGirthArc, topLine, 
+        topGirthLine, topGirthArc, topLine,
         topleftArc, leftLine, bottomLeftArc, bottomLine,
         bottomGirthArc, bottomGirthLine,
         };
@@ -1287,13 +1287,9 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineForCShape (CenterLineCShapeProfil
     double const girth = profile.GetGirth();
 
     if (BeNumerical::IsEqualToZero(girth))
-        {
         return createCenterLineForCShape (halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0);
-        }
     else
-        {
         return createCenterLineForCShape (halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0, girth);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1306,7 +1302,7 @@ static IGeometryPtr createCenterLineForLShape (double halfWidth, double halfDept
     DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth, 0.0 };
     DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
     DPoint3d const br_Apex = { halfWidth, -(halfDepth - halfWallThickness), 0.0 };
-    
+
     ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine(tl_Apex, bl_Apex);
     ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine(bl_Apex, br_Apex);
     ICurvePrimitivePtr bottomleftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
@@ -1316,7 +1312,7 @@ static IGeometryPtr createCenterLineForLShape (double halfWidth, double halfDept
         leftLine, bottomleftArc, bottomLine,
         };
 
-    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
+    return createGeometryFromPrimitiveArray (curves, CurveVector::BOUNDARY_TYPE_Open);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1332,20 +1328,20 @@ static IGeometryPtr createCenterLineForLShape(double halfWidth, double halfDepth
     DPoint3d const br_Apex = { halfWidth - halfWallThickness, -(halfDepth - halfWallThickness), 0.0 };
     DPoint3d const br_Girth = { (halfWidth - halfWallThickness), -(halfDepth - girth), 0.0 };
 
-    ICurvePrimitivePtr topGirthLine = ICurvePrimitive::CreateLine(tr_Girth, tl_Apex);
-    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine(tl_Apex, bl_Apex);
-    ICurvePrimitivePtr topLeftArc = createArcBetweenLines(topGirthLine, leftLine, filletRadius);
-    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine(bl_Apex, br_Apex);
-    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
-    ICurvePrimitivePtr rightGirthLine = ICurvePrimitive::CreateLine(br_Apex, br_Girth);
-    ICurvePrimitivePtr bottomRightArc = createArcBetweenLines(bottomLine, rightGirthLine, filletRadius);
+    ICurvePrimitivePtr topGirthLine = ICurvePrimitive::CreateLine (tr_Girth, tl_Apex);
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (tl_Apex, bl_Apex);
+    ICurvePrimitivePtr topLeftArc = createArcBetweenLines (topGirthLine, leftLine, filletRadius);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bl_Apex, br_Apex);
+    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines (leftLine, bottomLine, filletRadius);
+    ICurvePrimitivePtr rightGirthLine = ICurvePrimitive::CreateLine (br_Apex, br_Girth);
+    ICurvePrimitivePtr bottomRightArc = createArcBetweenLines (bottomLine, rightGirthLine, filletRadius);
 
     bvector<ICurvePrimitivePtr> curves =
         {
-        topGirthLine, topLeftArc, leftLine, bottomLeftArc, bottomLine, bottomRightArc, rightGirthLine, 
+        topGirthLine, topLeftArc, leftLine, bottomLeftArc, bottomLine, bottomRightArc, rightGirthLine,
         };
 
-    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
+    return createGeometryFromPrimitiveArray (curves, CurveVector::BOUNDARY_TYPE_Open);
     }
 
 /*---------------------------------------------------------------------------------**//**

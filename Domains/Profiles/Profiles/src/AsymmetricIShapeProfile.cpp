@@ -95,7 +95,7 @@ bool AsymmetricIShapeProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr AsymmetricIShapeProfile::_CreateGeometry() const
+IGeometryPtr AsymmetricIShapeProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateAsymmetricIShape (*this);
     }

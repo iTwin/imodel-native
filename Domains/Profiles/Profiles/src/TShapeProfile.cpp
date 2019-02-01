@@ -84,7 +84,7 @@ bool TShapeProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr TShapeProfile::_CreateGeometry() const
+IGeometryPtr TShapeProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateTShape (*this);
     }

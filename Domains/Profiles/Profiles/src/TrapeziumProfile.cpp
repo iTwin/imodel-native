@@ -66,7 +66,7 @@ bool TrapeziumProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr TrapeziumProfile::_CreateGeometry() const
+IGeometryPtr TrapeziumProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateTrapezium (*this);
     }

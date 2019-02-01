@@ -63,7 +63,7 @@ bool DoubleCShapeProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr DoubleCShapeProfile::_CreateGeometry() const
+IGeometryPtr DoubleCShapeProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateDoubleCShape (*this, *GetSingleProfile());
     }
@@ -71,7 +71,7 @@ IGeometryPtr DoubleCShapeProfile::_CreateGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr DoubleCShapeProfile::_UpdateGeometry (Profile const& relatedProfile) const
+IGeometryPtr DoubleCShapeProfile::_UpdateShapeGeometry (Profile const& relatedProfile) const
     {
     if (typeid (relatedProfile) == typeid (CShapeProfile))
         return ProfilesGeometry::CreateDoubleCShape (*this, static_cast<CShapeProfile const&> (relatedProfile));

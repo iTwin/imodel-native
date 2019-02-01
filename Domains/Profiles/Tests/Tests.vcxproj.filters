@@ -104,6 +104,9 @@
     <ClCompile Include="src\CapsuleProfileTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
+    <ClCompile Include="src\CenterLineLShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\TestHost.h">

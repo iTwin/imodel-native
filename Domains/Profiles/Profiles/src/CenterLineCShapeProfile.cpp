@@ -38,13 +38,11 @@ CenterLineCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CenterLineCShapeProfile::CenterLineCShapeProfile(CreateParams const& params)
+CenterLineCShapeProfile::CenterLineCShapeProfile (CreateParams const& params)
      : T_Super (params)
     {
     if (params.m_isLoadingElement)
-        {
         return;
-        }
 
     SetFlangeWidth (params.flangeWidth);
     SetDepth (params.depth);
@@ -93,7 +91,7 @@ bool CenterLineCShapeProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr CenterLineCShapeProfile::_CreateGeometry() const
+IGeometryPtr CenterLineCShapeProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateCenterLineCShape (*this);
     }
@@ -133,7 +131,7 @@ void CenterLineCShapeProfile::SetDepth (double value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CenterLineCShapeProfile::GetFilletRadius() const 
+double CenterLineCShapeProfile::GetFilletRadius() const
     {
     return GetPropertyValueDouble (PRF_PROP_CenterLineCShapeProfile_FilletRadius);
     }
@@ -149,7 +147,7 @@ void CenterLineCShapeProfile::SetFilletRadius (double value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CenterLineCShapeProfile::GetGirth() const 
+double CenterLineCShapeProfile::GetGirth() const
     {
     return GetPropertyValueDouble (PRF_PROP_CenterLineCShapeProfile_Girth);
     }
@@ -162,36 +160,6 @@ void CenterLineCShapeProfile::SetGirth (double value)
     SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_Girth, ECN::ECValue (value));
     }
 
-/*DgnDbStatus CenterLineCShapeProfile::_OnInsert()
-    {
-    DgnDbStatus status (T_Super::_OnInsert());
-    if (status != DgnDbStatus::Success)
-        return status;
-
-    if (!CreateCenterLineGeometry())
-        return DgnDbStatus::NoGeometry;
-
-    return DgnDbStatus::Success;
-    }*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*DgnDbStatus CenterLineCShapeProfile::_OnUpdate (DgnElement const& original)
-    {
-    DgnDbStatus status (T_Super::_OnUpdate(original));
-
-    if (DgnDbStatus::Success == status)
-        {
-        if (false == CreateCenterLineGeometry())
-            {
-            return DgnDbStatus::NoGeometry;
-            }
-        }
-
-    return status;
-    }*/
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -200,22 +168,12 @@ bool CenterLineCShapeProfile::CreateGeometry()
     if (!T_Super::CreateGeometry())
         return false;
 
-    return CreateCenterLineGeometry();
-    }
+    IGeometryPtr centerLineGeometryPtr = _CreateCenterLineGeometry();
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CenterLineCShapeProfile::CreateCenterLineGeometry()
-    {
-    IGeometryPtr geometryPtr = _CreateCenterLineGeometry();
-    
-    if (geometryPtr.IsNull())
-        {
+    if (centerLineGeometryPtr.IsNull())
         return false;
-        }
-    
-    SetCenterLine(*geometryPtr);
+
+    SetCenterLine (*centerLineGeometryPtr);
 
     return true;
     }
@@ -223,7 +181,7 @@ bool CenterLineCShapeProfile::CreateCenterLineGeometry()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr CenterLineCShapeProfile::_CreateCenterLineGeometry() const
+IGeometryPtr CenterLineCShapeProfile::_CreateCenterLineGeometry()
     {
     return ProfilesGeometry::CreateCenterLineForCShape (*this);
     }

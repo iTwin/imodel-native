@@ -114,7 +114,7 @@ bool Profile::CreateGeometry()
     if (m_geometryUpdated)
         return true;
 
-    IGeometryPtr geometryPtr = _CreateGeometry();
+    IGeometryPtr geometryPtr = _CreateShapeGeometry();
     if (geometryPtr.IsNull())
         return false;
     SetShape (*geometryPtr);
@@ -136,7 +136,7 @@ DgnDbStatus Profile::UpdateGeometry (Profile const& relatedProfile)
     {
     BeAssert (!m_geometryUpdated && "UpdateGeometry should only be called once before an Update to the element");
 
-    IGeometryPtr geometryPtr = _UpdateGeometry (relatedProfile);
+    IGeometryPtr geometryPtr = _UpdateShapeGeometry (relatedProfile);
     if (geometryPtr.IsNull())
         return DgnDbStatus::NoGeometry;
 

@@ -60,10 +60,10 @@ public:
         };
 
 protected:
-    explicit AsymmetricIShapeProfile (CreateParams const& params); //!< @private
+    explicit AsymmetricIShapeProfile (CreateParams const& params);  //!< @private
 
-    virtual bool _Validate() const override; //!< @private
-    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
+    virtual bool _Validate() const override;                        //!< @private
+    virtual IGeometryPtr _CreateShapeGeometry() const override;     //!< @private
 
 private:
     bool ValidateTopFlangeThickness() const;

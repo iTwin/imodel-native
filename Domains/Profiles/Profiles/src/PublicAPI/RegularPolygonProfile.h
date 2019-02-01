@@ -47,7 +47,7 @@ protected:
     explicit RegularPolygonProfile (CreateParams const& params); //!< @private
 
     virtual bool _Validate() const override; //!< @private
-    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
+    virtual IGeometryPtr _CreateShapeGeometry() const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (RegularPolygonProfile)

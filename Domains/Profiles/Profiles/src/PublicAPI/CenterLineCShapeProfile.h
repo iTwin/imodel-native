@@ -28,8 +28,8 @@ public:
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (CenterLineCShapeProfile)
 
     public:
-        PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName);
-        PROFILES_EXPORT explicit CreateParams(Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double wallThickness, double girth = 0.0, double filletRadius = 0.0);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double wallThickness, double girth = 0.0, double filletRadius = 0.0);
     public:
         //! Required properties
         double flangeWidth = 0.0;
@@ -45,11 +45,11 @@ protected:
     explicit CenterLineCShapeProfile (CreateParams const& params); //!< @private
 
     virtual bool _Validate() const override; //!< @private
-    virtual IGeometryPtr _CreateGeometry () const override; //!< @private
-    virtual bool CreateGeometry () override; //!< @private
-    bool CreateCenterLineGeometry();
+    virtual bool CreateGeometry () override;  //!< @private
+    virtual IGeometryPtr _CreateShapeGeometry() const override;  //!< @private
 
-    virtual IGeometryPtr _CreateCenterLineGeometry() const;
+private:
+    IGeometryPtr _CreateCenterLineGeometry();
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineCShapeProfile)

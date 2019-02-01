@@ -76,7 +76,7 @@ bool CShapeProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr CShapeProfile::_CreateGeometry() const
+IGeometryPtr CShapeProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateCShape (*this);
     }

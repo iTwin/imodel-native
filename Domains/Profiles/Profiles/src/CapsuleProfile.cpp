@@ -61,7 +61,7 @@ bool CapsuleProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr CapsuleProfile::_CreateGeometry() const
+IGeometryPtr CapsuleProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateCapsule (*this);
     }

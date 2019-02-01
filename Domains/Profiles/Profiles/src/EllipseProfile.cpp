@@ -60,7 +60,7 @@ bool EllipseProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr EllipseProfile::_CreateGeometry() const
+IGeometryPtr EllipseProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateEllipse (*this);
     }

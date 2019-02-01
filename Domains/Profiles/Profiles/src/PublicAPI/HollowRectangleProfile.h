@@ -55,7 +55,7 @@ protected:
     explicit HollowRectangleProfile (CreateParams const& params); //!< @private
 
     virtual bool _Validate() const override; //!< @private
-    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
+    virtual IGeometryPtr _CreateShapeGeometry() const override; //!< @private
 
 private:
     bool ValidateWallThickness() const;

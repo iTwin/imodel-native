@@ -60,7 +60,7 @@ bool RegularPolygonProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr RegularPolygonProfile::_CreateGeometry() const
+IGeometryPtr RegularPolygonProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateRegularPolygon (*this);
     }

@@ -69,7 +69,7 @@ bool DoubleLShapeProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr DoubleLShapeProfile::_CreateGeometry() const
+IGeometryPtr DoubleLShapeProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateDoubleLShape (*this, *GetSingleProfile());
     }
@@ -77,7 +77,7 @@ IGeometryPtr DoubleLShapeProfile::_CreateGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr DoubleLShapeProfile::_UpdateGeometry (Profile const& relatedProfile) const
+IGeometryPtr DoubleLShapeProfile::_UpdateShapeGeometry (Profile const& relatedProfile) const
     {
     if (typeid (relatedProfile) == typeid (LShapeProfile))
         return ProfilesGeometry::CreateDoubleLShape (*this, static_cast<LShapeProfile const&> (relatedProfile));

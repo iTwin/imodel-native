@@ -63,7 +63,7 @@ bool RoundedRectangleProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr RoundedRectangleProfile::_CreateGeometry() const
+IGeometryPtr RoundedRectangleProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateRoundedRectangle (*this);
     }

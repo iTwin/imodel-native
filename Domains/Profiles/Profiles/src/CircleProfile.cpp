@@ -55,7 +55,7 @@ bool CircleProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr CircleProfile::_CreateGeometry() const
+IGeometryPtr CircleProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateCircle (*this);
     }

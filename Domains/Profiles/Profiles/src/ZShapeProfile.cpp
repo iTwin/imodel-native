@@ -77,7 +77,7 @@ bool ZShapeProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ZShapeProfile::_CreateGeometry() const
+IGeometryPtr ZShapeProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateZShape (*this);
     }

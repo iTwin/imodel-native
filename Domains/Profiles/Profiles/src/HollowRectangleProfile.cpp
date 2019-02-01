@@ -70,7 +70,7 @@ bool HollowRectangleProfile::_Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr HollowRectangleProfile::_CreateGeometry() const
+IGeometryPtr HollowRectangleProfile::_CreateShapeGeometry() const
     {
     return ProfilesGeometry::CreateHollowRectangle (*this);
     }
