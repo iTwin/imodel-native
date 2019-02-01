@@ -781,6 +781,8 @@ public:
 //! when computing UV params, a base 2d transform is computed from the material properties.
 //! If the MaterialUVDetail defines its own transform, it overrides the material's
 //! computed transform.
+//! See RenderingAsset::Trans2x3Builder for a convenient way to construct or modify such
+//! a transform.
 // @bsistruct                                                   Paul.Connelly   01/19
 //=======================================================================================
 struct MaterialUVDetail
