@@ -28,7 +28,7 @@ enum DgnDbProfileValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 2,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
-    DGNDB_CURRENT_VERSION_Sub2  = 1,
+    DGNDB_CURRENT_VERSION_Sub2  = 2,
 
     DGNDB_SUPPORTED_VERSION_Major = 2,  // oldest version of the profile supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 0,
