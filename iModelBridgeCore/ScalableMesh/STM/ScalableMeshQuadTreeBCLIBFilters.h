@@ -6,7 +6,7 @@
 //:>       $Date: 2010/12/15 18:23:19 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -67,6 +67,9 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIBProgressiveFi
 
 template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIBMeshFilter1 : public ISMMeshIndexFilter<POINT, EXTENT>//public ISMPointIndexFilter<POINT, EXTENT>
 {
+    private: 
+
+        bool m_isMultiProcessGeneration = false; 
 
     public:
 
@@ -85,6 +88,8 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIBMeshFilter1 :
             {
             return new ScalableMeshQuadTreeBCLIBMeshFilter1();
             }
+
+        void SetIsMultiProcessGeneration(bool isMultiProcess) { m_isMultiProcessGeneration = isMultiProcess; }
 };
 
   

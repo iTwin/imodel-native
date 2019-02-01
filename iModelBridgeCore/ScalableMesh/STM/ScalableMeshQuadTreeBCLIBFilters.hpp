@@ -43,11 +43,6 @@
     #define DEFAULT_VIEW_DEPENDENT_METRIC HFLOAT_MAX
 #endif
 
-/*
-#ifndef SM_CLOUD_GROUPING_OPTIMIZATION
-    #define SM_CLOUD_GROUPING_OPTIMIZATION
-#endif
-*/
 
 /**----------------------------------------------------------------------------
  Initiates a filtering of the node. Ther filtering process
@@ -500,11 +495,13 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		}
 	}
 
-#ifndef SM_CLOUD_GROUPING_OPTIMIZATION
-	SMMemoryPool::GetInstance()->RemoveItem(pParentMeshNode->m_pointsPoolItemId, pParentMeshNode->GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)pParentMeshNode->m_SMIndex);
-	parentPointsPtr = 0;
-	pParentMeshNode->m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
-#endif
+	//In multi-process flushing to disk needs to be controlled by the the workers.
+    if (!m_isMultiProcessGeneration)    
+        {
+	    SMMemoryPool::GetInstance()->RemoveItem(pParentMeshNode->m_pointsPoolItemId, pParentMeshNode->GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)pParentMeshNode->m_SMIndex);
+	    parentPointsPtr = 0;
+	    pParentMeshNode->m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+        }
 
 	if (polylines.size() > 0)
 	{
@@ -682,18 +679,19 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 #endif
 	}
 
-#ifndef SM_CLOUD_GROUPING_OPTIMIZATION    
-    //Flushing tiles to disk during filtering result in less tiles being flushed sequentially at the end of the generation process, leading to potential huge performance gain.
-    for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+	//In multi-process flushing to disk needs to be controlled by the the workers.
+    if (!m_isMultiProcessGeneration)    
         {
-        if (subNodes[indexNodes] != NULL)
+        //Flushing tiles to disk during filtering result in less tiles being flushed sequentially at the end of the generation process, leading to potential huge performance gain.
+        for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
             {
-            subNodes[indexNodes]->Discard();
+            if (subNodes[indexNodes] != NULL)
+                {
+                subNodes[indexNodes]->Discard();
+                }
             }
         }
-#endif
     
-
 	return true;
 }
 

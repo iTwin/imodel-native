@@ -1354,9 +1354,7 @@ public:
 
      @return Pointer to filter or NULL if none is set.
     -----------------------------------------------------------------------------*/
-    ISMPointIndexFilter<POINT, EXTENT>*
-    GetFilter() ;
-
+    BENTLEY_SM_EXPORT ISMPointIndexFilter<POINT, EXTENT>* GetFilter();
 
     /**----------------------------------------------------------------------------
      Push the data in leaf and balance the octree

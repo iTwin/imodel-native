@@ -17,6 +17,7 @@
 #include <BeXml/BeXml.h>
 #include "ImagePPHeaders.h"
 #include "ScalableMeshSourceCreatorWorker.h"
+#include "ScalableMeshQuadTreeBCLIBFilters.h"
 
 #define TASK_PER_WORKER 3
 
@@ -803,6 +804,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
+    ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>* filter = dynamic_cast<ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>*>(pDataIndex->GetFilter());
+    if (filter != nullptr)
+        {
+        filter->SetIsMultiProcessGeneration(true);
+        }
+        
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>>     generatedNodes;
     bvector<RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>>> generatedPtsNeighbors;
 
@@ -933,8 +940,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         if (needFiltering)
             {
             for (auto& node : nodesToMesh)
-                {
-                node->Filter((int)node->GetLevel(), nullptr);        
+                {                  
+                node->Filter((int)node->GetLevel(), nullptr);                
                 node->SetDirty(true);
                 }
             }
