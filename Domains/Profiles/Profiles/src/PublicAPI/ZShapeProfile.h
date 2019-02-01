@@ -54,7 +54,7 @@ public:
         };
 
 protected:
-    explicit ZShapeProfile (CreateParams const& params); //!< @private //!< @private
+    explicit ZShapeProfile (CreateParams const& params); //!< @private
 
     virtual bool _Validate() const override; //!< @private
     virtual IGeometryPtr _CreateGeometry() const override; //!< @private

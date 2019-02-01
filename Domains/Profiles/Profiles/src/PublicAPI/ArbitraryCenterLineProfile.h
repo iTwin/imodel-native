@@ -23,6 +23,7 @@ struct ArbitraryCenterLineProfile : ArbitraryShapeProfile, ICenterLineProfile
     friend struct ArbitraryCenterLineProfileHandler;
 
 protected:
+    //! @private
     explicit ArbitraryCenterLineProfile (CreateParams const& params) : T_Super (params) {}
 
 public:

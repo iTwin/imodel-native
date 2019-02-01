@@ -77,6 +77,7 @@ public:
     PROFILES_EXPORT static LShapeProfilePtr Create (CreateParams const& params) { return new LShapeProfile (params); }
 
 public:
+    //! @beginGroup
     PROFILES_EXPORT double GetWidth() const; //!< Get the value of @ref CreateParams.width "Width"
     PROFILES_EXPORT void SetWidth (double value); //!< Set the value for @ref CreateParams.width "Width"
 
@@ -94,12 +95,13 @@ public:
 
     PROFILES_EXPORT Angle GetLegSlope() const; //!< Get the value of @ref CreateParams.legSlope "LegSlope"
     PROFILES_EXPORT void SetLegSlope (Angle const& value); //!< Set the value for @ref CreateParams.legSlope "LegSlope"
+    //! @endGroup
 
 public:
-    PROFILES_EXPORT double GetFlangeInnerFaceLength() const;
-    PROFILES_EXPORT double GetWebInnerFaceLength() const;
-    PROFILES_EXPORT double GetHorizontalLegSlopeHeight() const;
-    PROFILES_EXPORT double GetVerticalLegSlopeHeight() const;
+    PROFILES_EXPORT double GetFlangeInnerFaceLength() const; //!< @private
+    PROFILES_EXPORT double GetWebInnerFaceLength() const; //!< @private
+    PROFILES_EXPORT double GetHorizontalLegSlopeHeight() const; //!< @private
+    PROFILES_EXPORT double GetVerticalLegSlopeHeight() const; //!< @private
 
     }; // LShapeProfile
 

@@ -25,7 +25,7 @@ struct CompositeProfile : Profile
     friend struct CompositeProfileHandler;
 
 protected:
-    explicit CompositeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit CompositeProfile (CreateParams const& params) : T_Super (params) {} //<! @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CompositeProfile)

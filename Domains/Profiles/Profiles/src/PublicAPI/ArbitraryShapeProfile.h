@@ -22,6 +22,7 @@ struct ArbitraryShapeProfile : SinglePerimeterProfile
     friend struct ArbitraryShapeProfileHandler;
 
 protected:
+    //! @private
     explicit ArbitraryShapeProfile (CreateParams const& params) : T_Super (params) {}
 
 public:

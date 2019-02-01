@@ -28,13 +28,22 @@ public:
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (DoubleCShapeProfile)
 
     public:
+        //! Constructor to initialize members.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
+        //! @param[in] singleProfile Reference to CShapeProfile that will be used to construct the profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, CShapeProfile const& singleProfile);
+        //! Constructor to initialize members.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
+        //! @param[in] singleProfileId Id of CShapeProfile that will be used to construct the profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, Dgn::DgnElementId const& singleProfileId);
 
     public:
-        //! Required properties
-        double spacing = 0.0;
-        Dgn::DgnElementId singleProfileId = Dgn::DgnElementId();
+        //! @beginGroup
+        double spacing = 0.0; //!< Distance separating the individual back to back CShapeProfiles.
+        Dgn::DgnElementId singleProfileId = Dgn::DgnElementId(); //!< Id of LShapeProfile that will be used to construct the profile.
+        //! @endGroup
         };
 
 protected:
@@ -43,8 +52,8 @@ protected:
     virtual bool _Validate() const override; //!< @private
 
 private:
-    virtual IGeometryPtr _CreateGeometry() const override; //!< @private
-    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override; //!< @private
+    virtual IGeometryPtr _CreateGeometry() const override;
+    virtual IGeometryPtr _UpdateGeometry (Profile const& relatedProfile) const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleCShapeProfile)
@@ -57,12 +66,14 @@ public:
     PROFILES_EXPORT static DoubleCShapeProfilePtr Create (CreateParams const& params) { return new DoubleCShapeProfile (params); }
 
 public:
+    //! @beginGroup
     PROFILES_EXPORT double GetSpacing() const; //!< Get the value of @ref CreateParams.spacing "Spacing"
     PROFILES_EXPORT void SetSpacing (double value); //!< Set the value for @ref CreateParams.spacing "Spacing"
 
-    PROFILES_EXPORT CShapeProfilePtr GetSingleProfile() const; //!< Get the value of @ref CreateParams.singleProfile "SingleProfile"
-    PROFILES_EXPORT void SetSingleProfile (CShapeProfile const& singleProfile); //!< Set the value for @ref CreateParams.singleProfile "SingleProfile"
-    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId); //!< Set the value for @ref CreateParams.singleProfile "SingleProfile"
+    PROFILES_EXPORT CShapeProfilePtr GetSingleProfile() const; //!< Get the CShapeProfile instance referenced by @ref CreateParams.singleProfileId "SingleProfileId"
+    PROFILES_EXPORT void SetSingleProfile (CShapeProfile const& singleProfile); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
+    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
+    //! @endGroup
 
     }; // DoubleCShapeProfile
 

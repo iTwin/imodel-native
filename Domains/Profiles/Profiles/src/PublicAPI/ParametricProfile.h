@@ -25,6 +25,7 @@ struct ParametricProfile : SinglePerimeterProfile
     friend struct ParametricProfileHandler;
 
 protected:
+    //! @private
     explicit ParametricProfile (CreateParams const& params) : T_Super (params) {}
 
 public:

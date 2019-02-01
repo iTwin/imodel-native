@@ -51,7 +51,7 @@ public:
         };
 
 protected:
-    explicit SchifflerizedLShapeProfile (CreateParams const& params); //!< @private //!< @private
+    explicit SchifflerizedLShapeProfile (CreateParams const& params); //!< @private
 
     virtual bool _Validate() const override; //!< @private
 
