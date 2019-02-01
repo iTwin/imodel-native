@@ -383,10 +383,10 @@
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="BaseProfile" relationshipName="DerivedProfileRefersToSinglePerimeterProfile" direction="Forward" description="" />
-        <ECProperty propertyName="Offset" typeName="point2d" description="" />
-        <ECProperty propertyName="Scale" typeName="point2d" description="" />
-        <ECProperty propertyName="Rotation" typeName="double" description="" />
-        <ECProperty propertyName="MirrorAboutYAxis" typeName="boolean" description="" />
+        <ECProperty propertyName="Offset" typeName="point2d" description="2D vector specifying how the profiles geometry will be offseted from it's original coordinates." />
+        <ECProperty propertyName="Scale" typeName="point2d" description="A non-uniform scale factor." />
+        <ECProperty propertyName="Rotation" typeName="double" description="Angle by which the profiles geometry will be rotated." />
+        <ECProperty propertyName="MirrorAboutYAxis" typeName="boolean" description="Flag indicating whether the profiles geometry should be mirrored around the Y axis." />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="DerivedProfileRefersToSinglePerimeterProfile" modifier="Sealed" strength="referencing">
@@ -419,10 +419,10 @@
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="SingleProfile" relationshipName="ArbitraryCompositeProfileAspectRefersToSinglePerimeterProfile" direction="Forward" description="" />
-        <ECProperty propertyName="Offset" typeName="point2d" description="" />
-        <ECProperty propertyName="Rotation" typeName="double" description="" />
-        <ECProperty propertyName="MirrorAboutYAxis" typeName="boolean" description="" />
-        <ECProperty propertyName="MemberPriority" typeName="int" description="Member Priority, same as in bis:ElementGorupsMembers" />
+        <ECProperty propertyName="Offset" typeName="point2d" description="2D vector specifying how the profiles geometry will be offseted from it's original coordinates." />
+        <ECProperty propertyName="Rotation" typeName="double" description="Angle by which the profiles geometry will be rotated." />
+        <ECProperty propertyName="MirrorAboutYAxis" typeName="boolean" description="Flag indicating whether the profiles geometry should be mirrored around the Y axis." />
+        <ECProperty propertyName="MemberPriority" typeName="int" description="Index used to strictly order components. This property is a duplicate from bis:ElementGorupsMembers." />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ArbitraryCompositeProfileAspectRefersToSinglePerimeterProfile" modifier="Sealed" strength="referencing">
@@ -439,9 +439,9 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Spacing" typeName="double" description="" />
-        <ECProperty propertyName="Type" typeName="DoubleLShapeProfileType" description="" />
-        <ECNavigationProperty propertyName="SingleProfile" relationshipName="DoubleLShapeProfileRefersToLShapeProfile" direction="Forward" description="" />
+        <ECProperty propertyName="Spacing" typeName="double" description="Distance separating the individual back to back LShapeProfiles." />
+        <ECProperty propertyName="Type" typeName="DoubleLShapeProfileType" description="Enumeration defining which legs are to be placed back to back." />
+        <ECNavigationProperty propertyName="SingleProfile" relationshipName="DoubleLShapeProfileRefersToLShapeProfile" direction="Forward" description="Reference to LShapeProfile that will be used to construct the profile." />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="DoubleLShapeProfileRefersToLShapeProfile" modifier="Sealed" strength="referencing">
@@ -458,8 +458,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Spacing" typeName="double" />
-        <ECNavigationProperty propertyName="SingleProfile" relationshipName="DoubleCShapeProfileRefersToCShapeProfile" direction="Forward" description="" />
+        <ECProperty propertyName="Spacing" typeName="double" description="Distance separating the individual back to back CShapeProfiles." />
+        <ECNavigationProperty propertyName="SingleProfile" relationshipName="DoubleCShapeProfileRefersToCShapeProfile" direction="Forward" description="Reference to CShapeProfile that will be used to construct the profile." />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="DoubleCShapeProfileRefersToCShapeProfile" modifier="Sealed" strength="referencing">
