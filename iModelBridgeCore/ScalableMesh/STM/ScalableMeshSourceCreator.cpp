@@ -300,6 +300,12 @@ void IScalableMeshSourceCreator::SetCreationCompleteness(ScalableMeshCreationCom
     dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_sourceCreationCompleteness = creationCompleteness;
     }
 
+void IScalableMeshSourceCreator::SetSplitThreshold(uint32_t splitThreshold)
+    {
+    assert(splitThreshold >= 50);
+    dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_splitThreshold = splitThreshold;
+    }
+
 void IScalableMeshSourceCreator::SetSourcesDirty()
     {
     // Make sure that sources are not seen as up to date anymore
@@ -602,7 +608,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     else
         {
         assert(m_sourceCreationMethod == SCM_CREATION_METHOD_ONE_SPLIT);
-        splitThreshold = SM_ONE_SPLIT_THRESHOLD;
+        splitThreshold = m_splitThreshold;
         }
     
     CreateDataIndex(pDataIndex, true, splitThreshold);
@@ -858,7 +864,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             startClock = clock();
 #endif
 
-            pDataIndex->CutTiles(SM_ONE_SPLIT_THRESHOLD);
+            pDataIndex->CutTiles(m_splitThreshold);
 
 #ifdef SCALABLE_MESH_ATP
             s_getLastClippingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -1395,6 +1401,16 @@ int IScalableMeshSourceCreator::Impl::LoadSources(SMSQLiteFilePtr& smSQLiteFile)
 
     return (success) ? BSISUCCESS : BSIERROR;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                  Mathieu.St-Pierre   02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void IScalableMeshSourceCreator::Impl::SetSplitThreshold(uint32_t splitThreshold)
+    {
+    m_splitThreshold = splitThreshold;
+    }    
+
 
 int IScalableMeshSourceCreator::Impl::SaveSources(SMSQLiteFilePtr& smSQLiteFile)
 {

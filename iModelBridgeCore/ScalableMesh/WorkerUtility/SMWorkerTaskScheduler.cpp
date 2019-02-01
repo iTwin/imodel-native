@@ -21,7 +21,6 @@
 #include <ScalableMesh\IScalableMeshPolicy.h>
 #include <ScalableMesh\IScalableMeshSourceCreator.h>
 #include <ScalableMesh\IScalableMeshSourceCreatorWorker.h>
-
 #include "SMWorkerDefinitions.h"
 
 
@@ -816,7 +815,7 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
     BeFileName smFileName;
 
     ParseJobInfo(jobName, smFileName, pXmlTaskNode);
-        
+                 
     BeFileName smFileNameAbsolutePath;
 
     GetScalableMeshFileName(smFileNameAbsolutePath, smFileName);
@@ -837,7 +836,14 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
 
     creatorPtr->SetCreationMethod(creationMethod);
     creatorPtr->SetCreationCompleteness(SCM_CREATION_COMPLETENESS_INDEX_ONLY);
-    
+
+    uint32_t splitThreshold;
+    BeXmlStatus xmlStatus = pXmlTaskNode->GetAttributeUInt32Value(splitThreshold, "splitThreshold");    
+
+    if (xmlStatus == BEXML_Success && splitThreshold >= 100)
+        {
+        creatorPtr->SetSplitThreshold(splitThreshold);
+        }        
 
 /*
     double nTimeToCreateSeeds = 0, nTimeToEstimateParams = 0, nTimeToFilterGround = 0;*/
@@ -912,7 +918,7 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
 #endif
 
             bool isSingleFile = true;
-            creatorPtr->SetShareable(true);
+            creatorPtr->SetShareable(true);                                                            
             StatusInt status = creatorPtr->Create(isSingleFile);
 
 #if 0

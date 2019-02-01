@@ -29,13 +29,13 @@ struct JobProcessingStat
     {
 
     JobProcessingStat()
-        {
-        m_startTime = clock();
-        m_stopTime = clock();
+        {        
+        time(&m_startTime);
+        time(&m_stopTime);
         }
 
-    clock_t m_startTime;
-    clock_t m_stopTime;
+    time_t m_startTime;
+    time_t m_stopTime;
 
     bvector<TaskProcessingStat> m_processedTasks;
     };
