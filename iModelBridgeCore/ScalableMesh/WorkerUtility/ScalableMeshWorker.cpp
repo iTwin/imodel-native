@@ -323,8 +323,24 @@ void ScalableMeshWorker::Start()
     if (m_nbExtraWorkers > 0)
         {        
         Utf8String cmdStr(m_workerProcessName);                
-        cmdStr.append(Utf8PrintfString(" -taskFolder=\"%s\\\"", Utf8String(m_taskFolderName.c_str()).c_str()));        
-        cmdStr.append(Utf8PrintfString(" -rf=\"%s\\\"", Utf8String(m_resultFolderName.c_str()).c_str()));
+
+        cmdStr.append(Utf8PrintfString(" -taskFolder=\"%s\"", Utf8String(m_taskFolderName.c_str()).c_str()));        
+        
+        if (m_useGroupingStrategy)
+            {
+            cmdStr.append(Utf8PrintfString(" -gr"));
+            cmdStr.append(Utf8PrintfString(" -gs=%ui", m_groupingSize));
+            }
+        
+        if (!m_resultFolderName.empty())
+            {
+            cmdStr.append(Utf8PrintfString(" -rf=\"%s\"", Utf8String(m_resultFolderName.c_str()).c_str()));        
+            }
+        
+        if (m_startAsService)
+            {
+            cmdStr.append(Utf8PrintfString(" -ss", Utf8String(m_resultFolderName.c_str()).c_str()));
+            }
         
         for (uint16_t taskId = 0; taskId < m_nbExtraWorkers; taskId++)
             {
