@@ -65,6 +65,7 @@ public:
 
     PROFILES_EXPORT double GetYRadius() const; //!< Get the value of @ref CreateParams.yRadius "YRadius"
     PROFILES_EXPORT void SetYRadius (double value); //!< Set the value for @ref CreateParams.yRadius "YRadius"
+    //! @endGroup
 
     }; // EllipseProfile
 

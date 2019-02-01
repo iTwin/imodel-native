@@ -58,8 +58,10 @@ public:
     //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static CircleProfilePtr Create (CreateParams const& params) { return new CircleProfile (params); }
 
+    //! @beginGroup
     PROFILES_EXPORT double GetRadius() const; //!< Get the value of @ref CreateParams.radius "Radius"
     PROFILES_EXPORT void SetRadius (double value); //!< Set the value for @ref CreateParams.radius "Radius"
+    //! @endGroup
 
     }; // CircleProfile
 

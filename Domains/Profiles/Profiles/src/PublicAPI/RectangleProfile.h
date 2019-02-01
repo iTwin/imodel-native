@@ -59,11 +59,13 @@ public:
     //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static RectangleProfilePtr Create (CreateParams const& params) { return new RectangleProfile (params); }
 
+    //! @beginGroup
     PROFILES_EXPORT double GetWidth() const; //!< Get the value of @ref CreateParams.width "Width"
     PROFILES_EXPORT void SetWidth (double value); //!< Set the value for @ref CreateParams.width "Width"
 
     PROFILES_EXPORT double GetDepth() const; //!< Get the value of @ref CreateParams.depth "Depth"
     PROFILES_EXPORT void SetDepth (double value); //!< Set the value for @ref CreateParams.depth "Depth"
+    //! @endGroup
 
     }; // RectangleProfile
 

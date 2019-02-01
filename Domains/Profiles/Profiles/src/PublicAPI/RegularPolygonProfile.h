@@ -59,11 +59,13 @@ public:
     //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static RegularPolygonProfilePtr Create (CreateParams const& params) { return new RegularPolygonProfile (params); }
 
+    //! @beginGroup
     PROFILES_EXPORT uint64_t GetSideCount() const; //!< Get the value of @ref CreateParams.sideCount "SideCount"
     PROFILES_EXPORT void SetSideCount (uint64_t value); //!< Set the value for @ref CreateParams.sideCount "SideCount"
 
     PROFILES_EXPORT double GetSideLength() const; //!< Get the value of @ref CreateParams.sideLength "SideLength"
     PROFILES_EXPORT void SetSideLength (double value); //!< Set the value for @ref CreateParams.sideLength "SideLength"
+    //! @endGroup
 
     }; // RegularPolygonProfile
 

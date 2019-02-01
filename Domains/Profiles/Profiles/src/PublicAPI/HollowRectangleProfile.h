@@ -84,6 +84,7 @@ public:
 
     PROFILES_EXPORT double GetOuterFilletRadius() const; //!< Get the value of @ref CreateParams.outerFilletRadius "OuterFilletRadius"
     PROFILES_EXPORT void SetOuterFilletRadius (double value); //!< Set the value for @ref CreateParams.outerFilletRadius "OuterFilletRadius"
+    //! @endGroup
 
     }; // HollowRectangleProfile
 
