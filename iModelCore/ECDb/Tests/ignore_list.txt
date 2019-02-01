@@ -35,3 +35,26 @@ ECSqlToSqlGenerationTests.NavPropSharedColumnCasting
 ECSqlToSqlGenerationTests.LinkTableSharedColumnCasting
 DbMappingTestFixture.SharedColumnCasting
 #==================================================================>>>
+
+SchemaUpgradeTestFixture.Formats
+
+    # VSTS#67992
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 02/01/2019
+    # c:\build\src\mds06t\ECDb\Tests\Published\SchemaUpgradeTests.cpp(10475): error:       Expected: compSpec
+    # Which is: {"includeZero":true,"spacer":" ","units":[{"label":"m","name":"MyMeter"},{"label":"mm","name":"MM"}]}
+    # To be equal to: JsonValue(jval)
+    # Which is: {"includeZero":true,"units":[{"label":"m","name":"MyMeter"},{"label":"mm","name":"MM"}]}
+    # Schema.02.00.00.MyFormat
+    # 2019-01-31 20:46:56,201 ERROR [0x00003f50] ECObjectsNative - Composite node on Schema:MyFormat failed to create composite value spec
+    # 2019-01-31 20:46:56,201 ERROR [0x00003f50] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="utf-8" ?>
+    # <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+
+SchemaManagerTests.Formats
+
+    # VSTS#67991
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 02/01/2019
+    # c:\build\src\mds06t\ECDb\Tests\Published\SchemaManagerTests.cpp(2032): error:       Expected: compSpec
+    # Which is: {"includeZero":true,"spacer":" ","units":[{"label":"m","name":"MyMeter"},{"label":"mm","name":"MM"}]}
+    # To be equal to: JsonValue(jval)
+    # Which is: {"includeZero":true,"units":[{"label":"m","name":"MyMeter"},{"label":"mm","name":"MM"}]}
+    # Schema1:Format2
