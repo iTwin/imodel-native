@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ContentProviderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../../../Source/RulesDriven/RulesEngine/QueryContracts.h"
@@ -537,4 +537,36 @@ TEST_F(ContentProviderTests, LoadsNestedContentFields)
     ASSERT_TRUE(value[1].IsObject());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*sprocket2).GetId().GetValue(), BeRapidJsonUtilities::UInt64FromValue(value[1]["PrimaryKeys"][0]["ECInstanceId"]));
     EXPECT_STREQ("Two", value[1]["Values"]["Sprocket_Description"].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentProviderTests, AllowsUsingCustomFunctionsInInstanceFilterWithPolymorphicallyRelatedProperties)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&](IECInstanceR instance)
+        {
+        instance.SetValue("Widget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId(), rel));
+        });
+    
+    ContentRule rule;
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1,
+        "this.IsOfClass(\"Widget\", \"RulesEngineTest\")", m_widgetClass->GetFullName(), true);
+    rule.AddSpecification(*spec);
+    RelatedPropertiesSpecification* relatedPropertiesSpec = new RelatedPropertiesSpecification(RequiredRelationDirection_Forward,
+        rel->GetFullName(), m_gadgetClass->GetFullName(), "Description", RelationshipMeaning::RelatedInstance, true);
+    spec->AddRelatedProperty(*relatedPropertiesSpec);
+
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule));
+
+    ContentDescriptorCP descriptor = provider->GetContentDescriptor();
+    ASSERT_TRUE(nullptr != descriptor);
+    EXPECT_EQ(7 + 1, descriptor->GetVisibleFields().size()); // 7 Widget properties + Gadget.Description
+    EXPECT_EQ(1, provider->GetContentSetSize());
+
+    ContentSetItemPtr item;
+    EXPECT_TRUE(provider->GetContentSetItem(item, 0));
     }
