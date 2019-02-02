@@ -231,7 +231,7 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             return PrintUsage(argv[0]);        
         if (argv[iArg] == wcsstr(argv[iArg], L"-taskFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-tf="))
             {
-            BeFileName::FixPathName(m_taskFolderName, GetArgValueW(argv[iArg]).c_str());
+            m_taskFolderName.assign(GetArgValueW(argv[iArg]).c_str());
             if (!BeFileName::DoesPathExist(m_taskFolderName.c_str()))
                 {
                 fwprintf(stderr, L"%ls is not an existing folder\n", m_taskFolderName.c_str());
@@ -280,7 +280,7 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
 
         if (argv[iArg] == wcsstr(argv[iArg], L"-resultFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-rf="))
             {
-            BeFileName::FixPathName(m_resultFolderName, GetArgValueW(argv[iArg]).c_str());
+            m_resultFolderName.assign(GetArgValueW(argv[iArg]).c_str());
             if (!BeFileName::DoesPathExist(m_resultFolderName.c_str()))
                 {
                 fwprintf(stderr, L"%ls is not an existing folder\n", m_resultFolderName.c_str());
