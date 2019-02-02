@@ -230,7 +230,7 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
         if (argv[iArg] == wcsstr(argv[iArg], L"-help") || argv[iArg] == wcsstr(argv[iArg], L"-h"))
             return PrintUsage(argv[0]);        
         if (argv[iArg] == wcsstr(argv[iArg], L"-taskFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-tf="))
-            {
+            {            
             m_taskFolderName.assign(GetArgValueW(argv[iArg]).c_str());
             if (!BeFileName::DoesPathExist(m_taskFolderName.c_str()))
                 {
@@ -279,7 +279,7 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             }
 
         if (argv[iArg] == wcsstr(argv[iArg], L"-resultFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-rf="))
-            {
+            {            
             m_resultFolderName.assign(GetArgValueW(argv[iArg]).c_str());
             if (!BeFileName::DoesPathExist(m_resultFolderName.c_str()))
                 {
@@ -324,7 +324,7 @@ void ScalableMeshWorker::Start()
         {        
         Utf8String cmdStr(m_workerProcessName);                
 
-        cmdStr.append(Utf8PrintfString(" -taskFolder=\"%s\"", Utf8String(m_taskFolderName.c_str()).c_str()));        
+        cmdStr.append(Utf8PrintfString(" -taskFolder=\"%s\\\"", Utf8String(m_taskFolderName.c_str()).c_str()));        
         
         if (m_useGroupingStrategy)
             {
@@ -334,7 +334,7 @@ void ScalableMeshWorker::Start()
         
         if (!m_resultFolderName.empty())
             {
-            cmdStr.append(Utf8PrintfString(" -rf=\"%s\"", Utf8String(m_resultFolderName.c_str()).c_str()));        
+            cmdStr.append(Utf8PrintfString(" -rf=\"%s\\\"", Utf8String(m_resultFolderName.c_str()).c_str()));        
             }
         
         if (m_startAsService)
