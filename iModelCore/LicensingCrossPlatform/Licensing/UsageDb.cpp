@@ -2,7 +2,7 @@
 |
 |     $Source: Licensing/UsageDb.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Utils/SCVWritter.h>
@@ -87,7 +87,7 @@ BentleyStatus UsageDb::SetUpTables()
     // Create Policy table
     if (m_db.CreateTable("Policy",
                          "PolicyId NVARCHAR(20) PRIMARY KEY, "
-                         "UserId NVARCHAR(20), "
+                         "UserId NVARCHAR(40), "
                          "ExpirationDate NVARCHAR(20), "
                          "LastUpdateTime NVARCHAR(20), "
                          "PolicyFile NVARCHAR(900)") != DbResult::BE_SQLITE_OK)

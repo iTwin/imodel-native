@@ -2,7 +2,7 @@
 |
 |     $Source: Licensing/Policy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Policy.h"
@@ -35,18 +35,18 @@ Policy::Policy(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy> Policy::Create(std::shared_ptr<JWToken> jwToken)
 {
-	if (jwToken == nullptr)
+	if (jwToken == nullptr) {
 		return nullptr;
-
+	}
 	Utf8String policyB64 = jwToken->GetClaim(GETCLAIM_JwtokenClaim_Url);
-	if (policyB64.empty())
+	if (policyB64.empty()) {
 		return nullptr;
-
+	}
 	Utf8String policy = Base64Utilities::Decode(policyB64);
 	Json::Value policyJson;
-	if (!Json::Reader::Parse(policy, policyJson))
+	if (!Json::Reader::Parse(policy, policyJson)) {
 		return nullptr;
-
+	}
 	return std::shared_ptr<Policy>(new Policy(policyJson));
 }
 

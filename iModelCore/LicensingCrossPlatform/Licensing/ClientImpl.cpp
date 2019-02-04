@@ -2,7 +2,7 @@
 |
 |     $Source: Licensing/ClientImpl.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientImpl.h"
@@ -844,9 +844,9 @@ folly::Future<Utf8String> ClientImpl::GetCertificate()
 
     LOG.debugv("GetCertificate - EntitlementPolicyService: %s", url.c_str());
 
-    auto authHandler = m_authProvider->GetAuthenticationHandler(url, m_httpHandler, IConnectAuthenticationProvider::HeaderPrefix::Saml);
+    //auto authHandler = m_authProvider->GetAuthenticationHandler(url, m_httpHandler, IConnectAuthenticationProvider::HeaderPrefix::Saml);
 
-    HttpClient client(nullptr, authHandler);
+	HttpClient client(nullptr, m_httpHandler);//authHandler);
     return client.CreateGetRequest(url).Perform().then(
         [=] (Response response)
         {
@@ -1086,6 +1086,7 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 	// if null, NotEntitled
 	if (policy == nullptr)
 		{
+		LOG.errorv("NOT ENTITLED due to NULLPTR");
 		return LicenseStatus::NotEntitled;
 		}
 	// get PolicyStatus
@@ -1110,6 +1111,7 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 	// if prodStatus is NoLicense, return LicenseStatus::NotEntitled
 	if (productStatus == Policy::ProductStatus::NoLicense)
 		{
+		LOG.errorv("NOT ENTITLED due to ProductStatus::NoLicense");
 		return LicenseStatus::NotEntitled;
 		}
 	// if prodStatus is Allowed

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/ClientTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,12 +16,11 @@
 #include "../../../Licensing/ClientWithKeyImpl.h"
 #include "../../../Licensing/UsageDb.h"
 #include "../../../PublicAPI/Licensing/Utils/SCVWritter.h"
+#include "../../../Licensing/Logging.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <BeSQLite/BeSQLite.h>
-#include <fstream>
-#include <Licensing/Utils/InMemoryJsonLocalState.h>
 
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
@@ -86,7 +85,7 @@ BeFileName GetUsageDbPath()
 
 ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
     {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
@@ -114,7 +113,7 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
 
 ClientFreeImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
 {
-	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -125,7 +124,7 @@ ClientFreeImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, 
 
 ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
 {
-	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
 	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
@@ -137,7 +136,7 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInte
 
 	BeFileName dbPath = GetUsageDbPath();
 
-	Utf8String accesskey = "somekey";
+	Utf8String accesskey = "3553B457AB047DCCFEE3DC40482293E0";
 
 	return std::make_shared<ClientWithKeyImpl>(
 		accesskey,
@@ -151,7 +150,7 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInte
 
 ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
 {
-	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
 	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
@@ -179,7 +178,7 @@ ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, I
 
 ClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
 {
-	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -191,7 +190,7 @@ ClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterva
 
 ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
 {
-	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
 	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
@@ -203,7 +202,7 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInte
 
 	BeFileName dbPath = GetUsageDbPath();
 
-	Utf8String accesskey = "somekey";
+	Utf8String accesskey = "3553B457AB047DCCFEE3DC40482293E0";
 
 	return Client::CreateWithKey(
 		accesskey,
@@ -238,12 +237,12 @@ ClientPtr CreateFreeTestClientFromFactory(bool signIn)
 
 ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn)
 {
-	return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+	return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Dev, TEST_PRODUCT_ID);
 }
 
 ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
 {
-	return CreateWithKeyTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+	return CreateWithKeyTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Dev, TEST_PRODUCT_ID);
 }
 
 ClientImplPtr CreateTestClient(bool signIn, UrlProvider::Environment env)
@@ -300,10 +299,11 @@ TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplication_Success)
 	EXPECT_SUCCESS(client->TrackUsage(tokenstring,version,projectId).get());
     }
 
-TEST_F(ClientTests, StartWithKeyApplication_StopApplication_Success)
+TEST_F(ClientTests, DISABLED_StartWithKeyApplication_StopApplication_Success)
 {
 	auto client = CreateWithKeyTestClient(true);
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+	client->SendUsageRealtimeWithKey().get();
 	EXPECT_SUCCESS(client->StopApplication());
 }
 
@@ -323,7 +323,7 @@ TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplicationFromFactory_Success)
 	EXPECT_SUCCESS(client->TrackUsage(tokenstring, version, projectId).get());
 }
 
-TEST_F(ClientTests, StartWithKeyApplicationFromFactory_Success)
+TEST_F(ClientTests, DISABLED_StartWithKeyApplicationFromFactory_Success)
 {
 	auto client = CreateWithKeyTestClientFromFactory(true);
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);

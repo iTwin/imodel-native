@@ -2,7 +2,7 @@
 |
 |     $Source: Licensing/ClientWithKeyImpl.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,7 +35,12 @@ public:
 	LICENSING_EXPORT LicenseStatus StartApplication();
 	LICENSING_EXPORT BentleyStatus StopApplication();
 
+	LICENSING_EXPORT std::shared_ptr<Policy> GetPolicyTokenWithKey();
+	LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicyWithKey();
 	LICENSING_EXPORT folly::Future<folly::Unit> SendUsageRealtimeWithKey();
+	LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyRequestWithKey();
+	LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogsWithKey(BeFileNameCR featureCSV, Utf8StringCR ultId);
+
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

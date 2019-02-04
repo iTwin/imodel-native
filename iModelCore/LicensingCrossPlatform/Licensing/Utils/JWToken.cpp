@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/Utils/JWToken.cpp $
+|     $Source: Licensing/Utils/JWToken.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Utils/JWToken.h>
@@ -10,6 +10,7 @@
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/Base64Utilities.h>
 #include <json/value.h>
+#include "../Logging.h"
 
 #include <Licensing/Utils/UrlSafeBase64Utilities.h>
 
@@ -31,25 +32,30 @@ std::shared_ptr<JWToken> JWToken::Create(Utf8StringCR token, Utf8StringCR certif
     {
     bvector<Utf8String> parts;
 
+
     BeStringUtilities::Split(token.c_str(), ".", parts);
 
-    if (parts.size() != 3)
-        return nullptr;
+	if (parts.size() != 3) {
+		return nullptr;
+	}
 
     Utf8String header = Base64Utilities::Decode(parts[0]);
     Json::Value headerJson;
-    if (!Json::Reader::Parse(header, headerJson))
-        return nullptr;
+	if (!Json::Reader::Parse(header, headerJson)) {
+		return nullptr;
+	}
 
     Utf8String payload = Base64Utilities::Decode(parts[1]);
     Json::Value payloadJson;
-    if (!Json::Reader::Parse(payload, payloadJson))
-        return nullptr;
+	if (!Json::Reader::Parse(payload, payloadJson)) {
+		return nullptr;
+	}
 
     auto jwtToken = std::shared_ptr<JWToken>(new JWToken(headerJson, payloadJson));
 
-    if (!certificate.empty() && jwtToken->Validate(parts[0] + "." + parts[1], parts[2], certificate) != SUCCESS)
-        return nullptr;
+	if (!certificate.empty() && jwtToken->Validate(parts[0] + "." + parts[1], parts[2], certificate) != SUCCESS) {
+		return nullptr;
+	}
 
     return jwtToken;
     }
