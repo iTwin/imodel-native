@@ -18,3 +18,9 @@ PresentationTestingUnitTests.SwapVals
     # VSTS#72550
     # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 02/02/2019
     # Crash
+
+PresentationTestingUnitTests.NoChildNodes
+
+    # VSTS#72559
+    # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 02/04/2019
+    # Crash
