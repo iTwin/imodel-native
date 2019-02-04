@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -3650,6 +3650,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
                                                            0, scaleUorPerMeters, 0, 0.0,
                                                            0, 0, scaleUorPerMeters, 0.0);
 
+    //auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
     auto coordInterp = GeoCoordinates::GeoCoordInterpretation::Cartesian;
     if (this->IsCesium3DTiles())
         {
@@ -3657,17 +3658,17 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
         if (!tileToDb.IsIdentity())
             {
             computedTransform = Transform::FromProduct(computedTransform, tileToDb);
+            auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
+            if(!tileToECEF.IsIdentity())
+                {
+                Transform ecefToTile;
+                ecefToTile.InverseOf(tileToECEF);
+                computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
+                }
             }
         else
             { // tile coordinates are not transformed, therefore they must be interpreted as XYZ coordinates
             coordInterp = GeoCoordinates::GeoCoordInterpretation::XYZ;
-            }
-        auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
-        if (!tileToECEF.IsIdentity())
-            {
-            Transform ecefToTile;
-            ecefToTile.InverseOf(tileToECEF);
-            computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
             }
         }
 

@@ -268,7 +268,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
     return true;
 }
 
-StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& path, TransformCR transform, ClipVectorPtr clips, const uint64_t& coverageID, const GeoCoordinates::BaseGCSCPtr sourceGCS, bool outputTexture,ScalableMeshProgress* progress)
+StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& path, ClipVectorPtr clips, const uint64_t& coverageID, const GeoCoordinates::BaseGCSCPtr sourceGCS, bool outputTexture,ScalableMeshProgress* progress)
 {
     if (progress != nullptr)
     {
@@ -318,8 +318,55 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     pDataStore->Register(index->m_smID);
 
     // Destination coordinates will be ECEF
-    static GeoCoordinates::BaseGCSPtr destinationGCS = GeoCoordinates::BaseGCS::CreateGCS(L"ll84");
+    // Create a WGS84 GCS to convert the WGS84 Lat/Long to ECEF/XYZ
+    WString warningMsg;
+    StatusInt warning;
+    auto destinationGCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
+    destinationGCS->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
 
+    auto ecefTrans = Transform::FromIdentity();
+    if(sourceGCS.IsValid())
+        {
+        destinationGCS->SetVerticalDatumCode(sourceGCS->GetVerticalDatumCode());
+
+
+        DRange3d range = index->GetContentExtent();
+        DPoint3d origin = DPoint3d::FromInterpolate(range.low, .5, range.high);
+        //origin.z = 0; // always use ground plane
+
+
+        GeoPoint originLatLong, yLatLong, tempLatLong;
+        sourceGCS->LatLongFromCartesian(originLatLong, origin);
+        sourceGCS->LatLongFromCartesian(yLatLong, DPoint3d::FromSumOf(origin, DPoint3d::From(0.0, 1.0, 0.0)));         // Arbitrarily 10 meters in Y direction will be used to calculate y axis of transform.
+
+        tempLatLong = originLatLong;
+        sourceGCS->LatLongFromLatLong(originLatLong, tempLatLong, *destinationGCS);
+        tempLatLong = yLatLong;
+        sourceGCS->LatLongFromLatLong(yLatLong, tempLatLong, *destinationGCS);
+
+        DPoint3d ecefOrigin, ecefY;
+        destinationGCS->XYZFromLatLong(ecefOrigin, originLatLong);
+        destinationGCS->XYZFromLatLong(ecefY, yLatLong);
+
+        //ecefY = DPoint3d::FromSumOf(ecefOrigin, DPoint3d::From(0.0, 10.0, 0.0));
+
+        RotMatrix rMatrix = RotMatrix::FromIdentity();
+        DVec3d zVector, yVector;
+        zVector.Normalize((DVec3dCR)ecefOrigin);
+        yVector.NormalizedDifference(ecefY, ecefOrigin);
+
+        double product = yVector.x*zVector.x + yVector.y*zVector.y + yVector.z*zVector.z;
+        product;
+
+        rMatrix.SetColumn(yVector, 1);
+        rMatrix.SetColumn(zVector, 2);
+        rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
+
+        ecefTrans = Transform::From(rMatrix, ecefOrigin);
+
+        auto dbToTile = Transform::From(DPoint3d::From(-origin.x, -origin.y, -origin.z));
+        ecefTrans = Transform::FromProduct(ecefTrans, dbToTile);
+        }
 
     SMIndexMasterHeader<DRange3d> oldMasterHeader;
     index->GetDataStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
@@ -337,17 +384,10 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     strategy->SetOldMasterHeader(oldMasterHeader);
     strategy->SetClipInfo(coverageID, isClipBoundary);
     //strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
-    strategy->SetRootTransform(transform);
+    strategy->SetRootTransform(ecefTrans);
     strategy->AddGroup(rootNodeGroup.get());
     index->SetRootNodeGroup(rootNodeGroup);
 
-    DRange3d smExtent = index->GetIndexExtent();
-
-    DPoint3d center = DPoint3d::From((smExtent.low.x + smExtent.high.x) *0.5, (smExtent.low.y + smExtent.high.y) *0.5, (smExtent.low.z + smExtent.high.z) *0.5);
-    Transform t = Transform::From(center);
-    t.InverseOf(t);
-
-    strategy->SetTransform(t);
 
 
     // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
@@ -390,7 +430,8 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
 
     PrepareClipsForSaveAs(clips);
 
-    Publish3DTile(nodeP, pDataStore, t, clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
+
+    Publish3DTile(nodeP, pDataStore, Transform::FromIdentity(), clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
 
     if (progress != nullptr) progress->Progress() = 1.0f;
 
@@ -510,11 +551,8 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     if (status != SUCCESS || textureInfo->IsUsingBingMap())
         outputTexture = false;
 
-    Transform t = transform;
-    t.FromProduct(meshP->GetReprojectionTransform(), t);
 
-
-    status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, t, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
+    status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
     SMNodeGroupPtr rootTileset = mesh->GetMainIndexP()->GetRootNodeGroup();
     BeAssert(rootTileset.IsValid()); // something wrong in the publish
 

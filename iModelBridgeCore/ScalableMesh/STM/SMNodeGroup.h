@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.h $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -945,7 +945,7 @@ class SMGroupingStrategy
         GeoCoordinates::BaseGCSCPtr m_sourceGCS;
         GeoCoordinates::BaseGCSCPtr m_destinationGCS;
         Transform m_rootTransform;
-        Transform m_transform;
+        Transform m_transform = Transform::FromIdentity();
         bool m_isClipBoundary = false;
         uint64_t m_clipID = -1;
     };
@@ -1365,13 +1365,6 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToUtf8String();
 #endif
 
-        SMMasterHeader["tileToDb"] = Json::Value(Json::arrayValue);
-        Transform tileToDb;
-        tileToDb.InverseOf(this->m_transform);
-        matrix = DMatrix4d::From(tileToDb);
-        for (size_t i = 0; i<4; i++)
-            for (size_t j = 0; j<4; j++)
-                SMMasterHeader["tileToDb"].append(matrix.coff[j][i]);
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;
