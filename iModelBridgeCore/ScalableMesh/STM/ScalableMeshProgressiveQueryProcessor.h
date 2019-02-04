@@ -8,9 +8,10 @@
 
 #include "ScalableMesh.h"
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
 USING_NAMESPACE_BENTLEY_DGN
 #endif
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 typedef DRange3d Extent3dType;
 

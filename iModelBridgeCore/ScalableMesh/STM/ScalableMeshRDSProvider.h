@@ -11,8 +11,13 @@
 |   Header File Dependencies
 +--------------------------------------------------------------------------------------*/
 
+#ifdef DGNDB06_API
+	#include <RealityPlatform/RealityDataService.h>
+#else
     #include <RealityPlatformTools/RealityDataService.h>
-    USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+#endif	
+
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
 #include <ScalableMesh/IScalableMeshRDSProvider.h>

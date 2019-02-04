@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/MeshTile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@
 #include <map> // NB: Because bmap doesn't support move semantics...
 #include <ScalableMesh/GeoCoords/GCS.h>
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
 
 namespace BENTLEY_NAMESPACE_NAME
     {
@@ -169,7 +169,7 @@ enum class TileSource
 //! This class is more efficient than bvector<byte> since it does not initialize the memory to zeros.
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
-#if 0 //NEEDS_WORK_SM_CESIUM_B0200
+#ifdef DGNDB06_API
 struct ByteStream
     {
     private:
@@ -410,7 +410,12 @@ private:
     //TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams);
     TileDisplayParams(uint32_t fillColor, TileTextureImagePtr texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
 public:
-    static TileDisplayParamsPtr Create() { return Create(0, nullptr,false); }
+    static TileDisplayParamsPtr Create() 
+		{ 
+#ifndef DGNDB06_API
+		return Create(0, nullptr,false); 
+#endif		
+		}
     //static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) { return Create(&graphicParams, &geometryParams); }
     //static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) { return new TileDisplayParams(graphicParams, geometryParams); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImagePtr textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
@@ -648,7 +653,7 @@ public:
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved);
     //! Create a TileGeometry for an ISolidKernelEntity
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
 	static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);
 #else
     static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);

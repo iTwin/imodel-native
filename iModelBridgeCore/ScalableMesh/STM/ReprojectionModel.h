@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/ReprojectionModel.h $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -19,6 +19,12 @@
 #endif
 USING_NAMESPACE_IMAGEPP
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+#if defined(VANCOUVER_API)
+    #define CONVERT_RETURN_TYPE void
+#else
+    #define CONVERT_RETURN_TYPE StatusInt
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -42,7 +48,50 @@ class ReprojectionModel : public TRANSFOMODEL
         // HGF2DTransfoModel interface
 
         // Conversion interface
-#ifndef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
+        virtual CONVERT_RETURN_TYPE ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const override;
+        virtual CONVERT_RETURN_TYPE ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const override;
+        virtual CONVERT_RETURN_TYPE ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const override;
+        virtual CONVERT_RETURN_TYPE ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const;
+		
+		virtual CONVERT_RETURN_TYPE ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const ;
+        virtual CONVERT_RETURN_TYPE ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const ;
+        virtual CONVERT_RETURN_TYPE ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const ;
+        virtual CONVERT_RETURN_TYPE ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const ;
+
+#if defined(DGNDB06_API)
+        virtual bool IsConvertDirectThreadSafe() const override { return false; }
+        virtual bool IsConvertInverseThreadSafe() const override { return false; }
+#endif
+
+        virtual TRANSFOMODEL* Clone() const override;
+
+        virtual HFCMatrix<3, 3>  GetMatrix() const override;
+
+        virtual bool IsStretchable(double pi_AngleTolerance = 0) const override { return false; }
+        virtual void GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, DISPLACEMENT* po_pDisplacement) const override;
+
+        virtual HFCPtr<TRANSFOMODEL> ComposeInverseWithDirectOf(const TRANSFOMODEL& pi_rModel) const override;
+
+        virtual bool                CanBeRepresentedByAMatrix() const override { return false; }
+
+
+        virtual HFCPtr<TRANSFOMODEL> CreateSimplifiedModel() const override;
+
+        virtual bool          PreservesLinearity() const override { return false; }
+        virtual bool          PreservesParallelism() const override { return false; }
+        virtual bool          PreservesShape() const override { return false; }
+        virtual bool          PreservesDirection() const override { return false; }
+
+        // Domain management ... a cartographic reprojection model usually has a limited domain.
+        virtual bool                                    HasDomain() const  { return true; }
+        virtual HFCPtr<HGF2DShape>    GetDirectDomain() const;
+        virtual HFCPtr<HGF2DShape>    GetInverseDomain() const;
+
+        // Operations
+        virtual void Reverse();
+
+#else       
         virtual StatusInt _ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const override;
         virtual StatusInt _ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const override;
         virtual StatusInt _ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const override;
@@ -82,54 +131,16 @@ class ReprojectionModel : public TRANSFOMODEL
 
         // Operations
         virtual void _Reverse() override;
-
-#else
-        virtual void ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const override;
-        virtual void ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const override;
-        virtual void ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const override;
-        virtual void ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const;
-		
-		virtual void ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const ;
-        virtual void ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const ;
-        virtual void ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const ;
-        virtual void ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const ;
-
-        virtual TRANSFOMODEL* Clone() const override;
-
-        virtual HFCMatrix<3, 3>  GetMatrix() const override;
-
-        virtual bool IsStretchable(double pi_AngleTolerance = 0) const override { return false; }
-        virtual void GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, DISPLACEMENT* po_pDisplacement) const override;
-
-        virtual HFCPtr<TRANSFOMODEL> ComposeInverseWithDirectOf(const TRANSFOMODEL& pi_rModel) const override;
-
-        virtual bool                CanBeRepresentedByAMatrix() const override { return false; }
-
-
-        virtual HFCPtr<TRANSFOMODEL> CreateSimplifiedModel() const override;
-
-        virtual bool          PreservesLinearity() const override { return false; }
-        virtual bool          PreservesParallelism() const override { return false; }
-        virtual bool          PreservesShape() const override { return false; }
-        virtual bool          PreservesDirection() const override { return false; }
-
-        // Domain management ... a cartographic reprojection model usually has a limited domain.
-        virtual bool                                    HasDomain() const  { return true; }
-        virtual HFCPtr<HGF2DShape>    GetDirectDomain() const;
-        virtual HFCPtr<HGF2DShape>    GetInverseDomain() const;
-
-        // Operations
-        virtual void Reverse();
 #endif
 
     protected:
 
-#ifndef VANCOUVER_API
-        virtual void  _Prepare() override {};
-        virtual HFCPtr<TRANSFOMODEL>   _ComposeYourself(const TRANSFOMODEL& pi_rModel) const override;
-#else
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
         virtual void  Prepare() override {};
         virtual HFCPtr<TRANSFOMODEL>   ComposeYourself(const TRANSFOMODEL& pi_rModel) const;
+#else        
+        virtual void  _Prepare() override {};
+        virtual HFCPtr<TRANSFOMODEL>   _ComposeYourself(const TRANSFOMODEL& pi_rModel) const override;
 #endif
 
     private:

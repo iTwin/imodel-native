@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMSQLiteSisterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -13,10 +13,10 @@ BeFileName GetTempPathFromProjectPath(const BeFileName& path)
 {
 	BeFileName extraFileDir;
 
-#ifndef VANCOUVER_API
-	Desktop::FileSystem::BeGetTempPath(extraFileDir);
-#else
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
 	BeFileName::BeGetTempPath(extraFileDir);
+#else
+    Desktop::FileSystem::BeGetTempPath(extraFileDir);	
 #endif
 
 	WString substrFile = path.c_str();

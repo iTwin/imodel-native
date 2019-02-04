@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -214,7 +214,7 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 
     private:
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); } 
 #endif
 

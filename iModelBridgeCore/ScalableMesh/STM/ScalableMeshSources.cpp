@@ -6,7 +6,7 @@
 |       $Date: 2012/02/23 01:54:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -494,10 +494,10 @@ bool IDTMSource::Impl::_IsReachable () const
         try
             {
 			HFCPtr<HFCURL> pUrl(
-#ifndef VANCOUVER_API
-				HFCURL::Instanciate(Utf8String(m_path))
-#else
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
 				HFCURL::Instanciate(m_path)
+#else
+                HFCURL::Instanciate(Utf8String(m_path))
 #endif
 			);
 
@@ -662,10 +662,10 @@ const WString& IDTMLocalFileSource::Impl::GetPath (StatusInt& status) const
         try
             {
             HFCPtr<HFCURL> pUrl(
-#ifndef VANCOUVER_API
-				HFCURL::Instanciate(Utf8String(m_path))
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
+                HFCURL::Instanciate(m_path)				
 #else
-				HFCURL::Instanciate(m_path)
+                HFCURL::Instanciate(Utf8String(m_path))				
 #endif
 			);
 

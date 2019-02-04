@@ -36,6 +36,31 @@ BESQL_VERSION_STRUCT ScalableMeshDb::GetCurrentVersion() const
     }
 
 #ifndef VANCOUVER_API
+
+#ifdef DGNDB06_API
+
+DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
+    {
+    CachedStatementPtr stmtTest;
+    GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
+    assert(stmtTest != nullptr);
+    DbResult status = stmtTest->Step();
+
+    assert(status == BE_SQLITE_ROW);
+       
+    Utf8String schemaVs(stmtTest->GetValueText(0));
+
+    SchemaVersion databaseSchema(schemaVs.c_str());
+   
+    SchemaVersion currentVersion = GetCurrentVersion();
+    if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_MajorMinor) != 0))
+        return BE_SQLITE_SCHEMA;
+
+    return BE_SQLITE_OK;
+    }
+
+#else
+
 ProfileState ScalableMeshDb::_CheckProfileVersion() const
     {
     CachedStatementPtr stmtTest;
@@ -63,7 +88,11 @@ DbResult ScalableMeshDb::_UpgradeProfile()
     return updateResult;
     }
 
+#endif
+
 #else
+
+
 static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
 Utf8String SchemaVersion::ToJson() const { return Utf8PrintfString(s_versionfmt, m_major, m_minor, m_sub1, m_sub2); }
 
