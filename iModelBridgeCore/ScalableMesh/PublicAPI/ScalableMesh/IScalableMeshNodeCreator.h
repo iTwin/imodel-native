@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:30:02 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,6 +27,8 @@ struct IScalableMeshNodeCreator : public IScalableMeshCreator
     private:
         /*__PUBLISH_SECTION_END__*/
         friend struct IScalableMeshCreator;
+        friend struct SaveAsNodeCreator;
+
         struct                              Impl;
         //std::auto_ptr<Impl>                 m_implP;
 

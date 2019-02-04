@@ -27,6 +27,8 @@
 #include "..\Tool\VolumeCalculationTool.h"
 #include "..\Initialize.h"
 #include "..\TiledTriangulation\ITiledTriangulatorValidator.h"
+#include "..\..\..\STM\SMNodeGroup.h"
+
 
 using namespace std;
 
@@ -5074,6 +5076,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
         clipType = ClipType::NONE;
 
     double t = clock();
+    double time_count_triangles = 0;
 
     bool isClipped = clipType != ClipType::NONE; // type == SaveAsType::_3DTILES_CLIPPED || type == SaveAsType::_3SM_CLIPPED;
 
@@ -5113,7 +5116,6 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (allTestPass)
         {
-        nOfTriangles3SM = GetTriangleCount(myScalableMesh.get(), clipP);
         switch (type)
             {
             case SaveAsType::_3DTILES:
@@ -5125,6 +5127,8 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             allTestPass = SUCCESS == IScalableMeshSaveAs::Generate3DTiles(myScalableMesh, tilesOutDir, L"", SMCloudServerType::LocalDisk, nullptr, clipP, (uint64_t)-1);
 
+            t = clock() - t;
+
             ScalableMesh::IScalableMeshPtr cesiumMesh = nullptr;
             if (allTestPass)
                 {
@@ -5134,6 +5138,8 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
             if (allTestPass)
                 {
+                time_count_triangles = clock();
+                nOfTriangles3SM = GetTriangleCount(myScalableMesh.get(), clipP);
                 nOfTrianglesResult = GetTriangleCount(cesiumMesh.get(), nullptr);
                 allTestPass = nOfTrianglesResult == nOfTriangles3SM;
                 }
@@ -5158,6 +5164,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
                     }
                 }
             allTestPass = SUCCESS == IScalableMeshSaveAs::DoSaveAs(myScalableMesh, smOutFileName, clipP, nullptr /*progress*/, Transform::FromIdentity());
+            t = clock() - t;
             ScalableMesh::IScalableMeshPtr newMesh = nullptr;
             if (allTestPass)
                 {
@@ -5166,8 +5173,13 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
             if (allTestPass)
                 {
+                time_count_triangles = clock();
+                nOfTriangles3SM = GetTriangleCount(myScalableMesh.get(), clipP);
+
                 nOfTrianglesResult = GetTriangleCount(newMesh.get(), clipP);
                 allTestPass = nOfTrianglesResult == nOfTriangles3SM;
+
+                time_count_triangles = clock() - time_count_triangles;
                 }
             break;
             }
@@ -5179,14 +5191,15 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
             }
         }
-    t = clock() - t;
 
-    fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%s,%0.5f\n",
+
+    fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%s,%0.5f,%0.5f\n",
         smFileName.c_str(),
         outputDirectory.c_str(),
         nOfTriangles3SM,
         nOfTrianglesResult,
         allTestPass ? L"true" : L"false",
+        (double)time_count_triangles / CLOCKS_PER_SEC,
         (double)t / CLOCKS_PER_SEC
     );
 
@@ -5594,9 +5607,33 @@ void PrepareClipsForGetMesh(ClipVectorPtr clips)
 
 uint64_t GetTriangleCount(IScalableMesh* meshP, ClipVectorPtr clips)
     {
-    uint64_t nOfTriangles = 0;
+    std::atomic<uint64_t> nOfTriangles = 0;
 
     PrepareClipsForGetMesh(clips);
+
+    struct LocalThreadInfo
+        {
+        IScalableMeshNodePtr m_currentNode;
+        };
+    typedef SMNodeDistributor<LocalThreadInfo> TriangleCountThreadPool;
+    static const uint64_t nbThreads = std::max((uint64_t)1, (uint64_t)(std::thread::hardware_concurrency() - 2));
+    typedef std::function<void(LocalThreadInfo&)> work_func_type;
+    typedef std::function<bool(LocalThreadInfo&)> pred_func_type;
+    work_func_type func = [&nOfTriangles, clips] (LocalThreadInfo& info)
+        {
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        if(info.m_currentNode->IsTextured())
+            flags->SetLoadTexture(false);
+        IScalableMeshMeshPtr mesh = clips.IsValid() ? info.m_currentNode->GetMeshUnderClip2(flags, clips, -1, false/*unused?*/) : info.m_currentNode->GetMesh(flags);
+        if (mesh.IsValid())
+            nOfTriangles.fetch_add(mesh->GetNbFaces(), std::memory_order_relaxed);
+        info.m_currentNode->ClearCachedData();
+        };
+    pred_func_type is_ready_func = [] (LocalThreadInfo& info)
+        {
+        return true;
+        };
+    TriangleCountThreadPool* triangleCountThreadPool = new TriangleCountThreadPool(func, is_ready_func, nbThreads, 10000);
 
     IScalableMeshNodePtr root = meshP->GetRootNode();
 
@@ -5605,16 +5642,13 @@ uint64_t GetTriangleCount(IScalableMesh* meshP, ClipVectorPtr clips)
     while (!nodes.empty())
         {
         IScalableMeshNodePtr currentNode = nodes.front();
-        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-        if (currentNode->IsTextured())
-            flags->SetLoadTexture(true);
-        IScalableMeshMeshPtr mesh = clips.IsValid() ? currentNode->GetMeshUnderClip2(flags, clips, -1, false/*unused?*/) : currentNode->GetMesh(flags);
-        nOfTriangles += mesh.IsValid() ? mesh->GetNbFaces() : 0;
-
+        triangleCountThreadPool->AddWorkItem(LocalThreadInfo{ currentNode });
+        
         bvector<IScalableMeshNodePtr> childrenNodes = currentNode->GetChildrenNodes();
         for (auto child : childrenNodes) nodes.push(child);
         nodes.pop();
         }
+    delete triangleCountThreadPool;
     return nOfTriangles;
     }
 
