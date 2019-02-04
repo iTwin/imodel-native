@@ -507,6 +507,9 @@ DbResult SMSQLiteFile::CreateTables()
     DbResult result;
     result = m_database->CreateNewDb(filename);
 
+    if (result == BE_SQLITE_ERROR_FileExists)
+        return false;
+
     if (result == BE_SQLITE_ERROR_AlreadyOpen) 
         return true;
 

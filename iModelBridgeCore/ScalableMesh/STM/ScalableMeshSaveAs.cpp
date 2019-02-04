@@ -47,9 +47,8 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
 StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress, const Transform& transform)
 {
     // Create Scalable Mesh at output path
-    StatusInt status;
-    IScalableMeshNodeCreatorPtr scMeshDestination = IScalableMeshNodeCreator::GetFor(destination.c_str(), status);
-    if (SUCCESS != status || !scMeshDestination.IsValid())
+    SaveAsNodeCreatorPtr scMeshDestination = new SaveAsNodeCreator(destination.c_str());
+    if (!scMeshDestination.IsValid())
         return ERROR;
 
     IScalableMeshTextureInfoPtr textureInfo = nullptr;

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -9,13 +9,25 @@
 
 #include <ScalableMesh\IScalableMesh.h>
 #include <ScalableMesh\IScalableMeshProgress.h>
-#include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include <ScalableMesh\IScalableMeshPublisher.h>
 #include "../SMNodeGroup.h"
+#include "../ScalableMeshNodeCreator.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 #define MAX_QUEUE_SIZE 30000
+
+struct SaveAsNodeCreator : public IScalableMeshNodeCreator::Impl, public RefCountedBase
+    {
+    public:
+        explicit                            SaveAsNodeCreator(const WChar*            scmFileName);
+        virtual                             ~SaveAsNodeCreator();
+
+        StatusInt SetGCS(const GeoCoords::GCS&       gcs);
+        IScalableMeshNodeEditPtr FindParentNodeFor(IScalableMeshNodePtr sourceNode, StatusInt& status);
+    };
+
+typedef RefCountedPtr<SaveAsNodeCreator> SaveAsNodeCreatorPtr;
 
 struct SM3SMPublishParams;
 typedef RefCountedPtr<SM3SMPublishParams> SM3SMPublishParamsPtr;
@@ -25,7 +37,7 @@ struct SM3SMPublishParams : virtual public IScalableMeshPublishParams
     private:
 
         IScalableMeshPtr m_source = nullptr;
-        IScalableMeshNodeCreatorPtr m_destination = nullptr;
+        SaveAsNodeCreatorPtr m_destination = nullptr;
         ClipVectorPtr m_clips = nullptr;
         IScalableMeshProgressPtr m_progress = nullptr;
         bool m_saveTextures = false;
@@ -35,7 +47,7 @@ struct SM3SMPublishParams : virtual public IScalableMeshPublishParams
 
         IScalableMeshPtr GetSource() { return m_source;}
 
-        IScalableMeshNodeCreatorPtr GetDestination() { return m_destination;}
+        SaveAsNodeCreatorPtr GetDestination() { return m_destination;}
 
         ClipVectorPtr GetClips() { return m_clips; }
 
@@ -47,7 +59,7 @@ struct SM3SMPublishParams : virtual public IScalableMeshPublishParams
 
         void SetSource(IScalableMeshPtr source) { m_source = source; }
 
-        void SetDestination(IScalableMeshNodeCreatorPtr destination) { m_destination = destination; }
+        void SetDestination(SaveAsNodeCreatorPtr destination) { m_destination = destination; }
 
         void SetClips(ClipVectorPtr clips) { m_clips = clips; }
 
@@ -105,7 +117,8 @@ struct SM3SMPublisher : virtual public IScalableMeshPublisher
     private:
 
         bool      IsNodeClippedOut(IScalableMeshNodePtr sourceNode);
-        StatusInt ProcessNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& destNode, const Transform& transform);
+        IScalableMeshMeshPtr ExtractMeshData(IScalableMeshNodePtr sourceNode, const Transform& transform);
+        StatusInt ProcessNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& destNode, IScalableMeshMeshPtr meshData, const Transform& transform);
         StatusInt SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScalableMeshMeshPtr mesh, IScalableMeshNodeEditPtr& destNode, const Transform& transform);
         StatusInt PublishRecursive(IScalableMeshNodePtr sourceNode, SMNodeEditPromisePtr parentDestNode, const Transform& transform);
         StatusInt CreateAndAddNewNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& newDestNode);
