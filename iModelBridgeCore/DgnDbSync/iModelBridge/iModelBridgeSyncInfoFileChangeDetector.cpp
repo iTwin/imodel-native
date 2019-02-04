@@ -33,6 +33,7 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::InsertResultsIntoBIM(Conve
         {
         BeAssert((DgnDbStatus::LockNotHeld != stat) && "Failed to get or retain necessary locks");
         BeAssert(false);
+        LOG.errorv("Error inserting element due to status %d", stat);
         //ReportIssue(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::ConvertFailure(), IssueReporter::FmtElement(*conversionResults.m_element).c_str());
         return stat;
         }
@@ -567,7 +568,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::iMod
                 double lmt = item._GetLastModifiedTime();
                 if (!forceChange && (0 != lmt))
                     {
-                    double previousLmt = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_lastModHash.c_str());
+                    double previousLmt = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_version.c_str());
                     if (previousLmt == lmt)
                         return Results(ChangeType::Unchanged, rec, SourceState(lmt, ""));
                     }

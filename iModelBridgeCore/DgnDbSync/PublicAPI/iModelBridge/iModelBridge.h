@@ -15,9 +15,11 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnView/DgnViewLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
-#include <WebServices/Client/ClientInfo.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
 #include <WebServices/Configuration/UrlProvider.h>
+BEGIN_BENTLEY_NAMESPACE namespace WebServices {
+typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
+} END_BENTLEY_NAMESPACE
 
 #ifdef __IMODEL_BRIDGE_BUILD__
     #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
@@ -46,11 +48,11 @@
 #define XTRN_SRC_ASPCT_CLASS                    "ExternalSourceAspect"
 #define XTRN_SRC_ASPCT_FULLCLASSNAME            XTRN_SRC_ASPCT_SCHEMA(XTRN_SRC_ASPCT_CLASS)
 #define XTRN_SRC_ASPCT_Scope                    "Scope"
-#define XTRN_SRC_ASPCT_SourceId                 "SourceId"
+#define XTRN_SRC_ASPCT_Identifier               "Identifier"
 #define XTRN_SRC_ASPCT_Kind                     "Kind"
-#define XTRN_SRC_ASPCT_LastModHash              "LastModHash"
-#define XTRN_SRC_ASPCT_Hash                     "Hash"
-#define XTRN_SRC_ASPCT_Properties               "Properties"
+#define XTRN_SRC_ASPCT_Version                  "Version"
+#define XTRN_SRC_ASPCT_Checksum                 "Checksum"
+#define XTRN_SRC_ASPCT_JsonProperties           "JsonProperties"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -539,7 +541,7 @@ struct iModelBridge
         IDmsSupport* m_dmsSupport;
 
         Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
-        WebServices::UrlProvider::Environment   m_environment;    //!< Connect environment
+        int                                     m_environment;    //!< Connect environment. Should match UrlProvider::Environment
         Utf8String                              m_iModelHubUserName;
         Utf8String                              m_projectGuid;
 
@@ -654,8 +656,9 @@ struct iModelBridge
         Utf8String GetiModelName() const { return m_repositoryName; }
         void SetiModelName(Utf8StringCR repositoryName)  { m_repositoryName = repositoryName; }
 
-        WebServices::UrlProvider::Environment GetUrlEnvironment() const { return m_environment; }
-        void SetUrlEnvironment(WebServices::UrlProvider::Environment env)  { m_environment = env; }
+        //UrlProvider::Environment
+        int GetUrlEnvironment() const { return m_environment; }
+        void SetUrlEnvironment(int env)  { m_environment = env; }
 
         Utf8String GetUserName() const { return m_iModelHubUserName; }
         void SetUserName(Utf8StringCR name) { m_iModelHubUserName = name; }

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConvertViewAttachments.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -135,6 +135,50 @@ void Converter::AddV8ModelToRange(Bentley::DRange3dR range, DgnV8ModelR v8Model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttachmentCR v8Attachment, ResolvedModelMapping const& parentModel)
     {
+    // TRICKY: 
+    //  This code *generates* drawings. It does not convert existing drawings. 
+    //  Keep in mind that `parentModel` is the sheet model that contains the v8Attachment element.
+    //  When we record a new Drawing element in syncinfo, we specify that source element is the v8 attachment element in the v8 sheet model.
+    //  Likewise, when we add an XSA to the new Drawing element, we specify the v8 attachment element's ID as the SourceId and the BIM sheet model as the Scope.
+    //  For the XSA, we have to make sure that we capture the entire *path* to the v8 attachment element in order to handle the case of nested references.
+
+    if (_WantProvenanceInBim() && IsUpdating())
+        {
+        auto sel = GetDgnDb().GetPreparedECSqlStatement(
+            "SELECT d.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_Drawing) " d, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
+            " WHERE x.Kind='Element' AND x.Scope.Id=? AND x.Identifier=? AND x.Element.Id=d.ECInstanceId");
+        sel->BindId(1, parentModel.GetDgnModel().GetModeledElementId());
+        sel->BindText(2, ComputeV8AttachmentIdPath(v8Attachment).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        if (BE_SQLITE_ROW == sel->Step())
+            {
+            auto drawingElementId = sel->GetValueId<DgnElementId>(0);
+
+            _GetChangeDetector()._OnElementSeen(*this, drawingElementId);
+
+            auto drawingModel = GetDgnDb().Models().GetModel(DgnModelId(drawingElementId.GetValue()));
+    
+            SyncInfo::ModelIterator siIter(GetDgnDb(), "ModelId=?");
+            siIter.GetStatement()->BindId(1, drawingModel->GetModelId());
+            auto first = siIter.begin();
+            if (first != siIter.end())
+                {
+                ResolvedModelMapping rmm(*drawingModel, parentModel.GetV8Model(), first.GetMapping(), &v8Attachment);
+                _GetChangeDetector()._OnModelSeen(*this, rmm);
+
+                SyncInfo::ElementIterator elIter(GetDgnDb(), "ElementId=?");
+                elIter.GetStatement()->BindId(1, drawingElementId);
+                auto firstElMapping = elIter.begin();
+                if (firstElMapping != elIter.end())
+                    {
+                    ResolvedModelMappingWithElement rmme;
+                    rmme.SetResolvedModelMapping(rmm);
+                    rmme.SetModeledElementMapping(firstElMapping.GetV8ElementMapping()); 
+                    return rmme;
+                    }
+                }
+            }
+        }
+
     // Create a BIM drawing model to put them in.
     auto drawing = CreateDrawing(nullptr, Utf8String(v8Attachment.GetLogicalName()).c_str());
     
@@ -144,7 +188,25 @@ ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttac
     // Note that InsertConversionResults also inserts the new element mapping into syncinfo
     ElementConversionResults newDrawingElement;
     newDrawingElement.m_element = drawing;
+    
+    if (_WantProvenanceInBim())
+        {
+        newDrawingElement.m_sourceId = ComputeV8AttachmentIdPath(v8Attachment);
+        newDrawingElement.m_scope = parentModel;
+        newDrawingElement.m_jsonProps = ComputeV8AttachmentPathDescriptionAsJson(v8Attachment);
+        }
+
     DgnV8Api::EditElementHandle v8eh(v8Attachment.GetElementId(), &parentModel.GetV8Model());
+
+/* this is done automatically by InsertConversionResults
+    if (_WantProvenanceInBim())
+        {
+        SyncInfo::ElementProvenance elprov(v8eh, GetSyncInfo(), GetCurrentIdPolicy());
+        SyncInfo::V8ElementExternalSourceAspectData xsource(parentModel.GetDgnModel().GetModelId(), v8eh.GetElementId(), elprov);
+        auto aspect = SyncInfo::V8ElementExternalSourceAspect::CreateAspect(xsource, GetDgnDb());
+        aspect.AddAspect(*newDrawingElement.m_element);
+        }
+        */
     InsertConversionResults(newDrawingElement, v8eh, parentModel);
     rmme.SetModeledElementMapping(newDrawingElement.m_mapping); 
 
@@ -157,7 +219,6 @@ ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttac
     GetSyncInfo().InsertModel(smapping, drawingModel->GetModelId(), parentModel.GetV8Model(), refTrans);
 
     rmme.SetResolvedModelMapping(ResolvedModelMapping(*drawingModel, parentModel.GetV8Model(), smapping, &v8Attachment));
-
     return rmme;
     }
 
@@ -441,7 +502,7 @@ void Converter::SheetsConvertViewAttachments(ResolvedModelMapping const& v8Sheet
 
         auto i = drawingGenerator.m_drawingsForAttachments.find(v8DgnAttachment->GetElementId());
         bool isFromProxyGraphics = (i != drawingGenerator.m_drawingsForAttachments.end());
-        auto proxyModel = isFromProxyGraphics? i->second.GetDgnModel().ToGeometricModelP(): nullptr;
+       auto proxyModel = isFromProxyGraphics? i->second.GetDgnModel().ToGeometricModelP(): nullptr;
 
         auto it = updSeq.find(v8DgnAttachment);
         int seq = it == updSeq.end() ? 0 : it->second;

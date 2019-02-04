@@ -12,6 +12,7 @@
 //----------------------------------------------------------------------------------------
 struct GeomPartTests : public ConverterTestBaseFixture
     {
+    int GetGeomPartAspectCount(DgnDbR);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,8 +28,12 @@ static int getGeomPartCount(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int getGeomPartAspectCount(DgnDbR db)
+int GeomPartTests::GetGeomPartAspectCount(DgnDbR db)
     {
+    if (!m_params.GetWantProvenanceInBim())
+        {
+        return 0;
+        }
     auto sel = db.GetPreparedECSqlStatement("SELECT COUNT(*) from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind=?)");
     sel->BindText(1, SyncInfo::ExternalSourceAspect::KindToString(SyncInfo::ExternalSourceAspect::Kind::GeomPart), EC::IECSqlBinder::MakeCopy::No);
     sel->Step();
@@ -50,7 +55,7 @@ TEST_F(GeomPartTests, NormalCells)
     
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_EQ(expectedGeomPartCount, getGeomPartCount(*db));
-    ASSERT_EQ(expectedGeomPartAspectCount, getGeomPartAspectCount(*db));
+    ASSERT_EQ(expectedGeomPartAspectCount, GetGeomPartAspectCount(*db));
     db->CloseDb();
     db = nullptr;
     
@@ -59,7 +64,7 @@ TEST_F(GeomPartTests, NormalCells)
 
     db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_EQ(expectedGeomPartCount, getGeomPartCount(*db));
-    ASSERT_EQ(expectedGeomPartAspectCount, getGeomPartAspectCount(*db));
+    ASSERT_EQ(expectedGeomPartAspectCount, GetGeomPartAspectCount(*db));
     db->CloseDb();
     db = nullptr;
 
@@ -78,7 +83,7 @@ TEST_F(GeomPartTests, NormalCells)
 
     db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_EQ(expectedGeomPartCount + expectedRefGeomPartCount, getGeomPartCount(*db));
-    ASSERT_EQ(expectedGeomPartAspectCount + expectedRefGeomPartAspectCount, getGeomPartAspectCount(*db));
+    ASSERT_EQ(expectedGeomPartAspectCount + expectedRefGeomPartAspectCount, GetGeomPartAspectCount(*db));
     db->CloseDb();
     db = nullptr;
 
@@ -87,7 +92,7 @@ TEST_F(GeomPartTests, NormalCells)
 
     db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_EQ(expectedGeomPartCount + expectedRefGeomPartCount, getGeomPartCount(*db));
-    ASSERT_EQ(expectedGeomPartAspectCount + expectedRefGeomPartAspectCount, getGeomPartAspectCount(*db));
+    ASSERT_EQ(expectedGeomPartAspectCount + expectedRefGeomPartAspectCount, GetGeomPartAspectCount(*db));
     db->CloseDb();
     db = nullptr;
     }
@@ -105,7 +110,7 @@ TEST_F(GeomPartTests, SharedCells)
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_EQ(expectedGeomPartCount, getGeomPartCount(*db));
-    ASSERT_EQ(expectedGeomPartAspectCount, getGeomPartAspectCount(*db));
+    ASSERT_EQ(expectedGeomPartAspectCount, GetGeomPartAspectCount(*db));
 
     db->CloseDb();
     db = nullptr;
@@ -113,5 +118,5 @@ TEST_F(GeomPartTests, SharedCells)
 
     db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_EQ(expectedGeomPartCount, getGeomPartCount(*db));
-    ASSERT_EQ(expectedGeomPartAspectCount, getGeomPartAspectCount(*db));
+    ASSERT_EQ(expectedGeomPartAspectCount, GetGeomPartAspectCount(*db));
     }

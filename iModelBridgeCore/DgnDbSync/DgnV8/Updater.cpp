@@ -70,7 +70,16 @@ ResolvedImportJob Converter::GetResolvedImportJob(SyncInfo::ImportJob const& imp
         return ResolvedImportJob();
         }
 
-    return ResolvedImportJob(importJob, *jobSubject);
+    SyncInfo::V8ModelMapping mm;
+    auto status = GetSyncInfo().GetModelBySyncInfoId(mm, importJob.GetV8ModelSyncInfoId());
+    if (BSISUCCESS != status)
+        {
+        BeAssert(false);
+        ReportError(IssueCategory::CorruptData(), Issue::Error(), "ImportJob has bad V8ModelSyncInfoId");
+        return ResolvedImportJob();
+        }
+
+    return ResolvedImportJob(*jobSubject, importJob.GetTransform(), mm.GetModelId(), mm.GetV8ModelId().GetValue(), m_rootTrans, importJob.GetType(), importJob.GetRowId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,7 +112,7 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
 #ifdef TEST_EXTERNAL_SOURCE_ASPECT
     {
     // TODO - must filter on scope
-    // auto findAspect = converter.GetDgnDb().GetPreparedECSqlStatement("Select * from SourceInfo.SourceElementInfo where (SourceId=? and Kind='Element')");
+    // auto findAspect = converter.GetDgnDb().GetPreparedECSqlStatement("Select * from " XTRN_SRC_ASPCT_FullClassName " where (Identifier=? and Kind='Element')");
     // findAspect->BindInt64(1, v8eh.GetElementId());
     }
 #endif

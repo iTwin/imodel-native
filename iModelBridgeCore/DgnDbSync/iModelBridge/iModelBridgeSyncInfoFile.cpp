@@ -780,7 +780,7 @@ ECN::IECInstancePtr iModelExternalSourceAspect::CreateInstance(DgnElementId scop
     {
     auto instance = aspectClass.GetDefaultStandaloneEnabler()->CreateInstance();
     instance->SetValue(XTRN_SRC_ASPCT_Scope, ECN::ECValue(scope));
-    instance->SetValue(XTRN_SRC_ASPCT_SourceId, ECN::ECValue(sourceId.c_str()));
+    instance->SetValue(XTRN_SRC_ASPCT_Identifier, ECN::ECValue(sourceId.c_str()));
     instance->SetValue(XTRN_SRC_ASPCT_Kind, ECN::ECValue(kind));
     if (ss)
         SetSourceState(*instance, *ss);
@@ -800,7 +800,7 @@ ECN::ECClassCP iModelExternalSourceAspect::GetAspectClass(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId)
     {
-    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND SourceId=?)");
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Identifier=?)");
     sel->BindId(1, scopeId);
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -817,7 +817,7 @@ iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementByHash(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR hash)
     {
-    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Hash=?)");
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Checksum=?)");
     sel->BindId(1, scopeId);
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, hash.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -877,7 +877,7 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bool includeSourceState)
     {
-    Utf8PrintfString str("%-10.10s %8.8s %-8.8s", "Kind", "Scope", "SourceId");
+    Utf8PrintfString str("%-16.16s %8.8s %-32.32s %-32.32s", "Kind", "Scope", "Scope Element Class", "Identifier");
     if (includeSourceState)
         {
         // TBD
@@ -892,9 +892,11 @@ Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String iModelExternalSourceAspect::FormatForDump(bool includeProperties, bool includeSourceState) const
+Utf8String iModelExternalSourceAspect::FormatForDump(DgnDbR db, bool includeProperties, bool includeSourceState) const
     {
-    Utf8PrintfString str("%-10.10s %8.0llx %-8.8s", GetKind(), GetScope().GetValueUnchecked(), GetSourceId());
+    auto scopeEl = db.Elements().GetElement(GetScope());
+    auto scopeClass = scopeEl.IsValid()? scopeEl->GetElementClass()->GetFullName(): "?";
+    Utf8PrintfString str("%-16.16s %8.0llx %-32.32s %-32.32s", GetKind().c_str(), GetScope().GetValueUnchecked(), scopeClass, GetIdentifier().c_str());
     if (includeSourceState)
         {
         // TBD
@@ -902,7 +904,7 @@ Utf8String iModelExternalSourceAspect::FormatForDump(bool includeProperties, boo
     if (includeProperties)
         {
         ECN::ECValue props;
-        if (ECN::ECObjectsStatus::Success == m_instance->GetValue(props, XTRN_SRC_ASPCT_Properties) && !props.IsNull() && props.IsString())
+        if (ECN::ECObjectsStatus::Success == m_instance->GetValue(props, XTRN_SRC_ASPCT_JsonProperties) && !props.IsNull() && props.IsString())
             str.append("\t").append(props.GetUtf8CP());
         }
     return str;
@@ -932,12 +934,15 @@ void iModelExternalSourceAspect::Dump(DgnElementCR el, Utf8CP loggingCategory, N
 
     ILogger* logger = loggingCategory? LoggingManager::GetLogger(loggingCategory): nullptr;
 
-    outDump(logger, sev, Utf8PrintfString("Element %llx (%s)", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName()));
+    GeometrySource const* geom = el.ToGeometrySource();
+    Utf8String catid = geom? Utf8PrintfString("Category: %llu", geom->GetCategoryId().GetValue()): Utf8String();
+
+    outDump(logger, sev, Utf8PrintfString("Element ID: 0x%llx Class: %s Code: %s %s", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName(), el.GetCode().GetValueUtf8CP(), catid.c_str()));
 
     outDump(logger, sev, GetDumpHeaders(includeProperties, includeSourceState));
     for (auto const& aspect : aspects)
         {
-        auto str = aspect.FormatForDump(includeProperties, includeSourceState);
+        auto str = aspect.FormatForDump(el.GetDgnDb(), includeProperties, includeSourceState);
         outDump(logger, sev, str);
         }
     outDump(logger, sev, "");
@@ -1004,17 +1009,17 @@ DgnElementId iModelExternalSourceAspect::GetScope() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP iModelExternalSourceAspect::GetSourceId() const
+Utf8String iModelExternalSourceAspect::GetIdentifier() const
     {
     ECN::ECValue v;
-    m_instance->GetValue(v, XTRN_SRC_ASPCT_SourceId);
+    m_instance->GetValue(v, XTRN_SRC_ASPCT_Identifier);
     return v.GetUtf8CP();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP iModelExternalSourceAspect::GetKind() const 
+Utf8String iModelExternalSourceAspect::GetKind() const 
     {
     ECN::ECValue v;
     m_instance->GetValue(v, XTRN_SRC_ASPCT_Kind);
@@ -1029,14 +1034,14 @@ iModelExternalSourceAspect::SourceState iModelExternalSourceAspect::GetSourceSta
     SourceState ss;
 
     ECN::ECValue v;
-    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_Hash)) && !v.IsNull())
+    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_Checksum)) && !v.IsNull())
         {
-        ss.m_hash = v.GetUtf8CP();
+        ss.m_checksum = v.GetUtf8CP();
         }
 
-    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_LastModHash)) && !v.IsNull())
+    if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_Version)) && !v.IsNull())
         {
-        ss.m_lastModHash = v.GetUtf8CP();
+        ss.m_version = v.GetUtf8CP();
         }
 
     return ss;
@@ -1052,7 +1057,7 @@ void iModelExternalSourceAspect::SetProperties(rapidjson::Document const& json)
     json.Accept(writer);
 
     ECN::ECValue props(buffer.GetString());
-    m_instance->SetValue(XTRN_SRC_ASPCT_Properties, props);
+    m_instance->SetValue(XTRN_SRC_ASPCT_JsonProperties, props);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1062,7 +1067,7 @@ rapidjson::Document iModelExternalSourceAspect::GetProperties() const
     {
     rapidjson::Document json(rapidjson::kObjectType);
     ECN::ECValue props;
-    if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, XTRN_SRC_ASPCT_Properties) || !props.IsString() || props.IsNull())
+    if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, XTRN_SRC_ASPCT_JsonProperties) || !props.IsString() || props.IsNull())
         return json;
     json.Parse(props.GetUtf8CP());
     return json;
@@ -1073,8 +1078,8 @@ rapidjson::Document iModelExternalSourceAspect::GetProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelExternalSourceAspect::SetSourceState(ECN::IECInstanceR instance, SourceState const& ss)
     {
-    instance.SetValue(XTRN_SRC_ASPCT_Hash, ECN::ECValue(ss.m_hash.c_str()));
-    instance.SetValue(XTRN_SRC_ASPCT_LastModHash, ECN::ECValue(ss.m_lastModHash.c_str()));
+    instance.SetValue(XTRN_SRC_ASPCT_Checksum, ECN::ECValue(ss.m_checksum.c_str()));
+    instance.SetValue(XTRN_SRC_ASPCT_Version, ECN::ECValue(ss.m_version.c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1083,8 +1088,8 @@ void iModelExternalSourceAspect::SetSourceState(ECN::IECInstanceR instance, Sour
 iModelExternalSourceAspect::SourceState iModelBridgeSyncInfoFile::SourceState::GetAspectState() const
     {
     iModelExternalSourceAspect::SourceState state;
-    iModelExternalSourceAspect::DoubleToString(state.m_lastModHash, m_lmt);
-    state.m_hash = m_hash;
+    iModelExternalSourceAspect::DoubleToString(state.m_version, m_lmt);
+    state.m_checksum = m_hash;
     return state;
     }
 
@@ -1093,6 +1098,6 @@ iModelExternalSourceAspect::SourceState iModelBridgeSyncInfoFile::SourceState::G
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeSyncInfoFile::SourceState::SourceState(iModelExternalSourceAspect::SourceState aspectState)
     {
-    m_hash = aspectState.m_hash;
-    m_lmt = iModelExternalSourceAspect::DoubleFromString(aspectState.m_lastModHash.c_str());
+    m_hash = aspectState.m_checksum;
+    m_lmt = iModelExternalSourceAspect::DoubleFromString(aspectState.m_version.c_str());
     }

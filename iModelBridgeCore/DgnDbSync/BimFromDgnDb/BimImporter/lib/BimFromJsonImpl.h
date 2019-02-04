@@ -105,7 +105,6 @@ struct BimFromJsonImpl : DgnImportContext
         BentleyStatus CreateAndAttachSyncInfo();
         BentleyStatus AttachSyncInfo();
         BentleyStatus ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue, folly::Future<bool>& exporterFuture);
-        void AddToQueue(const char* entry);
         void SetDone() { m_isDone = true; }
         void FinalizeImport();
         void ShowProgress() { if (nullptr != m_meter) m_meter->ShowProgress(); }

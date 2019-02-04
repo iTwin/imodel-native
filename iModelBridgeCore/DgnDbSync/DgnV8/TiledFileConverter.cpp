@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/TiledFileConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -150,6 +150,14 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         return ResolvedModelMapping();
         }
     BeAssert(model->GetRefCount() > 0); // DgnModels holds references to all models that it loads
+
+    if (_WantProvenanceInBim())
+        {
+        auto modeledElement = m_dgndb->Elements().GetElement(model->GetModeledElementId())->CopyForEdit();
+        auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(v8Model, Transform::FromIdentity(), *this);
+        modelAspect.AddAspect(*modeledElement);
+        modeledElement->Update();
+        }
 
     auto v8mm = ResolvedModelMapping(*model, v8Model, mapping, v8ModelRef.AsDgnAttachmentCP());
 

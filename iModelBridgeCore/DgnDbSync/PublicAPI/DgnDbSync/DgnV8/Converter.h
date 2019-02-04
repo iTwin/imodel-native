@@ -301,30 +301,49 @@ struct ResolvedModelMapping
 struct ResolvedImportJob
 {
 protected:
-    SyncInfo::ImportJob m_mapping;
+    int64_t m_syncInfoImportJobRowId {};        // <-- temporary, until we get rid of syncinfo
     SubjectCPtr m_jobSubject;
+    DgnV8Api::ModelId m_v8MasterModel {};
+    Transform m_v8MasterModelTransform;
+    DgnModelId m_masterModel;
+    Transform m_jobTransform;
+    SyncInfo::ImportJob::Type m_type {};
 public:
     ResolvedImportJob() {}
-    ResolvedImportJob(SyncInfo::ImportJob const& j, SubjectCR s) : m_mapping(j), m_jobSubject(&s) {}
+    ResolvedImportJob(SubjectCR s, TransformCR jtr, DgnModelId masterModel, DgnV8Api::ModelId v8MasterModel, TransformCR v8tr, SyncInfo::ImportJob::Type typ, int64_t sijid = 0) : 
+        m_jobSubject(&s), m_masterModel(masterModel), m_v8MasterModel(v8MasterModel), m_v8MasterModelTransform(v8tr), m_jobTransform(jtr), m_type(typ), m_syncInfoImportJobRowId(sijid) {}
     ResolvedImportJob(SubjectCR s) : m_jobSubject(&s) {}
 
     bool IsValid() const {return m_jobSubject.IsValid();}
 
-    void FromSelect(BeSQLite::Statement& stmt) {m_mapping.FromSelect(stmt); /* WIP_IMPORT_JOB -- resolve the subject */}
+    //! Get the V8 master model for this job
+    DgnV8Api::ModelId GetV8MasterModelId() const { return m_v8MasterModel; }
+    void SetV8MasterModelId(DgnV8Api::ModelId mm) { m_v8MasterModel = mm; }
 
-    SyncInfo::ImportJob& GetImportJob() {return m_mapping;}
+    //! Get The *v8 master model* transform
+    TransformCR GetV8MasterModelTransform() const {return m_v8MasterModelTransform;}
+    void SetV8MasterModelTransform(TransformCR t) {m_v8MasterModelTransform=t;}
 
-    //! Get the root model for this job
-    SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const { return m_mapping.GetV8ModelSyncInfoId(); }
+    //! Get the iModel model that was created for the master model
+    DgnModelId GetMasterModelId() const { return m_masterModel; }
+    void SetMasterModelId(DgnModelId mm) { m_masterModel = mm; }
 
     //! Get the job subject
     SubjectCR GetSubject() const {BeAssert(IsValid()); return *m_jobSubject;}
 
+    //! Get The *job* transform
+    TransformCR GetJobTransform() const {return m_jobTransform;}
+    void SetJobTransform(TransformCR t) {m_jobTransform=t;}
+
     //! Get the type of converter that created this job
-    SyncInfo::ImportJob::Type GetConverterType() const {return m_mapping.GetType();}
+    SyncInfo::ImportJob::Type GetConverterType() const {return m_type;}
+    void SetConverterType(SyncInfo::ImportJob::Type t) {m_type=t;}
 
     //! Get the name prefix that is used by this job
-    Utf8StringCR GetNamePrefix() const { return m_mapping.GetPrefix(); }
+    Utf8StringCR GetNamePrefix() const { return ""; }
+
+    int64_t GetSyncInfoImportJobRowId() const {return m_syncInfoImportJobRowId;}
+    void SetSyncInfoImportJobRowId(int64_t v) {m_syncInfoImportJobRowId=v;}
 
 };
 
@@ -363,9 +382,14 @@ struct ResolvedModelMappingWithElement : ResolvedModelMapping
 //=======================================================================================
 struct ElementConversionResults
 {
+    /* *** For ExternalSourceAspect *** */
+    ResolvedModelMapping m_scope;     //!< INPUT: Optional scope element for ExternalSourceAspect. Defaults to mapping passed to ProcessConversionResults
+    Utf8String m_sourceId;            //!< INPUT: Optional SourceId for ExternalSourceAspect.
+    Utf8String m_jsonProps;           //!< INPUT: Optional JSON properties for ExternalSourceAspect.
     DgnElementPtr m_element;  //!< The DgnDb element created to represent the V8 element -- optional
     V8ECInstanceKey m_v8PrimaryInstance; //!< The primary ECInstance found on the V8 element
     bvector<bpair<V8ECInstanceKey,ECN::IECInstancePtr>> m_v8SecondaryInstanceMappings; //!< The secondary ECInstances found on the v8 element plus their converted IECInstance
+    /* ********************************* */
 
     bvector<ElementConversionResults> m_childElements; //!< Child elements
 
@@ -1212,6 +1236,7 @@ public:
     //! Look up the ImportJob that was created by a prior run of the converter for this V8 file, assuming that there is only one. This method
     //! fails if there is no ImportJob or if there is more than one ImportJob.
     ResolvedImportJob FindSoleImportJobForFile(DgnV8FileR rootFile);
+    ResolvedImportJob FindImportJobFromAspect(DgnV8FileR, DgnV8Api::ModelId const*);
 
     //! Look up the ImportJob that was created by a prior run of the converter for this V8 model, if any.
     ResolvedImportJob FindImportJobForModel(DgnV8ModelR rootModel);
@@ -1418,6 +1443,14 @@ public:
     //! @name Extracted drawing graphics
     //! @{
 
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentDescription(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescription(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescriptionAsJson(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentIdPath(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8ElementIdPath(DgnV8EhCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8ElementIdPath(DgnV8Api::DisplayPath const&);
+    DGNDBSYNC_EXPORT void ComputeXSAInfo(Utf8StringR idPath, Utf8StringR v8AttachmentJson, DgnV8EhCR eh, DgnAttachmentCP att);
+
     DgnCategoryId GetExtractionCategoryId(V8NamedViewType);
     DGNDBSYNC_EXPORT virtual DgnCategoryId _GetExtractionCategoryId(DgnAttachmentCR);
     DGNDBSYNC_EXPORT virtual DgnSubCategoryId _GetExtractionSubCategoryId(DgnCategoryId, DgnV8Api::ClipVolumePass pass,
@@ -1434,7 +1467,9 @@ public:
                                                                            SyncInfo::V8ElementSource const& attachmentMapping,
                                                                            SyncInfo::V8ElementMapping const& originalElementMapping,
                                                                            DgnV8Api::ElementHandle& eh,
-                                                                           DgnCategoryId categoryId, GeometryBuilder& builder);
+                                                                           DgnCategoryId categoryId, GeometryBuilder& builder,
+                                                                           Utf8StringCR sourceIdPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel); // <-- Needed by ExternalSourceAspect
+
     DGNDBSYNC_EXPORT virtual bool _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
@@ -1824,10 +1859,12 @@ public:
                                            IChangeDetector::SearchResults const& updatePlan, bool isParentElement = true);
     
     //! This function can be used to record a mapping from a V8 element to an existing BIM element. Rarely used.
-    SyncInfo::V8ElementMapping RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
+    SyncInfo::V8ElementMapping RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, 
+        Utf8StringCR sourceIdPath, Utf8StringCR propsJson); // <-- Needed for ExternalSourceAspect
 
     //! This function can be used to update the provenance data stored in an existing SyncInfo mapping. Rarely used.
-    SyncInfo::V8ElementMapping UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
+    SyncInfo::V8ElementMapping UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, ResolvedModelMapping const& scope, 
+        Utf8StringCR sourceIdPath, Utf8StringCR propsJson); // <-- Needed for ExternalSourceAspect
 
     //! Convenience method to create a new, non-persistent element.
     static DgnElementPtr CreateNewElement(DgnDbApi::DgnModel&, DgnClassId, DgnCategoryId, DgnCode, Utf8CP label = nullptr);
@@ -2405,7 +2442,6 @@ public:
     protected:
     DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type v8ConverterType);
     DGNDBSYNC_EXPORT SubjectCPtr GetSourceMasterModelSubject(DgnV8ModelR v8RootModel);
-    DGNDBSYNC_EXPORT Utf8String ComputeReferenceSubjectName(DgnAttachmentCR);
 
     public:
 

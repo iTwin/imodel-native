@@ -377,9 +377,12 @@ struct SyncInfo
     struct V8ElementExternalSourceAspectData
         {
         DgnModelId m_scope;         // The model that was created (earlier) in the iModel from the V8 model that contains this V8 element.
-        DgnV8Api::ElementId m_v8Id; // The V8 element's ID
+        DgnV8Api::ElementId m_v8Id {}; // The V8 element's ID
+        Utf8String m_v8IdPath;      // Or, a path of V8 element IDs, in case of elements in nested references.
         ElementProvenance m_prov;   // The V8 element's state
-        V8ElementExternalSourceAspectData(DgnModelId scope, DgnV8Api::ElementId v8Id, ElementProvenance const& prov) : m_scope(scope), m_v8Id(v8Id), m_prov(prov) {}
+        Utf8String m_propsJson;
+        V8ElementExternalSourceAspectData(DgnModelId scope, DgnV8Api::ElementId v8Id, ElementProvenance const& prov, Utf8StringCR propsJson) : m_scope(scope), m_v8Id(v8Id), m_prov(prov), m_propsJson(propsJson) {}
+        V8ElementExternalSourceAspectData(DgnModelId scope, Utf8StringCR idPath, ElementProvenance const& prov, Utf8StringCR propsJson) : m_scope(scope), m_v8IdPath(idPath), m_prov(prov), m_propsJson(propsJson) {}
         };
     
     //! Uniquely identifies a V8 element
@@ -500,11 +503,13 @@ struct SyncInfo
       protected:
         friend struct SyncInfo;
         ExternalSourceAspect(ECN::IECInstance* i) : iModelExternalSourceAspect(i) {}
+        static Utf8String FormatV8ElementId(DgnV8Api::ElementId v8Id) {return Utf8PrintfString("%llu", v8Id);}  // DgnV8Api::ElementId is a UInt64
+        static Utf8String FormatV8ModelId(DgnV8Api::ModelId v8Id) {return Utf8PrintfString("%ld", v8Id);}       // DgnV8Api::ModelId is a Int32
 
       public:
         enum class Kind
             {
-            Element, Model, DrawingGraphic, Level, GeomPart, ViewDefinition, BridgeJoblet
+            Element, Model, ProxyGraphic, Level, GeomPart, ViewDefinition, BridgeJoblet
             };
 
         static Utf8CP KindToString(Kind kind)
@@ -513,7 +518,7 @@ struct SyncInfo
                 {
                 case Kind::Element: return "Element";
                 case Kind::Model: return "Model";
-                case Kind::DrawingGraphic: return "DrawingGraphic";
+                case Kind::ProxyGraphic: return "ProxyGraphic";
                 case Kind::Level: return "Level";
                 case Kind::GeomPart: return "GeomPart";
                 case Kind::ViewDefinition: return "ViewDefinition";
@@ -527,7 +532,7 @@ struct SyncInfo
             {
             if (0==strcmp(str,"Element")) return Kind::Element;
             if (0==strcmp(str,"Model")) return Kind::Model;
-            if (0==strcmp(str,"DrawingGraphic")) return Kind::DrawingGraphic;
+            if (0==strcmp(str,"ProxyGraphic")) return Kind::ProxyGraphic;
             if (0==strcmp(str,"Level")) return Kind::Level;
             if (0==strcmp(str,"GeomPart")) return Kind::GeomPart;
             if (0==strcmp(str,"ViewDefinition")) return Kind::ViewDefinition;
@@ -542,7 +547,7 @@ struct SyncInfo
     struct LevelExternalSourceAspect : ExternalSourceAspect
         {
         private:
-        static Utf8String FormatSourceId(DgnV8Api::LevelId v8Id) {return Utf8PrintfString("%d", v8Id);}
+        static Utf8String FormatSourceId(DgnV8Api::LevelId v8Id) {return FormatV8ElementId(v8Id);}
         LevelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
         DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const&, DgnV8ModelCR, Converter&);
 
@@ -556,32 +561,23 @@ struct SyncInfo
         DGNDBSYNC_EXPORT static BentleyStatus FindFirstSubCategory(DgnSubCategoryId&, DgnV8ModelCR v8Model, uint32_t flid, Level::Type ltype, Converter& converter);
         };
 
-#ifdef WIP_DrawingGraphicExternalSourceAspect
     //! Identifies a drawing graphic in the V8 source
     struct DrawingGraphicExternalSourceAspect : ExternalSourceAspect
         {
-        // Scope = RepositoryLink for V8 File that contains:
-        //                          "DrawingV8ModelSyncInfoId BIGINT NOT NULL," // A V8 type-100 (DgnAttachment) element - represents the section as a whole -- this is the model that contains the type 100
-        // SourceId                 "AttachmentV8ElementId BIGINT NOT NULL,"       //              "                                                         -- this is the ID of the type 100
-        // OriginalV8ModelSyncInfoId BIGINT NOT NULL,"   // A V8 3D element that was sectioned
-        //      Will have to become the RepositoryLink that contains:
-        // OriginalV8ElementId BIGINT NOT NULL,"         //              "
-        // Category BIGINT NOT NULL,"                    // The BIM category of the graphic
-        // Host element             "Graphic BIGINT NOT NULL,"                     // The BIM DrawingGraphic element that contains all of the section graphics derived from the above element (in this particular attachment's section)
-        /*
-                                    "PRIMARY KEY(DrawingV8ModelSyncInfoId,AttachmentV8ElementId,"
-                                     "OriginalV8ModelSyncInfoId,OriginalV8ElementId,"
-                                     "Category)"
-                                     */
+        private:
+        DrawingGraphicExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        public:
+        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
+        DGNDBSYNC_EXPORT static DrawingGraphicExternalSourceAspect CreateAspect(DgnModelCR bimDrawingModel, Utf8StringCR idPath, Utf8StringCR propsJson, DgnDbR db);
+        DGNDBSYNC_EXPORT static DgnElementId FindDrawingGraphicBySource(DgnModelCR drawingModel, Utf8StringCR idPath, DgnCategoryId drawingGraphicCategory, DgnClassId elementClassId, DgnDbR db);
         };
-#endif
 
     //! Identifies the source of a ViewDefinition. The source is identified by the ElementId of the V8 view element. 
     //! This aspect *also* stores a view name as data, not as the primary identifier.
     struct ViewDefinitionExternalSourceAspect : ExternalSourceAspect
         {
         private:
-        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return Utf8PrintfString("%lld", v8Id);}
+        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
 
         public:
         static constexpr Utf8CP json_v8ViewName = "v8ViewName";
@@ -628,7 +624,7 @@ struct SyncInfo
       private:
         V8ElementExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
       public:
-        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return Utf8PrintfString("%lld", v8Id);}
+        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
         static Utf8String FormatSourceId(DgnV8EhCR el) {return FormatSourceId(el.GetElementId());}
 
         //! Create a new aspect in memory. Caller must call AddAspect, passing in the element that is to have this aspect.
@@ -636,10 +632,12 @@ struct SyncInfo
         
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
         //! Use this method only in the case where the element is known to have only a single element kind aspect.
-        static V8ElementExternalSourceAspect GetAspect(DgnElementR, DgnV8Api::ElementId);
+        static V8ElementExternalSourceAspect GetAspect(DgnElementR, Utf8StringCR);
+        static V8ElementExternalSourceAspect GetAspect(DgnElementR el, DgnV8Api::ElementId eid) {return GetAspect(el, FormatSourceId(eid));}
         //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
         //! Use this method only in the case where the element is known to have only a single element kind aspect.
-        static V8ElementExternalSourceAspect GetAspect(DgnElementCR, DgnV8Api::ElementId);
+        static V8ElementExternalSourceAspect GetAspect(DgnElementCR, Utf8StringCR);
+        static V8ElementExternalSourceAspect GetAspect(DgnElementCR el, DgnV8Api::ElementId eid) {return GetAspect(el, FormatSourceId(eid));}
 
         DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov); 
 
@@ -656,7 +654,7 @@ struct SyncInfo
       private:
         V8ModelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
       public:
-        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return Utf8PrintfString("%lld", v8Id);}
+        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return FormatV8ElementId(v8Id);}
         static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}
 
         //! Create a new aspect in memory. Caller must call AddAspect, passing in the model element that is to have this aspect.
@@ -673,6 +671,8 @@ struct SyncInfo
         DGNDBSYNC_EXPORT Transform GetTransform() const;
         DGNDBSYNC_EXPORT Utf8String GetV8ModelName() const;
 
+        // DGNDBSYNC_EXPORT static DgnModelId FindModelBySourceId(DgnElementId scopeId, DgnV8Api::ModelId, TransformCR t, DgnDbR);
+
 
         #ifdef TEST_EXTERNAL_SOURCE_ASPECT
         void AssertMatch(V8ModelMapping const&);
@@ -680,25 +680,33 @@ struct SyncInfo
         };
 
     //! Marker for a Subject that represents a Bridge "joblet", that is, a combination of bridge and master file/model.
+    //! The Scope is the BIM Model element. That is what links this subject's aspect to the master model.
     struct BridgeJobletExternalSourceAspect : ExternalSourceAspect
         {
         enum class ConverterType {RootModel=0, TiledFile=1}; //!< persistent data. do not change!
 
-      private:
         BridgeJobletExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
-      public:
-        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return Utf8PrintfString("%lld", v8Id);}
+        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return FormatV8ModelId(v8Id);}
         static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}
 
-        //! Create a new aspect in memory. Caller must call AddAspect, passing in the model element that is to have this aspect.
-        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect CreateAspect(DgnV8ModelCR masterModel, ConverterType, Converter&);
+        //! Create a new aspect in memory.
+        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect CreateAspect(DgnModelId masterModel, DgnV8Api::ModelId v8MasterModelId, ConverterType, Converter&);
         
+        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect GetAspect(SubjectCR subj, DgnV8Api::ModelId v8Id);
+        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect GetAspect(SubjectR subj, DgnV8Api::ModelId v8Id);
+
+        // DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindAspectBySourceId(Utf8StringCR bridgeName, DgnV8ModelCR masterModel, Converter& converter);
+        DGNDBSYNC_EXPORT static std::tuple<BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> FindAspect(Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, DgnV8Api::ModelId const*, Converter& converter);
+
+        DGNDBSYNC_EXPORT Utf8String GetBridgeName() const;
+
         //! Update the root transform
         DGNDBSYNC_EXPORT void SetTransform(TransformCR);
         //! Get the root transform
         DGNDBSYNC_EXPORT Transform GetTransform() const;
 
-        DGNDBSYNC_EXPORT DgnV8Api::ModelId GetMasterModelId() const;
+        DgnModelId GetMasterModelId() const {return DgnModelId(GetScope().GetValueUnchecked());}
+        DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8MasterModelId() const;
         DGNDBSYNC_EXPORT ConverterType GetConverterType() const;
         };
 
@@ -733,6 +741,7 @@ struct SyncInfo
         static BentleyStatus FindById(ImportJob&, DgnDbCR, SyncInfo::V8ModelSyncInfoId);
         static void CreateTable(BeSQLite::Db&);
 
+        int64_t GetRowId() const {return m_ROWID;}
         SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const { return m_v8RootModel; }
         void SetV8ModelSyncInfoId(SyncInfo::V8ModelSyncInfoId i) {m_v8RootModel=i;}
         Type GetType() const {return m_type;}
@@ -1134,7 +1143,8 @@ public:
     //! Record a mapping between a DrawingGraphic and the V8 element that it was derived from. 
     DGNDBSYNC_EXPORT BentleyStatus InsertExtractedGraphic(V8ElementSource const& attachment,
                                                           V8ElementSource const& originalElement,
-                                                          DgnCategoryId categoryId, DgnElementId extractedGraphic);
+                                                          DgnCategoryId categoryId, DgnElementId extractedGraphic,
+                                                          DgnModelCR bimDrawingModel, Utf8StringCR idPathOptional, Utf8StringCR attachmentInfo); // <-- this is for new external source aspect
     //! Delete mappings for all extracted graphics associated with the specified V8 element.
     DGNDBSYNC_EXPORT BentleyStatus DeleteExtractedGraphics(V8ElementSource const& attachment,
                                                            V8ElementSource const& originalElement);
@@ -1143,9 +1153,10 @@ public:
                                                                    V8ElementSource const& originalElement,
                                                                    DgnCategoryId category);
     //! Return the DrawingGraphic that was derived from the specified V8 element. 
-    DGNDBSYNC_EXPORT DgnElementId FindExtractedGraphic(V8ElementSource const& attachment,
-                                                       V8ElementSource const& originalElement,
-                                                       DgnCategoryId categoryId);
+    DGNDBSYNC_EXPORT DgnElementId FindExtractedGraphic(V8ElementSource const& attachment,       
+                                                       V8ElementSource const& originalElement,  
+                                                       DgnCategoryId categoryId,                
+                                                       DgnModelCR scope_bimDrawingModel, Utf8StringCR idPath, DgnClassId); // <-- this is for new external source aspect
 
     //! Record a mapping between a DgnV8 View and a DgnDb ID
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo, Utf8CP viewName);
@@ -1187,8 +1198,7 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus InsertImportJob(ImportJob const& importJob);
 
     //! Update the import job's transform, prefix, and subjectid.
-    //! @param importJob    The importJob info to update
-    DGNDBSYNC_EXPORT BentleyStatus UpdateImportJob(ImportJob const& importJob);
+    DGNDBSYNC_EXPORT BentleyStatus UpdateImportJob(int64_t rowId, TransformCR);
     //! @}
     };
 

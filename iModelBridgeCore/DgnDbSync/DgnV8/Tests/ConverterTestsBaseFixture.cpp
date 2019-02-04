@@ -78,7 +78,8 @@ void ConverterTestBaseFixture::SetUp()
     m_params.SetConfigFile(configFileName);
     m_params.SetSkipUnchangedFiles(false);  // file time granularity is 1 second. That's too long for an automated test.
     m_params.SetWantThumbnails(false); // It takes too long, and most tests do not look at them
-    m_params.SetWantProvenanceInBim(true);
+    if (getenv("IMODEL_BRIDGE_WANT_PROVENANCE_IN_BIM"))
+        m_params.SetWantProvenanceInBim(true);
     m_count = 0;
     m_opts.m_useTiledConverter = false;
     BentleyApi::BeFileName::CreateNewDirectory(GetOutputDir());
@@ -678,7 +679,7 @@ DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Ap
         estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
                       BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
                       XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.SourceId AS INT) = ?)");
+                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.Identifier AS INT) = ?)");
         estmt.BindInt64(1, eV8Id);
 
         DbResult status = estmt.Step();

@@ -151,7 +151,6 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
 
-    BeAssert(!GetRepositoryLinkFromAppData(*GetRootV8File()).IsValid());
     WriteRepositoryLink(*GetRootV8File());  // Find the RepositoryLink element for the root file now. This is the order in which the older converter did it.
 
     m_importJob = FindImportJobForModel(*GetRootModelP());
@@ -190,22 +189,41 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
     {
-    // Look up the root model in syncinfo, using the ID saved in the ImportJob record. We can't use GetModelForDgnV8Model, because m_rootTrans might have changed.
-    SyncInfo::V8ModelMapping syncInfoModelMapping;
-    auto status = GetSyncInfo().GetModelBySyncInfoId(syncInfoModelMapping, m_importJob.GetV8ModelSyncInfoId());
-    if (BSISUCCESS != status)
-        {
-        BeAssert(false);
-        ReportError(IssueCategory::CorruptData(), Issue::Error(), "ImportJob has bad V8ModelSyncInfoId");
-        return BSIERROR;
-        }
-    auto rootBimModel = GetDgnDb().Models().GetModel(syncInfoModelMapping.GetModelId());
+    auto rootBimModel = GetDgnDb().Models().GetModel(m_importJob.GetMasterModelId());
     if (!rootBimModel.IsValid())
         {
         BeAssert(false);
         ReportError(IssueCategory::CorruptData(), Issue::Error(), "V8ModelMapping has bad DgnModelId");
         return BSIERROR;
         }
+
+    SyncInfo::V8ModelMapping syncInfoModelMapping;
+    if (!_WantProvenanceInBim())
+        {
+        // Look up the root model in syncinfo, using the ID saved in the ImportJob record. We can't use GetModelForDgnV8Model, because m_rootTrans might have changed.
+        auto status = GetSyncInfo().GetModelBySyncInfoId(syncInfoModelMapping, SyncInfo::V8ModelSyncInfoId(m_importJob.GetSyncInfoImportJobRowId()));
+        if (BSISUCCESS != status)
+            {
+            BeAssert(false);
+            ReportError(IssueCategory::CorruptData(), Issue::Error(), "ImportJob has bad V8ModelSyncInfoId");
+            return BSIERROR;
+            }
+        }
+    else
+        {
+        // Assume that the root model in syncinfo is the first entry for this file and v8 model id.
+        SyncInfo::ModelIterator it(*m_dgndb, "V8FileSyncInfoId=? AND V8Id=?");
+        it.GetStatement()->BindInt(1, GetV8FileSyncInfoIdFromAppData(*m_rootFile).GetValue());
+        it.GetStatement()->BindInt(2, m_importJob.GetV8MasterModelId());
+        auto entry = it.begin();
+        if (entry == it.end())
+            {
+            BeAssert(false);
+            return BSIERROR;
+            }
+        syncInfoModelMapping = entry.GetMapping();
+        }
+
     m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping, nullptr);
     _AddResolvedModelMapping(m_rootModelMapping);
     return BSISUCCESS;
@@ -224,10 +242,20 @@ void SpatialConverterBase::ApplyJobTransformToRootTrans()
 
     m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
 
-    if (!Converter::IsTransformEqualWithTolerance(jobTrans,m_importJob.GetImportJob().GetTransform()))
+    if (!Converter::IsTransformEqualWithTolerance(jobTrans,m_importJob.GetJobTransform()))
         {
-        m_importJob.GetImportJob().SetTransform(jobTrans);
-        GetSyncInfo().UpdateImportJob(m_importJob.GetImportJob()); // update syncinfo to record the new baseline
+        m_importJob.SetJobTransform(jobTrans);
+        if (_WantProvenanceInBim())
+            {
+            auto ed = m_importJob.GetSubject().MakeCopy<Subject>();
+            auto aspect = SyncInfo::BridgeJobletExternalSourceAspect::GetAspect(*ed, m_importJob.GetV8MasterModelId());
+            aspect.SetTransform(jobTrans);
+            ed->Update();
+            }
+        else
+            {
+            GetSyncInfo().UpdateImportJob(m_importJob.GetSyncInfoImportJobRowId(), jobTrans); // update syncinfo to record the new baseline
+            }
         }
     }
 
@@ -380,7 +408,7 @@ SubjectCPtr SpatialConverterBase::GetSourceMasterModelSubject(DgnV8ModelR v8Root
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SpatialConverterBase::ComputeReferenceSubjectName(DgnAttachmentCR attachment)
+Utf8String Converter::ComputeV8AttachmentDescription(DgnAttachmentCR attachment)
     {
     BeAssert(nullptr != attachment.GetDgnModelP());
     auto& v8Model = *attachment.GetDgnModelP();
@@ -411,6 +439,111 @@ Utf8String SpatialConverterBase::ComputeReferenceSubjectName(DgnAttachmentCR att
         refname.append(", ").append(modelName);
 
     return refname;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeV8AttachmentPathDescription(DgnAttachmentCR att)
+    {
+    Utf8String path;
+    auto parentAttachment = att.GetParentDgnAttachmentCP();
+    if (nullptr != parentAttachment)
+        {
+        path = ComputeV8AttachmentPathDescription(*parentAttachment);
+        path.append(" / ");
+        }
+    path.append(ComputeV8AttachmentDescription(att));
+    return path;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeV8AttachmentPathDescriptionAsJson(DgnAttachmentCR att)
+    {
+    auto attachmentInfo = ComputeV8AttachmentPathDescription(att);
+    
+    rapidjson::Document json(rapidjson::kObjectType);
+    auto& allocator = json.GetAllocator();
+    json.AddMember("v8AttachmentInfo", rapidjson::Value(attachmentInfo.c_str(), allocator), allocator);
+    
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    json.Accept(writer);
+
+    return buffer.GetString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeV8AttachmentIdPath(DgnAttachmentCR att)
+    {
+    Utf8String path;
+    auto parentAttachment = att.GetParentDgnAttachmentCP();
+    if (nullptr != parentAttachment)
+        {
+        path = ComputeV8AttachmentIdPath(*parentAttachment);
+        path.append("/");
+        }
+    path.append(SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(att.GetElementId()));
+    return path;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeV8ElementIdPath(DgnV8EhCR eh)
+    {
+    Utf8String path;
+    auto attachment = eh.GetModelRef()->AsDgnAttachmentCP();
+    if (nullptr != attachment)
+        {
+        path = ComputeV8AttachmentIdPath(*attachment);
+        path.append("/");
+        }
+    path.append(SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(eh.GetElementId()));
+    return path;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeV8ElementIdPath(DgnV8Api::DisplayPath const& dpath)
+    {
+    Utf8String path;
+    auto attachment = dpath.GetRoot()->AsDgnAttachmentCP();
+    if (nullptr != attachment)
+        {
+        path = ComputeV8AttachmentIdPath(*attachment);
+        path.append("/");
+        }
+    path.append(SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(dpath.GetTailElem()->GetElementId()));
+    return path;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::ComputeXSAInfo(Utf8StringR idPath, Utf8StringR v8AttachmentJson, DgnV8EhCR eh, DgnAttachmentCP att)
+    {
+    // If the element is *known* to be a DgnAttachment, then format it.
+    if (nullptr != att)
+        {
+        idPath = ComputeV8AttachmentIdPath(*att);
+        v8AttachmentJson = ComputeV8AttachmentPathDescriptionAsJson(*att);
+        return;
+        }
+
+    // This is normal element. It may be in an attached model.
+    idPath = ComputeV8ElementIdPath(eh);
+
+    att = eh.GetModelRef()->AsDgnAttachmentCP();
+    if (nullptr != att)
+        v8AttachmentJson = ComputeV8AttachmentPathDescriptionAsJson(*att);
+    else
+        v8AttachmentJson.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -482,12 +615,6 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
     JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());
 
-    if (_WantProvenanceInBim())
-        {
-        auto aspect = SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(*GetRootModelP(), (SyncInfo::BridgeJobletExternalSourceAspect::ConverterType)jtype, *this);
-        aspect.AddAspect(*ed);
-        }
-
     SubjectCPtr jobSubject = ed->InsertT<Subject>();
     if (!jobSubject.IsValid())
         return ImportJobCreateStatus::FailedInsertFailure;
@@ -515,17 +642,34 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     m_rootModelMapping = GetModelForDgnV8Model(*m_rootModelRef->GetDgnModelP(), m_rootTrans);
 
     // 6. Now that we have the root model's syncinfo id, we can define the syncinfo part of the importjob.
-    SyncInfo::ImportJob importJob;
-    importJob.SetV8ModelSyncInfoId(m_rootModelMapping.GetV8ModelSyncInfoId());
-    importJob.SetPrefix(_GetNamePrefix());
-    importJob.SetType(jtype);
-    importJob.SetSubjectId(jobSubject->GetElementId());
-    importJob.SetTransform(BentleyApi::Transform::FromIdentity());
-    if (BSISUCCESS != GetSyncInfo().InsertImportJob(importJob))
-        return ImportJobCreateStatus::FailedExistingRoot;
+	m_importJob.SetV8MasterModelId(m_rootModelRef->GetModelId());
+    m_importJob.SetV8MasterModelTransform(m_rootTrans);
+	m_importJob.SetMasterModelId(m_rootModelMapping.GetDgnModel().GetModelId());
+	m_importJob.SetJobTransform(BentleyApi::Transform::FromIdentity());
+	m_importJob.SetConverterType(jtype);
+    if (_WantProvenanceInBim())
+        {
+		auto ed = m_importJob.GetSubject().CopyForEdit();
+        auto aspect = SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(m_rootModelMapping.GetDgnModel().GetModelId(), m_rootModelMapping.GetV8ModelId().GetValue(), 
+                                                                                    (SyncInfo::BridgeJobletExternalSourceAspect::ConverterType)jtype, *this);
+        aspect.AddAspect(*ed);
+		if (!ed->Update().IsValid())
+            return ImportJobCreateStatus::FailedInsertFailure;
+		}
+    else
+        {
+        SyncInfo::ImportJob importJob;
+        importJob.SetV8ModelSyncInfoId(m_rootModelMapping.GetV8ModelSyncInfoId());
+        importJob.SetPrefix(_GetNamePrefix());
+        importJob.SetType(jtype);
+        importJob.SetSubjectId(jobSubject->GetElementId());
+        importJob.SetTransform(BentleyApi::Transform::FromIdentity());
+        if (BSISUCCESS != GetSyncInfo().InsertImportJob(importJob))
+            return ImportJobCreateStatus::FailedExistingRoot;
 
-    m_importJob.GetImportJob() = importJob;     // Update the syncinfo part of the import job
-
+        m_importJob.SetSyncInfoImportJobRowId(importJob.GetRowId());
+        }
+        		
     return ImportJobCreateStatus::Success;
     }
 
@@ -582,10 +726,10 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     {
     BeFileName fn(v8File.GetFileName().c_str());
     bool isMyFile = _GetParams().IsFileAssignedToBridge(fn);
-    if (!isMyFile)
+    if (!isMyFile && !v8File.IsIModel())
         {
-        // Always own a .i.dgn file and all its embedded references:
-        if (v8File.IsIModel() || v8File.IsEmbeddedFile())
+        // Always own embedded references:
+        if (v8File.IsEmbeddedFile())
             return  true;
 
         // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
@@ -706,7 +850,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
             continue;
             }
 
-        SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, ComputeReferenceSubjectName(*attachment), ModelSubjectType::References);
+        SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, ComputeV8AttachmentDescription(*attachment), ModelSubjectType::References);
         if (!myRefsSubject.IsValid())
             {
             BeAssert(false);
@@ -790,7 +934,7 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
         {
         auto importJob = FindSoleImportJobForFile(*m_rootFile);
         if (importJob.IsValid())
-            return GetSyncInfo().GetV8ModelIdFromV8ModelSyncInfoId(importJob.GetV8ModelSyncInfoId());
+            return importJob.GetV8MasterModelId();
         }
 
     if (!IsV8Format(*m_rootFile))

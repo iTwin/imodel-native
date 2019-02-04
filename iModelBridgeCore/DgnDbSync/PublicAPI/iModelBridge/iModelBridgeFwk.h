@@ -192,7 +192,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String          m_bcsProjectId;       //!< iModelHub project 
         Utf8String          m_repositoryName;     //!< A repository in the iModelHub project
         Http::Credentials   m_credentials;        //!< User credentials
-        Utf8String          m_callBackurl;
+        Utf8String          m_callBackurl;       //! < The OIDC callback url to receive access token
+        BeSQLite::BeBriefcaseId m_briefcaseId;     //! optional briefcaseId if the bim file is missing.
         WebServices::UrlProvider::Environment m_environment;    //!< Connect environment
         uint8_t             m_maxRetryCount = 3;  //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         bvector<WString>    m_bargs;
@@ -386,6 +387,8 @@ public:
             logger->messagev(severity, "%s|%.0f millisecs", formattedDescription.c_str(), stopWatch.GetElapsedSeconds() * 1000.0);
             }
         }
+
+    BeSQLite::BeBriefcaseId GetBriefcaseId();
 };
 
 END_BENTLEY_DGN_NAMESPACE
