@@ -48,7 +48,7 @@ public:
     Dgn::DgnDbStatus UpdateGeometry (Profile const& relatedProfile);
 
 protected:
-    virtual bool CreateGeometry();
+    virtual bool _CreateGeometry();
 
 private:
     virtual IGeometryPtr _CreateShapeGeometry() const { return nullptr; }

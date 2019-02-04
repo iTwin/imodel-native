@@ -89,14 +89,6 @@ bool CenterLineCShapeProfile::_Validate() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr CenterLineCShapeProfile::_CreateShapeGeometry() const
-    {
-    return ProfilesGeometry::CreateCenterLineCShape (*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double CenterLineCShapeProfile::GetFlangeWidth() const
@@ -163,12 +155,12 @@ void CenterLineCShapeProfile::SetGirth (double value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CenterLineCShapeProfile::CreateGeometry()
+bool CenterLineCShapeProfile::_CreateGeometry()
     {
-    if (!T_Super::CreateGeometry())
+    if (!T_Super::_CreateGeometry())
         return false;
 
-    IGeometryPtr centerLineGeometryPtr = _CreateCenterLineGeometry();
+    IGeometryPtr centerLineGeometryPtr = CreateCenterLineGeometry();
 
     if (centerLineGeometryPtr.IsNull())
         return false;
@@ -181,9 +173,17 @@ bool CenterLineCShapeProfile::CreateGeometry()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr CenterLineCShapeProfile::_CreateCenterLineGeometry()
+IGeometryPtr CenterLineCShapeProfile::CreateCenterLineGeometry()
     {
     return ProfilesGeometry::CreateCenterLineForCShape (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CenterLineCShapeProfile::_CreateShapeGeometry() const
+    {
+    return ProfilesGeometry::CreateCenterLineCShape (*this);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -45,11 +45,11 @@ protected:
     explicit CenterLineCShapeProfile (CreateParams const& params); //!< @private
 
     virtual bool _Validate() const override; //!< @private
-    virtual bool CreateGeometry () override;  //!< @private
-    virtual IGeometryPtr _CreateShapeGeometry() const override;  //!< @private
+    virtual bool _CreateGeometry () override;  //!< @private
+    IGeometryPtr _CreateShapeGeometry() const;  //!< @private
 
 private:
-    IGeometryPtr _CreateCenterLineGeometry();
+    IGeometryPtr CreateCenterLineGeometry();
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineCShapeProfile)

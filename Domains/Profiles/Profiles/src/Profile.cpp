@@ -58,7 +58,7 @@ DgnDbStatus Profile::_OnInsert()
     if (!_Validate())
         return DgnDbStatus::ValidationFailed;
 
-    if (!CreateGeometry())
+    if (!_CreateGeometry())
         return DgnDbStatus::NoGeometry;
 
     return T_Super::_OnInsert();
@@ -72,7 +72,7 @@ DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
     if (!_Validate())
         return DgnDbStatus::ValidationFailed;
 
-    if (!CreateGeometry())
+    if (!_CreateGeometry())
         return DgnDbStatus::NoGeometry;
 
     return T_Super::_OnUpdate (original);
@@ -109,7 +109,7 @@ void Profile::_CopyFrom (DgnElement const& source)
 * was updated via a call to Profile::UpdateGeometry.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Profile::CreateGeometry()
+bool Profile::_CreateGeometry()
     {
     if (m_geometryUpdated)
         return true;
@@ -117,6 +117,7 @@ bool Profile::CreateGeometry()
     IGeometryPtr geometryPtr = _CreateShapeGeometry();
     if (geometryPtr.IsNull())
         return false;
+
     SetShape (*geometryPtr);
 
     return true;
