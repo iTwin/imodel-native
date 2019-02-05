@@ -814,7 +814,6 @@ Utf8String FormatParsingSet::GetSignature(bool distinct) //, int* colonCount)
     if (m_segs.size() == 0)
         return signature;
 
-    signature.get_allocator().allocate(m_segs.size() * 4 + 2);
     ParsingSegmentType type;
 
     for (FormatParsingSegmentP fps = m_segs.begin(); fps != m_segs.end(); fps++)
