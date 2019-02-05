@@ -239,3 +239,16 @@ WSRepositoryClientTests.SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsA
     # To be equal to: uniqueRequestIds
     #       Which is: 1
     # [  FAILED  ] WSRepositoryClientTests.SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId (1 ms)
+
+UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
+    # Random, MacOSx64, NDEBUG, https://bentleycs.visualstudio.com/iModelTechnologies/_build/results?buildId=61997&_a=summary
+    # [ RUN      ] UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
+    # /Users/platform-bld/vsts_agent_a/_work/1/s/iModelCore/WSClient/Tests/UnitTests/Published/WebServices/Configuration/UrlProviderTests.cpp:139: Failure
+    # Mock function called more times than expected - taking default action specified at:
+    # /Users/platform-bld/vsts_agent_a/_work/1/s/iModelCore/WSClient/Tests/UnitTests/Published/WebServices/Configuration/UrlProviderTests.cpp:143:
+    #     Function call: GetUrl(@0x7f88a27126d8 "Mobile.PunchListWsg", 103)
+    #           Returns: 0x7f88a27124d0
+    #          Expected: to be called once
+    #            Actual: called twice - over-saturated and active
+    # Feb  5 10:00:53  Be[26261] <Error>: WSClient: URL 'Mobile.PunchListWsg' is not configured on buddi service for region '103'. Will use fallback URL.
+    # [  FAILED  ] UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl (37 ms)
