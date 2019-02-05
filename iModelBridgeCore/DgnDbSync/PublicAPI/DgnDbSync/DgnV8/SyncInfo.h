@@ -241,10 +241,10 @@ struct SyncInfo
     struct V8ElementExternalSourceAspectIteratorByV8Id : V8ElementExternalSourceAspectIterator 
     {
     private:
-        void Bind(uint64_t elId) {m_stmt->Reset(); m_stmt->BindText(1, V8ElementExternalSourceAspect::FormatSourceId(elId).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);}
+        void Bind(uint64_t elId) {m_stmt->Reset(); m_stmt->BindText(GetParameterIndex("idparm"), V8ElementExternalSourceAspect::FormatSourceId(elId).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);}
     public:
-        V8ElementExternalSourceAspectIteratorByV8Id(DgnModelCR model, DgnV8Api::ElementId eid) : V8ElementExternalSourceAspectIterator(model, "Identifier=?") {Bind(eid);}
-        V8ElementExternalSourceAspectIteratorByV8Id(DgnModelCR model, DgnV8EhCR eh) : V8ElementExternalSourceAspectIterator(model, "Identifier=?") {Bind(eh.GetElementId());}
+        V8ElementExternalSourceAspectIteratorByV8Id(DgnModelCR model, DgnV8Api::ElementId eid) : V8ElementExternalSourceAspectIterator(model, "Identifier=:idparm") {Bind(eid);}
+        V8ElementExternalSourceAspectIteratorByV8Id(DgnModelCR model, DgnV8EhCR eh) : V8ElementExternalSourceAspectIterator(model, "Identifier=:idparm") {Bind(eh.GetElementId());}
     };
 
     struct V8ElementExternalSourceAspectIteratorByChecksum : SyncInfo::V8ElementExternalSourceAspectIterator
@@ -254,10 +254,10 @@ struct SyncInfo
             Utf8String provHash;
             iModelExternalSourceAspect::HexStrFromBytes(provHash, hash.m_buffer);
             m_stmt->Reset(); 
-            m_stmt->BindText(1, provHash.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+            m_stmt->BindText(GetParameterIndex("checksumparm"), provHash.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
             }
     public:
-        V8ElementExternalSourceAspectIteratorByChecksum(DgnModelCR model, SyncInfo::ElementHash const& hash) : V8ElementExternalSourceAspectIterator(model, "Checksum=?") {Bind(hash);}
+        V8ElementExternalSourceAspectIteratorByChecksum(DgnModelCR model, SyncInfo::ElementHash const& hash) : V8ElementExternalSourceAspectIterator(model, "Checksum=:checksumparm") {Bind(hash);}
     };
 
     struct LevelExternalSourceAspect : ExternalSourceAspect

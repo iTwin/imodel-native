@@ -162,8 +162,7 @@ ResolvedModelMapping TiledFileConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
         // not found in syncinfo => treat as insert
         }
 
-    if (!GetRepositoryLinkId(*v8Model.GetDgnFileP()).IsValid())
-        WriteRepositoryLink(*v8Model.GetDgnFileP());
+    GetRepositoryLinkId(*v8Model.GetDgnFileP());
 
     auto model = m_dgndb->Models().GetModel(targetModelId);
     if (!model.IsValid())
@@ -273,8 +272,7 @@ void TiledFileConverter::ConvertTile(BeFileNameCR tileFileName)
         return;
 
     BeAssert(_GetIdPolicy(*m_rootFile) == _GetIdPolicy(*tileFile));
-    if (!GetRepositoryLinkId(*tileFile).IsValid())
-        WriteRepositoryLink(*tileFile);
+    GetRepositoryLinkId(*tileFile);
 
     _ConvertSpatialLevelTable(*tileFile); // This actually checks that there are NO levels to be converted -- that all levels in the tile's level table were already found in the root's level table. 
 

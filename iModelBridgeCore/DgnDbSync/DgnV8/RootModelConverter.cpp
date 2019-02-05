@@ -115,8 +115,7 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
 
     // Detect all V8 models. This process also classifies 2d design models and loads and fills drawings and sheets.
     // The of models that we find will be fed into the ECSchema conversion logic. These functions will ALSO enroll the v8files that they find in syncinfo.
-    if (!GetRepositoryLinkId(*m_rootFile).IsValid())
-        WriteRepositoryLink(*m_rootFile);
+    GetRepositoryLinkId(*m_rootFile);
     
     for (auto xdomain : XDomainRegistry::s_xdomains)
         xdomain->_OnBeginConversion(*this, *m_rootModelRef->GetDgnModelP());
@@ -152,7 +151,7 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
 
-    WriteRepositoryLink(*GetRootV8File());  // Find the RepositoryLink element for the root file now. This is the order in which the older converter did it.
+    GetRepositoryLinkId(*GetRootV8File());  // Find the RepositoryLink element for the root file now. This is the order in which the older converter did it.
 
     m_importJob = FindSoleImportJobForFile(*m_rootFile);
 
@@ -545,8 +544,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
         return ImportJobCreateStatus::FailedExistingRoot;
         }
 
-    if (!GetRepositoryLinkId(*GetRootV8File()).IsValid())
-        WriteRepositoryLink(*GetRootV8File());
+    GetRepositoryLinkId(*GetRootV8File());
 
     auto sourceMasterModelSubject = GetSourceMasterModelSubject(*GetRootModelP());
 
@@ -653,8 +651,6 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
 ResolvedImportJob Converter::FindSoleImportJobForFile(DgnV8FileR rootFile)
     {
     auto repositoryLinkId = GetRepositoryLinkId(rootFile);
-    if (!repositoryLinkId.IsValid())
-        repositoryLinkId = WriteRepositoryLink(rootFile);
         
     // Note: we only support a single master *model* per master *file*.
     // So, there will be one and only one master model subject for this file.
@@ -855,7 +851,6 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
     // FindSpatialV8Models has already called ClassifyNormal2dModels (thisV8File);
 
     RepositoryLinkId v8FileId = GetRepositoryLinkId(thisV8File);
-    WriteRepositoryLink(thisV8File);    // write the RepositoryLink element for this v8 file now. This the order in which the older converter did it.
 
     // NB: We must not try to skip entire files if we need to follow reference attachments. Instead, we can skip 
     //      the elements in a model if the model (i.e., the file) is unchanged.
@@ -895,7 +890,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
                                                                                         IssueReporter::FmtAttachment(*attachment).c_str()).c_str());
             continue;
             }
-        iModelExternalSourceAspect::Dump(*myRefsSubject, nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
+        // iModelExternalSourceAspect::Dump(*myRefsSubject, nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
 
         SetSpatialParentSubject(*myRefsSubject); // >>>>>>>>>> Push spatial parent subject
 

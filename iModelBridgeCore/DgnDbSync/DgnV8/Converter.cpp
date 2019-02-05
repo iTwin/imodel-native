@@ -293,10 +293,13 @@ RepositoryLinkId Converter::GetRepositoryLinkId(DgnV8FileCR file) const
         
     SyncInfo::V8FileInfo finfo = const_cast<Converter*>(this)->GetSyncInfo().ComputeFileInfo(file);
     auto aspect = SyncInfo::RepositoryLinkExternalSourceAspect::FindAspectByIdentifier(GetDgnDb(), finfo.m_uniqueName);
-    if (!aspect.IsValid())
-        return RepositoryLinkId();
-    SetRepositoryLinkInAppData(file, aspect.GetRepositoryLinkId());
-    return aspect.GetRepositoryLinkId();
+    if (aspect.IsValid())
+        {
+        SetRepositoryLinkInAppData(file, aspect.GetRepositoryLinkId());
+        return aspect.GetRepositoryLinkId();
+        }
+
+    return const_cast<Converter*>(this)->WriteRepositoryLink(const_cast<DgnV8FileR>(file));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3611,8 +3614,7 @@ void ConverterLibrary::SetRootModelAndSubject(DgnV8ModelR rootV8Model, SubjectCR
     m_rootFile = rootV8Model.GetDgnFileP();
 
     CreateProvenanceTables(); // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
-    if (!GetRepositoryLinkId(*m_rootFile).IsValid())
-        WriteRepositoryLink(*m_rootFile);
+    GetRepositoryLinkId(*m_rootFile);
     FindSpatialV8Models(*GetRootModelP());
     FindV8DrawingsAndSheets();
 

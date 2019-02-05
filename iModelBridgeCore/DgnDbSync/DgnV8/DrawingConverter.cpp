@@ -257,7 +257,7 @@ bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
         return make_bpair(foundmm, false); // v8model has already been imported
         }
 	
-    WriteRepositoryLink(*v8model.GetDgnFileP());    // The old converter created a repository link for each sheet file, so we will do it, too. This is harmless if there's already a link for this file.
+    GetRepositoryLinkId(*v8model.GetDgnFileP());    // The old converter created a repository link for each sheet file, so we will do it, too. This is harmless if there's already a link for this file.
 
     _OnDrawingModelFound(v8model);	// We may have reached a new drawing model (e.g., in the case where we *generated* the model to adjust for annotation scale.)
 

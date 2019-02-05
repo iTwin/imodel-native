@@ -545,15 +545,15 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     DoUpdate(m_dgnDbFileName, rootV8FileName);
     ASSERT_EQ(1, m_count) << L"Update should have found the one element that I added.";
 
-    //  Count the models
+    //  Count *all* of the models, from both files
     if (true)
         {
         SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8ModelExternalSourceAspectIterator models(*FindRepositoryLinkByFilename(*syncInfo.m_dgndb, rootV8FileName));
-        int count = 0;
-        for (SyncInfo::V8ModelExternalSourceAspectIterator::Entry entry = models.begin(); entry != models.end(); ++entry)
-            ++count;
+        auto stmt = syncInfo.m_dgndb->GetPreparedECSqlStatement("SELECT COUNT(*) FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind=?)");
+        stmt->BindText(1, SyncInfo::ExternalSourceAspect::Kind::Model, BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BentleyApi::BeSQLite::BE_SQLITE_ROW, stmt->Step());
+        int count = stmt->GetValueInt(0);
         ASSERT_EQ(nModelsExpected, count);
         }
 
