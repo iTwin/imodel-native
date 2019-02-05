@@ -90,7 +90,7 @@ LicenseStatus ClientWithKeyImpl::StartApplication()
 		(LicenseStatus::Offline == licStatus) ||
 		(LicenseStatus::Trial == licStatus))
 	{
-		int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+		//int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
 
 		//UsageHeartbeat(currentTimeUnixMs);
 		//LogPostingHeartbeat(currentTimeUnixMs);
