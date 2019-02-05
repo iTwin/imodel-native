@@ -1027,7 +1027,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
         HFCPtr<ClipRegistry> m_clipRegistry;
 
-        std::atomic<size_t> m_texId = 0;
+        std::atomic<size_t> m_texId = {0};
 
         SharedTextureManager m_texMgr;
                 
