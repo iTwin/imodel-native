@@ -4866,6 +4866,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                 clipComplete->Append(*clip);
             }
             bvector<size_t> polyfaceIndices;
+
             if (meshP.get() != nullptr)
                 hasClip = GetRegionsFromClipVector3D(polyfaces, polyfaceIndices, clipComplete.get(), this->m_SMIndex->IsFromCesium() ? polyHeader.get() : polyfaceQuery, isMaskPrimitive);
         }

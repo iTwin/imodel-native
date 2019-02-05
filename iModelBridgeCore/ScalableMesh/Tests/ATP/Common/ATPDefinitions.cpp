@@ -5166,8 +5166,8 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
             if (allTestPass)
                 {
-                nOfTrianglesResult = GetTriangleCount(newMesh.get(), clipP);
-                allTestPass = nOfTrianglesResult == nOfTriangles3SM;
+//                nOfTrianglesResult = GetTriangleCount(newMesh.get(), clipP);
+               // allTestPass = nOfTrianglesResult == nOfTriangles3SM;
                 }
             break;
             }

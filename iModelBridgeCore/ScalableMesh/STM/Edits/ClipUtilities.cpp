@@ -1814,8 +1814,6 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
     {
         local_polyfaces.resize(currentClip->size()+1);
         clipPolys.push_back(currentClip);
-        for (size_t i =0; i < currentClip->size(); ++i)
-            polyfaceIndices.push_back(i);
     }
     else
         {
@@ -1829,10 +1827,9 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
 #else
                 ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
 #endif
-                if(!isMask.empty())
-                    newClip->back()->SetIsMask(isMask[&primitive - &clip->front()]);
+               // if(!isMask.empty())
+               //     newClip->back()->SetIsMask(isMask[&primitive - &clip->front()]);
                 clipPolys.push_back(newClip);
-                polyfaceIndices.push_back(i);
                 }
             ++i;
             }
