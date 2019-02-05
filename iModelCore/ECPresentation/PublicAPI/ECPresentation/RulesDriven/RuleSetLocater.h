@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/RuleSetLocater.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -352,7 +352,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RuleSetLocaterManager : IRulesetLocaterManager, I
         bool operator<(CacheKey const& other) const
             {
             return m_connectionId < other.m_connectionId
-                || m_connectionId == other.m_connectionId && m_rulesetId < other.m_rulesetId;
+                || (m_connectionId == other.m_connectionId && m_rulesetId < other.m_rulesetId);
             }
         };
 
@@ -365,14 +365,15 @@ struct EXPORT_VTABLE_ATTRIBUTE RuleSetLocaterManager : IRulesetLocaterManager, I
         };
 
 private:
-    mutable bool m_cacheRulesetsOnCreated;
     bvector<RuleSetLocaterPtr> m_locaters;
+    mutable bool m_isLocating;
     mutable bmap<CacheKey, bvector<CacheValue>> m_rulesetsCache;
     IConnectionManagerCR m_connections;
     mutable BeMutex m_mutex;
 
 private:
     void _OnConnectionEvent(ConnectionEvent const&) override;
+    void RemoveCachedRulesets(Utf8CP rulesetId);
 
 protected:
     // IRulesetLocaterManager

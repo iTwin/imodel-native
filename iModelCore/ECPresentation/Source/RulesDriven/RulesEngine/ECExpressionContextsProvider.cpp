@@ -1516,7 +1516,14 @@ public:
 
         return true;
         }
-    bool Comma() override {ARGUMENTS_PRECONDITION(); Append(","); return true;}
+    bool Comma() override
+        {
+        ARGUMENTS_PRECONDITION();
+        if (m_inArguments)
+            HandleScopeEnd();
+        Append(",");
+        return true;
+        }
     bool OpenParens() override {ARGUMENTS_PRECONDITION(); Append("("); return true;}
     bool CloseParens() override {ARGUMENTS_PRECONDITION(); Append(")"); return true;}
 

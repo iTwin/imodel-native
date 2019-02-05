@@ -5,3 +5,22 @@
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+RulesDrivenECPresentationManagerMultithreadingRealConnectionTests.SetsUpCustomFunctionsInBothPrimaryAndProxyConnections
+
+    # VSTS#72433
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 02/01/2019
+    # c:\build\src\mds06t\ECPresentation\Tests\NonPublished\RulesEngine\PresentationManagerMultithreadingTests.cpp(255): error:       Expected: 1
+    # To be equal to: contentSet.GetSize()
+    # Which is: 0
+
+PresentationTestingUnitTests.SwapVals
+
+    # VSTS#72550
+    # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 02/02/2019
+    # Crash
+
+PresentationTestingUnitTests.NoChildNodes
+
+    # VSTS#72559
+    # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 02/04/2019
+    # Crash

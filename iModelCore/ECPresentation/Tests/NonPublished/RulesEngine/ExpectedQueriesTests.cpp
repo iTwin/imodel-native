@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ExpectedQueriesTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ExpectedQueries.h"
@@ -1767,6 +1767,31 @@ void ExpectedQueries::RegisterExpectedQueries()
         expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_GadgetHasSprocket.GetId());
 
         RegisterQuery("RelatedInstanceNodes_InstanceFilter_IsOfClassFunction", *expected);
+        }
+
+    // RelatedInstanceNodes_InstanceFilter_AllowsAccessingParentNode
+        {
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&ret_Gadget);
+
+        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        nested->SelectContract(*contract, "this");
+        nested->From(ret_Gadget, true, "this");
+        nested->From(ret_Sprocket, false, "parent", true);
+        nested->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", true, false));
+        nested->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
+        nested->Where("[parent].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
+        nested->Where("[this].[Description] = [parent].[Description]", BoundQueryValuesList(), true);
+
+        ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
+        expected->SelectAll();
+        expected->From(*nested);
+        expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetParentECClassId(ret_Sprocket.GetId());
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_GadgetHasSprockets.GetId());
+
+        RegisterQuery("RelatedInstanceNodes_InstanceFilter_AllowsAccessingParentNode", *expected);
         }
 
     // RelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority

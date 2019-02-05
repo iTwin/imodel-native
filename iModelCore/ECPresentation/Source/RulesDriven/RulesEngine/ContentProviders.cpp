@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentProviders.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -566,6 +566,7 @@ struct DescriptorBuilder : ContentSpecificationsVisitor
 private:
     ContentDescriptorBuilder::Context* m_context;
     ContentDescriptorBuilder* m_descriptorBuilder;
+    CustomFunctionsContext* m_functionsContext;
     ContentDescriptorPtr m_descriptor;
     
 protected:
@@ -646,12 +647,19 @@ public:
             context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetLocale(), 
             context.GetInputKeys(), context.GetSelectionInfo());
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
+
+        m_functionsContext = new CustomFunctionsContext(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), 
+            context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), 
+            context.GetECExpressionsCache(), context.GetNodesFactory(), nullptr, nullptr, nullptr, 
+            context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr);
+        if (context.IsLocalizationContext())
+            m_functionsContext->SetLocalizationProvider(*localizationProvider);
         }
     
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
-    ~DescriptorBuilder() {DELETE_AND_CLEAR(m_descriptorBuilder); DELETE_AND_CLEAR(m_context);}
+    ~DescriptorBuilder() {DELETE_AND_CLEAR(m_descriptorBuilder); DELETE_AND_CLEAR(m_context); DELETE_AND_CLEAR(m_functionsContext);}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            07/2017
@@ -917,8 +925,7 @@ void ContentProvider::Initialize()
         return;
 
     m_initialized = true;
-    m_executor->SetQuery(*_GetQuery());
-        
+
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), 
         GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
         GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, 

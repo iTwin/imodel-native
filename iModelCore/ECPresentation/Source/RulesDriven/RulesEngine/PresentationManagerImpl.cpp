@@ -69,7 +69,7 @@ IUserSettingsManager* RulesDrivenECPresentationManagerDependenciesFactory::_Crea
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::Impl::Impl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, Params const& params)
-    : m_localState(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr)
+    : m_localState(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr), m_localizationProvider(nullptr)
     {
     m_locaters = dependenciesFactory._CreateRulesetLocaterManager(params.GetConnections());
     m_userSettings = dependenciesFactory._CreateUserSettingsManager(params.GetPaths().GetTemporaryDirectory());
