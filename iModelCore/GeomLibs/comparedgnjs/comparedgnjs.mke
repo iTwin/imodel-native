@@ -6,7 +6,7 @@
 %include mdl.mki
 
 AppName = comparedgnjs
-CCompPDBName = $(comparedgnjs)
+CCompPDBName = $(AppName)
 o = $(OutputRootDir)Build/GeomLibsTest/
 
 ProductDir = $(OutputRootDir)Product/
