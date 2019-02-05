@@ -990,6 +990,9 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::AddChi
     m_nodeHeader.m_IsBranched = true;
     m_nodeHeader.m_apSubNodeID.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
 
+    childNodeP->m_createdNodeMap = m_createdNodeMap;
+    m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(childNodeP->GetBlockID().m_integerID, childNodeP));
+
     for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);
 
     SetDirty(true);
