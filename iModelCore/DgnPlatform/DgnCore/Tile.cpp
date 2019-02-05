@@ -530,7 +530,6 @@ protected:
     void _AddPolyfaceR(PolyfaceHeaderR, bool) override;
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
     bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) override;
-    bool _WantPreBakedBody(IBRepEntityCR) override;
 
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override;
     GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
@@ -2771,20 +2770,6 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR lsSymb, IFacetOptionsPtr&
         }
 
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileBuilder::_WantPreBakedBody(IBRepEntityCR body)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID)
-    // ###TODO: Take this tile's tolerance into account; also would be nice to detect single planar sheets since the BRepCurveVector should suffice even if curved.
-    bool curved = BRepUtil::HasCurvedFaceOrEdge(body);
-    return !curved;
-#else
-    return true;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

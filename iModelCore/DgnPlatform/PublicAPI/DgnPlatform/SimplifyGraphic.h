@@ -56,7 +56,6 @@ protected:
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
     DGNPLATFORM_EXPORT bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) override;
     DGNPLATFORM_EXPORT bool _WantStrokePattern(PatternParamsCR pattern) override;
-    bool _WantPreBakedBody(IBRepEntityCR) override { return false; }
 
     bool _IsOpen() const override {return m_isOpen;}
     Render::GraphicPtr _Finish() override;
