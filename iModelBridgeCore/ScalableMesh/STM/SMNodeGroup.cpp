@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.cpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -759,10 +759,10 @@ bool SMNodeGroup::DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, 
                         {
                         // Construct path to tempory folder
                         BeFileName tempPath;
-#ifndef VANCOUVER_API
-						if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
+                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))                        
 #else
-                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+                        if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
 #endif
                             BeAssert(false); // Couldn't retrieve the temporary path
                         tempPath.AppendToPath(L"RealityDataCache");
@@ -1020,7 +1020,7 @@ Json::Value * SMGroupCache::GetNodeFromCache(const uint64_t & nodeId)
     }
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre 08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

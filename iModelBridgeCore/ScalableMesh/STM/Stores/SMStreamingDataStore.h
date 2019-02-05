@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMStreamingDataStore.h $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -83,6 +83,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             WString GetServerID() const
                 {
                 return WString(m_serverID.c_str(), BentleyCharEncoding::Utf8);
+                }
+
+            Utf8String GetUtf8ServerID() const
+                {
+                return m_serverID;
                 }
 
             WString GetGUID() const

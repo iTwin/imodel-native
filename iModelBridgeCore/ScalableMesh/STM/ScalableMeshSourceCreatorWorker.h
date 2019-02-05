@@ -44,7 +44,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         HFCPtr<MeshIndexType> GetDataIndex();
 
         
-        void GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks);
+        void GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);
         
         void GetTaskPlanFileName(BeFileName& taskPlanFileName) const;
 
@@ -74,7 +74,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         virtual                             ~Impl();
 
         
-        StatusInt                    CreateGenerationTasks();
+        StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName);
         
         StatusInt                    CreateMeshTasks();        
 

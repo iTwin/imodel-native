@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:13 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -88,7 +88,7 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     {
     private:
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
         //Avoid assert added on Bim02    
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return std::numeric_limits<uint32_t>::max(); }
 #endif

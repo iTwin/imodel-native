@@ -448,7 +448,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
     
     void ImportThread(DgnPlatformLib::Host* hostToAdopt, BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporterPtr& importerPtr)
         {    
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
         DgnPlatformLib::AdoptHost(*hostToAdopt);
 #else
         assert(!"No AdoptHost on BIM0200 - Untested behavior");

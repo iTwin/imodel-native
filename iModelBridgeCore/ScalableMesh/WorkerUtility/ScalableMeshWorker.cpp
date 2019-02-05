@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_IMAGEPP
 
 
-#define TRACE_ON 1
+//#define TRACE_ON
 
 
 BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
@@ -230,8 +230,8 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
         if (argv[iArg] == wcsstr(argv[iArg], L"-help") || argv[iArg] == wcsstr(argv[iArg], L"-h"))
             return PrintUsage(argv[0]);        
         if (argv[iArg] == wcsstr(argv[iArg], L"-taskFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-tf="))
-            {
-            BeFileName::FixPathName(m_taskFolderName, GetArgValueW(argv[iArg]).c_str());
+            {            
+            m_taskFolderName.assign(GetArgValueW(argv[iArg]).c_str());
             if (!BeFileName::DoesPathExist(m_taskFolderName.c_str()))
                 {
                 fwprintf(stderr, L"%ls is not an existing folder\n", m_taskFolderName.c_str());
@@ -265,7 +265,32 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             m_useGroupingStrategy = true;            
             continue;
             }
-       
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"-groupingSize=") || argv[iArg] == wcsstr(argv[iArg], L"-gs="))
+            {
+            m_groupingSize = BeStringUtilities::Wtoi(GetArgValueW(argv[iArg]).c_str());            
+            continue;
+            }                        
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"-startAsService") || argv[iArg] == wcsstr(argv[iArg], L"-ss"))
+            {
+            m_startAsService = true;            
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"-resultFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-rf="))
+            {            
+            m_resultFolderName.assign(GetArgValueW(argv[iArg]).c_str());
+            if (!BeFileName::DoesPathExist(m_resultFolderName.c_str()))
+                {
+                fwprintf(stderr, L"%ls is not an existing folder\n", m_resultFolderName.c_str());
+                return PrintUsage(argv[0]);
+                }
+
+            continue;
+            }
+
+               
         fwprintf(stderr, L"Unrecognized command line option: %ls\n", argv[iArg]);
         return PrintUsage(argv[0]);
         }
@@ -298,7 +323,24 @@ void ScalableMeshWorker::Start()
     if (m_nbExtraWorkers > 0)
         {        
         Utf8String cmdStr(m_workerProcessName);                
-        cmdStr.append(Utf8PrintfString(" -taskFolder=\"%s\"", Utf8String(m_taskFolderName.c_str()).c_str()));
+
+        cmdStr.append(Utf8PrintfString(" -taskFolder=\"%s\\\"", Utf8String(m_taskFolderName.c_str()).c_str()));        
+        
+        if (m_useGroupingStrategy)
+            {
+            cmdStr.append(Utf8PrintfString(" -gr"));
+            cmdStr.append(Utf8PrintfString(" -gs=%ui", m_groupingSize));
+            }
+        
+        if (!m_resultFolderName.empty())
+            {
+            cmdStr.append(Utf8PrintfString(" -rf=\"%s\\\"", Utf8String(m_resultFolderName.c_str()).c_str()));        
+            }
+        
+        if (m_startAsService)
+            {
+            cmdStr.append(Utf8PrintfString(" -ss", Utf8String(m_resultFolderName.c_str()).c_str()));
+            }
         
         for (uint16_t taskId = 0; taskId < m_nbExtraWorkers; taskId++)
             {
@@ -331,7 +373,7 @@ void ScalableMeshWorker::Start()
             }
         }    
 
-    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers, m_useGroupingStrategy);
+    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers, m_useGroupingStrategy, m_groupingSize, m_startAsService, m_resultFolderName);
 
     taskScheduler.Start();
     }

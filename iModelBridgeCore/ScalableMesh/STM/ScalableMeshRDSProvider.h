@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ScalableMeshRDSProvider.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,8 +11,13 @@
 |   Header File Dependencies
 +--------------------------------------------------------------------------------------*/
 
+#ifdef DGNDB06_API
+	#include <RealityPlatform/RealityDataService.h>
+#else
     #include <RealityPlatformTools/RealityDataService.h>
-    USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+#endif	
+
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
 #include <ScalableMesh/IScalableMeshRDSProvider.h>
@@ -47,10 +52,11 @@ private:
 
     Utf8String m_ProjectGuid;
     Utf8String m_PWCSMeshGuid;
+    Utf8String m_ServerUrl;
     AzureConnection m_AzureConnection;
     std::function<void(Utf8StringR, time_t&)>* m_tokenProviderP = nullptr;
 
-    static void InitializeRealityDataService(const Utf8String& projectID);
+    static void InitializeRealityDataService(const Utf8String& serverUrl, const Utf8String& projectID);
 
     bool        IsTokenExpired();
     void        UpdateToken();   
@@ -71,9 +77,9 @@ protected:
 public:
 
     static Utf8String GetBuddiUrl();
-    static bool IsHostedByRDS(const Utf8String& projectGuid, const Utf8String& url);
+    static bool IsHostedByRDS(const Utf8String& serverUrl, const Utf8String& projectGuid, const Utf8String& url);
 
-    explicit ScalableMeshRDSProvider(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid);
+    explicit ScalableMeshRDSProvider(const Utf8String& serverUrl, const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid);
     virtual ~ScalableMeshRDSProvider();
 };
 

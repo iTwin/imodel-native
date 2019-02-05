@@ -96,7 +96,7 @@ private:
     SMGroupGlobalParameters& operator=(const SMGroupGlobalParameters&) = delete;
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
 #endif
 
@@ -133,7 +133,7 @@ private:
     SMGroupCache(node_header_cache* nodeCache);
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     virtual uint32_t _GetExcessiveRefCountThreshold() const override;
 #endif
 
@@ -503,7 +503,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ADD_GROUPING_STRATEGY_FRIENDSHIPS
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     private:
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
 #endif
@@ -1394,10 +1394,10 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         auto wktString = pi_Group->GetParameters()->GetWellKnownText();
         if (!wktString.empty())
             SMMasterHeader["GCS"] = Utf8String(wktString.c_str());
-#ifndef VANCOUVER_API
-		SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
-#else
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToUtf8String();
+#else        
+        SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
 #endif
 
         SMMasterHeader["tileToDb"] = Json::Value(Json::arrayValue);

@@ -1270,9 +1270,9 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
 ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
     RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(
 #ifndef VANCOUVER_API
-        new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex)
+        new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex, false)
 #else
- SMStoredMemoryPoolGenericBlobItem<MTGGraph>::CreateItem(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex)
+        SMStoredMemoryPoolGenericBlobItem<MTGGraph>::CreateItem(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex, false)
 #endif
         );
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());

@@ -14,7 +14,7 @@
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshPolicy.h>
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
     #include <DgnPlatform\DgnPlatformErrors.r.h>
     #include <DgnPlatform\DgnPlatformBaseType.r.h>
 

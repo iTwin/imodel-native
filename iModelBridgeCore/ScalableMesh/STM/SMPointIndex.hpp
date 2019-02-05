@@ -11,6 +11,22 @@
 
 using namespace ISMStore;
 
+
+//=======================================================================================
+// @bsimethod                                                     Mathieu.St-Pierre 10/19
+//=======================================================================================
+SMNodeDataToLoad::SMNodeDataToLoad()
+    {
+    m_pts = true;    
+    };
+
+//=======================================================================================
+// @bsimethod                                                     Mathieu.St-Pierre 10/19
+//=======================================================================================
+SMNodeDataToLoad::~SMNodeDataToLoad()
+    {
+    }
+
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
@@ -4033,6 +4049,15 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
     HINVARIANTS;
 
     return returnValue;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Mathieu.St-Pierre   01/19
+//=======================================================================================
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadData(SMNodeDataToLoad* dataToLoad)
+    {
+    if (dataToLoad == nullptr || dataToLoad->m_pts)
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr = GetPointsPtr(true);
     }
 
 //=======================================================================================

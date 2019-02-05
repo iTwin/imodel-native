@@ -297,7 +297,7 @@ DgnPlatformLib::Host* hostToAdopt,
 #endif
 int threadId)
         {        
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
         DgnPlatformLib::AdoptHost(*hostToAdopt);
 #else
         //assert(!"No AdoptHost on BIM0200 - Untested behavior");
@@ -1122,7 +1122,7 @@ DgnPlatformLib::Host* hostToAdopt,
 #endif
 size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr* displayCacheManagerPtr)
             {  
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
             DgnPlatformLib::AdoptHost(*hostToAdopt);
 #else
             //assert(!"No AdoptHost on BIM0200 - Untested behavior");

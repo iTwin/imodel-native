@@ -3,10 +3,18 @@
 #include <ScalableMesh/ScalableMeshLib.h>
 #ifndef VANCOUVER_API
     #include <ThreeMxReader/ThreeMXReader.h>    
+    
+    #ifdef DGNDB06_API
+        #include <DgnPlatform/ImageUtilities.h>
+    #else
+        #include <FreeImage/FreeImage.h>
+    #endif
+    
 #else
     #include <Acute3d/ThreeMXReader.h>    
+    #include <FreeImage/FreeImage.h>
 #endif
-#include    <FreeImage/FreeImage.h>
+
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshCreator.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
@@ -178,6 +186,40 @@ private:
         m_nodeArray.push_back(std::move(node));
     }
 
+#ifdef DGNDB06_API
+
+    void _DecodeJpegData(Byte const* data, size_t dataSize, bvector<Byte>& rgb, int& width, int& height)
+    {
+        // Decode the JPEG buffer
+        ImageUtilities::RgbImageInfo outInfo, inInfo;
+        memset(&inInfo, 0, sizeof(inInfo));
+        inInfo.hasAlpha = true;
+        inInfo.isBGR = true;
+        inInfo.isTopDown = true;
+
+        bvector<Byte> bgra;
+        if (SUCCESS != ImageUtilities::ReadImageFromJpgBuffer(bgra, outInfo, data, dataSize, inInfo))
+        {
+            m_convertStatus = SMFrom3MXStatus::ReadJPEGError;
+            return;
+        }
+
+        // Transform the BGRA buffer into an RGB buffer
+        width  = outInfo.width;
+        height = outInfo.height;
+        size_t nPixels = width * height;
+        rgb.resize(nPixels * 3);
+        for (size_t i = 0; i < nPixels; i++)
+        {
+            rgb[3 * i] = bgra[4 * i + 2];
+            rgb[3 * i + 1] = bgra[4 * i + 1];
+            rgb[3 * i + 2] = bgra[4 * i];
+        }
+        bgra.clear(); // Free memory asap
+    }
+
+#else
+
     void _DecodeJpegMetaData(Byte const* data, size_t dataSize, int& width, int& height)
     {
         FIMEMORY*       memory = FreeImage_OpenMemory(const_cast <byte*> (data), (DWORD)dataSize);
@@ -223,7 +265,7 @@ private:
 
         FreeImage_CloseMemory(memory);
     }
-
+#endif
 
     virtual void _PushJpegTexture(Byte const* data, size_t dataSize)
     {
@@ -236,13 +278,15 @@ private:
         int w;
         int h;
 
-        //_DecodeJpegData(data, dataSize, rgb, w, h);
+#ifdef DGNDB06_API
+        _DecodeJpegData(data, dataSize, rgb, w, h);        
+#else        
+        _DecodeJpegMetaData(data, dataSize, w, h);        
+#endif
 
-        // Add the texture to the Scalable Mesh and record its id
-        //int64_t texID = m_scMesh->AddTexture(w, h, 3, rgb.data());
-        _DecodeJpegMetaData(data, dataSize, w, h);
-            int64_t texID = m_scMesh->AddTextureCompressed(w, h, 3, data, dataSize);
+        int64_t texID = m_scMesh->AddTextureCompressed(w, h, 3, data, dataSize);
         m_textureIDArray.push_back(texID);
+
     }
 
     virtual void _Clear()

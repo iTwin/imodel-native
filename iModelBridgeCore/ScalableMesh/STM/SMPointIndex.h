@@ -116,6 +116,17 @@ template <class POINT, class EXTENT> class ProducedNodeContainer;
 template <class POINT, class EXTENT> class SMMeshIndex;    
 template <class POINT, class EXTENT> class SMMeshIndexNode;    
 
+
+struct SMNodeDataToLoad 
+    {
+    SMNodeDataToLoad();        
+
+    virtual ~SMNodeDataToLoad();
+
+    bool m_pts;
+    };
+
+
 template <class POINT, class EXTENT> class SMPointIndexNode : public HFCShareableObject<SMPointIndexNode<POINT, EXTENT>>
     {
     friend class ISMPointIndexFilter<POINT, EXTENT>;
@@ -574,6 +585,11 @@ public:
      Loads the present tile if delay loaded.
     -----------------------------------------------------------------------------*/
     virtual void Load() const; 
+
+    /**----------------------------------------------------------------------------
+    Loads the data for a node
+    -----------------------------------------------------------------------------*/
+    virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr); 
 
     /**----------------------------------------------------------------------------
     Unloads the present tile if delay loaded.
@@ -1263,6 +1279,9 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
 
         virtual void Load() const override
             {};
+        
+        virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr) override
+            {};
 
         virtual bool Store() override
             {
@@ -1335,9 +1354,7 @@ public:
 
      @return Pointer to filter or NULL if none is set.
     -----------------------------------------------------------------------------*/
-    ISMPointIndexFilter<POINT, EXTENT>*
-    GetFilter() ;
-
+    BENTLEY_SM_EXPORT ISMPointIndexFilter<POINT, EXTENT>* GetFilter();
 
     /**----------------------------------------------------------------------------
      Push the data in leaf and balance the octree

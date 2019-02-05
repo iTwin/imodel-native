@@ -29,7 +29,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #else
     USING_NAMESPACE_BENTLEY_DGN

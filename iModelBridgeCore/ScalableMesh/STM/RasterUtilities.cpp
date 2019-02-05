@@ -33,10 +33,10 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     {
     HFCPtr<HRFRasterFile> pRasterFile;
     HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(
-#ifndef VANCOUVER_API
-		Utf8String(path)
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
+        path
 #else
-		path
+        Utf8String(path)
 #endif
 	));
 
@@ -73,7 +73,7 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
                 {
                 localFilePath.append(path);
                 }
-#ifdef VANCOUVER_API            
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)         
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(localFilePath), TRUE);
 #else
 			pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(Utf8String(localFilePath)), TRUE);
@@ -458,7 +458,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 
 
     // NEEDS_WORK_SM : Imagepp needs update on bim02
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
     HFCPtr<HFCURL> pFileName(HFCURL::Instanciate(outputFileName));
 #else
     HFCPtr<HFCURL> pFileName(HFCURL::Instanciate(Utf8String(outputFileName)));
