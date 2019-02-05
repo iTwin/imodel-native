@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnProvenance.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -133,7 +133,7 @@ void DgnV8ModelProvenance::CreateTable(DgnDbR dgndb)
     dgndb.CreateTable(DGN_TABLE_ProvenanceModel,
                       "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
                       "ModelId BIGINT,"//Maps to ModelId in SYNCINFO_ATTACH(SYNC_TABLE_Model),
-                      "V8FileId TEXT COLLATE NoCase REFERENCES " DGN_TABLE_ProvenanceFile "(V8FileId) ON DELETE CASCADE," //Maps to V8FileSyncInfoId
+                      "V8FileId TEXT COLLATE NoCase REFERENCES " DGN_TABLE_ProvenanceFile "(V8FileId) ON DELETE CASCADE," //Maps to RepositoryLinkId
                       "V8ModelId INT,"//Maps to V8Id
                       "V8ModelName CHAR NOT NULL,"
                       "Transform BLOB,"
