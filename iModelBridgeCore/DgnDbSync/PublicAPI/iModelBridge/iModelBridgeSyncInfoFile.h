@@ -395,6 +395,7 @@ struct iModelExternalSourceAspect
 // Identifies an iModelExternalSourceAspect on an element.
 // @bsiclass                                                    
 //=======================================================================================
+#ifdef COMMENT_OUT_NOT_USED
 struct iModelExternalSourceAspectID
     {
     DgnElementId m_elementId;
@@ -410,10 +411,13 @@ struct iModelExternalSourceAspectID
     bool operator!=(iModelExternalSourceAspectID const& rhs) const {return !(*this == rhs);}
     bool operator <(iModelExternalSourceAspectID const& rhs) const {if (m_elementId.GetValue() < rhs.m_elementId.GetValue()) return true; if (m_elementId.GetValue() > rhs.m_elementId.GetValue()) return false; return m_aspectId < rhs.m_aspectId;}
     };
+#endif
 
 //=======================================================================================
-// Helper class for stepping through all ExternalSourceAspects in a specified Scope
-// with optional WHERE clause
+//! Helper class for stepping through all ExternalSourceAspects in a specified Scope
+//! with optional WHERE clause. 
+//! NB: It is generally unsafe to use positional parameter binding. Use named parameters
+//! and call GetParameterIndex instead.
 // @bsiclass                                                    
 //=======================================================================================
 template<typename T>
@@ -499,6 +503,9 @@ public:
 
     //! Get the prepared statement for this iterator. This can be used to bind parameters before calling /c begin.
     BeSQLite::EC::CachedECSqlStatement* GetStatement() {return m_stmt.get();}
+
+    //! Get the parameter index of the specified named parameter. Note: you should not include the parameter prefix character in the name of the parameter.
+    int GetParameterIndex(Utf8CP pname) {BeAssert((*pname != ':') && (*pname != '@') && (*pname != '$')); auto i = GetStatement()->GetParameterIndex(pname); BeAssert(i != -1); return i;}
 };
 
 struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile

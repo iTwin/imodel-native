@@ -105,6 +105,7 @@ BentleyStatus SyncInfo::CreateTables()
 
 
     if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)))
+        {
         m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema),
                          "V8Id INTEGER PRIMARY KEY,"
                          "RepositoryLinkId INTEGER NOT NULL,"
@@ -115,7 +116,6 @@ BentleyStatus SyncInfo::CreateTables()
                          "LastModified TIMESTAMP,"
                          "Digest INTEGER");
 
-    if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_Imagery)))
         m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Imagery),
                          "ElementId BIGINT PRIMARY KEY, "
                          "RepositoryLinkId BIGINT,"
@@ -124,17 +124,18 @@ BentleyStatus SyncInfo::CreateTables()
                          "FileSize BIGINT,"
                          "ETag TEXT,"
                          "RDSId TEXT");
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
+        m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
 
+        //need a unique index to ensure uniqueness for schemas based on checksum
+        Utf8String ddl;
+        ddl.Sprintf("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_variantxml_uix ON "  SYNC_TABLE_ECSchema "(V8Name, RepositoryLinkId, Digest);");
+        MUSTBEOK(m_dgndb->ExecuteSql(ddl.c_str()));
+        //need a index on the entire table for fast look ups
+        MUSTBEOK(m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_ix ON "  SYNC_TABLE_ECSchema "(V8Name);"));
 
-    //need a unique index to ensure uniqueness for schemas based on checksum
-    Utf8String ddl;
-    ddl.Sprintf("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_variantxml_uix ON "  SYNC_TABLE_ECSchema "(V8Name, RepositoryLinkId, Digest);");
-    MUSTBEOK(m_dgndb->ExecuteSql(ddl.c_str()));
-    //need a index on the entire table for fast look ups
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_ix ON "  SYNC_TABLE_ECSchema "(V8Name);"));
+        CreateNamedGroupTable(true);
+        }
 
-    CreateNamedGroupTable(true);
     CreateECTables();
 
     m_dgndb->SaveChanges();
@@ -320,41 +321,6 @@ Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedImportJob Converter::FindSoleImportJobForFile(DgnV8FileR rootFile)
-    {
-    auto repositoryLinkId = GetRepositoryLinkId(rootFile);
-    if (!repositoryLinkId.IsValid())
-        repositoryLinkId = WriteRepositoryLink(rootFile);
-        
-    // Note: we only support a single master *model* per master *file*.
-    // So, there will be one and only one master model subject for this file.
-    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE (Parent.Id=? AND json_extract(JsonProperties, '$.Subject.Model.Type') = 'SourceMasterModel')");
-    stmt->BindId(1, GetDgnDb().Elements().GetRootSubjectId());
-    if (BE_SQLITE_ROW != stmt->Step())
-        return ResolvedImportJob();
-    auto masterModelSubjectId = stmt->GetValueId<DgnElementId>(0);
-    BeAssert(BE_SQLITE_ROW != stmt->Step());
-
-    // Each V8-based bridge is a child of the masterModelSubject. Find the one with the correct name. There will only be one.
-    stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE (Parent.Id=? AND json_extract(JsonProperties, '$.Subject.Job.BridgeRegSubKey') = ?)");
-    stmt->BindId(1, masterModelSubjectId);
-    stmt->BindText(2, _GetParams().GetBridgeRegSubKeyUtf8().c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes); // e.g., "iModelBridgeForMstn" or "ABDBridge", etc.
-    if (BE_SQLITE_ROW != stmt->Step())
-        return ResolvedImportJob();
-    auto jobSubjectId = stmt->GetValueId<DgnElementId>(0);
-    auto jobSubject = GetDgnDb().Elements().Get<Subject>(jobSubjectId);
-    if (!jobSubject.IsValid())
-        {
-        BeAssert(false);
-        return ResolvedImportJob();
-        }
-    auto aspect = SyncInfo::BridgeJobletExternalSourceAspect::GetAspect(*jobSubject);
-    return ResolvedImportJob(*jobSubject, aspect.GetTransform(), aspect.GetMasterModelId(), aspect.GetV8MasterModelId(), m_rootTrans, aspect.GetConverterType());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::FindFileByFileName(BeFileNameCR fullFileName)
@@ -367,14 +333,23 @@ SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::FindFileByFileName(BeFile
         prefixLen = 0;
 
     Utf8String searchName(fullFileName.substr(prefixLen));
-    
-    RepositoryLinkExternalSourceAspectIterator rlinkIter(GetConverter().GetDgnDb(), "json_extract(JsonProperties, '$.fileName') LIKE ?");
-    rlinkIter.GetStatement()->BindText(1, searchName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+#ifdef DOES_NOT_WORK_IF_NAME_IS_FILE_URL
+    RepositoryLinkExternalSourceAspectIterator rlinkIter(GetConverter().GetDgnDb(), "(json_extract(JsonProperties, '$.fileName') LIKE :searchName)");
+    rlinkIter.GetStatement()->BindText(rlinkIter.GetParameterIndex("searchName"), searchName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     for (auto aspect : rlinkIter)
         {
         if (aspect.GetFileName().EndsWithI(searchName.c_str()))
             return aspect;
         }
+#else
+    RepositoryLinkExternalSourceAspectIterator rlinkIter(GetConverter().GetDgnDb());
+    for (auto aspect : rlinkIter)
+        {
+        if (aspect.GetFileName().EndsWithI(searchName.c_str()))
+            return aspect;
+        }
+#endif
     return RepositoryLinkExternalSourceAspect(nullptr);
     }
 
@@ -677,7 +652,6 @@ BentleyStatus SyncInfo::AttachToProject(DgnDb& targetProject, BeFileNameCR dbNam
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus   importElementAspectSchema(DgnDbR db)
     {
     if (db.Schemas().ContainsSchema(XTRN_SRC_ASPCT_ECSCHEMA_NAME))
@@ -711,6 +685,7 @@ static BentleyStatus   importElementAspectSchema(DgnDbR db)
 
     return BSISUCCESS;
     }
++---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
@@ -1034,6 +1009,21 @@ SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSou
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::RepositoryLinkExternalSourceAspect::Update(V8FileInfo const& fileInfo)
+    {
+    iModelExternalSourceAspect::SourceState ss;
+    iModelExternalSourceAspect::UInt64ToString(ss.m_version, fileInfo.m_lastModifiedTime);
+    SetSourceState(ss);
+
+    auto json = GetProperties();
+    json["fileSize"] = rapidjson::Value(iModelExternalSourceAspect::UInt64ToString(fileInfo.m_fileSize).c_str(), json.GetAllocator());
+    json["lastSaveTime"] = fileInfo.m_lastSaveTime;
+    SetProperties(json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSourceAspect::FindAspectByIdentifier(DgnDbR db, Utf8StringCR uniqueName)
@@ -1104,21 +1094,6 @@ StableIdPolicy SyncInfo::RepositoryLinkExternalSourceAspect::GetStableIdPolicy()
     {
     auto json = GetProperties();
     return (StableIdPolicy)(json["idPolicy"].GetInt());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      1/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::RepositoryLinkExternalSourceAspect::Update(V8FileInfo const& fileInfo)
-    {
-    iModelExternalSourceAspect::SourceState ss;
-    iModelExternalSourceAspect::UInt64ToString(ss.m_version, fileInfo.m_lastModifiedTime);
-    SetSourceState(ss);
-
-    auto json = GetProperties();
-    json["fileSize"] = rapidjson::Value(Utf8PrintfString("%llu", fileInfo.m_fileSize).c_str(), json.GetAllocator());
-    json["lastSavetime"] = fileInfo.m_lastSaveTime;
-    SetProperties(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1273,7 +1248,7 @@ BentleyStatus SyncInfo::OnAttach(DgnDb& project)
     {
     m_dgndb = &project;
 
-    importElementAspectSchema(*m_dgndb);
+    // importElementAspectSchema(*m_dgndb);
 
     if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)))
         {

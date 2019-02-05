@@ -217,7 +217,7 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     if (m_v8DgnAttachment.IsCameraOn())
         {
         Transform thisTrans = m_converter.ComputeAttachmentTransform(m_converter.GetRootTrans(), m_v8DgnAttachment);
-        ResolvedModelMapping modelMapping = m_converter.FindFirstModelMappedTo(*m_v8DgnAttachment.GetDgnModelP());
+        ResolvedModelMapping modelMapping = m_converter.FindFirstResolvedModelMapping(*m_v8DgnAttachment.GetDgnModelP());
         if (modelMapping.IsValid())
             {
             DPoint3d    eyePoint;

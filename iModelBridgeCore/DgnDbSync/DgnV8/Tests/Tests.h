@@ -41,7 +41,7 @@ struct SyncInfoReader
     SyncInfoReader(Converter::Params&);
     void AttachToDgnDb(BentleyApi::BeFileNameCR);
     void MustFindFileByName(RepositoryLinkId&, BentleyApi::BeFileNameCR v8FileName, int expectedCount=1);
-    void MustFindModelByV8ModelId(iModelExternalSourceAspectID&, RepositoryLinkId, DgnV8Api::ModelId, int expectedCount=1);
-    void MustFindElementByV8ElementId(DgnElementId&, iModelExternalSourceAspectID, DgnV8Api::ElementId, int expectedCount=1);
+    void MustFindModelByV8ModelId(DgnModelId&, RepositoryLinkId, DgnV8Api::ModelId, int expectedCount=1);
+    void MustFindElementByV8ElementId(DgnElementId&, DgnModelId, DgnV8Api::ElementId, int expectedCount=1);
     };
 

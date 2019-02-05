@@ -401,7 +401,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     if (IsUpdating())
         {
-        auto existingDrawingGraphicId = SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphicBySource(model, v8SectionedElementPath, categoryId, elementClassId, *GetDgnDb());
+        auto existingDrawingGraphicId = SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphicBySource(parentSheetModelMapping.GetDgnModel(), v8SectionedElementPath, categoryId, elementClassId, GetDgnDb());
         if (existingDrawingGraphicId.IsValid())
             {
             // We already have a graphic for this element. Update it.
@@ -420,7 +420,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     // This is a new graphic for this element.
 
-    auto aspect = SyncInfo::ProxyGraphicExternalSourceAspect::CreateAspect(parentSheetModelMapping.GetDgnModel(), v8SectionedElementPath, attachmentInfo, *GetDgnDb());
+    auto aspect = SyncInfo::ProxyGraphicExternalSourceAspect::CreateAspect(parentSheetModelMapping.GetDgnModel(), v8SectionedElementPath, attachmentInfo, GetDgnDb());
     aspect.AddAspect(*drawingGraphic);
 
     drawingGraphic->Insert(&status);
@@ -558,7 +558,7 @@ static TargetDrawingBoundary getTargetDrawingBoundary(DgnV8EhCR viewEH, Converte
                     if (dbEh != nullptr)
                         {
                         // Note: scope may be holding the V8 model open, and it may close and free all of its V8 ElementRefs when we return.
-                        tdb.m_modelMapping = cvt.FindFirstModelMappedTo(*dbEh->GetDgnModelP());
+                        tdb.m_modelMapping = cvt.FindFirstResolvedModelMapping(*dbEh->GetDgnModelP());
                         tdb.m_eid = dbEh->GetElementId();
                         return tdb;
                         }
@@ -858,7 +858,7 @@ void ConvertDetailingSymbolExtension::RecordDrawingBoundaryDependency(Converter&
     if (nullptr == attachment)
         return;
 
-    auto attmm = converter.FindFirstModelMappedTo(*attachment->GetParent().GetDgnModelP());
+    auto attmm = converter.FindFirstResolvedModelMapping(*attachment->GetParent().GetDgnModelP());
 
     auto stmt = GetInsertStatement(converter.GetDgnDb(), DetType::DrawingBoundary);
     stmt->BindId    (1, v8mm.GetDgnModel().GetModelId());

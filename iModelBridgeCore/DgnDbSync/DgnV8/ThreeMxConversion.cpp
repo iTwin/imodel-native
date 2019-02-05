@@ -305,7 +305,7 @@ StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8
                 }
 
             auto    refTrans = converter.ComputeAttachmentTransform(v8mm.GetTransform(), *classifierModelRef->AsDgnAttachmentCP());
-            classifierMM = converter.FindModelForDgnV8Model(*classifierModelRef->GetDgnModelP(), refTrans);
+            classifierMM = converter.FindResolvedModelMapping(*classifierModelRef->GetDgnModelP(), refTrans);
 
             if (!classifierMM.IsValid())
                 {

@@ -177,11 +177,11 @@ void RootModelConverter::_OnDrawingModelFound(DgnV8ModelR v8model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::_KeepFileAlive(DgnV8FileR v8file)
+void RootModelConverter::_KeepFileAlive(DgnV8FileCR v8file) const
     {
     // See "Keeping sheet and drawing models alive" comment below.
-    if (std::find(m_filesKeepAlive.begin(), m_filesKeepAlive.end(), &v8file) == m_filesKeepAlive.end())
-        m_filesKeepAlive.push_back(&v8file);
+    if (std::find(m_filesKeepAlive.begin(), m_filesKeepAlive.end(), &const_cast<DgnV8FileR>(v8file)) == m_filesKeepAlive.end())
+        m_filesKeepAlive.push_back(&const_cast<DgnV8FileR>(v8file));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -247,7 +247,7 @@ bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
     // Note: We do not differentiate 2d attachments by transform. We handle attachments with positioning transforms specially in drawings and sheets elsewhere.
     auto toMeters = ComputeUnitsScaleTransform(v8model);
 
-    auto foundmm = FindModelForDgnV8Model(v8model, toMeters);
+    auto foundmm = FindResolvedModelMapping(v8model, toMeters);
     if (foundmm.IsValid())
         {
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
@@ -261,7 +261,7 @@ bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
 
     _OnDrawingModelFound(v8model);	// We may have reached a new drawing model (e.g., in the case where we *generated* the model to adjust for annotation scale.)
 
-    auto bimModel = _GetModelForDgnV8Model(v8model, toMeters); // adds to m_v8ModelMappings
+    auto bimModel = _GetResolvedModelMapping(v8model, toMeters); // adds to m_v8ModelMappings
     if (!bimModel.IsValid())
         return make_bpair(bimModel, false);
     
@@ -1158,7 +1158,7 @@ void InitCurrentModel(DgnModelRefP modelRef)
     
     if (nullptr != attachment->GetDgnModelP())
         {
-        info.m_modelMapping = m_converter._FindFirstModelMappedTo(*attachment->GetDgnModelP());
+        info.m_modelMapping = m_converter._FindFirstResolvedModelMapping(*attachment->GetDgnModelP());
         info.m_modelContentsChanged = info.m_modelMapping.IsValid() ? !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, info.m_modelMapping) : true;        // If no model mapping can't tell whether unchanged...
         }
 

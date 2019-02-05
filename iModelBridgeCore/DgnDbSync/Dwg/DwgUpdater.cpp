@@ -39,7 +39,7 @@ ResolvedImportJob DwgImporter::GetResolvedImportJob (DwgSyncInfo::ImportJob cons
 void UpdaterChangeDetector::_Prepare (DwgImporter& importer)
     {
     m_byIdIter   = new DwgSyncInfo::ByDwgObjectIdIter (importer.GetDgnDb());
-    m_byHashIter = new DwgSyncInfo::V8ElementExternalSourceAspectIteratorByChecksum (importer.GetDgnDb());
+    m_byHashIter = new DwgSyncInfo::ByHashIter (importer.GetDgnDb());
 
 #ifdef DEBUG_CHECKENTITY
     DwgSyncInfo::ElementIterator  all(importer.GetDgnDb(), nullptr);

@@ -877,7 +877,7 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bool includeSourceState)
     {
-    Utf8PrintfString str("%-16.16s %8.8s %-32.32s %-32.32s", "Kind", "Scope", "Scope Element Class", "Identifier");
+    Utf8PrintfString str("%-20.20s %8.8s %-32.32s %-32.32s", "Kind", "Scope", "Scope Element Class", "Identifier");
     if (includeSourceState)
         {
         // TBD
@@ -896,7 +896,7 @@ Utf8String iModelExternalSourceAspect::FormatForDump(DgnDbR db, bool includeProp
     {
     auto scopeEl = db.Elements().GetElement(GetScope());
     auto scopeClass = scopeEl.IsValid()? scopeEl->GetElementClass()->GetFullName(): "?";
-    Utf8PrintfString str("%-16.16s %8.0llx %-32.32s %-32.32s", GetKind().c_str(), GetScope().GetValueUnchecked(), scopeClass, GetIdentifier().c_str());
+    Utf8PrintfString str("%-20s %8.0llx %-32s %-32s", GetKind().c_str(), GetScope().GetValueUnchecked(), scopeClass, GetIdentifier().c_str());
     if (includeSourceState)
         {
         // TBD
@@ -929,15 +929,21 @@ static void outDump(ILogger* logger, NativeLogging::SEVERITY sev, Utf8StringCR m
 void iModelExternalSourceAspect::Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY sev, bool includeProperties, bool includeSourceState)
     {
     auto aspects = GetAll(el, nullptr);
-    if (aspects.empty())
-        return;
+//    if (aspects.empty())
+//        return;
 
     ILogger* logger = loggingCategory? LoggingManager::GetLogger(loggingCategory): nullptr;
 
     GeometrySource const* geom = el.ToGeometrySource();
-    Utf8String catid = geom? Utf8PrintfString("Category: %llu", geom->GetCategoryId().GetValue()): Utf8String();
+    Utf8String catid;
+    if (nullptr != geom)
+        catid.Sprintf("Category: 0x%llx", geom->GetCategoryId().GetValue());
 
-    outDump(logger, sev, Utf8PrintfString("Element ID: 0x%llx Class: %s Code: %s %s", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName(), el.GetCode().GetValueUtf8CP(), catid.c_str()));
+    Utf8String parent;
+    if (el.GetParentId().IsValid())
+        parent.Sprintf("Parent: 0x%llx", el.GetDgnDb().Elements().GetElement(el.GetParentId())->GetElementId().GetValue());
+
+    outDump(logger, sev, Utf8PrintfString("Element ID: 0x%llx Class: %s Code: %s %s %s", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName(), el.GetCode().GetValueUtf8CP(), catid.c_str(), parent.c_str()));
 
     outDump(logger, sev, GetDumpHeaders(includeProperties, includeSourceState));
     for (auto const& aspect : aspects)

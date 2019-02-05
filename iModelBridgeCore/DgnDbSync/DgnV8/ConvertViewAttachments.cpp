@@ -157,9 +157,9 @@ ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttac
     if (IsUpdating())
         {
         // Find any existing Drawing *element* that we created by generating a drawing for this attachment.
-        SyncInfo::V8ElementExternalSourceAspectIterator elIt(parentModel.GetDgnModel(), "Scope.Id=? AND Identifier=?");
-        elIt.GetStatement()->BindId(1, parentModel.GetDgnModel().GetModeledElementId());
-        elIt.GetStatement()->BindText(2, ComputeV8AttachmentIdPath(v8Attachment).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        SyncInfo::V8ElementExternalSourceAspectIterator elIt(parentModel.GetDgnModel(), "Scope.Id=:scope AND Identifier=:identifier");
+        elIt.GetStatement()->BindId(elIt.GetParameterIndex("scope"), parentModel.GetDgnModel().GetModeledElementId());
+        elIt.GetStatement()->BindText(elIt.GetParameterIndex("identifier"), ComputeV8AttachmentIdPath(v8Attachment).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
         for (auto elemXsaItem : elIt)
             {
             auto drawingElementId = elemXsaItem.GetElementId();
@@ -289,7 +289,7 @@ void Converter::SheetsCreateViewAttachment(ElementConversionResults& results,
             }
 
         // Scaled view - THE SHAPE OF A SCALED VIEW ATTACHMENT MUST BE EXACTLY PROPORTIONAL TO THE TARGET VIEW DELTA.
-        auto refModelMapping = FindFirstModelMappedTo(*v8DgnAttachment.GetDgnModelP());
+        auto refModelMapping = FindFirstResolvedModelMapping(*v8DgnAttachment.GetDgnModelP());
         if (!refModelMapping.IsValid())
             {
             BeDataAssert(false && "failed to infer scaled range of sheet attachment");
@@ -376,7 +376,7 @@ ResolvedModelMapping Converter::SheetsFindModelForAttachment(DgnAttachmentCR v8D
         return ResolvedModelMapping();
         }
 
-    ResolvedModelMapping importedModel = FindFirstModelMappedTo(*attachedV8Model);
+    ResolvedModelMapping importedModel = FindFirstResolvedModelMapping(*attachedV8Model);
     if (importedModel.IsValid())
         return importedModel;
         

@@ -71,7 +71,7 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
 
     SetLineStyleConverterRootModel(m_rootModelRef->GetDgnModelP());
 
-    CreateProvenanceTables(); // TRICKY: Call this before anyone calls GetRepositoryLinkId
+    CreateProvenanceTables(); // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
     GetRepositoryLinkId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
@@ -80,11 +80,11 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR)
+ResolvedModelMapping TiledFileConverter::_GetResolvedModelMapping(DgnV8ModelRefCR v8ModelRef, TransformCR)
     {
     if (IsUpdating())
         {
-        ResolvedModelMapping res = GetModelFromSyncInfo(v8ModelRef, m_rootTrans);
+        ResolvedModelMapping res = FindModelByExternalAspect(v8ModelRef, m_rootTrans);
         if (res.IsValid())
             {
             GetChangeDetector()._OnModelSeen(*this, res);
@@ -152,7 +152,7 @@ ResolvedModelMapping TiledFileConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
 
     if (IsUpdating())
         {
-        ResolvedModelMapping res = GetModelFromSyncInfo(v8Model, m_rootTrans);
+        ResolvedModelMapping res = FindModelByExternalAspect(v8Model, m_rootTrans);
         if (res.IsValid())
             {
             GetChangeDetector()._OnModelSeen(*this, res);

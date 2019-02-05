@@ -83,15 +83,9 @@ void Converter::AddAttachmentsToSelection(DgnModelIdSet& selector, DgnV8ModelRef
 
         Transform thisTrans = ComputeAttachmentTransform(trans, *attachment);
 
-        ResolvedModelMapping modelMapping = FindModelForDgnV8Model(*attachedModel, thisTrans);
+        ResolvedModelMapping modelMapping = FindResolvedModelMapping(*attachedModel, thisTrans);
         if (modelMapping.IsValid())
             selector.insert(modelMapping.GetDgnModel().GetModelId());
-        else
-            {
-            DgnV8ModelProvenance::ModelProvenanceEntry entryFound;
-            if (BSISUCCESS == FindModelProvenanceEntry(entryFound, *attachedModel, trans))
-                selector.insert(entryFound.m_modelId);
-            }
 
         AddAttachmentsToSelection(selector, *attachment, thisTrans);
         }
@@ -752,7 +746,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     if (LOG_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
         LOG.tracev("ConvertView [%s] (root=%d)", name.c_str(), v8Model->GetModelId());
 
-    ResolvedModelMapping modelMapping = FindModelForDgnV8Model(*v8Model, trans);
+    ResolvedModelMapping modelMapping = FindResolvedModelMapping(*v8Model, trans);
     if (!modelMapping.IsValid())
         {
         if (LOG_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
@@ -995,7 +989,7 @@ DgnViewId Converter::ConvertNamedView(DgnV8Api::NamedView& namedView, TransformC
     if (nullptr == v8Model)
         return DgnViewId();
 
-    auto v8mm = FindModelForDgnV8Model(*v8Model, trans);
+    auto v8mm = FindResolvedModelMapping(*v8Model, trans);
     if (!v8mm.IsValid())
         return DgnViewId();
 

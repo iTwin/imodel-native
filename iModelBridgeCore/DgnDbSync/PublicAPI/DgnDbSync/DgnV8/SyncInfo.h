@@ -116,7 +116,7 @@ struct SyncInfo
 
     struct RepositoryLinkExternalSourceAspectIterator : ExternalSourceAspectIterator<RepositoryLinkExternalSourceAspect>
         {
-        RepositoryLinkExternalSourceAspectIterator(DgnDbR db, Utf8CP wh) : ExternalSourceAspectIterator(db, db.Elements().GetRootSubjectId(), ExternalSourceAspect::Kind::RepositoryLink, wh) {}
+        RepositoryLinkExternalSourceAspectIterator(DgnDbR db, Utf8CP wh = nullptr) : ExternalSourceAspectIterator(db, db.Elements().GetRootSubjectId(), ExternalSourceAspect::Kind::RepositoryLink, wh) {}
         };
 
     //! Aspect stored on a Model element to a) identify the source V8 model and b) store additional qualifying information, such as a transform, that is applied during conversion
@@ -149,18 +149,18 @@ struct SyncInfo
     struct V8ModelExternalSourceAspectIterator : ExternalSourceAspectIterator<V8ModelExternalSourceAspect>
         {
         V8ModelExternalSourceAspectIterator(RepositoryLinkCR scope, Utf8CP wh = nullptr) : ExternalSourceAspectIterator(scope.GetDgnDb(), scope.GetElementId(), ExternalSourceAspect::Kind::Model, wh) {}
-        V8ModelExternalSourceAspectIterator(DgnDbR db, RepositoryLinkExternalSourceAspect const& rlxsa, Utf8CP wh = nullptr)  : ExternalSourceAspectIterator(db, rlxsa.GetElementId(), ExternalSourceAspect::Kind::Model, wh) {}
+        V8ModelExternalSourceAspectIterator(DgnDbR db, RepositoryLinkExternalSourceAspect const& rlxsa, Utf8CP wh)  : ExternalSourceAspectIterator(db, rlxsa.GetElementId(), ExternalSourceAspect::Kind::Model, wh) {}
         };
 
     struct V8ModelExternalSourceAspectIteratorByV8Id : V8ModelExternalSourceAspectIterator
         {
-        V8ModelExternalSourceAspectIteratorByV8Id(RepositoryLinkCR scope, DgnV8ModelCR v8Model) : V8ModelExternalSourceAspectIterator(scope, "Identifier=?")
+        V8ModelExternalSourceAspectIteratorByV8Id(RepositoryLinkCR scope, DgnV8ModelCR v8Model) : V8ModelExternalSourceAspectIterator(scope, "Identifier = :identifier")
             {
-            GetStatement()->BindText(1, V8ModelExternalSourceAspect::FormatSourceId(v8Model).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+            GetStatement()->BindText(GetParameterIndex("identifier"), V8ModelExternalSourceAspect::FormatSourceId(v8Model).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
             }
-        V8ModelExternalSourceAspectIteratorByV8Id(RepositoryLinkCR scope, DgnV8Api::ModelId v8ModelId) : V8ModelExternalSourceAspectIterator(scope, "Identifier=?")
+        V8ModelExternalSourceAspectIteratorByV8Id(RepositoryLinkCR scope, DgnV8Api::ModelId v8ModelId) : V8ModelExternalSourceAspectIterator(scope, "Identifier = :identifier")
             {
-            GetStatement()->BindText(1, V8ModelExternalSourceAspect::FormatSourceId(v8ModelId).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+            GetStatement()->BindText(GetParameterIndex("identifier"), V8ModelExternalSourceAspect::FormatSourceId(v8ModelId).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
             }
         };
 
@@ -367,7 +367,7 @@ struct SyncInfo
         //! Get the root transform
         DGNDBSYNC_EXPORT Transform GetTransform() const;
 
-        DgnModelId GetMasterModelId() const {return DgnModelId(GetScope().GetValueUnchecked());}
+        DgnElementId GetSourceMasterModelSubjectId() const {return GetScope();}
         DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8MasterModelId() const;
         DGNDBSYNC_EXPORT ConverterType GetConverterType() const;
         };

@@ -152,7 +152,7 @@ bool ChangeDetector::_ShouldSkipFileByName(Converter& converter, BeFileNameCR fi
     SyncInfo::RepositoryLinkExternalSourceAspect prov = converter.GetSyncInfo().FindFileByFileName(file);
     if (prov.IsValid())
         {
-        SyncInfo::V8ModelExternalSourceAspectIterator it(converter.GetDgnDb(), prov);
+        SyncInfo::V8ModelExternalSourceAspectIterator it(converter.GetDgnDb(), prov, nullptr);
         for (auto entry = it.begin(); entry != it.end(); ++entry)
             {
             m_v8ModelsSkipped.insert(entry->GetModelId());

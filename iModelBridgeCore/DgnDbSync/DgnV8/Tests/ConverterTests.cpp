@@ -268,10 +268,10 @@ TEST_F(LightTests, CreatePointLightWithECInstance)
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
         RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        iModelExternalSourceAspectID editiModelExternalSourceAspectID;
-        syncInfo.MustFindModelByV8ModelId(editiModelExternalSourceAspectID, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        DgnModelId editModelId;
+        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
         DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editiModelExternalSourceAspectID, eidWithInst);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eidWithInst);
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);

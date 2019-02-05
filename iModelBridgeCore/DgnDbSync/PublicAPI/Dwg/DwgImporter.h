@@ -149,7 +149,7 @@ public:
     //! Get the job subject
     SubjectCR GetSubject() const {BeAssert(IsValid()); return *m_jobSubject;}
     //! Get the type of converter that created this job
-    DwgBridgeJobletExternalSourceAspect::ConverterType GetImporterType() const {return m_mapping.GetType();}
+    DwgSyncInfo::ImportJob::Type GetImporterType() const {return m_mapping.GetType();}
     //! Get the name prefix that is used by this job
     Utf8StringCR GetNamePrefix() const { return m_mapping.GetPrefix(); }
 };  // ResolvedImportJob
@@ -1276,7 +1276,7 @@ public:
     DWG_EXPORT DwgImporter (Options& options);
     DWG_EXPORT ~DwgImporter ();
 
-    DWG_EXPORT ImportJobCreateStatus InitializeJob (Utf8CP comment=nullptr, DwgBridgeJobletExternalSourceAspect::ConverterType = DwgBridgeJobletExternalSourceAspect::ConverterType::RootModels);
+    DWG_EXPORT ImportJobCreateStatus InitializeJob (Utf8CP comment=nullptr, DwgSyncInfo::ImportJob::Type = DwgSyncInfo::ImportJob::Type::RootModels);
     DWG_EXPORT ImportJobLoadStatus FindJob ();
     DWG_EXPORT ResolvedImportJob const& GetImportJob () const { return m_importJob; }
     DWG_EXPORT BentleyStatus    AttachSyncInfo ();
@@ -1411,7 +1411,7 @@ struct UpdaterChangeDetector : IDwgChangeDetector
 {
 private:
     DwgSyncInfo::ByDwgObjectIdIter*         m_byIdIter;
-    DwgSyncInfo::V8ElementExternalSourceAspectIteratorByChecksum*                m_byHashIter;
+    DwgSyncInfo::ByHashIter*                m_byHashIter;
     DgnElementIdSet                         m_elementsSeen;
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_dwgModelsSeen;
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_dwgModelsSkipped;

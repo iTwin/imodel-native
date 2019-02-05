@@ -1762,7 +1762,7 @@ void DwgImporter::ComputeDefaultImportJobName (Utf8StringCR rootModelName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments, DwgBridgeJobletExternalSourceAspect::ConverterType jobType)
+DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments, DwgSyncInfo::ImportJob::Type jobType)
     {
     // will create a new ImportJob - don't call this if updating!
     if (this->IsUpdating())
@@ -1809,7 +1809,7 @@ DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments
     // 1. Map in the root file.
     auto    fileId = this->GetDwgFileId (this->GetDwgDb());
     // NB! file might already be in syncinfo! The logic that tries to detect an existing Job puts it there!
-    DwgSyncInfo::RepositoryLinkExternalSourceAspectIteratorByElementId   syncInfoFiles (this->GetDgnDb(), fileId);
+    DwgSyncInfo::FileById   syncInfoFiles (this->GetDgnDb(), fileId);
     DwgSyncInfo::FileIterator::Entry syncInfoFile = syncInfoFiles.begin();
     if (syncInfoFile == syncInfoFiles.end())
         {

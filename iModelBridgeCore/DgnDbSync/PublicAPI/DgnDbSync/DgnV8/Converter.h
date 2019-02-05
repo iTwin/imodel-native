@@ -1050,7 +1050,7 @@ protected:
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
     virtual void _OnSheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) {}
 
-    virtual void _OnFileDiscovered(DgnV8FileR) {;}
+    virtual void _OnFileDiscovered(DgnV8FileCR) const {;}
 
 public:
     virtual Params const& _GetParams() const = 0;
@@ -1159,9 +1159,9 @@ public:
     DGNDBSYNC_EXPORT BeSQLite::BeGuid GetDocumentGUIDforFile(DgnV8FileCR);
 
     //! Create a RepositoryLink to represent this file in the BIM and cache it in memory
-    RepositoryLinkId WriteRepositoryLink(DgnV8FileR file);
+    RepositoryLinkId WriteRepositoryLink(DgnV8FileR);
 
-    static void SetRepositoryLinkInAppData(DgnV8FileCR file, RepositoryLinkId rlinkId);
+    void SetRepositoryLinkInAppData(DgnV8FileCR, RepositoryLinkId) const;
 
     DGNDBSYNC_EXPORT static void DiscardV8FileSyncInfoAppData(DgnV8FileR);
 
@@ -1508,7 +1508,7 @@ public:
                                     ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8Attachment, 
                                     DgnViewId attachedViewId, int displayPriority, bool isFromDirectlyAttachedProxyGraphics);
     
-    //! Calls FindModelForDgnV8Model to find the BIM model that corresponds to the attached V8 model
+    //! Calls FindResolvedModelMapping to find the BIM model that corresponds to the attached V8 model
     ResolvedModelMapping SheetsFindModelForAttachment(DgnAttachmentCR);
         
     //! Finds or generates a view of \a geometricModel that can be used as the target for a ViewAttachment that is based on \a v8DgnAttachment
@@ -1566,7 +1566,7 @@ public:
     virtual void _OnDrawingModelFound(DgnV8ModelR) = 0;
 
     //! Callback that is invoked when it is likely that the specified V8 file must be kept alive by adding an explicit ref to it.
-    virtual void _KeepFileAlive(DgnV8FileR) = 0;
+    virtual void _KeepFileAlive(DgnV8FileCR) const = 0;
 
     //! Convert the contents of a drawing model, populating a BIM drawing model, and convert views of this model. The conversion also pulls in proxy graphics from attachments.
     void DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm);
@@ -1672,16 +1672,13 @@ public:
 
     void CaptureModelDiscard(DgnV8ModelR);
 
-    ResolvedModelMapping GetModelFromSyncInfo(DgnV8ModelRefCR, TransformCR);
-    BentleyStatus FindModelProvenanceEntry(DgnV8ModelProvenance::ModelProvenanceEntry& entryFound, DgnV8ModelR v8Model, TransformCR trans);
-    virtual ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR, TransformCR) = 0;
-    ResolvedModelMapping GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR toBim) {return _GetModelForDgnV8Model(v8ModelRef, toBim);}
-    virtual ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR) = 0;
-    ResolvedModelMapping FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR toBim) {return _FindModelForDgnV8Model(v8Model, toBim);}
-    virtual ResolvedModelMapping _FindFirstModelMappedTo(DgnV8ModelR v8Model) = 0;
-    //! Looks up the first \em resolved model mapping for the specified V8 model. 
-    //! @note This function does \em not look in syncinfo, but only in the list of resolved mappings.
-    ResolvedModelMapping FindFirstModelMappedTo(DgnV8ModelR v8Model) {return _FindFirstModelMappedTo(v8Model);}
+    ResolvedModelMapping FindModelByExternalAspect(DgnV8ModelRefCR, TransformCR);   // Look up a previously converted model by querying ExternalSourceAspects
+    virtual ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR, TransformCR) = 0;
+    ResolvedModelMapping GetResolvedModelMapping(DgnV8ModelRefCR v8ModelRef, TransformCR toBim) {return _GetResolvedModelMapping(v8ModelRef, toBim);}
+    virtual ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) = 0;
+    ResolvedModelMapping FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR toBim) {return _FindResolvedModelMapping(v8Model, toBim);}
+    virtual ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) = 0;
+    ResolvedModelMapping FindFirstResolvedModelMapping(DgnV8ModelR v8Model) {return _FindFirstResolvedModelMapping(v8Model);}
 
     //! When converting this DgnV8 model to DgnDb, decide what type of model it should become.
     //! May cause attachments to be loaded.
@@ -2345,13 +2342,14 @@ protected:
 
     virtual void _AddResolvedModelMapping(ResolvedModelMapping const&) {}
 
-    BentleyStatus FindRootModelFromImportJob();
+    BentleyStatus GetResolvedRootModelFromImportJob();
     void ApplyJobTransformToRootTrans();
     void DetectRootTransformChange();
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
     BentleyStatus MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
 
+    // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
     void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
@@ -2584,15 +2582,15 @@ private:
 
 protected:
     RootModelSpatialParams& m_params;   // NB: Must store a *reference* to the bridge's Params, as they may change after our constructor is called
-    bvector<DgnV8FileP> m_v8Files;
+    mutable bvector<DgnV8FileP> m_v8Files;
+    mutable bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
     bvector<Bentley::DgnModelPtr> m_drawingModelsKeepAlive;
-    bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
-    DgnV8Api::ViewGroupPtr m_viewGroup;
     bmultiset<ResolvedModelMapping> m_v8ModelMappings; // NB: the V8Model pointer is the key
     bvector<DgnV8ModelP> m_spatialModelsInAttachmentOrder;
     bset<DgnV8ModelP> m_spatialModelsSeen;
     bset<DgnV8ModelP> m_nonSpatialModelsSeen;
     bvector<DgnV8ModelP> m_nonSpatialModelsInModelIndexOrder;
+    DgnV8Api::ViewGroupPtr m_viewGroup;
     std::unique_ptr<IChangeDetector> m_changeDetector;
     bool m_considerNormal2dModelsSpatial;   // Unlike the member in RootModelSpatialParams, this considers the config file, too. It is checked often, so calulated once in the constructor.
 
@@ -2615,15 +2613,15 @@ protected:
     //! @name  Models
     //! @{
     DGNDBSYNC_EXPORT void _AddResolvedModelMapping(ResolvedModelMapping const&) override;
-    DGNDBSYNC_EXPORT ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR) override;
-    DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstModelMappedTo(DgnV8ModelR v8Model) override;
-    DGNDBSYNC_EXPORT ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR, TransformCR) override;
-    ResolvedModelMapping GetModelForDgnV8Model(DgnV8ModelRefCR v8Model, TransformCR toBim) {return _GetModelForDgnV8Model(v8Model, toBim);}
-    DGNDBSYNC_EXPORT ResolvedModelMapping MapDgnV8ModelToDgnDbModel(DgnV8ModelR, TransformCR, DgnModelId targetModelId); // Like GetModelForDgnV8Model, except that caller already knows the target model
-    DGNDBSYNC_EXPORT void _OnDrawingModelFound(DgnV8ModelR v8model) override;
-    DGNDBSYNC_EXPORT void _KeepFileAlive(DgnV8FileR) override;
+    DGNDBSYNC_EXPORT ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR, TransformCR) override;
+    DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) override;
+    DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) override;
-    DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindMappingsToV8Model(DgnV8ModelR v8Model);
+    DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindResolvedModelMappings(DgnV8ModelR v8Model);
+    ResolvedModelMapping GetResolvedModelMapping(DgnV8ModelRefCR v8Model, TransformCR toBim) {return _GetResolvedModelMapping(v8Model, toBim);}
+    DGNDBSYNC_EXPORT ResolvedModelMapping MapDgnV8ModelToDgnDbModel(DgnV8ModelR, TransformCR, DgnModelId targetModelId); // Like GetResolvedModelMapping, except that caller already knows the target model
+    DGNDBSYNC_EXPORT void _OnDrawingModelFound(DgnV8ModelR v8model) override;
+    DGNDBSYNC_EXPORT void _KeepFileAlive(DgnV8FileCR) const override;
     bool IsLessInMappingOrder(DgnV8ModelP a, DgnV8ModelP b);
     void UnmapModelsNotAssignedToBridge();
 
@@ -2644,7 +2642,7 @@ protected:
     //! @name  V8Files
     //! @{
     //! Override to make sure that all files encountered by the converter are cached in m_v8Files
-    DGNDBSYNC_EXPORT void _OnFileDiscovered(DgnV8FileR) override;
+    DGNDBSYNC_EXPORT void _OnFileDiscovered(DgnV8FileCR) const override;
 
     //! @}
 
@@ -2766,12 +2764,12 @@ protected:
     ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) override {BeAssert(false && "TBD"); return ResolvedModelMapping();}
 
     DgnV8Api::ModelId GetDefaultModelId(DgnV8FileR v8File);
-    DGNDBSYNC_EXPORT ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR) override;
-    ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR) override {return m_rootModelMapping;}
-    ResolvedModelMapping _FindFirstModelMappedTo(DgnV8ModelR v8Model) override {return m_rootModelMapping;}
+    DGNDBSYNC_EXPORT ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR v8ModelRef, TransformCR) override;
+    ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) override {return m_rootModelMapping;}
+    ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) override {return m_rootModelMapping;}
     ResolvedModelMapping MapDgnV8ModelToDgnDbModel(DgnV8ModelR v8Model, DgnModelId targetModelId);
     void _OnDrawingModelFound(DgnV8ModelR v8model) override {}
-    void _KeepFileAlive(DgnV8FileR) override {}
+    void _KeepFileAlive(DgnV8FileCR) const override {}
 
     // in the tiled converter, we always consider normal 2d models to be spatial models.
     bool _ConsiderNormal2dModelsSpatial() override {return true;}
@@ -3219,7 +3217,7 @@ public:
     //! @return The record of the mapping, which includes the units transform from source to BIM
     //! @note If you called SetRootModelAndSubject up front, then you must supply a transform when recording mappings for all 
     //! attached models. Call #ComputeAttachmentTransform to get this transform.
-    //! @see FindModelForDgnV8Model and FindFirstModelMappedTo
+    //! @see FindResolvedModelMapping and FindFirstResolvedModelMapping
     DGNDBSYNC_EXPORT ResolvedModelMapping RecordModelMapping(DgnV8ModelR sourceV8Model, DgnModelR targetBimModel, BentleyApi::TransformCP transform = nullptr);
 
     //! Record a V8 Level -> BIM DgnSubCategory mapping for elements in a particular model.
