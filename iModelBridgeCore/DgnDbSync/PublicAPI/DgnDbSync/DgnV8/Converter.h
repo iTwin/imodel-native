@@ -301,30 +301,49 @@ struct ResolvedModelMapping
 struct ResolvedImportJob
 {
 protected:
-    SyncInfo::ImportJob m_mapping;
+    int64_t m_syncInfoImportJobRowId {};        // <-- temporary, until we get rid of syncinfo
     SubjectCPtr m_jobSubject;
+    DgnV8Api::ModelId m_v8MasterModel {};
+    Transform m_v8MasterModelTransform;
+    DgnModelId m_masterModel;
+    Transform m_jobTransform;
+    SyncInfo::ImportJob::Type m_type {};
 public:
     ResolvedImportJob() {}
-    ResolvedImportJob(SyncInfo::ImportJob const& j, SubjectCR s) : m_mapping(j), m_jobSubject(&s) {}
+    ResolvedImportJob(SubjectCR s, TransformCR jtr, DgnModelId masterModel, DgnV8Api::ModelId v8MasterModel, TransformCR v8tr, SyncInfo::ImportJob::Type typ, int64_t sijid = 0) : 
+        m_jobSubject(&s), m_masterModel(masterModel), m_v8MasterModel(v8MasterModel), m_v8MasterModelTransform(v8tr), m_jobTransform(jtr), m_type(typ), m_syncInfoImportJobRowId(sijid) {}
     ResolvedImportJob(SubjectCR s) : m_jobSubject(&s) {}
 
     bool IsValid() const {return m_jobSubject.IsValid();}
 
-    void FromSelect(BeSQLite::Statement& stmt) {m_mapping.FromSelect(stmt); /* WIP_IMPORT_JOB -- resolve the subject */}
+    //! Get the V8 master model for this job
+    DgnV8Api::ModelId GetV8MasterModelId() const { return m_v8MasterModel; }
+    void SetV8MasterModelId(DgnV8Api::ModelId mm) { m_v8MasterModel = mm; }
 
-    SyncInfo::ImportJob& GetImportJob() {return m_mapping;}
+    //! Get The *v8 master model* transform
+    TransformCR GetV8MasterModelTransform() const {return m_v8MasterModelTransform;}
+    void SetV8MasterModelTransform(TransformCR t) {m_v8MasterModelTransform=t;}
 
-    //! Get the root model for this job
-    SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const { return m_mapping.GetV8ModelSyncInfoId(); }
+    //! Get the iModel model that was created for the master model
+    DgnModelId GetMasterModelId() const { return m_masterModel; }
+    void SetMasterModelId(DgnModelId mm) { m_masterModel = mm; }
 
     //! Get the job subject
     SubjectCR GetSubject() const {BeAssert(IsValid()); return *m_jobSubject;}
 
+    //! Get The *job* transform
+    TransformCR GetJobTransform() const {return m_jobTransform;}
+    void SetJobTransform(TransformCR t) {m_jobTransform=t;}
+
     //! Get the type of converter that created this job
-    SyncInfo::ImportJob::Type GetConverterType() const {return m_mapping.GetType();}
+    SyncInfo::ImportJob::Type GetConverterType() const {return m_type;}
+    void SetConverterType(SyncInfo::ImportJob::Type t) {m_type=t;}
 
     //! Get the name prefix that is used by this job
-    Utf8StringCR GetNamePrefix() const { return m_mapping.GetPrefix(); }
+    Utf8StringCR GetNamePrefix() const { return ""; }
+
+    int64_t GetSyncInfoImportJobRowId() const {return m_syncInfoImportJobRowId;}
+    void SetSyncInfoImportJobRowId(int64_t v) {m_syncInfoImportJobRowId=v;}
 
 };
 
@@ -1217,6 +1236,7 @@ public:
     //! Look up the ImportJob that was created by a prior run of the converter for this V8 file, assuming that there is only one. This method
     //! fails if there is no ImportJob or if there is more than one ImportJob.
     ResolvedImportJob FindSoleImportJobForFile(DgnV8FileR rootFile);
+    ResolvedImportJob FindImportJobFromAspect(DgnV8FileR, DgnV8Api::ModelId const*);
 
     //! Look up the ImportJob that was created by a prior run of the converter for this V8 model, if any.
     ResolvedImportJob FindImportJobForModel(DgnV8ModelR rootModel);

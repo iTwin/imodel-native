@@ -70,7 +70,16 @@ ResolvedImportJob Converter::GetResolvedImportJob(SyncInfo::ImportJob const& imp
         return ResolvedImportJob();
         }
 
-    return ResolvedImportJob(importJob, *jobSubject);
+    SyncInfo::V8ModelMapping mm;
+    auto status = GetSyncInfo().GetModelBySyncInfoId(mm, importJob.GetV8ModelSyncInfoId());
+    if (BSISUCCESS != status)
+        {
+        BeAssert(false);
+        ReportError(IssueCategory::CorruptData(), Issue::Error(), "ImportJob has bad V8ModelSyncInfoId");
+        return ResolvedImportJob();
+        }
+
+    return ResolvedImportJob(*jobSubject, importJob.GetTransform(), mm.GetModelId(), mm.GetV8ModelId().GetValue(), m_rootTrans, importJob.GetType(), importJob.GetRowId());
     }
 
 /*---------------------------------------------------------------------------------**//**

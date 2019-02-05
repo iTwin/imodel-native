@@ -1169,7 +1169,6 @@ struct SheetCompositionTests : public ConverterTestBaseFixture
     void AnalyzeDrawingModels(std::vector<DgnElementId>& drawingElementIds, int& attachmentAspectCount, DgnDbR db);
     void CheckExtractedDrawingGraphics(
         Utf8CP expectedSeetName,
-        Utf8CP expectedDrawingUserLabel,
         int expectedDrawingElementCount,
         int expectedAttachmentAspectCount,
         int expectedDrawingGraphicCount,
@@ -1249,7 +1248,7 @@ TEST_F (SheetCompositionTests, HasDrawingBoundary)
 void SheetCompositionTests::FindSheetModelSource(DgnV8Api::ModelId& v8SheetModelId, DgnDbR db, DgnModelId sheetModelId)
     {
     auto selSheetModelSourceId = db.GetPreparedECSqlStatement(
-        "SELECT x.Identifer from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
+        "SELECT x.Identifier from " BIS_SCHEMA(BIS_CLASS_Sheet) " s JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=s.ECInstanceId)"
         " WHERE x.Element.Id=? and x.Kind='Model'");
     selSheetModelSourceId->BindId(1, sheetModelId);
     ASSERT_EQ(BE_SQLITE_ROW, selSheetModelSourceId->Step());
@@ -1293,7 +1292,7 @@ void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<BentleyApi::DRange3
 
     // Find all ExternalSourceAspects on all DrawingGraphics in the DrawingModel
     auto selGraphics = db.GetPreparedECSqlStatement(
-        "SELECT x.Identifer, x.Scope.Id, dg.ECInstanceId, x.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_DrawingGraphic) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
+        "SELECT x.Identifier, x.Scope.Id, dg.ECInstanceId, x.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_DrawingGraphic) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
         " WHERE dg.Model.Id=? and x.Kind='ProxyGraphic'");
     selGraphics->BindId(1, drawingModel.GetModelId());
     
@@ -1325,7 +1324,6 @@ void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<BentleyApi::DRange3
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SheetCompositionTests::CheckExtractedDrawingGraphics(
     Utf8CP expectedSeetName,
-    Utf8CP expectedDrawingUserLabel,
     int expectedDrawingElementCount,
     int expectedAttachmentAspectCount,
     int expectedDrawingGraphicCount,
@@ -1366,7 +1364,6 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
 
         auto drawing = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
         ASSERT_TRUE(drawing.IsValid());
-        ASSERT_STREQ(drawing->GetUserLabel(), expectedDrawingUserLabel);
         auto drawingModel = drawing->GetSub<DrawingModel>();
         ASSERT_TRUE(drawingModel.IsValid());
 
@@ -1380,7 +1377,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
         V8FileEditor v8editor;
         v8editor.Open(m_v8FileName);
 
-        auto selSheetModelSourceId = db->GetPreparedECSqlStatement("SELECT x.Identifer from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
+        auto selSheetModelSourceId = db->GetPreparedECSqlStatement("SELECT x.Identifier from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
                                                         " WHERE x.Element.Id=? and x.Kind='Model'");
         selSheetModelSourceId->BindId(1, sheetModel->GetModeledElementId());
         ASSERT_EQ(BE_SQLITE_ROW, selSheetModelSourceId->Step());
@@ -1417,7 +1414,6 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
 
         auto drawing = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
         ASSERT_TRUE(drawing.IsValid());
-        ASSERT_STREQ(drawing->GetUserLabel(), expectedDrawingUserLabel);
         auto drawingModel = drawing->GetSub<DrawingModel>();
         ASSERT_TRUE(drawingModel.IsValid());
 
@@ -1443,7 +1439,6 @@ TEST_F (SheetCompositionTests, ExtractedDrawingGraphics)
     m_wantCleanUp = false;
 
     static constexpr Utf8CP expectedSeetName = "Section_Case1";
-    static constexpr Utf8CP expectedDrawingUserLabel = "Section_Case1";
 
     int expectedDrawingElementCount = 1;
     int expectedAttachmentAspectCount = 4;
@@ -1451,5 +1446,5 @@ TEST_F (SheetCompositionTests, ExtractedDrawingGraphics)
 
     DgnV8Api::ModelId expectedV8SheetModelId = 219;
 
-
+    CheckExtractedDrawingGraphics(expectedSeetName, expectedDrawingElementCount, expectedAttachmentAspectCount, expectedDrawingGraphicCount, expectedV8SheetModelId);
     }
