@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/FenceParams.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -16,8 +16,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct FenceSimplifyGraphic : SimplifyGraphic
 {
-bool _WantPreBakedBody(IBRepEntityCR) override {return true;}
-
 explicit FenceSimplifyGraphic(Render::GraphicBuilder::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context) : SimplifyGraphic(params, processor, context) {}
 };
 
@@ -71,7 +69,7 @@ Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, DgnDbR db, Trans
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
 UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
-UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;} // NOTE: Won't be used for persistent BReps, we'll use backup mesh from GeometryStream...
+UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;} // NOTE: Inefficient w/o backup mesh from GeometryStream...
 UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return UnhandledPreference::Box;}
 
 /*---------------------------------------------------------------------------------**//**

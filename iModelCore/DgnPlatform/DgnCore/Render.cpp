@@ -1037,18 +1037,6 @@ void OctEncodedNormal::VerifyEncoded(uint16_t val, DVec3dCR in)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GraphicBuilder::_WantPreBakedBody(IBRepEntityCR body)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID)
-    return !BRepUtil::HasCurvedFaceOrEdge(body);
-#else
-    return true;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicBuilder::CreateParams::CreateParams(DgnViewportR vp, TransformCR tf, GraphicType type)
