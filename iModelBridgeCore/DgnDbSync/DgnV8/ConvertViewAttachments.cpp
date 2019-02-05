@@ -142,40 +142,47 @@ ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttac
     //  Likewise, when we add an XSA to the new Drawing element, we specify the v8 attachment element's ID as the SourceId and the BIM sheet model as the Scope.
     //  For the XSA, we have to make sure that we capture the entire *path* to the v8 attachment element in order to handle the case of nested references.
 
-    if (_WantProvenanceInBim() && IsUpdating())
+    // iModel                       V8           
+    // ----------------             -----------------------
+    // Sheet (element)                                                         
+    // SheetModel                   DgnSheetModel                                               
+    // Drawing(element)             DgnAttachment (element)         We effectively generate a drawing from the attachment (really, from the attached models)
+    // DrawingModel
+
+    // Here are the XSA's that we create:
+    // SheetModel          ModelXsa DgnSheetModel   (this is created in a separate function, not here.)
+    // DrawingModel        ModelXsa DgnSheetModel
+    // Drawing(element)  ElementXsa DgnAttachment
+
+    if (IsUpdating())
         {
-        auto sel = GetDgnDb().GetPreparedECSqlStatement(
-            "SELECT d.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_Drawing) " d, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
-            " WHERE x.Kind='Element' AND x.Scope.Id=? AND x.Identifier=? AND x.Element.Id=d.ECInstanceId");
-        sel->BindId(1, parentModel.GetDgnModel().GetModeledElementId());
-        sel->BindText(2, ComputeV8AttachmentIdPath(v8Attachment).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-        if (BE_SQLITE_ROW == sel->Step())
+        // Find any existing Drawing *element* that we created by generating a drawing for this attachment.
+        SyncInfo::V8ElementExternalSourceAspectIterator elIt(parentModel.GetDgnModel(), "Scope.Id=? AND Identifier=?");
+        elIt.GetStatement()->BindId(1, parentModel.GetDgnModel().GetModeledElementId());
+        elIt.GetStatement()->BindText(2, ComputeV8AttachmentIdPath(v8Attachment).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        for (auto elemXsaItem : elIt)
             {
-            auto drawingElementId = sel->GetValueId<DgnElementId>(0);
+            auto drawingElementId = elemXsaItem.GetElementId();
+            if (!GetDgnDb().Elements().Get<Drawing>(drawingElementId).IsValid())    // Make sure we only find XSAs on Drawing elements!
+                continue;
 
             _GetChangeDetector()._OnElementSeen(*this, drawingElementId);
 
-            auto drawingModel = GetDgnDb().Models().GetModel(DgnModelId(drawingElementId.GetValue()));
-    
-            SyncInfo::ModelIterator siIter(GetDgnDb(), "ModelId=?");
-            siIter.GetStatement()->BindId(1, drawingModel->GetModelId());
-            auto first = siIter.begin();
-            if (first != siIter.end())
-                {
-                ResolvedModelMapping rmm(*drawingModel, parentModel.GetV8Model(), first.GetMapping(), &v8Attachment);
-                _GetChangeDetector()._OnModelSeen(*this, rmm);
+            auto drawing = GetDgnDb().Elements().GetElement(drawingElementId);
 
-                SyncInfo::ElementIterator elIter(GetDgnDb(), "ElementId=?");
-                elIter.GetStatement()->BindId(1, drawingElementId);
-                auto firstElMapping = elIter.begin();
-                if (firstElMapping != elIter.end())
-                    {
-                    ResolvedModelMappingWithElement rmme;
-                    rmme.SetResolvedModelMapping(rmm);
-                    rmme.SetModeledElementMapping(firstElMapping.GetV8ElementMapping()); 
-                    return rmme;
-                    }
-                }
+            // Now get the XSA for the existing Drawing*Model* that goes with this Drawing element.
+            auto drawingModel = drawing->GetSubModel();
+            SyncInfo::V8ModelExternalSourceAspect modelXsa;
+            DgnElementCPtr modeledElement;
+            std::tie(modeledElement, modelXsa) = SyncInfo::V8ModelExternalSourceAspect::GetAspect(*drawingModel);
+            ResolvedModelMapping rmm(*drawingModel, parentModel.GetV8Model(), modelXsa, &v8Attachment);
+            _GetChangeDetector()._OnModelSeen(*this, rmm);
+            
+            // Return both element and model mappings
+            ResolvedModelMappingWithElement rmme;
+            rmme.SetResolvedModelMapping(rmm);
+            rmme.SetModeledElementMapping(elemXsaItem); 
+            return rmme;
             }
         }
 
@@ -189,36 +196,26 @@ ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttac
     ElementConversionResults newDrawingElement;
     newDrawingElement.m_element = drawing;
     
-    if (_WantProvenanceInBim())
-        {
-        newDrawingElement.m_sourceId = ComputeV8AttachmentIdPath(v8Attachment);
-        newDrawingElement.m_scope = parentModel;
-        newDrawingElement.m_jsonProps = ComputeV8AttachmentPathDescriptionAsJson(v8Attachment);
-        }
+    newDrawingElement.m_sourceId = ComputeV8AttachmentIdPath(v8Attachment);
+    newDrawingElement.m_scope = parentModel;
+    newDrawingElement.m_jsonProps = ComputeV8AttachmentPathDescriptionAsJson(v8Attachment);
 
     DgnV8Api::EditElementHandle v8eh(v8Attachment.GetElementId(), &parentModel.GetV8Model());
 
-/* this is done automatically by InsertConversionResults
-    if (_WantProvenanceInBim())
-        {
-        SyncInfo::ElementProvenance elprov(v8eh, GetSyncInfo(), GetCurrentIdPolicy());
-        SyncInfo::V8ElementExternalSourceAspectData xsource(parentModel.GetDgnModel().GetModelId(), v8eh.GetElementId(), elprov);
-        auto aspect = SyncInfo::V8ElementExternalSourceAspect::CreateAspect(xsource, GetDgnDb());
-        aspect.AddAspect(*newDrawingElement.m_element);
-        }
-        */
-    InsertConversionResults(newDrawingElement, v8eh, parentModel);
+    InsertConversionResults(newDrawingElement, v8eh, parentModel);      // automatically adds a V8ElementExternalSourceAspect to the new Drawing element
     rmme.SetModeledElementMapping(newDrawingElement.m_mapping); 
 
     auto drawingModel = DrawingModel::Create(*drawing);
     drawingModel->Insert();
 
     // Map the PARENT model to this new drawing (since we are going to put the attachment's proxy graphics into the drawing).
-    SyncInfo::V8ModelMapping smapping;
     auto refTrans = ComputeAttachmentTransform(parentModel.GetTransform(), v8Attachment);
-    GetSyncInfo().InsertModel(smapping, drawingModel->GetModelId(), parentModel.GetV8Model(), refTrans);
+    auto drawingModelXsa = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(parentModel.GetV8Model(), refTrans, *this);
+    auto drawingEd = newDrawingElement.m_element->CopyForEdit();
+    drawingModelXsa.AddAspect(*drawingEd);
+    drawingEd->Update();
 
-    rmme.SetResolvedModelMapping(ResolvedModelMapping(*drawingModel, parentModel.GetV8Model(), smapping, &v8Attachment));
+    rmme.SetResolvedModelMapping(ResolvedModelMapping(*drawingModel, parentModel.GetV8Model(), drawingModelXsa, &v8Attachment));
     return rmme;
     }
 
@@ -349,7 +346,10 @@ void Converter::SheetsCreateViewAttachment(ElementConversionResults& results,
     refClip.Init(v8DgnAttachment, nullptr, /*relativeToImmediateParent*/false);    // false means transform to "world" which in this context means the sheet
 
     if (refClip.HasClips() && refClip.HasViewletClips())
-        clipVector = ConvertClip(refClip.CalculateClip(nullptr), &v8SheetModelMapping.GetTransform());
+        {
+        auto transform = v8SheetModelMapping.GetTransform();
+        clipVector = ConvertClip(refClip.CalculateClip(nullptr), &transform);
+        }
 
     DgnCategoryId attachmentCategoryId = GetOrCreateDrawingCategoryId(*GetJobDefinitionModel(), CATEGORY_NAME_Attachments);
 

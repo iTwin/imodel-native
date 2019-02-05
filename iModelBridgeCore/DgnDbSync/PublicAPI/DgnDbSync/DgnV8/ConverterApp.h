@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/DgnV8/ConverterApp.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define NULL 0
@@ -40,7 +40,7 @@ struct ConverterApp : iModelBridge
         {
         bvector<DgnModelId> m_modelsInserted, m_modelsDeleted;
         void _OnModelInserted(ResolvedModelMapping const& m) {m_modelsInserted.push_back(m.GetDgnModel().GetModelId());}
-        void _OnModelDelete(DgnModelR, SyncInfo::V8ModelMapping const& m) {m_modelsDeleted.push_back(m.GetModelId());}
+        void _OnModelDelete(DgnModelR, SyncInfo::V8ModelExternalSourceAspect const& m) {m_modelsDeleted.push_back(m.GetModelId());}
         };
 
 protected:

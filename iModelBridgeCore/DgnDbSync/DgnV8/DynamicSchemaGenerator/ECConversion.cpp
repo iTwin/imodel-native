@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -2879,7 +2879,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
     ECObjectsV8::SchemaKey existingSchemaKey;
     SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
     
-    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), SyncInfo::V8FileSyncInfoId()))
+    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), RepositoryLinkId()))
         {
         //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
         //and also check whether the existing one and the new one are compatible.
@@ -2930,7 +2930,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                             return BSISUCCESS;
                             }
                         }
-                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), Converter::GetV8FileSyncInfoIdFromAppData(*v8Model.GetDgnFileP())))
+                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP())))
                         return BSISUCCESS;
                     }
                 }
@@ -3112,7 +3112,7 @@ void DynamicSchemaGenerator::CheckNoECSchemaChanges(bvector<DgnV8ModelP> const& 
     for (auto& v8Model : uniqueModels)
         {
         bmap<Utf8String, uint32_t> syncInfoChecksums;
-        SyncInfo::V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*v8Model->GetDgnFileP());
+        RepositoryLinkId v8FileId = Converter::GetRepositoryLinkIdFromAppData(*v8Model->GetDgnFileP());
         GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums, v8FileId);
         CheckECSchemasForModel(*v8Model, syncInfoChecksums);
         }
@@ -3377,7 +3377,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
 
     // *** TRICKY: We need to know if this is an update or not. The framework has not yet set the 'is-updating' flag.
     //              So, we must figure out if this is an update or not right here and now by checking to see if the job subject already exists.
-    _GetParamsR().SetIsUpdating(FindImportJobForModel(*GetRootModelP()).IsValid());
+    _GetParamsR().SetIsUpdating(FindSoleImportJobForFile(*GetRootV8File()).IsValid());
 
 #ifndef NDEBUG
     if (_WantModelProvenanceInBim())
@@ -3512,7 +3512,7 @@ BentleyStatus TiledFileConverter::MakeSchemaChanges()
     bvector<DgnV8FileP> filesInOrder;
     filesInOrder.push_back(GetRootModelP()->GetDgnFileP());
 
-    GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
+    GetRepositoryLinkId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
     auto status = T_Super::MakeSchemaChanges(filesInOrder, modelsInOrder);
 
@@ -3601,7 +3601,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
     v8ECManager.FindRelationshipEntriesOnElement(v8Element.GetElementRef(), relationships);
 
     DgnDbR dgndb = GetDgnDb();
-    SyncInfo::V8FileSyncInfoId fileId = GetV8FileSyncInfoIdFromAppData(*v8Element.GetDgnFileP());
+    RepositoryLinkId fileId = GetRepositoryLinkId(*v8Element.GetDgnFileP());
 
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {

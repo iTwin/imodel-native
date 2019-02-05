@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ScalableMeshConversion.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -219,16 +219,15 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
             modelSelector.AddModel(modelId);
             modelSelector.Update();
             }
-        SyncInfo::ElementProvenance prov = SyncInfo::ElementProvenance(v8el, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
-        SyncInfo::V8ElementMapping mapping = SyncInfo::V8ElementMapping(DgnElementId(modelId.GetValue()), v8el, v8mm.GetV8ModelSyncInfoId(), prov);
-        converter.GetSyncInfo().InsertElement(mapping);
-        converter._GetChangeDetector()._OnElementSeen(converter, mapping.GetElementId());
 
+        converter.WriteV8ElementExternalSourceAspect(existingId, v8el, changeInfo.m_v8ElementAspect.GetModelId());
+        
+        converter._GetChangeDetector()._OnElementSeen(converter, existingId);
         }
     if (((ScalableMeshModel*)spatialModel)->_AllowPublishing())
         {
         // Schedule reality model tileset creation.
-        converter.AddModelRequiringRealityTiles(modelId, smFileName.GetNameUtf8(), Converter::GetV8FileSyncInfoIdFromAppData(*v8el.GetDgnFileP()));
+        converter.AddModelRequiringRealityTiles(modelId, smFileName.GetNameUtf8(), converter.GetRepositoryLinkId(*v8el.GetDgnFileP()));
         }
     else if (!converter.GetDgnDb().GeoLocation().GetEcefLocation().m_isValid)
         {

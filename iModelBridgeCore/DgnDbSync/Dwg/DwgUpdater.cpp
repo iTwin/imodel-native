@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgUpdater.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
@@ -39,7 +39,7 @@ ResolvedImportJob DwgImporter::GetResolvedImportJob (DwgSyncInfo::ImportJob cons
 void UpdaterChangeDetector::_Prepare (DwgImporter& importer)
     {
     m_byIdIter   = new DwgSyncInfo::ByDwgObjectIdIter (importer.GetDgnDb());
-    m_byHashIter = new DwgSyncInfo::ByHashIter (importer.GetDgnDb());
+    m_byHashIter = new DwgSyncInfo::V8ElementExternalSourceAspectIteratorByChecksum (importer.GetDgnDb());
 
 #ifdef DEBUG_CHECKENTITY
     DwgSyncInfo::ElementIterator  all(importer.GetDgnDb(), nullptr);

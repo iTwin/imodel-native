@@ -550,17 +550,17 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         {
         SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::ModelIterator models(*syncInfo.m_dgndb, nullptr);
+        SyncInfo::V8ModelExternalSourceAspectIterator models(*syncInfo.m_dgndb, nullptr);
         int count = 0;
-        for (SyncInfo::ModelIterator::Entry entry = models.begin(); entry != models.end(); ++entry)
+        for (SyncInfo::V8ModelExternalSourceAspectIterator::Entry entry = models.begin(); entry != models.end(); ++entry)
             ++count;
         ASSERT_EQ(nModelsExpected, count);
         }
 
     DgnElementId dgnDbElementId;
     BentleyApi::Placement3d wasPlacement;
-    SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
-    SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
+    RepositoryLinkId editV8FileSyncInfoId;
+    iModelExternalSourceAspectID editiModelExternalSourceAspectID;
     if (true)
         {
         //  Verify that Updater found the new element
@@ -569,9 +569,9 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
 
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, editV8FileName);
 
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, editV8ModelId);
+        syncInfo.MustFindModelByV8ModelId(editiModelExternalSourceAspectID, editV8FileSyncInfoId, editV8ModelId);
 
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, editV8ElementId);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editiModelExternalSourceAspectID, editV8ElementId);
 
         DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
         ASSERT_TRUE(dgnDbElement.IsValid());
@@ -613,7 +613,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
 
         DgnElementId dgnDbElementAfter;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editV8ModelSyncInfoId, editV8ElementId);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editiModelExternalSourceAspectID, editV8ElementId);
         ASSERT_EQ(dgnDbElementId, dgnDbElementAfter) << L"modified V8 element should still be mapped to the same DgnDb element";
 
         DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
@@ -650,7 +650,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
 
         DgnElementId dgnDbElementAfter;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editV8ModelSyncInfoId, editV8ElementId, /*>>*/0/*<<*/);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editiModelExternalSourceAspectID, editV8ElementId, /*>>*/0/*<<*/);
         ASSERT_TRUE(!dgnDbElementAfter.IsValid()) << L"V8 element was deleted => we should not find a mapping to a DgnDb element";
 
         DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);

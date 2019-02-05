@@ -1103,12 +1103,12 @@ TEST_F(ECConversionTests, UpdatePropertyValueOnExistingInstance)
         {
         SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
+        RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        iModelExternalSourceAspectID editiModelExternalSourceAspectID;
+        syncInfo.MustFindModelByV8ModelId(editiModelExternalSourceAspectID, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
         DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, eidWithInst);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editiModelExternalSourceAspectID, eidWithInst);
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);

@@ -711,8 +711,8 @@ BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, 
         {
         Utf8String docId = it.GetSourceIdentity().GetId();
 
-        if (IsDocumentAssignedToJob(docId))   // This is how to check if the document still exists.
-            continue;                         //  If it does, do nothing.
+        if (IsDocumentInRegistry(docId)) // If the document is in the document registry at all, that means that a) the document exists, and b) the job scheduler assigned the document to this bridge.
+            continue;                    // So, if the doc exists and is still assigned to me, then don't delete it.
 
         auto docrid = m_syncInfo.FindRowidBySourceId(iModelBridgeSyncInfoFile::SourceIdentity(srid, kind, docId.c_str()));
 
@@ -966,7 +966,7 @@ iModelExternalSourceAspect iModelExternalSourceAspect::GetAspect(DgnElementCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelExternalSourceAspect iModelExternalSourceAspect::GetAspect(DgnElementR el, BeSQLite::EC::ECInstanceId aspectid, ECN::ECClassCP aspectClass)
+iModelExternalSourceAspect iModelExternalSourceAspect::GetAspectForEdit(DgnElementR el, BeSQLite::EC::ECInstanceId aspectid, ECN::ECClassCP aspectClass)
     {
     if (!aspectClass)
         aspectClass = GetAspectClass(el.GetDgnDb());
@@ -1003,6 +1003,16 @@ DgnElementId iModelExternalSourceAspect::GetScope() const
     {
     ECN::ECValue v;
     m_instance->GetValue(v, XTRN_SRC_ASPCT_Scope);
+    return v.GetNavigationInfo().GetId<DgnElementId>();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId iModelExternalSourceAspect::GetElementId() const
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, "Element");
     return v.GetNavigationInfo().GetId<DgnElementId>();
     }
 
@@ -1101,3 +1111,65 @@ iModelBridgeSyncInfoFile::SourceState::SourceState(iModelExternalSourceAspect::S
     m_hash = aspectState.m_checksum;
     m_lmt = iModelExternalSourceAspect::DoubleFromString(aspectState.m_version.c_str());
     }
+
+#ifdef COMMENT_OUT
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename XSAT>
+ExternalSourceAspectIterator::ExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP kind, Utf8StringCR wh) : m_db(db))
+    {
+    Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind=?)");
+    if (!wh.empty())
+        ecsql.append(" AND (").append(wh).append(" )");
+    ecsql.append(" )");
+
+    m_stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+
+    if (!m_stmt.IsValid())
+        return;
+
+    m_stmt->BindId(1, scope);
+    m_stmt->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename XSAT>
+BeSQLite::DbResult ExternalSourceAspectIterator::Step() const
+    {
+    if (!m_stmt.IsValid())
+        return BE_SQLITE_DONE;
+
+    auto rc = m_stmt->Step();
+    if (BE_SQLITE_ROW !=  rc)
+        {
+        m_aspect.Invalidate();
+        return rc;
+        }
+
+    auto el = m_db.Elements().GetElement(m_stmt->GetValueId<DgnElementId>(1));
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        m_aspect.Invalidate();
+        return BE_SQLITE_ERROR;
+        }
+    m_aspect = iModelExternalSourceAspect::GetAspect(*el, m_stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0));
+    return BE_SQLITE_ROW;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename XSAT>
+void ExternalSourceAspectIterator::Entry::Step()
+    {
+    if (m_it) 
+        {
+        if (BeSQLite::BE_SQLITE_ROW != m_it->Step()) 
+            m_it = nullptr;
+        }
+    }
+#endif

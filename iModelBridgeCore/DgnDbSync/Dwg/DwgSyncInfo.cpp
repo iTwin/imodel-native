@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgSyncInfo.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
@@ -1205,7 +1205,7 @@ bool DwgSyncInfo::IsMappedToSameDwgObject (DgnElementId elementId, DgnElementIdS
     if (iThisElement.GetDwgObjectId() == 0)
         {
         // when StableIdPolicy==ByHash
-        ByHashIter  othersMappedToDwgHash(*m_dgndb);
+        V8ElementExternalSourceAspectIteratorByChecksum  othersMappedToDwgHash(*m_dgndb);
         othersMappedToDwgHash.Bind(iThisElement.GetDwgModelSyncInfoId(), iThisElement.GetProvenance().GetPrimaryHash(), iThisElement.GetProvenance().GetSecondaryHash());
         for (auto const& otherMappedToDwgHash : othersMappedToDwgHash)
             {
@@ -1563,7 +1563,7 @@ DwgSyncInfo::ElementIterator::ElementIterator(DgnDbCR db, Utf8CP where) : BeSQLi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DwgSyncInfo::ByHashIter::Bind (DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId, DwgSyncInfo::DwgObjectHash hash1, DwgSyncInfo::DwgObjectHash hash2)
+void DwgSyncInfo::V8ElementExternalSourceAspectIteratorByChecksum::Bind (DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId, DwgSyncInfo::DwgObjectHash hash1, DwgSyncInfo::DwgObjectHash hash2)
     {
     m_stmt->Reset(); 
     m_stmt->BindInt (1, modelSyncId.GetValue()); 

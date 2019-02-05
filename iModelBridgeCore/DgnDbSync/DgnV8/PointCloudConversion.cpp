@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/PointCloudConversion.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -231,8 +231,6 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
     // Extract color and weight from element symbology.
     setPointCloudSymbology(*pPointCloudModel, v8eh, *this);
     
-    SyncInfo::ElementProvenance prov = SyncInfo::ElementProvenance(v8eh, GetSyncInfo(), GetCurrentIdPolicy());
-    SyncInfo::V8ElementMapping mapping = SyncInfo::V8ElementMapping(pPointCloudModel->GetModeledElementId(), v8eh, v8mm.GetV8ModelSyncInfoId(), prov);
     if (!existingId.IsValid())
         {
         auto modelStatus = pPointCloudModel->Insert();
@@ -242,7 +240,7 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
             ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), Utf8String(filename.c_str()).c_str());
             return ERROR;
             }
-        m_syncInfo.InsertElement(mapping);
+
         _GetChangeDetector()._OnElementSeen(*this, pPointCloudModel->GetModeledElementId());
         }
     else
@@ -254,11 +252,14 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
             ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), filename.GetNameUtf8().c_str());
             return ERROR;
             }
-        m_syncInfo.UpdateElement(mapping);
-        _OnElementConverted(mapping.GetElementId(), &v8eh, Converter::ChangeOperation::Update);
+
+        _OnElementConverted(existingId, &v8eh, Converter::ChangeOperation::Update);
         }
+
+    WriteV8ElementExternalSourceAspect(pPointCloudModel->GetModeledElementId(), v8eh, GetDgnDb().GetRealityDataSourcesModel()->GetModelId());
+
     // Schedule reality model tileset creation.
-    AddModelRequiringRealityTiles(pPointCloudModel->GetModelId(), filename.GetNameUtf8(), Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP()));
+    AddModelRequiringRealityTiles(pPointCloudModel->GetModelId(), filename.GetNameUtf8(), GetRepositoryLinkId(*v8eh.GetDgnFileP()));
 
         
     // Display the point cloud (or not) in the DgnDb views

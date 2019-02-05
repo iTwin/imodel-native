@@ -682,14 +682,14 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
         {
         SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
+        RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        iModelExternalSourceAspectID editiModelExternalSourceAspectID;
+        syncInfo.MustFindModelByV8ModelId(editiModelExternalSourceAspectID, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
         DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, eid);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editiModelExternalSourceAspectID, eid);
         DgnElementId dgnDbElementId2;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId2, editV8ModelSyncInfoId, eid2);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId2, editiModelExternalSourceAspectID, eid2);
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         //db->Schemas().CreateClassViewsInDb();
@@ -738,12 +738,12 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
         {
         SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
+        RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        iModelExternalSourceAspectID editiModelExternalSourceAspectID;
+        syncInfo.MustFindModelByV8ModelId(editiModelExternalSourceAspectID, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
         DgnElementId dgnDbElementId3;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId3, editV8ModelSyncInfoId, eid3);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId3, editiModelExternalSourceAspectID, eid3);
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         auto dgnDbElement3 = db->Elements().GetElement(dgnDbElementId3);
@@ -1103,12 +1103,12 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
         {
         SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
+        RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        iModelExternalSourceAspectID editiModelExternalSourceAspectID;
+        syncInfo.MustFindModelByV8ModelId(editiModelExternalSourceAspectID, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
         DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, eid);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editiModelExternalSourceAspectID, eid);
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         //db->Schemas().CreateClassViewsInDb();

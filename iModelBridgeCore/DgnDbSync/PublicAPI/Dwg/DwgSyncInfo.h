@@ -143,9 +143,9 @@ struct DwgSyncInfo
         const_iterator end() const {return Entry (NULL, false);}
         };
 
-    struct FileById : FileIterator
+    struct RepositoryLinkExternalSourceAspectIteratorByElementId : FileIterator
         {
-        FileById (DgnDbCR db, DwgFileId fileId) : FileIterator(db, "Id=?")
+        RepositoryLinkExternalSourceAspectIteratorByElementId (DgnDbCR db, DwgFileId fileId) : FileIterator(db, "Id=?")
             {
             GetStatement()->BindInt(1, fileId.GetValue());
             }

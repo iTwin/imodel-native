@@ -649,7 +649,7 @@ bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson              08/17
 //---------------------------------------------------------------------------------------
-bool iModelBridge::Params::IsDocumentAssignedToJob(Utf8StringCR docId) const
+bool iModelBridge::Params::IsDocumentInRegistry(Utf8StringCR docId) const
     {
     if (nullptr == m_documentPropertiesAccessor) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
         {
