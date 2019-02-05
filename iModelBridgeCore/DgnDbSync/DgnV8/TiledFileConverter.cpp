@@ -130,7 +130,7 @@ ResolvedModelMapping TiledFileConverter::_GetResolvedModelMapping(DgnV8ModelRefC
     BeAssert(model->GetRefCount() > 0); // DgnModels holds references to all models that it loads
 
     auto modeledElement = m_dgndb->Elements().GetElement(model->GetModeledElementId())->CopyForEdit();
-    auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(v8Model, Transform::FromIdentity(), *this);
+    auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(v8Model, m_rootTrans, *this);
     modelAspect.AddAspect(*modeledElement);
     modeledElement->Update();
 
@@ -169,7 +169,7 @@ ResolvedModelMapping TiledFileConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
         return ResolvedModelMapping();
 
     auto modeledElement = m_dgndb->Elements().GetElement(model->GetModeledElementId())->CopyForEdit();
-    auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(v8Model, Transform::FromIdentity(), *this);
+    auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(v8Model, m_rootTrans, *this);
     modelAspect.AddAspect(*modeledElement);
     auto updatedModelElement = modeledElement->Update();
     BeAssert(updatedModelElement.IsValid());
