@@ -16,7 +16,7 @@
 #include <DgnView/DgnViewLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
-#include <WebServices/Configuration/UrlProvider.h>
+
 BEGIN_BENTLEY_NAMESPACE namespace WebServices {
 typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
 } END_BENTLEY_NAMESPACE
