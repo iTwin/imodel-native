@@ -775,9 +775,14 @@ int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size
     size_t countAsBytes = 0;
     uint64_t* ct = new uint64_t[countData];
 
+    bool mustRedo = false;
+    for (size_t i = 0; i < countData; i++)
+        if (DataTypeArray[i].clientID == -1 && !DataTypeArray[i].upToDate)
+            mustRedo = true;
+
     for (size_t i = 0; i < countData; i++)
         {
-        ct[i] = DataTypeArray[i].WriteToBinaryStream(serializedSet[i]);
+        ct[i] = DataTypeArray[i].WriteToBinaryStream(serializedSet[i], mustRedo);
         countAsBytes += ct[i];
         countAsPts += (size_t)(ceil((float)ct[i] / sizeof(int32_t)));
         }

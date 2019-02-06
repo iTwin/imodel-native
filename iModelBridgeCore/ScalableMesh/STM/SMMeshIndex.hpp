@@ -5066,9 +5066,23 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
     DRange3d polyRange;
     size_t n = 0;
     bool noIntersect = true;
+    bvector<int> indices;
+    bool useX = extRange.XLength() > extRange.YLength();
+    DRange1d ext1d = useX ? DRange1d::From(extRange.low.x, extRange.high.x) : DRange1d::From(extRange.low.y, extRange.high.y);
+    bool withinRange = false;
     for (auto&pt : polyPts)
         {
         if (extRange.IsContainedXY(pt)) ++n;
+        if (((useX && ext1d.Contains(pt.x)) || (!useX && ext1d.Contains(pt.y))) && !withinRange)
+        {
+            indices.push_back(&pt - &polyPts[0]);
+            withinRange = true;
+        }
+        else if (((useX && !ext1d.Contains(pt.x)) || (!useX && !ext1d.Contains(pt.y))) && withinRange)
+        {
+            indices.push_back(&pt - &polyPts[0]);
+            withinRange = false;
+        }
         pt.z = 0;
         polyRange.Extend(pt);
         if (noIntersect && &pt - &polyPts[0] != 0)
@@ -5082,7 +5096,18 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         }
     if (n >2) return true;
 
-    ICurvePrimitivePtr curvePtr(ICurvePrimitive::CreateLineString(polyPts));
+
+    ICurvePrimitivePtr curvePtr;
+    if((withinRange && indices.size() == 1) || indices.empty())
+        curvePtr = ICurvePrimitive::CreateLineString(polyPts);
+    else
+    {
+        bvector<DPoint3d> collectedIndices;
+        for (size_t i = 0; i < indices.size(); i += 2)
+            for (size_t j = std::max(0, indices[i] - 1); j < std::min((int)polyPts.size(), indices[i + 1] + 1); ++j)
+                collectedIndices.push_back(polyPts[j]);
+        curvePtr = ICurvePrimitive::CreateLineString(collectedIndices);
+    }
     CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
 
     extRange.low.z = extRange.high.z = 0;
