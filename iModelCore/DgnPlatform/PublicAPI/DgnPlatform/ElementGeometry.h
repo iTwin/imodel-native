@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementGeometry.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -171,8 +171,8 @@ struct GeometryStreamIO
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
         ParasolidBRep           = 25,   //!< Parasolid body
-        BRepPolyface            = 26,   //!< Polyface from Parasolid solid or sheet body (needed until we have Parasolid support on all platforms) 
-        BRepCurveVector         = 27,   //!< CurveVector from Parasolid wire or planar sheet body (needed until we have Parasolid support on all platforms) 
+        BRepPolyfaceDeprecated  = 26,   //!< Polyface from Parasolid solid or sheet body (Parasolid now supported on all required platforms) 
+        BRepCurveVecDeprecated  = 27,   //!< CurveVector from Parasolid wire or planar sheet body (Parasolid now supported on all required platforms) 
         Image                   = 28,   //!< Small single-tile raster image 
     };
 
@@ -414,7 +414,6 @@ struct GeometryCollection
         DGNPLATFORM_EXPORT bool IsCurve() const;            //!< open and unstructured curves check that avoids creating GeometricPrimitivePtr when possible.
         DGNPLATFORM_EXPORT bool IsSurface() const;          //!< closed curve, planar region, surface, and open mesh check that avoids creating GeometricPrimitivePtr when possible.
         DGNPLATFORM_EXPORT bool IsSolid() const;            //!< solid and volumetric mesh check that avoids creating GeometricPrimitivePtr when possible.
-        DGNPLATFORM_EXPORT bool IsBRepPolyface() const;     //!< polyface representation of a BRep surface/solid that is only returned when the solid kernel is unavailable.
 
         DgnGeometryPartPtr GetGeometryPartPtr() const {return m_state->m_dgnDb.Elements().GetForEdit<DgnGeometryPart>(m_state->m_geomStreamEntryId.GetGeometryPartId());}
         DgnGeometryPartCPtr GetGeometryPartCPtr() const {return m_state->m_dgnDb.Elements().Get<DgnGeometryPart>(m_state->m_geomStreamEntryId.GetGeometryPartId());}
