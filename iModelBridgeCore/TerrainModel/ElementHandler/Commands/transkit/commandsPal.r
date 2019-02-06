@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/transkit/commandsPal.r $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $	
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $	
 |
 +----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
@@ -285,21 +285,21 @@ XCommandListRsc         XCMDLISTID_TerrainModelCommands =
         "TMImport",
         TXT_Balloon_ImportLandXML,
         TXT_Flyover_ImportLandXML,
-        "53df5da6-aafe-11e4-b0ff-6894231a2840", "", "[Session]Session.TreatActiveModelAs3D()", "", "", "SystemEvent.ActiveModelChanged", NOACCEL,
-        PP_ID_FeatureAspects_TerrainModel_Import },              // @fadoc  TerrainModel.ImportLandXML XCommand
+        "53df5da6-aafe-11e4-b0ff-6894231a2840", "", "[Session]Session.IsTerrainModelEnabled(\"Terrain_Model\")", "", "", "SystemEvent.ActiveModelChanged", NOACCEL,
+        PP_ID_FeatureAspects_TerrainModel_Import },              // @fadoc  TerrainModel.ImportLandXML XCommand  "[Session]Session.IsTerrainModelEnabled()" -this is special expression which check both capability and isactive 3d model
     {"TerrainModel.Label.Contours",
         {CMD_TERRAINMODEL_LABEL_CONTOURS, "TERRAINMODELCOMMANDS" , ""},
         "TMAnnotateContours",
         TXT_Balloon_LabelContours,
         TXT_Flyover_LabelContours,
-        "53dfaba3-aafe-11e4-b83c-6894231a2840", "", "", "", "", "", NOACCEL,
+        "53dfaba3-aafe-11e4-b83c-6894231a2840", "", "[Session]Session.IsCapabilityEnabled(\"Terrain_Model\")", "", "", "", NOACCEL,
         PP_ID_FeatureAspects_TerrainModel_Annotate_Contours},   // @fadoc  TerrainModel.Label.Contours XCommand
     {"TerrainModel.Label.Spots",
         {CMD_TERRAINMODEL_LABEL_SPOTS, "TERRAINMODELCOMMANDS" , ""},
         "TMAnnotateSpots",
         TXT_Balloon_LabelSpots,
         TXT_Flyover_LabelSpots,
-        "53dfabaa-aafe-11e4-a4ad-6894231a2840", "", "", "", "", "", NOACCEL,
+        "53dfabaa-aafe-11e4-a4ad-6894231a2840", "", "[Session]Session.IsCapabilityEnabled(\"Terrain_Model\")", "", "", "", NOACCEL,
         PP_ID_FeatureAspects_TerrainModel_Annotate_Spots},      // @fadoc  TerrainModel.Label.Spots XCommand
     }
 };
