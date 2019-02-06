@@ -21,15 +21,45 @@ struct ArbitraryShapeProfile : SinglePerimeterProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_ArbitraryShapeProfile, SinglePerimeterProfile);
     friend struct ArbitraryShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (ArbitraryShapeProfile)
+
+    public:
+        //! Constructor to initialize members.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
+        //! @param[in] geometryPtr IGeometry to set for this profile.
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr);
+
+    public:
+        //! Geometry of the profile
+        IGeometryPtr geometryPtr;
+        };
+
 protected:
     //! @private
-    explicit ArbitraryShapeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit ArbitraryShapeProfile (CreateParams const& params);
+
+    //! @private
+    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
+
+private:
+    virtual IGeometryPtr _CreateShapeGeometry() const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (ArbitraryShapeProfile)
 
-    PROFILES_EXPORT static ArbitraryShapeProfilePtr Create (/*TODO: args*/);
+    //! Creates an instance of ArbitraryShapeProfile.
+    //! @param params CreateParams used to populate instance properties.
+    //! @return Instance of ArbitraryShapeProfile.
+    //! Note that you must call instance.Insert() to persist it in the `DgnDb`
+    PROFILES_EXPORT static ArbitraryShapeProfilePtr Create (CreateParams const& params) { return new ArbitraryShapeProfile (params); }
+
+private:
+    IGeometryPtr m_geometryPtr;
 
     }; // ArbitraryShapeProfile
 
