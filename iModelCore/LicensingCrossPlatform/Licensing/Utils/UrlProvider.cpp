@@ -53,6 +53,195 @@ uint32_t s_regionsId[4] = {
 // Will log errors if buddi.bentley.com does not have required URL for given environment (region).
 UrlProvider::UrlDescriptor::Registry s_urlRegistry;
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
+    "BIMReviewShare",
+    "https://qa-bimreviewshare.bentley.com",
+    "https://qa-bimreviewshare.bentley.com",
+    "https://bimreviewshare.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
+    "Mobile.ConnectEula",
+    "https://dev-agreement-eus.cloudapp.net/rest",
+    "https://qa-connect-agreement.bentley.com/rest",
+    "https://connect-agreement.bentley.com/rest",
+    "https://perf-agreement-eus.cloudapp.net/rest",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectTermsOfServiceUrl(
+    "ConnectTermsOfServiceUrl",
+    "https://dev-agreementportal-eus.cloudapp.net/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
+    "https://qa-connect-agreementportal.bentley.com/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
+    "https://connect-agreementportal.bentley.com/AgreementApp/Home/Eula/view/readonly/BentleyConnect",
+    "https://perf-agreementportal-eus.cloudapp.net/AgreementApp/Home/Eula/view/readonly/BentleyConnect",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
+    "Mobile.ConnectProjectUrl",
+    "https://dev-webportal-eus.cloudapp.net/project/index?projectId=",
+    "https://qa-connect-webportal.bentley.com/project/index?projectId=",
+    "https://connect.bentley.com/project/index?projectId=",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
+    "Mobile.ConnectWsgGlobal",
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
+    "https://connect-wsg20.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectedContext(
+    "CONNECTEDContextService.URL",
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
+    "https://connect-wsg20.bentley.com",
+    "https://perf-wsg20-eus.cloudapp.net",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPersonalPublishing(
+    "Mobile.ConnectWsgPersonalPublishing",
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
+    "https://connect-wsg20.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
+    "Mobile.ConnectWsgProjectContent",
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
+    "https://connect-wsg20.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
+    "ProjectShare.Url",
+    "https://dev-projectsharestorage-eus.cloudapp.net",
+    "https://qa-connect-projectsharestorage.bentley.com",
+    "https://connect-projectsharestorage.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
+    "Mobile.PunchListWsg",
+    "https://dev-punchlist-eus.cloudapp.net",
+    "https://qa-connect-punchlist.bentley.com",
+    "https://connect-punchlist.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgClashIssues(
+    "Mobile.ClashIssuesWsg",
+    "https://dev-punchlist-eus.cloudapp.net",
+    "https://qa-connect-punchlist.bentley.com",
+    "https://connect-punchlist.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgSharedContent(
+    "Mobile.ConnectWsgSharedContent",
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
+    "https://connect-wsg20.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgRepositoryFederation(
+    "RepositoryFederationService.URL",
+    "https://dev-bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://qa-bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://perf-bcsf.bentley.com/ProjectGateway/Wsg",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
+    "Mobile.ConnectForms",
+    "https://dev-formswsg-eus.cloudapp.net",
+    "https://qa-connect-formswsg.bentley.com",
+    "https://connect-formswsg.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelHubApi(
+    "iModelHubApi",
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsStsAuth(
+    "Mobile.ImsStsAuth",
+    "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsActiveStsDelegationService(
+    "ActiveSTSDelegationServiceUrl",
+    "https://qa-ims.bentley.com/rest/DelegationSTSService",
+    "https://qa-ims.bentley.com/rest/DelegationSTSService",
+    "https://ims.bentley.com/rest/DelegationSTSService",
+    "https://qa-ims.bentley.com/rest/DelegationSTSService",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsFederatedAuth(
+    "IMS.FederatedAuth.Url",
+    "https://qa-ims.bentley.com/",
+    "https://qa-ims.bentley.com/",
+    "https://ims.bentley.com/",
+    "https://qa-ims.bentley.com/",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::Passport(
+    "Mobile.Passport",
+    "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
+    "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
+    "https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageAndFeatureTrackingAPI(
+    "Mobile.UsageAndFeatureTrackingAPI",
+    "https://qa-selectserver.bentley.com/LicensingProxy",
+    "https://qa-selectserver.bentley.com/LicensingProxy",
+    "https://SELECTserver.bentley.com/LicensingProxy",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageTracking(
+    "Mobile.UsageTracking",
+    "https://licenseXM.bentley.com/bss/ws/mobile",
+    "https://licenseXM.bentley.com/bss/ws/mobile",
+    "https://SELECTserver.bentley.com/bss/ws/mobile",
+    nullptr,
+    &s_urlRegistry
+);
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageLoggingServices(
     "UsageLoggingServices.Url",
     "https://dev-ulas-eus2-sfc01.bentley.com/",
@@ -79,6 +268,79 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::EntitlementPolicyService(
     "https://qa-ulas-eus2-sfc01.bentley.com/v1/PolicyService/api",
     &s_urlRegistry
 );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
+    "BeXMPP",
+    "dev-xmppcollab-eus.cloudapp.net",
+    "qa-connect-xmppcollab.bentley.com",
+    "connect-xmppcollab.bentley.com",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsActiveSTSHelperService(
+    "ActiveSTSHelperServiceUrl",
+    "https://qa-ims.bentley.com/rest/STSHelperService",
+    "https://qa-ims.bentley.com/rest/STSHelperService",
+    "https://ims.bentley.com/rest/STSHelperService",
+    "https://qa-ims.bentley.com/rest/STSHelperService",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsPassiveAuthUrl(
+    "PassiveAuthUrl",
+    "https://qa-ims.bentley.com/SignIn/K",
+    "https://qa-ims.bentley.com/SignIn/K",
+    "https://ims.bentley.com/Account/LoginK",
+    nullptr,
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelBridgeConfiguration(
+    "iModelBridgeConfiguration",
+    "https://dev-connect-iModelBridgeConfiguration.bentley.com",
+    "https://qa-connect-iModelBridgeConfiguration.bentley.com",
+    "https://connect-iModelBridgeConfiguration.bentley.com",
+    "https://perf-connect-iModelBridgeConfiguration.bentley.com",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::RecommendationServiceUrl(
+    "RecommendationService.URL",
+    "https://dev-recommendation-eus.cloudapp.net",
+    "https://qa-connect-recommendation.bentley.com",
+    "https://connect-recommendation.bentley.com",
+    "https://dev-recommendation-eus.cloudapp.net",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectSharedFederatedUIURL(
+    "ProjectSharedFederatedUI.URL",
+    "https://dev-projectshareportal.bentley.com/",
+    "https://qa-projectshareportal.bentley.com/",
+    "https://projectshareportal.bentley.com/",
+    "https://perf-projectshareportal.bentley.com/",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::IMSOpenID(
+    "IMSOpenID",
+    "https://qa-imsoidc.bentley.com/",
+    "https://qa-imsoidc.bentley.com/",
+    "https://qa-imsoidc.bentley.com/",
+    "https://imsoidc.bentley.com",
+    &s_urlRegistry
+);
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProductSettingsService(
+    "ProductSettingsService.RP",
+    "https://dev-connect-productsettingsservice.bentley.com",
+    "https://qa-connect-productsettingsservice.bentley.com",
+    "https://connect-productsettingsservice.bentley.com",
+    "https://qa-connect-productsettingsservice.bentley.com",
+    &s_urlRegistry
+);
+
 
 
 /*--------------------------------------------------------------------------------------+

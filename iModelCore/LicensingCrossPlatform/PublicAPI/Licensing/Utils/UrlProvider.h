@@ -13,7 +13,6 @@
 #include <Bentley/WString.h>
 #include <Bentley/Tasks/TaskScheduler.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include "UrlProvider.h"
 #include "BuddiClient.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE

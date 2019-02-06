@@ -48,5 +48,7 @@ LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
 #LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeZlib$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(libext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(libext)
+#LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext))  does not work, "cannot read Lib file"
+#LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSecurity$(stlibext))  does not work, "cannot read Lib file"
 
 %include $(sharedMki)linkLibrary.mki
