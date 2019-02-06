@@ -21,14 +21,14 @@
         <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="ECObjectsNative" PartFile="iModelCore/ecobjects/ECObjects" Repository="imodel02"/>
-        <SubPart PartName="iModelCoreSqlang" PartFile="iModelCore/DgnPlatform/iModelCoreL10N" Repository="imodel02"/>
+        <SubPart PartName="iModelCoreSqlang" PartFile="iModelCore/iModelCoreL10N" Repository="imodel02"/>
     </Part>
 
     <Part Name="RunUnitTests" DeferType="RunUnitTests">
-        <SubPart PartName="RunUnitGTest" PartFile="iModelCore/DgnPlatform/iModelCoreTesting" Repository="imodel02"/>
-        <SubPart PartName="RunUnitJUnit" PartFile="iModelCore/DgnPlatform/iModelCoreTesting" Repository="imodel02"/>
-        <SubPart PartName="RunUnitXCTest" PartFile="iModelCore/DgnPlatform/iModelCoreTesting" Repository="imodel02"/>
-        <SubPart PartName="RunUnitCppTest" PartFile="iModelCore/DgnPlatform/iModelCoreTesting" Repository="imodel02"/>
+        <SubPart PartName="RunUnitGTest" PartFile="iModelCore/iModelCoreTesting" Repository="imodel02"/>
+        <SubPart PartName="RunUnitJUnit" PartFile="iModelCore/iModelCoreTesting" Repository="imodel02"/>
+        <SubPart PartName="RunUnitXCTest" PartFile="iModelCore/iModelCoreTesting" Repository="imodel02"/>
+        <SubPart PartName="RunUnitCppTest" PartFile="iModelCore/iModelCoreTesting" Repository="imodel02"/>
     </Part>
 
     <Product Name="iModelCoreSDK" OnlyPlatforms="x64">

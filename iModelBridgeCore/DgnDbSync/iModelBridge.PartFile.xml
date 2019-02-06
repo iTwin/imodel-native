@@ -59,6 +59,7 @@
       <SubPart PartName="iModelBridgeFwkExe-Unix-Shim"/>
       <SubPart PartName="Docs-Windows" LibType="Dynamic"/>
       <SubPart PartName="Docs-Unix-Shim"/>
+      <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
       <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
       <Directories DirectoryListName="iModelBridgeFwkDirList" />
     </Product>
@@ -84,6 +85,7 @@
         <SubPart PartName="iModelBridgeFwkExe-Unix-Shim"/>
         <SubPart PartName="Docs-Windows" LibType="Dynamic"/>
         <SubPart PartName="Docs-Unix-Shim"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
 
         <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
         <Directories DirectoryListName="iModelBridgeFwkDirList"/>
@@ -159,6 +161,7 @@
     <Product Name="iModelBridgeAssign" SaveProduct="true">
       <SubPart PartName="iModelBridgeAssignExeShim" />
       <SubPart PartName="iModelBridgeGetAffinityHostExe" LibType="Static"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
       <Directories DirectoryListName="iModelBridgeAssignDirList" />
     </Product>
 

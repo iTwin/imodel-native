@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
   <Part Name="iModelJsNodeAddon.Dev" PrgOutputDir="iModelJsNodeAddon">
-    <SubPart PartName="iModelCorePRG" PartFile="iModelCore/DgnPlatform/iModelCore"/>
+    <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore"/>
     <SubPart PartName="iModelJsMakePackages"/>
   </Part>
 
