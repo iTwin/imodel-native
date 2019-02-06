@@ -172,6 +172,79 @@ void Profile::SetName (Utf8String val)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Validation for CodeValues should come from platform and CodeSpec, CodeSpecFragment's,
+* but today platform doesn't provide it - detailed validation of CodeValue is skipped
+* here too ..
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+StandardCatalogCode Profile::GetStandardCatalogCode() const
+    {
+    Utf8String const& codeValueStr = GetCode().GetValue().GetUtf8();
+
+    size_t offset = 0;
+    Utf8String tokens[4];
+    int tokenIndex = 0;
+    for (; tokenIndex < _countof (tokens); ++tokenIndex)
+        {
+        offset = codeValueStr.GetNextToken (tokens[tokenIndex], PRF_CODEVALUE_DELIM_StandardCatalogProfile, offset);
+        if (offset == Utf8String::npos)
+            break;
+        }
+
+    // Validate values that are too short and don't fill out StandardCatalogCode
+    if (tokenIndex != _countof (tokens))
+        return StandardCatalogCode();
+
+    StandardCatalogCode catalogCode;
+    catalogCode.manufacturer = tokens[0].c_str();
+    catalogCode.standardsOrganization = tokens[1].c_str();
+    catalogCode.revision = tokens[2].c_str();
+    catalogCode.designation = tokens[3].c_str();
+
+    return catalogCode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::SetStandardCatalogCode (StandardCatalogCode const& catalogCode)
+    {
+    Utf8CP pDesignation = GetName().c_str();
+    Utf8CP pManufacturer = catalogCode.manufacturer.c_str();
+    Utf8CP pStandardsOrganization = catalogCode.standardsOrganization.c_str();
+    Utf8CP pRevision = catalogCode.revision.c_str();
+
+    if (Utf8String::IsNullOrEmpty (pDesignation) || Utf8String::IsNullOrEmpty (pManufacturer) ||
+        Utf8String::IsNullOrEmpty (pStandardsOrganization) ||Utf8String::IsNullOrEmpty (pRevision))
+        return DgnDbStatus::InvalidCode;
+
+    Utf8String codeValue;
+    codeValue.Sprintf (PRF_CODEVALUE_FORMAT_StandardCatalogProfile, pManufacturer, pStandardsOrganization, pRevision, pDesignation);
+
+    CodeSpecCPtr codeSpecPtr = m_dgndb.CodeSpecs().GetCodeSpec (PRF_CODESPEC_StandardCatalogProfile);
+    if (codeSpecPtr.IsNull())
+        return DgnDbStatus::InvalidCodeSpec;
+
+    DgnCode code = codeSpecPtr->CreateCode (codeValue);
+
+    return SetCode (code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::SetStandardCatalogCode (nullptr_t)
+    {
+    CodeSpecCPtr codeSpecPtr = m_dgndb.CodeSpecs().GetCodeSpec (PRF_CODESPEC_StandardCatalogProfile);
+    if (codeSpecPtr.IsNull())
+        return DgnDbStatus::InvalidCodeSpec;
+
+    DgnCode code = codeSpecPtr->CreateCode ("");
+
+    return SetCode (code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr Profile::GetShape() const
