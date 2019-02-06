@@ -5102,6 +5102,8 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         curvePtr = ICurvePrimitive::CreateLineString(polyPts);
     else
     {
+        if (withinRange)
+            indices.push_back((int)polyPts.size() - 1);
         bvector<DPoint3d> collectedIndices;
         for (size_t i = 0; i < indices.size(); i += 2)
             for (size_t j = std::max(0, indices[i] - 1); j < std::min((int)polyPts.size(), indices[i + 1] + 1); ++j)
