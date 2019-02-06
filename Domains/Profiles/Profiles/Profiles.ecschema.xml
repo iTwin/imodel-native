@@ -26,26 +26,6 @@
     </ECEntityClass>
 
     <!-- Aspects -->
-    <ECEntityClass typeName="StandardProfileAspect">
-        <BaseClass>bis:ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0" />
-        </ECCustomAttributes>
-        <ECProperty propertyName="Manufacturer" typeName="string" description="The manufacturer of the sections (certain manufacturers may make sections with deviations from the base standard)." />
-        <ECProperty propertyName="Revision" typeName="string" description="The revision date or number of the standard." />
-        <ECProperty propertyName="StandardsOrganization" typeName="string" description="The organization that creates the table where this section appears." />
-    </ECEntityClass>
-
-    <ECRelationshipClass typeName="ProfileOwnsStandardProfileAspect" modifier="Sealed" strength="embedding">
-        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
-            <Class class="Profile" />
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="false">
-            <Class class="StandardProfileAspect" />
-        </Target>
-    </ECRelationshipClass>
-
     <ECStructClass typeName="CustomCardinalPoint" description="Custom location cardinal point of a profile.">
         <ECProperty propertyName="Name" typeName="string" description="Name of the cardinal point. It is used to reference the custom cardinal point." />
         <ECProperty propertyName="Location" typeName="point2d" description="Coordinates inside the bounding box of a profile defining the cardinal point." />
