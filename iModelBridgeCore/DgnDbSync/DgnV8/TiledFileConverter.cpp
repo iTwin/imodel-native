@@ -364,7 +364,7 @@ void TiledFileConverter::_OnFileComplete(DgnV8FileR v8File)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TiledFileConverter::_BeginConversion()
     {
-    if (!GetImportJob().IsValid() || (GetImportJob().GetConverterType() != SyncInfo::BridgeJobletExternalSourceAspect::ConverterType::TiledFile))
+    if (!GetImportJob().IsValid() || (GetImportJob().GetConverterType() != ResolvedImportJob::ConverterType::TiledFile))
         {
         OnFatalError();
         return;

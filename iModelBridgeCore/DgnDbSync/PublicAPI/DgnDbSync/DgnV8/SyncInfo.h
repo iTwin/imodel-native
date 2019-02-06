@@ -71,7 +71,6 @@ struct SyncInfo
             static constexpr Utf8CP Level = "Level";
             static constexpr Utf8CP GeomPart = "GeomPart";
             static constexpr Utf8CP ViewDefinition = "ViewDefinition";
-            static constexpr Utf8CP BridgeJoblet = "BridgeJoblet";
             };
         };
 
@@ -137,6 +136,7 @@ struct SyncInfo
         
         DGNDBSYNC_EXPORT static std::tuple<DgnElementPtr, V8ModelExternalSourceAspect> GetAspectForEdit(DgnModelR);
         DGNDBSYNC_EXPORT static std::tuple<DgnElementCPtr, V8ModelExternalSourceAspect> GetAspect(DgnModelCR);
+        DGNDBSYNC_EXPORT static V8ModelExternalSourceAspect GetAspectByAspectId(DgnDbR, BeSQLite::EC::ECInstanceId aspectId);
 
         RepositoryLinkId GetRepositoryLinkId() const {return RepositoryLinkId(GetScope().GetValueUnchecked());}
         DgnModelId GetModelId() const {return DgnModelId(GetElementId().GetValueUnchecked());}
@@ -341,37 +341,6 @@ struct SyncInfo
         //! Get an existing GeomPart aspect from the specified DgnGeometryPart
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect GetAspect(DgnGeometryPartCR el);
         };
-
-    //! Source info for a Subject that represents a Bridge "joblet", that is, a combination of bridge and master file/model.
-    //! The Scope and Identifier properties of the BridgeJoblet XSA serve as a pointer to the master/root model. 
-    //! That is, the Scope is the BIM Model element for the master/root model. That is what links this subject's aspect to the master model.
-    //! And the Identifer is the V8ModelId.
-    struct BridgeJobletExternalSourceAspect : ExternalSourceAspect
-        {
-        enum class ConverterType {RootModel=0, TiledFile=1}; //!< persistent data. do not change!
-
-        BridgeJobletExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
-        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return FormatV8ModelId(v8Id);}
-        static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}
-
-        //! Create a new aspect in memory.
-        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect CreateAspect(SubjectCR masterModelSubject, DgnV8Api::ModelId v8Id, ConverterType, Converter&);
-        
-        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect GetAspect(SubjectCR subj);
-        DGNDBSYNC_EXPORT static BridgeJobletExternalSourceAspect GetAspectForEdit(SubjectR subj);
-
-        // DGNDBSYNC_EXPORT Utf8String GetBridgeName() const;
-
-        //! Update the root transform
-        DGNDBSYNC_EXPORT void SetTransform(TransformCR);
-        //! Get the root transform
-        DGNDBSYNC_EXPORT Transform GetTransform() const;
-
-        DgnElementId GetSourceMasterModelSubjectId() const {return GetScope();}
-        DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8MasterModelId() const;
-        DGNDBSYNC_EXPORT ConverterType GetConverterType() const;
-        };
-
 
     enum class ECSchemaMappingType
         {

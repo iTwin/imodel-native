@@ -295,50 +295,23 @@ struct ResolvedModelMapping
 //=======================================================================================
 struct ResolvedImportJob
 {
+    enum class ConverterType {RootModel, TiledFile};
 protected:
-    int64_t m_syncInfoImportJobRowId {};        // <-- temporary, until we get rid of syncinfo
     SubjectCPtr m_jobSubject;
-    DgnV8Api::ModelId m_v8MasterModel {};
-    Transform m_v8MasterModelTransform;
-    DgnModelId m_masterModel;
-    Transform m_jobTransform;
-    SyncInfo::BridgeJobletExternalSourceAspect::ConverterType m_type {};
+    ConverterType m_type;
 public:
+
     ResolvedImportJob() {}
-    ResolvedImportJob(SubjectCR s, TransformCR jtr, DgnModelId masterModel, DgnV8Api::ModelId v8MasterModel, TransformCR v8tr, SyncInfo::BridgeJobletExternalSourceAspect::ConverterType typ, int64_t sijid = 0) : 
-        m_jobSubject(&s), m_masterModel(masterModel), m_v8MasterModel(v8MasterModel), m_v8MasterModelTransform(v8tr), m_jobTransform(jtr), m_type(typ), m_syncInfoImportJobRowId(sijid) {}
-    ResolvedImportJob(SubjectCR s) : m_jobSubject(&s) {}
+    ResolvedImportJob(SubjectCR s, ConverterType t) : m_jobSubject(&s), m_type(t) {}
 
     bool IsValid() const {return m_jobSubject.IsValid();}
 
-    //! Get the V8 master model for this job
-    DgnV8Api::ModelId GetV8MasterModelId() const { return m_v8MasterModel; }
-    void SetV8MasterModelId(DgnV8Api::ModelId mm) { m_v8MasterModel = mm; }
-
-    //! Get The *v8 master model* transform
-    TransformCR GetV8MasterModelTransform() const {return m_v8MasterModelTransform;}
-    void SetV8MasterModelTransform(TransformCR t) {m_v8MasterModelTransform=t;}
-
-    //! Get the iModel model that was created for the master model
-    DgnModelId GetMasterModelId() const { return m_masterModel; }
-    void SetMasterModelId(DgnModelId mm) { m_masterModel = mm; }
-
-    //! Get the job subject
     SubjectCR GetSubject() const {BeAssert(IsValid()); return *m_jobSubject;}
-
-    //! Get The *job* transform
-    TransformCR GetJobTransform() const {return m_jobTransform;}
-    void SetJobTransform(TransformCR t) {m_jobTransform=t;}
-
-    //! Get the type of converter that created this job
-    SyncInfo::BridgeJobletExternalSourceAspect::ConverterType GetConverterType() const {return m_type;}
-    void SetConverterType(SyncInfo::BridgeJobletExternalSourceAspect::ConverterType t) {m_type=t;}
+    
+    ConverterType GetConverterType() const {return m_type;}
 
     //! Get the name prefix that is used by this job
     Utf8StringCR GetNamePrefix() const { return ""; }
-
-    int64_t GetSyncInfoImportJobRowId() const {return m_syncInfoImportJobRowId;}
-    void SetSyncInfoImportJobRowId(int64_t v) {m_syncInfoImportJobRowId=v;}
 
 };
 
@@ -1211,9 +1184,6 @@ public:
     //! Find or create the standard set of job-specific partitions, documentlistmodels, and other definition elements that the converter uses to organize the converted information.
     //! Note that this cannot be done until the ImportJob has been created (when creating a new ImportJob) or read from syncinfo (when updating).
     void GetOrCreateJobPartitions();
-
-    //! If the current bridge was ever run with this master model, find and return the Job Subject that was recorded.
-    ResolvedImportJob FindSoleImportJobForFile(DgnV8FileR rootFile);
 
     void ValidateJob();
 
@@ -2342,8 +2312,6 @@ protected:
 
     virtual void _AddResolvedModelMapping(ResolvedModelMapping const&) {}
 
-    BentleyStatus GetResolvedRootModelFromImportJob();
-    void ApplyJobTransformToRootTrans();
     void DetectRootTransformChange();
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
@@ -2405,8 +2373,22 @@ public:
     //! @param comments         Optional description of the job
     //! @param v8ConverterType  type of V8 converter
     protected:
-    DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob(Utf8CP comments, SyncInfo::BridgeJobletExternalSourceAspect::ConverterType v8ConverterType);
-    DGNDBSYNC_EXPORT SubjectCPtr GetSourceMasterModelSubject(DgnV8ModelR v8RootModel);
+    DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob(Utf8CP comments, ResolvedImportJob::ConverterType);
+
+    //! Find or create a "source master model subject", given a known V8 root model.
+    DGNDBSYNC_EXPORT SubjectCPtr CreateAndInsertSourceMasterModelSubject(DgnV8ModelR v8RootModel);
+        
+    void SetRootModelAspectIdInSourceMasterModelSubject(SubjectCR);
+    BeSQLite::EC::ECInstanceId GetRootModelAspectIdFromSourceMasterModelSubject(SubjectCR) const;
+    SyncInfo::V8ModelExternalSourceAspect GetRootModelAspectFromSourceMasterModelSubject(SubjectCR s) {return SyncInfo::V8ModelExternalSourceAspect::GetAspectByAspectId(GetDgnDb(), GetRootModelAspectIdFromSourceMasterModelSubject(s));}
+
+    //! If the current bridge was ever run with this master model, find and return the Job Subject that was recorded.
+    ResolvedImportJob FindSoleJobSubjectForSourceMasterModel(SubjectCR masterModelSubject);
+
+    //! Find an existing "source master model subject", if it exists, for the specified V8 model. If you just want to find the first (or only) one, pass
+    //! the dictionary model of the V8 file.
+    SubjectCPtr FindSourceMasterModelSubject(DgnV8ModelCR);
+
 
     public:
 
@@ -2703,7 +2685,7 @@ public:
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.
     //! @param comments         Optional description of the job
-    ImportJobCreateStatus InitializeJob(Utf8CP comments = nullptr) {return T_Super::InitializeJob(comments, SyncInfo::BridgeJobletExternalSourceAspect::ConverterType::RootModel);}
+    ImportJobCreateStatus InitializeJob(Utf8CP comments = nullptr) {return T_Super::InitializeJob(comments, ResolvedImportJob::ConverterType::RootModel);}
 
     //! Try to open the root model that is specified in SpatialParams.
     //! When running in update mode, this function looks up the ImportJob from the previous conversion gets the root model from that.
@@ -2782,7 +2764,7 @@ public:
     TiledFileConverter(SpatialParams& p) : T_Super(p), m_params(p) {;}
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! @param comments         Optional description of the job
-    ImportJobCreateStatus InitializeJob(Utf8CP comments = nullptr) {return T_Super::InitializeJob(comments, SyncInfo::BridgeJobletExternalSourceAspect::ConverterType::TiledFile);}
+    ImportJobCreateStatus InitializeJob(Utf8CP comments = nullptr) {return T_Super::InitializeJob(comments, ResolvedImportJob::ConverterType::TiledFile);}
     //! Try to open the root model that is specified in SpatialParams.
     //! When running in update mode, this function looks up the root model from the existing ImportJob.
     //! @return non-zero error status if the root file could not be opened or the root model could not be found.

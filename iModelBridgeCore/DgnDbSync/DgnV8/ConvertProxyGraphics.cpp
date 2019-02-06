@@ -299,7 +299,9 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
                                                          DgnCategoryId categoryId, GeometryBuilder& builder, 
                                                          Utf8StringCR v8SectionedElementPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& parentSheetModelMapping)
     {
-    // The "orignal" element is the 3-D element that was sectioned/projected/rendered
+    // "sectionedV8Element" is the 3-D element that was sectioned/projected/rendered
+    
+    // Note that sectionedElementXsa may be invalid even if sectionedV8Element is valid. That happens if we did not actually convert the 3-D elements but only drawings that reference them.
 
     DgnModelR model = drawingModelMapping.GetDgnModel();
 
@@ -329,6 +331,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         }
     else
         {
+#ifdef WIP_EXTERNAL_SOURCE_ELEMENT // sectionedElementXsa will almost always be invalid in this case. If we want to report this issue, then the caller will have to pass in the ElementId
         // Issue a warning about missing sectioned element
         auto rlink = GetRepositoryLinkElement(drawingModelMapping.GetRepositoryLinkId());
         if (rlink.IsValid())
@@ -336,6 +339,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
             auto aspect = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*rlink);
             ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::ExtractedGraphicMissingElement(), "", sectionedElementXsa.GetV8ElementId(), model.GetName().c_str(), aspect.GetFileName().c_str());
             }
+#endif
         }
 
     if (!elementClassId.IsValid())
@@ -363,7 +367,8 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         }
     if (BSISUCCESS != builder.Finish(*drawingGraphic->ToGeometrySourceP()))
         {
-        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", sectionedElementXsa.GetV8ElementId(), model.GetName().c_str());
+        if (sectionedElementXsa.IsValid())
+            ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", sectionedElementXsa.GetV8ElementId(), model.GetName().c_str());
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }
@@ -449,9 +454,12 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         }
 
     //  Create a relationship to the 3d element that it was derived from. (If the relationship already exists, this will be a nop.)
-    auto originalInBim = GetDgnDb().Elements().Get<GeometricElement>(sectionedElementXsa.GetElementId());
-    if (originalInBim.IsValid())
-        GraphicDerivedFromElement::Insert(*drawingGraphic->ToDrawingGraphic(), *originalInBim);
+    if (sectionedElementXsa.IsValid())
+        {
+        auto originalInBim = GetDgnDb().Elements().Get<GeometricElement>(sectionedElementXsa.GetElementId());
+        if (originalInBim.IsValid())
+            GraphicDerivedFromElement::Insert(*drawingGraphic->ToDrawingGraphic(), *originalInBim);
+        }
 
     return DgnDbStatus::Success;
     }

@@ -3379,7 +3379,13 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
 
     // *** TRICKY: We need to know if this is an update or not. The framework has not yet set the 'is-updating' flag.
     //              So, we must figure out if this is an update or not right here and now by checking to see if the job subject already exists.
-    _GetParamsR().SetIsUpdating(FindSoleImportJobForFile(*GetRootV8File()).IsValid());
+    auto mmsubj = FindSourceMasterModelSubject(*GetRootModelP());
+    if (mmsubj.IsValid())
+        {
+        auto jobsubj = FindSoleJobSubjectForSourceMasterModel(*mmsubj);
+        if (jobsubj.IsValid())
+            _GetParamsR().SetIsUpdating(true);
+        }
 
 #ifndef NDEBUG
     if (_WantModelProvenanceInBim())

@@ -844,6 +844,35 @@ std::tuple<DgnElementCPtr, SyncInfo::V8ModelExternalSourceAspect> SyncInfo::V8Mo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::GetAspectByAspectId(DgnDbR db, BeSQLite::EC::ECInstanceId aspectId)
+    {
+    auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (ECInstanceId=?)");
+    stmt->BindId(1, aspectId);
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false && "invalid aspectId");
+        return V8ModelExternalSourceAspect();
+        }
+    auto el = db.Elements().GetElement(stmt->GetValueId<DgnElementId>(0));
+    if (!el.IsValid())
+        {
+        BeAssert(false && "How could I find an aspect of an element and not be able to get the element itself?");
+        return V8ModelExternalSourceAspect();
+        }
+
+    auto aspect = iModelExternalSourceAspect::GetAspect(*el, aspectId);
+    if (aspect.GetKind() != Kind::Model)
+        {
+        BeAssert(false && "Not a model aspect");
+        return V8ModelExternalSourceAspect();
+        }
+
+    return V8ModelExternalSourceAspect(aspect.m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform SyncInfo::V8ModelExternalSourceAspect::GetTransform() const
@@ -861,6 +890,7 @@ void SyncInfo::V8ModelExternalSourceAspect::SetTransform(TransformCR t)
     {
     auto json = GetProperties();
     json["transform"] = fixedArrayToJson((double*)&t, 12, json.GetAllocator());
+    SetProperties(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -876,85 +906,6 @@ Utf8String SyncInfo::V8ModelExternalSourceAspect::GetV8ModelName() const
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId SyncInfo::V8ModelExternalSourceAspect::GetV8ModelId() const
-    {
-    return atoi(GetIdentifier().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceAspect::GetAspect(SubjectCR subj)
-    {
-    return BridgeJobletExternalSourceAspect(ExternalSourceAspect::GetAspect(subj, SyncInfo::GetSoleAspectIdByKind(subj, Kind::BridgeJoblet)).m_instance.get());
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceAspect::GetAspectForEdit(SubjectR subj)
-    {
-    return BridgeJobletExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(subj, SyncInfo::GetSoleAspectIdByKind(subj, Kind::BridgeJoblet)).m_instance.get());
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(SubjectCR masterModelSubject, DgnV8Api::ModelId v8MasterModelId, ConverterType converterType, Converter& converter) 
-    {
-    auto aspectClass = GetAspectClass(converter.GetDgnDb());
-    if (nullptr == aspectClass)
-        return BridgeJobletExternalSourceAspect(nullptr);
-    
-    auto instance = CreateInstance(masterModelSubject.GetElementId(), Kind::BridgeJoblet, FormatSourceId(v8MasterModelId), nullptr, *aspectClass);
-    
-    BridgeJobletExternalSourceAspect aspect(instance.get());
-    
-    rapidjson::Document json(rapidjson::kObjectType);
-    auto& allocator = json.GetAllocator();
-    // transform property is initially missing/null
-    json.AddMember("type", (int)converterType, allocator);
-    aspect.SetProperties(json);
-
-    return aspect;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::BridgeJobletExternalSourceAspect::SetTransform(TransformCR t)
-    {
-    auto json = GetProperties();
-    auto& allocator = json.GetAllocator();
-    if (!json.HasMember("transform"))
-        json.AddMember("transform", fixedArrayToJson((double*)&t, 12, allocator), allocator);
-    else
-        json["transform"] = fixedArrayToJson((double*)&t, 12, allocator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform SyncInfo::BridgeJobletExternalSourceAspect::GetTransform() const
-    {
-    auto json = GetProperties();
-    if (!json.HasMember("transform"))
-        return Transform::FromIdentity();
-    Transform transform;
-    fixedArrayFromJson((double*)&transform, 12, json["transform"].GetArray());
-    return transform;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::BridgeJobletExternalSourceAspect::ConverterType SyncInfo::BridgeJobletExternalSourceAspect::GetConverterType() const
-    {
-    auto json = GetProperties();
-    return (ConverterType)(json["type"].GetInt());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8Api::ModelId SyncInfo::BridgeJobletExternalSourceAspect::GetV8MasterModelId() const
     {
     return atoi(GetIdentifier().c_str());
     }

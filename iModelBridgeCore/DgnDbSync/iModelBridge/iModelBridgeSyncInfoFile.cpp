@@ -945,6 +945,9 @@ void iModelExternalSourceAspect::Dump(DgnElementCR el, Utf8CP loggingCategory, N
 
     outDump(logger, sev, Utf8PrintfString("Element ID: 0x%llx Class: %s Code: %s %s %s", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName(), el.GetCode().GetValueUtf8CP(), catid.c_str(), parent.c_str()));
 
+    if (aspects.empty())
+        return;
+
     outDump(logger, sev, GetDumpHeaders(includeProperties, includeSourceState));
     for (auto const& aspect : aspects)
         {
