@@ -27,7 +27,10 @@ public:
     ProfilesDomain();
 
 private:
-    WCharCP _GetSchemaRelativePath() const override { return PRF_SCHEMA_PATH; }
+    virtual WCharCP _GetSchemaRelativePath() const override { return PRF_SCHEMA_PATH; }
+
+    virtual void _OnSchemaImported (Dgn::DgnDb& db) const override;
+
     }; // ProfilesDomain
 
 END_BENTLEY_PROFILES_NAMESPACE

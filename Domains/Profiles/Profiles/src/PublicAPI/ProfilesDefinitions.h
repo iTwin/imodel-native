@@ -29,6 +29,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 END_BENTLEY_PROFILES_NAMESPACE
 
 #define PRF_SCHEMA_NAME                             "Profiles"
+#define PRF_SCHEMA_ALIAS                            "prf"
 #define PRF_SCHEMA_FILE                             L"Profiles.ecschema.xml"
 #define PRF_SCHEMA_LOCATION                         L"ECSchemas/Domain/"
 #define PRF_SCHEMA_PATH                             PRF_SCHEMA_LOCATION PRF_SCHEMA_FILE
@@ -214,8 +215,11 @@ END_BENTLEY_PROFILES_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------------------
-// CodeSpec names
+// CodeSpec names and CodeValue string formats
 //-----------------------------------------------------------------------------------------
+#define PRF_CODESPEC_StandardCatalogProfile                 PRF_SCHEMA_ALIAS ":StandardCatalogProfile"
+#define PRF_CODEVALUE_DELIM_StandardCatalogProfile          ":"
+#define PRF_CODEVALUE_FORMAT_StandardCatalogProfile         "%s:%s:%s:%s"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects

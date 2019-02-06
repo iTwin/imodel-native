@@ -56,4 +56,23 @@ ProfilesDomain::ProfilesDomain() : DgnDomain (PRF_SCHEMA_NAME, "Bentley Profiles
     RegisterHandler (MaterialProfileHandler::GetHandler());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ProfilesDomain::_OnSchemaImported (DgnDb& db) const
+    {
+    CodeSpecPtr codeSpecPtr = CodeSpec::Create (db, PRF_CODESPEC_StandardCatalogProfile, CodeScopeSpec::CreateRepositoryScope());
+
+    CodeFragmentSpecList& fragments = codeSpecPtr->GetFragmentSpecsR();
+    fragments.push_back (CodeFragmentSpec::FromElementTypeCode ("Manufacturer"));
+    fragments.push_back (CodeFragmentSpec::FromFixedString (":"));
+    fragments.push_back (CodeFragmentSpec::FromElementTypeCode ("StandardsOrganization"));
+    fragments.push_back (CodeFragmentSpec::FromFixedString (":"));
+    fragments.push_back (CodeFragmentSpec::FromElementTypeCode ("Revision"));
+    fragments.push_back (CodeFragmentSpec::FromFixedString (":"));
+    fragments.push_back (CodeFragmentSpec::FromElementTypeCode ("Designation"));
+
+    BeAssert (codeSpecPtr->Insert() == DgnDbStatus::Success);
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE
