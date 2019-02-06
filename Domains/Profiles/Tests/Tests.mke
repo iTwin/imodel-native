@@ -47,6 +47,8 @@ $(o)DomainTests.obj                     : $(BEGTEST_INPUT)DomainTests.cpp ${Mult
 
 $(o)GeometryTests.obj                   : $(BEGTEST_INPUT)GeometryTests.cpp ${MultiCompileDepends}
 
+$(o)ProfileTests.obj                    : $(BEGTEST_INPUT)ProfileTests.cpp ${MultiCompileDepends}
+
 $(o)CShapeProfileTests.obj              : $(BEGTEST_INPUT)CShapeProfileTests.cpp ${MultiCompileDepends}
 
 $(o)IShapeProfileTests.obj              : $(BEGTEST_INPUT)IShapeProfileTests.cpp ${MultiCompileDepends}

@@ -74,6 +74,7 @@
     <ClCompile Include="src\ProfilesTestCase.cpp" />
     <ClCompile Include="src\DomainTests.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\ProfileTests.cpp" />
     <ClCompile Include="src\RectangleProfileTests.cpp" />
     <ClCompile Include="src\RegularPolygonProfileTests.cpp" />
     <ClCompile Include="src\RoundedRectangleProfileTests.cpp" />
