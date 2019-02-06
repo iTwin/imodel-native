@@ -359,7 +359,7 @@ private:
     
     Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo() override;
 
-    void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& tileToECEF, const Transform& dbToTile) override;
+    void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& dbToECEF) override;
 
 protected:
     struct Properties
@@ -513,7 +513,7 @@ public:
 
     SCALABLEMESH_SCHEMA_EXPORT void CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines);
 
-        SCALABLEMESH_SCHEMA_EXPORT void WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& tileToECEF, const Transform& dbToTile) const;
+        SCALABLEMESH_SCHEMA_EXPORT void WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& dbToECEF) const;
 
     uint64_t GetAssociatedRegionId() const { return m_associatedRegion; }
 

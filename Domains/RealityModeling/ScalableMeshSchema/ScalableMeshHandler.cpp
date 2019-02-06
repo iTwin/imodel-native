@@ -134,11 +134,11 @@ PublishedTilesetInfo ScalableMeshModel::_GetPublishedTilesetInfo()
 //*---------------------------------------------------------------------------------**//**
 /* @bsimethod                                                    Richard.Bois   05/18
 /+---------------+---------------+---------------+---------------+---------------+------*/
-void ScalableMeshModel::_DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& tileToECEF, const Transform& dbToTile)
+void ScalableMeshModel::_DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& dbToECEF)
     {
     BeFileName rootPath = outDir;
     rootPath.AppendToPath(rootName.c_str());
-    WriteCesiumTileset(rootPath, outDir, tileToECEF, dbToTile);
+    WriteCesiumTileset(rootPath, outDir, dbToECEF);
     m_smPtr->GetRange(range);
     }
 
@@ -2005,12 +2005,12 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Richard.Bois     08/2018
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& tileToECEF, const Transform& dbToTile) const
+void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& dbToECEF) const
     {
     if (_AllowPublishing())
         {
 #ifdef _WIN32
-        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, tileToECEF, dbToTile))
+        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, dbToECEF))
             {
             BeFileName oldRootFile = outputDir;
             oldRootFile.AppendToPath(L"n_0.json");
