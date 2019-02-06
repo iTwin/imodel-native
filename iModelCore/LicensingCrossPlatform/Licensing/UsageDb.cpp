@@ -2,7 +2,7 @@
 |
 |     $Source: Licensing/UsageDb.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Utils/SCVWritter.h>
@@ -837,6 +837,7 @@ BentleyStatus UsageDb::UpdateDb()
                 {
                 LOG.infov("UpdateDb - Updating schema version %f to %f...", schemaVersion, LICENSE_CLIENT_SCHEMA_VERSION);
                 Utf8String updateStatement;
+                //Statement updateStmt;
                 stmt.Finalize();
                 updateStatement.Sprintf("UPDATE eimVersion SET SchemaVersion = %f WHERE rowid = 1", LICENSE_CLIENT_SCHEMA_VERSION);
                 stmt.Prepare(m_db, (Utf8CP) updateStatement.c_str());

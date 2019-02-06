@@ -5,8 +5,7 @@
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//#include <Licensing/Client.h>
-#include "../PublicAPI/Licensing/Client.h"
+#include <Licensing/Client.h>
 #include "ClientImpl.h"
 #include "ClientFreeImpl.h"
 #include "ClientWithKeyImpl.h"
@@ -30,7 +29,7 @@ Client::Client
 ClientPtr Client::Create
 (
 const ConnectSignInManager::UserInfo& userInfo,
-ApplicationInfoPtr applicationInfo,
+ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 bool offlineMode,
@@ -39,7 +38,7 @@ Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
 )
     {
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, applicationInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler)));
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler)));
 	}
 
 /*--------------------------------------------------------------------------------------+
@@ -60,7 +59,7 @@ ClientPtr Client::CreateFree
 ClientPtr Client::CreateWithKey
 (
 	Utf8StringCR accessKey,
-	ApplicationInfoPtr applicationInfo,
+	ClientInfoPtr clientInfo,
 	BeFileNameCR dbPath,
 	bool offlineMode,
 	Utf8StringCR projectId,
@@ -68,7 +67,7 @@ ClientPtr Client::CreateWithKey
 	IHttpHandlerPtr httpHandler
 )
 {
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, applicationInfo, dbPath, offlineMode, projectId, featureString, httpHandler)));
+	return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, projectId, featureString, httpHandler)));
 }
 
 /*--------------------------------------------------------------------------------------+

@@ -8,16 +8,11 @@
         </Bindings>
     </Part>
 
-    <Part Name="LicensingNativeLib" BentleyBuildMakeFile="Licensing.mke">
-        <!--<SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />-->
-        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/>
+    <Part Name="LicensingNativeLib" BentleyBuildMakeFile="Licensing.mke" >
+        <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" /> 
-        <SubPart PartName="BeHttpLibrary" PartFile="BeHttp" Repository="BeHttp" />
-        <!--<SubPart PartName="LibXml2" PartFile="Libsrc-Nugets" Repository="bsicommon"/> -->
-        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="BeSecurityLibrary" PartFile="BeSecurity" Repository="BeSecurity" />
-        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
         <!--<SubPart PartName="NativeClient.Docs"/>-->
         
         <Bindings>
@@ -25,7 +20,7 @@
             <Assemblies>Delivery/$(shlibprefix)Licensing$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-
+	
     <Part Name="Licensing" >
         <SubPart PartName="Licensing-Winx64-Only" />
         <SubPart PartName="Licensing-iOSARMActive-Only" />
@@ -104,7 +99,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Product Name="LicenseClientCrossPlatform" PrgOutputDir="LicenseClientCrossPlatform" SaveProduct="true" SaveTranskit="true">
+    <Product Name="LicenseClientCrossPLatform" PrgOutputDir="LicenseClientCrossPlatform" SaveProduct="true" SaveTranskit="true">
         <SubPart PartName="Licensing"/>
         <Directories DirectoryListName="LicenseClientCrossPlatform"/>
 

@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Licensing/Licensing.h $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,8 +11,8 @@
 #include <Bentley/Bentley.h>
 
 //__PUBLISH_SECTION_END__
-
-#ifdef __LICENSING_DLL_BUILD__
+#undef LICENSING_EXPORT
+#ifdef __BELICENSING_BUILD__
     #define LICENSING_EXPORT EXPORT_ATTRIBUTE
 #else
 //__PUBLISH_SECTION_START__

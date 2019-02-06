@@ -10,13 +10,16 @@
 
 #include <Licensing/Licensing.h>
 
-#include <Licensing/LicenseStatus.h>
-#include "Utils/ApplicationInfo.h"
-#include "Connect/ConnectSignInManager.h"
+#include "LicenseStatus.h"
 
-#include <Licensing/Utils/FeatureUserDataMap.h>
+#include <WebServices/Connect/IConnectAuthenticationProvider.h>
+#include <WebServices/Client/ClientInfo.h>
+#include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
+
+ #include <Licensing/Utils/FeatureUserDataMap.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                   
@@ -43,7 +46,7 @@ public:
 	LICENSING_EXPORT static ClientPtr Create
         (
 		const ConnectSignInManager::UserInfo& userInfo, /** For determining UserID */
-        ApplicationInfoPtr applicationInfo, /** A ApplicationInfoPtr */
+        ClientInfoPtr clientInfo, /** A ClientInfoPtr */
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider, /** For  */
         BeFileNameCR dbPath, /** Path for LicenseClient database */
         bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
@@ -61,7 +64,7 @@ public:
 	LICENSING_EXPORT static ClientPtr CreateWithKey
 	(
 		Utf8StringCR accessKey, /** AccessKey */
-		ApplicationInfoPtr applicationInfo, /** A ClientInfoPtr */
+		ClientInfoPtr clientInfo, /** A ClientInfoPtr */
 		BeFileNameCR dbPath, /** Path for LicenseClient database */
 		bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
 		Utf8StringCR projectId = "", /** ProjectID string, defaults to an empty string */
