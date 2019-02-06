@@ -43,8 +43,8 @@ typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
-#define XTRN_SRC_ASPCT_ECSCHEMA_NAME            "SourceInfo"
-#define XTRN_SRC_ASPCT_SCHEMA(name)             XTRN_SRC_ASPCT_ECSCHEMA_NAME "." name
+
+#define XTRN_SRC_ASPCT_SCHEMA(name)             BIS_ECSCHEMA_NAME "." name
 #define XTRN_SRC_ASPCT_CLASS                    "ExternalSourceAspect"
 #define XTRN_SRC_ASPCT_FULLCLASSNAME            XTRN_SRC_ASPCT_SCHEMA(XTRN_SRC_ASPCT_CLASS)
 #define XTRN_SRC_ASPCT_Scope                    "Scope"
@@ -1054,8 +1054,6 @@ public:
     //! @}
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
-
-    IMODEL_BRIDGE_EXPORT BentleyStatus  ImportElementAspectSchema(bool& madeChanges, bool force, DgnDbR dgndb);
 
     //! @name Feature Flags
     //! @{
