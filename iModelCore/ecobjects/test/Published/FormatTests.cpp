@@ -169,7 +169,7 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "es", 3, 2, 0);
-    schema->AddReferencedSchema(*GetUnitsSchema(true));
+    schema->AddReferencedSchema(*GetUnitsSchema());
 
     ECFormatP ufmt;
     EC_ASSERT_SUCCESS(schema->CreateFormat(ufmt, "AmerMYFI4", "myfi4", ""));
