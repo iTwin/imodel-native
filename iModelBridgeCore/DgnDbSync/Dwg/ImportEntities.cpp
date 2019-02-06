@@ -1440,9 +1440,19 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
         return  BSIERROR;
         }
 
+    // unmirror text on XY plane
+    DVec3d xAxis, zAxis;
+    xAxis.Normalize (xdir);
+    zAxis.Normalize (normal);
+    if (fabs(zAxis.z + 1.0) < 0.001)
+        {
+        xAxis.Negate ();
+        zAxis.Negate ();
+        }
+
     // get ECS - do not compound it with currTrans - handled in central factory.
     RotMatrix   ecs;
-    DwgHelper::ComputeMatrixFromXZ (ecs, xdir, normal);
+    DwgHelper::ComputeMatrixFromXZ (ecs, xAxis, zAxis);
 
     dgnText->SetText (textString.c_str());
     dgnText->SetOrigin (position);
@@ -2353,6 +2363,15 @@ void    ElementFactory::Validate2dTransform (TransformR transform) const
             {
             angles = YawPitchRollAngles (AngleInDegrees::FromDegrees(0.0), angles.GetPitch(), angles.GetRoll());
             transform = Transform::FromProduct (transform, angles.ToTransform(DPoint3d::FromZero()));
+            // reset near zero rotation components which will cause GeometryBuilder to fail
+            for (int i = 0; i < 3; i++)
+                {
+                for (int j = 0; j < 3; j++)
+                    {
+                    if (fabs(transform.form3d[i][j]) < 1.0e-4)
+                        transform.form3d[i][j] = 0.0;
+                    }
+                }
             }
         // and has no z-translation:
         placementPoint.z = 0.0;
