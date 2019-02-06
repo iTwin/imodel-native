@@ -373,6 +373,7 @@
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <Bindings>
             <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/DwgImporterTests.exe</Files>
+            <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/Test2dImporter.exe</Files>
             <Files ProductDirectoryName="Assets" Required="false">Delivery/ImporterTestsConfig.xml</Files>
             <Files ProductDirectoryName="Assets" Required="false">Delivery/DwgImporterTests.logging.config.xml</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="false">Delivery/DwgImporterTests_en-US.sqlang.db3</Files>
