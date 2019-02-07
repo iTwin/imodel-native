@@ -90,3 +90,159 @@ TEST_F (CenterLineCShapeProfileTestCase, SetProperties_ProfileInstance_ValidProp
     EXPECT_DOUBLE_EQ (1.0, profilePtr->GetWallThickness());
     EXPECT_DOUBLE_EQ (2.0, profilePtr->GetFilletRadius());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CenterLineCShapeProfileTestCase, Insert_InvalidProfileName_FailedInsert)
+    {
+    CreateParams params (GetModel(), "CenterLineCShape", 1.0, 2.0, 3.0, 4.0, 5.0);
+
+    params.name = nullptr;
+    EXPECT_FAIL_Insert (params) << "Profile name cannot be null.";
+
+    params.name = "";
+    EXPECT_FAIL_Insert (params) << "Profile name cannot be empty.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_InvalidFlangeWidth_FailedInsert)
+    {
+    CreateParams params (GetModel(), "CenterLineCShape", INFINITY, 4.0, 1.0, 1.0, 0.17);
+    
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape profile should fail with invalid FlangeWidth value.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_ValidFlangeWidth_SuccessfulInsert)
+    {
+    CreateParams params (GetModel(), "CenterLineCShape", INFINITY, 4.0, 1.0, 1.5, 0.17);
+    params.flangeWidth = 4.0;
+
+    EXPECT_SUCCESS_Insert (params) << "CenterLineCShape FlangeWidth should be positive value.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_ValidDepth_SuccessfulInsert)
+    {
+    CreateParams params (GetModel(), "CenterLineCShape", 4.0, INFINITY, 1.0, 1.5, 0.17);
+    params.depth = 4.0;
+
+    EXPECT_SUCCESS_Insert (params) << "CenterLineCShape Depth should be positive value.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_InvalidDepth_FailedInsert)
+    {
+    CreateParams params (GetModel(), "CenterLineCShape", 4.0, INFINITY, 1.0, 1.0, 0.17);
+
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape profile should fail with invalid Depth value.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_ValidWallThickness_SuccessfulInsert)
+    {
+    CreateParams params (GetModel(), "CenterLineCShape", 4.0, 4.0, INFINITY, 1.5, 0.17);
+    params.wallThickness = 1.0;
+
+    EXPECT_SUCCESS_Insert (params) << "CenterLineCShape Depth should be positive value.";
+
+    params.wallThickness = 1.2;
+    
+    EXPECT_SUCCESS_Insert (params) << "CenterLineCShape WallThickness should be less than half of FlangeWidth or half of Depth value.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_InvalidWallThickness_FailedInsert)
+    {
+    CreateParams params (GetModel(), "CenterLineCShape", 4.0, 4.0, INFINITY, 1.5, 0.17);
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape WallThickness should be positive value.";
+
+    params.wallThickness = 4;
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape WallThickness should be less than half of FlangeWidth (or half of Depth) value.";
+
+    params.wallThickness = -4;
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape WallThickness should be positive value.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_InvalidGirth_FailedInsert)
+    {
+    CreateParams params (GetModel(), "CenterLineCShape", 4.0, 4.0, 1.2, INFINITY, 0.17);
+    
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape Girth should be positive value.";
+
+    params.girth = -1;
+
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape Girth should be positive value.";
+
+    params.girth = 2.37;
+
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape Girth should be less of half Depth.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_ValidGirth_SuccessfulInsert)
+    {
+    CreateParams params (GetModel(), "CenterLineCShape", 4.0, 4.0, 1.2, INFINITY, 0.17);
+
+    params.girth = 1.37;
+
+    EXPECT_SUCCESS_Insert (params) << "CenterLineCShape Girth should be positive and greater or equal WallThickness + FilletRadius.";
+
+    params.girth = 1.99;
+
+    EXPECT_SUCCESS_Insert (params) << "CenterLineCShape Girth should be less of half Depth.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_ValidFilletRadius_SuccessfulInsert)
+    {
+    CreateParams params (GetModel (), "CenterLineCShape", 12.3, 12.4, 0.8, 6.15, INFINITY);
+    params.filletRadius = 0.0;
+
+    EXPECT_SUCCESS_Insert (params) << "CenterLineCShape FilletRadius should be positive or zero.";
+
+    params.filletRadius = 0.17;
+
+    EXPECT_SUCCESS_Insert (params) << "CenterLineCShape FilletRadius should be positive or zero.";
+
+    params.filletRadius = params.flangeWidth / 2.0 - params.wallThickness;
+    EXPECT_SUCCESS_Insert (params) << "CenterLineCShape FilletRadius should be less or equal FlangeWidth / 2.0 - WallThickness.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CenterLineCShapeProfileTestCase, Insert_InvalidFilletRadius_FailedInsert)
+    {
+    CreateParams params (GetModel (), "CenterLineCShape", 12.3, 12.3, 0.8, 6.14, INFINITY);
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape FilletRadius should be positive or zero.";
+
+    params.filletRadius = -0.17;
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape FilletRadius should be positive or zero.";
+
+    params.filletRadius = params.flangeWidth / 2.0 - params.wallThickness + 0.1;
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape FilletRadius should be less or equal FlangeWidth / 2.0 - WallThickness.";
+
+    params.filletRadius = params.depth / 2.0 - params.wallThickness + 0.1;
+    EXPECT_FAIL_Insert (params) << "CenterLineCShape FilletRadius should be less or equal Depth / 2.0 - WallThickness.";
+    }

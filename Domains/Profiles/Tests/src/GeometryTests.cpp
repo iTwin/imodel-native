@@ -233,7 +233,7 @@ void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, bool placeI
 * space.
 * @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryTestCase::InsertPhysicalElementForCenterLineProfile(ProfilePtr profilePtr, IGeometryPtr centerLineGeom, bool placeInNewRow)
+void GeometryTestCase::InsertPhysicalElementForCenterLineProfile (ProfilePtr profilePtr, IGeometryPtr centerLineGeom, bool placeInNewRow)
     {
     PhysicalElementPtr physicaleElementPtr = GenericPhysicalObject::Create (GetPhysicalModel(), GetCategoryId());
     physicaleElementPtr->SetUserLabel (profilePtr->GetName().c_str());
@@ -241,7 +241,7 @@ void GeometryTestCase::InsertPhysicalElementForCenterLineProfile(ProfilePtr prof
     GeometrySource* pGeometrySource = physicaleElementPtr->ToGeometrySourceP();
     IGeometryPtr profileGeometryPtr = profilePtr->GetShape();
     DRange3d range = {0};
-    BeAssert(profileGeometryPtr->TryGetRange (range));
+    BeAssert (profileGeometryPtr->TryGetRange (range));
 
     Placement3d elementPlacement;
     elementPlacement.GetOriginR() = offsetProfilePlacement (profileGeometryPtr, placeInNewRow);
@@ -253,7 +253,7 @@ void GeometryTestCase::InsertPhysicalElementForCenterLineProfile(ProfilePtr prof
 
     if (centerLineGeom.IsValid())
         {
-        Transform translation = Transform::From (DPoint3d::From(range.low.x * -1.0, range.low.y * -1.0));
+        Transform translation = Transform::From (DPoint3d::From (range.low.x * -1.0, range.low.y * -1.0));
         BeAssert (centerLineGeom->TryTransformInPlace (translation));
 
         builder->Append (GetGeometryParamsForCenterLine());
@@ -330,23 +330,17 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_SlopeAndRoundings", 3.5, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
 
     InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape not rounded, with girth", 3.5, 10.0, 1.0, 1.3, 0.0), true);
-    InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape not rounded, with max girth", 3.5, 10.0, 1.0, 10.0 / 2 - 0.01, 0.0));
     InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape not rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.0));
-    InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape rounded, with min girth", 3.5, 10.0, 1.0, 1.17, 0.17));
+    InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape rounded, with girth", 5.0, 10.0, 1.0, 1.18, 0.17));
     InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.17));
-    InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape rounded, with max girth", 3.5, 10.0, 1.0, 4.99, 0.17));
-    InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape rounded, with girth", 3.5, 10.0, 1.0, 3.5, 0.17));
-
+    InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape not rounded, with long girth", 3.5, 10.0, 1.0, 3.5, 0.0));
+    InsertCenterlineCShapeGeometry (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape rounded, with long girth", 3.5, 10.0, 1.0, 3.5, 0.17));
 
     InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams (GetModel(), "CenterLineLShape not rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.0), true);
     InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape not rounded, with girth", 3.5, 10.0, 1.0, 2.0, 0.0));
     InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with girth", 3.5, 10.0, 1.0, 2.0, 0.17));
     InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.17));
-    InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with long girth", 3.5, 10.0, 1.0, 7.0, 0.17));
-    InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with max girth", 3.5, 10.0, 1.0, 8.99, 0.17));
-    InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with max girth", 10, 10.0, 1.0, 8.99, 0.17));
-    InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with girth, large wall thickness", 10, 10.0, 4.0, 5.99, 0.17));
-    InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with girth, large wall thickness, max fillet radius", 10, 10.0, 4.0, 5.99, 1.0));
+    InsertCenterlineLShapeGeometry (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with long girth", 3.5, 10.0, 1.0, 6.0, 0.17));
 
     InsertProfileGeometry<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Circle", 3.0), true);
     InsertProfileGeometry<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "HollowCircle", 3.0, 0.5));
