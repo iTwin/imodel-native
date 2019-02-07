@@ -297,9 +297,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         auto smModel = dynamic_cast<ScalableMeshModelCP>(geometricModel);
         if (smModel != nullptr)
             {
-            DPoint3d initialCenter = m_dgndb->GeoLocation().GetInitialProjectCenter();
-            dbToEcefTransform = Transform::FromProduct(dbToEcefTransform, Transform::From(initialCenter.x, initialCenter.y, initialCenter.z));
-            smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform, Transform::From(-initialCenter.x, -initialCenter.y, -initialCenter.z));
+            smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform);
             }
         else
             {
