@@ -78,7 +78,6 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_MaterialProfile                                    "MaterialProfile"
 
 // Aspects
-#define PRF_CLASS_StandardProfileAspect                              "StandardProfileAspect"
 #define PRF_CLASS_CustomCardinalPointsAspect                         "CustomCardinalPointsAspect"
 
 // Relationships
@@ -172,9 +171,6 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_SchifflerizedLShapeProfile_LegBendOffset                        "LegBendOffset"
 #define PRF_PROP_SchifflerizedLShapeProfile_FilletRadius                         "FilletRadius"
 #define PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius                           "EdgeRadius"
-#define PRF_PROP_StandardProfileAspect_Manufacturer                              "Manufacturer"
-#define PRF_PROP_StandardProfileAspect_Revision                                  "Revision"
-#define PRF_PROP_StandardProfileAspect_StandardsOrganization                     "StandardsOrganization"
 #define PRF_PROP_CustomCardinalPointsAspect_Points                               "Points"
 #define PRF_PROP_TShapeProfile_FlangeWidth                                       "FlangeWidth"
 #define PRF_PROP_TShapeProfile_Depth                                             "Depth"
@@ -331,7 +327,6 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (RegularPolygonProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (RoundedRectangleProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (SchifflerizedLShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (SinglePerimeterProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (StandardProfileAspect)
 PROFILES_TYPEDEFS (CustomCardinalPoint)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CustomCardinalPointsAspect)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TShapeProfile)

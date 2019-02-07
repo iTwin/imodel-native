@@ -112,8 +112,6 @@ $(o)SchifflerizedLShapeProfile$(oext) : $(appSrc)SchifflerizedLShapeProfile.cpp 
 
 $(o)SinglePerimeterProfile$(oext) : $(appSrc)SinglePerimeterProfile.cpp ${MultiCompileDepends} $(appPublicApi)SinglePerimeterProfile.h
 
-$(o)StandardProfileAspect$(oext) : $(appSrc)StandardProfileAspect.cpp ${MultiCompileDepends} $(appPublicApi)StandardProfileAspect.h
-
 $(o)CustomCardinalPointsAspect$(oext) : $(appSrc)CustomCardinalPointsAspect.cpp ${MultiCompileDepends} $(appPublicApi)CustomCardinalPointsAspect.h
 
 $(o)TShapeProfile$(oext) : $(appSrc)TShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)TShapeProfile.h

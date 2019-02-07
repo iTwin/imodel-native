@@ -161,9 +161,6 @@
     <ClCompile Include="src\TrapeziumProfile.cpp">
       <Filter>Src\SinglePerimeterProfiles\GeometricShapes</Filter>
     </ClCompile>
-    <ClCompile Include="src\StandardProfileAspect.cpp">
-      <Filter>Src\Aspects</Filter>
-    </ClCompile>
     <ClCompile Include="src\SinglePerimeterProfile.cpp">
       <Filter>Src\SinglePerimeterProfiles</Filter>
     </ClCompile>
@@ -309,9 +306,6 @@
     </ClInclude>
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\SchifflerizedLShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles\LetterShapes</Filter>
-    </ClInclude>
-    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\StandardProfileAspect.h">
-      <Filter>PublicAPI\Aspects</Filter>
     </ClInclude>
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ArbitraryShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>

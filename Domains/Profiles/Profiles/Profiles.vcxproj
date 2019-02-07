@@ -103,7 +103,6 @@
     <ClCompile Include="src\RoundedRectangleProfile.cpp" />
     <ClCompile Include="src\SchifflerizedLShapeProfile.cpp" />
     <ClCompile Include="src\SinglePerimeterProfile.cpp" />
-    <ClCompile Include="src\StandardProfileAspect.cpp" />
     <ClCompile Include="src\TrapeziumProfile.cpp" />
     <ClCompile Include="src\TShapeProfile.cpp" />
     <ClCompile Include="src\TTShapeProfile.cpp" />
@@ -151,7 +150,6 @@
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\RoundedRectangleProfile.h" />
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\SchifflerizedLShapeProfile.h" />
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\SinglePerimeterProfile.h" />
-    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\StandardProfileAspect.h" />
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TrapeziumProfile.h" />
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TShapeProfile.h" />
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TTShapeProfile.h" />

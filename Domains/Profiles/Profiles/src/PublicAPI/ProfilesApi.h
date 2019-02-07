@@ -41,7 +41,6 @@
 #include "DoubleCShapeProfile.h"
 #include "DoubleLShapeProfile.h"
 #include "ArbitraryCompositeProfile.h"
-#include "StandardProfileAspect.h"
 #include "CustomCardinalPointsAspect.h"
 #include "MaterialProfileDefinition.h"
 #include "MaterialProfile.h"

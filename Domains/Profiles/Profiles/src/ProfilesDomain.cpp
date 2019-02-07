@@ -50,7 +50,6 @@ ProfilesDomain::ProfilesDomain() : DgnDomain (PRF_SCHEMA_NAME, "Bentley Profiles
     RegisterHandler (DoubleLShapeProfileHandler::GetHandler());
     RegisterHandler (ArbitraryCompositeProfileHandler::GetHandler());
     RegisterHandler (ArbitraryCompositeProfileAspectHandler::GetHandler());
-    RegisterHandler (StandardProfileAspectHandler::GetHandler());
     RegisterHandler (CustomCardinalPointsAspectHandler::GetHandler());
     RegisterHandler (MaterialProfileDefinitionHandler::GetHandler());
     RegisterHandler (MaterialProfileHandler::GetHandler());
