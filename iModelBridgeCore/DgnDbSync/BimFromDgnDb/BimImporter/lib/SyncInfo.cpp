@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/SyncInfo.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Logging/bentleylogging.h>
@@ -168,25 +168,6 @@ BentleyStatus SyncInfo::PerformVersionChecks()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::ModelIterator::ModelIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
-    {
-    m_params.SetWhere(where);
-    Utf8String sqlString = MakeSqlString("SELECT ROWId, TargetId, SourceId, Name FROM " SYNCINFO_ATTACH(SYNC_TABLE_Model));
-    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::ModelIterator::Entry SyncInfo::ModelIterator::begin() const
-    {
-    m_stmt->Reset();
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2016
-//---------------+---------------+---------------+---------------+---------------+-------
 DbResult SyncInfo::ModelMapping::Insert(BeSQLite::Db& db) const
     {
     if (!m_targetId.IsValid())
@@ -227,29 +208,6 @@ BentleyStatus SyncInfo::InsertModel(ModelMapping& minfo, DgnModelId target, DgnM
 
     auto rc = minfo.Insert(*m_dgnDb);
     return (BE_SQLITE_ROW == rc) ? SUCCESS : ERROR;
-    }
-
-int64_t SyncInfo::ElementIterator::Entry::GetRowId() { return m_sql->GetValueInt64(0); }
-DgnElementId SyncInfo::ElementIterator::Entry::GetTargetId() { return m_sql->GetValueId<DgnElementId>(1); }
-DgnElementId SyncInfo::ElementIterator::Entry::GetSourceId() { return m_sql->GetValueId<DgnElementId>(2); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::ElementIterator::ElementIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
-    {
-    m_params.SetWhere(where);
-    Utf8String sqlString = MakeSqlString("SELECT ROWId, TargetId, SourceId FROM " SYNCINFO_ATTACH(SYNC_TABLE_Element));
-    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::ElementIterator::Entry SyncInfo::ElementIterator::begin() const
-    {
-    m_stmt->Reset();
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -428,7 +386,24 @@ DgnSubCategoryId SyncInfo::LookupSubCategory(DgnCategoryId catId, DgnSubCategory
         return stmt->GetValueId<DgnSubCategoryId>(0);
         }
     return DgnSubCategoryId();
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::InsertAspect(BeSQLite::EC::ECInstanceId oldId, BeSQLite::EC::ECInstanceId newId)
+    {
+    m_aspectMapping[oldId] = newId;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BeSQLite::EC::ECInstanceId SyncInfo::LookupAspect(BeSQLite::EC::ECInstanceId oldId)
+    {
+    auto i = m_aspectMapping.find(oldId);
+    return i == m_aspectMapping.end() ? BeSQLite::EC::ECInstanceId() : i->second;
     }
 
 //---------------------------------------------------------------------------------------
