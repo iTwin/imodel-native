@@ -4,6 +4,7 @@
 
 #include <ctime> 
 #include <process.h>
+#include <string.h>
 
 #include <Bentley\BeDirectoryIterator.h>
 #include <BeXml\BeXml.h>
@@ -365,6 +366,7 @@ void TaskScheduler::Start()
 
             BeFileName name;
             bool isDir;
+            int  fileOpReturnCode = 0; 
         
             for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())        
                 {                                
@@ -386,7 +388,12 @@ void TaskScheduler::Start()
                                 
                     //struct _stat64i32 buffer;
 
-                    if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
+                    if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0)
+                        {
+                        fileOpReturnCode = fclose(lockFile);
+                        assert(fileOpReturnCode == 0);
+                        continue;
+                        }
                                 
                     FILE* file = nullptr;
                 
@@ -394,10 +401,17 @@ void TaskScheduler::Start()
                     errno_t err = 0;
                     file = _wfsopen(name, L"ab+", _SH_DENYRW);
                 
-                    if (file == nullptr) continue;
+                    if (file == nullptr) 
+                        {                        
+                        fileOpReturnCode = fclose(lockFile);
+                        assert(fileOpReturnCode == 0);
+                        continue;
+                        }
 
                     if (err != 0)
                         {
+                        fileOpReturnCode = fclose(lockFile);
+                        assert(fileOpReturnCode == 0);
                         assert(file == nullptr);
                         continue;
                         }
@@ -409,7 +423,10 @@ void TaskScheduler::Start()
 
                     if (startingChar == 0 || readSize == 0)
                         {
-                        fclose(file);
+                        fileOpReturnCode = fclose(file);
+                        assert(fileOpReturnCode == 0);
+                        fileOpReturnCode = fclose(lockFile);
+                        assert(fileOpReturnCode == 0);
                         continue;
                         }
 
@@ -422,10 +439,18 @@ void TaskScheduler::Start()
                         {                    
 					    }
 
-                    fclose(lockFile);
-
-                    while (0 != _wremove(lockFileName))
+                    while (0 != fclose(lockFile))
                         {
+                        }
+
+                    int retRemoveCode; 
+
+                    while (0 != (retRemoveCode = _wremove(lockFileName)))
+                        {
+                        retRemoveCode = retRemoveCode;
+
+                        char buffer[1024];
+                        strerror_s(buffer, 1024, errno);
 			            sleeper.Sleep();
                         }                                
                     }

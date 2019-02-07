@@ -991,7 +991,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         pChildNode = pChildNode->GetNextSibling();
         } while (pChildNode != nullptr);
             
-    //Flush all the data on disk
+    //Flush all the data on disk    
     OpenSqlFiles(false, true);
 
     generatedPtsNeighbors.clear();
@@ -1006,10 +1006,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     generatedNodes.clear();
 
-    pDataIndex->Store();
+    pDataIndex->Store();            
 
     CloseSqlFiles();
 
+#if 0 
+    //The save and save sister files are closing the db, which can create deadlock. Add sisterMain lock to prevent this for happening.
     FILE* lockFile;
     BeFileName lockFileName;
     GetSisterMainLockFileName(lockFileName);
@@ -1024,9 +1026,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
     assert(pSqliteStore != nullptr);
     pSqliteStore->SaveSisterFiles();
-
+    
     fclose(lockFile);
-
+#endif
 
     assert(SMMemoryPool::GetInstance()->GetCurrentlyUsed() == 0);
         
@@ -1249,6 +1251,21 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
         dbOpResult = m_smSisterDb->ReOpenShared(readOnly, true);
 
     assert(dbOpResult == true);
+	
+/*			
+	if (!m_smDb->IsDbOpen() || !m_smDb->IsReadonly())
+        {
+        while (!m_smDb->ReOpenShared(readOnly, true));    
+        }
+
+    assert(dbOpResult == true);
+            
+    if (!m_smSisterDb->IsDbOpen() || !m_smSisterDb->IsReadonly())
+        {
+        while (!m_smSisterDb->ReOpenShared(readOnly, true));
+        }
+		*/
+
 
     if (needSisterMainLockFile)
         {
