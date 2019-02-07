@@ -27,7 +27,7 @@
   <ItemGroup>
     <ClInclude Include="Licensing\FreeClientImpl.h" />
     <ClInclude Include="Licensing\ClientImpl.h" />
-    <ClInclude Include="Licensing\ClientInterface.h" />
+    <ClInclude Include="Licensing\IClient.h" />
     <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
     <ClInclude Include="Licensing\IFreeClient.h" />
     <ClInclude Include="PublicAPI\Licensing\FreeClient.h" />

@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Client.h>
 #include "ClientImpl.h"
-#include "FreeClientImpl.h"
 #include "ClientWithKeyImpl.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -17,7 +16,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 Client::Client
 (
-	std::shared_ptr<struct ClientInterface> implementation
+    std::shared_ptr<struct IClient> implementation
 )
 {
 	m_impl = implementation;
@@ -81,11 +80,3 @@ BentleyStatus Client::StopApplication()
      {
      return m_impl->MarkFeature(featureId, featureUserData);
      }
-
- /*--------------------------------------------------------------------------------------+
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
- folly::Future<BentleyStatus> Client::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
-	 {
-	 return m_impl->TrackUsage(accessToken, version, projectId);
-	 }

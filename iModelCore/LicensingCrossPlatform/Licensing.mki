@@ -9,7 +9,7 @@
 %include MultiCppCompileRule.mki
 
 Headers =
-Headers + $(SourceDir)ClientInterface.h
+Headers + $(SourceDir)IClient.h
 Headers + $(SourceDir)ClientImpl.h
 Headers + $(SourceDir)IFreeClient.h
 Headers + $(SourceDir)FreeClientImpl.h
