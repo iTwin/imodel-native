@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ClientTests.h"
+#include "Utils/MockHttpHandler.h"
 #include "DummyPolicyHelper.h"
 
 #include <Licensing/Client.h>
@@ -20,6 +21,7 @@
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <BeSQLite/BeSQLite.h>
+#include <BeSQLite/L10N.h>
 #include <fstream>
 #include <Licensing/Utils/InMemoryJsonLocalState.h>
 
@@ -100,7 +102,7 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
             return nullptr;
         }
     BeFileName dbPath = GetUsageDbPath();
-    
+
     return std::make_shared<ClientImpl>(
         manager->GetUserInfo(),
         clientInfo,
@@ -261,6 +263,37 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
     return CreateTestClient(signIn, heartbeatInterval, timeRetriever, delayedExecutor, UrlProvider::Environment::Qa, productId);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientTests::ClientTests() :
+    m_handler(std::make_shared<MockHttpHandler>())
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+MockHttpHandler& ClientTests::GetHandler() const
+    {
+    return *m_handler;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<MockHttpHandler> ClientTests::GetHandlerPtr() const
+    {
+    return m_handler;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientTests::TearDown()
+    {
+    m_handler->ValidateAndClearExpectations();
+    }
+
 void ClientTests::SetUpTestCase()
     {
     // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
@@ -273,12 +306,18 @@ void ClientTests::SetUpTestCase()
     BeFileName tmpDir;
     BeTest::GetHost().GetTempDir(tmpDir);
     BeSQLiteLib::Initialize(tmpDir);
+
+    BeFileName path;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
+    path.AppendToPath(L"sqlang/DgnClientFx_en.sqlang.db3");
+
+    ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
 TEST_F(ClientTests, StartApplication_StopApplication_Success)
     {
     auto client = CreateTestClient(true);
-    EXPECT_NE((int) client->StartApplication(), (int) LicenseStatus::Error);    
+    EXPECT_NE((int) client->StartApplication(), (int) LicenseStatus::Error);
     EXPECT_SUCCESS(client->StopApplication());
     }
 
@@ -335,7 +374,7 @@ TEST_F(ClientTests, GetCertificate_Success)
     Utf8String cert;
 
     auto client = CreateTestClient(true);
-        
+
     EXPECT_NO_THROW(cert = client->GetCertificate().get());
     EXPECT_NE(cert.empty(), true);
     }
@@ -346,6 +385,29 @@ TEST_F(ClientTests, GetPolicy_Success)
 
     auto policyToken = client->GetPolicy().get();
     EXPECT_NE(policyToken, nullptr);
+    }
+
+Response StubHttpResponse()
+    {
+    HttpStatus httpStatus = HttpStatus::OK;
+    ConnectionStatus status = ConnectionStatus::OK;
+
+    return Response(HttpResponseContent::Create(HttpStringBody::Create()), "", status, httpStatus);
+    }
+
+TEST_F(ClientTests, GetCertificate_Success_Mock)
+    {
+    auto url = "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api/PolicyTokenSigningCertificate";
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(url, request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    HttpClient client(nullptr, GetHandlerPtr());
+    auto cert = client.CreateGetRequest(url).Perform().get();
     }
 
 TEST_F(ClientTests, GetProductStatus_Test)
@@ -379,7 +441,7 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	client->AddPolicyToDb(Policy::Create(jsonPolicyNoRequestData));
 	client->AddPolicyToDb(Policy::Create(jsonPolicyIdBad));
 	client->AddPolicyToDb(Policy::Create(jsonPolicyOfflineNotAllowed));
-	
+
 	// NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
 	ASSERT_EQ((int)client->GetProductStatus(), (int)LicenseStatus::AccessDenied); // Obtained test policy should result in AccessDenied
 	ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Ok);
@@ -393,10 +455,10 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	ASSERT_EQ((int)client->GetProductStatus(9908), (int)LicenseStatus::NotEntitled);
 	ASSERT_EQ((int)client->GetProductStatus(9999), (int)LicenseStatus::NotEntitled); // Policy with productId does not exist
 	ASSERT_EQ((int)client->GetProductStatus(9909), (int)LicenseStatus::Ok); // Grace Period NOT started; should return Ok
-	
+
 	auto timestamp = DateHelper::GetCurrentTime();
 	auto timestampPast = DateHelper::AddDaysToCurrentTime(-14); // Two weeks ago; default offline period allowed is only 1 week
-	
+
 	client->GetUsageDb().SetOfflineGracePeriodStart(timestamp);
 	ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Offline); // Valid status should be Offline now
 	ASSERT_EQ((int)client->GetProductStatus(9909), (int)LicenseStatus::DisabledByPolicy); // Grace Period started; should be disabled
