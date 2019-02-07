@@ -219,6 +219,7 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
 
     SetRepositoryLinkInAppData(file, RepositoryLinkId(rlinkPost->GetElementId().GetValue()));
 
+#ifdef WIP_OLD_MODEL_PROVENANCE
     if (_WantModelProvenanceInBim())
         {
         BeSQLite::BeGuid guid = GetDocumentGUIDforFile(file);
@@ -235,6 +236,7 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
                 }
             }
         }
+#endif
 
 #ifndef NDEBUG
     {
@@ -3222,6 +3224,7 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
         return ResolvedModelMapping();
         }
 
+#ifdef WIP_OLD_MODEL_PROVENANCE
     if (_WantModelProvenanceInBim())
         {
         DgnV8FileP file = v8Model.GetDgnFileP();
@@ -3231,13 +3234,14 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
             {
             LOG.infov("DgnV8FileProvenance has %s (%s)", Bentley::Utf8String(file->GetFileName()).c_str(), guid.ToString().c_str());
             DgnV8ModelProvenance::ModelProvenanceEntry entry;
-            entry.m_dgnv8ModelId = modelId.GetValue();
+            entry.m_dgnv8ModelId = v8ModelRef->GetModelId();
             entry.m_modelId = modelId;
             entry.m_modelName = newModelName;
             entry.m_trans = trans;
             DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
             }
         }
+#endif
 
     DgnModelPtr model = m_dgndb->Models().GetModel(modelId);
     if (!model.IsValid())

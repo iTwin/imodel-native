@@ -1733,8 +1733,10 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
             {
             DgnModelId modelId = mref->GetModelId();
             mref->Delete();
+#ifdef WIP_OLD_MODEL_PROVENANCE
             if (_WantModelProvenanceInBim())
                 DgnV8ModelProvenance::Delete(modelId, GetDgnDb());
+#endif
             if (element.IsValid())
                 element->Delete();
             }

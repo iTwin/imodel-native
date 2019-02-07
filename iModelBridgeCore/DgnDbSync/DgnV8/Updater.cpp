@@ -226,8 +226,10 @@ void Converter::_DeleteModel(DgnModelR model, SyncInfo::V8ModelExternalSourceAsp
     model.Delete();
     db.Elements().Delete(modeledElementId);
 
+#ifdef WIP_OLD_MODEL_PROVENANCE
     if (_WantModelProvenanceInBim())
         DgnV8ModelProvenance::Delete(model.GetModelId(), GetDgnDb());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

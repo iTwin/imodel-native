@@ -105,6 +105,7 @@ ResolvedModelMapping TiledFileConverter::_GetResolvedModelMapping(DgnV8ModelRefC
         return ResolvedModelMapping();
         }
 
+#ifdef WIP_OLD_MODEL_PROVENANCE
     if (_WantModelProvenanceInBim())
         {
         DgnV8FileP file = v8Model.GetDgnFileP();
@@ -119,6 +120,7 @@ ResolvedModelMapping TiledFileConverter::_GetResolvedModelMapping(DgnV8ModelRefC
             DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
             }
         }
+#endif
 
     DgnModelPtr model = m_dgndb->Models().GetModel(modelId);
     if (!model.IsValid())
