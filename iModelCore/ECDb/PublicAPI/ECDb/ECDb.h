@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECDb.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -367,6 +367,12 @@ public:
     ECDB_EXPORT BentleyStatus AddIssueListener(IIssueListener const& issueListener);
     ECDB_EXPORT void RemoveIssueListener();
 
+    //! Try to get a registered sql function by name
+    //! @param[in,out] function return pointer to the sql function.
+    //! @param[in] name function identifier
+    //! @param[in] argCount number of arguments that the sql function takes.
+    //! @return true if function successfully  find a function with the signature (name, argCount)
+    ECDB_EXPORT bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 
     ECDB_EXPORT void AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnClearCache) const;
     using Db::AddAppData;
