@@ -255,6 +255,57 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, SetsUp
     EXPECT_EQ(1, contentSet.GetSize());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* VSTS#73761
+* @bsimethod                                    Haroldas.Vitunskas              02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, HandlesProjectReloadCorrectly)
+    {
+    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    "    <ECSchemaReference name =\"Bentley_Standard_CustomAttributes\" version =\"01.04\" prefix =\"bsca\" />"
+    "    <ECClass typeName=\"ClassA\" isDomainClass=\"True\">"
+    "        <ECProperty propertyName=\"n\" typeName=\"int\" />"
+    "    </ECClass>"
+    "    <ECClass typeName=\"ClassB\" >"
+    "        <ECProperty propertyName=\"p\" typeName=\"int\" />"
+    "    </ECClass>"
+    "</ECSchema>";
+    ECSchemaPtr schema = nullptr;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, schemaXML, *context);
+    
+    // prepare the dataset
+    ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1,
+        Utf8PrintfString("this.IsOfClass(\"%s\", \"%s\")", ecClass->GetName().c_str(), ecClass->GetSchema().GetName().c_str()),
+        ecClass->GetFullName(), true);
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*specification);
+    rules->AddPresentationRule(*rule);
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    locater->AddRuleSet(*rules);
+    m_manager->GetLocaters().RegisterLocater(*locater);
+
+    // get content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+
+    // Attempt to trigger a deadlock by importing a schema and ask for content again
+    bvector<ECSchemaCP> schemaList = bvector<ECSchemaCP>{ schema.get() };
+    s_project->GetECDb().Schemas().ImportSchemas(schemaList);
+
+    descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/

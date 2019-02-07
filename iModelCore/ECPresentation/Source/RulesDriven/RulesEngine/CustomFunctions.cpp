@@ -1701,8 +1701,19 @@ CustomFunctionsInjector::CustomFunctionsInjector(IConnectionManagerCR connection
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsInjector::~CustomFunctionsInjector()
     {
+    bset<ECDb const*> removedPrimaryConnections;
+
     for (IConnectionCP connection : m_handledConnections)
+        {
         Unregister(*connection);
+
+        // Unregister primary connections if they haven't been unregistered yet
+        if (removedPrimaryConnections.end() == removedPrimaryConnections.find(&connection->GetECDb()))
+            {
+            removedPrimaryConnections.insert(&connection->GetECDb());
+            Unregister(*connection, true);
+            }
+        }
 
     DestroyFunctions();
     m_connections.DropListener(*this);
@@ -1864,6 +1875,5 @@ void CustomFunctionsInjector::_OnConnectionEvent(ConnectionEvent const& evt)
             }
         for (IConnectionCP conn : toErase)
             m_handledConnections.erase(conn);
-        Unregister(evt.GetConnection(), true);
         }
     }
