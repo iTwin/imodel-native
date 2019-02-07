@@ -108,7 +108,7 @@ BentleyStatus SyncInfo::CreateTables()
         {
         m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema),
                          "V8Id INTEGER PRIMARY KEY,"
-                         "RepositoryLinkId INTEGER NOT NULL,"
+                         "RepositoryLinkId BIGINT NOT NULL,"
                          "V8Name TEXT NOT NULL,"
                          "V8VersionMajor INTEGER NOT NULL,"
                          "V8VersionMinor INTEGER NOT NULL,"
@@ -1336,7 +1336,7 @@ DbResult SyncInfo::InsertECSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId,
         return BE_SQLITE_ERROR;
         }
 
-    stmt->BindInt(1, v8FileId.GetValue());
+    stmt->BindId(1, v8FileId);
     stmt->BindText(2, v8SchemaName, Statement::MakeCopy::No);
     stmt->BindInt(3, v8ProfileVersionMajor);
     stmt->BindInt(4, v8ProfileVersionMinor);
@@ -1380,7 +1380,7 @@ bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMapping
 
     stmt->BindText(1, v8SchemaName, Statement::MakeCopy::No);
     if (fileId.IsValid())
-        stmt->BindInt(2, fileId.GetValue());
+        stmt->BindId(2, fileId);
     if (BE_SQLITE_ROW != stmt->Step())
         return false;
 
@@ -1422,7 +1422,7 @@ DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInf
         return BE_SQLITE_ERROR;
         }
 
-    stmt->BindInt(1, fileId.GetValue());
+    stmt->BindId(1, fileId);
     while (BE_SQLITE_ROW == stmt->Step())
         {
         syncInfoChecksums[stmt->GetValueText(0)] = (uint32_t) stmt->GetValueInt(1);
@@ -1568,7 +1568,7 @@ BeSQLite::DbResult SyncInfo::InsertImageryFile(DgnElementId modeledElementId, Re
     stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "(ElementId, RepositoryLinkId, Filename, LastModified, FileSize, ETag, RDSId) VALUES (?,?,?,?,?,?,?)");
     int col = 1;
     stmt.BindId(col++, modeledElementId);
-    stmt.BindInt(col++, filesiid.GetValue());
+    stmt.BindId(col++, filesiid);
     stmt.BindText(col++, filename, Statement::MakeCopy::No);
     stmt.BindUInt64(col++, lastModifiedTime);
     stmt.BindUInt64(col++, fileSize);
@@ -1631,7 +1631,7 @@ bool SyncInfo::ModelHasChangedImagery(RepositoryLinkId filesiid)
     if (!filesiid.IsValid())
         return false;
 
-    stmt->BindInt(1, filesiid.GetValue());
+    stmt->BindId(1, filesiid);
     while (BE_SQLITE_ROW == stmt->Step())
         {
         Utf8String fileName = stmt->GetValueText(0);
