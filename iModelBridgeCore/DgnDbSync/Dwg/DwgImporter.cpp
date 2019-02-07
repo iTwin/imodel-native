@@ -1928,6 +1928,11 @@ void            DwgImporter::_BeginImport ()
     {
     this->_GetChangeDetector()._Prepare (*this);
     m_dgndb->AddIssueListener (m_issueReporter.GetECDbIssueListener());
+
+    // get imported DWG schemas
+    auto schemaName = DwgHelper::GetAttrdefECSchemaName (m_dwgdb.get());
+    m_attributeDefinitionSchema = m_dgndb->Schemas().GetSchema (schemaName.c_str(), true);
+
     m_hasBegunProcessing = true;
     }
 

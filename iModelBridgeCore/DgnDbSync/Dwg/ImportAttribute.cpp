@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportAttribute.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -339,16 +339,7 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
     // create attredef schema if not already created:
     if (attrdefSchema.IsNull())
         {
-        Utf8String  schemaName = SCHEMAName_AttributeDefinitions;
-
-        auto dwg = block.GetDatabase ();
-        if (dwg != nullptr)
-            {
-            Utf8String  filename(BeFileName::GetFileNameWithoutExtension (dwg->GetFileName().c_str()).c_str());
-            schemaName += "_" + filename;
-            if (!ECNameValidation::IsValidName(schemaName.c_str()))
-                ECNameValidation::EncodeToValidName (schemaName, schemaName.c_str());
-            }
+        Utf8String  schemaName = DwgHelper::GetAttrdefECSchemaName (block.GetDatabase().get());
 
         status = ECSchema::CreateSchema (attrdefSchema, schemaName, SCHEMAAlias_AttributeDefinitions, 1, 0, 0);
         if (ECObjectsStatus::Success == status)
