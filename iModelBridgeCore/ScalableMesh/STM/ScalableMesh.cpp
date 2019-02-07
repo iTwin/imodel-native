@@ -3661,29 +3661,27 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
                                                            0, scaleUorPerMeters, 0, 0.0,
                                                            0, 0, scaleUorPerMeters, 0.0);
 
-    auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
-    //auto coordInterp = GeoCoordinates::GeoCoordInterpretation::XYZ;
-    //   #ifndef LINUX_SCALABLEMESH_BUILD
-    //if (this->IsCesium3DTiles())
-    //    {
-    //    auto tileToDb = m_streamingSettings->GetTileToDbTransform();
-    //    if (!tileToDb.IsIdentity())
-    //        {
-    //        computedTransform = Transform::FromProduct(computedTransform, tileToDb);
-    //        }
-    //    else
-    //        { // tile coordinates are not transformed, therefore they must be interpreted as XYZ coordinates
-    //        coordInterp = GeoCoordinates::GeoCoordInterpretation::XYZ;
-    //        }
-    //    auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
-    //    if (!tileToECEF.IsIdentity())
-    //        {
-    //        Transform ecefToTile;
-    //        ecefToTile.InverseOf(tileToECEF);
-    //        computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
-    //        }
-    //    }
-    //    #endif
+    //auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
+    auto coordInterp = GeoCoordinates::GeoCoordInterpretation::Cartesian;
+    if (this->IsCesium3DTiles())
+        {
+        auto tileToDb = m_streamingSettings->GetTileToDbTransform();
+        if (!tileToDb.IsIdentity())
+            {
+            computedTransform = Transform::FromProduct(computedTransform, tileToDb);
+            auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
+            if(!tileToECEF.IsIdentity())
+                {
+                Transform ecefToTile;
+                ecefToTile.InverseOf(tileToECEF);
+                computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
+                }
+            }
+        else
+            { // tile coordinates are not transformed, therefore they must be interpreted as XYZ coordinates
+            coordInterp = GeoCoordinates::GeoCoordInterpretation::XYZ;
+            }
+        }
 
     if (targetCS == nullptr || !gcs.HasGeoRef())
         {
