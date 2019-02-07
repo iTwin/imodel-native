@@ -103,79 +103,12 @@ BentleyStatus SyncInfo::CreateTables()
         return BSIERROR;
         }
 
-    if (m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_File)))
+
+    if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)))
         {
-        CreateECTables();
-        ImportJob::CreateTable(*m_dgndb);
-        GeomPart::CreateTable(*m_dgndb);
-        m_dgndb->SaveChanges();
-        return BSISUCCESS;
-        }
-
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_File),
-                         "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                         "UniqueName CHAR NOT NULL UNIQUE,"
-                         "V8Name CHAR NOT NULL,"
-                         "LastSaveTime REAL,"
-                         "LastModified BIGINT,"
-                         "FileSize BIGINT,"
-                         "UseHash BOOL");
-
-    // can be N:N
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Model),
-                         "ModelId BIGINT NOT NULL,"
-                         "V8FileSyncInfoId INTEGER REFERENCES " SYNC_TABLE_File "(Id) ON DELETE CASCADE,"
-                         "V8Id INT,"
-                         "V8Name CHAR NOT NULL,"
-                         "Transform BLOB,"
-                         "CONSTRAINT FileModelId UNIQUE(ModelId,V8FileSyncInfoId,V8Id,Transform)"); // we can map the same v8 model to two different BIM models. 
-                                                                                                    // for example, we may import a drawing to its own BIM DrawingModel, and we may 
-                                                                                                    // merge that same drawing into the DrawingModel of its V8 parent.
-
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Model) "NativeIdx ON "  SYNC_TABLE_Model "(ModelId)");
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Model) "FileAndModel ON "  SYNC_TABLE_Model "(V8FileSyncInfoId,V8Id)");
-
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Level),
-                         "Id INT,"
-                         "Type INT,"
-                         "V8FileSyncInfoId INTEGER REFERENCES " SYNC_TABLE_File "(Id) ON DELETE CASCADE,"
-                         "V8Model INT,"
-                         "V8Id INT,"
-                         "V8Name CHAR NOT NULL,"
-                         "CONSTRAINT FileModelId UNIQUE(V8FileSyncInfoId,V8Model,V8Id,Type)");
-
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Level) "NativeIdx ON "  SYNC_TABLE_Level "(Id)");
-
-    // can be N:N
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Element),
-                         "ElementId BIGINT NOT NULL,"
-                         "v8ModelSyncInfoId BIGINT NOT NULL,"
-                         "V8ElementId BIGINT,"
-                         "LastModified REAL,"
-                         "Hash BLOB");
-
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Element) "ElementIdx ON " SYNC_TABLE_Element "(ElementId)");
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Element) "V8Idx ON " SYNC_TABLE_Element "(V8ModelSyncInfoId,V8ElementId)");
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Element) "HashIdx ON "  SYNC_TABLE_Element "(V8ModelSyncInfoId,Hash) WHERE V8ElementId IS NULL");
-
-    // can be N:1
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ExtractedGraphic),
-                         "DrawingV8ModelSyncInfoId BIGINT NOT NULL," // A V8 type-100 (DgnAttachment) element - represents the section as a whole
-                         "AttachmentV8ElementId BIGINT NOT NULL,"       //              "
-                         "OriginalV8ModelSyncInfoId BIGINT NOT NULL,"   // A V8 3D element that was sectioned
-                         "OriginalV8ElementId BIGINT NOT NULL,"         //              "
-                         "Category BIGINT NOT NULL,"                    // The BIM category of the graphic
-                         "Graphic BIGINT NOT NULL,"                     // The BIM DrawingGraphic element that contains all of the section graphics derived from the above element (in this particular attachment's section)
-                         "PRIMARY KEY(DrawingV8ModelSyncInfoId,AttachmentV8ElementId,"
-                                     "OriginalV8ModelSyncInfoId,OriginalV8ElementId,"
-                                     "Category)"
-                         );
-
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Discards), "V8ModelSyncInfoId INT, V8Id BIGINT");
-
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema),
+        m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema),
                          "V8Id INTEGER PRIMARY KEY,"
-                         "V8FileSyncInfoId INTEGER NOT NULL,"
+                         "RepositoryLinkId BIGINT NOT NULL,"
                          "V8Name TEXT NOT NULL,"
                          "V8VersionMajor INTEGER NOT NULL,"
                          "V8VersionMinor INTEGER NOT NULL,"
@@ -183,36 +116,26 @@ BentleyStatus SyncInfo::CreateTables()
                          "LastModified TIMESTAMP,"
                          "Digest INTEGER");
 
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_View),
-                         "ElementId BIGINT NOT NULL, "
-                         "V8FileSyncInfoId INTEGER NOT NULL, "
-                         "V8ElementId BIGINT, "
-                         "V8ViewName TEXT, "
-                         "LastModified REAL");
-
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Imagery),
+        m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Imagery),
                          "ElementId BIGINT PRIMARY KEY, "
-                         "V8FileSyncInfoId INTEGER REFERENCES " SYNC_TABLE_File "(Id) ON DELETE CASCADE,"
+                         "RepositoryLinkId BIGINT,"
                          "Filename TEXT NOT NULL,"
                          "LastModified BIGINT,"
                          "FileSize BIGINT,"
                          "ETag TEXT,"
                          "RDSId TEXT");
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
+        m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
 
-    ImportJob::CreateTable(*m_dgndb);
-    GeomPart::CreateTable(*m_dgndb);
+        //need a unique index to ensure uniqueness for schemas based on checksum
+        Utf8String ddl;
+        ddl.Sprintf("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_variantxml_uix ON "  SYNC_TABLE_ECSchema "(V8Name, RepositoryLinkId, Digest);");
+        MUSTBEOK(m_dgndb->ExecuteSql(ddl.c_str()));
+        //need a index on the entire table for fast look ups
+        MUSTBEOK(m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_ix ON "  SYNC_TABLE_ECSchema "(V8Name);"));
 
-    //need a unique index to ensure uniqueness for schemas based on checksum
-    Utf8String ddl;
-    ddl.Sprintf("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_variantxml_uix ON "  SYNC_TABLE_ECSchema "(V8Name, V8FileSyncInfoId, Digest);");
-    MUSTBEOK(m_dgndb->ExecuteSql(ddl.c_str()));
-    //need a index on the entire table for fast look ups
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_ix ON "  SYNC_TABLE_ECSchema "(V8Name);"));
+        CreateNamedGroupTable(true);
+        }
 
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Discards) "V8Idx ON " SYNC_TABLE_Discards "(V8ModelSyncInfoId, V8Id)"));
-
-    CreateNamedGroupTable(true);
     CreateECTables();
 
     m_dgndb->SaveChanges();
@@ -229,6 +152,20 @@ void SyncInfo::CreateECTables()
     V8ECSchemaXmlInfo::CreateTable(*m_dgndb);
     V8ElementSecondaryECClassInfo::CreateTable(*m_dgndb);
     }
+
+// TOOD: Get rid of this
+struct SyncInfoProperty
+{
+    struct Spec : BeSQLite::PropertySpec
+        {
+        Spec(BentleyApi::Utf8CP name) : PropertySpec(name, "SyncInfo", PropertySpec::Mode::Normal, PropertySpec::Compress::No) {}
+        };
+
+    static Spec ProfileVersion()       {return Spec("SchemaVersion");}
+    static Spec DgnDbGuid()            {return Spec("DgnDbGuid");}
+    static Spec DbProfileVersion()     {return Spec("DbSchemaVersion");}
+    static Spec DgnDbProfileVersion()  {return Spec("DgnDbSchemaVersion");}
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
@@ -300,7 +237,6 @@ DbResult SyncInfo::InsertLineStyle(DgnStyleId newId, double componentScale, V8St
     MappedLineStyle mapEntry(newId, componentScale);
     m_lineStyle[oldId] = mapEntry;
 
-    // WIP_CONVERTER -- write syncinfo 
     return BE_SQLITE_DONE;
     }
 
@@ -385,493 +321,9 @@ Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::ImportJob::CreateTable (BeSQLite::Db& db)
-    {
-    if (db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ImportJob)))
-        return;
-    db.CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ImportJob),
-                         "V8ModelSyncInfoId INTEGER PRIMARY KEY,"
-                         "Transform BLOB,"
-                         "Type INTEGER,"
-                         "Prefix TEXT,"
-                         "SubjectId BIGINT NOT NULL"
-                         ); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult SyncInfo::ImportJob::Insert (BeSQLite::Db& db) const
-    {
-    Statement stmt;
-    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) "(V8ModelSyncInfoId,Transform,Type,Prefix,SubjectId) VALUES (?,?,?,?,?)");
-    int col = 1;
-    stmt.BindInt(col++, m_v8RootModel.GetValue());
-    stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
-    stmt.BindInt(col++, (int)m_type);
-    stmt.BindText(col++, m_prefix, Statement::MakeCopy::No);
-    stmt.BindId(col++, m_subjectId);
-    auto res = stmt.Step();
-    m_ROWID = db.GetLastInsertRowId();
-    return res;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult SyncInfo::ImportJob::Update (BeSQLite::Db& db) const
-    {
-    Statement stmt;
-    stmt.Prepare(db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) " SET Transform=?,Prefix=?,SubjectId=? WHERE(ROWID=?)");
-    int col = 1;
-    stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
-    stmt.BindText(col++, m_prefix, Statement::MakeCopy::No);
-    stmt.BindId(col++, m_subjectId);
-    stmt.BindInt64(col++, m_ROWID);
-    return stmt.Step();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SyncInfo::ImportJob::GetSelectSql()
-    {
-    return "SELECT ROWID,V8ModelSyncInfoId,Transform,Type,Prefix,SubjectId FROM " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::ImportJob::FromSelect(BeSQLite::Statement& stmt)
-    {
-    int col = 0;
-    m_ROWID = stmt.GetValueInt64(col++);
-    m_v8RootModel = V8ModelSyncInfoId(stmt.GetValueInt(col++));
-    memcpy(&m_transform, stmt.GetValueBlob(col++), sizeof(Transform));
-    m_type = (Type)stmt.GetValueInt(col++);
-    m_prefix = stmt.GetValueText(col++);
-    m_subjectId = stmt.GetValueId<DgnElementId>(col++);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ImportJobIterator::ImportJobIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
-    {
-    m_params.SetWhere(where);
-    Utf8String sqlString = MakeSqlString(ImportJob::GetSelectSql().c_str());
-    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ImportJob SyncInfo::ImportJobIterator::ImportJobIterator::Entry::GetimportJob()
-    {
-    SyncInfo::ImportJob importJob;
-    importJob.FromSelect(*m_sql);
-    return importJob;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ImportJobIterator::Entry SyncInfo::ImportJobIterator::begin() const
-    {
-    m_stmt->Reset();
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::ImportJob::FindById(ImportJob& importJob, DgnDbCR db, V8ModelSyncInfoId modelsiid)
-    {
-    if (!db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ImportJob)))
-        return BSIERROR;
-
-    if (!modelsiid.IsValid())
-        return BSIERROR;
-
-    ImportJobIterator iter(db, "V8ModelSyncInfoId=?");
-    iter.GetStatement()->BindInt64(1, modelsiid.GetValue());
-    auto i = iter.begin();
-    if (i == iter.end())
-        return BSIERROR;
-    importJob.FromSelect(*iter.GetStatement());
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::FindImportJobByV8RootModelId(ImportJob& importJob, SyncInfo::V8ModelSyncInfoId modelsiid)
-    {
-    return ImportJob::FindById(importJob, *m_dgndb, modelsiid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedImportJob Converter::FindImportJobFromAspect(DgnV8FileR rootFile, DgnV8Api::ModelId const* v8ModelId)
-    {
-    if (!GetRepositoryLinkFromAppData(rootFile).IsValid())
-        {
-        _GetV8FileIntoSyncInfo(rootFile, _GetIdPolicy(rootFile)); // TRICKY: Before looking for models, register the root file in syncinfo. This starts the process of populating m_v8files. Do NOT CALL GetV8FileSyncInfoId as that will fail to populate m_v8Files in some cases.
-        WriteRepositoryLink(rootFile);
-        }
-
-    DgnElementId jobSubjectId;
-    DgnModelId masterModelId;
-    SyncInfo::BridgeJobletExternalSourceAspect aspect(nullptr);
-    std::tie(aspect, jobSubjectId, masterModelId) = SyncInfo::BridgeJobletExternalSourceAspect::FindAspect(_GetParams().GetBridgeRegSubKeyUtf8(), rootFile, v8ModelId, *this);
-    if (!aspect.IsValid())
-        return ResolvedImportJob();
-
-    auto subj = GetDgnDb().Elements().Get<Subject>(jobSubjectId);
-    return ResolvedImportJob(*subj, aspect.GetTransform(), aspect.GetMasterModelId(), aspect.GetV8MasterModelId(), m_rootTrans, (SyncInfo::ImportJob::Type)aspect.GetConverterType());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedImportJob Converter::FindSoleImportJobForFile(DgnV8FileR rootFile)
-    {
-    if (_WantProvenanceInBim())
-        {
-        return FindImportJobFromAspect(rootFile, nullptr);
-        }
-
-    SyncInfo::V8FileProvenance provenance = m_syncInfo.FindFile(rootFile);
-    if (!provenance.IsValid())
-        return ResolvedImportJob();
-
-    auto fsid = GetV8FileSyncInfoId(rootFile); // (makes sure that syncinfo is cached in file's appdata)
-    if (!fsid.IsValid())
-        return ResolvedImportJob();
-
-    Statement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT importJob.V8ModelSyncInfoId FROM " 
-                 SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) " importJob, "
-                 SYNCINFO_ATTACH(SYNC_TABLE_Model) " model "
-                 "WHERE model.V8FileSyncInfoId=? AND importJob.V8ModelSyncInfoId = model.ROWID");
-    stmt.BindInt(1, fsid.GetValue());
-    if (stmt.Step() != BE_SQLITE_ROW)
-        return ResolvedImportJob();
-        
-    SyncInfo::V8ModelSyncInfoId msid = stmt.GetValueId<SyncInfo::V8ModelSyncInfoId>(0);
-
-    SyncInfo::ImportJob importJob;
-    GetSyncInfo().FindImportJobByV8RootModelId(importJob, msid);    // grab the data now, before we step again
-
-    if (BE_SQLITE_ROW == stmt.Step())                               // check that there is only ONE ImportJob record for this file
-        {
-        OnFatalError(IssueCategory::CorruptData(), Issue::Error(), "Multiple ImportJobs are registered for the root file. You must specify a root model in order to select the one you want to use.");
-        BeAssert(false);
-        return ResolvedImportJob();
-        }
-
-    return GetResolvedImportJob(importJob);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedImportJob Converter::FindImportJobForModel(DgnV8ModelR rootModel)
-    {
-    if (_WantProvenanceInBim())
-        {
-        auto mid = rootModel.GetModelId();
-        return FindImportJobFromAspect(*rootModel.GetDgnFileP(), &mid);
-        }
-
-    auto fsid = GetV8FileSyncInfoId(*rootModel.GetDgnFileP());
-    if (!fsid.IsValid())
-        return ResolvedImportJob();
-
-    Statement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT importJob.V8ModelSyncInfoId FROM " 
-                 SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) " importJob, "
-                 SYNCINFO_ATTACH(SYNC_TABLE_Model) " model "
-                 "WHERE model.V8FileSyncInfoId=? AND model.V8Id=? AND importJob.V8ModelSyncInfoId = model.ROWID");
-    stmt.BindInt(1, fsid.GetValue());
-    stmt.BindInt(2, rootModel.GetModelId());
-
-    if (BE_SQLITE_ROW != stmt.Step())
-        return ResolvedImportJob();
-
-    SyncInfo::V8ModelSyncInfoId msid = stmt.GetValueId<SyncInfo::V8ModelSyncInfoId>(0);
-    SyncInfo::ImportJob importJob;
-    GetSyncInfo().FindImportJobByV8RootModelId(importJob, msid);
-    return GetResolvedImportJob(importJob);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::GeomPart::CreateTable (BeSQLite::Db& db)
-    {
-    if (db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart)))
-        return;
-    db.CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart),
-                         "Id INTEGER PRIMARY KEY,"
-                         "Tag TEXT"
-                         );
-    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_GeomPart) "TagIdx ON "  SYNC_TABLE_GeomPart "(Tag)");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult SyncInfo::GeomPart::Insert (BeSQLite::Db& db) const
-    {
-    Statement stmt;
-    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_GeomPart) "(Id,Tag) VALUES (?,?)");
-    int col = 1;
-    stmt.BindId(col++, m_id);
-    stmt.BindText(col++, m_tag, Statement::MakeCopy::No);
-    auto res = stmt.Step();
-    return res;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SyncInfo::GeomPart::GetSelectSql()
-    {
-    return "SELECT Id,Tag FROM " SYNCINFO_ATTACH(SYNC_TABLE_GeomPart);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::GeomPart::FromSelect(BeSQLite::Statement& stmt)
-    {
-    int col = 0;
-    m_id = stmt.GetValueId<DgnGeometryPartId>(col++);
-    m_tag = stmt.GetValueText(col++);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::GeomPartIterator::GeomPartIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
-    {
-    m_params.SetWhere(where);
-    Utf8String sqlString = MakeSqlString(GeomPart::GetSelectSql().c_str());
-    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::GeomPart SyncInfo::GeomPartIterator::GeomPartIterator::Entry::GetGeomPart()
-    {
-    SyncInfo::GeomPart GeomPart;
-    GeomPart.FromSelect(*m_sql);
-    return GeomPart;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::GeomPartIterator::Entry SyncInfo::GeomPartIterator::begin() const
-    {
-    m_stmt->Reset();
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::GeomPart::FindByTag(GeomPart& GeomPart, DgnDbCR db, Utf8CP tag)
-    {
-    if (!db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart)))
-        return BSIERROR;
-
-    if (Utf8String::IsNullOrEmpty(tag))
-        return BSIERROR;
-
-    GeomPartIterator iter(db, "Tag=?");
-    iter.GetStatement()->BindText(1, tag, Statement::MakeCopy::No);
-    auto i = iter.begin();
-    if (i == iter.end())
-        return BSIERROR;
-    GeomPart.FromSelect(*iter.GetStatement());
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::GeomPart::FindById(GeomPart& GeomPart, DgnDbCR db, DgnGeometryPartId partId)
-    {
-    if (!db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart)))
-        return BSIERROR;
-
-    GeomPartIterator iter(db, "Id=?");
-    iter.GetStatement()->BindId(1, partId);
-    auto i = iter.begin();
-    if (i == iter.end())
-        return BSIERROR;
-    GeomPart.FromSelect(*iter.GetStatement());
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8Api::ModelId SyncInfo::GetV8ModelIdFromV8ModelSyncInfoId(V8ModelSyncInfoId msiid)
-    {
-    SyncInfo::V8ModelMapping mapping;
-    GetModelBySyncInfoId(mapping, msiid);
-    return mapping.GetV8ModelId().GetValue();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::InsertImportJob(ImportJob const& importJob)
-    {
-    return (BE_SQLITE_DONE == importJob.Insert(*m_dgndb))? BSISUCCESS: BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::UpdateImportJob(int64_t rowid, TransformCR t)
-    {
-    ImportJobIterator iter(*GetDgnDb(), "ROWID=?");
-    iter.GetStatement()->BindInt64(1, rowid);
-    auto i = iter.begin();
-    if (i == iter.end())
-        return BSIERROR;
-    ImportJob importJob;
-    importJob.FromSelect(*iter.GetStatement());
-    importJob.SetTransform(t);
-    return (BE_SQLITE_DONE == importJob.Update(*m_dgndb))? BSISUCCESS: BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8FileProvenance::V8FileProvenance(DgnV8FileCR file, SyncInfo& sync, StableIdPolicy policy) : m_syncInfo(&sync)
-    {
-    if (!file.IsEmbeddedFile())
-        {
-        GetInfo(BeFileName(file.GetFileName().c_str()));
-        m_lastSaveTime = ((DgnV8FileR) file).GetLastSaveTime();
-        }
-
-    m_idPolicy = policy;
-    WString fullFileName(file.GetFileName().c_str());
-    m_v8Name = Utf8String(fullFileName);
-    m_uniqueName = sync.GetUniqueNameForFile(file);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SyncInfo::V8FileProvenance::Insert()
-    {
-    Statement stmt;
-    stmt.Prepare(*m_syncInfo->m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_File) "(UniqueName,V8Name,LastSaveTime,LastModified,FileSize,UseHash) VALUES (?,?,?,?,?,?)");
-
-    int col = 1;
-    stmt.BindText(col++, m_uniqueName, Statement::MakeCopy::No);
-    stmt.BindText(col++, m_v8Name, Statement::MakeCopy::No);
-    stmt.BindDouble(col++, m_lastSaveTime);
-    stmt.BindInt64(col++, m_lastModifiedTime);
-    stmt.BindInt64(col++, m_fileSize);
-    stmt.BindInt(col++, m_idPolicy == StableIdPolicy::ByHash ? 1 : 0);
-
-    DbResult rc = stmt.Step();
-    BeAssert(rc == BE_SQLITE_DONE);
-
-    auto rowid = m_syncInfo->m_dgndb->GetLastInsertRowId();
-    BeAssert(rowid <= UINT32_MAX);
-    m_syncId = V8FileSyncInfoId((uint32_t) rowid);
-
-    return rc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8FileProvenance SyncInfo::InsertFile(DbResult* err, DgnV8FileCR file, StableIdPolicy policy)
-    {
-    V8FileProvenance prov(file, *this, policy);
-    auto rc = prov.Insert();
-    if (rc == BE_SQLITE_DONE)
-        return prov;
-    if (nullptr != err)
-        *err = rc;
-    return V8FileProvenance(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8FileProvenance SyncInfo::UpdateFile(DbResult* err, DgnV8FileCR file)
-    {
-    V8FileProvenance prov = FindFile(file);
-    if (!prov.IsValid())
-        {
-        if (err)
-            *err = BE_SQLITE_NOTFOUND;
-        return prov;
-        }
-
-    V8FileProvenance currentStats(file, *this, prov.m_idPolicy); // Get the current time, etc.
-
-    auto rc = prov.Update(prov.m_syncId, currentStats);
-    if (rc == BE_SQLITE_DONE)
-        return prov;
-    if (nullptr != err)
-        *err = rc;
-    return V8FileProvenance(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SyncInfo::V8FileProvenance::Update(V8FileSyncInfoId id, FileInfo const& latest)
-    {
-    Statement stmt;
-    stmt.Prepare(*m_syncInfo->m_dgndb, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_File) " SET LastSaveTime=?,LastModified=?,FileSize=? WHERE Id=?");
-    int col = 1;
-    stmt.BindDouble(col++, latest.m_lastSaveTime);
-    stmt.BindInt64(col++, latest.m_lastModifiedTime);
-    stmt.BindInt64(col++, latest.m_fileSize);
-    stmt.BindInt(col++, id.GetValue());
-    return stmt.Step();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8FileProvenance SyncInfo::FindFileByUniqueName(Utf8StringCR uname)
-    {
-    FileIterator files(GetConverter().GetDgnDb(), "UniqueName=?");
-    files.GetStatement()->BindText(1, uname, Statement::MakeCopy::No);
-    SyncInfo::FileIterator::Entry entry = files.begin();
-    return (entry == files.end())? V8FileProvenance(*this): entry.GetV8FileProvenance(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8FileProvenance SyncInfo::FindFile(DgnV8FileCR file)
-    {
-    return FindFileByUniqueName(GetUniqueNameForFile(file));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8FileProvenance SyncInfo::FindFileByFileName(BeFileNameCR fullFileName)
+SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::FindFileByFileName(BeFileNameCR fullFileName)
     {
     // Make the worst-case assumption that the local files have been moved to a new directory.
     // Consider only the relative path of the file.
@@ -881,44 +333,24 @@ SyncInfo::V8FileProvenance SyncInfo::FindFileByFileName(BeFileNameCR fullFileNam
         prefixLen = 0;
 
     Utf8String searchName(fullFileName.substr(prefixLen));
-    
-    FileIterator files(GetConverter().GetDgnDb(), "V8Name LIKE ?");
-    files.GetStatement()->BindText(1, searchName, Statement::MakeCopy::Yes);
-    for (auto entry : files)
+
+#ifdef DOES_NOT_WORK_IF_NAME_IS_FILE_URL
+    RepositoryLinkExternalSourceAspectIterator rlinkIter(GetConverter().GetDgnDb(), "(json_extract(JsonProperties, '$.fileName') LIKE :searchName)");
+    rlinkIter.GetStatement()->BindText(rlinkIter.GetParameterIndex("searchName"), searchName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    for (auto aspect : rlinkIter)
         {
-        if (entry.GetV8Name().EndsWithI(searchName.c_str()))
-            return entry.GetV8FileProvenance(*this);
+        if (aspect.GetFileName().EndsWithI(searchName.c_str()))
+            return aspect;
         }
-    return V8FileProvenance(*this);;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Sam.Wilson                      07/14
-//---------------------------------------------------------------------------------------
-SyncInfo::V8FileProvenance SyncInfo::FileIterator::Entry::GetV8FileProvenance(SyncInfo& si)
-    {
-    V8FileProvenance fp(si);
-    fp.m_syncId = GetV8FileSyncInfoId();
-    fp.m_uniqueName = GetUniqueName();
-    fp.m_v8Name = GetV8Name();
-    fp.m_idPolicy = GetCannotUseElementIds()? StableIdPolicy::ByHash : StableIdPolicy::ById;
-    fp.m_lastSaveTime = GetLastSaveTime();
-    fp.m_lastModifiedTime = GetLastModifiedTime();
-    fp.m_fileSize = GetFileSize();
-    return fp;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Sam.Wilson                      07/14
-//---------------------------------------------------------------------------------------
-SyncInfo::V8FileProvenance SyncInfo::FindFileById(V8FileSyncInfoId sid)
-    {
-    if (!sid.IsValid())
-        return V8FileProvenance(*this);
-    FileIterator files(GetConverter().GetDgnDb(), "Id=?");
-    files.GetStatement()->BindInt(1, sid.GetValue());
-    SyncInfo::FileIterator::Entry entry = files.begin();
-    return (entry == files.end())? V8FileProvenance(*this): entry.GetV8FileProvenance(*this);
+#else
+    RepositoryLinkExternalSourceAspectIterator rlinkIter(GetConverter().GetDgnDb());
+    for (auto aspect : rlinkIter)
+        {
+        if (aspect.GetFileName().EndsWithI(searchName.c_str()))
+            return aspect;
+        }
+#endif
+    return RepositoryLinkExternalSourceAspect(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -926,7 +358,7 @@ SyncInfo::V8FileProvenance SyncInfo::FindFileById(V8FileSyncInfoId sid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SyncInfo::HasDiskFileChanged(BeFileNameCR fileName)
     {
-    V8FileProvenance prov = FindFileByFileName(fileName);
+    RepositoryLinkExternalSourceAspect prov = FindFileByFileName(fileName);
     if (!prov.IsValid())
         return true;
 
@@ -937,7 +369,7 @@ bool SyncInfo::HasDiskFileChanged(BeFileNameCR fileName)
     // 2. also using file size
     SyncInfo::DiskFileInfo df;
     df.GetInfo(fileName);
-    return df.m_lastModifiedTime != prov.m_lastModifiedTime || df.m_fileSize != prov.m_fileSize;
+    return df.m_lastModifiedTime != prov.GetLastModifiedTime() || df.m_fileSize != prov.GetFileSize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -948,11 +380,12 @@ bool SyncInfo::HasLastSaveTimeChanged(DgnV8FileCR v8File)
     if (v8File.IsEmbeddedFile())
         return false;
 
-    V8FileProvenance previous = FindFile(v8File);
+    V8FileInfo finfo = ComputeFileInfo(v8File);
+    auto previous = RepositoryLinkExternalSourceAspect::FindAspectByIdentifier(*GetDgnDb(), finfo.m_uniqueName);
     if (!previous.IsValid())
         return true;
 
-    auto lastSaveTime = ((DgnV8FileR) v8File).GetLastSaveTime ();
+    auto lastSaveTime = const_cast<DgnV8FileR>(v8File).GetLastSaveTime();
 
     // a non-DGN FileIO may not set the last saved time in the file header - resort to the last modified time in such a case:
     if (0.0 == lastSaveTime)
@@ -960,420 +393,23 @@ bool SyncInfo::HasLastSaveTimeChanged(DgnV8FileCR v8File)
         BeFileName  filename(v8File.GetFileName().c_str());
         SyncInfo::DiskFileInfo diskfile;
         diskfile.GetInfo (filename);
-        return diskfile.m_lastModifiedTime != previous.m_lastModifiedTime;
+        return diskfile.m_lastModifiedTime != previous.GetLastModifiedTime();
         }
 
-    return lastSaveTime != previous.m_lastSaveTime;
-    }
-
-SyncInfo::V8FileSyncInfoId SyncInfo::FileIterator::Entry::GetV8FileSyncInfoId() { return SyncInfo::V8FileSyncInfoId(m_sql->GetValueInt(0)); }
-Utf8String SyncInfo::FileIterator::Entry::GetUniqueName() { return m_sql->GetValueText(1); }
-Utf8String SyncInfo::FileIterator::Entry::GetV8Name() { return m_sql->GetValueText(2); }
-bool SyncInfo::FileIterator::Entry::GetCannotUseElementIds() { return 0 != m_sql->GetValueInt(3); }
-double SyncInfo::FileIterator::Entry::GetLastSaveTime() { return m_sql->GetValueDouble(4); }
-uint64_t SyncInfo::FileIterator::Entry::GetLastModifiedTime() { return m_sql->GetValueInt64(5); }
-uint64_t SyncInfo::FileIterator::Entry::GetFileSize() { return m_sql->GetValueInt64(6); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::FileIterator::FileIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
-    {
-    m_params.SetWhere(where);
-    Utf8String sqlString = MakeSqlString("SELECT Id,UniqueName,V8Name,UseHash,LastSaveTime,LastModified,FileSize FROM " SYNCINFO_ATTACH(SYNC_TABLE_File));
-    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::FileIterator::Entry SyncInfo::FileIterator::begin() const
-    {
-    m_stmt->Reset();
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
-    }
-
-SyncInfo::V8ModelSyncInfoId SyncInfo::ModelIterator::Entry::GetV8ModelSyncInfoId() { return V8ModelSyncInfoId(m_sql->GetValueInt64(0)); }
-DgnModelId SyncInfo::ModelIterator::Entry::GetModelId() { return m_sql->GetValueId<DgnModelId>(1); }
-SyncInfo::V8FileSyncInfoId SyncInfo::ModelIterator::Entry::GetV8FileSyncInfoId() { return V8FileSyncInfoId(m_sql->GetValueInt(2)); }
-SyncInfo::V8ModelId SyncInfo::ModelIterator::Entry::GetV8ModelId() { return V8ModelId(m_sql->GetValueInt(3)); }
-Utf8CP SyncInfo::ModelIterator::Entry::GetV8Name() { return m_sql->GetValueText(4); }
-Transform SyncInfo::ModelIterator::Entry::GetTransform()
-    {
-    if (m_sql->IsColumnNull(5))
-        return Transform::FromIdentity();
-
-    Transform t;
-    memcpy(&t, m_sql->GetValueBlob(5), sizeof(t));
-    return t;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::DeleteFile(V8FileSyncInfoId filesiid)
-    {
-    Statement stmt;
-    stmt.Prepare(*m_dgndb, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_File) " WHERE ROWID=?");
-    stmt.BindInt64(1, filesiid.GetValue());
-    return stmt.Step() == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ModelIterator::ModelIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
-    {
-    m_params.SetWhere(where);
-    Utf8String sqlString = MakeSqlString("SELECT ROWID,ModelId,V8FileSyncInfoId,V8Id,V8Name,Transform FROM " SYNCINFO_ATTACH(SYNC_TABLE_Model));
-    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ModelIterator::Entry SyncInfo::ModelIterator::begin() const
-    {
-    m_stmt->Reset();
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SyncInfo::V8ModelMapping::Insert(Db& db) const
-    {
-    if (!m_modelId.IsValid())
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
-
-    Statement stmt;
-    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Model) " (ModelId,V8FileSyncInfoId,V8Id,V8Name,Transform) VALUES (?,?,?,?,?)");
-    int col = 1;
-    stmt.BindId(col++, m_modelId);
-    stmt.BindInt(col++, m_source.m_v8FileSyncInfoId.GetValue());
-    stmt.BindInt(col++, m_source.m_modelId.GetValue());
-    stmt.BindText(col++, m_v8Name, Statement::MakeCopy::No);
-    if (m_transform.IsIdentity())
-        stmt.BindNull(col++);
-    else
-        stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
-
-    auto rc = stmt.Step();
-    if (BE_SQLITE_DONE == rc)
-        m_syncInfoId = V8ModelSyncInfoId(db.GetLastInsertRowId());
-
-    return rc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SyncInfo::V8ModelMapping::Update(Db& db) const
-    {
-    if (!m_syncInfoId.IsValid() || !m_modelId.IsValid())
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
-
-    Statement stmt;
-    stmt.Prepare(db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_Model) " SET ModelId=?,V8FileSyncInfoId=?,V8Id=?,V8Name=?,Transform=? WHERE (ROWID=?)");
-    int col = 1;
-    stmt.BindId(col++, m_modelId);
-    stmt.BindInt(col++, m_source.m_v8FileSyncInfoId.GetValue());
-    stmt.BindInt(col++, m_source.m_modelId.GetValue());
-    stmt.BindText(col++, m_v8Name, Statement::MakeCopy::No);
-    if (m_transform.IsIdentity())
-        stmt.BindNull(col++);
-    else
-        stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
-    stmt.BindInt64(col++, m_syncInfoId.GetValue());
-
-    auto rc = stmt.Step();
-    BeAssert(BE_SQLITE_DONE == rc);
-    return rc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelMapping::V8ModelMapping()
-    {
-    m_transform.InitIdentity();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelMapping::V8ModelMapping(DgnModelId mid, DgnV8ModelCR v8Model, TransformCR trans)
-    {
-    m_v8Name = Utf8String(v8Model.GetModelNameCP());
-    m_source = V8ModelSource(v8Model);
-    m_transform = trans;
-    m_modelId = mid;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::InsertModel(V8ModelMapping& modelMap, DgnModelId mid, DgnV8ModelCR v8Model, TransformCR trans)
-    {
-    modelMap = V8ModelMapping(mid, v8Model, trans);
-
-    auto rc = modelMap.Insert(*m_dgndb);
-    return (BE_SQLITE_DONE == rc) ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::GetModelBySyncInfoId(V8ModelMapping& mapping, V8ModelSyncInfoId modelsiid)
-    {
-    SyncInfo::ModelIterator it(*GetDgnDb(), "ROWID=?");
-    it.GetStatement()->BindInt64(1, modelsiid.GetValue());
-    for (auto entry = it.begin(); entry != it.end(); ++entry)
-        {
-        if (entry.GetV8ModelSyncInfoId() == modelsiid)
-            {
-            mapping = entry.GetMapping();
-            return BSISUCCESS;
-            }
-        }
-    return BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::FindModel(V8ModelMapping* mapping, DgnV8ModelCR v8Model, TransformCP modelTrans, StableIdPolicy idPolicy)
-    {
-    // Note: We can't call Converter::GetModelFromSyncInfo at this stage, because it hasn't set up the m_v8Files array yet
-    SyncInfo::V8FileProvenance provenance = FindFile(*v8Model.GetDgnFileP());
-    if (!provenance.IsValid())
-        return BSIERROR;
-
-    SyncInfo::ModelIterator it(*GetDgnDb(), "V8FileSyncInfoId=? AND V8Id=?");
-    it.GetStatement()->BindInt(1, provenance.m_syncId.GetValue());
-    it.GetStatement()->BindInt(2, v8Model.GetModelId());
-
-    for (auto entry=it.begin(); entry!=it.end(); ++entry)
-        {
-        if (nullptr == modelTrans || Converter::IsTransformEqualWithTolerance(entry.GetTransform(),*modelTrans))
-            {
-            if (nullptr != mapping)
-                {
-                *mapping = entry.GetMapping();
-                }
-            return BentleyApi::SUCCESS;
-            }
-        }
-
-    return BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::DeleteModel(V8ModelSyncInfoId modelsiid)
-    {
-    Statement stmt;
-    stmt.Prepare(*m_dgndb, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_Model) " WHERE ROWID=?");
-    stmt.BindInt64(1, modelsiid.GetValue());
-    return stmt.Step() == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::UpdateElement(V8ElementMapping const& mapping)
-    {
-    if (!mapping.m_elementId.IsValid())
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_Element) " SET LastModified=?,Hash=? WHERE ElementId=?");
-    int col = 1;
-    stmt->BindDouble(col++, mapping.m_provenance.m_lastModified);
-    stmt->BindBlob(col++, &mapping.m_provenance.m_hash, sizeof(mapping.m_provenance.m_hash), Statement::MakeCopy::No);
-    stmt->BindId(col++, mapping.m_elementId);
-    return (stmt->Step() == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::InsertElement(V8ElementMapping const& mapping)
-    {
-    if (!mapping.IsValid())
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-
-    if (m_converter.IsUpdating())
-        DeleteDiscardedElement(mapping.m_v8ElementId, mapping.m_v8ModelSyncInfoId); // just in case it was previously recorded as a discard
-
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Element) " (V8ModelSyncInfoId,V8ElementId,ElementId,LastModified,Hash) VALUES (?,?,?,?,?)");
-
-    int col = 1;
-    stmt->BindInt(col++, mapping.m_v8ModelSyncInfoId.GetValue());
-
-    if (mapping.m_provenance.m_idPolicy == StableIdPolicy::ById)
-        stmt->BindInt64(col++, mapping.m_v8ElementId);
-    else
-        stmt->BindNull(col++);
-
-    stmt->BindId(col++, mapping.m_elementId);
-    stmt->BindDouble(col++, mapping.m_provenance.m_lastModified);
-    stmt->BindBlob(col++, &mapping.m_provenance.m_hash, sizeof(mapping.m_provenance.m_hash), Statement::MakeCopy::No);
-    return (stmt->Step() == BE_SQLITE_DONE)? BSISUCCESS: BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::DeleteElement(DgnElementId gid)
-    {
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_Element) " WHERE ElementId=?");
-    stmt->BindId(1, gid);
-    return (stmt->Step() == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle      03/15
-//+---------------+---------------+---------------+---------------+---------------+------
-bool SyncInfo::TryFindElement(DgnElementId& elementId, DgnV8EhCR eh) const
-    {
-    elementId = DgnElementId();
-    CachedStatementPtr stmt = nullptr;
-    m_dgndb->GetCachedStatement(stmt, "SELECT ElementId FROM " SYNCINFO_ATTACH(SYNC_TABLE_Element) " as element " 
-                                " INNER JOIN " SYNCINFO_ATTACH(SYNC_TABLE_Model) " as model "
-                                " ON element.V8ModelSyncInfoId=model.ROWID "
-                                " WHERE model.V8FileSyncInfoId=? AND V8ElementId=?");
-
-    V8ModelSource source(*eh.GetDgnModelP());
-
-    // ***
-    // *** NEEDS WORK: This check for a type-100 doesn't make sense. Are we trying to handle case of a V8 "far reference" to a V8 element? It won't be a type-100.
-    // ***
-    DgnV8FileP dgnV8File = eh.GetDgnFileP();
-    if (eh.GetElementType() == DgnV8Api::REFERENCE_ATTACH_ELM)
-        {
-        DgnV8Api::DgnModelRef* model = eh.GetDgnModelP();
-        model = DgnV8Api::DependencyManager::ResolveReferenceAttachment(model, eh.GetElementId());
-        if (nullptr != model)
-            dgnV8File = model->GetDgnFileP();
-        }
-    SyncInfo::V8FileSyncInfoId fileId = Converter::GetV8FileSyncInfoIdFromAppData(*dgnV8File);
-
-    stmt->BindInt(1, fileId.GetValue());
-    stmt->BindInt64(2, eh.GetElementId());
-
-    const DbResult stat = stmt->Step();
-    if (BE_SQLITE_ROW == stat)
-        {
-        if (!stmt->IsColumnNull(0))
-            {
-            elementId = DgnElementId(stmt->GetValueUInt64(0));
-            return true;
-            }
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SyncInfo::IsMappedToSameV8Element(DgnElementId elementId, DgnElementIdSet const& known) const
-    {
-    ElementIterator findByBimId(*m_dgndb, "ElementId=?");
-    findByBimId.GetStatement()->BindId(1, elementId);
-    auto iThisElement = findByBimId.begin();
-    if (iThisElement == findByBimId.end())
-        return false;
-
-    if (iThisElement.GetV8ElementId() == 0)
-        {
-        // when StableIdPolicy==ByHash
-        ByHashIter  othersMappedToV8Hash(*m_dgndb);
-        othersMappedToV8Hash.Bind(iThisElement.GetV8ModelSyncInfoId(), iThisElement.GetProvenance().m_hash);
-        for (auto const& otherMappedToV8Hash : othersMappedToV8Hash)
-            {
-            if (known.find(otherMappedToV8Hash.GetElementId()) != known.end())
-                return true;
-            }
-        }
-    else
-        {
-        // when StableIdPolicy==ById
-        ByV8ElementIdIter othersMappedToV8Id(*m_dgndb);
-        othersMappedToV8Id.Bind(iThisElement.GetV8ModelSyncInfoId(), iThisElement.GetV8ElementId());
-        for (auto const& otherMappedToV8Id : othersMappedToV8Id)
-            {
-            if (known.find(otherMappedToV8Id.GetElementId()) != known.end())
-                return true;
-            }
-        }
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ElementProvenance::ElementProvenance(StatementP sql)
-    {
-    m_lastModified = sql->GetValueDouble(3);
-    memcpy(&m_hash, sql->GetValueBlob(4), sizeof(m_hash));
-    m_idPolicy = sql->IsColumnNull(1) ? StableIdPolicy::ByHash : StableIdPolicy::ById;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelSyncInfoId SyncInfo::ElementIterator::Entry::GetV8ModelSyncInfoId() const { return V8ModelSyncInfoId(m_sql->GetValueInt64(0)); }
-uint64_t SyncInfo::ElementIterator::Entry::GetV8ElementId() const { return m_sql->GetValueInt64(1); }
-DgnElementId SyncInfo::ElementIterator::Entry::GetElementId() const { return m_sql->GetValueId<DgnElementId>(2); }
-SyncInfo::ElementProvenance SyncInfo::ElementIterator::Entry::GetProvenance() const { return SyncInfo::ElementProvenance(m_sql); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ElementIterator::ElementIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
-    {
-    m_params.SetWhere(where);
-    Utf8String sqlString = MakeSqlString("SELECT V8ModelSyncInfoId,V8ElementId,ElementId,LastModified,Hash FROM " SYNCINFO_ATTACH(SYNC_TABLE_Element));
-    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ElementIterator::Entry SyncInfo::ElementIterator::begin() const
-    {
-    m_stmt->Reset();
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    return lastSaveTime != previous.GetLastSaveTime();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::DrawingGraphicExternalSourceAspect SyncInfo::DrawingGraphicExternalSourceAspect::CreateAspect(DgnModelCR bimDrawingModel, Utf8StringCR idPath, Utf8StringCR propsJson, DgnDbR db) 
+SyncInfo::ProxyGraphicExternalSourceAspect SyncInfo::ProxyGraphicExternalSourceAspect::CreateAspect(DgnModelCR bimDrawingModel, Utf8StringCR idPath, Utf8StringCR propsJson, DgnDbR db) 
     {
     auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
-        return DrawingGraphicExternalSourceAspect(nullptr);
+        return ProxyGraphicExternalSourceAspect(nullptr);
 
-    auto instance = CreateInstance(bimDrawingModel.GetModeledElementId(), KindToString(Kind::ProxyGraphic), idPath, nullptr, *aspectClass);
-    auto aspect = DrawingGraphicExternalSourceAspect(instance.get());
+    auto instance = CreateInstance(bimDrawingModel.GetModeledElementId(), Kind::ProxyGraphic, idPath, nullptr, *aspectClass);
+    auto aspect = ProxyGraphicExternalSourceAspect(instance.get());
 
     if (!propsJson.empty())
         {
@@ -1385,100 +421,21 @@ SyncInfo::DrawingGraphicExternalSourceAspect SyncInfo::DrawingGraphicExternalSou
     return aspect;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::InsertExtractedGraphic(V8ElementSource const& attachment, 
-                                               V8ElementSource const& originalElement, 
-                                               DgnCategoryId categoryId, DgnElementId extractedGraphic,
-                                               DgnModelCR bimDrawingModel, Utf8StringCR idPathOptional, Utf8StringCR attachmentInfo) // <-- this is for new external source aspect
-    {
-    if (!originalElement.IsValid() || !categoryId.IsValid() || !extractedGraphic.IsValid())
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    if (m_converter._WantProvenanceInBim())
-        {
-        Utf8String idPath = !idPathOptional.empty()? idPathOptional: DrawingGraphicExternalSourceAspect::FormatSourceId(attachment.m_v8ElementId);
-        auto aspect = DrawingGraphicExternalSourceAspect::CreateAspect(bimDrawingModel, idPath, attachmentInfo, *GetDgnDb());
-        auto graphicEl = GetDgnDb()->Elements().GetForEdit<DgnElement>(extractedGraphic);
-        aspect.AddAspect(*graphicEl);
-        return graphicEl->Update().IsValid()? BSISUCCESS: BSIERROR;
-        }
-
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_ExtractedGraphic) 
-                              " (DrawingV8ModelSyncInfoId,AttachmentV8ElementId,"
-                                "OriginalV8ModelSyncInfoId,OriginalV8ElementId,"
-                                "Category,Graphic)    VALUES (?,?,?,?,?,?)");
-
-    int col = 1;
-    stmt->BindInt64(col++, attachment.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, attachment.m_v8ElementId);
-    stmt->BindInt64(col++, originalElement.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, originalElement.m_v8ElementId);
-    stmt->BindId(col++, categoryId);
-    stmt->BindId(col++, extractedGraphic);
-    return (stmt->Step() == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::DeleteExtractedGraphics(V8ElementSource const& attachment, 
-                                                V8ElementSource const& originalElement)
-    {
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_ExtractedGraphic) 
-                                " WHERE (DrawingV8ModelSyncInfoId=? AND AttachmentV8ElementId=?"
-                                "    AND OriginalV8ModelSyncInfoId=?   AND OriginalV8ElementId=?)");
-    int col = 1;
-    stmt->BindInt64(col++, attachment.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, attachment.m_v8ElementId);
-    stmt->BindInt64(col++, originalElement.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, originalElement.m_v8ElementId);
-    return (stmt->Step() == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::DeleteExtractedGraphicsCategory(V8ElementSource const& attachment, 
-                                                        V8ElementSource const& originalElement,
-                                                        DgnCategoryId categoryId)
-    {
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_ExtractedGraphic) 
-                                " WHERE (DrawingV8ModelSyncInfoId=? AND AttachmentV8ElementId=?"
-                                "    AND OriginalV8ModelSyncInfoId=?   AND OriginalV8ElementId=?"
-                                "    AND Category=?)");
-    int col = 1;
-    stmt->BindInt64(col++, attachment.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, attachment.m_v8ElementId);
-    stmt->BindInt64(col++, originalElement.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, originalElement.m_v8ElementId);
-    stmt->BindId(col++, categoryId);
-    return (stmt->Step() == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Sam.Wilson      1/19
 //+---------------+---------------+---------------+---------------+---------------+------
-DgnElementId SyncInfo::DrawingGraphicExternalSourceAspect::FindDrawingGraphicBySource (DgnModelCR drawingModel, 
-    Utf8StringCR idPath, DgnCategoryId drawingGraphicCategory, DgnClassId elementClassId, DgnDbR db)
+DgnElementId SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphic (DgnModelCR proxyGraphicScope, Utf8StringCR sectionedV8ElementPath, DgnCategoryId drawingGraphicCategory, DgnClassId drawingGraphicClassId, DgnDbR db)
     {
-    auto ecclass = db.Schemas().GetClass(elementClassId);
+    auto drawingGraphicClass = db.Schemas().GetClass(drawingGraphicClassId);
     Utf8PrintfString ecsql(
         "SELECT dg.ECInstanceId FROM %s dg, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
-        " WHERE dg.Model.Id=? AND dg.Category.Id=? AND x.Element.Id=dg.ECInstanceId AND x.Kind='ProxyGraphic' AND x.Identifier=?",
-        ecclass? ecclass->GetFullName(): BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
+        " WHERE x.Scope.Id=? AND dg.Category.Id=? AND x.Element.Id=dg.ECInstanceId AND x.Kind='ProxyGraphic' AND x.Identifier=?",
+        drawingGraphicClass? drawingGraphicClass->GetFullName(): BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
     auto stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     int col=1;
-    stmt->BindId(col++, drawingModel.GetModelId());
+    stmt->BindId(col++, proxyGraphicScope.GetModelId());
     stmt->BindId(col++, drawingGraphicCategory);
-    stmt->BindText(col++, idPath.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindText(col++, sectionedV8ElementPath.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW == stmt->Step())
         {
         auto eid = stmt->GetValueId<DgnElementId>(0);
@@ -1488,84 +445,22 @@ DgnElementId SyncInfo::DrawingGraphicExternalSourceAspect::FindDrawingGraphicByS
     return DgnElementId();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Sam.Wilson      09/16
-//+---------------+---------------+---------------+---------------+---------------+------
-DgnElementId SyncInfo::FindExtractedGraphic(V8ElementSource const& attachment,      
-                                            V8ElementSource const& originalElement, 
-                                            DgnCategoryId categoryId,               
-                                            DgnModelCR scope_bimDrawingModel, // <-- this is for new external source aspect
-                                            Utf8StringCR idPath, // <-- this is for new external source aspect
-                                            DgnClassId elementClassId) // <-- this is for new external source aspect
-    {
-    if (m_converter._WantProvenanceInBim())
-        {
-        return DrawingGraphicExternalSourceAspect::FindDrawingGraphicBySource(scope_bimDrawingModel, idPath, categoryId, elementClassId, *GetDgnDb());
-        }
-
-    CachedStatementPtr stmt = nullptr;
-    m_dgndb->GetCachedStatement(stmt, "SELECT Graphic FROM " SYNCINFO_ATTACH(SYNC_TABLE_ExtractedGraphic) 
-                                " WHERE (DrawingV8ModelSyncInfoId=? AND AttachmentV8ElementId=?"
-                                "    AND OriginalV8ModelSyncInfoId=?   AND OriginalV8ElementId=?"
-                                "    AND Category=?)");
-    int col = 1;
-    stmt->BindInt64(col++, attachment.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, attachment.m_v8ElementId);
-    stmt->BindInt64(col++, originalElement.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, originalElement.m_v8ElementId);
-    stmt->BindId(col++, categoryId);
-
-    bvector<DgnElementId> graphics;
-    if (BE_SQLITE_ROW == stmt->Step())
-        {
-        return stmt->GetValueId<DgnElementId>(0);
-        }
-    
-    return DgnElementId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SyncInfo::Level::Insert(Db& db) const
-    {
-    if (!m_id.IsValid())
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
-
-    Statement stmt;
-    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Level) " (Id,V8FileSyncInfoId,V8Model,V8Id,V8Name,Type) VALUES (?,?,?,?,?,?)");
-    int col = 1;
-    stmt.BindId(col++, m_id);
-    stmt.BindInt(col++, m_fm.GetV8FileSyncInfoId().GetValue());
-    stmt.BindInt(col++, m_fm.GetV8ModelId().GetValue());
-    stmt.BindInt(col++, m_v8Id);
-    stmt.BindText(col++, m_v8Name.c_str(), Statement::MakeCopy::No); // V8Name
-    stmt.BindInt(col++, (int)m_type);
-
-    return stmt.Step();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCategoryId& subCatId, DgnV8ModelCR v8Model, uint32_t levelId, Level::Type ltype, Converter& converter)
+BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCategoryId& subCatId, DgnV8ModelCR v8Model, uint32_t levelId, Type ltype, Converter& converter)
     {
-    if (!converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()).IsValid())
-        converter.WriteRepositoryLink(*v8Model.GetDgnFileP());  // Must ensure that we have a RepositoryLink. Level conversion happens very early, before model conversion, and so the file may not have been registered yet.
-    DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
+    DgnElementId repositoryLinkId = converter.GetRepositoryLinkId(*v8Model.GetDgnFileP());
     BeAssert(repositoryLinkId.IsValid());
     Utf8String v8LevelId = FormatSourceId(levelId);
     Utf8String v8ModelId = V8ModelExternalSourceAspect::FormatSourceId(v8Model);
-    auto desiredCategoryClassId = converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, (Level::Type::Spatial == ltype)? BIS_CLASS_SpatialCategory: BIS_CLASS_DrawingCategory);
+    auto desiredCategoryClassId = converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, (Type::Spatial == ltype)? BIS_CLASS_SpatialCategory: BIS_CLASS_DrawingCategory);
     
     auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_SubCategory) " e"
         " WHERE (x.Element.Id=e.ECInstanceId AND x.Scope.Id=? AND x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.v8ModelId') = ?)");
     aspectStmt->BindId(1, repositoryLinkId);
-    aspectStmt->BindText(2, KindToString(Kind::Level), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    aspectStmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     aspectStmt->BindText(3, v8LevelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     aspectStmt->BindText(4, v8ModelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
@@ -1594,35 +489,6 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::FindFirstSubCategory(DgnSubCategoryId& glid, BeSQLite::Db& db, DgnV8ModelCR v8Model, uint32_t flid, Level::Type ltype)
-    {
-#ifdef WIP_EXTERNAL_SOURCE_ASPECT_TOO_SLOW
-    if (m_converter._WantProvenanceInBim())
-        {
-        return LevelExternalSourceAspect::FindFirstSubCategory(glid, v8Model, flid, ltype, m_converter);
-        }
-#endif
-
-    V8ModelSource fm(v8Model);
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "SELECT Id FROM " SYNCINFO_ATTACH(SYNC_TABLE_Level) " WHERE V8FileSyncInfoId=? AND V8Model=? AND V8Id=? AND Type=?");
-
-    int col = 1;
-    stmt->BindInt(col++, fm.GetV8FileSyncInfoId().GetValue());
-    stmt->BindInt(col++, fm.GetV8ModelId().GetValue());
-    stmt->BindInt(col++, flid);
-    stmt->BindInt(col++, (int)ltype);
-
-    if (stmt->Step() != BE_SQLITE_ROW)
-        return BSIERROR;
-
-    glid = stmt->GetValueId<DgnSubCategoryId>(0);
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Converter& converter)
@@ -1633,9 +499,9 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateA
     if (nullptr == aspectClass)
         return LevelExternalSourceAspect(nullptr);
     
-    DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
+    DgnElementId repositoryLinkId = converter.GetRepositoryLinkId(*v8Model.GetDgnFileP());
     BeAssert(repositoryLinkId.IsValid());
-    auto instance = CreateInstance(repositoryLinkId, KindToString(Kind::Level), FormatSourceId(vlevel.GetLevelId()), nullptr, *aspectClass);
+    auto instance = CreateInstance(repositoryLinkId, Kind::Level, FormatSourceId(vlevel.GetLevelId()), nullptr, *aspectClass);
     
     LevelExternalSourceAspect aspect(instance.get());
     
@@ -1656,61 +522,44 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateA
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Converter& converter)
     {
-    if (!converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()).IsValid())
-        converter.WriteRepositoryLink(*v8Model.GetDgnFileP());  // Must ensure that we have a RepositoryLink. Level conversion happens very early, before model conversion, and so the file may not have been registered yet.
-    return CreateAspect(converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()), vlevel, v8Model, converter);
+    return CreateAspect(converter.GetRepositoryLinkId(*v8Model.GetDgnFileP()), vlevel, v8Model, converter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::Level SyncInfo::InsertLevel(DgnSubCategoryId subcategoryid, DgnV8ModelCR v8model, DgnV8Api::LevelHandle const& vlevel)
+SyncInfo::LevelExternalSourceAspect SyncInfo::InsertLevel(DgnSubCategoryId subcategoryid, DgnV8ModelCR v8model, DgnV8Api::LevelHandle const& vlevel)
     {
-    V8ModelSource fm(v8model);
     auto catid = DgnSubCategory::QueryCategoryId(*GetDgnDb(), subcategoryid);
-    Level::Type ltype = m_converter.IsSpatialCategory(catid)? Level::Type::Spatial: Level::Type::Drawing;
+    LevelExternalSourceAspect::Type ltype = m_converter.IsSpatialCategory(catid)? LevelExternalSourceAspect::Type::Spatial: LevelExternalSourceAspect::Type::Drawing;
 
-    Level levelprov(subcategoryid, ltype, fm, vlevel.GetLevelId(), Utf8String(vlevel.GetName()).c_str());
+    auto subCatEl = GetDgnDb()->Elements().GetForEdit<DgnSubCategory>(subcategoryid);
 
-    if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
-        LOG_LEVEL.tracev("InsertLevel %lld - f:%d m:%d id:%d n:%s", 
-                         levelprov.m_id.GetValue(), 
-                         levelprov.m_fm.m_v8FileSyncInfoId.GetValue(), levelprov.m_fm.m_modelId.GetValue(), levelprov.m_v8Id, 
-                         levelprov.m_v8Name.c_str());
+    auto existingSubCatId = FindSubCategory(vlevel.GetLevelId(), v8model, ltype);
+    if (existingSubCatId.IsValid())
+        return LevelExternalSourceAspect::GetAspect(*GetDgnDb()->Elements().Get<DgnSubCategory>(existingSubCatId));
 
-    auto rc = levelprov.Insert(*m_dgndb);
-    if (BE_SQLITE_DONE != rc)
-        {
-        levelprov.m_id = DgnSubCategoryId();
+    auto aspect = LevelExternalSourceAspect::CreateAspect(vlevel, v8model, m_converter);
+    aspect.AddAspect(*subCatEl);
+    subCatEl->Update();
+    return aspect;
+    }
 
-        if (BeSQLiteLib::IsConstraintDbResult(rc))
-            {
-            //BeAssert(false);
-            }
-        else
-            {
-            m_converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::InconsistentData(), Converter::Issue::InvalidLevel(),
-                                    Utf8PrintfString("%s (%lu)", Utf8String(vlevel.GetName()).c_str(), vlevel.GetLevelId()).c_str());   // LevelId is UInt32
-            }
-        }
-
-    if (m_converter._WantProvenanceInBim())
-        {
-        auto subCatEl = GetDgnDb()->Elements().GetForEdit<DgnSubCategory>(subcategoryid);
-        auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(vlevel, v8model, m_converter);
-        aspect.AddAspect(*subCatEl);
-        subCatEl->Update();
-        }
-
-    return levelprov;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::GetAspect(DgnSubCategoryCR el)
+    {
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::Level);
+    return LevelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, id).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, DgnV8FileR v8File, Level::Type ltype)
+DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, DgnV8FileR v8File, LevelExternalSourceAspect::Type ltype)
     {
-    V8FileSyncInfoId fid = Converter::GetV8FileSyncInfoIdFromAppData(v8File);
+    RepositoryLinkId fid = m_converter.GetRepositoryLinkId(v8File);
     DgnSubCategoryId glid;
     return (FindFirstSubCategory(glid, *m_dgndb, v8File.GetDictionaryModel(), v8levelId, ltype) == BSISUCCESS) ? glid : DgnSubCategoryId();
     }
@@ -1718,7 +567,7 @@ DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, DgnV8FileR v8File
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId SyncInfo::FindCategory(uint32_t v8levelId, DgnV8FileR v8File, Level::Type ltype)
+DgnCategoryId SyncInfo::FindCategory(uint32_t v8levelId, DgnV8FileR v8File, LevelExternalSourceAspect::Type ltype)
     {
     DgnSubCategoryId subcatid = FindSubCategory(v8levelId, v8File, ltype);
     return DgnSubCategory::QueryCategoryId(*GetDgnDb(), subcatid);
@@ -1727,7 +576,7 @@ DgnCategoryId SyncInfo::FindCategory(uint32_t v8levelId, DgnV8FileR v8File, Leve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, DgnV8ModelCR v8Model, Level::Type ltype)
+DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, DgnV8ModelCR v8Model, LevelExternalSourceAspect::Type ltype)
     {
     DgnSubCategoryId glid;
     return (FindFirstSubCategory(glid, *m_dgndb, v8Model, v8levelId, ltype) == BSISUCCESS) ? glid : DgnSubCategoryId();
@@ -1736,7 +585,7 @@ DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, DgnV8ModelCR v8Mo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId SyncInfo::GetSubCategory(uint32_t v8levelId, DgnV8ModelCR v8Model, Level::Type ltype)
+DgnSubCategoryId SyncInfo::GetSubCategory(uint32_t v8levelId, DgnV8ModelCR v8Model, LevelExternalSourceAspect::Type ltype)
     {
     DgnSubCategoryId glid;
     if (FindFirstSubCategory(glid, *m_dgndb, v8Model, v8levelId, ltype) != BSISUCCESS
@@ -1772,55 +621,12 @@ DgnCategoryId SyncInfo::GetCategory(DgnV8EhCR v8Eh, ResolvedModelMapping const& 
         return v8mm.GetDgnModel().Is2dModel() ? GetConverter().GetUncategorizedDrawingCategory() : GetConverter().GetUncategorizedCategory(); // level of non-graphic element is not valid for category...
 
     uint32_t v8Level = Converter::GetV8Level(v8Eh);
-    Level::Type ltype = v8mm.GetDgnModel().Is3d() ? Level::Type::Spatial : Level::Type::Drawing;
+    LevelExternalSourceAspect::Type ltype = v8mm.GetDgnModel().Is3d() ? LevelExternalSourceAspect::Type::Spatial : LevelExternalSourceAspect::Type::Drawing;
     DgnCategoryId categoryId;
     if (0 != v8Level)
         categoryId = FindCategory(v8Level, *v8Eh.GetDgnModelP()->GetDgnFileP(), ltype);
 
     return (categoryId.IsValid() ? categoryId : GetConverter().GetUncategorizedCategory()); // return uncategorized if we didn't find a valid category...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SyncInfo::WasElementDiscarded(uint64_t vid, V8ModelSyncInfoId fm)
-    {
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " SYNCINFO_ATTACH(SYNC_TABLE_Discards) " WHERE V8ModelSyncInfoId=? AND V8Id=?");
-    stmt->Reset();
-    stmt->ClearBindings();
-    stmt->BindInt64(1, fm.GetValue());
-    stmt->BindInt64(2, vid);
-    return stmt->Step() == BE_SQLITE_ROW;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::InsertDiscardedElement(DgnV8EhCR eeh, V8ModelSyncInfoId modelsiid)
-    {
-    DgnV8ModelP v8Model = eeh.GetDgnModelP();
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Discards) "(V8ModelSyncInfoId,V8Id) VALUES (?,?)");
-    int col = 1;
-    stmt->BindInt64(col++, modelsiid.GetValue());
-    stmt->BindInt64(col++, eeh.GetElementId());
-    stmt->Step();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::DeleteDiscardedElement(uint64_t vid, V8ModelSyncInfoId fm)
-    {
-    DiscardedElement deprov(fm, vid);
-
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_Discards) " WHERE V8ModelSyncInfoId=? AND V8Id=?");
-    int col = 1;
-    stmt->BindInt64(col++, fm.GetValue());
-    stmt->BindInt64(col++, deprov.m_v8Id);
-    return stmt->Step() == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1852,62 +658,29 @@ BentleyStatus SyncInfo::AttachToProject(DgnDb& targetProject, BeFileNameCR dbNam
     return OnAttach(targetProject);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
+* @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_EXTERNAL_SOURCE_ASPECT
-void SyncInfo::AssertAspectMatchesSyncInfo(V8ElementMapping const& mapping)
+BeSQLite::EC::ECInstanceId SyncInfo::GetSoleAspectIdByKind(DgnElementCR el, Utf8CP kind)
     {
-    if (!m_converter._WantProvenanceInBim())
-        return;
-
-    auto el = m_converter.GetDgnDb().Elements().GetElement(mapping.GetElementId());
-    if (!el.IsValid())
-        return;
-
-    auto props = V8ElementExternalSourceAspect::GetAspect(*el, mapping.m_v8ElementId);
-    if (!props.IsValid())
-        {
-        // BeAssert(!m_converter._GetParams().GetWantProvenanceInBim());    Can't assert this until I convert all of the places that create syncinfo records to also create aspects
-        return;
-        }
-
-    props.AssertMatch(*el, mapping.m_v8ElementId, mapping.m_provenance);
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=?)");
+    sel->BindId(1, el.GetElementId());
+    sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != sel->Step())
+        return BeSQLite::EC::ECInstanceId();
+    auto id = sel->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+    BeAssert(BE_SQLITE_ROW != sel->Step());
+    return id;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_EXTERNAL_SOURCE_ASPECT
-void SyncInfo::V8ElementExternalSourceAspect::AssertMatch(DgnElementCR el, DgnV8Api::ElementId v8Id, ElementProvenance const& elprov)
-    {
-    BeAssert(GetV8ElementId() == v8Id);
-    // TODO: Get and check the aspect corresponding to the original v8 model
-    // BeAssert(GetScope().GetValue() == el.GetModelId().GetValue()); -- No. scope identifies the model in the bim that represents the v8 element's model. The v8 element itself might not have been added to that bim model. For example, when we encounter a NamedGroup definiton element in a model, we typically write it to the bim dictionary model.
-    BeAssert(GetKind() == ExternalSourceAspect::Kind::Element);
-    
-    auto ss = GetSourceState();
-
-    Utf8String provLastMod;
-    iModelExternalSourceAspect::DoubleToString(provLastMod, elprov.m_lastModified);
-    BeAssert(ss.m_version == provLastMod);
-
-    Utf8String provHash;
-    iModelExternalSourceAspect::HexStrFromBytes(provHash, elprov.m_hash.m_buffer);
-    BeAssert(ss.m_checksum.Equals(provHash));
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetExternalSourceAspectIds(DgnElementCR el, ExternalSourceAspect::Kind kind, Utf8StringCR sourceId)
+bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetExternalSourceAspectIds(DgnElementCR el, Utf8CP kind, Utf8StringCR sourceId)
     {
     auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=? AND Identifier=?)");
     sel->BindId(1, el.GetElementId());
-    sel->BindText(2, ExternalSourceAspect::KindToString(kind), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     bvector<BeSQLite::EC::ECInstanceId> ids;
     while (BE_SQLITE_ROW == sel->Step())
@@ -1918,13 +691,13 @@ bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetExternalSourceAspectIds(DgnElem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::GetAspect(DgnElementR el, Utf8StringCR sourceId)
+SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::GetAspectForEdit(DgnElementR el, Utf8StringCR sourceId)
     {
     auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Element, sourceId);
     if (ids.size() == 0)
         return V8ElementExternalSourceAspect(nullptr);
     BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
-    return V8ElementExternalSourceAspect(ExternalSourceAspect::GetAspect(el, ids.front()).m_instance.get());
+    return V8ElementExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, ids.front()).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1942,41 +715,6 @@ SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::GetAspect(DgnElementR el, DgnV8Api::ModelId v8Id)
-    {
-    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Model, FormatSourceId(v8Id));
-    if (ids.size() == 0)
-        return V8ModelExternalSourceAspect(nullptr);
-    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element from a given sourceId");
-    return V8ModelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, ids.front()).m_instance.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::GetAspect(DgnElementCR el, DgnV8Api::ModelId v8Id)
-    {
-    auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Model, FormatSourceId(v8Id));
-    if (ids.size() == 0)
-        return V8ModelExternalSourceAspect(nullptr);
-    BeAssert(ids.size() == 1 && "Not supporting multiple model kind aspects on a single bim element from a given sourceId");
-    return V8ModelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, ids.front()).m_instance.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      1/19
-DgnModelId SyncInfo::V8ModelExternalSourceAspect::FindModelBySourceId(DgnElementId scopeId, DgnV8Api::ModelId v8ModelId, TransformCR t, DgnDbR db)
-    {
-    auto identifier = SyncInfo::V8ModelExternalSourceAspect::FormatSourceId(v8ModelId);
-    auto ei = FindElementBySourceId(db, scopeId, KindToString(Kind::Model), identifier);
-		TODO: check transform, t, matches
-    return DgnModelId(ei.elementId.GetValueUnchecked());
-    }
-+---------------+---------------+---------------+---------------+---------------+------*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect::CreateAspect(V8ElementExternalSourceAspectData const& provdata, DgnDbR db) 
     {
     auto aspectClass = GetAspectClass(db);
@@ -1985,7 +723,7 @@ SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect:
 
     auto sourceId = !provdata.m_v8IdPath.empty()? provdata.m_v8IdPath: FormatSourceId(provdata.m_v8Id); 
 
-    auto instance = CreateInstance(DgnElementId(provdata.m_scope.GetValue()), KindToString(Kind::Element), sourceId, nullptr, *aspectClass);
+    auto instance = CreateInstance(DgnElementId(provdata.m_scope.GetValue()), Kind::Element, sourceId, nullptr, *aspectClass);
     auto aspect = V8ElementExternalSourceAspect(instance.get());
 
     if (!provdata.m_propsJson.empty())
@@ -1998,6 +736,23 @@ SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect:
     aspect.Update(provdata.m_prov);
 
     return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SyncInfo::V8ElementExternalSourceAspect::DoesProvenanceMatch(ElementProvenance const& elprov) const
+    {
+    auto ss = GetSourceState();
+
+    Utf8String provLastMod;
+    iModelExternalSourceAspect::DoubleToString(provLastMod, elprov.m_lastModified);
+    if (ss.m_version != provLastMod)
+        return false;
+
+    Utf8String provHash;
+    iModelExternalSourceAspect::HexStrFromBytes(provHash, elprov.m_hash.m_buffer);
+    return ss.m_checksum.Equals(provHash);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2030,8 +785,8 @@ SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::Cre
     if (nullptr == aspectClass)
         return V8ModelExternalSourceAspect(nullptr);
     
-    DgnElementId repositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP());
-    auto instance = CreateInstance(repositoryLinkId, KindToString(Kind::Model), FormatSourceId(v8Model), nullptr, *aspectClass);
+    DgnElementId repositoryLinkId = converter.GetRepositoryLinkId(*v8Model.GetDgnFileP());
+    auto instance = CreateInstance(repositoryLinkId, Kind::Model, FormatSourceId(v8Model), nullptr, *aspectClass);
     
     V8ModelExternalSourceAspect aspect(instance.get());
     
@@ -2047,6 +802,52 @@ SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::Cre
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+std::tuple<DgnElementPtr, SyncInfo::V8ModelExternalSourceAspect> SyncInfo::V8ModelExternalSourceAspect::GetAspectForEdit(DgnModelR model)
+    {
+    auto el = model.GetModeledElement()->CopyForEdit();
+    auto aspectId = SyncInfo::GetSoleAspectIdByKind(*el, Kind::Model);
+    return std::make_tuple(el, V8ModelExternalSourceAspect(iModelExternalSourceAspect::GetAspectForEdit(*el, aspectId).m_instance.get()));
+    }
+
+std::tuple<DgnElementCPtr, SyncInfo::V8ModelExternalSourceAspect> SyncInfo::V8ModelExternalSourceAspect::GetAspect(DgnModelCR model)
+    {
+    auto el = model.GetModeledElement();
+    auto aspectId = SyncInfo::GetSoleAspectIdByKind(*el, Kind::Model);
+    return std::make_tuple(el, V8ModelExternalSourceAspect(iModelExternalSourceAspect::GetAspect(*el, aspectId).m_instance.get()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::GetAspectByAspectId(DgnDbR db, BeSQLite::EC::ECInstanceId aspectId)
+    {
+    auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (ECInstanceId=?)");
+    stmt->BindId(1, aspectId);
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false && "invalid aspectId");
+        return V8ModelExternalSourceAspect();
+        }
+    auto el = db.Elements().GetElement(stmt->GetValueId<DgnElementId>(0));
+    if (!el.IsValid())
+        {
+        BeAssert(false && "How could I find an aspect of an element and not be able to get the element itself?");
+        return V8ModelExternalSourceAspect();
+        }
+
+    auto aspect = iModelExternalSourceAspect::GetAspect(*el, aspectId);
+    if (aspect.GetKind() != Kind::Model)
+        {
+        BeAssert(false && "Not a model aspect");
+        return V8ModelExternalSourceAspect();
+        }
+
+    return V8ModelExternalSourceAspect(aspect.m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform SyncInfo::V8ModelExternalSourceAspect::GetTransform() const
@@ -2055,6 +856,16 @@ Transform SyncInfo::V8ModelExternalSourceAspect::GetTransform() const
     Transform transform;
     fixedArrayFromJson((double*)&transform, 12, json["transform"].GetArray());
     return transform;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::V8ModelExternalSourceAspect::SetTransform(TransformCR t)
+    {
+    auto json = GetProperties();
+    json["transform"] = fixedArrayToJson((double*)&t, 12, json.GetAllocator());
+    SetProperties(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2075,182 +886,136 @@ DgnV8Api::ModelId SyncInfo::V8ModelExternalSourceAspect::GetV8ModelId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
+* @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef TEST_EXTERNAL_SOURCE_ASPECT
-void SyncInfo::V8ModelExternalSourceAspect::AssertMatch(V8ModelMapping const& mapping)
+SyncInfo::V8FileInfo SyncInfo::ComputeFileInfo(DgnV8FileCR file)
     {
-    // BeAssert(GetScope().GetValue() == ... TODO: must be a repository link element
-    BeAssert(GetV8ModelId() == mapping.GetV8ModelId().GetValue());
-    BeAssert(GetKind() == ExternalSourceAspect::Kind::Model);
-    BeAssert(GetTransform().IsEqual(mapping.GetTransform(), Angle::SmallAngle(), 1.0e-5));
-    BeAssert(GetV8ModelName().Equals(mapping.GetV8Name()));
+    V8FileInfo info;
+
+    if (!file.IsEmbeddedFile())
+        {
+        info.GetInfo(BeFileName(file.GetFileName().c_str()));
+        info.m_lastSaveTime = ((DgnV8FileR) file).GetLastSaveTime();
+        }
+
+    WString fullFileName(file.GetFileName().c_str());
+    info.m_v8Name = Utf8String(fullFileName);
+    info.m_uniqueName = GetUniqueNameForFile(file);
+    return info;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceAspect::GetAspect(SubjectCR subj, DgnV8Api::ModelId v8Id)
+SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSourceAspect::CreateAspect(DgnDbR db, V8FileInfo const& fileInfo, StableIdPolicy idPolicy) 
     {
-    auto ids = SyncInfo::GetExternalSourceAspectIds(subj, Kind::BridgeJoblet, FormatSourceId(v8Id));
-    if (ids.size() == 0)
-        return BridgeJobletExternalSourceAspect(nullptr);
-    BeAssert(ids.size() == 1 && "Not supporting multiple BridgeJoblet kind aspects with a given v8 Model on a single Subject element");
-    return BridgeJobletExternalSourceAspect(ExternalSourceAspect::GetAspect(subj, ids.at(0)).m_instance.get());
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceAspect::GetAspect(SubjectR subj, DgnV8Api::ModelId v8Id)
-    {
-    auto ids = SyncInfo::GetExternalSourceAspectIds(subj, Kind::BridgeJoblet, FormatSourceId(v8Id));
-    if (ids.size() == 0)
-        return BridgeJobletExternalSourceAspect(nullptr);
-    BeAssert(ids.size() == 1 && "Not supporting multiple BridgeJoblet kind aspects with a given v8 Model on a single Subject element");
-    return BridgeJobletExternalSourceAspect(ExternalSourceAspect::GetAspect(subj, ids.at(0)).m_instance.get());
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::BridgeJobletExternalSourceAspect SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(DgnModelId masterModelId, DgnV8Api::ModelId v8MasterModelId, ConverterType converterType, Converter& converter) 
-    {
-    auto aspectClass = GetAspectClass(converter.GetDgnDb());
+    auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
-        return BridgeJobletExternalSourceAspect(nullptr);
+        return RepositoryLinkExternalSourceAspect(nullptr);
     
-    auto instance = CreateInstance(DgnElementId(masterModelId.GetValue()), KindToString(Kind::BridgeJoblet), FormatSourceId(v8MasterModelId), nullptr, *aspectClass);
+    SourceState ss;
+    iModelExternalSourceAspect::UInt64ToString(ss.m_version, fileInfo.m_lastModifiedTime);
+    auto instance = CreateInstance(db.Elements().GetRootSubjectId(), Kind::RepositoryLink, fileInfo.m_uniqueName, &ss, *aspectClass);
     
-    BridgeJobletExternalSourceAspect aspect(instance.get());
+    RepositoryLinkExternalSourceAspect aspect(instance.get());
     
     rapidjson::Document json(rapidjson::kObjectType);
     auto& allocator = json.GetAllocator();
-    // transform property is initially missing/null
-    json.AddMember("type", (int)converterType, allocator);
+    json.AddMember("lastSaveTime", fileInfo.m_lastSaveTime, allocator);
+    json.AddMember("fileSize", rapidjson::Value(iModelExternalSourceAspect::UInt64ToString(fileInfo.m_fileSize).c_str(), allocator), allocator);
+    json.AddMember("fileName", rapidjson::Value(fileInfo.m_v8Name.c_str(), allocator), allocator);
+    json.AddMember("idPolicy", (int)idPolicy, allocator);
     aspect.SetProperties(json);
 
     return aspect;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> SyncInfo::BridgeJobletExternalSourceAspect::FindAspectBySourceId(Utf8StringCR bridgeName, DgnV8ModelCR v8MasterModel, Converter& converter)
-    {
-    auto v8MasterFileRepositoryLinkId = converter.GetRepositoryLinkFromAppData(*v8MasterModel.GetDgnFileP());
-
-    // Look for a Subject element that a) has the specified Subject.Bridge name, and b) has a 'Joblet' XSA on with a source identifier that matches the v8MasterModel's ID.
-    // Note that no two subjects can have the same bridge name and the same Joblet XSA. That combination must be unique.
-    auto sel = converter.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT x.Scope.Id, x.Element.Id, x.ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_Subject) " s"
-        " WHERE (x.Element.Id=s.ECInstanceId AND x.Kind=? AND x.Identifier=? AND json_extract(s.JsonProperties, '$.Subject.Job.Bridge') = ?)");
-    sel->BindText(1, KindToString(Kind::BridgeJoblet), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-    sel->BindText(2, FormatSourceId(v8MasterModel).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-    sel->BindText(3, bridgeName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-    while (BE_SQLITE_ROW == sel->Step())
-        {
-        auto jobMasterModelId = sel->GetValueId<DgnModelId>(0);            // x.Scope.Id   -- The master model in the BIM is the *scope* of the XSA
-        auto jobSubjectElemId = sel->GetValueId<DgnElementId>(1);          // x.Element.Id -- The subject element in the BIM is the owner of the XSA
-        auto jobletAspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(2); // x.ECInstanceId
-
-        auto jobSubject = converter.GetDgnDb().Elements().GetElement(jobSubjectElemId);
-        auto jobletAspect = BridgeJobletExternalSourceAspect(ExternalSourceAspect::GetAspect(*jobSubject, jobletAspectId).m_instance.get());
-
-        // Make sure the master model that we find was sourced from the specified v8 master file.
-
-        // *** NEEDS WORK: this joblet logic has to know that a model XSA is scoped to a RepositoryLink AND that the master model's XSA has no transform
-        auto masterModelAspect = V8ModelExternalSourceAspect::FindModelBySourceId(v8MasterFileRepositoryLinkId, jobletAspect.GetV8MasterModelId(), Transform::FromIdentity(), converter.GetDgnDb()); 
-        if (masterModelAspect.IsValid())
-            {
-            return std::make_tuple(jobletAspect, jobSubjectElemId, jobMasterModelId);
-            }
-        }
-    return std::make_tuple(BridgeJobletExternalSourceAspect(nullptr), DgnElementId(), DgnModelId());
-    }
+* @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::tuple<SyncInfo::BridgeJobletExternalSourceAspect, DgnElementId, DgnModelId> SyncInfo::BridgeJobletExternalSourceAspect::FindAspect(
-    Utf8StringCR bridgeName, DgnV8FileR v8MasterFile, DgnV8Api::ModelId const* v8ModelId, Converter& converter)
+void SyncInfo::RepositoryLinkExternalSourceAspect::Update(V8FileInfo const& fileInfo)
     {
-    auto v8MasterFileRepositoryLinkId = converter.GetRepositoryLinkFromAppData(v8MasterFile);
+    iModelExternalSourceAspect::SourceState ss;
+    iModelExternalSourceAspect::UInt64ToString(ss.m_version, fileInfo.m_lastModifiedTime);
+    SetSourceState(ss);
 
-    // Look for all Subject elements that a) have the specified Subject.Bridge name, and b) have a 'Joblet' XSA.
-    // Then pick the one that identifies a master model that itself was sourced from the specified v8 master file.
-    auto sel = converter.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT x.Scope.Id, x.Element.Id, x.ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_Subject) " s"
-        " WHERE (x.Element.Id=s.ECInstanceId AND x.Kind=? AND json_extract(s.JsonProperties, '$.Subject.Job.Bridge') = ?)");
-    sel->BindText(1, KindToString(Kind::BridgeJoblet), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-    sel->BindText(2, bridgeName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-    while (BE_SQLITE_ROW == sel->Step())
-        {
-        auto jobMasterModelId = sel->GetValueId<DgnModelId>(0);            // x.Scope.Id   -- The master model in the BIM is the *scope* of the XSA
-        auto jobSubjectElemId = sel->GetValueId<DgnElementId>(1);          // x.Element.Id -- The subject element in the BIM is the owner of the XSA
-        auto jobletAspectId = sel->GetValueId<BeSQLite::EC::ECInstanceId>(2); // x.ECInstanceId
-
-        auto jobSubject = converter.GetDgnDb().Elements().GetElement(jobSubjectElemId);
-        auto jobletAspect = BridgeJobletExternalSourceAspect(ExternalSourceAspect::GetAspect(*jobSubject, jobletAspectId).m_instance.get());
-
-        // If we have a V8 modelid, then it must match.
-        if ((v8ModelId != nullptr) && (jobletAspect.GetV8MasterModelId() != *v8ModelId))
-            continue;
-
-        // Make sure that this joblet identifies a master model in the specified V8 file (using the FileRepositoryLnik)
-        auto jobMasterModel = converter.GetDgnDb().Elements().GetElement(DgnElementId(jobMasterModelId.GetValue()));
-        if (!jobMasterModel.IsValid())
-            continue;
-
-        auto masterModelAspect = V8ModelExternalSourceAspect::GetAspect(*jobMasterModel, jobletAspect.GetV8MasterModelId());
-        if (masterModelAspect.IsValid() && masterModelAspect.GetScope() == v8MasterFileRepositoryLinkId) // *** NEEDS WORK: this joblet logic has to know that a model XSA is scoped to a RepositoryLink
-            {
-            return std::make_tuple(jobletAspect, jobSubjectElemId, jobMasterModelId);
-            }
-        }
-    return std::make_tuple(BridgeJobletExternalSourceAspect(nullptr), DgnElementId(), DgnModelId());
+    auto json = GetProperties();
+    json["fileSize"] = rapidjson::Value(iModelExternalSourceAspect::UInt64ToString(fileInfo.m_fileSize).c_str(), json.GetAllocator());
+    json["lastSaveTime"] = fileInfo.m_lastSaveTime;
+    SetProperties(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::BridgeJobletExternalSourceAspect::SetTransform(TransformCR t)
+SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSourceAspect::FindAspectByIdentifier(DgnDbR db, Utf8StringCR uniqueName)
+    {
+    auto ei = FindElementBySourceId(db, db.Elements().GetRootSubjectId(), Kind::RepositoryLink, uniqueName);
+    auto rlink = db.Elements().Get<RepositoryLink>(ei.elementId);
+    if (!rlink.IsValid())
+        return RepositoryLinkExternalSourceAspect(nullptr);
+    return RepositoryLinkExternalSourceAspect(ExternalSourceAspect::GetAspect(*rlink, SyncInfo::GetSoleAspectIdByKind(*rlink, Kind::RepositoryLink)).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(RepositoryLinkR el)
+    {
+    return RepositoryLinkExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, SyncInfo::GetSoleAspectIdByKind(el, Kind::RepositoryLink)).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(RepositoryLinkCR el)
+    {
+    return RepositoryLinkExternalSourceAspect(ExternalSourceAspect::GetAspect(el, SyncInfo::GetSoleAspectIdByKind(el, Kind::RepositoryLink)).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t SyncInfo::RepositoryLinkExternalSourceAspect::GetLastModifiedTime() const
+    {
+    return iModelExternalSourceAspect::UInt64FromString(GetSourceState().m_version.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+double SyncInfo::RepositoryLinkExternalSourceAspect::GetLastSaveTime() const
     {
     auto json = GetProperties();
-    auto& allocator = json.GetAllocator();
-    if (!json.HasMember("transform"))
-        json.AddMember("transform", fixedArrayToJson((double*)&t, 12, allocator), allocator);
-    else
-        json["transform"] = fixedArrayToJson((double*)&t, 12, allocator);
+    uint64_t v;
+    return json["lastSaveTime"].GetDouble();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
+* @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform SyncInfo::BridgeJobletExternalSourceAspect::GetTransform() const
+uint64_t SyncInfo::RepositoryLinkExternalSourceAspect::GetFileSize() const
     {
     auto json = GetProperties();
-    if (!json.HasMember("transform"))
-        return Transform::FromIdentity();
-    Transform transform;
-    fixedArrayFromJson((double*)&transform, 12, json["transform"].GetArray());
-    return transform;
+    return iModelExternalSourceAspect::UInt64FromString(json["fileSize"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
+* @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::BridgeJobletExternalSourceAspect::ConverterType SyncInfo::BridgeJobletExternalSourceAspect::GetConverterType() const
+Utf8String SyncInfo::RepositoryLinkExternalSourceAspect::GetFileName() const
     {
     auto json = GetProperties();
-    return (ConverterType)(json["type"].GetInt());
+    return json["fileName"].GetString();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
+* @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8Api::ModelId SyncInfo::BridgeJobletExternalSourceAspect::GetV8MasterModelId() const
+StableIdPolicy SyncInfo::RepositoryLinkExternalSourceAspect::GetStableIdPolicy() const
     {
-    return atoi(GetIdentifier().c_str());
+    auto json = GetProperties();
+    return (StableIdPolicy)(json["idPolicy"].GetInt());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2262,7 +1027,7 @@ SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::C
     if (nullptr == aspectClass)
         return GeomPartExternalSourceAspect(nullptr);
                 
-    auto instance = iModelExternalSourceAspect::CreateInstance(scopeId, KindToString(Kind::GeomPart), tag, nullptr, *aspectClass);
+    auto instance = iModelExternalSourceAspect::CreateInstance(scopeId, Kind::GeomPart, tag, nullptr, *aspectClass);
     return GeomPartExternalSourceAspect(instance.get());
     }
 
@@ -2274,7 +1039,7 @@ SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::G
     // There's only one source aspect on a geompart element, so no need for an aspectid
 #ifdef TEST_EXTERNAL_SOURCE_ASPECT
         {
-        auto count = GetAllByKind(el, KindToString(Kind::GeomPart)).size();
+        auto count = GetAllByKind(el, Kind::GeomPart).size();
         BeAssert((0 == count) || (1 == count));
         }
 #endif
@@ -2296,7 +1061,7 @@ SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSou
     if (nullptr == aspectClass)
         return ViewDefinitionExternalSourceAspect(nullptr);
 
-    auto instance = iModelExternalSourceAspect::CreateInstance(scopeId, KindToString(Kind::ViewDefinition), FormatSourceId(viewInfo.GetElementId()), nullptr, *aspectClass);
+    auto instance = iModelExternalSourceAspect::CreateInstance(scopeId, Kind::ViewDefinition, FormatSourceId(viewInfo.GetElementId()), nullptr, *aspectClass);
     auto aspect = ViewDefinitionExternalSourceAspect(instance.get());
 
     aspect.Update(viewInfo, viewName);
@@ -2347,7 +1112,7 @@ SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSou
     // There's only one source aspect on a ViewDefinition element, so no need for an aspectid
 #ifdef TEST_EXTERNAL_SOURCE_ASPECT
         {        
-        auto count = GetAllByKind(el, KindToString(Kind::ViewDefinition)).size();
+        auto count = GetAllByKind(el, Kind::ViewDefinition).size();
         BeAssert((0 == count) || (1 == count));
         }
 #endif
@@ -2357,16 +1122,16 @@ SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::GetAspect(ViewDefinitionR el)    // non-const version, used for editing
+SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectForEdit(ViewDefinitionR el)    // non-const version, used for editing
     {
     // There's only one source aspect on a ViewDefinition element, so no need for an aspectid
 #ifdef TEST_EXTERNAL_SOURCE_ASPECT
         {        
-        auto count = GetAllByKind(el, KindToString(Kind::ViewDefinition)).size();
+        auto count = GetAllByKind(el, Kind::ViewDefinition).size();
         BeAssert((0 == count) || (1 == count));
         }
 #endif
-    return ViewDefinitionExternalSourceAspect(ExternalSourceAspect::GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
+    return ViewDefinitionExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2374,7 +1139,7 @@ SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSou
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::tuple<SyncInfo::ViewDefinitionExternalSourceAspect,DgnViewId> SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(DgnElementId scopeId, DgnV8ViewInfoCR viewInfo, DgnDbR db)
     {
-    DgnElementId elId = FindElementBySourceId(db, scopeId, KindToString(Kind::ViewDefinition), FormatSourceId(viewInfo.GetElementId())).elementId;
+    DgnElementId elId = FindElementBySourceId(db, scopeId, Kind::ViewDefinition, FormatSourceId(viewInfo.GetElementId())).elementId;
     if (!elId.IsValid())
         return std::make_tuple(ViewDefinitionExternalSourceAspect(nullptr), DgnViewId());
 
@@ -2394,16 +1159,8 @@ BeSQLite::EC::CachedECSqlStatementPtr SyncInfo::ViewDefinitionExternalSourceAspe
     {
     auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=?)");
     stmt->BindId(1, scope);
-    stmt->BindText(2, KindToString(Kind::ViewDefinition), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindText(2, Kind::ViewDefinition, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     return stmt;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ExternalSourceAspect::Kind SyncInfo::ExternalSourceAspect::GetKind() const 
-    {
-    return ParseKind(iModelExternalSourceAspect::GetKind().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2413,8 +1170,7 @@ BentleyStatus SyncInfo::OnAttach(DgnDb& project)
     {
     m_dgndb = &project;
 
-    
-    if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_File)))
+    if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)))
         {
         // We are creating a new syncinfo file
         Utf8String currentDbProfileVersion;
@@ -2471,7 +1227,6 @@ BentleyStatus SyncInfo::OnAttach(DgnDb& project)
         }
 
     CreateTables();  // We STILL call CreateTables. That gives EC a chance to create its TEMP tables.
-    ValidateViewTable();
 
     SetValid(true);
     return BSISUCCESS;
@@ -2527,7 +1282,7 @@ DbResult SyncInfo::InsertECSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId,
 
     BeAssert(checksum != 0);
 
-    V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(v8File);
+    RepositoryLinkId v8FileId = m_converter.GetRepositoryLinkId(v8File);
     if (!v8FileId.IsValid() || Utf8String::IsNullOrEmpty(v8SchemaName))
         {
         BeAssert(false);
@@ -2536,13 +1291,13 @@ DbResult SyncInfo::InsertECSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId,
 
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "INSERT OR REPLACE INTO " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)
-                                                    " (V8FileSyncInfoId,V8Name,V8VersionMajor,V8VersionMinor,MappingType,LastModified,Digest) VALUES (?,?,?,?,?,?,?)"))
+                                                    " (RepositoryLinkId,V8Name,V8VersionMajor,V8VersionMinor,MappingType,LastModified,Digest) VALUES (?,?,?,?,?,?,?)"))
         {
         BeAssert(false && "Could not retrieve cached SyncInfo statement.");
         return BE_SQLITE_ERROR;
         }
 
-    stmt->BindInt(1, v8FileId.GetValue());
+    stmt->BindId(1, v8FileId);
     stmt->BindText(2, v8SchemaName, Statement::MakeCopy::No);
     stmt->BindInt(3, v8ProfileVersionMajor);
     stmt->BindInt(4, v8ProfileVersionMinor);
@@ -2568,7 +1323,7 @@ DbResult SyncInfo::InsertECSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
-bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& mappingType, Utf8CP v8SchemaName, V8FileSyncInfoId fileId) const
+bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& mappingType, Utf8CP v8SchemaName, RepositoryLinkId fileId) const
     {
     //first check whether we need to capture this schema or not
     CachedStatementPtr stmt = nullptr;
@@ -2576,7 +1331,7 @@ bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMapping
                   SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)
                   " WHERE V8Name=?");
     if (fileId.IsValid())
-        sql.append("and V8FileSyncInfoId = ? ");
+        sql.append("and RepositoryLinkId = ? ");
 
     if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, sql.c_str()))
         {
@@ -2586,7 +1341,7 @@ bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMapping
 
     stmt->BindText(1, v8SchemaName, Statement::MakeCopy::No);
     if (fileId.IsValid())
-        stmt->BindInt(2, fileId.GetValue());
+        stmt->BindId(2, fileId);
     if (BE_SQLITE_ROW != stmt->Step())
         return false;
 
@@ -2619,34 +1374,22 @@ bool SyncInfo::ContainsECSchema(Utf8CP v8SchemaName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, V8FileSyncInfoId fileId) const
+DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT V8Name, Digest FROM " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) " WHERE V8FileSyncInfoId=?"))
+    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT V8Name, Digest FROM " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) " WHERE RepositoryLinkId=?"))
         {
         BeAssert(false && "Could not retrieve cached SyncInfo statement.");
         return BE_SQLITE_ERROR;
         }
 
-    stmt->BindInt(1, fileId.GetValue());
+    stmt->BindId(1, fileId);
     while (BE_SQLITE_ROW == stmt->Step())
         {
         syncInfoChecksums[stmt->GetValueText(0)] = (uint32_t) stmt->GetValueInt(1);
         }
 
     return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      04/15
-//---------------------------------------------------------------------------------------
-bool SyncInfo::V8ModelSource::operator<(V8ModelSource const& rhs) const
-    {
-    if (m_v8FileSyncInfoId < rhs.m_v8FileSyncInfoId)
-        return true;
-    if (m_v8FileSyncInfoId > rhs.m_v8FileSyncInfoId)
-        return false;
-    return m_modelId.GetValue() < rhs.m_modelId.GetValue();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2758,134 +1501,6 @@ BentleyStatus SyncInfo::FinalizeNamedGroups()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-void SyncInfo::ValidateViewTable()
-    {
-    if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_View)))
-        {
-        m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_View),
-                             "ElementId BIGINT NOT NULL, "
-                             "V8FileSyncInfoId INTEGER NOT NULL, "
-                             "V8ElementId BIGINT, "
-                             "V8ViewName TEXT, "
-                             "LastModified REAL");
-        return;
-        }
-
-    // Since it was created late, and then a new column was added need to ensure both that the table exists and the column exists
-    if (m_dgndb->ColumnExists(SYNCINFO_ATTACH(SYNC_TABLE_View), "V8ViewName"))
-        return;
-
-    m_dgndb->AddColumnToTable(SYNCINFO_ATTACH(SYNC_TABLE_View), "V8ViewName", "TEXT");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo, Utf8CP viewName)
-    {
-    Statement stmt;
-    stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_View) "(ElementId, V8FileSyncInfoId, V8ElementId, V8ViewName, LastModified) VALUES (?, ?,?,?,?)");
-    int col = 1;
-    stmt.BindId(col++, viewId);
-
-    ElementRefP      viewElemRef = viewInfo.GetElementRef();
-    if (nullptr == viewElemRef)
-        return DbResult::BE_SQLITE_NOTFOUND;
-
-    V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*viewElemRef->GetDgnModelP()->GetDgnFileP());
-    if (!v8FileId.IsValid())
-        return BeSQLite::DbResult::BE_SQLITE_ERROR_FileNotFound;
-
-    stmt.BindInt(col++, v8FileId.GetValue());
-    stmt.BindInt64(col++, viewElemRef->GetElementId());
-    stmt.BindText(col++, viewName, Statement::MakeCopy::Yes);
-    stmt.BindDouble(col++, viewElemRef->GetLastModified());
-    auto res = stmt.Step();
-    return res;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool SyncInfo::TryFindView(DgnViewId& viewId, double& lastModified, Utf8StringR v8ViewName, DgnV8ViewInfoCR viewInfo) const
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT ElementId, V8ViewName, LastModified FROM "
-                                                    SYNCINFO_ATTACH(SYNC_TABLE_View)
-                                                    " WHERE V8FileSyncInfoId=? AND V8ElementId=?"))
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    ElementRefP      viewElemRef = viewInfo.GetElementRef();
-    V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*viewElemRef->GetDgnModelP()->GetDgnFileP());
-    if (!v8FileId.IsValid())
-        return false;
-    stmt->BindInt(1, v8FileId.GetValue());
-    stmt->BindInt64(2, viewElemRef->GetElementId());
-    DbResult rc = stmt->Step();
-    if (BE_SQLITE_ROW != rc)
-        return false;
-
-    viewId = stmt->GetValueId<DgnViewId>(0);
-    v8ViewName = stmt->GetValueText(1);
-    lastModified = stmt->GetValueDouble(2);
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BeSQLite::DbResult SyncInfo::DeleteView(DgnViewId viewId)
-    {
-    Statement stmt;
-    stmt.Prepare(*m_dgndb, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_View) " WHERE ElementId=?");
-    stmt.BindId(1, viewId);
-    return stmt.Step();
-
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BeSQLite::DbResult SyncInfo::UpdateView(DgnViewId viewId, Utf8CP v8ViewName, DgnV8ViewInfoCR viewInfo)
-    {
-    Statement stmt;
-    stmt.Prepare(*m_dgndb, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_View) " SET LastModified=?, V8ViewName=? WHERE(ElementId=?)");
-    int col = 1;
-    stmt.BindDouble(col++, viewInfo.GetElementRef()->GetLastModified());
-    stmt.BindText(col++, v8ViewName, Statement::MakeCopy::Yes);
-    stmt.BindId(col++, viewId);
-    return stmt.Step();
-    }
-
-DgnViewId SyncInfo::ViewIterator::Entry::GetId() { return m_sql->GetValueId<DgnViewId>(0); }
-SyncInfo::V8FileSyncInfoId SyncInfo::ViewIterator::Entry::GetV8FileSyncInfoId() { return SyncInfo::V8FileSyncInfoId(m_sql->GetValueInt(1)); }
-uint64_t SyncInfo::ViewIterator::Entry::GetV8ElementId() { return m_sql->GetValueInt64(2); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::ViewIterator::ViewIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
-    {
-    m_params.SetWhere(where);
-    Utf8String sqlString = MakeSqlString("SELECT ElementId, V8FileSyncInfoId, V8ElementId, LastModified FROM " SYNCINFO_ATTACH(SYNC_TABLE_View));
-    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::ViewIterator::Entry SyncInfo::ViewIterator::begin() const
-    {
-    m_stmt->Reset();
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2018
-//---------------+---------------+---------------+---------------+---------------+-------
 bool SyncInfo::EnsureImageryTableExists()
     {
     if (m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_Imagery)))
@@ -2906,15 +1521,15 @@ bool SyncInfo::EnsureImageryTableExists()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BeSQLite::DbResult SyncInfo::InsertImageryFile(DgnElementId modeledElementId, V8FileSyncInfoId filesiid, Utf8CP filename, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId)
+BeSQLite::DbResult SyncInfo::InsertImageryFile(DgnElementId modeledElementId, RepositoryLinkId filesiid, Utf8CP filename, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId)
     {
     EnsureImageryTableExists();
 
     Statement stmt;
-    stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "(ElementId, V8FileSyncInfoId, Filename, LastModified, FileSize, ETag, RDSId) VALUES (?,?,?,?,?,?,?)");
+    stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "(ElementId, RepositoryLinkId, Filename, LastModified, FileSize, ETag, RDSId) VALUES (?,?,?,?,?,?,?)");
     int col = 1;
     stmt.BindId(col++, modeledElementId);
-    stmt.BindInt(col++, filesiid.GetValue());
+    stmt.BindId(col++, filesiid);
     stmt.BindText(col++, filename, Statement::MakeCopy::No);
     stmt.BindUInt64(col++, lastModifiedTime);
     stmt.BindUInt64(col++, fileSize);
@@ -2962,13 +1577,13 @@ void SyncInfo::GetCurrentImageryInfo(Utf8StringCR fileName, uint64_t& currentLas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-bool SyncInfo::ModelHasChangedImagery(V8FileSyncInfoId filesiid)
+bool SyncInfo::ModelHasChangedImagery(RepositoryLinkId filesiid)
     {
     EnsureImageryTableExists();
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT Filename, LastModified, FileSize, ETag FROM "
                                                     SYNCINFO_ATTACH(SYNC_TABLE_Imagery)
-                                                    " WHERE V8FileSyncInfoId=?"))
+                                                    " WHERE RepositoryLinkId=?"))
         {
         BeAssert(false);
         return false;
@@ -2977,7 +1592,7 @@ bool SyncInfo::ModelHasChangedImagery(V8FileSyncInfoId filesiid)
     if (!filesiid.IsValid())
         return false;
 
-    stmt->BindInt(1, filesiid.GetValue());
+    stmt->BindId(1, filesiid);
     while (BE_SQLITE_ROW == stmt->Step())
         {
         Utf8String fileName = stmt->GetValueText(0);

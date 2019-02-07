@@ -18,9 +18,6 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeDetector::_Prepare(Converter& c)
     {
-    m_byIdIter   = new SyncInfo::ByV8ElementIdIter(c.GetDgnDb());
-    m_byHashIter = new SyncInfo::ByHashIter(c.GetDgnDb());
-
     BeAssert (c.GetSyncInfo().IsValid());
     BeAssert (!c.WasAborted());
 
@@ -32,8 +29,6 @@ void ChangeDetector::_Prepare(Converter& c)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeDetector::_Cleanup(Converter& c)
     {
-    DELETE_AND_CLEAR(m_byHashIter);
-    DELETE_AND_CLEAR(m_byIdIter);
     m_elementsSeen.clear();
     c.GetRangePartIdMap().clear();
     }
@@ -43,8 +38,6 @@ void ChangeDetector::_Cleanup(Converter& c)
 //---------------+---------------+---------------+---------------+---------------+-------
 void ChangeDetector::PrepareIterators(DgnDbCR db)
     {
-    m_byIdIter = new SyncInfo::ByV8ElementIdIter(db);
-    m_byHashIter = new SyncInfo::ByHashIter(db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,34 +45,36 @@ void ChangeDetector::PrepareIterators(DgnDbCR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeDetector::~ChangeDetector()
     {
-    // ensure that we release the statements held by the "Iter" member variables, in case of abort.
-    DELETE_AND_CLEAR(m_byHashIter);
-    DELETE_AND_CLEAR(m_byIdIter);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
+* @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedImportJob Converter::GetResolvedImportJob(SyncInfo::ImportJob const& importJob)
+SyncInfo::V8ElementExternalSourceAspect ChangeDetector::FindElementAspectById(Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter)
     {
-    auto jobSubject = GetDgnDb().Elements().Get<Subject>(importJob.GetSubjectId());
-    if (!jobSubject.IsValid())
+    SyncInfo::V8ElementExternalSourceAspectIteratorByV8Id it(v8mm.GetDgnModel(), v8eh);
+    auto found = it.begin();
+    if (nullptr != filter)
         {
-        // *** WIP_IMPORT_JOB -- what to do if somebody has deleted the subject?
-        return ResolvedImportJob();
+        while ((found != it.end()) && !(*filter)(found, converter))
+            ++found;
         }
-
-    SyncInfo::V8ModelMapping mm;
-    auto status = GetSyncInfo().GetModelBySyncInfoId(mm, importJob.GetV8ModelSyncInfoId());
-    if (BSISUCCESS != status)
+    return (found != it.end())? *found: SyncInfo::V8ElementExternalSourceAspect();
+    }
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementExternalSourceAspect ChangeDetector::FindElementAspectByChecksum(Converter& converter, SyncInfo::ElementHash const& hash, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter)
+    {
+    SyncInfo::V8ElementExternalSourceAspectIteratorByChecksum it(v8mm.GetDgnModel(), hash);
+    auto found = it.begin();
+    if (nullptr != filter)
         {
-        BeAssert(false);
-        ReportError(IssueCategory::CorruptData(), Issue::Error(), "ImportJob has bad V8ModelSyncInfoId");
-        return ResolvedImportJob();
+        while ((found != it.end()) && !(*filter)(found, converter))
+            ++found;
         }
-
-    return ResolvedImportJob(*jobSubject, importJob.GetTransform(), mm.GetModelId(), mm.GetV8ModelId().GetValue(), m_rootTrans, importJob.GetType(), importJob.GetRowId());
+    return (found != it.end())? *found: SyncInfo::V8ElementExternalSourceAspect();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -90,34 +85,16 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
     {
     res.m_currentElementProvenance = SyncInfo::ElementProvenance(v8eh, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
     
-    SyncInfo::ElementIterator* iter;
     if (converter.GetCurrentIdPolicy() == StableIdPolicy::ById)
         {
-        iter = m_byIdIter;
-        m_byIdIter->Bind(v8mm.GetV8ModelSyncInfoId(), v8eh.GetElementId());
+        res.m_v8ElementAspect = FindElementAspectById(converter, v8eh, v8mm, filter);
         }
     else
         {
-        iter = m_byHashIter;
-        m_byHashIter->Bind(v8mm.GetV8ModelSyncInfoId(), res.m_currentElementProvenance.m_hash);
+        res.m_v8ElementAspect = FindElementAspectByChecksum(converter, res.m_currentElementProvenance.m_hash, v8mm, filter);
         }
 
-    auto found = iter->begin();
-    if (nullptr != filter)
-        {
-        while ((found != iter->end()) && !(*filter)(found, converter))
-            ++found;
-        }
-
-#ifdef TEST_EXTERNAL_SOURCE_ASPECT
-    {
-    // TODO - must filter on scope
-    // auto findAspect = converter.GetDgnDb().GetPreparedECSqlStatement("Select * from " XTRN_SRC_ASPCT_FullClassName " where (Identifier=? and Kind='Element')");
-    // findAspect->BindInt64(1, v8eh.GetElementId());
-    }
-#endif
-
-    if (found == iter->end())
+    if (!res.m_v8ElementAspect.IsValid())
         {
         // we never saw this element before, treat it as a new element. 
         // or maybe it was previously discarded (SyncInfo::WasElementDiscarded). 
@@ -127,12 +104,8 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
     else
         {
         //  This V8 element was previously mapped to at least one element in the BIM. See if the V8 element has changed.
-        res.m_v8ElementMapping = found.GetV8ElementMapping();
-        res.m_changeType = found.GetProvenance().IsSame(res.m_currentElementProvenance)? ChangeType::None: ChangeType::Update;
+        res.m_changeType = res.m_v8ElementAspect.DoesProvenanceMatch(res.m_currentElementProvenance)? ChangeType::None: ChangeType::Update;
 
-#ifdef TEST_EXTERNAL_SOURCE_ASPECT
-        converter.GetSyncInfo().AssertAspectMatchesSyncInfo(res.m_v8ElementMapping);
-#endif
         if (v8mm.GetDgnModel().IsSpatialModel() && converter.HasRootTransChanged())
             res.m_changeType = ChangeType::Update;
 
@@ -142,7 +115,7 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
         uint64_t existingFileSize;
         Utf8String existingEtag;
         Utf8String rdsId; // unnecessary but the method requires it
-        if (converter.GetSyncInfo().TryFindImageryFile(res.m_v8ElementMapping.GetElementId(), fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
+        if (converter.GetSyncInfo().TryFindImageryFile(res.m_v8ElementAspect.GetElementId(), fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
             {
             uint64_t currentLastModifiedTime;
             uint64_t currentFileSize;
@@ -158,8 +131,6 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
                 res.m_changeType = ChangeType::Update;
             }
         }
-
-    iter->GetStatement()->Reset();  // NB: don't leave the iterator in an active state!
 
     return (ChangeType::None != res.m_changeType);
     }
@@ -178,14 +149,13 @@ bool ChangeDetector::_ShouldSkipFileByName(Converter& converter, BeFileNameCR fi
     if (converter.HasRootTransChanged())  // must re-visit all elements if root transform has changed
         return false;
 
-    SyncInfo::V8FileProvenance prov = converter.GetSyncInfo().FindFileByFileName(file);
+    SyncInfo::RepositoryLinkExternalSourceAspect prov = converter.GetSyncInfo().FindFileByFileName(file);
     if (prov.IsValid())
         {
-        SyncInfo::ModelIterator it(converter.GetDgnDb(), "V8FileSyncInfoId=?");
-        it.GetStatement()->BindInt(1, prov.m_syncId.GetValue());
+        SyncInfo::V8ModelExternalSourceAspectIterator it(converter.GetDgnDb(), prov, nullptr);
         for (auto entry = it.begin(); entry != it.end(); ++entry)
             {
-            m_v8ModelsSkipped.insert(entry.GetV8ModelSyncInfoId());
+            m_v8ModelsSkipped.insert(entry->GetModelId());
             }
         }
 
@@ -204,7 +174,7 @@ bool ChangeDetector::_ShouldSkipFile(Converter& converter, DgnV8FileCR v8file)
         return false;
 
     // if it hasn't changed per the "last saved time", don't bother with it.
-    if (!s_doFileSaveTimeCheck || converter.GetSyncInfo().HasLastSaveTimeChanged(v8file) || converter.GetSyncInfo().ModelHasChangedImagery(Converter::GetV8FileSyncInfoIdFromAppData(v8file)))
+    if (!s_doFileSaveTimeCheck || converter.GetSyncInfo().HasLastSaveTimeChanged(v8file) || converter.GetSyncInfo().ModelHasChangedImagery(converter.GetRepositoryLinkId(v8file)))
         return false;
 
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
@@ -218,7 +188,7 @@ bool ChangeDetector::_ShouldSkipFile(Converter& converter, DgnV8FileCR v8file)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeDetector::_OnModelInserted(Converter& converter, ResolvedModelMapping const& v8mm)
     {
-    m_newlyDiscoveredModels.insert(v8mm.GetV8ModelSyncInfoId());
+    m_newlyDiscoveredModels.insert(v8mm.GetDgnModel().GetModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -226,13 +196,13 @@ void ChangeDetector::_OnModelInserted(Converter& converter, ResolvedModelMapping
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeDetector::_AreContentsOfModelUnChanged(Converter& converter, ResolvedModelMapping const& v8mm)
     {
-    if (m_newlyDiscoveredModels.find(v8mm.GetV8ModelSyncInfoId()) != m_newlyDiscoveredModels.end())
+    if (m_newlyDiscoveredModels.find(v8mm.GetDgnModel().GetModelId()) != m_newlyDiscoveredModels.end())
         return false;
 
     if (!_ShouldSkipFile(converter, *v8mm.GetV8Model().GetDgnFileP()))
         return false;
 
-    m_v8ModelsSkipped.insert(v8mm.GetV8ModelSyncInfoId());
+    m_v8ModelsSkipped.insert(v8mm.GetDgnModel().GetModelId());
     return true;
     }
 
@@ -241,30 +211,31 @@ bool ChangeDetector::_AreContentsOfModelUnChanged(Converter& converter, Resolved
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeDetector::_OnModelSeen(Converter& converter, ResolvedModelMapping const& v8mm)
     {
-    m_v8ModelsSeen.insert(v8mm.GetV8ModelSyncInfoId());
+    m_v8ModelsSeen.insert(v8mm.GetDgnModel().GetModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::_DeleteModel(SyncInfo::V8ModelMapping const& mm)
+void Converter::_DeleteModel(DgnModelR model, SyncInfo::V8ModelExternalSourceAspect const& modelXsa)
     {
-    auto mid = mm.GetModelId();
-    auto msid = mm.GetV8ModelSyncInfoId();
-    LOG.infov("Delete model %llx", mid.GetValue());
-    auto model = GetDgnDb().Models().GetModel(mid);
-    GetMonitor()._OnModelDelete(*model, mm);
-    model->Delete();
-    GetSyncInfo().DeleteModel(mm.GetV8ModelSyncInfoId());
+    LOG.infov("Delete model %llx (%s)", model.GetModelId().GetValue(), model.GetModeledElement()->GetCode().GetValueUtf8CP());
+    GetMonitor()._OnModelDelete(model, modelXsa);
+    auto& db = model.GetDgnDb();
+    auto modeledElementId = model.GetModeledElementId();
+    model.Delete();
+    db.Elements().Delete(modeledElementId);
 
+#ifdef WIP_OLD_MODEL_PROVENANCE
     if (_WantModelProvenanceInBim())
-        DgnV8ModelProvenance::Delete(mid, GetDgnDb());
+        DgnV8ModelProvenance::Delete(model.GetModelId(), GetDgnDb());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeDetector::_DetectDeletedModels(Converter& converter, SyncInfo::ModelIterator& iter)
+void ChangeDetector::_DetectDeletedModels(Converter& converter, SyncInfo::V8ModelExternalSourceAspectIterator& iter)
     {
     // *** NB: This alogorithm *infers* that a model was deleted in V8 if we did not see it during processing.
     //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in m_v8Files/ModelsSkipped or m_v8ModelsSeen.
@@ -273,16 +244,22 @@ void ChangeDetector::_DetectDeletedModels(Converter& converter, SyncInfo::ModelI
     // them were missing this time around. Those models and their constituent Models must to be deleted.
     for (auto wasModel=iter.begin(); wasModel!=iter.end(); ++wasModel)
         {
-        if (!converter.IsBimModelAssignedToJobSubject(wasModel.GetModelId()))
+        if (!converter.IsBimModelAssignedToJobSubject(wasModel->GetModelId()))
             continue;
 
-        if (m_v8ModelsSeen.find(wasModel.GetV8ModelSyncInfoId()) == m_v8ModelsSeen.end())
+        if (m_v8ModelsSeen.find(wasModel->GetModelId()) == m_v8ModelsSeen.end())
             {
-            if (m_v8ModelsSkipped.find(wasModel.GetV8ModelSyncInfoId()) != m_v8ModelsSkipped.end())
+            if (m_v8ModelsSkipped.find(wasModel->GetModelId()) != m_v8ModelsSkipped.end())
                 continue;   // we skipped this V8 model, so we don't expect to see it in m_v8ModelsSeen
 
             // not found, delete this model
-            converter._DeleteModel(wasModel.GetMapping());
+            auto model = converter.GetDgnDb().Models().GetModel(wasModel->GetModelId());
+            if (!model.IsValid())
+                {
+                BeAssert(false && "I found a Model *aspect*, and yet I cannot access the model that it points to. That's impossible.:");
+                continue;
+                }
+            converter._DeleteModel(*model, *wasModel);
 
             // Note that DetectDeletedElements will take care of detecting and deleting the elements that were in the V8 model.
             }
@@ -298,10 +275,6 @@ void Converter::_DeleteElement(DgnElementId eid)
 
     _OnElementBeforeDelete(eid);
     GetDgnDb().Elements().Delete(eid);
-    GetSyncInfo().DeleteElement(eid);
-
-    // if (_WantProvenanceInBim())
-    //    DgnV8ElementProvenance::Delete(eid, GetDgnDb());
 
     _OnElementConverted(eid, nullptr, Converter::ChangeOperation::Delete);
     }
@@ -309,7 +282,7 @@ void Converter::_DeleteElement(DgnElementId eid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeDetector::_DetectDeletedElements(Converter& converter, SyncInfo::ElementIterator& iter)
+void ChangeDetector::_DetectDeletedElements(Converter& converter, SyncInfo::V8ElementExternalSourceAspectIterator& iter)
     {
     // *** NB: This alogorithm *infers* that an element was deleted in V8 if we did not see it, its model, or its file during processing.
     //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in m_v8Files/ModelsSkipped or m_elementsSeen.
@@ -317,15 +290,15 @@ void ChangeDetector::_DetectDeletedElements(Converter& converter, SyncInfo::Elem
     // iterate over all of the previously converted elements from the syncinfo.
     for (auto elementInSyncInfo=iter.begin(); elementInSyncInfo!=iter.end(); ++elementInSyncInfo)
         {
-        auto previouslyConvertedElementId = elementInSyncInfo.GetElementId();
+        auto previouslyConvertedElementId = elementInSyncInfo->GetElementId();
         if (m_elementsSeen.Contains(previouslyConvertedElementId)) // if update encountered at least one V8 element that was mapped to this BIM element,
             continue;   // keep this BIM element alive
 
-        if (m_v8ModelsSkipped.find(elementInSyncInfo.GetV8ModelSyncInfoId()) != m_v8ModelsSkipped.end()) // if we skipped this whole V8 model (e.g., because it was unchanged),
+        if (m_v8ModelsSkipped.find(elementInSyncInfo->GetModelId()) != m_v8ModelsSkipped.end()) // if we skipped this whole V8 model (e.g., because it was unchanged),
             continue;   // we don't expect any element from it to be in m_elementsSeen. Keep them all alive.
 
-        if (converter.GetSyncInfo().IsMappedToSameV8Element(previouslyConvertedElementId, m_elementsSeen)) // if update encountered at least one V8 element that this element was mapped to, 
-            continue;   // infer that this is a child of an assembly, and the assembly parent is in m_elementsSeen.
+#ifdef WIP_EXTERNAL_SOURCE_ASPECT // detect if any parent is in m_elementsSeen
+#endif
 
         // We did not encounter the V8 element that was mapped to this BIM element. We infer that the V8 element 
         // was deleted. Therefore, the update to the BIM is to delete the corresponding BIM element.
@@ -340,14 +313,15 @@ void ChangeDetector::_DetectDeletedElementsInFile(Converter& converter, DgnV8Fil
     {
     // iterate over all of the previously found elements from the syncinfo to determine if any of 
     // them were missing this time around. Those elements need to be deleted.
-    SyncInfo::ModelIterator modelsInFile(converter.GetDgnDb(), "V8FileSyncInfoId=?");
-    modelsInFile.GetStatement()->BindInt(1, Converter::GetV8FileSyncInfoIdFromAppData(v8File).GetValue());
+    SyncInfo::V8ModelExternalSourceAspectIterator modelsInFile(*converter.GetRepositoryLinkElement(v8File));
     for (auto modelInFile = modelsInFile.begin(); modelInFile != modelsInFile.end(); ++modelInFile)
         {
-        if (!converter.IsBimModelAssignedToJobSubject(modelInFile.GetModelId()))
+        if (!converter.IsBimModelAssignedToJobSubject(modelInFile->GetModelId()))
             continue;
-        SyncInfo::ElementIterator elementsInModel(converter.GetDgnDb(), "V8ModelSyncInfoId=?");
-        elementsInModel.GetStatement()->BindInt(1, modelInFile.GetV8ModelSyncInfoId().GetValue());
+        auto model = converter.GetDgnDb().Models().GetModel(modelInFile->GetModelId());
+        if (!model.IsValid())
+            continue; // could happen if modeled element still exists but submodel itself does not.
+        SyncInfo::V8ElementExternalSourceAspectIterator elementsInModel(*model);
         _DetectDeletedElements(converter, elementsInModel);
         }
     }
@@ -357,20 +331,21 @@ void ChangeDetector::_DetectDeletedElementsInFile(Converter& converter, DgnV8Fil
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeDetector::_DetectDeletedModelsInFile(Converter& converter, DgnV8FileR v8File)
     {
-    SyncInfo::ModelIterator iter(converter.GetDgnDb(), "V8FileSyncInfoId=?");
-    iter.GetStatement()->BindInt(1, Converter::GetV8FileSyncInfoIdFromAppData(v8File).GetValue());
+    SyncInfo::V8ModelExternalSourceAspectIterator iter(*converter.GetRepositoryLinkElement(v8File));
     _DetectDeletedModels(converter, iter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::DoesDocumentExist(Utf8StringCR docGuidStr, Utf8String localFileName)
+bool Converter::IsDocumentInRegistry(Utf8StringCR docGuidStr, Utf8String localFileName)
     {
     BeGuid docGuid;
     if (BSISUCCESS == docGuid.FromString(docGuidStr.c_str()))
-        return _GetParams().IsDocumentAssignedToJob(docGuidStr);
+        return _GetParams().IsDocumentInRegistry(docGuidStr);
     
+    // If we don't have a document registry, then we must be converting raw disk files. 
+    // Pretend that the directory is the registry.
     if (BSISUCCESS == DgnV8Api::DgnFile::ParsePackagedName(nullptr, nullptr, nullptr, WString(localFileName.c_str()).c_str()))
         return true;
 
@@ -380,24 +355,32 @@ bool Converter::DoesDocumentExist(Utf8StringCR docGuidStr, Utf8String localFileN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::_DeleteFileAndContents(SyncInfo::V8FileSyncInfoId filesid)
+void Converter::_DeleteFileAndContents(RepositoryLinkId repositoryLinkId)
     {
-    SyncInfo::ModelIterator modelsInFile(GetDgnDb(), "V8FileSyncInfoId=?");
-    modelsInFile.GetStatement()->BindInt(1, filesid.GetValue());
+    auto rlink = GetRepositoryLinkElement(repositoryLinkId);
+    if (!rlink.IsValid())
+        return;
+    SyncInfo::V8ModelExternalSourceAspectIterator modelsInFile(*rlink);
     for (auto wasModel : modelsInFile)
         {
-        SyncInfo::ElementIterator elementsInModel(GetDgnDb(), "v8ModelSyncInfoId=?");
-        elementsInModel.GetStatement()->BindUInt64(1, wasModel.GetV8ModelSyncInfoId().GetValue());
+        auto model = GetDgnDb().Models().GetModel(wasModel.GetModelId());
+        if (!model.IsValid())
+            {
+            BeAssert(false && "I found a Model *aspect*, and yet I cannot access the model that it points to. That's impossible.:");
+            continue;
+            }
+
+        SyncInfo::V8ElementExternalSourceAspectIterator elementsInModel(*model);
 
         for (auto wasElement : elementsInModel)
             {
             _DeleteElement(wasElement.GetElementId());
             }
 
-        _DeleteModel(wasModel.GetMapping());
+        _DeleteModel(*model, wasModel);
         }
 
-    GetSyncInfo().DeleteFile(filesid);
+    rlink->Delete();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -408,12 +391,12 @@ void Converter::_DetectDeletedDocuments()
     if (!IsUpdating())
         return;
 
-    SyncInfo::FileIterator files(GetDgnDb(), nullptr);
+    SyncInfo::RepositoryLinkExternalSourceAspectIterator files(GetDgnDb(), nullptr);
     for (auto file = files.begin(); file != files.end(); ++file)
         {
-        if (!DoesDocumentExist(file.GetUniqueName(), file.GetV8Name()))
+        if (!IsDocumentInRegistry(file->GetIdentifier(), file->GetFileName()))
             {
-            _DeleteFileAndContents(file.GetV8FileSyncInfoId());
+            _DeleteFileAndContents(file->GetRepositoryLinkId());
             }
         }
     }
@@ -478,7 +461,6 @@ void Converter::DeleteView(DgnViewId previouslyConvertedViewId, SyncInfo& syncIn
                 modelSelectorId = tempView->ToSpatialView()->GetModelSelectorId();
 
         elements.Delete(previouslyConvertedViewId); // Note that cascading delete takes care of deleting the ExternalSourceAspect, if any.
-        syncInfo.DeleteView(previouslyConvertedViewId);
 
         // Clean up the component elements
         // Category Selector
@@ -514,16 +496,14 @@ void Converter::DeleteView(DgnViewId previouslyConvertedViewId, SyncInfo& syncIn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-void ChangeDetector::_DetectDeletedViews(Converter& converter, SyncInfo::ViewIterator &iter)
+void ChangeDetector::_DetectDeletedViews(Converter& converter, SyncInfo::ViewDefinitionExternalSourceAspectIterator &iter)
     {
-    BeAssert(!converter._WantProvenanceInBim() && "Should not use syncinfo-based method of detecting previously converted views if we are using external source aspects");
-
     auto&   elements = converter.GetDgnDb().Elements();
     auto&   syncInfo = converter.GetSyncInfo();
 
     for (auto viewSyncInfo = iter.begin(); viewSyncInfo != iter.end(); ++viewSyncInfo)
         {
-        auto previouslyConvertedViewId = viewSyncInfo.GetId();
+        auto previouslyConvertedViewId = viewSyncInfo->GetViewId();
 
         if (m_viewsSeen.find(previouslyConvertedViewId) != m_viewsSeen.end())
             continue;
@@ -537,26 +517,9 @@ void ChangeDetector::_DetectDeletedViews(Converter& converter, SyncInfo::ViewIte
 //---------------+---------------+---------------+---------------+---------------+-------
 void ChangeDetector::_DetectDeletedViewsInFile(Converter& converter, DgnV8FileR v8File)
     {
-    if (converter._WantProvenanceInBim())
-        {
-        auto scope = converter.GetRepositoryLinkFromAppData(v8File);
-        auto iterator = SyncInfo::ViewDefinitionExternalSourceAspect::GetIteratorForScope(converter.GetDgnDb(), scope);
-        while (BE_SQLITE_ROW == iterator->Step())
-            {
-            auto previouslyConvertedViewId = iterator->GetValueId<DgnViewId>(0);
-
-            if (m_viewsSeen.find(previouslyConvertedViewId) != m_viewsSeen.end())
-                continue;
-        
-            converter.DeleteView(previouslyConvertedViewId, converter.GetSyncInfo());
-            }
-        }
-    else
-        {
-        SyncInfo::ViewIterator viewsInFile(converter.GetDgnDb(), "V8FileSyncInfoId=?");
-        viewsInFile.GetStatement()->BindInt(1, Converter::GetV8FileSyncInfoIdFromAppData(v8File).GetValue());
-        _DetectDeletedViews(converter, viewsInFile);
-        }
+    auto scope = converter.GetRepositoryLinkId(v8File);
+    auto iterator = SyncInfo::ViewDefinitionExternalSourceAspectIterator(converter.GetDgnDb(), scope);
+    _DetectDeletedViews(converter, iterator);
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

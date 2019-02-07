@@ -594,7 +594,7 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
 
     DgnSubCategoryId subCategoryId = params.GetSubCategoryId(); // see if the caller wants to specify an override SubCategoryId
     if (!subCategoryId.IsValid()) // if not, look up the SubCategoryId from V8 LevelId
-        subCategoryId = GetSyncInfo().GetSubCategory(v8Level, v8Model, is3d? SyncInfo::Level::Type::Spatial: SyncInfo::Level::Type::Drawing);
+        subCategoryId = GetSyncInfo().GetSubCategory(v8Level, v8Model, is3d? SyncInfo::LevelExternalSourceAspect::Type::Spatial: SyncInfo::LevelExternalSourceAspect::Type::Drawing);
     DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(GetDgnDb(), subCategoryId);
 
     params = Render::GeometryParams();
@@ -928,12 +928,6 @@ void ProcessSymbol(DgnV8Api::IDisplaySymbol& symbol, DgnV8ModelR model) {DgnV8Ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
     {
-    if (!_WantProvenanceInBim())
-        {
-        SyncInfo::GeomPart sigp;
-        return (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
-        }
-
     return SyncInfo::GeomPartExternalSourceAspect::GetAspectByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
     }
 
@@ -942,12 +936,6 @@ DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
     {
-    if (!_WantProvenanceInBim())
-        {
-        SyncInfo::GeomPart sigp;
-        return (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
-        }
-
     auto geomPart = m_dgndb->Elements().Get<DgnGeometryPart>(partId);
     if (!geomPart.IsValid())
         {
@@ -963,15 +951,6 @@ Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8StringCR partTag)
     {
-    if (!_WantProvenanceInBim())
-        {
-        SyncInfo::GeomPart siTag(partId, partTag);
-        auto rc = siTag.Insert(*m_dgndb);
-        if (BeSQLite::BE_SQLITE_DONE != rc)
-            return BSIERROR;
-        return BSISUCCESS;
-        }
-
     auto aspect = SyncInfo::GeomPartExternalSourceAspect::CreateAspect(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
     auto partElem = GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
     aspect.AddAspect(*partElem);
@@ -989,7 +968,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
         {
         Utf8String nameStr;
         nameStr.Assign(patternV8.cellName);
-        Utf8PrintfString partTag("PatternV8-%ld-%s-%lld", Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), nameStr.c_str(), patternV8.cellId);
+        Utf8PrintfString partTag("PatternV8-%lld-%s-%lld", Converter::GetRepositoryLinkIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()).GetValue(), nameStr.c_str(), patternV8.cellId);
         DgnGeometryPartId partId = QueryGeometryPartId(partTag.c_str());
 
         if (!partId.IsValid())
@@ -2540,10 +2519,10 @@ Utf8String GetPartTag(Bentley::ElementRefP instanceElRef, Utf8CP prefix, uint32_
 
     if (sequenceNo > 1)
         { // Note: partScale < 0.0 implies "mirrored" which means a different codeValue must be generated
-        return Utf8PrintfString(partScale < 0.0 ? "%s-%ld-M%lld-%d" : "%s-%ld-%lld-%d", prefix, Converter::GetV8FileSyncInfoIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()), instanceElRef->GetElementId(), sequenceNo-1);
+        return Utf8PrintfString(partScale < 0.0 ? "%s-%lld-M%lld-%d" : "%s-%lld-%lld-%d", prefix, Converter::GetRepositoryLinkIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()).GetValue(), instanceElRef->GetElementId(), sequenceNo-1);
         }
 
-    return Utf8PrintfString(partScale < 0.0 ? "%s-%ld-M%lld" : "%s-%ld-%lld", prefix, Converter::GetV8FileSyncInfoIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()), instanceElRef->GetElementId());
+    return Utf8PrintfString(partScale < 0.0 ? "%s-%lld-M%lld" : "%s-%lld-%lld", prefix, Converter::GetRepositoryLinkIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()).GetValue(), instanceElRef->GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2843,7 +2822,7 @@ void ApplySharedCellInstanceOverrides(DgnV8EhCR v8eh, Render::GeometryParamsR ge
 
         if (0 != v8Level && DgnV8Api::LEVEL_BYCELL != v8Level)
             {
-            DgnSubCategoryId subCategoryId = m_converter.GetSyncInfo().GetSubCategory(v8Level, m_v8mt.GetV8Model(), m_model.Is3d() ? SyncInfo::Level::Type::Spatial: SyncInfo::Level::Type::Drawing);
+            DgnSubCategoryId subCategoryId = m_converter.GetSyncInfo().GetSubCategory(v8Level, m_v8mt.GetV8Model(), m_model.Is3d() ? SyncInfo::LevelExternalSourceAspect::Type::Spatial: SyncInfo::LevelExternalSourceAspect::Type::Drawing);
             DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(m_converter.GetDgnDb(), subCategoryId);
 
             geomParams.SetCategoryId(categoryId, false); // <- Don't clear appearance overrides...
@@ -3393,7 +3372,7 @@ void LightWeightConverter::InitGeometryParams(Render::GeometryParams& params, Dg
 
     DgnSubCategoryId subCategoryId = params.GetSubCategoryId(); // see if the caller wants to specify an override SubCategoryId
     if (!subCategoryId.IsValid()) 
-        subCategoryId = GetSubCategory (v8Level,  is3d ? SyncInfo::Level::Type::Spatial : SyncInfo::Level::Type::Drawing);
+        subCategoryId = GetSubCategory (v8Level,  is3d ? SyncInfo::LevelExternalSourceAspect::Type::Spatial : SyncInfo::LevelExternalSourceAspect::Type::Drawing);
 
     DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(GetDgnDb(), subCategoryId);
 
@@ -4648,7 +4627,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                 if (0 != v8Level && DgnV8Api::LEVEL_BYCELL != v8Level)
                     {
-                    DgnSubCategoryId subCategoryId = m_converter.GetSubCategory(v8Level, m_model.Is3d() ? SyncInfo::Level::Type::Spatial : SyncInfo::Level::Type::Drawing);
+                    DgnSubCategoryId subCategoryId = m_converter.GetSubCategory(v8Level, m_model.Is3d() ? SyncInfo::LevelExternalSourceAspect::Type::Spatial : SyncInfo::LevelExternalSourceAspect::Type::Drawing);
                     DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(m_converter.GetDgnDb(), subCategoryId);
 
                     geomParams.SetCategoryId(categoryId, false); // <- Don't clear appearance overrides...
@@ -5286,7 +5265,7 @@ void LightWeightConverter::InitGeometryParams(Render::GeometryParams& params, Dg
 
     DgnSubCategoryId subCategoryId = params.GetSubCategoryId(); // see if the caller wants to specify an override SubCategoryId
     if (!subCategoryId.IsValid()) // if not, look up the SubCategoryId from V8 LevelId
-        subCategoryId = GetSubCategory(v8Level, v8Model, is3d ? SyncInfo::Level::Type::Spatial : SyncInfo::Level::Type::Drawing);
+        subCategoryId = GetSubCategory(v8Level, v8Model, is3d ? SyncInfo::LevelExternalSourceAspect::Type::Spatial : SyncInfo::LevelExternalSourceAspect::Type::Drawing);
 
     DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(GetDgnDb(), subCategoryId);
 

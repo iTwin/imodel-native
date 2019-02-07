@@ -231,9 +231,9 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     for (auto const& curr : m_modelsRequiringRealityTiles)
         {
         auto model = m_dgndb->Models().GetModel(curr.first);
-        bpair<Utf8String, SyncInfo::V8FileSyncInfoId> tpair = curr.second;
+        bpair<Utf8String, RepositoryLinkId> tpair = curr.second;
         Utf8String fileName = tpair.first;
-        SyncInfo::V8FileSyncInfoId fileId = tpair.second;
+        RepositoryLinkId fileId = tpair.second;
         auto geometricModel = model->ToGeometricModel();
 
         if (nullptr == geometricModel)

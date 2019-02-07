@@ -43,8 +43,8 @@ typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
-
-#define XTRN_SRC_ASPCT_SCHEMA(name)             BIS_ECSCHEMA_NAME "." name
+#define XTRN_SRC_ASPCT_ECSCHEMA_NAME            "BisCore"
+#define XTRN_SRC_ASPCT_SCHEMA(name)             XTRN_SRC_ASPCT_ECSCHEMA_NAME "." name
 #define XTRN_SRC_ASPCT_CLASS                    "ExternalSourceAspect"
 #define XTRN_SRC_ASPCT_FULLCLASSNAME            XTRN_SRC_ASPCT_SCHEMA(XTRN_SRC_ASPCT_CLASS)
 #define XTRN_SRC_ASPCT_Scope                    "Scope"
@@ -384,10 +384,10 @@ BentleyStatus SampleBridge::_DetectDeletedDocuments()
         {
         Utf8String docId = documentInSyncInfo.GetSourceIdentity().GetId();
 
-        if (IsDocumentAssignedToJob(docId))   // This is how to check if the document still exists.
-            continue;                         //  If it does, do nothing.
+        if (IsDocumentInRegistry(docId))    // If the document is in the document registry at all, that means that a) the document exists, and b) the job scheduler assigned the document to this bridge.
+            continue;                       // So, if the doc exists and is still assigned to me, then don't delete it.
 
-        // Infer that that document was deleted. 
+        // Infer that that document was deleted (or possibly reassigned)
 
         // Delete related elements and models in the briefcase
         ...
@@ -666,9 +666,9 @@ struct iModelBridge
         Utf8String GetProjectGuid() const { return m_projectGuid; }
         void SetProjectGuid(Utf8StringCR projectGuid) { m_projectGuid = projectGuid; }
 
-	    //! Check if a document is assigned to this job or not.
+	    //! Check if a document is in the document registry
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
-	    IMODEL_BRIDGE_EXPORT bool IsDocumentAssignedToJob(Utf8StringCR docId) const;
+	    IMODEL_BRIDGE_EXPORT bool IsDocumentInRegistry(Utf8StringCR docId) const;
 
 	    //! Check if the specified file is assigned to this bridge or not.
 	    IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
@@ -928,9 +928,9 @@ public:
     //! @name Document Properties Helper Functions
     //! @{
 
-    //! Check if a document is assigned to this job or not.
+    //! Check if this document is in the document registry
     //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
-    bool IsDocumentAssignedToJob(Utf8StringCR docId) const {return GetParamsCR().IsDocumentAssignedToJob(docId);}
+    bool IsDocumentInRegistry(Utf8StringCR docId) const {return GetParamsCR().IsDocumentInRegistry(docId);}
 
     //! Check if the specified file is assigned to this bridge or not.
     bool IsFileAssignedToBridge(BeFileNameCR fn) const {return GetParamsCR().IsFileAssignedToBridge(fn);}

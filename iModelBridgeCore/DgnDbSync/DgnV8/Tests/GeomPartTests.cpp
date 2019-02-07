@@ -35,7 +35,7 @@ int GeomPartTests::GetGeomPartAspectCount(DgnDbR db)
         return 0;
         }
     auto sel = db.GetPreparedECSqlStatement("SELECT COUNT(*) from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind=?)");
-    sel->BindText(1, SyncInfo::ExternalSourceAspect::KindToString(SyncInfo::ExternalSourceAspect::Kind::GeomPart), EC::IECSqlBinder::MakeCopy::No);
+    sel->BindText(1, SyncInfo::ExternalSourceAspect::Kind::GeomPart, EC::IECSqlBinder::MakeCopy::No);
     sel->Step();
     return sel->GetValueInt(0);
     }

@@ -305,7 +305,7 @@ StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8
                 }
 
             auto    refTrans = converter.ComputeAttachmentTransform(v8mm.GetTransform(), *classifierModelRef->AsDgnAttachmentCP());
-            classifierMM = converter.FindModelForDgnV8Model(*classifierModelRef->GetDgnModelP(), refTrans);
+            classifierMM = converter.FindResolvedModelMapping(*classifierModelRef->GetDgnModelP(), refTrans);
 
             if (!classifierMM.IsValid())
                 {
@@ -325,7 +325,7 @@ StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8
                 BeAssert (false && "unable to find classifier level");
                 break;
                 }
-            classifierCategoryId = converter.GetSyncInfo().FindCategory(levelHandle.GetLevelId(), *classifierMM.GetV8Model().GetDgnFileP(), SyncInfo::Level::Type::Spatial);
+            classifierCategoryId = converter.GetSyncInfo().FindCategory(levelHandle.GetLevelId(), *classifierMM.GetV8Model().GetDgnFileP(), SyncInfo::LevelExternalSourceAspect::Type::Spatial);
             }
         
         classifiers.push_back(ModelSpatialClassifier(classifiedModelId, classifierCategoryId, classifierElementId, classifierFlags, Utf8String(wName.c_str()), expandDistance * converter.ComputeUnitsScaleFactor(*v8el.GetModelRef()->GetDgnModelP()), activeLinkId == classifierXai.GetId()));
@@ -407,16 +407,14 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
             modelSelector.AddModel(modelId);
             modelSelector.Update();
             }
-        SyncInfo::ElementProvenance prov = SyncInfo::ElementProvenance(v8el, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
-        SyncInfo::V8ElementMapping mapping = SyncInfo::V8ElementMapping(DgnElementId(modelId.GetValue()), v8el, v8mm.GetV8ModelSyncInfoId(), prov);
-        converter.GetSyncInfo().InsertElement(mapping);
-        converter._GetChangeDetector()._OnElementSeen(converter, mapping.GetElementId());
+        DgnElementId modeledElementId(modelId.GetValue());
+        converter.WriteV8ElementExternalSourceAspect(modeledElementId, v8el, v8mm.GetDgnModel().GetModelId()); // NB: last arg (scope) must be the same model as is passed in to _IsElementChanged
         }
     else
         modelId = DgnModelId(existingId.GetValue());
 
     // Schedule reality model tileset creation.
-    converter.AddModelRequiringRealityTiles(modelId, rootUrl, Converter::GetV8FileSyncInfoIdFromAppData(*v8el.GetDgnFileP()));
+    converter.AddModelRequiringRealityTiles(modelId, rootUrl, converter.GetRepositoryLinkId(*v8el.GetDgnFileP()));
 
     return Result::SkipElement;
     }

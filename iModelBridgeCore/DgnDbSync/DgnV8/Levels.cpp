@@ -110,7 +110,7 @@ void Converter::ComputeSubCategoryAppearanceFromLevel(DgnSubCategory::Appearance
     //  WIP_V10_LEVELS -- Do we care about whether there is a line style scale?
     double unitsScale = 0;
     bool foundStyle = false;
-    auto lineStyleId = m_syncInfo.FindLineStyle(unitsScale, foundStyle, SyncInfo::V8StyleId(GetV8FileSyncInfoIdFromAppData(*level->GetByLevelLineStyle().GetDefinitionFile()), (uint32_t) level->GetByLevelLineStyle().GetStyle()));
+    auto lineStyleId = m_syncInfo.FindLineStyle(unitsScale, foundStyle, SyncInfo::V8StyleId(GetRepositoryLinkId(*level->GetByLevelLineStyle().GetDefinitionFile()), (uint32_t) level->GetByLevelLineStyle().GetStyle()));
 
     appear.SetInvisible(false); // It never makes sense to define a SubCategory that is invisible. If a level is off in a view, then we will turn off this SubCategory in that view.
     appear.SetDisplayPriority(level->GetDisplayPriority());
@@ -130,12 +130,10 @@ void Converter::ComputeSubCategoryAppearanceFromLevel(DgnSubCategory::Appearance
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId Converter::FindFirstModelInSyncInfo(DgnV8ModelCR v8Model) const
     {
-    SyncInfo::ModelIterator it(*m_dgndb, "V8FileSyncInfoId=? AND V8Id=?");
-    it.GetStatement()->BindInt(1, GetV8FileSyncInfoIdFromAppData(*v8Model.GetDgnFileP()).GetValue());
-    it.GetStatement()->BindInt(2, v8Model.GetModelId());
+    SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id it(*GetRepositoryLinkElement(*v8Model.GetDgnFileP()), v8Model);
     auto entry=it.begin();
     if (entry != it.end())
-        return entry.GetModelId();
+        return entry->GetModelId();
     return DgnModelId();
     }
 
@@ -272,19 +270,13 @@ DgnCategoryId Converter::ConvertLevelToCategory(DgnV8Api::LevelHandle const& lev
 
         if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
             LOG_LEVEL.tracev("inserted level [%s] (%d) -> [%s] (%lld)%s", Utf8String(level.GetName()).c_str(), level.GetLevelId(), dbCategoryName.c_str(), dbCategoryId.GetValue(), is3d? " (Spatial)":" (Drawing)");
-
-        /*
-        if (_WantProvenanceInBim())
-            {
-            auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(level, v8File.GetDictionaryModel(), *this);
-            auto defaultSubCategory = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(DgnCategory::GetDefaultSubCategoryId(dbCategoryId));
-            aspect.AddAspect(*defaultSubCategory);
-            defaultSubCategory->Update();
-            }
-            */
         }
 
+    // Even if this is the second time we've seen a level by this name and we decide above not to insert a new copy,
+    // we still create a LevelExternalSourceAspect for this source. That will help us, later, to detect display differences
+    // and to create source-specific SubCategories if necessary. See ConvertLevelMask where we call GetSyncInfo().FindSubCategory -- that must succeed.
     m_syncInfo.InsertLevel(DgnCategory::GetDefaultSubCategoryId(dbCategoryId), v8File.GetDictionaryModel(), level);
+
     return dbCategoryId;
     }
 
@@ -303,7 +295,7 @@ void Converter::ConvertAllSpatialLevels(DgnV8FileR v8file)
         {
         if (IsUpdating())
             {
-            DgnCategoryId categoryId = GetSyncInfo().FindCategory(level.GetLevelId(), v8file, SyncInfo::Level::Type::Spatial);
+            DgnCategoryId categoryId = GetSyncInfo().FindCategory(level.GetLevelId(), v8file, SyncInfo::LevelExternalSourceAspect::Type::Spatial);
             if (categoryId.IsValid())
                 {
                 if (IsSpatialCategory(categoryId)) // go with previously converted level ... as long as it's a spatial level
@@ -320,16 +312,6 @@ void Converter::ConvertAllSpatialLevels(DgnV8FileR v8file)
         if (IsDefaultLevel(level))
             {
             GetSyncInfo().InsertLevel(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedCategory()), v8file.GetDictionaryModel(), level);
-
-            /*
-            if (_WantProvenanceInBim())
-                {
-                auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(level, v8file.GetDictionaryModel(), *this);
-                auto defaultSubCategory = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedCategory()));
-                aspect.AddAspect(*defaultSubCategory);
-                defaultSubCategory->Update();
-                }
-                */
 
             if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
                 LOG_LEVEL.tracev("merged level [%s] (%d) -> %d", Utf8String(level.GetName()).c_str(), level.GetLevelId(), GetUncategorizedCategory().GetValue());
@@ -437,7 +419,7 @@ void Converter::CheckNoLevelChange(DgnV8Api::LevelHandle const& v8Level, DgnCate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ConvertAttachmentLevelMask(ViewDefinitionR theView, DgnV8ViewInfoCR viewInfo, DgnAttachmentCR v8Attachment, SyncInfo::Level::Type ltype)
+void Converter::ConvertAttachmentLevelMask(ViewDefinitionR theView, DgnV8ViewInfoCR viewInfo, DgnAttachmentCR v8Attachment, SyncInfo::LevelExternalSourceAspect::Type ltype)
     {
     DgnV8FileP v8ReferenceFile = v8Attachment.GetDgnFileP();
     auto& v8Model = v8ReferenceFile->GetDictionaryModel();
@@ -500,7 +482,7 @@ void Converter::ConvertLevelMask(ViewDefinitionR theView, DgnV8ViewInfoCR viewIn
     auto& categories = theView.GetCategorySelector();
     
     bool handleInconsistencies = theView.IsSpatialView(); // only spatial views process references and so only spatial views can have attachments disagreeing about level symbology or visibility
-    auto levelType = theView.IsSpatialView()? SyncInfo::Level::Type::Spatial: SyncInfo::Level::Type::Drawing;
+    auto levelType = theView.IsSpatialView()? SyncInfo::LevelExternalSourceAspect::Type::Spatial: SyncInfo::LevelExternalSourceAspect::Type::Drawing;
 
     //  Start by adding all categories to the view that are on in the V8 root model level mask.
     Bentley::BitMaskCP v8LevelMask = nullptr;
@@ -641,7 +623,7 @@ DgnCategoryId Converter::ConvertDrawingLevel(DgnV8FileR v8file, DgnV8Api::LevelI
     if (!level.IsValid())
         return GetUncategorizedDrawingCategory();
 
-    DgnCategoryId categoryId = m_syncInfo.FindCategory(levelId, v8file, SyncInfo::Level::Type::Drawing);
+    DgnCategoryId categoryId = m_syncInfo.FindCategory(levelId, v8file, SyncInfo::LevelExternalSourceAspect::Type::Drawing);
     if (categoryId.IsValid())
         {
         if (IsDrawingCategory(categoryId)) // go with previously converted level ... as long as it's a drawing level
@@ -655,16 +637,6 @@ DgnCategoryId Converter::ConvertDrawingLevel(DgnV8FileR v8file, DgnV8Api::LevelI
     if (IsDefaultLevel(level))
         {
         m_syncInfo.InsertLevel(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedDrawingCategory()), v8file.GetDictionaryModel(), level);
-
-        /*
-        if (_WantProvenanceInBim())
-            {
-            auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(level, v8file.GetDictionaryModel(), *this);
-            auto defaultSubCategory = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedDrawingCategory()));
-            aspect.AddAspect(*defaultSubCategory);
-            defaultSubCategory->Update();
-            }
-            */
 
         if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
             LOG_LEVEL.tracev("merged level [%s] (%d) -> %d", Utf8String(level.GetName()).c_str(), level.GetLevelId(), GetUncategorizedDrawingCategory().GetValue());

@@ -294,10 +294,29 @@ struct iModelExternalSourceAspect
         std::transform(str.begin(), str.end(), bytes, [](Utf8Char ch) {return isdigit(ch) ? ch - '0' : static_cast <char> (tolower(ch)) - 'a' + 10;});
         }
 
-    // Generate a string representation of a double, without losing any precision
+    //! Generate a string representation of a double, without losing any precision
     static void DoubleToString(Utf8StringR str, double v) {str.Sprintf("%.17g", v);}
-    // Reconstruct a double by parsing a string representation
+    //! Reconstruct a double by parsing a string representation
     static double DoubleFromString(Utf8CP str) {return ::atof(str);}
+
+    //! Useful when writing uint64_t to JSON 
+    static void UInt64ToString(Utf8StringR str, uint64_t v)
+        {
+        str.Sprintf("%llu", v);
+        }
+    static Utf8String UInt64ToString(uint64_t v)
+        {
+        Utf8String s;
+        UInt64ToString(s, v);
+        return s;
+        }
+
+    //! Useful when deserializing uint64_t previously written as a string
+    static uint64_t UInt64FromString(Utf8CP str)
+        {
+        uint64_t v;
+        return (1 == sscanf(str, "%llu", &v))? v: 0;
+        }
 
     struct SourceState
         {
@@ -313,8 +332,14 @@ struct iModelExternalSourceAspect
     iModelExternalSourceAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
  
     bool IsValid() const {return m_instance.IsValid();}
+    void Invalidate() {m_instance = nullptr;}
 
+    bool operator!=(iModelExternalSourceAspect const& rhs) const {return m_instance == rhs.m_instance;}
+    bool operator==(iModelExternalSourceAspect const& rhs) const {return m_instance != rhs.m_instance;}
+
+    BeSQLite::EC::ECInstanceId GetECInstanceId() const { return BeSQLite::EC::ECInstanceId(BeSQLite::EC::ECInstanceId::FromString(m_instance->GetInstanceId().c_str()).GetValueUnchecked()); }
     IMODEL_BRIDGE_EXPORT Utf8String GetKind() const;
+    IMODEL_BRIDGE_EXPORT DgnElementId GetElementId() const;
     IMODEL_BRIDGE_EXPORT DgnElementId GetScope() const;
     IMODEL_BRIDGE_EXPORT Utf8String GetIdentifier() const;
     IMODEL_BRIDGE_EXPORT SourceState GetSourceState() const;
@@ -332,7 +357,7 @@ struct iModelExternalSourceAspect
     //! Get an existing ExternalSourceAspect from the specified element in order to view the aspect
     IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspect(DgnElementCR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
     //! Get an existing ExternalSourceAspect from the specified element in order to update the aspect (and then the element)
-    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspect(DgnElementR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
+    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspectForEdit(DgnElementR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
 
     //! Look up an aspect by Scope, Kind, and SourceId
     IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspectBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
@@ -365,6 +390,123 @@ struct iModelExternalSourceAspect
     IMODEL_BRIDGE_EXPORT static Utf8String GetDumpHeaders(bool includeProperties, bool includeSourceState);
     IMODEL_BRIDGE_EXPORT static void Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY, bool includeProperties = true, bool includeSourceState = false);
     };
+
+//=======================================================================================
+// Identifies an iModelExternalSourceAspect on an element.
+// @bsiclass                                                    
+//=======================================================================================
+#ifdef COMMENT_OUT_NOT_USED
+struct iModelExternalSourceAspectID
+    {
+    DgnElementId m_elementId;
+    BeSQLite::EC::ECInstanceId m_aspectId;
+
+    iModelExternalSourceAspectID()  {}
+    iModelExternalSourceAspectID(DgnElementId eid, BeSQLite::EC::ECInstanceId aid) : m_elementId(eid), m_aspectId(aid) {BeAssert(m_elementId.IsValid()); BeAssert(m_aspectId.IsValid());}
+    iModelExternalSourceAspectID(iModelExternalSourceAspect const& aspect) : m_elementId(aspect.GetElementId()), m_aspectId(aspect.GetECInstanceId()) {BeAssert(m_elementId.IsValid()); BeAssert(m_aspectId.IsValid());}
+
+    bool IsValid() const {return m_elementId.IsValid();}
+
+    bool operator==(iModelExternalSourceAspectID const& rhs) const {return m_elementId == rhs.m_elementId && m_aspectId == rhs.m_aspectId;}
+    bool operator!=(iModelExternalSourceAspectID const& rhs) const {return !(*this == rhs);}
+    bool operator <(iModelExternalSourceAspectID const& rhs) const {if (m_elementId.GetValue() < rhs.m_elementId.GetValue()) return true; if (m_elementId.GetValue() > rhs.m_elementId.GetValue()) return false; return m_aspectId < rhs.m_aspectId;}
+    };
+#endif
+
+//=======================================================================================
+//! Helper class for stepping through all ExternalSourceAspects in a specified Scope
+//! with optional WHERE clause. 
+//! NB: It is generally unsafe to use positional parameter binding. Use named parameters
+//! and call GetParameterIndex instead.
+// @bsiclass                                                    
+//=======================================================================================
+template<typename T>
+struct ExternalSourceAspectIterator : NonCopyableClass
+{
+    struct Entry;
+    friend struct Entry;
+
+protected:
+    DgnDbR m_db;
+    BeSQLite::EC::CachedECSqlStatementPtr m_stmt;
+    mutable iModelExternalSourceAspect m_aspect;
+
+    BeSQLite::DbResult Step() const
+        {
+        if (!m_stmt.IsValid())
+            return BeSQLite::BE_SQLITE_DONE;
+
+        auto rc = m_stmt->Step();
+        if (BeSQLite::BE_SQLITE_ROW !=  rc)
+            {
+            m_aspect.Invalidate();
+            return rc;
+            }
+
+        auto el = m_db.Elements().GetElement(m_stmt->GetValueId<DgnElementId>(1));
+        if (!el.IsValid())
+            {
+            BeAssert(false);
+            m_aspect.Invalidate();
+            return BeSQLite::BE_SQLITE_ERROR;
+            }
+        m_aspect = iModelExternalSourceAspect::GetAspect(*el, m_stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0));
+        return BeSQLite::BE_SQLITE_ROW;
+        }
+
+public:
+    ExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP kind, Utf8StringCR wh) : m_db(db)
+        {
+        Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind=?)");
+        if (!wh.empty())
+            ecsql.append(" AND (").append(wh).append(" )");
+        ecsql.append(" )");
+
+        m_stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+
+        if (!m_stmt.IsValid())
+            return;
+
+        m_stmt->BindId(1, scope);
+        m_stmt->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        }
+
+    //! Move ctor. ExternalSourceAspectIterator are not copyable, but they are movable.
+    ExternalSourceAspectIterator(ExternalSourceAspectIterator&& rhs) : m_stmt(std::move(rhs.m_stmt)), m_aspect(rhs.m_aspect), m_db(rhs.m_db) {}
+
+    struct Entry : std::iterator<std::input_iterator_tag, T const>
+    {
+        friend struct ExternalSourceAspectIterator;
+    protected:
+        ExternalSourceAspectIterator const* m_it;
+        Entry(ExternalSourceAspectIterator const* it) : m_it(it) {Step();}
+        void Step()
+            {
+            if (m_it) 
+                {
+                if (BeSQLite::BE_SQLITE_ROW != m_it->Step()) 
+                    m_it = nullptr;
+                }
+            }
+    public:
+        Entry& operator++() {Step(); return *this;}
+        bool operator!=(Entry const& rhs) const {return !(*this == rhs);}
+        bool operator==(Entry const& rhs) const {return m_it == rhs.m_it;}
+        T const& operator*() const {return (T const&)(m_it->m_aspect);}
+        T const* operator->() const {return (T const*)(&m_it->m_aspect);}
+    };
+
+    typedef Entry const_iterator;
+    typedef const_iterator iterator;
+    const_iterator begin() const {return Entry(this);}
+    const_iterator end() const {return Entry(nullptr);}
+
+    //! Get the prepared statement for this iterator. This can be used to bind parameters before calling /c begin.
+    BeSQLite::EC::CachedECSqlStatement* GetStatement() {return m_stmt.get();}
+
+    //! Get the parameter index of the specified named parameter. Note: you should not include the parameter prefix character in the name of the parameter.
+    int GetParameterIndex(Utf8CP pname) {BeAssert((*pname != ':') && (*pname != '@') && (*pname != '$')); auto i = GetStatement()->GetParameterIndex(pname); BeAssert(i != -1); return i;}
+};
 
 struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 {
