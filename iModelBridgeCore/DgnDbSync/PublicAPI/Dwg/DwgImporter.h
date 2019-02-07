@@ -749,9 +749,9 @@ public:
         double  GetBasePartScale () const { return m_basePartScale; }
         void    SetBasePartScale (double scale) { m_basePartScale = scale; }
         bool    IsMirrored () const { return m_basePartScale < -1.0e-5; }
-        bool    IsValid () const { return m_keyValue.m_buffer[0] != 0; }
+        DWG_EXPORT bool IsValid () const;
         //! The left-hand operand of the key
-        bool operator < (SharedPartKey const& rho) const;
+        DWG_EXPORT bool operator < (SharedPartKey const& rho) const;
         };  // SharedPartKey
     typedef bpair<SharedPartKey, T_SharedPartList>      T_BlockPartsEntry;
     typedef bmap<SharedPartKey, T_SharedPartList>       T_BlockPartsMap;

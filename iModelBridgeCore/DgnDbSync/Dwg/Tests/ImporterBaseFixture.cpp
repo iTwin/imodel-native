@@ -107,6 +107,8 @@ void    ImporterTestBaseFixture::DoConvert (DwgImporter* importer, BentleyApi::B
     // start a new import job
     ASSERT_EQ(DwgImporter::ImportJobCreateStatus::Success, importer->InitializeJob());
 
+    importer->MakeDefinitionChanges (importer->GetImportJob().GetSubject());
+
     // ready to import DWG into iModel:
     status = importer->Process ();
     ASSERT_SUCCESS(status);

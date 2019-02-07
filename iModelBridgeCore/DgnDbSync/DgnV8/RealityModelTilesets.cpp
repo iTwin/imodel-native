@@ -260,9 +260,9 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
                 if (existingEtag.Equals(currentEtag))
                     continue;
                 }
-            else if (currentLastModifiedTime == existingLastModifiedTime && currentFileSize == existingFileSize)
+            else if (currentLastModifiedTime == existingLastModifiedTime && currentFileSize == existingFileSize && !Utf8String::IsNullOrEmpty(rdsId.c_str()))
                 continue;
-            isUpdate = true;
+            isUpdate = !Utf8String::IsNullOrEmpty(rdsId.c_str());
             }
 
         // Only get to this point if it is a new image or if it is an existing image that has been modified
