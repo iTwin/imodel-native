@@ -10,17 +10,17 @@
 
     <Part Name="LicensingNativeLib" BentleyBuildMakeFile="Licensing.mke" >
         <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" /> 
+        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
         <!--<SubPart PartName="NativeClient.Docs"/>-->
-        
+
         <Bindings>
             <Libs>Delivery/$(libprefix)Licensing$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)Licensing$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-	
+
     <Part Name="Licensing" >
         <SubPart PartName="Licensing-Winx64-Only" />
         <SubPart PartName="Licensing-iOSARMActive-Only" />
@@ -49,39 +49,44 @@
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Licensing" SubPartDirectory="UnitTests/Licensing">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
-	
+
     <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="Licensing" />
-        
+
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
     </Part>
-	
+
 	<Product Name="Licensing-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="UnitTests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
-	
+
 	<Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingTest -dTEST_COLLECTION_PRODUCT=Licensing-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
         <SubProduct ProductName="Licensing-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-        
+
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/LicensingTest/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/LicensingTest/Assets" />
         </Bindings>
     </Part>
-	
+
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-Gtest -dGTEST_NAME=LicensingTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Licensing-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-        
+        <SubPart PartName="UnitTestL10n"/>
+
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/LicensingTest.log</Files>
         </Bindings>
+    </Part>
+
+    <Part Name="UnitTestL10n" BMakeFile="CopyTestingL10nDb.mke">
+        <SubProduct ProductName="Licensing-Gtest" />
     </Part>
 
     <!--<Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke" OnlyPlatforms="x64">
@@ -93,7 +98,7 @@
             </Files>
         </Bindings>
     </Part>-->
-    
+
 	<Product Name="Licensing-Gtest" >
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
@@ -114,5 +119,5 @@
         <ProductDirectory Name="VendorNotices" Deliver="false"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="Static"/>
     </ProductDirectoryList>
-    
+
 </BuildContext>
