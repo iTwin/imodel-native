@@ -256,7 +256,7 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
         _OnElementConverted(existingId, &v8eh, Converter::ChangeOperation::Update);
         }
 
-    WriteV8ElementExternalSourceAspect(pPointCloudModel->GetModeledElementId(), v8eh, GetDgnDb().GetRealityDataSourcesModel()->GetModelId());
+    WriteV8ElementExternalSourceAspect(pPointCloudModel->GetModeledElementId(), v8eh, v8mm.GetDgnModel().GetModelId()); // NB: last arg (scope) must be the same model as is passed in to _IsElementChanged
 
     // Schedule reality model tileset creation.
     AddModelRequiringRealityTiles(pPointCloudModel->GetModelId(), filename.GetNameUtf8(), GetRepositoryLinkId(*v8eh.GetDgnFileP()));

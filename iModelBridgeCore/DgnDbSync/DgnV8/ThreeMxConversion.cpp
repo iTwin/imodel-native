@@ -408,7 +408,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
             modelSelector.Update();
             }
         DgnElementId modeledElementId(modelId.GetValue());
-        converter.WriteV8ElementExternalSourceAspect(modeledElementId, v8el, db.GetRealityDataSourcesModel()->GetModelId());
+        converter.WriteV8ElementExternalSourceAspect(modeledElementId, v8el, v8mm.GetDgnModel().GetModelId()); // NB: last arg (scope) must be the same model as is passed in to _IsElementChanged
         }
     else
         modelId = DgnModelId(existingId.GetValue());

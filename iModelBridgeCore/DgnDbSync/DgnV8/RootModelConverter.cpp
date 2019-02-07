@@ -566,6 +566,11 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
 
     GetRepositoryLinkId(*GetRootV8File());
 
+    // ***
+    // ***  See Job Subject XSA.jpg for a diagram of how the MasterModel, BridgeJob, Hierarchy Subject hierarchy works,
+    // ***  how PhysicalPartitions are plugged in, and how ExternalSourceAspects (aka XSAs) create new relationships.
+    // ***
+
     // Bootstrap the source master model subject element. (Note: another bridge might have created it already.)
     auto sourceMasterModelSubject = FindSourceMasterModelSubject(*GetRootModelP());
     if (!sourceMasterModelSubject.IsValid())
@@ -594,9 +599,12 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     if (FindSoleJobSubjectForSourceMasterModel(*sourceMasterModelSubject).IsValid())
         return ImportJobCreateStatus::FailedExistingRoot;
 
-    SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id modelIt(*GetRepositoryLinkElement(*GetRootV8File()), *GetRootModelP());
-    if (modelIt.begin() != modelIt.end())
-        return ImportJobCreateStatus::FailedExistingNonRootModel;
+    if (IsFileAssignedToBridge(*GetRootV8File()))   // If this joblet is supposed to convert this master model, then we must assert that it wasn't already converted by some other joblet
+        {                                           // (On the other hand, this joblet may only be traversing through this master model in order to find some reference file to convert.)
+        SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id modelIt(*GetRepositoryLinkElement(*GetRootV8File()), *GetRootModelP());
+        if (modelIt.begin() != modelIt.end())
+            return ImportJobCreateStatus::FailedExistingNonRootModel;
+        }
 
     // If we are creating a JobSubject, then we know that we are not updating the results of a previous run of this joblet
     _SetChangeDetector(false);
@@ -612,8 +620,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
         v8JobProps["BridgeVersion"] = 1;//TODO: Move it to #define
         v8JobProps["ConverterType"] = (int)jtype;
         JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
-        JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity(), JobSubjectUtils::WhichTransform::Editable);
-        JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity(), JobSubjectUtils::WhichTransform::SavedCopy);
+        JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());
         
         jobSubject = ed->InsertT<Subject>();
         }
@@ -666,6 +673,8 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr SpatialConverterBase::FindSourceMasterModelSubject(DgnV8ModelCR v8Model)
     {
+    // *** See Job Subject XSA.jpg
+
     auto repositoryLinkId = GetRepositoryLinkId(*v8Model.GetDgnFileP());
         
     // Look up the SourceMasterModel Subject
@@ -701,6 +710,8 @@ SubjectCPtr SpatialConverterBase::FindSourceMasterModelSubject(DgnV8ModelCR v8Mo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedImportJob SpatialConverterBase::FindSoleJobSubjectForSourceMasterModel(SubjectCR masterModelSubject)
     {
+    // *** See Job Subject XSA.jpg
+
     // Each V8-based bridge is a child of the masterModelSubject. Find the one with the correct name. There will only be one.
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE (Parent.Id=? AND json_extract(JsonProperties, '$.Subject.Job.Bridge') = ?)");
     stmt->BindId(1, masterModelSubject.GetElementId());

@@ -270,19 +270,13 @@ DgnCategoryId Converter::ConvertLevelToCategory(DgnV8Api::LevelHandle const& lev
 
         if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
             LOG_LEVEL.tracev("inserted level [%s] (%d) -> [%s] (%lld)%s", Utf8String(level.GetName()).c_str(), level.GetLevelId(), dbCategoryName.c_str(), dbCategoryId.GetValue(), is3d? " (Spatial)":" (Drawing)");
-
-        /*
-        if (_WantProvenanceInBim())
-            {
-            auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(level, v8File.GetDictionaryModel(), *this);
-            auto defaultSubCategory = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(DgnCategory::GetDefaultSubCategoryId(dbCategoryId));
-            aspect.AddAspect(*defaultSubCategory);
-            defaultSubCategory->Update();
-            }
-            */
         }
 
+    // Even if this is the second time we've seen a level by this name and we decide above not to insert a new copy,
+    // we still create a LevelExternalSourceAspect for this source. That will help us, later, to detect display differences
+    // and to create source-specific SubCategories if necessary. See ConvertLevelMask where we call GetSyncInfo().FindSubCategory -- that must succeed.
     m_syncInfo.InsertLevel(DgnCategory::GetDefaultSubCategoryId(dbCategoryId), v8File.GetDictionaryModel(), level);
+
     return dbCategoryId;
     }
 
@@ -318,16 +312,6 @@ void Converter::ConvertAllSpatialLevels(DgnV8FileR v8file)
         if (IsDefaultLevel(level))
             {
             GetSyncInfo().InsertLevel(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedCategory()), v8file.GetDictionaryModel(), level);
-
-            /*
-            if (_WantProvenanceInBim())
-                {
-                auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(level, v8file.GetDictionaryModel(), *this);
-                auto defaultSubCategory = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedCategory()));
-                aspect.AddAspect(*defaultSubCategory);
-                defaultSubCategory->Update();
-                }
-                */
 
             if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
                 LOG_LEVEL.tracev("merged level [%s] (%d) -> %d", Utf8String(level.GetName()).c_str(), level.GetLevelId(), GetUncategorizedCategory().GetValue());
@@ -653,16 +637,6 @@ DgnCategoryId Converter::ConvertDrawingLevel(DgnV8FileR v8file, DgnV8Api::LevelI
     if (IsDefaultLevel(level))
         {
         m_syncInfo.InsertLevel(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedDrawingCategory()), v8file.GetDictionaryModel(), level);
-
-        /*
-        if (_WantProvenanceInBim())
-            {
-            auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(level, v8file.GetDictionaryModel(), *this);
-            auto defaultSubCategory = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedDrawingCategory()));
-            aspect.AddAspect(*defaultSubCategory);
-            defaultSubCategory->Update();
-            }
-            */
 
         if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
             LOG_LEVEL.tracev("merged level [%s] (%d) -> %d", Utf8String(level.GetName()).c_str(), level.GetLevelId(), GetUncategorizedDrawingCategory().GetValue());

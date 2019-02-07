@@ -868,12 +868,9 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         {
         if (!view->EqualState(*existingDef) || view->GetName() != existingDef->GetName())
             {
-            if (_WantProvenanceInBim())
-                {
-                auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectForEdit(*view);
-                if (aspect.IsValid())
-                    aspect.Update(viewInfo, defaultName.c_str());
-                }
+            auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectForEdit(*view);
+            if (aspect.IsValid())
+                aspect.Update(viewInfo, defaultName.c_str());
 
             if (!view->Update().IsValid())
                 {

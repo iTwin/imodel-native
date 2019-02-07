@@ -2134,10 +2134,11 @@ SyncInfo::V8ElementExternalSourceAspect  Converter::AddOrUpdateV8ElementExternal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementExternalSourceAspect Converter::WriteV8ElementExternalSourceAspect(DgnElementId bimElementId, DgnV8EhCR v8eh, DgnModelId scope, Utf8StringCR sourceIdPath, Utf8StringCR propsJson)
+SyncInfo::V8ElementExternalSourceAspect Converter::WriteV8ElementExternalSourceAspect(DgnElementId bimElementId, DgnV8EhCR v8eh, DgnModelId scope, Utf8StringCR sourceIdPathIn, Utf8StringCR propsJson)
     {
     auto el = GetDgnDb().Elements().GetElement(bimElementId)->CopyForEdit();
     SyncInfo::ElementProvenance newProv(v8eh, GetSyncInfo(), GetCurrentIdPolicy());
+    Utf8String sourceIdPath = !sourceIdPathIn.empty()? sourceIdPathIn: SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(v8eh);
     SyncInfo::V8ElementExternalSourceAspectData elprov(scope, sourceIdPath, newProv, propsJson);
     auto aspect = AddOrUpdateV8ElementExternalSourceAspect(*el, elprov);
     el->Update();
@@ -2470,7 +2471,7 @@ DgnV8Api::FindInstancesScopePtr Converter::CreateFindInstancesScope(DgnV8EhCR v8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::RecordConversionResultsInSyncInfo(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, 
+void Converter::AnnounceConversionResults(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, 
                                                   IChangeDetector::SearchResults const& updatePlan, bool isParentElement)
     {
     if (!results.m_element.IsValid() || !results.m_element->GetElementId().IsValid())
@@ -2502,7 +2503,7 @@ void Converter::RecordConversionResultsInSyncInfo(ElementConversionResults& resu
         }
 
     for (ElementConversionResults& child : results.m_childElements)
-        RecordConversionResultsInSyncInfo(child, v8eh, v8mm, updatePlan, false);
+        AnnounceConversionResults(child, v8eh, v8mm, updatePlan, false);
 
     ChangeOperation changeOperation = (IChangeDetector::ChangeType::Update == updatePlan.m_changeType)? 
                                         ChangeOperation::Update : ChangeOperation::Create;
@@ -2524,7 +2525,7 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results, SyncInfo
     DgnDbStatus stat;
     DgnCode code = results.m_element->GetCode();
 
-    AddOrUpdateV8ElementExternalSourceAspect(*results.m_element, elprov);
+    results.m_mapping = AddOrUpdateV8ElementExternalSourceAspect(*results.m_element, elprov);
 
     auto result = m_dgndb->Elements().Insert(*results.m_element, &stat);
 
@@ -2616,7 +2617,7 @@ DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conv
 
     DgnElementPtr writeEl = MakeCopyForUpdate(*conversionResults.m_element, *el);
 
-    AddOrUpdateV8ElementExternalSourceAspect(*writeEl, elprov);
+    conversionResults.m_mapping = AddOrUpdateV8ElementExternalSourceAspect(*writeEl, elprov);
 
     DgnDbStatus stat;
     DgnElementCPtr result = m_dgndb->Elements().Update(*writeEl, &stat); 
@@ -2752,7 +2753,7 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         _GetChangeDetector().OnElementSeen(*this, conversionResults.m_element.get());
         }
 
-    RecordConversionResultsInSyncInfo(conversionResults, v8eh, v8mm, csearch);
+    AnnounceConversionResults(conversionResults, v8eh, v8mm, csearch);
 
     if (BSISUCCESS != iModelBridge::SaveChangesToConserveMemory(GetDgnDb(), nullptr, 100000))
         {
@@ -3679,16 +3680,6 @@ void ConverterLibrary::RecordLevelMappingForModel(DgnV8Api::LevelId sourceV8Leve
     {
     auto v8Level = sourceV8Model.GetLevelCache().GetLevel(sourceV8LevelId);
     m_syncInfo.InsertLevel(targetBimSubCategory, *sourceV8Model.GetDgnModelP(), v8Level);
-
-    /*
-    if (_WantProvenanceInBim())
-        {
-        auto el = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(targetBimSubCategory);
-        auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(v8Level, *sourceV8Model.GetDgnModelP(), *this);
-        aspect.AddAspect(*el);
-        el->Update();
-        }
-        */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3699,16 +3690,6 @@ void ConverterLibrary::RecordLevelMappingForModel(DgnV8Api::LevelId sourceV8Leve
     auto v8Level = sourceV8File.GetLevelCacheR().GetLevel(sourceV8LevelId);
     RepositoryLinkId v8fileId = GetRepositoryLinkId(sourceV8File);
     m_syncInfo.InsertLevel(targetBimSubCategory, sourceV8File.GetDictionaryModel(), v8Level);
-
-    /*
-    if (_WantProvenanceInBim())
-        {
-        auto el = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(targetBimSubCategory);
-        auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(v8Level, sourceV8File.GetDictionaryModel(), *this);
-        aspect.AddAspect(*el);
-        el->Update();
-        }
-        */
     }
 
 /*---------------------------------------------------------------------------------**//**

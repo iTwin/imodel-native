@@ -128,7 +128,7 @@ struct SyncInfo
       public:
         V8ModelExternalSourceAspect() : ExternalSourceAspect(nullptr) {}
 
-        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return FormatV8ElementId(v8Id);}
+        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return FormatV8ModelId(v8Id);}
         static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}
 
         //! Create a new aspect in memory. Caller must call AddAspect, passing in the model element that is to have this aspect.
@@ -275,6 +275,7 @@ struct SyncInfo
 
         //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file. Caller must call AddAspect, passing in the Category element.
         DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnV8Api::LevelHandle const&, DgnV8ModelCR, Converter&);
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect LevelExternalSourceAspect::GetAspect(DgnSubCategoryCR);
 
         DGNDBSYNC_EXPORT static BentleyStatus FindFirstSubCategory(DgnSubCategoryId&, DgnV8ModelCR v8Model, uint32_t flid, Type ltype, Converter& converter);
         };
@@ -287,7 +288,7 @@ struct SyncInfo
         public:
         static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
         DGNDBSYNC_EXPORT static ProxyGraphicExternalSourceAspect CreateAspect(DgnModelCR bimDrawingModel, Utf8StringCR idPath, Utf8StringCR propsJson, DgnDbR db);
-        DGNDBSYNC_EXPORT static DgnElementId FindDrawingGraphicBySource(DgnModelCR drawingModel, Utf8StringCR idPath, DgnCategoryId drawingGraphicCategory, DgnClassId elementClassId, DgnDbR db);
+        DGNDBSYNC_EXPORT static DgnElementId FindDrawingGraphic(DgnModelCR proxyGraphicScope, Utf8StringCR sectionedV8ElementPath, DgnCategoryId drawingGraphicCategory, DgnClassId drawingGraphicClassId, DgnDbR db);
         };
 
     //! Identifies the source of a ViewDefinition. The source is identified by the ElementId of the V8 view element. 
@@ -474,15 +475,7 @@ public:
     //! @name Levels, Fonts, Styles, Materials
     //! @{
 
-    //! Record sync info for a level.
-    //! @param[out] info        Sync info for the level
-    //! @param[in]  glevelId    The level's ID in the DgnDb
-    //! @param[in]  v8model     If the level is to be used only by elements in a single model, then \a v8model should identify the model. If the level is to be
-    //! used by elements in any model in the current v8 file, then pass the dictionary model.
-    //! @param[in]  vlevel      The V8 level that was converted
-    //! @return non-zero error status if the level could not be inserted in sync info. This would probably be caused by a non-unique name.
-    //! @note reports an issue in insertion fails.
-    DGNDBSYNC_EXPORT BentleyStatus InsertLevel(DgnSubCategoryId glevelId, DgnV8ModelCR v8model, DgnV8Api::LevelHandle const& vlevel);
+    DGNDBSYNC_EXPORT LevelExternalSourceAspect InsertLevel(DgnSubCategoryId glevelId, DgnV8ModelCR v8model, DgnV8Api::LevelHandle const& vlevel);
 
     //! Lookup the first native level mapped to the specified v8 level id. Elements using this level are assumed to be in the current v8 model in the current v8 file.
     //! This function checks first for a model-specific version of the level and then falls back to a file-wide version.

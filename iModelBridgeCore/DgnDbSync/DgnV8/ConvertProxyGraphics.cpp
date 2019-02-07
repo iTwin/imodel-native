@@ -406,7 +406,8 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     if (IsUpdating())
         {
-        auto existingDrawingGraphicId = SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphicBySource(parentSheetModelMapping.GetDgnModel(), v8SectionedElementPath, categoryId, elementClassId, GetDgnDb());
+        // See "How ProxyGraphics are tracked"
+        auto existingDrawingGraphicId = SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphic(parentSheetModelMapping.GetDgnModel(), v8SectionedElementPath, categoryId, elementClassId, GetDgnDb());
         if (existingDrawingGraphicId.IsValid())
             {
             // We already have a graphic for this element. Update it.
@@ -425,6 +426,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     // This is a new graphic for this element.
 
+    // See "How ProxyGraphics are tracked"
     auto aspect = SyncInfo::ProxyGraphicExternalSourceAspect::CreateAspect(parentSheetModelMapping.GetDgnModel(), v8SectionedElementPath, attachmentInfo, GetDgnDb());
     aspect.AddAspect(*drawingGraphic);
 
@@ -1003,3 +1005,60 @@ void ConvertDetailingSymbolExtension::RelateCalloutToDrawing(Converter& converte
 
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+/*  Proxy Graphics
+
+Background:
+
+A proxy graphic is some part of a section or projection of a 3-D element. (Sectioning a single 3-D element could result in many separate proxy graphics.)
+The 3-D element that was sectioned or projected is called the "v8SectionedElement" in this code.
+The v8SectionedElement may *or may not* be converted by the V8Converter.
+If it is converted, then the converter will create a relationship between it and the generated DrawingGraphic that captures its proxy graphics.
+It will not be converted if it is not in a spatial model that is found by the converter starting from the root spatial model.
+It will not be converted if does not actually exist any more in the source files.
+In either case, the proxy graphics may still exist in the sheet or drawing's attachment element. And in that case, the converter will
+convert the proxy graphics, without the originals.
+Therefore, the code that converts proxy graphics must be careful not to assume that the v8SectionedElement corresponds to anything in the iModel.
+
+In V8, the source of proxy graphics looks like this:
+Sheet Model ---DgnAttachment#1--> Drawing Model --DgnAttachment(SectionView)#2--> 3D Design Model { 3D element#99 }
+or
+Sheet Model ---DgnAttachment#1--> Drawing Model --DgnAttachment(SectionView)#2--> 3D Design Model ---DgnAttachment#3---> 3D DesignModel 2 { 3D element#100 }
+or
+Sheet Model --DgnAttachment(SectionView)#6--------------------------------------> 3D Design Model { 3D element#99 }
+or
+Sheet Model --DgnAttachment(SectionView)#6--------------------------------------> 3D Design Model ---DgnAttachment#3---> 3D DesignModel 2 { 3D element#100 }
+
+Note how the v8SectionedElement may be in a nested reference attachment. In fact the sheet may reference another sheet and/or the drawings may reference other drawings. There is no limit to the levels or combinations of nested references.
+Note that there may or may not be a V8 Drawing Model. The V8 Sheet model may reference the 3D Design Model directly.
+
+In an iModel, proxy graphics are captured as DrawingGraphic elements and are stored in Drawing models. Views of Drawing models are attached to Sheet models.
+That is, reference attachments are collapsed.
+
+"How ProxyGraphics are tracked"
+
+Identity = path
+The ProxyGraphicExternalSourceAspect Identity is the full path from the BIS Sheet to the v8SectionedElement. For example, in the first case described above,
+the path would be: 1/2/99, where 1 and 2 are the ElementIds of the two DgnAttachments, and 99 is the ElementId of the sectioned V8 element in the 3D design model.
+In the last case, the path wouild be: 6/3/100. 
+
+Scope = Sheet
+The Scope of a ProxyGraphicExternalSourceAspect is the BIS Sheet. 
+Note in the examples above how the path begins at the (BIS) Sheet and then identifies the (V8) attachments
+used to reach the final 3D element. This works whether or not there is a drawing model. 
+Note that the BIS Sheet's own ModelExternalSourceAspect identifies the V8 Sheet model.
+
+
+iModel                        DGN
+------------------------      ----------------------
+Sheet
+^ | XSA Identifer-----------> SheetModel
+| |                             DgnAttachment#1
+| |                               DrawingModel?
+| views:                            DgnAttachment#2
+|   Drawing                           DesignModel
+|       DrawingGraphic                  3DElement#3
++---Scope  XSA  Identifier --------------/
+
+
+*/

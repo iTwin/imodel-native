@@ -424,19 +424,18 @@ SyncInfo::ProxyGraphicExternalSourceAspect SyncInfo::ProxyGraphicExternalSourceA
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Sam.Wilson      1/19
 //+---------------+---------------+---------------+---------------+---------------+------
-DgnElementId SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphicBySource (DgnModelCR drawingModel, 
-    Utf8StringCR idPath, DgnCategoryId drawingGraphicCategory, DgnClassId elementClassId, DgnDbR db)
+DgnElementId SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphic (DgnModelCR proxyGraphicScope, Utf8StringCR sectionedV8ElementPath, DgnCategoryId drawingGraphicCategory, DgnClassId drawingGraphicClassId, DgnDbR db)
     {
-    auto ecclass = db.Schemas().GetClass(elementClassId);
+    auto drawingGraphicClass = db.Schemas().GetClass(drawingGraphicClassId);
     Utf8PrintfString ecsql(
         "SELECT dg.ECInstanceId FROM %s dg, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
-        " WHERE dg.Model.Id=? AND dg.Category.Id=? AND x.Element.Id=dg.ECInstanceId AND x.Kind='ProxyGraphic' AND x.Identifier=?",
-        ecclass? ecclass->GetFullName(): BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
+        " WHERE x.Scope.Id=? AND dg.Category.Id=? AND x.Element.Id=dg.ECInstanceId AND x.Kind='ProxyGraphic' AND x.Identifier=?",
+        drawingGraphicClass? drawingGraphicClass->GetFullName(): BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
     auto stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     int col=1;
-    stmt->BindId(col++, drawingModel.GetModelId());
+    stmt->BindId(col++, proxyGraphicScope.GetModelId());
     stmt->BindId(col++, drawingGraphicCategory);
-    stmt->BindText(col++, idPath.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindText(col++, sectionedV8ElementPath.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW == stmt->Step())
         {
         auto eid = stmt->GetValueId<DgnElementId>(0);
@@ -529,17 +528,30 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::InsertLevel(DgnSubCategoryId subcategoryid, DgnV8ModelCR v8model, DgnV8Api::LevelHandle const& vlevel)
+SyncInfo::LevelExternalSourceAspect SyncInfo::InsertLevel(DgnSubCategoryId subcategoryid, DgnV8ModelCR v8model, DgnV8Api::LevelHandle const& vlevel)
     {
     auto catid = DgnSubCategory::QueryCategoryId(*GetDgnDb(), subcategoryid);
     LevelExternalSourceAspect::Type ltype = m_converter.IsSpatialCategory(catid)? LevelExternalSourceAspect::Type::Spatial: LevelExternalSourceAspect::Type::Drawing;
 
     auto subCatEl = GetDgnDb()->Elements().GetForEdit<DgnSubCategory>(subcategoryid);
-    auto aspect = SyncInfo::LevelExternalSourceAspect::CreateAspect(vlevel, v8model, m_converter);
+
+    auto existingSubCatId = FindSubCategory(vlevel.GetLevelId(), v8model, ltype);
+    if (existingSubCatId.IsValid())
+        return LevelExternalSourceAspect::GetAspect(*GetDgnDb()->Elements().Get<DgnSubCategory>(existingSubCatId));
+
+    auto aspect = LevelExternalSourceAspect::CreateAspect(vlevel, v8model, m_converter);
     aspect.AddAspect(*subCatEl);
-    auto inserted = subCatEl->Update();
-    
-    return inserted.IsValid()? BSISUCCESS: BSIERROR;
+    subCatEl->Update();
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::GetAspect(DgnSubCategoryCR el)
+    {
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::Level);
+    return LevelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, id).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -877,7 +877,7 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bool includeSourceState)
     {
-    Utf8PrintfString str("%-20.20s %8.8s %-32.32s %-32.32s", "Kind", "Scope", "Scope Element Class", "Identifier");
+    Utf8PrintfString str("%-20.20s %8.8s %-32.32s %-32.32s", "Kind", "Scope", " ", "Identifier");
     if (includeSourceState)
         {
         // TBD

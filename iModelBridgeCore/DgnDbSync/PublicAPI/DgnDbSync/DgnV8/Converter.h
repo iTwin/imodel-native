@@ -1776,20 +1776,16 @@ public:
         ProcessConversionResults(res, newEle, v8eh, v8mm);
         }
     
-    //! Records a mapping in SyncInfo, based on the contents of conversion results. Called by ProcessConversionResults. Rarely called directly. 
-    //! @param[in,out]  conversionResults    On input, the data to be written to the BIM; on output, the result of updating the BIM and syncinfo.
+    //! Announcement that a conversion was done. Called by ProcessConversionResults. Rarely called directly. 
+    //! @param[in,out]  conversionResults    On input, the data to be written to the BIM; on output, the result of updating the BIM, plus the newly assigned or updated ExternalSourceAspect, if successful.
     //! @param[in] v8mm The model that contains the element
-    //! @param[in] updatePlan The element's current syncinfo mapping, if known.
+    //! @param[in] updatePlan An indication of whether this is an insert or an update, plus the element's pre-conversion ExternalSourceAspect, if any.
     //! @param[in] isParentElement Set to true for stand-alone and parent elements, and false for child elements.
-    //! \a updatePlan is the plan for how to update the BIM and syncinfo. It might indicate that the element is new and should be inserted.
-    //! Or, it might contain syncinfo mapping if the element is already in the BIM and should be updated.
-    //! On input, \a conversionResults.m_element should either be invalid, indicating that the element should be discarded, or it 
-    //! should be set to a copy of the element that is to be inserted or updated. On ouput, either \a conversionResults.m_isDiscard is set to true
-    //! if the element was discarded, or \a conversionResults.m_v8Mapping is set to the element's syncinfo mapping. 
-    void RecordConversionResultsInSyncInfo(ElementConversionResults& conversionResults, DgnV8EhCR, ResolvedModelMapping const& v8mm, 
+    void AnnounceConversionResults(ElementConversionResults& conversionResults, DgnV8EhCR, ResolvedModelMapping const& v8mm, 
                                            IChangeDetector::SearchResults const& updatePlan, bool isParentElement = true);
     
     //! Write a new or updated V8ElementExternalSourceAspect to the iModel. This method calls update on the element.
+    //! 'scope' must be the same model that is passed in to _IsElementChanged
     SyncInfo::V8ElementExternalSourceAspect WriteV8ElementExternalSourceAspect(DgnElementId bimElementId, DgnV8EhCR v8eh, DgnModelId scope, Utf8StringCR sourceIdPath = "", Utf8StringCR propsJson = "");
 
     //! Add a V8ElementExternalSourceAspect to a new element or update an existing aspect on a previously converted element.

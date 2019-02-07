@@ -993,7 +993,7 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         _OnElementConverted(pModel->GetModeledElementId(), &v8eh, Converter::ChangeOperation::Update);
         }
 
-    WriteV8ElementExternalSourceAspect(pModel->GetModeledElementId(), v8eh, GetDgnDb().GetRealityDataSourcesModel()->GetModelId());
+    WriteV8ElementExternalSourceAspect(pModel->GetModeledElementId(), v8eh, v8mm.GetDgnModel().GetModelId()); // NB: last arg (scope) must be the same model as is passed in to _IsElementChanged
 
     // -- Enable display (or not) in views.    
     DgnCategoryId category = GetSyncInfo().GetCategory(v8eh, v8mm);

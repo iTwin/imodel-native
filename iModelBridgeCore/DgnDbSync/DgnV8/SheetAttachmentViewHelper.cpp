@@ -503,11 +503,14 @@ DgnViewId Converter::SheetsGetViewForAttachment(bool isFromProxyGraphics, Geomet
     if ((prov.m_changeType == IChangeDetector::ChangeType::Update) && newView.IsValid())
         UpdateViewChildren(*newView, DgnViewId(prov.GetExistingElementId().GetValue()));
 
-    // Update the BIM and SyncInfo as needed (or if needed) for the ViewDefinition element itself.
+    // Update the BIM as needed (or if needed) for the ViewDefinition element itself.
     ElementConversionResults results;
     results.m_element = newView.get();  // (results.m_element is a Ptr that adds a ref to the newView element)
     ProcessConversionResults(results, prov, v8AttachmentEh, sheetModelMapping);
-    return DgnViewId(results.m_mapping.GetElementId().GetValueUnchecked());
+
+    if (!results.m_mapping.IsValid())
+        return DgnViewId();
+    return DgnViewId(results.m_mapping.GetElementId().GetValue());
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

@@ -496,8 +496,6 @@ void Converter::DeleteView(DgnViewId previouslyConvertedViewId, SyncInfo& syncIn
 //---------------+---------------+---------------+---------------+---------------+-------
 void ChangeDetector::_DetectDeletedViews(Converter& converter, SyncInfo::ViewDefinitionExternalSourceAspectIterator &iter)
     {
-    BeAssert(!converter._WantProvenanceInBim() && "Should not use syncinfo-based method of detecting previously converted views if we are using external source aspects");
-
     auto&   elements = converter.GetDgnDb().Elements();
     auto&   syncInfo = converter.GetSyncInfo();
 
