@@ -247,7 +247,7 @@ protected:
 
 private:
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     //Avoid assert added on Bim02    
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return std::numeric_limits<uint32_t>::max(); }
 #endif

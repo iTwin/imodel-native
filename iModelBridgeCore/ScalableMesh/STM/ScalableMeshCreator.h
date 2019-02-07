@@ -116,6 +116,8 @@ struct IScalableMeshCreator::Impl
         friend struct                       IScalableMeshSourceCreatorWorker::Impl;
         friend struct                       IScalableMeshSourceCreator::Impl;
         friend struct                       IScalableMeshNodeCreator::Impl;
+        friend struct                       SaveAsNodeCreator;
+
 
         GeoCoords::GCS                      m_gcs;
         ScalableMeshCompressionType         m_compressionType;

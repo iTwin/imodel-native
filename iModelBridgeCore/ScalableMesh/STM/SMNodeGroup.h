@@ -96,7 +96,7 @@ private:
     SMGroupGlobalParameters& operator=(const SMGroupGlobalParameters&) = delete;
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
 #endif
 
@@ -133,7 +133,7 @@ private:
     SMGroupCache(node_header_cache* nodeCache);
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     virtual uint32_t _GetExcessiveRefCountThreshold() const override;
 #endif
 
@@ -172,8 +172,8 @@ struct SMGroupNodeIds : bvector<uint64_t> {
     uint64_t m_sizeOfRawHeaders;
     };
 
-template <typename Type, typename Queue = std::queue<Type>>
-class SMNodeDistributor : public Queue, std::mutex, std::condition_variable, public HFCShareableObject<SMNodeDistributor<Type, Queue> > {
+template <typename Type, typename Queue = std::deque<Type>>
+class SMNodeDistributor : public Queue, public std::mutex, std::condition_variable, public HFCShareableObject<SMNodeDistributor<Type, Queue> > {
     typename Queue::size_type capacity;
     unsigned int m_concurrency;
     bool m_done = false;
@@ -275,17 +275,23 @@ SMNodeDistributor(Function function
         if (Queue::size() == capacity)
             {
             static std::atomic<uint64_t> lastNumberOfItems = {Queue::size()};
-            while (!wait_for(lock, 1000ms, [this]
+            while(Queue::size() < capacity / 2)
                 {
-                return Queue::size() < capacity / 2;
-                }))
+                lock.unlock();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                lock.lock();
+                }
+            //while (!wait_for(lock, 1000ms, [this]
+            //    {
+            //    return Queue::size() < capacity / 2;
+            //    }))
                 {
                // std::lock_guard<mutex> clk(s_consoleMutex);
                // std::cout << "\r  Speed : " << lastNumberOfItems - Queue::size() << " items/second     Remaining : " << Queue::size() << "                         ";
                 lastNumberOfItems = Queue::size();
                 }
             }
-        Queue::push(std::forward<Type>(value));
+        Queue::push_back(std::forward<Type>(value));
         if (notify) notify_one();
         }
 
@@ -301,11 +307,19 @@ SMNodeDistributor(Function function
         {
         std::unique_lock<std::mutex> lock(*this);
         bool areThreadsFinished = false;
-        while (!wait_for(lock, 1000ms, function) || !areThreadsFinished)
+        size_t speed = Queue::size();
+        while (!areThreadsFinished)
             {
-			if (function()) //allow a yield after progress finishes, to leave time for all threads to return
-				wait_for(lock, 1000ms);
-            for (auto state : m_threadStates)
+            size_t size_before = Queue::size();
+            lock.unlock();
+            if(function())
+                { //allow a yield after progress finishes, to leave time for all threads to return
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+            lock.lock();
+            speed = size_before - Queue::size();
+            LOG.infov("nodes/sec: %f, remaining: %f", speed, Queue::size());
+            for(auto state : m_threadStates)
                 {
                 if (!(areThreadsFinished = state.second == ThreadState::IDLE))
                     break;
@@ -319,6 +333,9 @@ SMNodeDistributor(Function function
         {
         std::unique_lock<std::mutex> lock(*this);
         bool areThreadsFinished = false;
+        auto startSize = Queue::size();
+        size_t speed = Queue::size();
+        auto startTime = clock();
         while (true)
             {
             for (auto state : m_threadStates)
@@ -328,8 +345,13 @@ SMNodeDistributor(Function function
                 }
             if (!Queue::empty() || !areThreadsFinished)
                 {
-                assert(lock.owns_lock());
-                wait_for(lock, 1000ms);
+                size_t size_before = Queue::size();
+                lock.unlock();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                lock.lock();
+                speed = size_before - Queue::size();
+                auto elapsedTime = (float)((clock() - startTime) / CLOCKS_PER_SEC);
+                LOG.infov("nodes/sec: %f    avg: %f    remaining: %d", (float)speed, (float)(startSize - Queue::size()) / elapsedTime, Queue::size());
                 }
             else
                 {
@@ -359,8 +381,8 @@ private:
             if (!Queue::empty()) {
                 assert(lock.owns_lock());
                 Type item{ std::move(Queue::front()) };
-                Queue::pop();
-                notify_one();
+                Queue::pop_front();
+                //notify_one();
                 m_threadStates[std::this_thread::get_id()] = ThreadState::WORKING;
                 lock.unlock();
                 process(item);
@@ -403,8 +425,8 @@ private:
 			if (!Queue::empty()) {
 				assert(lock.owns_lock());
 				Type item{ std::move(Queue::front()) };
-				Queue::pop();
-				notify_one();
+				Queue::pop_front();
+				//notify_one();
 				m_threadStates[std::this_thread::get_id()] = ThreadState::WORKING;
 				lock.unlock();
 				if (is_process_ready(item))
@@ -415,7 +437,7 @@ private:
 				else
 				{
 					lock.lock();
-					Queue::push(std::move(item));
+					Queue::push_back(std::move(item));
 				}
 			}
 			else if (m_done) {
@@ -481,7 +503,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ADD_GROUPING_STRATEGY_FRIENDSHIPS
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     private:
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
 #endif
@@ -1372,10 +1394,10 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         auto wktString = pi_Group->GetParameters()->GetWellKnownText();
         if (!wktString.empty())
             SMMasterHeader["GCS"] = Utf8String(wktString.c_str());
-#ifndef VANCOUVER_API
-		SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
-#else
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToUtf8String();
+#else        
+        SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
 #endif
 
         }

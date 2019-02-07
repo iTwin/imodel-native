@@ -1658,7 +1658,7 @@ public:
 
     IScalableMeshProgressPtr m_progress = nullptr;
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
+    BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
 
     uint64_t                    m_smID;
 #ifndef NDEBUG

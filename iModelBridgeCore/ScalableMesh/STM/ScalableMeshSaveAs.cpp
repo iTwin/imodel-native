@@ -47,9 +47,8 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
 StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress, const Transform& transform)
 {
     // Create Scalable Mesh at output path
-    StatusInt status;
-    IScalableMeshNodeCreatorPtr scMeshDestination = IScalableMeshNodeCreator::GetFor(destination.c_str(), status);
-    if (SUCCESS != status || !scMeshDestination.IsValid())
+    SaveAsNodeCreatorPtr scMeshDestination = new SaveAsNodeCreator(destination.c_str());
+    if (!scMeshDestination.IsValid())
         return ERROR;
 
     IScalableMeshTextureInfoPtr textureInfo = nullptr;
@@ -582,14 +581,6 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     //BingMap texture MUST NOT be baked into the Cesium 3D tile data
     if (status != SUCCESS || textureInfo->IsUsingBingMap())
         outputTexture = false;
-
-    DRange3d range;
-    mesh->GetRange(range);
-    DPoint3d origin = DPoint3d::FromInterpolate(range.low, .5, range.high);
-
-    DPoint3d ecefOrigin;
-    transform.Multiply(ecefOrigin, origin);
-
 
     status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
     SMNodeGroupPtr rootTileset = mesh->GetMainIndexP()->GetRootNodeGroup();

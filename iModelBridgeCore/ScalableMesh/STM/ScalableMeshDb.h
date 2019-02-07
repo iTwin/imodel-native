@@ -71,11 +71,11 @@ public:
 };
 #endif
 
-//#ifdef VANCOUVER_API
-//    #define BESQL_VERSION_STRUCT SchemaVersion
-//#else
+#ifdef DGNDB06_API
+    #define BESQL_VERSION_STRUCT SchemaVersion
+#else
     #define BESQL_VERSION_STRUCT ProfileVersion    
-//#endif
+#endif
 
 
 class InfiniteRetries : public BeSQLite::BusyRetry
@@ -99,9 +99,14 @@ class ScalableMeshDb : public BeSQLite::Db
 
     protected:
 #ifndef VANCOUVER_API    
-       ProfileState _CheckProfileVersion() const override;
 
-       virtual DbResult _UpgradeProfile() override;
+    #ifdef DGNDB06_API
+        virtual DbResult _VerifySchemaVersion(OpenParams const& params) override;
+    #else
+        ProfileState _CheckProfileVersion() const override;
+
+        virtual DbResult _UpgradeProfile() override;
+    #endif
 #endif
 
     virtual DbResult _OnDbCreated(CreateParams const& params) override;

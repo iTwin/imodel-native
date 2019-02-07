@@ -145,13 +145,13 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\src\DgnPlatform\DgnCore\;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ScalableMesh\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BePointCloud\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\RealityModeling\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDbSync\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI\DgnPlatform\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh  </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p ScalableMesh_DgnDb06 -f  ScalableMesh -r  ScalableMesh re  ScalableMesh_DgnDb06 </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>call bb -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -c
-call bb -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -c</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions);NEED_SAVE_AS_IN_IMPORT_DLL;DGNDB06_API</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>call bb -ax64 -p ScalableMesh_DgnDb06 -f  ScalableMesh -r  ScalableMesh re  ScalableMesh_DgnDb06   -c
+call bb -ax64 -p ScalableMesh_DgnDb06 -f  ScalableMesh -r  ScalableMesh re  ScalableMesh_DgnDb06 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p ScalableMesh_DgnDb06 -f  ScalableMesh -r  ScalableMesh re  ScalableMesh_DgnDb06  -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies />
@@ -218,13 +218,13 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>bb -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64  </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p ScalableMesh_DgnDb06 -f  ScalableMesh -r  ScalableMesh re  ScalableMesh_DgnDb06  </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>call bb -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -c
-call bb -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64  -c</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions);NEED_SAVE_AS_IN_IMPORT_DLL;DGNDB06_API</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>call bb -ax64 -p ScalableMesh_DgnDb06 -f  ScalableMesh -r  ScalableMesh re  ScalableMesh_DgnDb06   -c
+call bb -ax64 -p ScalableMesh_DgnDb06 -f  ScalableMesh -r  ScalableMesh re  ScalableMesh_DgnDb06 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p ScalableMesh_DgnDb06 -f  ScalableMesh -r  ScalableMesh re  ScalableMesh_DgnDb06  -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <IncludePath>C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
@@ -741,8 +741,8 @@ call bb -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMesh.mke" />
-    <None Include="ScalableMesh.mki" />
+    <None Include="ScalableMesh_DgnDb06.mke" />
+    <None Include="ScalableMesh_DgnDb06.mki" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

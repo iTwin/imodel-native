@@ -625,10 +625,13 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
                 auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
                 IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
                 bvector<Byte> cesiumData;
-#if NEED_SAVE_AS_IN_IMPORT_DLL
+#if defined(NEED_SAVE_AS_IN_IMPORT_DLL) && !defined(DGNDB06_API)
                 IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
                 cesiumPublisher->Publish(nodeP, (hasMSClips ? clips : nullptr), coverageID, isClipBoundary, sourceGCS, destinationGCS, cesiumData, outputTexture);
+#else
+                assert(!"Not yet implemented on this code base");
 #endif
+
 
                 convertTime += clock() - t;
 
@@ -1378,7 +1381,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveN
     m_triIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
     GetMemoryPool()->RemoveItem(this->m_texturePoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)this->m_SMIndex);
+    GetMemoryPool()->RemoveItem(this->m_texturePoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::TextureCompressed, (uint64_t)this->m_SMIndex);
     GetMemoryPool()->RemoveItem(this->m_texturePoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)this->m_SMIndex);
+    RemoveMultiTextureData();
     this->m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
     GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::TriUvIndices, (uint64_t)this->m_SMIndex);
@@ -1413,7 +1418,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveM
             {
             ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->RemovePoolIdForTextureData(textureId);
             GetMemoryPool()->RemoveItem(displayTexturePoolItemId, textureId, SMStoreDataType::Texture, (uint64_t)this->m_SMIndex);            
-            }                                                
+            GetMemoryPool()->RemoveItem(displayTexturePoolItemId, textureId, SMStoreDataType::TextureCompressed, (uint64_t)this->m_SMIndex);
+            }
         }
 
     m_textureIds.clear();
@@ -4182,10 +4188,15 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
 
     if (!this->m_SMIndex->IsFromCesium())
         {
-        auto texID = this->m_nodeHeader.m_textureID.IsValid() && this->m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && this->m_nodeHeader.m_textureID.m_integerID != -1 ? this->m_nodeHeader.m_textureID : this->GetBlockID();
+        //auto texID = this->GetBlockID();
+        auto texID = this->m_nodeHeader.m_textureID.IsValid() && this->m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && this->m_nodeHeader.m_textureID.m_integerID != -1 ? this->m_nodeHeader.m_textureID.m_integerID : this->GetBlockID().m_integerID;
+        SMMemoryPoolItemId texPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->GetPoolIdForTextureData(texID);
 
-        poolMemBlobItemPtr = this->template GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(this->m_texturePoolItemId, SMStoreDataType::TextureCompressed, texID);
+        poolMemBlobItemPtr = this->template GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(texPoolItemId, SMStoreDataType::TextureCompressed, HPMBlockID(texID));
         assert(poolMemBlobItemPtr.IsValid());
+
+        m_textureIds.insert(texID);
+        ((SMMeshIndex<POINT, EXTENT>*)this->m_SMIndex)->TextureManager()->SetPoolIdForTextureData(texID, texPoolItemId);
         }
     else
         {
@@ -4685,8 +4696,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         }
     //std::cout << "Merging clips for " << this->GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
    
-    if (this->m_SMIndex->IsFromCesium() && tr.IsIdentity())
-        assert(!"ECEF datasets must define a transform to apply any clipping");
+    //if (this->m_SMIndex->IsFromCesium() && tr.IsIdentity())
+    //    assert(!"ECEF datasets must define a transform to apply any clipping");
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->GetPointsPtr());
 
@@ -5337,10 +5348,16 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
         DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeHeader.m_contentExtent),
             ExtentOp<EXTENT>::GetXMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeHeader.m_contentExtent));
         bvector<DPoint3d> clipData;
-        GetClipRegistry()->GetClip(clipId, clipData);
+        SMClipGeometryType geom;
+        SMNonDestructiveClipType type;
+        bool isActive;
+
+        GetClipRegistry()->GetClipWithParameters(clipId, clipData, geom, type, isActive);
         DRange3d clipExtent = DRange3d::From(&clipData[0], (int)clipData.size());
 
-        if (!clipExtent.IntersectsWith(nodeRange))
+		//Do 2D intersection for unbounded volume like those for road clipping     
+        if ((geom != SMClipGeometryType::BoundedVolume && !clipExtent.IntersectsWith(nodeRange, 2)) || 
+            (geom == SMClipGeometryType::BoundedVolume && !clipExtent.IntersectsWith(nodeRange)))
             DeleteClip(clipId, isVisible, setToggledWhenIdIsOn);
   /*      //force commit
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, this->GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)this->m_SMIndex);
