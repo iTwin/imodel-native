@@ -297,7 +297,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
     return true;
 }
 
-StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& path, TransformCR ecefTransform, TransformCR smTransform, ClipVectorPtr clips, const uint64_t& coverageID, const GeoCoordinates::BaseGCSCPtr sourceGCS, bool outputTexture,ScalableMeshProgress* progress)
+StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& path, ClipVectorPtr clips, const uint64_t& coverageID, const GeoCoordinates::BaseGCSCPtr sourceGCS, bool outputTexture,ScalableMeshProgress* progress)
 {
     if (progress != nullptr)
     {
@@ -326,6 +326,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
             }
         }
     }
+
     // Create store for 3DTiles output
     typedef SMStreamingStore<DRange3d>::SMStreamingSettings StreamingSettingsType;
     SMStreamingStore<DRange3d>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
@@ -352,7 +353,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     auto destinationGCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
     destinationGCS->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
 
-    Transform ecefTrans;
+    auto ecefTrans = Transform::FromIdentity();
     if(sourceGCS.IsValid())
         {
         destinationGCS->SetVerticalDatumCode(sourceGCS->GetVerticalDatumCode());
@@ -391,10 +392,9 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
         rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
 
         ecefTrans = Transform::From(rMatrix, ecefOrigin);
-        }
-    else 
-        {
-        ecefTrans.InverseOf(smTransform);
+
+        auto dbToTile = Transform::From(DPoint3d::From(-origin.x, -origin.y, -origin.z));
+        ecefTrans = Transform::FromProduct(ecefTrans, dbToTile);
         }
 
     SMIndexMasterHeader<DRange3d> oldMasterHeader;
@@ -417,10 +417,6 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     strategy->AddGroup(rootNodeGroup.get());
     index->SetRootNodeGroup(rootNodeGroup);
 
-    strategy->SetTransform(smTransform);
-
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity(L"SMPublisher", NativeLogging::LOG_TRACE);
 
     //LOG.debug("Publishing index...");
 
@@ -466,7 +462,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
 
     //LOG.debug("Publishing nodes...");
 
-    Publish3DTile(nodeP, pDataStore, smTransform, clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
+    Publish3DTile(nodeP, pDataStore, Transform::FromIdentity(), clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
 
     if (progress != nullptr) progress->Progress() = 1.0f;
 
@@ -477,7 +473,7 @@ bool s_stream_from_wsg;
 bool s_stream_from_grouped_store;
 bool s_is_virtual_grouping;
 
-StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const Transform& tileToECEF, const Transform& dbToTile, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
+StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const Transform& transform, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
     {
     if (!meshP.IsValid()) return ERROR;
 
@@ -586,14 +582,7 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     if (status != SUCCESS || textureInfo->IsUsingBingMap())
         outputTexture = false;
 
-    DRange3d range = ((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()))->GetContentExtent();
-    DPoint3d center = DPoint3d::FromInterpolate(range.low, .5, range.high);
-    Transform dbToTileLocal = Transform::From(DPoint3d::From(-center.x, -center.y, -center.z));
-
-    Transform smTransform = meshP->GetReprojectionTransform();
-    smTransform = smTransform.FromProduct(dbToTileLocal, smTransform);
-
-    status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, tileToECEF, smTransform, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
+    status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
     SMNodeGroupPtr rootTileset = mesh->GetMainIndexP()->GetRootNodeGroup();
     BeAssert(rootTileset.IsValid()); // something wrong in the publish
 
@@ -626,7 +615,7 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
         }
 StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
     {
-    return IScalableMeshSaveAs::Generate3DTiles(meshP, outContainerName, Transform::FromIdentity(), Transform::FromIdentity(), outDatasetName, server, progress, clips, coverageId);
+    return IScalableMeshSaveAs::Generate3DTiles(meshP, outContainerName, Transform::FromIdentity(), outDatasetName, server, progress, clips, coverageId);
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
