@@ -1,17 +1,18 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/ClientFreeImpl.cpp $
+|     $Source: Licensing/FreeClientImpl.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ClientFreeImpl.h"
+#include "FreeClientImpl.h"
 #include "GenerateSID.h"
 #include "Logging.h"
 #include "UsageDb.h"
 #include "FreeApplicationPolicyHelper.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
+#include <Licensing/Utils/UsageJsonHelper.h>
 
 #include <Bentley/BeSystemInfo.h>
 #include <BeHttp/HttpError.h>
@@ -20,7 +21,8 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
-ClientFreeImpl::ClientFreeImpl(
+FreeClientImpl::FreeClientImpl
+(
 	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
 )
@@ -37,25 +39,47 @@ ClientFreeImpl::ClientFreeImpl(
 	m_delayedExecutor = DelayedExecutor::Get();
 	}
 
-LicenseStatus ClientFreeImpl::StartApplication()
-	{
-	LOG.trace("ClientFreeImpl::StartApplication (This is unnecessary to call for ClientFreeImpl)");
-	return LicenseStatus::Ok;
-	}
 
-BentleyStatus ClientFreeImpl::StopApplication()
-	{
-	LOG.trace("ClientFreeImpl::StopApplication (This is unnecessary to call for ClientFreeImpl)");
-	return SUCCESS;
-	}
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Jason.Wichert           2/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> FreeClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
+    {
+    // Send real time usage
+    LOG.trace("TrackUsage");
 
-folly::Future<BentleyStatus> ClientFreeImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
-	{
-	return SendUsageRealtime(accessToken, version, projectId);
-	}
+    auto url = UrlProvider::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
+
+    HttpClient client(nullptr, m_httpHandler);
+    auto uploadRequest = client.CreateRequest(url, "POST");
+    uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
+    uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
+
+    // create Json body
+    auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids
+        (
+        m_clientInfo->GetDeviceId(),
+        m_featureString,
+        version,
+        projectId
+        );
+
+    uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
+
+    return uploadRequest.Perform().then(
+        [=](Response response)
+        {
+        if (!response.IsSuccess())
+            {
+            LOG.errorv("FreeClientImpl::TrackUsage ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
+            return BentleyStatus::ERROR;
+            }
+        return BentleyStatus::SUCCESS;
+        });
+    }
 
 /*
-folly::Future<Utf8String> ClientFreeImpl::PerformGetUserInfo()
+folly::Future<Utf8String> FreeClientImpl::PerformGetUserInfo()
 	{
 	LOG.info("PerformGetUserInfo");
 

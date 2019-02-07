@@ -74,7 +74,7 @@
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\Licensing-Gtest\LicensingTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensingcrossplatform\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);D:\dev\crossDev\src\licensing\LicensingCrossPlatform\Tests\UnitTests\Published\;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
+    <IncludePath>$(SrcRoot)licensingcrossplatform\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);C:\dev\crossplatformlic\src\licensing\LicensingCrossPlatform\Tests\UnitTests\Published\;C:\dev\crossplatformlic\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;C:\dev\crossplatformlic\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <BuildLog>

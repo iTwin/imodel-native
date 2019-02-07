@@ -129,7 +129,6 @@ public:
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
-    LICENSING_EXPORT folly::Future<BentleyStatus> SendUsageRealtime(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
     //Features

@@ -8,7 +8,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Licensing\Client.cpp" />
-    <ClCompile Include="Licensing\ClientFreeImpl.cpp" />
+    <ClCompile Include="Licensing\FreeClient.cpp" />
+    <ClCompile Include="Licensing\FreeClientImpl.cpp" />
     <ClCompile Include="Licensing\ClientImpl.cpp" />
     <ClCompile Include="Licensing\ClientWithKeyImpl.cpp" />
     <ClCompile Include="Licensing\Policy.cpp" />
@@ -24,10 +25,12 @@
     <ClCompile Include="Licensing\Utils\UrlSafeBase64Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Licensing\ClientFreeImpl.h" />
+    <ClInclude Include="Licensing\FreeClientImpl.h" />
     <ClInclude Include="Licensing\ClientImpl.h" />
     <ClInclude Include="Licensing\ClientInterface.h" />
     <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
+    <ClInclude Include="Licensing\IFreeClient.h" />
+    <ClInclude Include="PublicAPI\Licensing\FreeClient.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\DateHelper.h" />
     <ClInclude Include="Licensing\FreeApplicationPolicyHelper.h" />
     <ClInclude Include="Licensing\Logging.h" />
@@ -92,7 +95,7 @@
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);D:\dev\crossDev\src\licensing\LicensingCrossPlatform\PublicAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
+    <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);C:\dev\crossplatformlic\src\licensing\LicensingCrossPlatform\PublicAPI;C:\dev\crossplatformlic\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;C:\dev\crossplatformlic\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>

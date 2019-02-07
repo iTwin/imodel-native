@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Client.h>
 #include "ClientImpl.h"
-#include "ClientFreeImpl.h"
+#include "FreeClientImpl.h"
 #include "ClientWithKeyImpl.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -39,18 +39,6 @@ IHttpHandlerPtr httpHandler
 )
     {
 	return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler)));
-	}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClientPtr Client::CreateFree
-(
-	Utf8StringCR featureString,
-	IHttpHandlerPtr httpHandler
-)
-	{
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientFreeImpl>(featureString, httpHandler)));
 	}
 
 /*--------------------------------------------------------------------------------------+

@@ -11,13 +11,15 @@
 Headers =
 Headers + $(SourceDir)ClientInterface.h
 Headers + $(SourceDir)ClientImpl.h
-Headers + $(SourceDir)ClientFreeImpl.h
+Headers + $(SourceDir)IFreeClient.h
+Headers + $(SourceDir)FreeClientImpl.h
 Headers + $(SourceDir)ClientWithKeyImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
 Headers + $(SourceDir)UsageDb.h
 Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(PublicApiDir)Client.h
+Headers + $(PublicApiDir)FreeClient.h
 Headers + $(PublicApiDir)LicenseStatus.h
 Headers + $(PublicApiDir)Licensing.h
 Headers + $(PublicApiDir)Utils/DelayedExecutor.h
@@ -38,7 +40,9 @@ $(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${Multi
 
 $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${MultiCompileDepends}
 
-$(o)ClientFreeImpl$(oext)            : $(SourceDir)ClientFreeImpl.cpp $(Headers) ${MultiCompileDepends}
+$(o)FreeClient$(oext)                : $(SourceDir)FreeClient.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)FreeClientImpl$(oext)            : $(SourceDir)FreeClientImpl.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)ClientWithKeyImpl$(oext)         : $(SourceDir)ClientWithKeyImpl.cpp $(Headers) ${MultiCompileDepends}
 
@@ -60,6 +64,6 @@ $(o)DelayedExecutor$(oext)           : $(SourceDir)Utils/DelayedExecutor.cpp $(H
 
 $(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Headers) ${MultiCompileDepends}
 
-$(o)FeatureUserDataMap$(oext)         : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
+$(o)FeatureUserDataMap$(oext)        : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

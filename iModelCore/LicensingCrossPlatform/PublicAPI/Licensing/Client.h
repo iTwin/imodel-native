@@ -55,12 +55,6 @@ public:
         IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
         );
 
-	LICENSING_EXPORT static ClientPtr CreateFree
-	(
-		Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
-		IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
-	);
-
 	LICENSING_EXPORT static ClientPtr CreateWithKey
 	(
 		Utf8StringCR accessKey, /** AccessKey */
