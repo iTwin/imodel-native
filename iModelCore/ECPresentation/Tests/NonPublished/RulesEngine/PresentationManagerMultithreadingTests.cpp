@@ -78,7 +78,8 @@ void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerMultithreadingTestsBase::TearDown()
     {
-    DELETE_AND_CLEAR(m_manager);
+    if (nullptr != m_manager)
+        DELETE_AND_CLEAR(m_manager);
     DELETE_AND_CLEAR(m_connections);
     }
 
@@ -253,6 +254,47 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, SetsUp
     ASSERT_TRUE(content.IsValid());
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     EXPECT_EQ(1, contentSet.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, UnregisterCustomFunctionsInBothPrimaryAndProxyConnections)
+    {
+    // prepare the dataset
+    ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1,
+        Utf8PrintfString("this.IsOfClass(\"%s\", \"%s\")", ecClass->GetName().c_str(), ecClass->GetSchema().GetName().c_str()),
+        ecClass->GetFullName(), true);
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*specification);
+    rules->AddPresentationRule(*rule);
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    locater->AddRuleSet(*rules);
+    m_manager->GetLocaters().RegisterLocater(*locater);
+
+    // get content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+
+    // Assert that custom functions are registered
+    ASSERT_TRUE(content.IsValid());
+    DbFunction* function = nullptr;
+    s_project->GetECDb().TryGetSqlFunction(function, FUNCTION_NAME_IsOfClass, 3);
+    ASSERT_NE(nullptr, function);
+    
+    // Remove presentation manager
+    DELETE_AND_CLEAR(m_manager);
+
+    // Assert that custom functions are unregistered
+    s_project->GetECDb().TryGetSqlFunction(function, FUNCTION_NAME_IsOfClass, 3);
+    ASSERT_EQ(nullptr, function);
     }
 
 /*---------------------------------------------------------------------------------**//**
