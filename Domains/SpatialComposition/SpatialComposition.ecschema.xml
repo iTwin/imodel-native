@@ -3,11 +3,11 @@
 |
 |     $Source: SpatialComposition.ecschema.xml $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 ======================================================================================= -->
-<ECSchema schemaName="SpatialComposition" alias="spcomp" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+<ECSchema schemaName="SpatialComposition" alias="spcomp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.02" alias="bis"/>
     <ECSchemaReference name="AecUnits" version="01.00.01" alias="AECU" />
 
     <ECRelationshipClass typeName="CompositeComposesSubComposites" strength="embedding" modifier="None" description="relates the Composer with its' composees">
