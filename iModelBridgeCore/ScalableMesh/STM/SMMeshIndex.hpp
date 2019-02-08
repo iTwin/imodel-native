@@ -5069,19 +5069,29 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
     bvector<int> indices;
     bool useX = extRange.XLength() > extRange.YLength();
     DRange1d ext1d = useX ? DRange1d::From(extRange.low.x, extRange.high.x) : DRange1d::From(extRange.low.y, extRange.high.y);
-    bool withinRange = false;
+    int sign = -2;
+   
     for (auto&pt : polyPts)
         {
         if (extRange.IsContainedXY(pt)) ++n;
-        if (((useX && ext1d.Contains(pt.x)) || (!useX && ext1d.Contains(pt.y))) && !withinRange)
+        if (n >2) return true;
+        if (((useX && ext1d.low > pt.x) || (!useX && ext1d.low > pt.y)) && sign != -1)
         {
-            indices.push_back(&pt - &polyPts[0]);
-            withinRange = true;
+            if (abs(sign) <= 1 && sign > -1)
+                indices.push_back(&pt - &polyPts[0]);
+            sign = -1;
+
         }
-        else if (((useX && !ext1d.Contains(pt.x)) || (!useX && !ext1d.Contains(pt.y))) && withinRange)
+        else if (((useX && (ext1d.high < pt.x)) || (!useX && (ext1d.high < pt.y))) && sign != 1)
+        {
+            if (abs(sign) <= 1 && sign < 1)
+                indices.push_back(&pt - &polyPts[0]);
+            sign = 1;
+        }
+        else if (((useX && ext1d.Contains(pt.x)) || (!useX && ext1d.Contains(pt.y))))
         {
             indices.push_back(&pt - &polyPts[0]);
-            withinRange = false;
+            sign = 0;
         }
         pt.z = 0;
         polyRange.Extend(pt);
@@ -5094,20 +5104,19 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
                 }
             }
         }
-    if (n >2) return true;
 
 
     ICurvePrimitivePtr curvePtr;
-    if((withinRange && indices.size() == 1) || indices.empty())
+    if((sign == 0 && indices.size() == 1) || indices.empty())
         curvePtr = ICurvePrimitive::CreateLineString(polyPts);
     else
     {
-        if (withinRange)
+        if (sign == 0)
             indices.push_back((int)polyPts.size() - 1);
-        bvector<DPoint3d> collectedIndices;
-        for (size_t i = 0; i < indices.size(); i += 2)
-            for (size_t j = std::max(0, indices[i] - 1); j < std::min((int)polyPts.size()-1, indices[i + 1] + 1); ++j)
-                collectedIndices.push_back(polyPts[j]);
+        bvector<DPoint3d> collectedIndices, collectedIndices2;
+        for (auto i: indices)
+                collectedIndices.push_back(polyPts[i]);
+
         curvePtr = ICurvePrimitive::CreateLineString(collectedIndices);
     }
     CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
