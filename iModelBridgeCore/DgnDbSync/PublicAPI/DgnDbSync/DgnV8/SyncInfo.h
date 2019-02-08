@@ -56,8 +56,8 @@ struct SyncInfo
       protected:
         friend struct SyncInfo;
         ExternalSourceAspect(ECN::IECInstance* i) : iModelExternalSourceAspect(i) {}
-        static Utf8String FormatV8ElementId(DgnV8Api::ElementId v8Id) {return Utf8PrintfString("%llu", v8Id);}  // DgnV8Api::ElementId is a UInt64
-        static Utf8String FormatV8ModelId(DgnV8Api::ModelId v8Id) {return Utf8PrintfString("%ld", v8Id);}       // DgnV8Api::ModelId is a Int32
+        static Utf8String FormatV8ElementId(DgnV8Api::ElementId v8Id) {char buf[32]; BeStringUtilities::FormatUInt64(buf, v8Id); return buf;}  // DgnV8Api::ElementId is a UInt64
+        static Utf8String FormatV8ModelId(DgnV8Api::ModelId v8Id) {char buf[32]; return itoa(v8Id, buf, 10);}       // DgnV8Api::ModelId is a Int32
         BeSQLite::EC::ECInstanceId GetSoleAspectIdByKind(DgnElementCR el, Utf8CP kind);
 
       public:
