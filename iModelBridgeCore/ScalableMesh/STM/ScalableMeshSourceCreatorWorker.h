@@ -28,7 +28,12 @@ typedef RefCountedPtr<GenerationTask> GenerationTaskPtr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreator::Impl
     {
+
+    friend struct IScalableMeshSourceCreatorWorker;
+
     private:
+
+        
 
         ScalableMeshDb* m_smDb;
         ScalableMeshDb* m_smSisterDb;
