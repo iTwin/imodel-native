@@ -3,11 +3,11 @@
 |
 |     $Source: ClassificationSystems.ecschema.xml $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 ======================================================================================= -->
 <ECSchema schemaName="ClassificationSystems" alias="clsf" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="BisCore" version="01.00.01" alias="bis" />
+    <ECSchemaReference name="BisCore" version="01.00.02" alias="bis" />
 
     <ECEntityClass typeName="IClassified" modifier="Abstract" displayTitle="IClassifiedElement" Description="An interface that indicates that an element could be classified by classification(s)">
         <ECCustomAttributes>
