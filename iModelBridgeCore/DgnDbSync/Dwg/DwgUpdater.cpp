@@ -783,7 +783,7 @@ BentleyStatus DwgImporter::_DetectDeletedDocuments ()
         BeGuid  docGuid;
         auto name = file.GetUniqueName ();
         if (docGuid.FromString(name.c_str()) == BSISUCCESS)
-            docExists = this->GetOptions().IsDocumentAssignedToJob(name);
+            docExists = this->GetOptions().IsDocumentInRegistry(name);
         else
             docExists = BeFileName(file.GetDwgName().c_str(), true).DoesPathExist ();
 
