@@ -46,6 +46,8 @@ CPchOpts = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
+$(o)ProfilesCardinalPoints$(oext) : $(appSrc)ProfilesCardinalPoints.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesCardinalPoints.h
+
 $(o)ProfilesGeometry$(oext) : $(appSrc)ProfilesGeometry.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesGeometry.h
 
 $(o)ProfilesProperty$(oext) : $(appSrc)ProfilesProperty.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesProperty.h

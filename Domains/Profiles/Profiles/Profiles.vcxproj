@@ -70,6 +70,7 @@
     <ClCompile Include="src\AsymmetricIShapeProfile.cpp" />
     <ClCompile Include="src\BentPlateProfile.cpp" />
     <ClCompile Include="src\CapsuleProfile.cpp" />
+    <ClCompile Include="src\ProfilesCardinalPoints.cpp" />
     <ClCompile Include="src\CustomCardinalPointsAspect.cpp" />
     <ClCompile Include="src\MaterialProfile.cpp" />
     <ClCompile Include="src\MaterialProfileDefinition.cpp" />
@@ -109,6 +110,7 @@
     <ClCompile Include="src\ZShapeProfile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\PrivateAPI\ProfilesCardinalPoints.h" />
     <ClInclude Include="src\ProfilesInternal.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ArbitraryCompositeProfileAspect.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesLogging.h" />

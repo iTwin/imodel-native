@@ -17,8 +17,15 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct StandardCatalogCode
     {
-    PROFILES_EXPORT StandardCatalogCode() = default;
-    PROFILES_EXPORT StandardCatalogCode (Utf8CP pManufacturer, Utf8CP pStandardsOrganization, Utf8CP pRevision)
+    //! Default constructor.
+    //! @details All members are initialized to empty strings.
+    StandardCatalogCode() = default;
+    //! Constructor to initialize members of the struct.
+    //! @details See @ref designation "Designation" for why its not included in the parameters.
+    //! @param pManufacturer See @ref manufacturer "Manufacturer"
+    //! @param pStandardsOrganization See @ref pStandardsOrganization "Standards Organization"
+    //! @param pRevision See @ref pRevision "Revision"
+    StandardCatalogCode (Utf8CP pManufacturer, Utf8CP pStandardsOrganization, Utf8CP pRevision)
         : manufacturer (pManufacturer)
         , standardsOrganization (pStandardsOrganization)
         , revision (pRevision)
@@ -35,6 +42,54 @@ struct StandardCatalogCode
     //! @details When setting a StandardCatalogCode for a Profile, @ref Profile.CreateParams.name "Profiles Name" is automatically used for designation.
     //! This member is used for convenience when retrieving StandardCatalog. See @ref Profile.GetStandardCatalogCode().
     Utf8String designation;
+    };
+
+//=======================================================================================
+//! 2D location on the profile used to place and offset profiles when extruding them on curve members.
+//! @ingroup GROUP_Profiles
+//=======================================================================================
+struct CardinalPoint
+    {
+    //! Default constructor.
+    CardinalPoint()
+        : name(), location {0.0, 0.0} {}
+    //! Constructor to initialize members of the struct.
+    //! @param pName See @ref name "Name"
+    //! @param location See @ref location "Location"
+    CardinalPoint (Utf8CP pName, DPoint2d const& location)
+        : name (pName), location (location) {}
+
+    //! Name of the cardinal point. @details Used to reference and distinquish cardinal points. Unique in the scope of a profile.
+    Utf8String name;
+    //! 2D offset from the start of profiles coordinate system (0, 0) defining the location for the cardinal point.
+    DPoint2d location;
+    };
+
+//=======================================================================================
+//! Enum of published standard cardinal points.
+//! @ingroup GROUP_Profiles
+//=======================================================================================
+enum class StandardCardinalPoint : uint32_t
+    {
+    BottomLeft = 0,
+    BottomCenter,
+    BottomRight,
+    MidDepthLeft,
+    MidDepthCenter,
+    MidDepthRight,
+    TopLeft,
+    TopCenter,
+    TopRight,
+    GeometricCentroid,
+    BottomInLineWithGeometricCentroid,
+    LeftInLineWithGeometricCentroid,
+    RightInLineWithGeometricCentroid,
+    TopInLineWithGeometricCentroid,
+    ShearCentre,
+    BottomInLineWithShearCentre,
+    LeftInLineWithShearCentre,
+    RightInLineWithShearCentre,
+    TopInLineWithShearCentre
     };
 
 //=======================================================================================
@@ -107,6 +162,15 @@ public:
     //! @param removeCatalogCode Pass 'nullptr' to call this method.
     //! @returns DgnDbStatus::Success if `CodeValue` is successfully removed for the profile, error code otherwise.
     PROFILES_EXPORT Dgn::DgnDbStatus SetStandardCatalogCode (nullptr_t);
+
+    //! TODO Karolis: Add documentation.
+    PROFILES_EXPORT bvector<CardinalPoint> GetCardinalPoints() const;
+    //! TODO Karolis: Add documentation.
+    PROFILES_EXPORT Dgn::DgnDbStatus GetCardinalPoint (StandardCardinalPoint standardType, CardinalPoint& cardinalPoint) const;
+    //! TODO Karolis: Add documentation.
+    PROFILES_EXPORT Dgn::DgnDbStatus GetCardinalPoint (Utf8String const& name, CardinalPoint& cardinalPoint) const;
+    //! TODO Karolis: Add documentation.
+    PROFILES_EXPORT Dgn::DgnDbStatus AddCustomCardinalPoint (CardinalPoint const& customCardinalPoint);
 
     //! Get the IGeometry defining the shape of this Profile.
     //! @details Geometry is created during a db Insert or Update operation.
