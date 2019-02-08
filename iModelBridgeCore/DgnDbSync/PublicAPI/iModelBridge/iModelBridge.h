@@ -16,7 +16,7 @@
 #include <DgnView/DgnViewLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
-#include <WebServices/Configuration/UrlProvider.h>
+
 BEGIN_BENTLEY_NAMESPACE namespace WebServices {
 typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
 } END_BENTLEY_NAMESPACE
@@ -1054,8 +1054,6 @@ public:
     //! @}
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
-
-    IMODEL_BRIDGE_EXPORT BentleyStatus  ImportElementAspectSchema(bool& madeChanges, bool force, DgnDbR dgndb);
 
     //! @name Feature Flags
     //! @{

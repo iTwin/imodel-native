@@ -792,7 +792,7 @@ ECN::IECInstancePtr iModelExternalSourceAspect::CreateInstance(DgnElementId scop
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::ECClassCP iModelExternalSourceAspect::GetAspectClass(DgnDbR db)
     {
-    return db.Schemas().GetClass(XTRN_SRC_ASPCT_ECSCHEMA_NAME, XTRN_SRC_ASPCT_CLASS);
+    return db.Schemas().GetClass(BIS_ECSCHEMA_NAME, XTRN_SRC_ASPCT_CLASS);
     }
 
 /*---------------------------------------------------------------------------------**//**

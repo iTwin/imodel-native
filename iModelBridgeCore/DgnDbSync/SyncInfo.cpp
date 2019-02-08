@@ -661,43 +661,6 @@ BentleyStatus SyncInfo::AttachToProject(DgnDb& targetProject, BeFileNameCR dbNam
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2018
-static BentleyStatus   importElementAspectSchema(DgnDbR db)
-    {
-    if (db.Schemas().ContainsSchema(XTRN_SRC_ASPCT_ECSCHEMA_NAME))
-        return BSISUCCESS;
-
-    BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    schemaPathname.AppendToPath(L"ECSchemas/Application/SourceInfo.ecschema.xml");
-
-    if (!schemaPathname.DoesPathExist())
-        {
-        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
-        return BSIERROR;
-        }
-
-    ECN::ECSchemaPtr schema;
-    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
-    schemaContext->AddSchemaLocater(db.GetSchemaLocater());
-    ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schema, schemaPathname.GetName(), *schemaContext);
-
-    // CreateSearchPathSchemaFileLocater
-    if (ECN::SchemaReadStatus::Success != status)
-        {
-        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
-        return BSIERROR;
-        }
-
-    bvector<ECN::ECSchemaCP> schemas;
-    schemas.push_back(schema.get());
-    if (SchemaStatus::Success != db.ImportV8LegacySchemas(schemas))
-        return BSIERROR;
-
-    return BSISUCCESS;
-    }
-+---------------+---------------+---------------+---------------+---------------+------*/
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECInstanceId SyncInfo::GetSoleAspectIdByKind(DgnElementCR el, Utf8CP kind)
@@ -1205,8 +1168,6 @@ BeSQLite::EC::CachedECSqlStatementPtr SyncInfo::ViewDefinitionExternalSourceAspe
 BentleyStatus SyncInfo::OnAttach(DgnDb& project)
     {
     m_dgndb = &project;
-
-    // importElementAspectSchema(*m_dgndb);
 
     if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)))
         {

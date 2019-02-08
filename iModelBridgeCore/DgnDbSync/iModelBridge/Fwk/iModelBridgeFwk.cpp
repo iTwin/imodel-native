@@ -1665,25 +1665,6 @@ BentleyStatus   iModelBridgeFwk::ImportDgnProvenance(bool& madeChanges)
     return BSISUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
-    {
-    if (!(m_jobEnvArgs.m_wantProvenanceInBim || m_bridge->TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim)))
-        return BSISUCCESS;
-
-    if (m_briefcaseDgnDb->Schemas().ContainsSchema(XTRN_SRC_ASPCT_ECSCHEMA_NAME))
-        return BSISUCCESS;
-
-    if (SUCCESS != GetSchemaLock())
-        {
-        GetLogger().fatal("GetSchemaLock failed for ImportElementAspectSchema after all the retries. Ignoring.");
-        return BSIERROR;
-        }
-
-    return m_bridge->ImportElementAspectSchema(madeChanges, true, *m_briefcaseDgnDb);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -1716,11 +1697,7 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
 
     GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
     bool importedAspectSchema = false;
-    if (BSISUCCESS != ImportElementAspectSchema(importedAspectSchema))
-        {
-        GetLogger().error("Importing Element Aspect schema failed.");
-        }
-
+    
     BeAssert(!m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation());
 
     m_briefcaseDgnDb->BriefcaseManager().StartBulkOperation();
