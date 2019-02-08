@@ -29,12 +29,12 @@ typedef std::shared_ptr<struct Client> ClientPtr;
 struct Client
 {
 private:
-    std::shared_ptr<struct ClientInterface> m_impl;
+    std::shared_ptr<struct IClient> m_impl;
 
-	Client
-		(
-		std::shared_ptr<struct ClientInterface> implementation
-		);
+    Client
+        (
+        std::shared_ptr<struct IClient> implementation
+        );
 
 public:
 	//! Client Creator
@@ -54,12 +54,6 @@ public:
         Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
         IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
         );
-
-	LICENSING_EXPORT static ClientPtr CreateFree
-	(
-		Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
-		IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
-	);
 
 	LICENSING_EXPORT static ClientPtr CreateWithKey
 	(
@@ -94,10 +88,6 @@ public:
 	* Mark Feature Comment
 	*/
     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
-	/*!
-	* Track Usage Comment
-	*/
-    LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

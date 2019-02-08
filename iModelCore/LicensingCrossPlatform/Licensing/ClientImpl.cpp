@@ -706,42 +706,6 @@ folly::Future<folly::Unit> ClientImpl::SendUsageLogs(BeFileNameCR usageCSV, Utf8
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> ClientImpl::SendUsageRealtime(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
-	{
-	LOG.trace("SendUsageRealtime");
-
-	auto url = UrlProvider::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
-
-	HttpClient client(nullptr, m_httpHandler);
-	auto uploadRequest = client.CreateRequest(url, "POST");
-	uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
-	uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
-
-	// create Json body
-	auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids(
-		m_clientInfo->GetDeviceId(),
-		m_featureString,
-		version,
-		projectId
-	);
-
-	uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
-
-	return uploadRequest.Perform().then(
-		[=](Response response)
-		{
-		if (!response.IsSuccess()) {
-			LOG.errorv("ClientImpl::SendUsageRealtime ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
-			return BentleyStatus::ERROR;
-		}
-		return BentleyStatus::SUCCESS;
-		});
-	
-	}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<folly::Unit> ClientImpl::SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId)
     {
     LOG.debug("ClientImpl::SendFeatureLogs");

@@ -11,7 +11,7 @@
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
 
-#include "ClientInterface.h"
+#include "IClient.h"
 #include "UsageDb.h"
 #include "Policy.h"
 
@@ -43,7 +43,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct ClientImpl> ClientImplPtr;
 
-struct ClientImpl : ClientInterface
+struct ClientImpl : IClient
 {
 protected:
     struct Feature
@@ -129,7 +129,6 @@ public:
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
-    LICENSING_EXPORT folly::Future<BentleyStatus> SendUsageRealtime(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
     //Features

@@ -11,9 +11,10 @@
 #include "DummyPolicyHelper.h"
 
 #include <Licensing/Client.h>
+#include <Licensing/FreeClient.h>
 #include <Licensing/Utils/DateHelper.h>
 #include "../../../Licensing/ClientImpl.h"
-#include "../../../Licensing/ClientFreeImpl.h"
+#include "../../../Licensing/FreeClientImpl.h"
 #include "../../../Licensing/ClientWithKeyImpl.h"
 #include "../../../Licensing/UsageDb.h"
 #include "../../../PublicAPI/Licensing/Utils/SCVWritter.h"
@@ -114,13 +115,13 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         proxy);
     }
 
-ClientFreeImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+FreeClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
 {
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-	return std::make_shared<ClientFreeImpl>(
+	return std::make_shared<FreeClientImpl>(
 		"",
 		proxy);
 }
@@ -179,14 +180,14 @@ ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, I
 		proxy);
 }
 
-ClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+FreeClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
 {
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-	return Client::CreateFree(
+	return FreeClient::Create(
 		"",
 		proxy);
 }
@@ -228,12 +229,12 @@ ClientPtr CreateTestClientFromFactory(bool signIn)
 	return CreateTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
 }
 
-ClientFreeImplPtr CreateFreeTestClient(bool signIn)
+FreeClientImplPtr CreateFreeTestClient(bool signIn)
     {
 	return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
     }
 
-ClientPtr CreateFreeTestClientFromFactory(bool signIn)
+FreeClientPtr CreateFreeTestClientFromFactory(bool signIn)
 {
 	return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
 }
