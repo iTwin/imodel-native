@@ -5113,7 +5113,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
     {
         if (sign == 0)
             indices.push_back((int)polyPts.size() - 1);
-        bvector<DPoint3d> collectedIndices, collectedIndices2;
+        bvector<DPoint3d> collectedIndices;
         for (auto i: indices)
                 collectedIndices.push_back(polyPts[i]);
 
