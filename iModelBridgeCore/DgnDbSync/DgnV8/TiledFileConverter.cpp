@@ -29,18 +29,6 @@ void TiledFileConverter::_SetChangeDetector(bool isUpdating)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::ImportJob TiledFileConverter::GenerateImportJobInfo()
-    {
-    SyncInfo::ImportJob importJob;
-    importJob.SetV8ModelSyncInfoId(m_rootModelMapping.GetV8ModelSyncInfoId());
-    importJob.SetPrefix(m_params.GetNamePrefix());
-    importJob.SetType(SyncInfo::ImportJob::Type::TiledFile);
-    return importJob;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId TiledFileConverter::GetDefaultModelId(DgnV8FileR v8File)
     {
     if (!IsV8Format(v8File))
@@ -83,8 +71,8 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
 
     SetLineStyleConverterRootModel(m_rootModelRef->GetDgnModelP());
 
-    CreateProvenanceTables(); // TRICKY: Call this before anyone calls GetV8FileSyncInfoId
-    GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
+    CreateProvenanceTables(); // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
+    GetRepositoryLinkId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
     }
@@ -92,11 +80,11 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR)
+ResolvedModelMapping TiledFileConverter::_GetResolvedModelMapping(DgnV8ModelRefCR v8ModelRef, TransformCR)
     {
     if (IsUpdating())
         {
-        ResolvedModelMapping res = GetModelFromSyncInfo(v8ModelRef, m_rootTrans);
+        ResolvedModelMapping res = FindModelByExternalAspect(v8ModelRef, m_rootTrans);
         if (res.IsValid())
             {
             GetChangeDetector()._OnModelSeen(*this, res);
@@ -117,16 +105,7 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         return ResolvedModelMapping();
         }
 
-    SyncInfo::V8ModelMapping mapping;
-    auto rc = m_syncInfo.InsertModel(mapping, modelId, v8Model, m_rootTrans);
-    if (SUCCESS != rc)
-        {
-        BeAssert(false);
-        ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(v8Model).c_str());
-        OnFatalError();
-        return ResolvedModelMapping();
-        }
-
+#ifdef WIP_OLD_MODEL_PROVENANCE
     if (_WantModelProvenanceInBim())
         {
         DgnV8FileP file = v8Model.GetDgnFileP();
@@ -134,15 +113,16 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         if (SUCCESS == DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
             {
             DgnV8ModelProvenance::ModelProvenanceEntry entry;
-            entry.m_dgnv8ModelId = mapping.GetV8ModelId().GetValue();
+            entry.m_dgnv8ModelId = v8Model.GetModelId();
             entry.m_modelId = modelId;
-            entry.m_modelName = mapping.GetV8Name();
+            entry.m_modelName = Utf8String(v8Model.GetModelName());
             entry.m_trans = m_rootTrans;
             DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
             }
         }
+#endif
 
-    DgnModelPtr model = m_dgndb->Models().GetModel(mapping.GetModelId());
+    DgnModelPtr model = m_dgndb->Models().GetModel(modelId);
     if (!model.IsValid())
         {
         ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(v8Model).c_str());
@@ -151,15 +131,12 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         }
     BeAssert(model->GetRefCount() > 0); // DgnModels holds references to all models that it loads
 
-    if (_WantProvenanceInBim())
-        {
-        auto modeledElement = m_dgndb->Elements().GetElement(model->GetModeledElementId())->CopyForEdit();
-        auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(v8Model, Transform::FromIdentity(), *this);
-        modelAspect.AddAspect(*modeledElement);
-        modeledElement->Update();
-        }
+    auto modeledElement = m_dgndb->Elements().GetElement(model->GetModeledElementId())->CopyForEdit();
+    auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(v8Model, m_rootTrans, *this);
+    modelAspect.AddAspect(*modeledElement);
+    modeledElement->Update();
 
-    auto v8mm = ResolvedModelMapping(*model, v8Model, mapping, v8ModelRef.AsDgnAttachmentCP());
+    auto v8mm = ResolvedModelMapping(*model, v8Model, modelAspect, v8ModelRef.AsDgnAttachmentCP());
 
     GetChangeDetector()._OnModelInserted(*this, v8mm);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
@@ -177,7 +154,7 @@ ResolvedModelMapping TiledFileConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
 
     if (IsUpdating())
         {
-        ResolvedModelMapping res = GetModelFromSyncInfo(v8Model, m_rootTrans);
+        ResolvedModelMapping res = FindModelByExternalAspect(v8Model, m_rootTrans);
         if (res.IsValid())
             {
             GetChangeDetector()._OnModelSeen(*this, res);
@@ -187,17 +164,19 @@ ResolvedModelMapping TiledFileConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
         // not found in syncinfo => treat as insert
         }
 
-    _GetV8FileIntoSyncInfo(*v8Model.GetDgnFileP(), _GetIdPolicy(*v8Model.GetDgnFileP()));
-
-    SyncInfo::V8ModelMapping mapping;
-    auto rc = m_syncInfo.InsertModel(mapping, targetModelId, v8Model, m_rootTrans);
-    BeAssert(SUCCESS == rc);
+    GetRepositoryLinkId(*v8Model.GetDgnFileP());
 
     auto model = m_dgndb->Models().GetModel(targetModelId);
     if (!model.IsValid())
         return ResolvedModelMapping();
 
-    ResolvedModelMapping v8mm(*model, v8Model, mapping, nullptr);
+    auto modeledElement = m_dgndb->Elements().GetElement(model->GetModeledElementId())->CopyForEdit();
+    auto modelAspect = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(v8Model, m_rootTrans, *this);
+    modelAspect.AddAspect(*modeledElement);
+    auto updatedModelElement = modeledElement->Update();
+    BeAssert(updatedModelElement.IsValid());
+
+    ResolvedModelMapping v8mm(*model, v8Model, modelAspect, nullptr);
 
     GetChangeDetector()._OnModelInserted(*this, v8mm);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
@@ -295,7 +274,7 @@ void TiledFileConverter::ConvertTile(BeFileNameCR tileFileName)
         return;
 
     BeAssert(_GetIdPolicy(*m_rootFile) == _GetIdPolicy(*tileFile));
-    _GetV8FileIntoSyncInfo(*tileFile, _GetIdPolicy(*m_rootFile));   // make sure the tile file is registered
+    GetRepositoryLinkId(*tileFile);
 
     _ConvertSpatialLevelTable(*tileFile); // This actually checks that there are NO levels to be converted -- that all levels in the tile's level table were already found in the root's level table. 
 
@@ -373,7 +352,10 @@ void TiledFileConverter::_OnFileComplete(DgnV8FileR v8File)
         GetChangeDetector()._DetectDeletedElementsEnd(*this);
         GetChangeDetector()._DetectDeletedModelsEnd(*this);
 
-        GetSyncInfo().UpdateFile(nullptr, v8File);
+        auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(v8File));
+        auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
+        rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(v8File));
+        rlinkEd->Update();
         }
 
     GetDgnDb().Elements().ClearCache();
@@ -384,7 +366,7 @@ void TiledFileConverter::_OnFileComplete(DgnV8FileR v8File)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TiledFileConverter::_BeginConversion()
     {
-    if (!GetImportJob().IsValid() || (GetImportJob().GetConverterType() != SyncInfo::ImportJob::Type::TiledFile))
+    if (!GetImportJob().IsValid() || (GetImportJob().GetConverterType() != ResolvedImportJob::ConverterType::TiledFile))
         {
         OnFatalError();
         return;

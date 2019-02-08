@@ -83,15 +83,9 @@ void Converter::AddAttachmentsToSelection(DgnModelIdSet& selector, DgnV8ModelRef
 
         Transform thisTrans = ComputeAttachmentTransform(trans, *attachment);
 
-        ResolvedModelMapping modelMapping = FindModelForDgnV8Model(*attachedModel, thisTrans);
+        ResolvedModelMapping modelMapping = FindResolvedModelMapping(*attachedModel, thisTrans);
         if (modelMapping.IsValid())
             selector.insert(modelMapping.GetDgnModel().GetModelId());
-        else
-            {
-            DgnV8ModelProvenance::ModelProvenanceEntry entryFound;
-            if (BSISUCCESS == FindModelProvenanceEntry(entryFound, *attachedModel, trans))
-                selector.insert(entryFound.m_modelId);
-            }
 
         AddAttachmentsToSelection(selector, *attachment, thisTrans);
         }
@@ -721,26 +715,21 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     DgnViewId existingViewId;
     Utf8String v8ViewName;
-    DgnElementId externalSourceAspectScope = GetRepositoryLinkFromAppData(*viewInfo.GetRootDgnFileP());
+    DgnElementId externalSourceAspectScope = GetRepositoryLinkId(*viewInfo.GetRootDgnFileP());
     if (IsUpdating())
         {
         double lastModified;
-        if (_WantProvenanceInBim())
+        SyncInfo::ViewDefinitionExternalSourceAspect aspect(nullptr);
+        std::tie(aspect, existingViewId) = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(externalSourceAspectScope, viewInfo, GetDgnDb());
+        if (existingViewId.IsValid())
             {
-            SyncInfo::ViewDefinitionExternalSourceAspect aspect(nullptr);
-            std::tie(aspect, existingViewId) = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(externalSourceAspectScope, viewInfo, GetDgnDb());
-            if (existingViewId.IsValid())
-                {
-                v8ViewName = aspect.GetV8ViewName();
-                lastModified = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_version.c_str());
-                }
+            v8ViewName = aspect.GetV8ViewName();
+            lastModified = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_version.c_str());
             }
         else
             {
-            GetSyncInfo().TryFindView(existingViewId, lastModified, v8ViewName, viewInfo);
-            }
-        if (!existingViewId.IsValid())
             existingViewId = ViewDefinition::QueryViewId(*definitionModel, name);
+            }
         }
 
     DgnFilePtr v8File = viewInfo.GetRootDgnFileP(); // the file needs to have a non-zero reference count so LoadRootModelById will work.
@@ -757,7 +746,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     if (LOG_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
         LOG.tracev("ConvertView [%s] (root=%d)", name.c_str(), v8Model->GetModelId());
 
-    ResolvedModelMapping modelMapping = FindModelForDgnV8Model(*v8Model, trans);
+    ResolvedModelMapping modelMapping = FindResolvedModelMapping(*v8Model, trans);
     if (!modelMapping.IsValid())
         {
         if (LOG_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
@@ -879,12 +868,9 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         {
         if (!view->EqualState(*existingDef) || view->GetName() != existingDef->GetName())
             {
-            if (_WantProvenanceInBim())
-                {
-                auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspect(*view);
-                if (aspect.IsValid())
-                    aspect.Update(viewInfo, defaultName.c_str());
-                }
+            auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectForEdit(*view);
+            if (aspect.IsValid())
+                aspect.Update(viewInfo, defaultName.c_str());
 
             if (!view->Update().IsValid())
                 {
@@ -895,14 +881,11 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         }
     else
         {
-        if (_WantProvenanceInBim())
+        if (nullptr != viewInfo.GetElementRef()) // we run into cases where the ViewInfo does not correspond to a V8 element. We can't track that.
             {
-            if (nullptr != viewInfo.GetElementRef()) // we run into cases where the ViewInfo does not correspond to a V8 element. We can't track that.
-                {
-                auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, name, viewInfo, GetDgnDb());
-                if (aspect.IsValid())
-                    aspect.AddAspect(*view);
-                }
+            auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, name, viewInfo, GetDgnDb());
+            if (aspect.IsValid())
+                aspect.AddAspect(*view);
             }
 
         if (!view->Insert().IsValid())
@@ -919,13 +902,11 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     // Keep a map between V8 views and DgnDb views. This is needed to set the display on/off for external models in DgnDb.
     m_viewNumberMap.insert({view->GetViewId(), viewInfo.GetViewNumber()});
+
     if (!viewId.IsValid())
         viewId = view->GetViewId();
     GetChangeDetector()._OnViewSeen(*this, viewId);
-    if (IsUpdating() && existingViewId.IsValid())
-        GetSyncInfo().UpdateView(viewId, defaultName.c_str(), viewInfo);
-    else
-        GetSyncInfo().InsertView(viewId, viewInfo, defaultName.c_str());
+
     return BSISUCCESS;
     }
 
@@ -1005,7 +986,7 @@ DgnViewId Converter::ConvertNamedView(DgnV8Api::NamedView& namedView, TransformC
     if (nullptr == v8Model)
         return DgnViewId();
 
-    auto v8mm = FindModelForDgnV8Model(*v8Model, trans);
+    auto v8mm = FindResolvedModelMapping(*v8Model, trans);
     if (!v8mm.IsValid())
         return DgnViewId();
 

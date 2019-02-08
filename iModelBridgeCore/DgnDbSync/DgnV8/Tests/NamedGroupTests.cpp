@@ -638,6 +638,8 @@ TEST_F(NamedGroupTests, NamedGroupInReferenceModel)
     {
     LineUpFiles(L"NamedGroupInReferenceModel.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
+    RepositoryLinkId repo2; // TODO look up RepositoryLink for second file
+
     DgnV8Api::ElementId ng1id=0, ng2id=0;
         {
         //--------------------------------------------------------------------------------------------------------
@@ -693,7 +695,7 @@ TEST_F(NamedGroupTests, NamedGroupInReferenceModel)
         ASSERT_TRUE(groupElem1.IsValid());
         ASSERT_EQ(2, ElementGroupsMembers::QueryMembers(*groupElem1).size()) << "There should be 2 member in NamedGroup";
         // Named Group from referenced Model
-        DgnElementCPtr groupElem2 = FindV8ElementInDgnDb(*db, ng2id, 2);
+        DgnElementCPtr groupElem2 = FindV8ElementInDgnDb(*db, ng2id, repo2);
         ASSERT_TRUE(groupElem2.IsValid());
         ASSERT_EQ(2, ElementGroupsMembers::QueryMembers(*groupElem2).size()) << "There should be 2 member in NamedGroup";
         }

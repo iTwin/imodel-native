@@ -545,22 +545,22 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     DoUpdate(m_dgnDbFileName, rootV8FileName);
     ASSERT_EQ(1, m_count) << L"Update should have found the one element that I added.";
 
-    //  Count the models
+    //  Count *all* of the models, from both files
     if (true)
         {
         SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::ModelIterator models(*syncInfo.m_dgndb, nullptr);
-        int count = 0;
-        for (SyncInfo::ModelIterator::Entry entry = models.begin(); entry != models.end(); ++entry)
-            ++count;
+        auto stmt = syncInfo.m_dgndb->GetPreparedECSqlStatement("SELECT COUNT(*) FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind=?)");
+        stmt->BindText(1, SyncInfo::ExternalSourceAspect::Kind::Model, BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BentleyApi::BeSQLite::BE_SQLITE_ROW, stmt->Step());
+        int count = stmt->GetValueInt(0);
         ASSERT_EQ(nModelsExpected, count);
         }
 
     DgnElementId dgnDbElementId;
     BentleyApi::Placement3d wasPlacement;
-    SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
-    SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
+    RepositoryLinkId editV8FileSyncInfoId;
+    DgnModelId editModelId;
     if (true)
         {
         //  Verify that Updater found the new element
@@ -569,9 +569,9 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
 
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, editV8FileName);
 
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, editV8ModelId);
+        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, editV8ModelId);
 
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, editV8ElementId);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, editV8ElementId);
 
         DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
         ASSERT_TRUE(dgnDbElement.IsValid());
@@ -613,7 +613,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
 
         DgnElementId dgnDbElementAfter;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editV8ModelSyncInfoId, editV8ElementId);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editModelId, editV8ElementId);
         ASSERT_EQ(dgnDbElementId, dgnDbElementAfter) << L"modified V8 element should still be mapped to the same DgnDb element";
 
         DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
@@ -650,7 +650,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
 
         DgnElementId dgnDbElementAfter;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editV8ModelSyncInfoId, editV8ElementId, /*>>*/0/*<<*/);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editModelId, editV8ElementId, /*>>*/0/*<<*/);
         ASSERT_TRUE(!dgnDbElementAfter.IsValid()) << L"V8 element was deleted => we should not find a mapping to a DgnDb element";
 
         DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
@@ -659,35 +659,52 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryLinkId ConverterTestBaseFixture::FindRepositoryLinkIdByFilename(DgnDbR db, BentleyApi::BeFileNameCR filename)
+    {
+    Utf8String searchName(filename.c_str());
+
+    SyncInfo::RepositoryLinkExternalSourceAspectIterator rlinkIter(db, nullptr);
+    for (auto aspect : rlinkIter)
+        {
+        if (aspect.GetFileName().EndsWithI(searchName.c_str()))
+            return aspect.GetRepositoryLinkId();
+        }
+    return RepositoryLinkId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Api::ElementId eV8Id, uint8_t dgnIndex)
+DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Api::ElementId eV8Id, RepositoryLinkId rlinkId)
     {
-    SubjectCPtr jobSubject = GetFirstJobSubject(db);
-    if (!jobSubject.IsValid())
-        return nullptr;
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
+                    BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
+                    XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+                    " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.Identifier AS INT) = ?)");
+    estmt.BindInt64(1, eV8Id);
 
-    DgnCode code(db.CodeSpecs().QueryCodeSpecId("DgnV8"), jobSubject->GetElementId(), BentleyApi::Utf8PrintfString("DgnV8-%d-%ld", dgnIndex, eV8Id));
-    DgnElementCPtr element = db.Elements().GetElement(db.Elements().QueryElementIdByCode(code));
-    if (element.IsNull())
-        return nullptr;
-
-    if (m_params.GetWantProvenanceInBim())
+    while (BE_SQLITE_ROW == estmt.Step())
         {
-        //Find the element id from aspect.
-        BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
-        estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
-                      BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                      XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-                      " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.Identifier AS INT) = ?)");
-        estmt.BindInt64(1, eV8Id);
+        auto elementId = estmt.GetValueId<DgnElementId>(0);
+        auto element = db.Elements().GetElement(elementId);
+        
+        if (rlinkId.IsValid())
+            {
+            SyncInfo::V8ModelExternalSourceAspect modelAspect;
+            DgnElementCPtr modeledElement;
+            std::tie(modeledElement, modelAspect) = SyncInfo::V8ModelExternalSourceAspect::GetAspect(*element->GetModel());
+            BeAssert(modelAspect.IsValid());
+            if (modelAspect.GetRepositoryLinkId() != rlinkId)
+                continue;
+            }
 
-        DbResult status = estmt.Step();
-        BeAssert(BE_SQLITE_ROW == status);
-        BeAssert(element->GetElementId() == estmt.GetValueId<DgnElementId>(0));
+        return element;
         }
 
-    return element;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

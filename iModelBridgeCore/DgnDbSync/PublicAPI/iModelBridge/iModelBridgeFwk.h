@@ -104,7 +104,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     BentleyStatus BootstrapBriefcase(bool& createdNewRepo);
     BentleyStatus GetSchemaLock();
     BentleyStatus ImportDgnProvenance(bool& madeChanges);
-    BentleyStatus ImportElementAspectSchema(bool& madeChanges);
     
     enum class SyncState
         {
