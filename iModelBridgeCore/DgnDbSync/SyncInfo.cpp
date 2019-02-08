@@ -1641,8 +1641,6 @@ bool SyncInfo::HasUriContentChanged(DgnElementId eid)
     if (!aspect.IsValid())
         return false;
 
-    printf("%s\n", aspect.FormatForDump(*GetDgnDb(), true, true).c_str());
-
     UriContentInfo storedInfo;
     aspect.GetInfo(storedInfo);
 
