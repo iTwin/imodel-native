@@ -86,13 +86,14 @@ IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(con
     }
     
     IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(filePath, nbWorkers));    
+    /*
     IScalableMeshSourceCreatorWorker::Impl* implP(dynamic_cast<IScalableMeshSourceCreatorWorker::Impl*>(pCreatorWorker->m_implP.get()));
     assert(implP != nullptr);
+    */
 
-
-    implP->OpenSqlFiles(false, true);
+    //implP->OpenSqlFiles(false, true);
     status = pCreatorWorker->m_implP->LoadFromFile();
-    implP->CloseSqlFiles();
+    //implP->CloseSqlFiles();
 
     if (BSISUCCESS != status)
         return 0;
