@@ -26,9 +26,9 @@
     </ECEntityClass>
 
     <!-- Aspects -->
-    <ECStructClass typeName="CustomCardinalPoint" description="Custom location cardinal point of a profile.">
-        <ECProperty propertyName="Name" typeName="string" description="Name of the cardinal point. It is used to reference the custom cardinal point." />
-        <ECProperty propertyName="Location" typeName="point2d" description="Coordinates inside the bounding box of a profile defining the cardinal point." />
+    <ECStructClass typeName="CardinalPoint" description="2D location on the profile used to place and offset profiles when extruding them on curve members.">
+        <ECProperty propertyName="Name" typeName="string" description="Name of the cardinal point, used to reference and distinquish cardinal points. Unique in the scope of a profile." />
+        <ECProperty propertyName="Location" typeName="point2d" description="2D offset from the start of profiles coordinate system (0, 0) defining the location for the cardinal point." />
     </ECStructClass>
 
     <ECEntityClass typeName="CustomCardinalPointsAspect">
@@ -36,18 +36,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECStructArrayProperty propertyName="Points" typeName="CustomCardinalPoint" minOccurs="1" maxOccurs="unbounded" description="" />
+        <ECStructArrayProperty propertyName="Points" typeName="CardinalPoint" minOccurs="1" maxOccurs="unbounded" description="" />
     </ECEntityClass>
-
-    <ECRelationshipClass typeName="ProfileOwnsCustomCardinalPointsAspect" modifier="Sealed" strength="embedding">
-        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
-            <Class class="Profile" />
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="false">
-            <Class class="CustomCardinalPointsAspect" />
-        </Target>
-    </ECRelationshipClass>
 
     <!-- Core Profile classes -->
     <ECEntityClass typeName="Profile" modifier="Abstract" description="A resource defining one or more 2D areas that may have voids.">
@@ -55,8 +45,9 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" description="" />
-        <ECProperty propertyName="Shape" typeName="Bentley.Geometry.Common.IGeometry" description="" />
+        <ECProperty propertyName="Name" typeName="string" description="Name of the profile. This property is also used as designation when referencing a profile from standard catalog." />
+        <ECProperty propertyName="Shape" typeName="Bentley.Geometry.Common.IGeometry" description="2D geometry of the profile." />
+        <ECStructArrayProperty propertyName="CardinalPoints" typeName="CardinalPoint" minOccurs="0" maxOccurs="unbounded" description="Array of published and custom (user defined) cardinal points of the profile." />
     </ECEntityClass>
 
     <ECEntityClass typeName="SinglePerimeterProfile" modifier="Abstract" description="A Profile with a single outer perimiter.">

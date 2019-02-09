@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
+#include <ProfilesInternal\ProfilesCardinalPoints.h>
 #include <ProfilesInternal\ProfilesLogging.h>
 #include <ProfilesInternal\ProfilesQuery.h>
 #include <ProfilesInternal\ArbitraryCompositeProfileAspect.h>
@@ -60,6 +61,10 @@ DgnDbStatus Profile::_OnInsert()
 
     if (!_CreateGeometry())
         return DgnDbStatus::NoGeometry;
+
+    DgnDbStatus status = ProfilesCardinalPoints::AddStandardCardinalPoints (*this);
+    if (status != DgnDbStatus::Success)
+        return status;
 
     return T_Super::_OnInsert();
     }
@@ -262,6 +267,38 @@ void Profile::SetShape (IGeometry const& val)
     ECN::ECValue ecValue;
     ecValue.SetIGeometry (val);
     SetPropertyValue (PRF_PROP_Profile_Shape, ecValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<CardinalPoint> Profile::GetCardinalPoints() const
+    {
+    return ProfilesCardinalPoints::GetCardinalPoints (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::GetCardinalPoint (StandardCardinalPoint standardType, CardinalPoint& cardinalPoint) const
+    {
+    return ProfilesCardinalPoints::GetCardinalPoint (*this, standardType, cardinalPoint);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::GetCardinalPoint (Utf8String const& name, CardinalPoint& cardinalPoint) const
+    {
+    return ProfilesCardinalPoints::GetCardinalPoint (*this, name.c_str(), cardinalPoint);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::AddCustomCardinalPoint (CardinalPoint const& customCardinalPoint)
+    {
+    return ProfilesCardinalPoints::AddCustomCardinalPoint (*this, customCardinalPoint);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
