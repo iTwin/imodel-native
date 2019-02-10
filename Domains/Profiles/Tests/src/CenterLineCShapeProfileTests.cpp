@@ -236,10 +236,6 @@ TEST_F (CenterLineCShapeProfileTestCase, Insert_ValidFilletRadius_SuccessfulInse
 TEST_F (CenterLineCShapeProfileTestCase, Insert_InvalidFilletRadius_FailedInsert)
     {
     CreateParams params (GetModel (), "CenterLineCShape", 10.0, 10.0, 1.0, 0.0, INFINITY);
-    EXPECT_FAIL_Insert (params) << "CenterLineCShape FilletRadius should be positive or zero.";
-    TestParameterToBeFiniteAndPositive (params, params.filletRadius, "FilletRadius", true);
-
-    params.filletRadius = -0.17;
     TestParameterToBeFiniteAndPositive (params, params.filletRadius, "FilletRadius", true);
 
     params.filletRadius = params.flangeWidth / 2.0 - params.wallThickness + TESTS_EPSILON;
@@ -250,7 +246,7 @@ TEST_F (CenterLineCShapeProfileTestCase, Insert_InvalidFilletRadius_FailedInsert
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     02/2019
+* @bsimethod 02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CenterLineCShapeProfileTestCase, Insert_FilletRadiusAgainstTheGirth_CorrectInsertResult)
     {
