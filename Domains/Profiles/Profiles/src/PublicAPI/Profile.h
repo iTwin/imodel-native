@@ -71,25 +71,25 @@ struct CardinalPoint
 //=======================================================================================
 enum class StandardCardinalPoint : uint32_t
     {
-    BottomLeft = 0,
-    BottomCenter,
-    BottomRight,
-    MidDepthLeft,
-    MidDepthCenter,
-    MidDepthRight,
-    TopLeft,
-    TopCenter,
-    TopRight,
-    GeometricCentroid,
-    BottomInLineWithGeometricCentroid,
-    LeftInLineWithGeometricCentroid,
-    RightInLineWithGeometricCentroid,
-    TopInLineWithGeometricCentroid,
-    ShearCentre,
-    BottomInLineWithShearCentre,
-    LeftInLineWithShearCentre,
-    RightInLineWithShearCentre,
-    TopInLineWithShearCentre
+    BottomLeft = 0,                     //!< Bottom left corner of the profiles bounding box
+    BottomCenter,                       //!< Middle point of bottom line of the profiles bounding box
+    BottomRight,                        //!< Bottom right corner of the profiles bounding box
+    MidDepthLeft,                       //!< Middle point of left line of the profiles bounding box
+    MidDepthCenter,                     //!< Center point of the profiles bounding box
+    MidDepthRight,                      //!< Middle point of right line of the profiles bounding box
+    TopLeft,                            //!< Top left corner of the profiles bounding box
+    TopCenter,                          //!< Middle point of top line of the profiles bounding box
+    TopRight,                           //!< Top right corner of the profiles bounding box
+    GeometricCentroid,                  //!< Geometric centroid of the profiles geometry
+    BottomInLineWithGeometricCentroid,  //!< Most bottom point of the profiles geometry thats in-line with @ref GeometricCentroid
+    LeftInLineWithGeometricCentroid,    //!< Most left point of the profiles geometry thats in-line with @ref GeometricCentroid
+    RightInLineWithGeometricCentroid,   //!< Most right point of the profiles geometry thats in-line with @ref GeometricCentroid
+    TopInLineWithGeometricCentroid,     //!< Most top point of the profiles geometry thats in-line with @ref GeometricCentroid
+    ShearCenter,                        //!< Shear center of the profiles geometry
+    BottomInLineWithShearCenter,        //!< Most bottom point of the profiles geometry thats in-line with @ref ShearCenter
+    LeftInLineWithShearCenter,          //!< Most left point of the profiles geometry thats in-line with @ref ShearCenter
+    RightInLineWithShearCenter,         //!< Most right point of the profiles geometry thats in-line with @ref ShearCenter
+    TopInLineWithShearCenter            //!< Most top point of the profiles geometry thats in-line with @ref ShearCenter
     };
 
 //=======================================================================================
@@ -145,11 +145,14 @@ public:
     //! return If profile is valid - DgnDbStatus::Success, otherwise DgnDbStatus::ValidationFailed.
     PROFILES_EXPORT Dgn::DgnDbStatus Validate() const;
 
+    //! @beginGroup
     //! Get the value of @ref CreateParams.name "Name".
     PROFILES_EXPORT Utf8String GetName() const;
     //! Set the value for @ref CreateParams.name "Name".
     PROFILES_EXPORT void SetName (Utf8String val);
+    //! @endGroup
 
+    //! @beginGroup
     //! Get StandardCatalogCode associated with this profile.
     //! @details StandardCatalogCode is populated from profiles `CodeValue` property, see @ref GetCode()
     //! @returns StandardCatalogCode. If profile has no `CodeValue` set, StandardCatalogCode with empty stirngs is returned.
@@ -162,15 +165,28 @@ public:
     //! @param removeCatalogCode Pass 'nullptr' to call this method.
     //! @returns DgnDbStatus::Success if `CodeValue` is successfully removed for the profile, error code otherwise.
     PROFILES_EXPORT Dgn::DgnDbStatus SetStandardCatalogCode (nullptr_t);
+    //! @endGroup
 
-    //! TODO Karolis: Add documentation.
+    //! @beginGroup
+    //! Get all CardinalPoint's of this profile.
+    //! @returns Empty vector if profile has zero CardinalPoint's.
     PROFILES_EXPORT bvector<CardinalPoint> GetCardinalPoints() const;
-    //! TODO Karolis: Add documentation.
+    //! Get standard CardinalPoint by @ref StandardCardinalPoint "enumeration".
+    //! @returns DgnDbStatus::Success if CardinalPoint exists, error code otherwise.
     PROFILES_EXPORT Dgn::DgnDbStatus GetCardinalPoint (StandardCardinalPoint standardType, CardinalPoint& cardinalPoint) const;
-    //! TODO Karolis: Add documentation.
+    //! Get any CardinalPoint by its name.
+    //! @details This method can be used to query user-defined/custom CardinalPoint's.
+    //! @returns DgnDbStatus::Success if CardinalPoint exists, error code otherwise.
     PROFILES_EXPORT Dgn::DgnDbStatus GetCardinalPoint (Utf8String const& name, CardinalPoint& cardinalPoint) const;
-    //! TODO Karolis: Add documentation.
+    //! Add a user-defined/custom CardinalPoint for this profile.
+    //! @details CardinalPoint's name should be unique within this profiles scope.
+    //! @returns DgnDbStatus::Success if CardinalPoints was successfully added, error code otherwise.
     PROFILES_EXPORT Dgn::DgnDbStatus AddCustomCardinalPoint (CardinalPoint const& customCardinalPoint);
+    //! Remove a user-defined/custom CardinalPoint from this profile by name.
+    //! @details Trying to remove standard CardinalPoint's will result in DeletionProhibited error code.
+    //! @returns DgnDbStatus::Success if CardinalPoint was removed successfully, error code otherwise.
+    PROFILES_EXPORT Dgn::DgnDbStatus RemoveCustomCardinalPoint (Utf8String const& name);
+    //! @endGroup
 
     //! Get the IGeometry defining the shape of this Profile.
     //! @details Geometry is created during a db Insert or Update operation.

@@ -62,9 +62,9 @@ DgnDbStatus Profile::_OnInsert()
     if (!_CreateGeometry())
         return DgnDbStatus::NoGeometry;
 
-    /*DgnDbStatus status = ProfilesCardinalPoints::AddStandardCardinalPoints (*this);
+    DgnDbStatus status = ProfilesCardinalPoints::AddStandardCardinalPoints (*this);
     if (status != DgnDbStatus::Success)
-        return status;*/
+        return status;
 
     return T_Super::_OnInsert();
     }
@@ -299,6 +299,14 @@ DgnDbStatus Profile::GetCardinalPoint (Utf8String const& name, CardinalPoint& ca
 DgnDbStatus Profile::AddCustomCardinalPoint (CardinalPoint const& customCardinalPoint)
     {
     return ProfilesCardinalPoints::AddCustomCardinalPoint (*this, customCardinalPoint);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::RemoveCustomCardinalPoint (Utf8String const& name)
+    {
+    return ProfilesCardinalPoints::RemoveCustomCardinalPoint (*this, name);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -23,38 +23,43 @@ static Utf8CP s_standardCardinalPointNames[] =
     "LeftInLineWithGeometricCentroid",
     "RightInLineWithGeometricCentroid",
     "TopInLineWithGeometricCentroid",
-    "ShearCentre",
-    "BottomInLineWithShearCentre",
-    "LeftInLineWithShearCentre",
-    "RightInLineWithShearCentre",
-    "TopInLineWithShearCentre"
+    "ShearCenter",
+    "BottomInLineWithShearCenter",
+    "LeftInLineWithShearCenter",
+    "RightInLineWithShearCenter",
+    "TopInLineWithShearCenter"
     };
 constexpr uint32_t s_standardCardinalPointCount = _countof (s_standardCardinalPointNames);
+
+/*---------------------------------------------------------------------------------**//**
+* Creates a StandaloneECEnabler used for CardinalPoint ECIntance creation.
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static StandaloneECEnablerPtr getCardinalPointECEnabler (Profile const& profile)
+    {
+    ECClassCP pClass = profile.QueryClass (profile.GetDgnDb(), PRF_CLASS_CardinalPoint);
+    if (pClass == nullptr)
+        return nullptr;
+
+    ClassLayoutPtr classLayoutPtr = ClassLayout::BuildFromClass (*pClass);
+    if (classLayoutPtr.IsNull())
+        return nullptr;
+
+    return StandaloneECEnabler::CreateEnabler (*pClass, *classLayoutPtr, nullptr);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Creates a CardinalPoint corresponding ECInstance and sets it to a previously allocated
 * array index for the Profile.CardinalPoints property.
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus setCardinalPoint (Profile& profile, CardinalPoint const& cardinalPoint, uint32_t arrayIndex)
+static DgnDbStatus setCardinalPoint (Profile& profile, CardinalPoint const& cardinalPoint, uint32_t arrayIndex, StandaloneECEnabler* pEnabler = nullptr)
     {
-    static StandaloneECEnablerPtr s_enablerPtr = nullptr;
-    if (s_enablerPtr.IsNull())
-        {
-        ECClassCP pClass = profile.QueryClass (profile.GetDgnDb(), PRF_CLASS_CardinalPoint);
-        if (pClass == nullptr)
-            return DgnDbStatus::WrongClass;
+    StandaloneECEnablerPtr enablerPtr = pEnabler == nullptr ? getCardinalPointECEnabler (profile) : pEnabler;
+    if (enablerPtr.IsNull())
+        return DgnDbStatus::WrongClass;
 
-        ClassLayoutPtr classLayoutPtr = ClassLayout::BuildFromClass (*pClass);
-        if (classLayoutPtr.IsNull())
-            return DgnDbStatus::WrongClass;
-
-        s_enablerPtr = StandaloneECEnabler::CreateEnabler (*pClass, *classLayoutPtr, nullptr);
-        if (s_enablerPtr.IsNull())
-            return DgnDbStatus::WrongClass;
-        }
-
-    StandaloneECInstancePtr instancePtr = s_enablerPtr->CreateInstance();
+    StandaloneECInstancePtr instancePtr = enablerPtr->CreateInstance();
 
     BeAssert (instancePtr->SetValue (PRF_PROP_CardinalPoint_Name, ECValue (cardinalPoint.name.c_str())) == ECObjectsStatus::Success);
     BeAssert (instancePtr->SetValue (PRF_PROP_CardinalPoint_Location, ECValue (cardinalPoint.location)) == ECObjectsStatus::Success);
@@ -88,7 +93,7 @@ static uint32_t getCardinalPointsArraySize (Profile const& profile)
 * in \p structValue, error code otherwise.
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus findCardinalPointECValue (Profile const& profile, Utf8String const& name, ECValue& structValue)
+DgnDbStatus findCardinalPointECValue (Profile const& profile, Utf8String const& name, ECValue& structValue, uint32_t* pIndex = nullptr)
     {
     uint32_t arraySize = getCardinalPointsArraySize (profile);
     for (uint32_t i = 0; i < arraySize; ++i)
@@ -101,7 +106,11 @@ DgnDbStatus findCardinalPointECValue (Profile const& profile, Utf8String const& 
         BeAssert (structValue.GetStruct()->GetValue (propertyValue, PRF_PROP_CardinalPoint_Name) == ECObjectsStatus::Success);
 
         if (name.Equals (propertyValue.GetUtf8CP()))
+            {
+            if (pIndex != nullptr)
+                *pIndex = i;
             return DgnDbStatus::Success;
+            }
         }
 
     return DgnDbStatus::NotFound;
@@ -176,11 +185,15 @@ DgnDbStatus ProfilesCardinalPoints::AddStandardCardinalPoints (Profile& profile)
     if (status != DgnDbStatus::Success)
         return status;
 
+    StandaloneECEnablerPtr enablerPtr = getCardinalPointECEnabler (profile);
+    if (enablerPtr.IsNull())
+        return DgnDbStatus::WrongClass;
+
     for (int i = 0; i < s_standardCardinalPointCount; ++i)
         {
         CardinalPoint cardinalPoint = createStandardCardinalPoint (static_cast<StandardCardinalPoint> (i), profile);
 
-        status = setCardinalPoint (profile, cardinalPoint, i);
+        status = setCardinalPoint (profile, cardinalPoint, i, enablerPtr.get());
         if (status != DgnDbStatus::Success)
             return status;
         }
@@ -215,10 +228,37 @@ DgnDbStatus ProfilesCardinalPoints::AddCustomCardinalPoint (Profile& profile, Ca
 * Get all cardinal points that the profile has. Returns an empty vector in case of an error.
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ProfilesCardinalPoints::RemoveCustomCardinalPoint (Profile& profile, Utf8String const& name)
+    {
+    for (uint32_t i = 0; i < s_standardCardinalPointCount; ++i)
+        {
+        if (name.Equals (s_standardCardinalPointNames[i]))
+            return DgnDbStatus::DeletionProhibited;
+        }
+
+    uint32_t cardinalPointIndex;
+    ECValue ecValue;
+
+    DgnDbStatus status = findCardinalPointECValue (profile, name, ecValue, &cardinalPointIndex);
+    if (status != DgnDbStatus::Success)
+        return status;
+
+    uint32_t propertyIndex = 0;
+    profile.GetPropertyIndex (propertyIndex, PRF_PROP_Profile_CardinalPoints);
+
+    return profile.RemovePropertyArrayItem (propertyIndex, cardinalPointIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Get all cardinal points that the profile has. Returns an empty vector in case of an error.
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 bvector<CardinalPoint> ProfilesCardinalPoints::GetCardinalPoints (Profile const& profile)
     {
+    bvector<CardinalPoint> cardinalPoints;
+
     uint32_t arraySize = getCardinalPointsArraySize (profile);
-    bvector<CardinalPoint> cardinalPoints (static_cast<size_t> (arraySize));
+    cardinalPoints.reserve (static_cast<size_t> (arraySize));
 
     for (uint32_t i = 0; i < arraySize; ++i)
         {
