@@ -25,9 +25,6 @@
     <Filter Include="PublicAPI\CompositeProfiles">
       <UniqueIdentifier>{8c77af3c-0a73-4d89-809b-78b511622a90}</UniqueIdentifier>
     </Filter>
-    <Filter Include="PublicAPI\Aspects">
-      <UniqueIdentifier>{74d29cb6-3195-405a-bf34-8456fdf47195}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Pch">
       <UniqueIdentifier>{b030262e-d434-4042-b86d-adbff5f057f4}</UniqueIdentifier>
     </Filter>
@@ -54,9 +51,6 @@
     </Filter>
     <Filter Include="Src\MaterialProfiles">
       <UniqueIdentifier>{70b32bb4-2188-4247-9be4-cf681a820d88}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Src\Aspects">
-      <UniqueIdentifier>{409ec9ce-42eb-491b-aa22-c908826ff77a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\PrivateAPI">
       <UniqueIdentifier>{cbb8ca08-5bdd-4bbe-a4df-ba775fe41629}</UniqueIdentifier>
@@ -191,9 +185,6 @@
     <ClCompile Include="src\ParametricProfile.cpp">
       <Filter>Src\SinglePerimeterProfiles</Filter>
     </ClCompile>
-    <ClCompile Include="src\CustomCardinalPointsAspect.cpp">
-      <Filter>Src\Aspects</Filter>
-    </ClCompile>
     <ClCompile Include="src\MaterialProfile.cpp">
       <Filter>Src\MaterialProfiles</Filter>
     </ClCompile>
@@ -321,9 +312,6 @@
     </ClInclude>
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ParametricProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CustomCardinalPointsAspect.h">
-      <Filter>PublicAPI\Aspects</Filter>
     </ClInclude>
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesGeometry.h">
       <Filter>PrivateAPI</Filter>
