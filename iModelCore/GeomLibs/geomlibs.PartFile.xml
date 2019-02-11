@@ -205,7 +205,7 @@
     </Part>
 
 	<!-- Memory leak testing of GeomLibs tests. Only called on demand -->
-	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=GeomLibs-Gtest -dGTEST_NAME=GeomLibsTest" OnlyPlatforms="x64">
+	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeomLibs-Gtest -dGTEST_NAME=GeomLibsTest" OnlyPlatforms="x64">
 		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
 		<SubProduct ProductName="GeomLibs-Gtest" />
     </Part>
