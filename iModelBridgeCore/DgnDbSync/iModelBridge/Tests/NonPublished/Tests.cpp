@@ -886,6 +886,22 @@ TEST_F(iModelBridgeTests, Test1)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         }
+
+    if (true)
+    {
+        // Run an update with deleting an item.
+        //testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - delete
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = true;
+        testBridge.m_foo_items.erase(testBridge.m_foo_items.begin());
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+    }
     }
 
 /*---------------------------------------------------------------------------------**//**
