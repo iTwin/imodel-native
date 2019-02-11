@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/CurveVectorManipulationStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -114,7 +114,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DPoint3d _AdjustPoint(DPoint3d keyPoint) const override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<ConstructionGeometry> _FinishConstructionGeometry() const override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual LineStringManipulationStrategyPtr _InitLineStringManipulationStrategy(ICurvePrimitiveCR) const;
         virtual ChildCurveVectorManipulationStrategyPtr _InitChildCurveVectorManipulationStrategy(ICurvePrimitiveCR) const;

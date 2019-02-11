@@ -50,7 +50,7 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<ConstructionGeometry> _FinishConstructionGeometry() const override;
 
         GMS_PROPERTY_OVERRIDE(bool)
         GMS_PROPERTY_OVERRIDE(int)

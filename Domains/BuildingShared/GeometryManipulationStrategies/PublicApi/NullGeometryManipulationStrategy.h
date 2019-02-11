@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/NullGeometryManipulationStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,7 +58,7 @@ struct NullGeometryManipulationStrategy final : public GeometryManipulationStrat
         virtual bool _CanAcceptMorePoints() const override { return false; }
 
         virtual IGeometryPtr _FinishGeometry() const override { return nullptr; }
-        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override { return bvector<IGeometryPtr>(); }
+        virtual bvector<ConstructionGeometry> _FinishConstructionGeometry() const override { return bvector<ConstructionGeometry>(); }
 
         // IRessetableDynamic
         virtual void _SetDynamicState(DynamicStateBaseCR state) override {}

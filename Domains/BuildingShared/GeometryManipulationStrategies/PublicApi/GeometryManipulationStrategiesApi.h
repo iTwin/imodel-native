@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/GeometryManipulationStrategiesApi.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -72,6 +72,7 @@ enum class LineStringPlacementStrategyType;
 enum class SplinePlacementStrategyType;
 END_BUILDING_SHARED_NAMESPACE
 
+#include "ConstructionGeometry.h"
 #include "GeometryManipulationStrategyBase.h"
 #include "GeometryManipulationStrategy.h"
 #include "NullGeometryManipulationStrategy.h"

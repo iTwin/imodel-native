@@ -52,7 +52,7 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
-        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
+        virtual bvector<ConstructionGeometry> _FinishConstructionGeometry() const override;
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
         virtual bool _IsComplete() const override;
 
@@ -96,7 +96,7 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
-        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
+        virtual bvector<ConstructionGeometry> _FinishConstructionGeometry() const override;
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
         virtual bool _IsComplete() const override;
 

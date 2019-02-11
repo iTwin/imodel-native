@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PointManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -65,9 +65,9 @@ bvector<DPoint3d> PointManipulationStrategy::_GetKeyPoints() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Vytautas.Kaniusonis             10/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> PointManipulationStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> PointManipulationStrategy::_FinishConstructionGeometry() const
     {
-    return{ _FinishGeometry() };
+    return bvector<ConstructionGeometry>();
     }
 
 //--------------------------------------------------------------------------------------
