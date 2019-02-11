@@ -99,6 +99,21 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         if (!stat.IsSuccess())
             return stat;
         }
+    
+    // Propagate system property by setting the generated property id to leaf property id which would be check when column info is created.
+    if (selectClauseItemPropNameExp && selectClauseItemPropNameExp->IsPropertyRef())
+        {
+        DerivedPropertyExp const& first = selectClauseItemPropNameExp->GetPropertyRef()->GetEndPointDerivedProperty();
+        if (first.GetExpression()->GetType() == Exp::Type::PropertyName)
+            {
+            const PropertyNameExp& firstExp = first.GetExpression()->GetAs<PropertyNameExp>();
+            const PropertyPath& internalPropPath = firstExp.GetPropertyPath();
+            const ECPropertyCP leafProp = internalPropPath[internalPropPath.Size() - 1].GetProperty();
+            const bool isSystem = leafProp != nullptr && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
+            if (isSystem)
+                const_cast<ECPropertyP>(generatedProperty)->SetId(leafProp->GetId());               
+            }
+        }
 
     if (!isDuplicateName)
         m_selectClauseNames[propName] = &selectClauseItemExp;

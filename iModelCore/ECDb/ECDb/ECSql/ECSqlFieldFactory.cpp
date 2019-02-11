@@ -258,9 +258,10 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoFromPropertyNameExp(ECSqlPrep
 //static
 ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoFromGeneratedProperty(ECSqlPrepareContext const& ctx, ECPropertyCR generatedProperty)
     {
+    const bool isSystem = generatedProperty.HasId() && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(generatedProperty).IsSystemProperty();
     ECSqlPropertyPath propertyPath;
     propertyPath.AddEntry(generatedProperty);
-    return CreateTopLevelColumnInfo(ctx.Issues(), false, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(generatedProperty.GetClass(), nullptr));
+    return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(generatedProperty.GetClass(), nullptr));
     }
 
 //--------------------------------------------------------------------------------------
