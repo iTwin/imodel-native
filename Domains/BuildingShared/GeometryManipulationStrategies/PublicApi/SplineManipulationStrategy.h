@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/SplineManipulationStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,7 +48,7 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
     private:
         int m_order;
 
-        SplineControlPointsManipulationStrategy(int order) : T_Super(), m_order(order) {}
+        SplineControlPointsManipulationStrategy(int order);
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
@@ -64,7 +64,15 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
         virtual SplinePlacementStrategyType _GetType() const override {return SplinePlacementStrategyType::ControlPoints;}
 
         virtual SplinePlacementStrategyPtr _CreatePlacement() override;
+
+        virtual void _SetProperty(Utf8CP key, int const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, int& value) const override;
+        using T_Super::_SetProperty;
+        using T_Super::_TryGetProperty;
+
     public:
+        static constexpr Utf8CP prop_Order() { return "Order"; }
+
         static SplineControlPointsManipulationStrategyPtr Create(int order) { return new SplineControlPointsManipulationStrategy(order); }
 
         void SetOrder(int order) { _SetOrder(order); }
@@ -84,7 +92,7 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
         DVec3d m_startTangent = DVec3d::From(0, 0, 0);
         DVec3d m_endTangent = DVec3d::From(0, 0, 0);
 
-        SplineThroughPointsManipulationStrategy() : T_Super() {}
+        SplineThroughPointsManipulationStrategy();
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
@@ -106,7 +114,16 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
 
         virtual SplinePlacementStrategyPtr _CreatePlacement() override;
 
+
+        virtual void _SetProperty(Utf8CP key, DVec3d const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, DVec3d& value) const override;
+        using T_Super::_SetProperty;
+        using T_Super::_TryGetProperty;
+
     public:
+        static constexpr Utf8CP prop_StartTangent() { return "StartTangend"; }
+        static constexpr Utf8CP prop_EndTangent() { return "EndTangent"; }
+
         static SplineThroughPointsManipulationStrategyPtr Create() { return new SplineThroughPointsManipulationStrategy(); }
 
         void SetStartTangent(DVec3d startTangent);

@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/GeometryPlacementStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,6 +62,8 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GMS_PROPERTY_OVERRIDE(bvector<double>)
         GMS_PROPERTY_OVERRIDE(bvector<Utf8String>)
         GMS_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyPropertiesTo(GeometryManipulationStrategyBaseR) const;
 
     public:
         //! Get the underlying manipulation strategy.

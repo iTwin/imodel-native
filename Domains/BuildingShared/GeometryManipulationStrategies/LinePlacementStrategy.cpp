@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/LinePlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -192,6 +192,21 @@ LinePointLengthAnglePlacementStrategy::LinePointLengthAnglePlacementStrategy
         m_length = keyPoints[0].Distance(keyPoints[1]);
         m_angle = keyPoints[0].PlanarAngleTo(keyPoints[2], m_workingPlane.normal);
         }
+
+    RegisterDoubleProperty(prop_Length());
+    RegisterDoubleProperty(prop_Angle());
+    RegisterDPlane3dProperty(prop_WorkingPlane());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+LinePointLengthAnglePlacementStrategy::LinePointLengthAnglePlacementStrategy
+(
+    DPlane3d const & workingPlane
+)
+    : LinePointLengthAnglePlacementStrategy(*LineManipulationStrategy::Create(), workingPlane)
+    {
     }
 
 //--------------------------------------------------------------------------------------
@@ -412,7 +427,16 @@ LinePointsLengthPlacementStrategy::LinePointsLengthPlacementStrategy
         m_length = keyPoints[0].Distance(keyPoints[1]);
         m_direction = DVec3d::FromStartEnd(keyPoints[0], keyPoints[1]);
         }
+
+    RegisterDoubleProperty(prop_Length());
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+LinePointsLengthPlacementStrategy::LinePointsLengthPlacementStrategy() 
+    : LinePointsLengthPlacementStrategy(*LineManipulationStrategy::Create())
+    {}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
@@ -618,6 +642,20 @@ BentleyStatus LinePointsAnglePlacementStrategy::AdjustEndPoint()
 /////////////////////////////////////////////////////////////////////////////////////////
 // LineMetesAndBoundsPlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+LineMetesAndBoundsPlacementStrategy::LineMetesAndBoundsPlacementStrategy
+(
+    DPlane3d plane
+) 
+    : T_Super(plane)
+    , m_directionString("") 
+    {
+    RegisterCustomProperty(prop_MetesAndBounds());
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------

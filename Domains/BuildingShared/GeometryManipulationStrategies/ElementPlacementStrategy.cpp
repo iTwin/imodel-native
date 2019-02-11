@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/ElementPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -163,6 +163,18 @@ GeometryPlacementStrategyCPtr ElementPlacementStrategy::TryGetGeometryPlacementS
 GeometryPlacementStrategyPtr ElementPlacementStrategy::TryGetGeometryPlacementStrategyForEdit()
     {
     return _GetElementManipulationStrategyForEdit()._TryGetGeometryPlacementStrategyForEdit();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void ElementPlacementStrategy::_CopyPropertiesTo
+(
+    GeometryManipulationStrategyBaseR other
+) const
+    {
+    _GetElementManipulationStrategy().CopyPropertiesTo(other);
+    T_Super::_CopyPropertiesTo(other);
     }
 
 #define EPS_PROPERTY_OVERRIDE_IMPL(value_type)                                                          \

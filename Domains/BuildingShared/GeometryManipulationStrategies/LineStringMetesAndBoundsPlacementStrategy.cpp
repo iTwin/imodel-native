@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/LineStringMetesAndBoundsPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -16,6 +16,8 @@ LineStringMetesAndBoundsPlacementStrategy::LineStringMetesAndBoundsPlacementStra
     : T_Super()
     , m_workingPlane(DPlane3d::FromOriginAndNormal({0,0,0},DVec3d::From(0,0,1)))
     {
+    RegisterDPlane3dProperty(prop_WorkingPlane());
+    RegisterCustomProperty(prop_MetesAndBounds());
     }
 
 //--------------------------------------------------------------------------------------

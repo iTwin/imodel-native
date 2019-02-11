@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/GeometryManipulationStrategyBase.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -92,6 +92,8 @@ struct GeometryManipulationStrategyProperty
     protected:
         GeometryManipulationStrategyProperty() {}
         virtual ~GeometryManipulationStrategyProperty() {}
+
+        friend struct GeometryManipulationStrategyBase;
     };
 
 //=======================================================================================
@@ -100,10 +102,26 @@ struct GeometryManipulationStrategyProperty
 struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
     {
     private:
+        bvector<Utf8String> m_registeredBoolProperties;
+        bvector<Utf8String> m_registeredIntProperties;
+        bvector<Utf8String> m_registeredDoubleProperties;
+        bvector<Utf8String> m_registeredDVec3dProperties;
+        bvector<Utf8String> m_registeredDPlane3dProperties;
+        bvector<Utf8String> m_registeredRotMatrixProperties;
+        bvector<Utf8String> m_registeredUtf8StringProperties;
+        bvector<Utf8String> m_registeredDoubleVecProperties;
+        bvector<Utf8String> m_registeredUtf8StringVecProperties;
+        bvector<Utf8String> m_registeredCustomProperties;
+
         GeometryManipulationStrategyBase() {}
 
         friend struct GeometryManipulationStrategy;
         friend struct GeometryPlacementStrategy;
+
+        void RegisterProperty(Utf8StringCR propertyName, bvector<Utf8String>& allProperties);
+        void UnregisterProperty(Utf8StringCR propertyName, bvector<Utf8String>& allProperties);
+
+        template <typename T> static void CopyPropertiesTo(GeometryManipulationStrategyBaseCR from, GeometryManipulationStrategyBaseR to, bvector<Utf8String> const& propertyNames);
 
     protected:
         virtual void _OnPropertySet(Utf8CP key) {}
@@ -130,6 +148,18 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
         virtual IGeometryPtr _FinishGeometry() const = 0;
         virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const = 0;
 
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyPropertiesTo(GeometryManipulationStrategyBaseR) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterBoolProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterIntProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterDoubleProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterDVec3dProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterDPlane3dProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterRotMatrixProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterUtf8StringProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterDoubleVecProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterUtf8StringVecProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterCustomProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void UnregisterProperty(Utf8StringCR propertyName);
     public:
         //! Set/TryGet a bool property.
         GMS_SET_TRYGET_PROPERTY_TYPE(bool)
@@ -151,6 +181,9 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
         GMS_SET_TRYGET_PROPERTY_TYPE(bvector<Utf8String>)
         //! Set/TryGet a custom type property.
         GMS_SET_TRYGET_PROPERTY_TYPE(GeometryManipulationStrategyProperty)
+
+        //! Copy registered properties from another strategy.
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void CopyPropertiesTo(GeometryManipulationStrategyBaseR) const;
 
         //! Retrieve added key points. If dynamic key point is set - it contains that dynamic key point.
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> GetKeyPoints() const;

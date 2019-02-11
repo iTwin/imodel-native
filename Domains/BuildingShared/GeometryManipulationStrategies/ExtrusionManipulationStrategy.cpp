@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/ExtrusionManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -46,6 +46,49 @@ struct ExtrusionDynamicState : DynamicStateBase
 END_BUILDING_SHARED_NAMESPACE
 
 USING_NAMESPACE_BUILDING_SHARED
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+ExtrusionManipulationStrategy::ExtrusionManipulationStrategy() 
+    : ExtrusionManipulationStrategy(*CurveVectorManipulationStrategy::Create()) 
+    {}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+ExtrusionManipulationStrategy::ExtrusionManipulationStrategy
+(
+    CurveVectorManipulationStrategyR baseShapeManipulationStrategy
+)
+    : T_Super()
+    , m_baseComplete(false)
+    , m_heightSet(false)
+    , m_dynamicHeightSet(false)
+    , m_useFixedHeight(false)
+    , m_sweepDirectionSet(false)
+    , m_dynamicSweepDirectionSet(false)
+    , m_useFixedSweepDirection(false)
+    , m_height(0)
+    , m_dynamicHeight(0)
+    , m_fixedHeight(0)
+    , m_sweepDirection(DVec3d::From(0, 0, 0))
+    , m_dynamicSweepDirection(DVec3d::From(0, 0, 0))
+    , m_fixedSweepDirection(DVec3d::From(0, 0, 0))
+    , m_baseShapeManipulationStrategy(&baseShapeManipulationStrategy)
+    {
+    RegisterBoolProperty(prop_BaseComplete());
+    RegisterBoolProperty(prop_IsHeightSet());
+    RegisterBoolProperty(prop_IsDynamicHeightSet());
+    RegisterBoolProperty(prop_UseFixedHeight());
+    RegisterBoolProperty(prop_IsSweepDirectionSet());
+    RegisterBoolProperty(prop_IsDynamicSweepDirectionSet());
+    RegisterBoolProperty(prop_UseFixedSweepDirection());
+    RegisterDoubleProperty(prop_Height());
+    RegisterDoubleProperty(prop_FixedHeight());
+    RegisterDVec3dProperty(prop_SweepDirection());
+    RegisterDVec3dProperty(prop_FixedSweepDirection());
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018

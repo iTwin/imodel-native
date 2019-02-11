@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/ElementManipulationStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,6 +63,8 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         ELEM_PROPERTY_OVERRIDE(bvector<double>)
         ELEM_PROPERTY_OVERRIDE(bvector<Utf8String>)
         ELEM_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyPropertiesTo(GeometryManipulationStrategyBaseR) const;
     };
 
 END_BUILDING_SHARED_NAMESPACE
