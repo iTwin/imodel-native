@@ -443,83 +443,27 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
     Utf8String v8LevelId = FormatSourceId(levelId);
     auto desiredCategoryClassId = converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, (Type::Spatial == ltype)? BIS_CLASS_SpatialCategory: BIS_CLASS_DrawingCategory);
 
-    Utf8PrintfString v8ModelIdAndLevelTypeAsJson("[%d, %d]", v8Model.GetModelId(), (int)ltype);
-    
-#ifdef WIP_EXTERNAL_SOURCE_ASPECT
+    /* Do not join bis.externalsourceaspect to bis.subcategory. That one join causes a sub-query and an inner join (i.e., two more selects), 
+    all just to verify that the XSA belongs to a SubCategory element.
+    We don't need all of that, as long as we know that only SubCategory elements have the 'Level' Kind of XSAs.
 
-    If we join to the element table to stipulate the class (bis.subcategory), we get:
-    iModelConsole> .parse select x.element.id, x.jsonproperties from bis.externalsourceaspect x, bis.subcategory e where (x.element.id=e.ecinstanceid and x.scope.id=0x1 and x.kind='Level' and x.identifier='1' and json_extract(x.jsonproperties, '$.v8ModelId') = '1');
-SQLite SQL: SELECT [x].[ElementId],[x].[ps6] FROM (SELECT [Id] ECInstanceId,[ECClassId],[ElementId],[ps1],[ps2],[ps3],[ps6] FROM [main].[bis_ElementMultiAspect] 
-                WHERE [bis_ElementMultiAspect].ECClassId=152) [x],
-                    (SELECT [bis_DefinitionElement].[ElementId] ECInstanceId,[bis_DefinitionElement].[ECClassId],[bis_Element].[JsonProperties] FROM [main].[bis_DefinitionElement] 
-                            INNER JOIN [main].[bis_Element] ON [bis_DefinitionElement].[ElementId]=[bis_Element].[Id] 
-                                    WHERE [bis_DefinitionElement].ECClassId=118) [e] WHERE ([x].[ElementId]=[e].[ECInstanceId] AND [x].[ps1]=0x1 AND [x].[ps3]='Level' AND [x].[ps2]='1' AND json_extract([x].[ps6],'$.v8ModelId')='1')
+    Also, to avoid yet another select on the elements (definitions) table, to check that the level type (drawing or spatial) was as specified,
+    we duplicate that information into the 'Level' XSA itself.
 
-iModelConsole> .sqlite explain query plan SELECT [x].[ElementId],[x].[ps6] FROM (SELECT [Id] ECInstanceId,[ECClassId],[ElementId],[ps1],[ps2],[ps3],[ps6] FROM [main].[bis_ElementMultiAspect] 
-WHERE [bis_ElementMultiAspect].ECClassId=152) [x],
-(SELECT [bis_DefinitionElement].[ElementId] ECInstanceId,[bis_DefinitionElement].[ECClassId],[bis_Element].[JsonProperties] FROM [main].[bis_DefinitionElement] 
-INNER JOIN [main].[bis_Element] ON [bis_DefinitionElement].[ElementId]=[bis_Element].[Id] 
-WHERE [bis_DefinitionElement].ECClassId=118) [e] WHERE ([x].[ElementId]=[e].[ECInstanceId] AND [x].[ps1]=0x1 AND [x].[ps3]='Level' AND [x].[ps2]='1' AND json_extract([x].[ps6],'$.v8ModelId')='1')
-
-id      parent  notused detail
--------------------------------------------------------------
-5       0       0       SEARCH TABLE bis_ElementMultiAspect USING INDEX ix_bis_ExternalSourceAspect_Source (ps1=? AND ps3=? AND ps2=?)
-17      0       0       SEARCH TABLE bis_DefinitionElement USING INTEGER PRIMARY KEY (rowid=?)
-22      0       0       SEARCH TABLE bis_Element USING INTEGER PRIMARY KEY (rowid=?)
-
-
-    auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_SubCategory) " e"
-        " WHERE (x.Element.Id=e.ECInstanceId AND x.Scope.Id=? AND x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.v8ModelId') = ?)");
-    aspectStmt->BindId(1, repositoryLinkId);
-    aspectStmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    aspectStmt->BindText(3, v8LevelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    aspectStmt->BindText(4, v8ModelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-#else
-    /* If we just eliminate the join to bis.externalsourceaspect from the ECSql statement we get:
-iModelConsole> .parse select x.element.id, x.jsonproperties from bis.externalsourceaspect x where (x.scope.id=0x1 and x.kind='Level' and x.identifier='1' and json_extract(x.jsonproperties, '$.v8ModelId') = '1');
-SQLite SQL: SELECT [x].[ElementId],[x].[ps6] FROM (SELECT [Id] ECInstanceId,[ECClassId],[ElementId],[ps1],[ps2],[ps3],[ps6] FROM [main].[bis_ElementMultiAspect] 
-                WHERE [bis_ElementMultiAspect].ECClassId=152) [x] WHERE ([x].[ps1]=0x1 AND [x].[ps3]='Level' AND [x].[ps2]='1' AND json_extract([x].[ps6],'$.v8ModelId')='1')
-
-iModelConsole> .sqlite explain query plan SELECT [x].[ElementId],[x].[ps6] FROM (SELECT [Id] ECInstanceId,[ECClassId],[ElementId],[ps1],[ps2],[ps3],[ps6] FROM [main].[bis_ElementMultiAspect] WHERE [bis_ElementMultiAspect].ECClassId=152) [x] WHERE ([x].[ps1]=0x1 AND [x].[ps3]='Level' AND [x].[ps2]='1' AND json_extract([x].[ps6],'$.v8ModelId')='1')
-id      parent  notused detail
--------------------------------------------------------------
-3       0       0       SEARCH TABLE bis_ElementMultiAspect USING INDEX ix_bis_ExternalSourceAspect_Source (ps1=? AND ps3=? AND ps2=?)
-
-That eliminates a sub-query and an inner join. All of that was just to verify that the XSA belongs to a SubCategory element.
-We don't need all of that, as long as we know that only SubCategory elements have the 'Level' Kind of XSAs.
-
-Also, the original design required a follow-up query on the parent Category to check that the level type (drawing or spatial) was as specified. 
-I have duplicated that information into the 'Level' XSA itself.
-*/
+    Tricky: to avoid multiple calls to json_extract (which parses the JSON text each time), we specify multiple properties to
+    extract. That returns an array of values, formatting as JSON text. That's why we have to bind a text value to match it.
+    */
     auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x "
         " WHERE (x.Scope.Id=? AND x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.v8ModelId', '$.levelType') = ?)");
     aspectStmt->BindId(1, repositoryLinkId);
     aspectStmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     aspectStmt->BindText(3, v8LevelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    aspectStmt->BindText(4, v8ModelIdAndLevelTypeAsJson.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-
-#endif
-    BeSQLite::EC::CachedECSqlStatementPtr catClassStmt;
+    aspectStmt->BindText(4, Utf8PrintfString("[%d,%d]", v8Model.GetModelId(), (int)ltype).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     while (BE_SQLITE_ROW == aspectStmt->Step())
         {
         subCatId = aspectStmt->GetValueId<DgnSubCategoryId>(0);
-
-        // Must be a SubCategory of the requested type of Category (spatial or drawing)
-        if (!catClassStmt.IsValid())
-            catClassStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
-                "SELECT c.ECClassId FROM " BIS_SCHEMA(BIS_CLASS_Category) " c JOIN " BIS_SCHEMA(BIS_CLASS_SubCategory) " s ON c.ECInstanceId=s.Parent.Id"
-                " WHERE s.ECInstanceId=?");
-
-        catClassStmt->Reset();
-        catClassStmt->BindId(1, subCatId);
-        if (BE_SQLITE_ROW != catClassStmt->Step())
-            continue;
-        if (catClassStmt->GetValueId<ECN::ECClassId>(0) != desiredCategoryClassId)
-            continue;
-
         return BSISUCCESS;
         }
     return BSIERROR;
@@ -547,7 +491,7 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateA
     rapidjson::Document json(rapidjson::kObjectType);
     auto& allocator = json.GetAllocator();
     json.AddMember("v8ModelId", (int)v8Model.GetModelId(), allocator); // int32_t
-    json.AddMember("categoryType", (int)ctype, allocator);
+    json.AddMember("levelType", (int)ctype, allocator);
     json.AddMember("v8LevelName", rapidjson::Value(v8LevelName.c_str(), allocator), allocator);
     aspect.SetProperties(json);
 
