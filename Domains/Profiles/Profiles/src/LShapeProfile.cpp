@@ -6,7 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
-#include <ProfilesInternal\ProfilesPrivateApi.h>
+#include <ProfilesInternal\ProfilesLogging.h>
+#include <ProfilesInternal\ProfilesGeometry.h>
+#include <ProfilesInternal\ProfilesProperty.h>
+#include <ProfilesInternal\ProfilesQuery.h>
 #include <Profiles\LShapeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
