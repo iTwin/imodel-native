@@ -2,7 +2,7 @@
 #
 #     $Source: DgnGeoCoord/DgnGeoCoord.prewire.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 PolicyFile = $(SrcRoot)GeoCoord/mki/GeoCoordPolicy.mki
@@ -10,4 +10,4 @@ PolicyFile = $(SrcRoot)GeoCoord/mki/GeoCoordPolicy.mki
 
 # Wire in my own public header files.
 always:
-    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)DgnGeoCoord=$(DgnGeoPublicApiSrc)"
+    ~linkdir "$(BuildContextPublicApiDir)DgnGeoCoord=$(DgnGeoPublicApiSrc)"
