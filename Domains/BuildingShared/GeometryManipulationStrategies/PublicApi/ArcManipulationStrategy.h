@@ -80,6 +80,8 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         using T_Super::_SetProperty;
         using T_Super::_TryGetProperty;
 
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc; }
+
     public:
         static constexpr Utf8CP prop_UseSweep() { return "UseSweep"; }
         static constexpr Utf8CP prop_Sweep() { return "Sweep"; }

@@ -57,6 +57,8 @@ struct ChildCurveVectorManipulationStrategy : public CurvePrimitiveManipulationS
 
         virtual CurveVectorManipulationStrategyPtr _InitCurveVectorManipulationStrategy(CurveVectorCR) const;
 
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector; }
+
         // IRessetableDynamic
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetDynamicState(DynamicStateBaseCR state) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DynamicStateBaseCPtr _GetDynamicState() const override;

@@ -36,6 +36,7 @@ struct CurvePrimitivePlacementStrategy : public GeometryPlacementStrategy
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitive::CurvePrimitiveType GetResultCurvePrimitiveType() const;
         bool IsEmpty() const;
     };
 

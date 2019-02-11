@@ -128,6 +128,14 @@ bool CurvePrimitivePlacementStrategy::_IsContinious() const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+ICurvePrimitive::CurvePrimitiveType CurvePrimitivePlacementStrategy::GetResultCurvePrimitiveType() const
+    {
+    return _GetCurvePrimitiveManipulationStrategy().GetResultCurvePrimitiveType();
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                03/2018
 //---------------+---------------+---------------+---------------+---------------+------
 bool CurvePrimitivePlacementStrategy::IsEmpty() const
