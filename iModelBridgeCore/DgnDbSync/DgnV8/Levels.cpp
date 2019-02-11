@@ -349,6 +349,8 @@ void Converter::HandleLevelAppearanceInconsistency(ViewDefinitionR theView, DgnA
 
     DgnV8Api::LevelCache const& v8AttachmentLevelCache = v8Attachment.GetLevelCache();
     DgnV8Api::LevelHandle v8Level = v8AttachmentLevelCache.GetLevel(v8LevelId);
+    if (!v8Level.IsValid()) // looks like the level has disappeared from the v8 file!
+        return;
 
     bool maybeMakeSubCategories = !GetParams().NeverCopyLevel(); 
     IssueSeverity issueSeverity = maybeMakeSubCategories? IssueSeverity::Info: IssueSeverity::Error;
@@ -433,6 +435,8 @@ void Converter::ConvertAttachmentLevelMask(ViewDefinitionR theView, DgnV8ViewInf
 
             DgnV8Api::LevelCache const& v8AttachmentLevelCache = v8Attachment.GetLevelCache();
             DgnV8Api::LevelHandle v8Level = v8AttachmentLevelCache.GetLevel(levelId);
+            if (!v8Level.IsValid()) // looks like the level has disappeared from the v8 file!
+                continue;
 
             DgnSubCategoryId subcatId = GetSyncInfo().FindSubCategory(levelId, v8Model, ltype);   // Look up the default SubCategory for this level
             if (!subcatId.IsValid())
