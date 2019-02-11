@@ -35,6 +35,8 @@ struct LineManipulationStrategy : public CurvePrimitiveManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override;
 
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line; }
+
     public:
         static LineManipulationStrategyPtr Create() { return new LineManipulationStrategy(); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static LineManipulationStrategyPtr Create(DSegment3dCR line);

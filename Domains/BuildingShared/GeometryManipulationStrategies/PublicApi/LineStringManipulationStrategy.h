@@ -37,6 +37,8 @@ struct LineStringManipulationStrategy : public CurvePrimitiveManipulationStrateg
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual LineStringPlacementStrategyPtr _CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType) override;
 
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString; }
+
     public:
         static LineStringManipulationStrategyPtr Create() { return new LineStringManipulationStrategy(); }
         static LineStringManipulationStrategyPtr Create(ICurvePrimitiveCR primitive);

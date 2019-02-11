@@ -62,6 +62,7 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineControlPointsManipulationStrategy(*this); };
 
         virtual SplinePlacementStrategyType _GetType() const override {return SplinePlacementStrategyType::ControlPoints;}
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve; }
 
         virtual SplinePlacementStrategyPtr _CreatePlacement() override;
 
@@ -111,6 +112,7 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineThroughPointsManipulationStrategy(*this); };
 
         virtual SplinePlacementStrategyType _GetType() const override { return SplinePlacementStrategyType::ThroughPoints; }
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve; }
 
         virtual SplinePlacementStrategyPtr _CreatePlacement() override;
 

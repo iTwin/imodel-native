@@ -65,6 +65,8 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override;
 
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc; }
+
     public:
         static EllipseManipulationStrategyPtr Create() { return new EllipseManipulationStrategy(); }
 

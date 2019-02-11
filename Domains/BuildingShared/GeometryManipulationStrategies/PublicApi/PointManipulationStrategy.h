@@ -49,6 +49,8 @@ struct PointManipulationStrategy : public LineStringManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString; }
+
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static PointManipulationStrategyPtr Create() { return new PointManipulationStrategy(); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static PointManipulationStrategyPtr Create(DPoint3dCR point);

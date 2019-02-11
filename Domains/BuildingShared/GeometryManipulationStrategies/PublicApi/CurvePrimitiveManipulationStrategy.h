@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/CurvePrimitiveManipulationStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,6 +68,8 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
 
         virtual bool _IsContinious() const = 0;
 
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const = 0;
+
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
         
@@ -87,6 +89,8 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         CurvePrimitiveManipulationStrategyPtr Clone() const;
 
         bool IsContinious() const;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitive::CurvePrimitiveType GetResultCurvePrimitiveType() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

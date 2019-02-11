@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/CurvePrimitiveManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -479,4 +479,12 @@ IGeometryPtr CurvePrimitiveManipulationStrategy::_FinishGeometry() const
         return nullptr;
 
     return IGeometry::Create(primitive);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+ICurvePrimitive::CurvePrimitiveType CurvePrimitiveManipulationStrategy::GetResultCurvePrimitiveType() const
+    {
+    return _GetResultCurvePrimitiveType();
     }
