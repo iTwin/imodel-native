@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/SolidPrimitiveManipulationStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,9 +17,7 @@ struct SolidPrimitiveManipulationStrategy : public GeometryManipulationStrategy
     DEFINE_T_SUPER(GeometryManipulationStrategy)
 
     protected:
-        SolidPrimitiveManipulationStrategy() 
-            : T_Super()
-            {}
+        SolidPrimitiveManipulationStrategy();
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> _GetKeyPoints() const override;
 

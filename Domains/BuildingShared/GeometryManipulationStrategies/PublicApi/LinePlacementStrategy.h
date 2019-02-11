@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/LinePlacementStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -72,7 +72,7 @@ struct LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
         DPlane3d m_workingPlane;
 
     protected:
-        LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane) : T_Super(), m_workingPlane(workingPlane) {}
+        LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane);
         LinePointLengthAnglePlacementStrategy(LineManipulationStrategyR manipulationStrategy, DPlane3d const & workingPlane);
 
 
@@ -149,7 +149,7 @@ struct LineMetesAndBoundsPlacementStrategy : public LinePointLengthAnglePlacemen
         Utf8String m_directionString;
         
     protected:
-        LineMetesAndBoundsPlacementStrategy(DPlane3d plane) : T_Super(plane), m_directionString("") {}
+        LineMetesAndBoundsPlacementStrategy(DPlane3d plane);
 
         virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, GeometryManipulationStrategyProperty& value) const override;
@@ -169,7 +169,7 @@ struct LinePointsLengthPlacementStrategy : LinePlacementStrategy
         DVec3d m_direction;
 
     protected:
-        LinePointsLengthPlacementStrategy() : T_Super() {}
+        LinePointsLengthPlacementStrategy();
         LinePointsLengthPlacementStrategy(LineManipulationStrategyR manipulationStrategy);
 
         virtual void _SetProperty(Utf8CP key, const double & value) override;

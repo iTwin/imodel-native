@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/CurveVectorManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -286,7 +286,9 @@ CurveVectorManipulationStrategyPtr CurveVectorManipulationStrategy::Create
 CurveVectorManipulationStrategy::CurveVectorManipulationStrategy()
     : T_Super()
     , m_workingPlane(DPlane3d::FromOriginAndNormal({0,0,0}, DVec3d::From(0, 0, 1)))
-    {}
+    {
+    RegisterDPlane3dProperty(prop_WorkingPlane());
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018

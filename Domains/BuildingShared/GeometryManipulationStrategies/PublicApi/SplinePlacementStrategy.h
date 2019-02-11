@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/SplinePlacementStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,9 +41,6 @@ struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
         virtual CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_manipulationStrategy; }
         virtual CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
 
-        virtual void _SetProperty(Utf8CP key, const int & value) override;
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, int & value) const override;
-
         virtual SplinePlacementStrategyType _GetType() const override { return SplinePlacementStrategyType::ControlPoints; }
 
         void _SetOrder(int const & order);
@@ -52,7 +49,7 @@ struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineControlPointsPlacementStrategyPtr Create(int order) { return new SplineControlPointsPlacementStrategy(order); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineControlPointsPlacementStrategyPtr Create(SplineControlPointsManipulationStrategyR manipulationStrategy) { return new SplineControlPointsPlacementStrategy(manipulationStrategy); }
 
-        static constexpr Utf8CP prop_Order() { return "Order"; }
+        static constexpr Utf8CP prop_Order() { return SplineControlPointsManipulationStrategy::prop_Order(); }
     };
 
 struct SplineThroughPointsPlacementStrategy : SplinePlacementStrategy
@@ -88,6 +85,9 @@ struct SplineThroughPointsPlacementStrategy : SplinePlacementStrategy
         virtual DVec3d _GetEndTangent() const;
 
     public:
+        static constexpr Utf8CP prop_StartTangent() { return SplineThroughPointsManipulationStrategy::prop_StartTangent(); }
+        static constexpr Utf8CP prop_EndTangent() { return SplineThroughPointsManipulationStrategy::prop_EndTangent(); }
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineThroughPointsPlacementStrategyPtr Create() { return new SplineThroughPointsPlacementStrategy(); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineThroughPointsPlacementStrategyPtr Create(SplineThroughPointsManipulationStrategyR manipulationStrategy) { return new SplineThroughPointsPlacementStrategy(manipulationStrategy); }
 

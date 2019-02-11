@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/SplinePlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -34,28 +34,6 @@ SplineControlPointsPlacementStrategy::SplineControlPointsPlacementStrategy
     m_manipulationStrategy(&manipulationStrategy)
     {
     BeAssert(m_manipulationStrategy.IsValid());
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas             01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void SplineControlPointsPlacementStrategy::_SetProperty(Utf8CP key, const int & value)
-    {
-    if (0 == std::strcmp(key, prop_Order()))
-        _SetOrder(value);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas             01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SplineControlPointsPlacementStrategy::_TryGetProperty(Utf8CP key, int & value) const
-    {
-    if (0 == std::strcmp(key, prop_Order()))
-        value = _GetOrder();
-    else
-        return BentleyStatus::ERROR;
-
-    return BentleyStatus::SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------

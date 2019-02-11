@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/ElementManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -234,6 +234,23 @@ DynamicStateBaseCPtr ElementManipulationStrategy::_GetDynamicState() const
 bvector<IGeometryPtr> ElementManipulationStrategy::_FinishConstructionGeometry() const
     {
     return _GetGeometryManipulationStrategy().FinishConstructionGeometry();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ElementManipulationStrategy::_CopyPropertiesTo
+(
+    GeometryManipulationStrategyBaseR other
+) const
+    {
+    GeometryPlacementStrategyCPtr geometryPlacementStrategy = _TryGetGeometryPlacementStrategy();
+    if (geometryPlacementStrategy.IsValid())
+        geometryPlacementStrategy->CopyPropertiesTo(other);
+    else
+        _GetGeometryManipulationStrategy().CopyPropertiesTo(other);
+    
+    T_Super::_CopyPropertiesTo(other);
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \

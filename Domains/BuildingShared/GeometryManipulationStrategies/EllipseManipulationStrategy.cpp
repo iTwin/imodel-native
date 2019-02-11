@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/EllipseManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -10,6 +10,18 @@
 #define SWEEP_BREAK Angle::PiOver2()
 
 USING_NAMESPACE_BUILDING_SHARED
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+EllipseManipulationStrategy::EllipseManipulationStrategy() 
+    : T_Super()
+    , m_sweep(0)
+    , m_workingPlane(DPlane3d::FromOriginAndNormal(DPoint3d::From(0, 0, 0), DVec3d::From(0, 0, 0))) 
+    {
+    RegisterDVec3dProperty(prop_Normal());
+    RegisterDPlane3dProperty(prop_WorkingPlane());
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017

@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/ArcManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -24,6 +24,11 @@ ArcManipulationStrategy::ArcManipulationStrategy()
     , m_lastArc(nullptr)
     {
     std::fill_n(std::back_inserter(GetKeyPointsR()), 4, INVALID_POINT);
+
+    RegisterBoolProperty(prop_UseSweep());
+    RegisterDoubleProperty(prop_Sweep());
+    RegisterBoolProperty(prop_UseRadius());
+    RegisterDoubleProperty(prop_Radius());
     }
 
 #define KEY_POINT_ACCESSOR_IMPL(name, index) \

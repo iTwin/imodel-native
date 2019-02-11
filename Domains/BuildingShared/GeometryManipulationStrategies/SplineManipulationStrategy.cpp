@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/SplineManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -54,6 +54,19 @@ SplinePlacementStrategyType SplineManipulationStrategy::GetType() const
 // SplineControlPointsManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
 const int SplineControlPointsManipulationStrategy::default_Order = 3;
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+SplineControlPointsManipulationStrategy::SplineControlPointsManipulationStrategy
+(
+    int order
+) 
+    : T_Super()
+    , m_order(order) 
+    {
+    RegisterIntProperty(prop_Order());
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
@@ -145,9 +158,55 @@ bvector<IGeometryPtr> SplineControlPointsManipulationStrategy::_FinishConstructi
     return constructionGeometry;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void SplineControlPointsManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    int const& value
+)
+    {
+    if (0 == strcmp(key, prop_Order()))
+        {
+        m_order = value;
+        }
+
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SplineControlPointsManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    int& value
+) const
+    {
+    if (0 == strcmp(key, prop_Order()))
+        {
+        value = m_order;
+        return BSISUCCESS;
+        }
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineThroughPointsManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+SplineThroughPointsManipulationStrategy::SplineThroughPointsManipulationStrategy() 
+    : T_Super()
+    {
+    RegisterDVec3dProperty(prop_StartTangent());
+    RegisterDVec3dProperty(prop_EndTangent());
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -254,4 +313,48 @@ bvector<IGeometryPtr> SplineThroughPointsManipulationStrategy::_FinishConstructi
         }
 
     return constructionGeometry;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void SplineThroughPointsManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    DVec3d const& value
+)
+    {
+    if (0 == strcmp(key, prop_StartTangent()))
+        {
+        m_startTangent = value;
+        }
+    else if (0 == strcmp(key, prop_EndTangent()))
+        {
+        m_endTangent = value;
+        }
+
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SplineThroughPointsManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key, 
+    DVec3d& value
+) const
+    {
+    if (0 == strcmp(key, prop_StartTangent()))
+        {
+        value = m_startTangent;
+        return BSISUCCESS;
+        }
+    else if (0 == strcmp(key, prop_EndTangent()))
+        {
+        value = m_endTangent;
+        return BSISUCCESS;
+        }
+
+    return T_Super::_TryGetProperty(key, value);
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/ExtrusionManipulationStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -89,24 +89,8 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
         bool m_dynamicSweepDirectionSet;
         bool m_useFixedSweepDirection;
 
-        ExtrusionManipulationStrategy() : ExtrusionManipulationStrategy(*CurveVectorManipulationStrategy::Create()) {}
-        ExtrusionManipulationStrategy(CurveVectorManipulationStrategyR baseShapeManipulationStrategy)
-            : T_Super()
-            , m_baseComplete(false)
-            , m_heightSet(false)
-            , m_dynamicHeightSet(false)
-            , m_useFixedHeight(false)
-            , m_sweepDirectionSet(false)
-            , m_dynamicSweepDirectionSet(false)
-            , m_useFixedSweepDirection(false)
-            , m_height(0)
-            , m_dynamicHeight(0)
-            , m_fixedHeight(0)
-            , m_sweepDirection(DVec3d::From(0, 0, 0))
-            , m_dynamicSweepDirection(DVec3d::From(0, 0, 0))
-            , m_fixedSweepDirection(DVec3d::From(0, 0, 0))
-            , m_baseShapeManipulationStrategy(&baseShapeManipulationStrategy)
-            {}
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ExtrusionManipulationStrategy();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ExtrusionManipulationStrategy(CurveVectorManipulationStrategyR baseShapeManipulationStrategy);
 
         double CalculateHeight(DPoint3dCR keyPoint) const;
         DVec3d CalculateSweepDirection(DPoint3dCR keyPoint) const;

@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/GeometryManipulationStrategyBase.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -118,4 +118,212 @@ IGeometryPtr GeometryManipulationStrategyBase::FinishGeometry() const
 bvector<IGeometryPtr> GeometryManipulationStrategyBase::FinishConstructionGeometry() const
     {
     return _FinishConstructionGeometry();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterProperty
+(
+    Utf8StringCR propertyName, 
+    bvector<Utf8String>& allProperties
+)
+    {
+    auto existing = std::find(allProperties.begin(), allProperties.end(), propertyName);
+    if (allProperties.end() == existing)
+        allProperties.push_back(propertyName);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::UnregisterProperty
+(
+    Utf8StringCR propertyName, 
+    bvector<Utf8String>& allProperties
+)
+    {
+    auto existing = std::find(allProperties.begin(), allProperties.end(), propertyName);
+    if (allProperties.end() != existing)
+        allProperties.erase(existing);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterBoolProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredBoolProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterIntProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredIntProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterDoubleProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredDoubleProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterDVec3dProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredDVec3dProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterDPlane3dProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredDPlane3dProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterRotMatrixProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredRotMatrixProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterUtf8StringProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredUtf8StringProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterDoubleVecProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredDoubleVecProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterUtf8StringVecProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredUtf8StringVecProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterCustomProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredCustomProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::UnregisterProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    UnregisterProperty(propertyName, m_registeredBoolProperties);
+    UnregisterProperty(propertyName, m_registeredIntProperties);
+    UnregisterProperty(propertyName, m_registeredDoubleProperties);
+    UnregisterProperty(propertyName, m_registeredDVec3dProperties);
+    UnregisterProperty(propertyName, m_registeredDPlane3dProperties);
+    UnregisterProperty(propertyName, m_registeredRotMatrixProperties);
+    UnregisterProperty(propertyName, m_registeredUtf8StringProperties);
+    UnregisterProperty(propertyName, m_registeredDoubleVecProperties);
+    UnregisterProperty(propertyName, m_registeredUtf8StringVecProperties);
+    UnregisterProperty(propertyName, m_registeredCustomProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+template <typename T>
+void GeometryManipulationStrategyBase::CopyPropertiesTo
+(
+    GeometryManipulationStrategyBaseCR from,
+    GeometryManipulationStrategyBaseR to,
+    bvector<Utf8String> const& propertyNames
+)
+    {
+    for (Utf8StringCR propertyName : propertyNames)
+        {
+        T value;
+        if (BentleyStatus::SUCCESS == from.TryGetProperty(propertyName.c_str(), value))
+            to.SetProperty(propertyName.c_str(), value);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::_CopyPropertiesTo
+(
+    GeometryManipulationStrategyBaseR other
+) const
+    {
+    CopyPropertiesTo<bool>(*this, other, m_registeredBoolProperties);
+    CopyPropertiesTo<int>(*this, other, m_registeredIntProperties);
+    CopyPropertiesTo<double>(*this, other, m_registeredDoubleProperties);
+    CopyPropertiesTo<DVec3d>(*this, other, m_registeredDVec3dProperties);
+    CopyPropertiesTo<DPlane3d>(*this, other, m_registeredDPlane3dProperties);
+    CopyPropertiesTo<RotMatrix>(*this, other, m_registeredRotMatrixProperties);
+    CopyPropertiesTo<Utf8String>(*this, other, m_registeredUtf8StringProperties);
+    CopyPropertiesTo<bvector<double>>(*this, other, m_registeredDoubleVecProperties);
+    CopyPropertiesTo<bvector<Utf8String>>(*this, other, m_registeredUtf8StringVecProperties);
+    CopyPropertiesTo<GeometryManipulationStrategyProperty>(*this, other, m_registeredCustomProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::CopyPropertiesTo
+(
+    GeometryManipulationStrategyBaseR other
+) const
+    {
+    _CopyPropertiesTo(other);
     }
