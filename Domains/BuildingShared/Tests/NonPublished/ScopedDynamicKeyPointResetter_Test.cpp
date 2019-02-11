@@ -21,7 +21,7 @@ struct TestResettableDynamic : IResettableDynamic
         bool m_value = false;
 
     protected:
-        virtual DynamicStateBaseCPtr _GetDynamicState() const override { return BooleanDynamicState::Create(m_value); }
+        virtual DynamicStateBaseCPtr _GetDynamicState() const override { return BooleanDynamicState::Create(m_value).get(); }
         virtual void _SetDynamicState(DynamicStateBaseCR state) override 
             {
             BooleanDynamicStateCPtr booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
