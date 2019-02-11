@@ -297,7 +297,7 @@ Converter::V8NamedViewType Converter::GetV8NamedViewTypeOfFirstAttachment(DgnV8M
 DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping, 
                                                          SyncInfo::V8ElementExternalSourceAspect const& sectionedElementXsa, DgnV8Api::ElementHandle& sectionedV8Element,
                                                          DgnCategoryId categoryId, GeometryBuilder& builder, 
-                                                         Utf8StringCR v8SectionedElementPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& parentSheetModelMapping)
+                                                         Utf8StringCR v8SectionedElementPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& rootParentModel)
     {
     // "sectionedV8Element" is the 3-D element that was sectioned/projected/rendered
     
@@ -331,7 +331,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         }
     else
         {
-#ifdef WIP_EXTERNAL_SOURCE_ELEMENT // sectionedElementXsa will almost always be invalid in this case. If we want to report this issue, then the caller will have to pass in the ElementId
+#ifdef WIP_EXTERNAL_SOURCE_ASPECT // sectionedElementXsa will almost always be invalid in this case. If we want to report this issue, then the caller will have to pass in the ElementId
         // Issue a warning about missing sectioned element
         auto rlink = GetRepositoryLinkElement(drawingModelMapping.GetRepositoryLinkId());
         if (rlink.IsValid())
@@ -407,7 +407,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     if (IsUpdating())
         {
         // See "How ProxyGraphics are tracked"
-        auto existingDrawingGraphicId = SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphic(parentSheetModelMapping.GetDgnModel(), v8SectionedElementPath, categoryId, elementClassId, GetDgnDb());
+        auto existingDrawingGraphicId = SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphic(rootParentModel.GetDgnModel(), v8SectionedElementPath, categoryId, elementClassId, GetDgnDb());
         if (existingDrawingGraphicId.IsValid())
             {
             // We already have a graphic for this element. Update it.
@@ -427,7 +427,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     // This is a new graphic for this element.
 
     // See "How ProxyGraphics are tracked"
-    auto aspect = SyncInfo::ProxyGraphicExternalSourceAspect::CreateAspect(parentSheetModelMapping.GetDgnModel(), v8SectionedElementPath, attachmentInfo, GetDgnDb());
+    auto aspect = SyncInfo::ProxyGraphicExternalSourceAspect::CreateAspect(rootParentModel.GetDgnModel(), v8SectionedElementPath, attachmentInfo, GetDgnDb());
     aspect.AddAspect(*drawingGraphic);
 
     drawingGraphic->Insert(&status);

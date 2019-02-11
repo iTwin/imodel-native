@@ -2099,6 +2099,8 @@ public:
     //! @private
     DGNDBSYNC_EXPORT virtual void _DeleteElement(DgnElementId);
 
+    bool DetectDeletedExtractionGraphics(ResolvedModelMapping const& rootParentModel, bset<Utf8String> const& v8SectionedElementPathsSeen, std::set<DgnAttachmentCP> const& attachmentsUnchanged);
+
     bool HadAnyChanges() const { return m_hadAnyChanges || m_elementsConverted != 0; }
 };
 
