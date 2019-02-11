@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/CurveStrategy_Test.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeXml\BeXml.h>
@@ -391,7 +391,6 @@ TEST_F(CurveStrategyTests, SplineThroughPointsStrategyTests)
     TestUtils::CompareCurves(expectedCurve, strategy->FinishPrimitive());
 
     startTangent.Zero();
-    startTangent.Normalize();
     strategy->RemoveStartTangent();
     ASSERT_TRUE(startTangent.AlmostEqual(strategy->GetStartTangent())) << "Start tangent is incorrect";
 
@@ -448,12 +447,12 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
 
     strategy->AddKeyPoint({ 1, 0, 0 });
     TestUtils::ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 } }, strategy->GetKeyPoints());
-    bvector<IGeometryPtr> cGeom1 = strategy->FinishConstructionGeometry();
+    bvector<ConstructionGeometry> cGeom1 = strategy->FinishConstructionGeometry();
     ASSERT_EQ(2, cGeom1.size());
     ASSERT_TRUE(cGeom1[0].IsValid());
     ASSERT_TRUE(cGeom1[1].IsValid());
-    ICurvePrimitivePtr cGeom1PointString = cGeom1[0]->GetAsICurvePrimitive();
-    ICurvePrimitivePtr cGeom1LineString = cGeom1[1]->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom1PointString = cGeom1[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom1LineString = cGeom1[1].GetGeometry()->GetAsICurvePrimitive();
     ASSERT_TRUE(cGeom1PointString.IsValid());
     ASSERT_TRUE(cGeom1LineString.IsValid());
     bvector<DPoint3d> points1 {{0,0,0},{1,0,0}};
@@ -483,12 +482,12 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
     expectedCurve = TestUtils::CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, order);
     TestUtils::CompareCurves(expectedCurve, strategy->FinishPrimitive());
 
-    bvector<IGeometryPtr> cGeom2 = strategy->FinishConstructionGeometry();
+    bvector<ConstructionGeometry> cGeom2 = strategy->FinishConstructionGeometry();
     ASSERT_EQ(2, cGeom2.size());
     ASSERT_TRUE(cGeom2[0].IsValid());
     ASSERT_TRUE(cGeom2[1].IsValid());
-    ICurvePrimitivePtr cGeom2PointString = cGeom2[0]->GetAsICurvePrimitive();
-    ICurvePrimitivePtr cGeom2LineString = cGeom2[1]->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom2PointString = cGeom2[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom2LineString = cGeom2[1].GetGeometry()->GetAsICurvePrimitive();
     ASSERT_TRUE(cGeom2PointString.IsValid());
     ASSERT_TRUE(cGeom2LineString.IsValid());
     bvector<DPoint3d> points2 {{0,0,0}, {1,0,0}, {0,1,0}, {2,5,6}};
@@ -528,12 +527,12 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
     expectedCurve = TestUtils::CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 5, 6, 7 } }, order);
     TestUtils::CompareCurves(expectedCurve, strategy->FinishPrimitive());
 
-    bvector<IGeometryPtr> cGeom3 = strategy->FinishConstructionGeometry();
+    bvector<ConstructionGeometry> cGeom3 = strategy->FinishConstructionGeometry();
     ASSERT_EQ(2, cGeom3.size());
     ASSERT_TRUE(cGeom3[0].IsValid());
     ASSERT_TRUE(cGeom3[1].IsValid());
-    ICurvePrimitivePtr cGeom3PointString = cGeom3[0]->GetAsICurvePrimitive();
-    ICurvePrimitivePtr cGeom3LineString = cGeom3[1]->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom3PointString = cGeom3[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom3LineString = cGeom3[1].GetGeometry()->GetAsICurvePrimitive();
     ASSERT_TRUE(cGeom3PointString.IsValid());
     ASSERT_TRUE(cGeom3LineString.IsValid());
     bvector<DPoint3d> points3 {{0, 0, 0}, {1, 0, 0}, {5, 6, 7}};
@@ -562,4 +561,41 @@ TEST_F(CurveStrategyTests, SplineStrategiesCreationTest)
     SplinePlacementStrategyPtr pPlacement = pointsStrategy->CreatePlacement();
     ASSERT_TRUE(pPlacement.IsValid()) << "through points strategy failed to create";
     ASSERT_EQ(SplinePlacementStrategyType::ThroughPoints, pPlacement->GetType()) << "Placement Strategy type should be Through Points";
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveStrategyTests, CopyProperties)
+    {
+    SplineThroughPointsPlacementStrategyPtr sut1 = SplineThroughPointsPlacementStrategy::Create();
+    ASSERT_TRUE(sut1.IsValid());
+
+    SplineThroughPointsPlacementStrategyPtr sut2 = SplineThroughPointsPlacementStrategy::Create();
+    ASSERT_TRUE(sut2.IsValid());
+
+    DVec3d startTangent = DVec3d::From(10, 0, 0);
+    DVec3d endTangend = DVec3d::From(0, 10, 0);
+
+    sut1->SetProperty(SplineThroughPointsPlacementStrategy::prop_StartTangent(), startTangent);
+    sut1->SetProperty(SplineThroughPointsPlacementStrategy::prop_EndTangent(), endTangend);
+
+    DVec3d startTangentFromStrategy = DVec3d::From(0, 0, 0);
+    DVec3d endTangentFromStrategy = DVec3d::From(0, 0, 0);
+    ASSERT_EQ(BSISUCCESS, sut1->TryGetProperty(SplineThroughPointsPlacementStrategy::prop_StartTangent(), startTangentFromStrategy));
+    ASSERT_TRUE(startTangentFromStrategy.AlmostEqual(startTangent));
+    ASSERT_EQ(BSISUCCESS, sut1->TryGetProperty(SplineThroughPointsPlacementStrategy::prop_EndTangent(), endTangentFromStrategy));
+    ASSERT_TRUE(endTangentFromStrategy.AlmostEqual(endTangend));
+
+    ASSERT_EQ(BSISUCCESS, sut2->TryGetProperty(SplineThroughPointsPlacementStrategy::prop_StartTangent(), startTangentFromStrategy));
+    ASSERT_FALSE(startTangentFromStrategy.AlmostEqual(startTangent));
+    ASSERT_EQ(BSISUCCESS, sut2->TryGetProperty(SplineThroughPointsPlacementStrategy::prop_EndTangent(), endTangentFromStrategy));
+    ASSERT_FALSE(endTangentFromStrategy.AlmostEqual(endTangend));
+
+    sut1->CopyPropertiesTo(*sut2);
+
+    ASSERT_EQ(BSISUCCESS, sut2->TryGetProperty(SplineThroughPointsPlacementStrategy::prop_StartTangent(), startTangentFromStrategy));
+    ASSERT_TRUE(startTangentFromStrategy.AlmostEqual(startTangent));
+    ASSERT_EQ(BSISUCCESS, sut2->TryGetProperty(SplineThroughPointsPlacementStrategy::prop_EndTangent(), endTangentFromStrategy));
+    ASSERT_TRUE(endTangentFromStrategy.AlmostEqual(endTangend));
     }

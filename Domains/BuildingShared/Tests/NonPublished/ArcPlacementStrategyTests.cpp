@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/ArcPlacementStrategyTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
@@ -509,50 +509,96 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishConstructionGeometry)
     ASSERT_TRUE(sut->FinishConstructionGeometry().empty());
     sut->AddDynamicKeyPoint({0,0,0});
 
-    bvector<IGeometryPtr> cGeom1 = sut->FinishConstructionGeometry();
-    ASSERT_EQ(2, cGeom1.size());
+    bvector<ConstructionGeometry> cGeom1 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(3, cGeom1.size());
     ASSERT_TRUE(cGeom1[0].IsValid());
     ASSERT_TRUE(cGeom1[1].IsValid());
-    ICurvePrimitivePtr arcCP1 = cGeom1[0]->GetAsICurvePrimitive();
-    ICurvePrimitivePtr lineStringCP1 = cGeom1[1]->GetAsICurvePrimitive();
+    ASSERT_TRUE(cGeom1[2].IsValid());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcEdge, cGeom1[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToStart, cGeom1[1].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenter, cGeom1[2].GetType());
+    ICurvePrimitivePtr arcCP1 = cGeom1[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr lineCP1 = cGeom1[1].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerCP1 = cGeom1[2].GetGeometry()->GetAsICurvePrimitive();
     ASSERT_TRUE(arcCP1.IsValid());
-    ASSERT_TRUE(lineStringCP1.IsValid());
+    ASSERT_TRUE(lineCP1.IsValid());
+    ASSERT_TRUE(centerCP1.IsValid());
     ICurvePrimitivePtr expectedArcCP1 = ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(DPoint3d::From(0, 0, 0), expectedNormal, 2));
     ASSERT_TRUE(arcCP1->IsSameStructureAndGeometry(*expectedArcCP1));
-    ICurvePrimitivePtr expectedLineStringCP1 = ICurvePrimitive::CreateLineString({{0,0,0},{2,0,0}});
-    ASSERT_TRUE(lineStringCP1->IsSameStructureAndGeometry(*expectedLineStringCP1));
+    ICurvePrimitivePtr expectedLineCP1 = ICurvePrimitive::CreateLine(DSegment3d::From({0,0,0},{2,0,0}));
+    ASSERT_TRUE(lineCP1->IsSameStructureAndGeometry(*expectedLineCP1));
+    DPoint3d expectedCenter1 = DPoint3d::From(0, 0, 0);
+    ICurvePrimitivePtr expectedCenterCP1 = ICurvePrimitive::CreatePointString(&expectedCenter1, 1);
+    ASSERT_TRUE(centerCP1->IsSameStructureAndGeometry(*expectedCenterCP1));
 
     sut->AddKeyPoint({-1,0,0});
-    bvector<IGeometryPtr> cGeom2 = sut->FinishConstructionGeometry();
-    ASSERT_EQ(2, cGeom2.size());
+    bvector<ConstructionGeometry> cGeom2 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(3, cGeom2.size());
     ASSERT_TRUE(cGeom2[0].IsValid());
     ASSERT_TRUE(cGeom2[1].IsValid());
-    ICurvePrimitivePtr arcCP2 = cGeom2[0]->GetAsICurvePrimitive();
-    ICurvePrimitivePtr lineStringCP2 = cGeom2[1]->GetAsICurvePrimitive();
+    ASSERT_TRUE(cGeom2[2].IsValid());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcEdge, cGeom2[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToStart, cGeom2[1].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenter, cGeom2[2].GetType());
+    ICurvePrimitivePtr arcCP2 = cGeom2[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr lineCP2 = cGeom2[1].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerCP2 = cGeom2[2].GetGeometry()->GetAsICurvePrimitive();
     ASSERT_TRUE(arcCP2.IsValid());
-    ASSERT_TRUE(lineStringCP2.IsValid());
+    ASSERT_TRUE(lineCP2.IsValid());
+    ASSERT_TRUE(centerCP2.IsValid());
     ICurvePrimitivePtr expectedArcCP2 = ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(DPoint3d::From(-1, 0, 0), expectedNormal, 3));
     ASSERT_TRUE(arcCP2->IsSameStructureAndGeometry(*expectedArcCP2));
-    ICurvePrimitivePtr expectedLineStringCP2 = ICurvePrimitive::CreateLineString({{-1,0,0},{2,0,0}});
-    ASSERT_TRUE(lineStringCP2->IsSameStructureAndGeometry(*expectedLineStringCP2));
+    ICurvePrimitivePtr expectedLineCP2 = ICurvePrimitive::CreateLine(DSegment3d::From({-1,0,0},{2,0,0}));
+    ASSERT_TRUE(lineCP2->IsSameStructureAndGeometry(*expectedLineCP2));
+    DPoint3d expectedCenter2 = DPoint3d::From(-1, 0, 0);
+    ICurvePrimitivePtr expectedCenterCP2 = ICurvePrimitive::CreatePointString(&expectedCenter2, 1);
+    ASSERT_TRUE(centerCP2->IsSameStructureAndGeometry(*expectedCenterCP2));
 
     sut->AddDynamicKeyPoint({-1,3,0});
-    bvector<IGeometryPtr> cGeom3 = sut->FinishConstructionGeometry();
-    ASSERT_EQ(1, cGeom3.size());
-    ASSERT_TRUE(cGeom3.front().IsValid());
-    ICurvePrimitivePtr lineStringCP3 = cGeom3.front()->GetAsICurvePrimitive();
-    ASSERT_TRUE(lineStringCP3.IsValid());
-    ICurvePrimitivePtr expectedLineStringCP3 = ICurvePrimitive::CreateLineString({{-1,3,0},{-1,0,0},{2,0,0}});
-    ASSERT_TRUE(lineStringCP3->IsSameStructureAndGeometry(*expectedLineStringCP3));
+    bvector<ConstructionGeometry> cGeom3 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(3, cGeom3.size());
+    ASSERT_TRUE(cGeom3[0].IsValid());
+    ASSERT_TRUE(cGeom3[1].IsValid());
+    ASSERT_TRUE(cGeom3[2].IsValid());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToEnd, cGeom3[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToStart, cGeom3[1].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenter, cGeom3[2].GetType());
+    ICurvePrimitivePtr centerToEndCP1 = cGeom3[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerToStartCP1 = cGeom3[1].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerCP3 = cGeom3[2].GetGeometry()->GetAsICurvePrimitive();
+    ASSERT_TRUE(centerToEndCP1.IsValid());
+    ASSERT_TRUE(centerToStartCP1.IsValid());
+    ASSERT_TRUE(centerCP3.IsValid());
+    ICurvePrimitivePtr expectedCenterToEndCP1 = ICurvePrimitive::CreateLine(DSegment3d::From({-1,0,0}, {-1,3,0}));
+    ICurvePrimitivePtr expectedCenterToStartCP1 = ICurvePrimitive::CreateLine(DSegment3d::From({-1,0,0}, {2,0,0}));
+    ASSERT_TRUE(centerToEndCP1->IsSameStructureAndGeometry(*expectedCenterToEndCP1));
+    ASSERT_TRUE(centerToStartCP1->IsSameStructureAndGeometry(*expectedCenterToStartCP1));
+    DPoint3d expectedCenter3 = DPoint3d::From(-1, 0, 0);
+    ICurvePrimitivePtr expectedCenterCP3 = ICurvePrimitive::CreatePointString(&expectedCenter3, 1);
+    ASSERT_TRUE(centerCP3->IsSameStructureAndGeometry(*expectedCenterCP3));
 
     sut->AddKeyPoint({-4,0,0});
-    bvector<IGeometryPtr> cGeom4 = sut->FinishConstructionGeometry();
-    ASSERT_EQ(1, cGeom4.size());
-    ASSERT_TRUE(cGeom4.front().IsValid());
-    ICurvePrimitivePtr lineStringCP4 = cGeom4.front()->GetAsICurvePrimitive();
-    ASSERT_TRUE(lineStringCP4.IsValid());
-    ICurvePrimitivePtr expectedLineStringCP4 = ICurvePrimitive::CreateLineString({{-4,0,0},{-1,0,0},{2,0,0}});
-    ASSERT_TRUE(lineStringCP4->IsSameStructureAndGeometry(*expectedLineStringCP4));
+    bvector<ConstructionGeometry> cGeom4 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(3, cGeom4.size());
+    ASSERT_TRUE(cGeom4[0].IsValid());
+    ASSERT_TRUE(cGeom4[1].IsValid());
+    ASSERT_TRUE(cGeom4[2].IsValid());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToEnd, cGeom4[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToStart, cGeom4[1].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenter, cGeom4[2].GetType());
+    ICurvePrimitivePtr centerToEndCP2 = cGeom4[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerToStartCP2 = cGeom4[1].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerCP4 = cGeom4[2].GetGeometry()->GetAsICurvePrimitive();
+    ASSERT_TRUE(centerToEndCP2.IsValid());
+    ASSERT_TRUE(centerToStartCP2.IsValid());
+    ASSERT_TRUE(centerCP4.IsValid());
+    ICurvePrimitivePtr expectedCenterToEndCP2 = ICurvePrimitive::CreateLine(DSegment3d::From({-1,0,0}, {-4,0,0}));
+    ICurvePrimitivePtr expectedCenterToStartCP2 = ICurvePrimitive::CreateLine(DSegment3d::From({-1,0,0}, {2,0,0}));
+    ASSERT_TRUE(centerToEndCP2->IsSameStructureAndGeometry(*expectedCenterToEndCP2));
+    ASSERT_TRUE(centerToStartCP2->IsSameStructureAndGeometry(*expectedCenterToStartCP2));
+    DPoint3d expectedCenter4 = DPoint3d::From(-1, 0, 0);
+    ICurvePrimitivePtr expectedCenterCP4 = ICurvePrimitive::CreatePointString(&expectedCenter4, 1);
+    ASSERT_TRUE(centerCP4->IsSameStructureAndGeometry(*expectedCenterCP4));
     }
 
 //--------------------------------------------------------------------------------------
@@ -1235,22 +1281,90 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_FinishConstructionG
     ASSERT_TRUE(sut->FinishConstructionGeometry().empty());
     sut->AddDynamicKeyPoint({2,0,0});
 
-    bvector<IGeometryPtr> cGeom1 = sut->FinishConstructionGeometry();
-    ASSERT_EQ(1, cGeom1.size());
-    ASSERT_TRUE(cGeom1.front().IsValid());
-    ICurvePrimitivePtr cGeomCP1 = cGeom1.front()->GetAsICurvePrimitive();
-    ASSERT_TRUE(cGeomCP1.IsValid());
-    ICurvePrimitivePtr expectedCGeomCP1 = ICurvePrimitive::CreateLineString({{2,0,0},{1,0,0},{0,0,0}});
-    ASSERT_TRUE(cGeomCP1->IsSameStructureAndGeometry(*expectedCGeomCP1));
+    bvector<ConstructionGeometry> cGeom1 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(4, cGeom1.size());
+    ASSERT_TRUE(cGeom1[0].IsValid());
+    ASSERT_TRUE(cGeom1[1].IsValid());
+    ASSERT_TRUE(cGeom1[2].IsValid());
+    ASSERT_TRUE(cGeom1[3].IsValid());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToEnd, cGeom1[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToStart, cGeom1[1].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenter, cGeom1[2].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcInfiniteLine, cGeom1[3].GetType());
+    ICurvePrimitivePtr centerToEndCP1 = cGeom1[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerToStartCP1 = cGeom1[1].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerCP1 = cGeom1[2].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr infLineCP1 = cGeom1[3].GetGeometry()->GetAsICurvePrimitive();
+    ASSERT_TRUE(centerToEndCP1.IsValid());
+    ASSERT_TRUE(centerToStartCP1.IsValid());
+    ASSERT_TRUE(centerCP1.IsValid());
+    ASSERT_TRUE(infLineCP1.IsValid());
+    ICurvePrimitivePtr expectedCenterToEndCP1 = ICurvePrimitive::CreateLine(DSegment3d::From({1,0,0}, {2,0,0}));
+    ICurvePrimitivePtr expectedCenterToStartCP1 = ICurvePrimitive::CreateLine(DSegment3d::From({1,0,0}, {0,0,0}));
+    DPoint3d expectedCenter1 = DPoint3d::From(1, 0, 0);
+    ICurvePrimitivePtr expectedCenterCP1 = ICurvePrimitive::CreatePointString(&expectedCenter1, 1);
+    ICurvePrimitivePtr expectedInfLineCP1 = ICurvePrimitive::CreateLine(DSegment3d::From({0,0,0}, {1,1,0}));
+    ASSERT_TRUE(centerToEndCP1->IsSameStructureAndGeometry(*expectedCenterToEndCP1));
+    ASSERT_TRUE(centerToStartCP1->IsSameStructureAndGeometry(*expectedCenterToStartCP1));
+    ASSERT_TRUE(centerCP1->IsSameStructureAndGeometry(*expectedCenterCP1));
+    ASSERT_TRUE(infLineCP1->IsSameStructureAndGeometry(*expectedInfLineCP1));
 
     sut->AddKeyPoint({1,-1,0});
-    bvector<IGeometryPtr> cGeom2 = sut->FinishConstructionGeometry();
-    ASSERT_EQ(1, cGeom2.size());
-    ASSERT_TRUE(cGeom2.front().IsValid());
-    ICurvePrimitivePtr cGeomCP2 = cGeom2.front()->GetAsICurvePrimitive();
-    ASSERT_TRUE(cGeomCP2.IsValid());
-    ICurvePrimitivePtr expectedCGeomCP2 = ICurvePrimitive::CreateLineString({{1,-1,0}, {1,0,0}, {0,0,0}});
-    ASSERT_TRUE(cGeomCP2->IsSameStructureAndGeometry(*expectedCGeomCP2));
+    bvector<ConstructionGeometry> cGeom2 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(3, cGeom2.size());
+    ASSERT_TRUE(cGeom2[0].IsValid());
+    ASSERT_TRUE(cGeom2[1].IsValid());
+    ASSERT_TRUE(cGeom2[2].IsValid());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToEnd, cGeom2[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToStart, cGeom2[1].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenter, cGeom2[2].GetType());
+    ICurvePrimitivePtr centerToEndCP2 = cGeom2[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerToStartCP2 = cGeom2[1].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerCP2 = cGeom2[2].GetGeometry()->GetAsICurvePrimitive();
+    ASSERT_TRUE(centerToEndCP2.IsValid());
+    ASSERT_TRUE(centerToStartCP2.IsValid());
+    ASSERT_TRUE(centerCP2.IsValid());
+    ICurvePrimitivePtr expectedCenterToEndCP2 = ICurvePrimitive::CreateLine(DSegment3d::From({1,0,0}, {1,-1,0}));
+    ICurvePrimitivePtr expectedCenterToStartCP2 = ICurvePrimitive::CreateLine(DSegment3d::From({1,0,0}, {0,0,0}));
+    DPoint3d expectedCenter2 = DPoint3d::From(1, 0, 0);
+    ICurvePrimitivePtr expectedCenterCP2 = ICurvePrimitive::CreatePointString(&expectedCenter2, 1);
+    ASSERT_TRUE(centerToEndCP2->IsSameStructureAndGeometry(*expectedCenterToEndCP2));
+    ASSERT_TRUE(centerToStartCP2->IsSameStructureAndGeometry(*expectedCenterToStartCP2));
+    ASSERT_TRUE(centerCP2->IsSameStructureAndGeometry(*expectedCenterCP2));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartMidEndPlacementStrategyTests, InlineKeyPoints_FinishConstructionGeometry)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,0,0});
+    sut->AddDynamicKeyPoint({2,0,0});
+
+    bvector<ConstructionGeometry> cGeom = sut->FinishConstructionGeometry();
+    ASSERT_EQ(2, cGeom.size());
+    ASSERT_TRUE(cGeom[0].IsValid());
+    ASSERT_TRUE(cGeom[1].IsValid());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcInfiniteLine, cGeom[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcInvalidKeyPoint, cGeom[1].GetType());
+    ICurvePrimitivePtr infLineCP = cGeom[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr invalidKeyPointCP = cGeom[1].GetGeometry()->GetAsICurvePrimitive();
+    ASSERT_TRUE(infLineCP.IsValid());
+    ASSERT_TRUE(invalidKeyPointCP.IsValid());
+    ICurvePrimitivePtr expectedInfLineCP = ICurvePrimitive::CreateLine(DSegment3d::From({0,0,0}, {1,0,0}));
+    DPoint3d expectedInvalidKeyPoint = DPoint3d::From(2, 0, 0);
+    ICurvePrimitivePtr expectedInvalidKeyPointCP = ICurvePrimitive::CreatePointString(&expectedInvalidKeyPoint, 1);
+    ASSERT_TRUE(infLineCP->IsSameStructureAndGeometry(*expectedInfLineCP));
+    ASSERT_TRUE(invalidKeyPointCP->IsSameStructureAndGeometry(*expectedInvalidKeyPointCP));
     }
 
 #pragma endregion
@@ -1455,6 +1569,40 @@ TEST_F(ArcStartEndMidPlacementStrategyTests, FixedSweep)
     actualNormal.Normalize();
     ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
     ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartEndMidPlacementStrategyTests, InlineKeyPoints_FinishConstructionGeometry)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartEndMid);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,0,0});
+    sut->AddDynamicKeyPoint({2,0,0});
+
+    bvector<ConstructionGeometry> cGeom = sut->FinishConstructionGeometry();
+    ASSERT_EQ(2, cGeom.size());
+    ASSERT_TRUE(cGeom[0].IsValid());
+    ASSERT_TRUE(cGeom[1].IsValid());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcInfiniteLine, cGeom[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcInvalidKeyPoint, cGeom[1].GetType());
+    ICurvePrimitivePtr infLineCP = cGeom[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr invalidKeyPointCP = cGeom[1].GetGeometry()->GetAsICurvePrimitive();
+    ASSERT_TRUE(infLineCP.IsValid());
+    ASSERT_TRUE(invalidKeyPointCP.IsValid());
+    ICurvePrimitivePtr expectedInfLineCP = ICurvePrimitive::CreateLine(DSegment3d::From({0,0,0}, {1,0,0}));
+    DPoint3d expectedInvalidKeyPoint = DPoint3d::From(2, 0, 0);
+    ICurvePrimitivePtr expectedInvalidKeyPointCP = ICurvePrimitive::CreatePointString(&expectedInvalidKeyPoint, 1);
+    ASSERT_TRUE(infLineCP->IsSameStructureAndGeometry(*expectedInfLineCP));
+    ASSERT_TRUE(invalidKeyPointCP->IsSameStructureAndGeometry(*expectedInvalidKeyPointCP));
     }
 
 #pragma endregion

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/DgnElementPlacementStrategy_Test.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
@@ -16,6 +16,8 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(TestElementManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(TestArcKeyPointContainer)
 
 BEGIN_BUILDING_SHARED_NAMESPACE
+
+#define CONSTRUCTION_GEOMTYPE_ValidForTest 999999
 
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               05/2018
@@ -36,7 +38,7 @@ struct TestElementManipulationStrategy : DgnElementManipulationStrategy
         NullGeometryManipulationStrategyPtr m_geomManipStrategy;
         NullGeometryPlacementStrategyPtr m_geomPlaceStrategy;
 
-        bvector<IGeometryPtr> m_constructionGeometry;
+        bvector<ConstructionGeometry> m_constructionGeometry;
 
     protected:
         TestElementManipulationStrategy(Dgn::DgnDbR db) 
@@ -60,12 +62,12 @@ struct TestElementManipulationStrategy : DgnElementManipulationStrategy
         virtual bool _IsComplete() const override { return false; }
         virtual bool _CanAcceptMorePoints() const override { return false; }
 
-        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override { return m_constructionGeometry; }
+        virtual bvector<ConstructionGeometry> _FinishConstructionGeometry() const override { return m_constructionGeometry; }
 
     public:
         static TestElementManipulationStrategyPtr Create(Dgn::DgnDbR db) { return new TestElementManipulationStrategy(db); }
 
-        void SetConstructionGeometryForTest(bvector<IGeometryPtr> const& constructionGeometry) { m_constructionGeometry = constructionGeometry; }
+        void SetConstructionGeometryForTest(bvector<ConstructionGeometry> const& constructionGeometry) { m_constructionGeometry = constructionGeometry; }
     };
 
 //=======================================================================================
@@ -128,7 +130,7 @@ struct TestElementPlacementStrategy
     public:
         static TestElementPlacementStrategyPtr Create(Dgn::DgnDbR db) { return new TestElementPlacementStrategy(db); }
 
-        void SetConstructionGeometryForTest(bvector<IGeometryPtr> const& constructionGeometry) { m_manipStrategy->SetConstructionGeometryForTest(constructionGeometry); }
+        void SetConstructionGeometryForTest(bvector<ConstructionGeometry> const& constructionGeometry) { m_manipStrategy->SetConstructionGeometryForTest(constructionGeometry); }
         void SetArcKeyPointContainerForTest(TestArcKeyPointContainerCP container) { m_keyPointContainer = container; }
     };
 
@@ -202,7 +204,7 @@ TEST_F(DgnElementPlacementStrategyTestFixture, AddWorldOverlay)
     if (true)
         {
         CurveVectorPtr expectedCV = CurveVector::CreateLinear({{0,0,0},{1,0,0},{1,1,0}}, CurveVector::BOUNDARY_TYPE_Open);
-        sut->SetConstructionGeometryForTest({IGeometry::Create(expectedCV)});
+        sut->SetConstructionGeometryForTest({ConstructionGeometry(*IGeometry::Create(expectedCV), CONSTRUCTION_GEOMTYPE_GenericCurveVector)});
         FakeGraphicBuilderPtr builder = FakeGraphicBuilder::Create(GraphicBuilder::CreateParams::Scene(GetDgnDb()));
         sut->AddWorldOverlay(*builder);
 
@@ -217,7 +219,7 @@ TEST_F(DgnElementPlacementStrategyTestFixture, AddWorldOverlay)
     if (true)
         {
         ICurvePrimitivePtr expectedLineString = ICurvePrimitive::CreateLineString({{1,0,0},{2,2,0},{3,3,0}});
-        sut->SetConstructionGeometryForTest({IGeometry::Create(expectedLineString)});
+        sut->SetConstructionGeometryForTest({ConstructionGeometry(*IGeometry::Create(expectedLineString), CONSTRUCTION_GEOMTYPE_GenericICurvePrimitive)});
         FakeGraphicBuilderPtr builder = FakeGraphicBuilder::Create(GraphicBuilder::CreateParams::Scene(GetDgnDb()));
         sut->AddWorldOverlay(*builder);
 
@@ -233,7 +235,7 @@ TEST_F(DgnElementPlacementStrategyTestFixture, AddWorldOverlay)
         {
         bvector<DPoint3d> points {{2,2,0},{2,3,0},{1,3,0}};
         ICurvePrimitivePtr expectedPointString = ICurvePrimitive::CreatePointString(points);
-        sut->SetConstructionGeometryForTest({IGeometry::Create(expectedPointString)});
+        sut->SetConstructionGeometryForTest({ConstructionGeometry(*IGeometry::Create(expectedPointString), CONSTRUCTION_GEOMTYPE_GenericICurvePrimitive)});
         FakeGraphicBuilderPtr builder = FakeGraphicBuilder::Create(GraphicBuilder::CreateParams::Scene(GetDgnDb()));
         sut->AddWorldOverlay(*builder);
 
@@ -248,7 +250,7 @@ TEST_F(DgnElementPlacementStrategyTestFixture, AddWorldOverlay)
     if (true)
         {
         ICurvePrimitivePtr expectedArc = ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius({0,0,0}, DVec3d::From(0, 0, 1), 5));
-        sut->SetConstructionGeometryForTest({IGeometry::Create(expectedArc)});
+        sut->SetConstructionGeometryForTest({ConstructionGeometry(*IGeometry::Create(expectedArc), CONSTRUCTION_GEOMTYPE_GenericICurvePrimitive)});
         FakeGraphicBuilderPtr builder = FakeGraphicBuilder::Create(GraphicBuilder::CreateParams::Scene(GetDgnDb()));
         sut->AddWorldOverlay(*builder);
 
