@@ -64,7 +64,7 @@ always:
 #---------------------------------------------------------------------
 %if !defined (Minimal) || defined (NAD27ConvNAD83)
 always:
-    CreateSymLinks.py   -m"$(GeoCoordData)USA/NADCON=$(csDictionariesDir)USA/NADCON/*"
+    ~linkmultifiles "$(GeoCoordData)USA/NADCON=$(csDictionariesDir)USA/NADCON/*"
 
 %endif
 
