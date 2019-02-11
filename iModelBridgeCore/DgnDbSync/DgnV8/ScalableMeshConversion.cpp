@@ -220,9 +220,10 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
             modelSelector.Update();
             }
 
-        converter.WriteV8ElementExternalSourceAspect(existingId, v8el, v8mm.GetDgnModel().GetModelId()); // NB: last arg (scope) must be the same model as is passed in to _IsElementChanged
+        DgnElementId modeledElementId(modelId.GetValue());
+        converter.WriteV8ElementExternalSourceAspect(modeledElementId, v8el, v8mm.GetDgnModel().GetModelId()); // NB: last arg (scope) must be the same model as is passed in to _IsElementChanged
         
-        converter._GetChangeDetector()._OnElementSeen(converter, existingId);
+        converter._GetChangeDetector()._OnElementSeen(converter, modeledElementId);
         }
     if (((ScalableMeshModel*)spatialModel)->_AllowPublishing())
         {
