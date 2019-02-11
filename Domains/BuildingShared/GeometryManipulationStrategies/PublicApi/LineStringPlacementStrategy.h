@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/LineStringPlacementStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,6 +34,8 @@ struct LineStringPlacementStrategy : public CurvePrimitivePlacementStrategy
         LineStringManipulationStrategyR GetLineStringManipulationStrategyForEdit() { return *m_manipulationStrategy; }
         virtual CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_manipulationStrategy; }
         virtual CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyKeyPointsTo(LinePlacementStrategyR) const override;
 
     public:
         static LineStringPlacementStrategyPtr Create(LineStringPlacementStrategyType strategyType);

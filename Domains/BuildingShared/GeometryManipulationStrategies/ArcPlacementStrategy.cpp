@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/ArcPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -446,4 +446,115 @@ bool ArcPlacementStrategy::_TryGetEndKeyPoint
 ) const
     {
     return TryGetKeyPoint<&ArcManipulationStrategy::IsEndSet, &ArcManipulationStrategy::GetEnd>(m_manipulationStrategy.get(), endKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_CopyKeyPointsTo
+(
+    ArcPlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    switch (other.GetPlacementMethod())
+        {
+        case ArcPlacementMethod::StartEndMid:
+        case ArcPlacementMethod::StartCenter:
+        case ArcPlacementMethod::StartMidEnd:
+            {
+            if (!m_manipulationStrategy->IsStartSet())
+                return;
+
+            other.AddKeyPoint(m_manipulationStrategy->GetStart());
+            break;
+            }
+        default:
+            break;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+template <typename T>
+void copy2PointsTo
+(
+    ArcManipulationStrategyCR manipulationStrategy,
+    ArcPlacementMethod placementMethod,
+    T& other
+)
+    {
+    if (!manipulationStrategy.IsStartSet())
+        return;
+
+    other.AddKeyPoint(manipulationStrategy.GetStart());
+    switch (placementMethod)
+        {
+        case ArcPlacementMethod::StartEndMid:
+            {
+            if (manipulationStrategy.IsEndSet())
+                other.AddKeyPoint(manipulationStrategy.GetEnd());
+            break;
+            }
+        case ArcPlacementMethod::StartMidEnd:
+            {
+            if (manipulationStrategy.IsMidSet())
+                other.AddKeyPoint(manipulationStrategy.GetMid());
+            break;
+            }
+        default:
+            break;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_CopyKeyPointsTo
+(
+    LinePlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    if (!m_manipulationStrategy->IsStartSet())
+        return;
+
+    other.AddKeyPoint(m_manipulationStrategy->GetStart());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_CopyKeyPointsTo
+(
+    LineStringPlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    copy2PointsTo(*m_manipulationStrategy, GetPlacementMethod(), other);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_CopyKeyPointsTo
+(
+    SplineControlPointsPlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    copy2PointsTo(*m_manipulationStrategy, GetPlacementMethod(), other);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_CopyKeyPointsTo
+(
+    SplineThroughPointsPlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    copy2PointsTo(*m_manipulationStrategy, GetPlacementMethod(), other);
     }

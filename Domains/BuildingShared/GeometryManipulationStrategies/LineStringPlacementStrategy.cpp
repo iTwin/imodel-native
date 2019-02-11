@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/LineStringPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -44,4 +44,20 @@ LineStringPlacementStrategyPtr LineStringPlacementStrategy::Create
 
     placementStrategy->m_manipulationStrategy = &manipulationStrategy;
     return placementStrategy;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void LineStringPlacementStrategy::_CopyKeyPointsTo
+(
+    LinePlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    if (keyPoints.empty())
+        return;
+
+    other.AddKeyPoint(keyPoints.front());
     }

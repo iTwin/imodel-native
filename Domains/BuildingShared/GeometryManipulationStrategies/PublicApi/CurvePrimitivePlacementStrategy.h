@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/CurvePrimitivePlacementStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,6 +27,12 @@ struct CurvePrimitivePlacementStrategy : public GeometryPlacementStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsEmpty() const;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyKeyPointsTo(ArcPlacementStrategyR) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyKeyPointsTo(LinePlacementStrategyR) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyKeyPointsTo(LineStringPlacementStrategyR) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyKeyPointsTo(SplineControlPointsPlacementStrategyR) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyKeyPointsTo(SplineThroughPointsPlacementStrategyR) const;
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
