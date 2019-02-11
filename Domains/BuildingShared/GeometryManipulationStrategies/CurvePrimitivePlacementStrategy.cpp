@@ -150,3 +150,79 @@ bool CurvePrimitivePlacementStrategy::_IsEmpty() const
     {
     return _GetCurvePrimitiveManipulationStrategy().IsEmpty();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitivePlacementStrategy::PrepareReplacement
+(
+    CurvePrimitivePlacementStrategyR replacement
+)
+    {
+    ScopedDynamicKeyPointResetter dynamicKeyPointResetter(*this);
+    CopyPropertiesTo(replacement);
+
+    switch (replacement.GetResultCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            {
+            ArcPlacementStrategyP arcStrategy = dynamic_cast<ArcPlacementStrategyP>(&replacement);
+            if (nullptr == arcStrategy)
+                {
+                BeAssert(nullptr != arcStrategy);
+                return;
+                }
+            _CopyKeyPointsTo(*arcStrategy);
+            break;
+            }
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+            {
+            SplineControlPointsPlacementStrategyP bsplineStrategy = dynamic_cast<SplineControlPointsPlacementStrategyP>(&replacement);
+            if (nullptr == bsplineStrategy)
+                {
+                BeAssert(nullptr != bsplineStrategy);
+                return;
+                }
+            _CopyKeyPointsTo(*bsplineStrategy);
+            break;
+            }
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
+            {
+            SplineThroughPointsPlacementStrategyP intCurveStrategy = dynamic_cast<SplineThroughPointsPlacementStrategyP>(&replacement);
+            if (nullptr == intCurveStrategy)
+                {
+                BeAssert(nullptr != intCurveStrategy);
+                return;
+                }
+            _CopyKeyPointsTo(*intCurveStrategy);
+            break;
+            }
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            {
+            LinePlacementStrategyP lineStrategy = dynamic_cast<LinePlacementStrategyP>(&replacement);
+            if (nullptr == lineStrategy)
+                {
+                BeAssert(nullptr != lineStrategy);
+                return;
+                }
+            _CopyKeyPointsTo(*lineStrategy);
+            break;
+            }
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            {
+            LineStringPlacementStrategyP lineStringStrategy = dynamic_cast<LineStringPlacementStrategyP>(&replacement);
+            if (nullptr == lineStringStrategy)
+                {
+                BeAssert(nullptr != lineStringStrategy);
+                return;
+                }
+            _CopyKeyPointsTo(*lineStringStrategy);
+            break;
+            }
+        default:
+            {
+            BeAssert(false && "Not implemented");
+            return;
+            }
+        }
+    }

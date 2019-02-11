@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/CurveVectorPlacementStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,8 +41,8 @@ struct CurveVectorPlacementStrategy : public GeometryPlacementStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool FinishContiniousPrimitive();
         
-        void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
-        void ChangeDefaultPlacementStrategy(ArcPlacementMethod method);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(ArcPlacementMethod method);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);
     };
 

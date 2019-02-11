@@ -68,34 +68,38 @@ void CurvePrimitiveStrategyContainer::Pop()
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                02/2018
+// @bsimethod                                    Mindaugas.Butkus                02/2019
 //---------------+---------------+---------------+---------------+---------------+------
-void CurvePrimitiveStrategyContainer::SetDefaultNewGeometryType
-(
-    DefaultNewGeometryType type
-)
+void CurvePrimitiveStrategyContainer::ResetDynamicKeyPoint()
     {
-    m_defaultNewGeometryType = type;
+    for (CurvePrimitivePlacementStrategyPtr const& strategy : m_primitivePlacementStrategies)
+        {
+        strategy->ResetDynamicKeyPoint();
+        }
+    }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitiveStrategyContainer::PrepareNextStrategyAfterTypeOrPlacementChange()
+    {
     if (m_primitivePlacementStrategies.empty())
         return;
 
     bvector<DPoint3d> keyPoints = m_primitivePlacementStrategies.back()->GetKeyPoints();
 
-    if (!m_primitivePlacementStrategies.back()->IsComplete())
+    CurvePrimitivePlacementStrategyPtr oldStrategy = m_primitivePlacementStrategies.back();
+    if (!oldStrategy->IsComplete())
         {
         Pop();
         AddNext();
+        CurvePrimitivePlacementStrategyPtr newStrategy = m_primitivePlacementStrategies.back();
 
-        m_primitivePlacementStrategies.back()->PopKeyPoint();
-
-        for (DPoint3dCR keyPoint : keyPoints)
-            {
-            m_primitivePlacementStrategies.back()->AddKeyPoint(keyPoint);
-            }
-
-        if (m_primitivePlacementStrategies.back()->IsComplete() && !m_primitivePlacementStrategies.back()->CanAcceptMorePoints())
-            m_primitivePlacementStrategies.back()->PopKeyPoint();
+        newStrategy->PopKeyPoint();
+        oldStrategy->PrepareReplacement(*newStrategy);
+        
+        if (newStrategy->IsComplete() && !newStrategy->CanAcceptMorePoints())
+            newStrategy->PopKeyPoint();
         }
     else
         {
@@ -106,12 +110,33 @@ void CurvePrimitiveStrategyContainer::SetDefaultNewGeometryType
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitiveStrategyContainer::SetDefaultNewGeometryType
+(
+    DefaultNewGeometryType type
+)
+    {
+    if (type == m_defaultNewGeometryType)
+        return;
+
+    ResetDynamicKeyPoint();
+    m_defaultNewGeometryType = type;
+    PrepareNextStrategyAfterTypeOrPlacementChange();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
 void CurvePrimitiveStrategyContainer::SetDefaultPlacementStrategy
 (
     LinePlacementStrategyType type
 )
     {
+    if (type == m_defaultLinePlacementStrategyType)
+        return;
+
+    ResetDynamicKeyPoint();
     m_defaultLinePlacementStrategyType = type;
+    PrepareNextStrategyAfterTypeOrPlacementChange();
     }
 
 //--------------------------------------------------------------------------------------
@@ -122,7 +147,12 @@ void CurvePrimitiveStrategyContainer::SetDefaultPlacementStrategy
     ArcPlacementMethod method
 )
     {
+    if (method == m_defaultArcPlacementMethod)
+        return;
+
+    ResetDynamicKeyPoint();
     m_defaultArcPlacementMethod = method;
+    PrepareNextStrategyAfterTypeOrPlacementChange();
     }
 
 //--------------------------------------------------------------------------------------
@@ -133,7 +163,12 @@ void CurvePrimitiveStrategyContainer::SetDefaultPlacementStrategy
     LineStringPlacementStrategyType type
 )
     {
+    if (type == m_defaultLineStringPlacementStrategyType)
+        return;
+
+    ResetDynamicKeyPoint();
     m_defaultLineStringPlacementStrategyType = type;
+    PrepareNextStrategyAfterTypeOrPlacementChange();
     }
 
 //--------------------------------------------------------------------------------------
@@ -184,14 +219,14 @@ bool CurvePrimitiveStrategyContainer::CanAcceptMorePoints() const
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                02/2018
+// @bsimethod                                    Mindaugas.Butkus                02/2019
 //---------------+---------------+---------------+---------------+---------------+------
-void CurvePrimitiveStrategyContainer::AddNext()
+void CurvePrimitiveStrategyContainer::CreateNext
+(
+    CurvePrimitiveManipulationStrategyPtr& manipStrategy, 
+    CurvePrimitivePlacementStrategyPtr& placementStrategy
+) const
     {
-    BeAssert(IsEmpty() || IsComplete());
-
-    CurvePrimitiveManipulationStrategyPtr manipStrategy;
-    CurvePrimitivePlacementStrategyPtr placementStrategy;
     switch (m_defaultNewGeometryType)
         {
         case DefaultNewGeometryType::LineString:
@@ -232,6 +267,20 @@ void CurvePrimitiveStrategyContainer::AddNext()
         default:
             BeAssert(false);
         }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitiveStrategyContainer::AddNext()
+    {
+    BeAssert(IsEmpty() || IsComplete());
+
+    CurvePrimitiveManipulationStrategyPtr manipStrategy;
+    CurvePrimitivePlacementStrategyPtr placementStrategy;
+    CreateNext(manipStrategy, placementStrategy);
+    if (manipStrategy.IsNull() || placementStrategy.IsNull())
+        return;
 
     if (!m_primitiveManipulationStrategies.empty())
         placementStrategy->AddKeyPoint(m_primitiveManipulationStrategies.back()->GetLastKeyPoint());
@@ -439,10 +488,7 @@ bool CurveVectorManipulationStrategy::_IsDynamicKeyPointSet() const
 //---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorManipulationStrategy::_ResetDynamicKeyPoint()
     {
-    for (CurvePrimitiveManipulationStrategyPtr const& strategy : m_primitiveStrategyContainer.GetManipulationStrategies())
-        {
-        strategy->ResetDynamicKeyPoint();
-        }
+    m_primitiveStrategyContainer.ResetDynamicKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------

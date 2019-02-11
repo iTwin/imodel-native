@@ -102,11 +102,11 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
         virtual bool _IsComplete() const override;
 
         void _SetStartTangent(DVec3d startTangent) { m_startTangent = startTangent; }
-        void _RemoveStartTangent() { m_startTangent.Zero(); m_startTangent.Normalize(); }
+        void _RemoveStartTangent() { m_startTangent.Zero(); }
         DVec3d _GetStartTangent() const { return m_startTangent; }
 
         void _SetEndTangent(DVec3d endTangent) { m_endTangent = endTangent; }
-        void _RemoveEndTangent() { m_endTangent.Zero(); m_endTangent.Normalize(); }
+        void _RemoveEndTangent() { m_endTangent.Zero(); }
         DVec3d _GetEndTangent() const { return m_endTangent; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineThroughPointsManipulationStrategy(*this); };
