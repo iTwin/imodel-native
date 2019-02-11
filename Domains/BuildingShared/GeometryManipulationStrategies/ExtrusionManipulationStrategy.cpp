@@ -736,7 +736,7 @@ DynamicStateBaseCPtr ExtrusionManipulationStrategy::_GetDynamicState() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> ExtrusionManipulationStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> ExtrusionManipulationStrategy::_FinishConstructionGeometry() const
     {
     return m_baseShapeManipulationStrategy->FinishConstructionGeometry();
     }

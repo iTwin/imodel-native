@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/ChildCurveVectorManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -319,7 +319,7 @@ DynamicStateBaseCPtr ChildCurveVectorManipulationStrategy::_GetDynamicState() co
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> ChildCurveVectorManipulationStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> ChildCurveVectorManipulationStrategy::_FinishConstructionGeometry() const
     {
     return m_cvManipulationStrategy->FinishConstructionGeometry();
     }

@@ -231,7 +231,7 @@ DynamicStateBaseCPtr ElementManipulationStrategy::_GetDynamicState() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> ElementManipulationStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> ElementManipulationStrategy::_FinishConstructionGeometry() const
     {
     return _GetGeometryManipulationStrategy().FinishConstructionGeometry();
     }

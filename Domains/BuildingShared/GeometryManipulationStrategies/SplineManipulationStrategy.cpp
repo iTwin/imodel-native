@@ -128,9 +128,9 @@ static void computeInterpolationCurveTangentPoints(DPoint3dR startTangentPt, DPo
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> SplineControlPointsManipulationStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> SplineControlPointsManipulationStrategy::_FinishConstructionGeometry() const
     {
-    bvector<IGeometryPtr> constructionGeometry;
+    bvector<ConstructionGeometry> constructionGeometry;
 
     ICurvePrimitivePtr curve = _FinishPrimitive();
     if (curve.IsNull())
@@ -148,12 +148,12 @@ bvector<IGeometryPtr> SplineControlPointsManipulationStrategy::_FinishConstructi
     if (0 == poles.size())
         return constructionGeometry;
 
-    constructionGeometry.push_back(IGeometry::Create(ICurvePrimitive::CreatePointString(poles)));
+    constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreatePointString(poles)), CONSTRUCTION_GEOMTYPE_SplinePolePoints));
 
     if (bcurve->params.closed)
         poles.push_back(poles.front());
 
-    constructionGeometry.push_back(IGeometry::Create(ICurvePrimitive::CreateLineString(poles)));
+    constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreateLineString(poles)), CONSTRUCTION_GEOMTYPE_SplinePoleLines));
 
     return constructionGeometry;
     }
@@ -279,18 +279,18 @@ SplinePlacementStrategyPtr SplineThroughPointsManipulationStrategy::_CreatePlace
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> SplineThroughPointsManipulationStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> SplineThroughPointsManipulationStrategy::_FinishConstructionGeometry() const
     {
     ICurvePrimitivePtr curve = _FinishPrimitive();
     if (curve.IsNull())
-        return bvector<IGeometryPtr>();
+        return bvector<ConstructionGeometry>();
 
     MSInterpolationCurveCP fitCurve = curve->GetInterpolationCurveCP();
 
-    bvector<IGeometryPtr> constructionGeometry;
+    bvector<ConstructionGeometry> constructionGeometry;
     if (nullptr != fitCurve)
         {
-        constructionGeometry.push_back(IGeometry::Create(ICurvePrimitive::CreatePointString(fitCurve->fitPoints, fitCurve->params.numPoints)));
+        constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreatePointString(fitCurve->fitPoints, fitCurve->params.numPoints)), CONSTRUCTION_GEOMTYPE_SplineFitPoints));
 
         if (!fitCurve->params.isPeriodic)
             {
@@ -300,15 +300,15 @@ bvector<IGeometryPtr> SplineThroughPointsManipulationStrategy::_FinishConstructi
             computeInterpolationCurveTangentPoints(tangentPoints[0], tangentPoints[2], *fitCurve);
 
             // Display fat dots for start/end tangent points...
-            constructionGeometry.push_back(IGeometry::Create(ICurvePrimitive::CreatePointString(&tangentPoints[0], 1)));
-            constructionGeometry.push_back(IGeometry::Create(ICurvePrimitive::CreatePointString(&tangentPoints[2], 1)));
+            constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreatePointString(&tangentPoints[0], 1)), CONSTRUCTION_GEOMTYPE_SplineStartTangentPoint));
+            constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreatePointString(&tangentPoints[2], 1)), CONSTRUCTION_GEOMTYPE_SplineEndTangentPoint));
 
             // Display dotted style start/end tangent lines...
             tangentPoints[1] = fitCurve->fitPoints[0];
             tangentPoints[3] = fitCurve->fitPoints[fitCurve->params.numPoints - 1];
 
-            constructionGeometry.push_back(IGeometry::Create(ICurvePrimitive::CreateLineString(&tangentPoints[0], 2)));
-            constructionGeometry.push_back(IGeometry::Create(ICurvePrimitive::CreateLineString(&tangentPoints[2], 2)));
+            constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreateLineString(&tangentPoints[0], 2)), CONSTRUCTION_GEOMTYPE_SplineStartTangentLine));
+            constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreateLineString(&tangentPoints[2], 2)), CONSTRUCTION_GEOMTYPE_SplineEndTangentLine));
             }
         }
 

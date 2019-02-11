@@ -211,7 +211,7 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> ArcManipulationStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> ArcManipulationStrategy::_FinishConstructionGeometry() const
     {
     ICurvePrimitivePtr arcPrimitive = _FinishPrimitive();
     if (arcPrimitive.IsValid())
@@ -220,30 +220,52 @@ bvector<IGeometryPtr> ArcManipulationStrategy::_FinishConstructionGeometry() con
         if (!arcPrimitive->TryGetArc(arc))
             {
             BeAssert(false);
-            return bvector<IGeometryPtr>();
+            return bvector<ConstructionGeometry>();
             }
 
         DPoint3d center = arc.center;
         DPoint3d arcStart, arcEnd;
         arc.EvaluateEndPoints(arcStart, arcEnd);
 
+        bvector<ConstructionGeometry> constructionGeometry;
         if (arc.IsFullEllipse())
             {
-            return {IGeometry::Create(ICurvePrimitive::CreateLineString(bvector<DPoint3d>({center, arcStart})))};
+            constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(center, arcStart))), CONSTRUCTION_GEOMTYPE_ArcCenterToStart));
             }
         else
             {
-            return {IGeometry::Create(ICurvePrimitive::CreateLineString(bvector<DPoint3d>({arcEnd, center, arcStart})))};
+            constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(center, arcEnd))), CONSTRUCTION_GEOMTYPE_ArcCenterToEnd));
+            constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(center, arcStart))), CONSTRUCTION_GEOMTYPE_ArcCenterToStart));
             }
-        }
-    else
-        {
-        if (!IsStartSet() || !IsCenterSet())
-            return bvector<IGeometryPtr>();
 
+        constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreatePointString(&center, 1)), CONSTRUCTION_GEOMTYPE_ArcCenter));
+
+        if (IsStartSet() && IsEndSet() && IsMidSet())
+            {
+            DPoint3d infLineStart = GetStart();
+            DPoint3d infLineEnd;
+            if (IsMidDynamic())
+                {
+                infLineEnd = GetEnd();
+                }
+            else if (IsEndDynamic())
+                {
+                infLineEnd = GetMid();
+                }
+            else
+                {
+                return constructionGeometry;
+                }
+            constructionGeometry.push_back(ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(infLineStart, infLineEnd))), CONSTRUCTION_GEOMTYPE_ArcInfiniteLine));
+            }
+
+        return constructionGeometry;
+        }
+    else if(IsStartSet() && IsCenterSet())
+        {
         DVec3d normal;
         if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
-            return bvector<IGeometryPtr>();
+            return bvector<ConstructionGeometry>();
 
         DPoint3d center = GetCenter();
         DPoint3d start = GetArcStart();
@@ -254,14 +276,47 @@ bvector<IGeometryPtr> ArcManipulationStrategy::_FinishConstructionGeometry() con
             centerStart.ScaleToLength(m_radius);
             }
         if (DoubleOps::AlmostEqual(centerStart.Magnitude(), 0))
-            return bvector<IGeometryPtr>();
+            return bvector<ConstructionGeometry>();
 
         DPoint3d arcStart = center + centerStart;
 
         IGeometryPtr arcGeometry = IGeometry::Create(ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(center, normal, centerStart.Magnitude())));
-        IGeometryPtr lineStringGeometry = IGeometry::Create(ICurvePrimitive::CreateLineString(bvector<DPoint3d>({center, arcStart})));
-        return {arcGeometry, lineStringGeometry};
+        IGeometryPtr lineGeometry = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(center, arcStart)));
+        IGeometryPtr centerGeometry = IGeometry::Create(ICurvePrimitive::CreatePointString(&center, 1));
+        return {
+            ConstructionGeometry(*arcGeometry, CONSTRUCTION_GEOMTYPE_ArcEdge), 
+            ConstructionGeometry(*lineGeometry, CONSTRUCTION_GEOMTYPE_ArcCenterToStart),
+            ConstructionGeometry(*centerGeometry, CONSTRUCTION_GEOMTYPE_ArcCenter)
+            };
         }
+    else if (IsStartSet() && IsMidSet() && IsEndSet() && PointsOnLine(GetStart(), GetMid(), GetEnd()))
+        {
+        DPoint3d invalidPoint;
+        DPoint3d infLineStart = GetStart();
+        DPoint3d infLineEnd;
+
+        if (IsMidDynamic())
+            {
+            invalidPoint = GetMid();
+            infLineEnd = GetEnd();
+            }
+        else if (IsEndDynamic())
+            {
+            invalidPoint = GetEnd();
+            infLineEnd = GetMid();
+            }
+        else
+            {
+            return bvector<ConstructionGeometry>();
+            }
+
+        return {
+            ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(infLineStart, infLineEnd))), CONSTRUCTION_GEOMTYPE_ArcInfiniteLine),
+            ConstructionGeometry(*IGeometry::Create(ICurvePrimitive::CreatePointString(&invalidPoint, 1)), CONSTRUCTION_GEOMTYPE_ArcInvalidKeyPoint)
+            };
+        }
+    
+    return bvector<ConstructionGeometry>();
     }
 
 //--------------------------------------------------------------------------------------

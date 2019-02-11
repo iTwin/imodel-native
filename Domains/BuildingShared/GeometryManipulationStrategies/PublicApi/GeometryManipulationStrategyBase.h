@@ -146,7 +146,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
         virtual bool _CanAcceptMorePoints() const = 0;
 
         virtual IGeometryPtr _FinishGeometry() const = 0;
-        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const = 0;
+        virtual bvector<ConstructionGeometry> _FinishConstructionGeometry() const = 0;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _CopyPropertiesTo(GeometryManipulationStrategyBaseR) const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterBoolProperty(Utf8StringCR propertyName);
@@ -202,7 +202,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT IGeometryPtr FinishGeometry() const;
 
         //! Create constructions geometry.
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<IGeometryPtr> FinishConstructionGeometry() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<ConstructionGeometry> FinishConstructionGeometry() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

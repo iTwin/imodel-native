@@ -425,7 +425,7 @@ CurvePrimitiveManipulationStrategyPtr EllipseManipulationStrategy::_Clone() cons
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> EllipseManipulationStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> EllipseManipulationStrategy::_FinishConstructionGeometry() const
     {
-    return bvector<IGeometryPtr>();
+    return bvector<ConstructionGeometry>();
     }

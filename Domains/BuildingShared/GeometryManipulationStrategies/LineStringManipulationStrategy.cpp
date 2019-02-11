@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/LineStringManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -80,9 +80,9 @@ LineStringPlacementStrategyPtr LineStringManipulationStrategy::_CreateLineString
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> LineStringManipulationStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> LineStringManipulationStrategy::_FinishConstructionGeometry() const
     {
-    return bvector<IGeometryPtr>();
+    return bvector<ConstructionGeometry>();
     }
 
 //--------------------------------------------------------------------------------------

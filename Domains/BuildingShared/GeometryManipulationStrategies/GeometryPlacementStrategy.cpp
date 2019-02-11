@@ -170,7 +170,7 @@ DynamicStateBaseCPtr GeometryPlacementStrategy::_GetDynamicState() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<IGeometryPtr> GeometryPlacementStrategy::_FinishConstructionGeometry() const
+bvector<ConstructionGeometry> GeometryPlacementStrategy::_FinishConstructionGeometry() const
     {
     return _GetManipulationStrategy().FinishConstructionGeometry();
     }
