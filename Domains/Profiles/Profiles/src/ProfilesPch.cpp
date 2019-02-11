@@ -1,9 +1,9 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/src/ProfilesInternal.cpp $
+|     $Source: Profiles/src/ProfilesPch.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ProfilesInternal.h"
+#include "ProfilesPch.h"

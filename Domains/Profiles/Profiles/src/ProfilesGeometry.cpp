@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ProfilesInternal.h"
+#include "ProfilesPch.h"
 #include <ProfilesInternal\ProfilesGeometry.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE

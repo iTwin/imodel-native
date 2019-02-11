@@ -89,9 +89,6 @@
     <ClCompile Include="src\ProfilesDomain.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="src\ProfilesInternal.cpp">
-      <Filter>Pch</Filter>
-    </ClCompile>
     <ClCompile Include="src\CenterLineCShapeProfile.cpp">
       <Filter>Src\SinglePerimeterProfiles\CenterLineShapes</Filter>
     </ClCompile>
@@ -206,6 +203,9 @@
     <ClCompile Include="src\ProfilesCardinalPoints.cpp">
       <Filter>Src\PrivateAPI</Filter>
     </ClCompile>
+    <ClCompile Include="src\ProfilesPch.cpp">
+      <Filter>Pch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\Profile.h">
@@ -319,16 +319,10 @@
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesProperty.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\ProfilesInternal.h">
-      <Filter>Pch</Filter>
-    </ClInclude>
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\MaterialProfile.h">
       <Filter>PublicAPI\MaterialProfiles</Filter>
     </ClInclude>
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesLogging.h">
-      <Filter>PrivateAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesPrivateApi.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\MaterialProfileDefinition.h">
@@ -342,6 +336,9 @@
     </ClInclude>
     <ClInclude Include="src\PrivateAPI\ProfilesCardinalPoints.h">
       <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ProfilesPch.h">
+      <Filter>Pch</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

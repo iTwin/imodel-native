@@ -2,10 +2,10 @@
 |
 |     $Source: Profiles/src/CompositeProfile.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ProfilesInternal.h"
+#include "ProfilesPch.h"
 #include <Profiles\CompositeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE

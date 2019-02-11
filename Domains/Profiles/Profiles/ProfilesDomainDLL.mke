@@ -15,7 +15,7 @@ appSrc = $(_MakeFilePath)src\\
 appPublicApi = $(appSrc)PublicAPI\\
 appPrivateApi = $(appSrc)PrivateAPI\\
 
-MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ProfilesInternal.h $(appPublicApi)ProfilesApi.h $(appPrivateApi)
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ProfilesPch.h $(appPublicApi)ProfilesApi.h $(appPrivateApi)
 PublicApiIncludes = -I${BuildContext}\PrivateAPI\ -I${BuildContext}\PublicAPI\ -I${BuildContext}\VendorAPI\\
 
 always:
@@ -24,7 +24,7 @@ always:
 #----------------------------------------------------------------------
 #   Pre - compiled header
 #----------------------------------------------------------------------
-PchCompiland = $(appSrc)ProfilesInternal.cpp
+PchCompiland = $(appSrc)ProfilesPch.cpp
 PchOutputDir = $(o)
 PchExtraOptions = -Zm160
 PchExplicitDepends = $(MultiCompileDepends)
@@ -134,7 +134,7 @@ $(o)MaterialProfile$(oext) : $(appSrc)MaterialProfile.cpp ${MultiCompileDepends}
 DLM_NAME = $(appName)
 DLM_OBJECT_FILES = $(MultiCompileObjectList)
 DLM_OBJECT_DEST = $(o)
-DLM_OBJECT_PCH = $(o)ProfilesInternal$(oext)
+DLM_OBJECT_PCH = $(o)ProfilesPch$(oext)
 DLM_DEST = $(o)
 DLM_EXPORT_DEST = $(o)
 DLM_NOENTRY = 1

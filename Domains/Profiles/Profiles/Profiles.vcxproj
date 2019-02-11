@@ -95,7 +95,7 @@
     <ClCompile Include="src\ICenterLineProfile.cpp" />
     <ClCompile Include="src\ProfilesDomain.cpp" />
     <ClCompile Include="src\ProfilesGeometry.cpp" />
-    <ClCompile Include="src\ProfilesInternal.cpp" />
+    <ClCompile Include="src\ProfilesPch.cpp" />
     <ClCompile Include="src\ProfilesProperty.cpp" />
     <ClCompile Include="src\ProfilesQuery.cpp" />
     <ClCompile Include="src\RectangleProfile.cpp" />
@@ -110,10 +110,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\PrivateAPI\ProfilesCardinalPoints.h" />
-    <ClInclude Include="src\ProfilesInternal.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ArbitraryCompositeProfileAspect.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesLogging.h" />
-    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesPrivateApi.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesQuery.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesGeometry.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesProperty.h" />
@@ -154,6 +152,7 @@
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TShapeProfile.h" />
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TTShapeProfile.h" />
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ZShapeProfile.h" />
+    <ClInclude Include="src\ProfilesPch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

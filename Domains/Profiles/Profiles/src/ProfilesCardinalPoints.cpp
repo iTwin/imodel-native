@@ -1,4 +1,11 @@
-#include "ProfilesInternal.h"
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Profiles/src/ProfilesCardinalPoints.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "ProfilesPch.h"
 #include <ProfilesInternal\ProfilesCardinalPoints.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
