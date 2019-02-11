@@ -62,9 +62,9 @@ DgnDbStatus Profile::_OnInsert()
     if (!_CreateGeometry())
         return DgnDbStatus::NoGeometry;
 
-    DgnDbStatus status = ProfilesCardinalPoints::AddStandardCardinalPoints (*this);
+    /*DgnDbStatus status = ProfilesCardinalPoints::AddStandardCardinalPoints (*this);
     if (status != DgnDbStatus::Success)
-        return status;
+        return status;*/
 
     return T_Super::_OnInsert();
     }
