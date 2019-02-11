@@ -61,7 +61,7 @@
     </Part>
 
 
-    <Part Name="ScalableMeshV8SDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" BMakeOptions="+dDGNV8_DGNPLATFORM_SDK=$(BuildContext)SdkSources\ScalableMeshSDK\" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="ScalableMeshV8SDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" BentleyBuildMakeOptions="+dDGNV8_DGNPLATFORM_SDK=$(BuildContext)SdkSources\ScalableMeshSDK\" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SdkSource>ScalableMeshSDK</SdkSource>
         <Bindings>
             <PublicAPI ProductDirectoryName="VersionedDgnV8Api" Domain="VersionedDgnV8Api" />
@@ -372,7 +372,7 @@
     </Part>
 
     <!-- Memory leak testing of DgnV8Converter tests. Only called on demand -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64">
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="DgnV8ConverterTests" />
     </Part>

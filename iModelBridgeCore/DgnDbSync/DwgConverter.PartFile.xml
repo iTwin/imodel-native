@@ -76,7 +76,7 @@
       </Bindings>
     </Part>
 
-    <Part Name="OpenDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeFwkExe"  PartFile="iModelBridge"/>
         <SubPart PartName="DwgResources" />
@@ -87,7 +87,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridge"/>
@@ -98,7 +98,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgImportDLL" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815" ApiNumber="198b5" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgImportDLL" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815" ApiNumber="198b5" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"              Repository="Bentley"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
@@ -113,7 +113,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgDb" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815 +dBUILD_DWGDB" ApiNumber="198b5" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgDb" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815 +dBUILD_DWGDB" ApiNumber="198b5" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="Teigha"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha"      Repository="bin-teigha"  />
@@ -169,7 +169,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeFwkExe"  PartFile="iModelBridge"/>
         <SubPart PartName="DwgResources" />
@@ -180,7 +180,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridge"/>
@@ -191,7 +191,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealDwgImportDLL" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" ApiNumber="2019b5" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwgImportDLL" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" ApiNumber="2019b5" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"              Repository="Bentley"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
@@ -206,7 +206,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealDwgDb" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019 +dBUILD_DWGDB" ApiNumber="2019b5" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RealDwgDb" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019 +dBUILD_DWGDB" ApiNumber="2019b5" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="RealDwg"         PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg"     Repository="bin-realdwg" />
@@ -257,7 +257,7 @@
         <Directories DirectoryListName="DwgAppCommonDirList" />
     </Product>
 
-    <Part Name="RealDwg2018ImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwg2018ImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="DwgResources" />
         <SubPart PartName="RealDwg2018Bridge" />
@@ -267,7 +267,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealDwg2018Bridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwg2018Bridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridge"/>
@@ -278,7 +278,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealDwg2018ImportDll" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" ApiNumber="2018b5" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwg2018ImportDll" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" ApiNumber="2018b5" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"              Repository="Bentley"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
@@ -293,7 +293,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealDwg2018Db" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018 +dBUILD_DWGDB" ApiNumber="2018b5" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RealDwg2018Db" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018 +dBUILD_DWGDB" ApiNumber="2018b5" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="RealDwg2018"     PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg"     Repository="bin-realdwg2018" />
@@ -326,7 +326,7 @@
         <SubPart PartName="ListProperty" />
     </Part>
 
-    <Part Name="ImportXData" BentleyBuildMakeFile="Dwg/Samples/XData/ImportXData.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64">
+    <Part Name="ImportXData" BentleyBuildMakeFile="Dwg/Samples/XData/ImportXData.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64">
         <SubPart PartName="RealDwgImportDLL" />
         <SubPart PartName="RealDwgBridge" />
         <Bindings>
@@ -337,7 +337,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ListProperty" BentleyBuildMakeFile="Dwg/Samples/ListProp/ListProperty.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64">
+    <Part Name="ListProperty" BentleyBuildMakeFile="Dwg/Samples/ListProp/ListProperty.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64">
         <SubPart PartName="RealDwgImportDLL" />
         <SubPart PartName="RealDwgBridge" />
         <Bindings>
@@ -367,7 +367,7 @@
         <SubPart PartName="google_gtest_lib"    PartFile="gtest"    Repository="util-gtest"/>
     </Part>
     
-    <Part Name="DwgImporterTestsExe" BentleyBuildMakeFile="Dwg/Tests/Tests.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64">
+    <Part Name="DwgImporterTestsExe" BentleyBuildMakeFile="Dwg/Tests/Tests.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64">
         <SubPart PartName="GTestDependencies"/>
         <SubPart PartName="RealDwgImportExe"/>
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
