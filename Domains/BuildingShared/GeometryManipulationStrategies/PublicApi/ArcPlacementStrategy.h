@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/ArcPlacementStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -124,6 +124,12 @@ struct ArcPlacementStrategy
         virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
 
         virtual bvector<DPoint3d> _GetKeyPoints() const override;
+
+        virtual void _CopyKeyPointsTo(ArcPlacementStrategyR) const override;
+        virtual void _CopyKeyPointsTo(LinePlacementStrategyR) const override;
+        virtual void _CopyKeyPointsTo(LineStringPlacementStrategyR) const override;
+        virtual void _CopyKeyPointsTo(SplineControlPointsPlacementStrategyR) const override;
+        virtual void _CopyKeyPointsTo(SplineThroughPointsPlacementStrategyR) const override;
 
         // IArcPlacementStrategy
         virtual void _SetPlacementMethod(ArcPlacementMethod method) override;

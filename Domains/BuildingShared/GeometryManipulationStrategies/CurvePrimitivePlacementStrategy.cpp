@@ -2,12 +2,105 @@
 |
 |     $Source: GeometryManipulationStrategies/CurvePrimitivePlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
 
 USING_NAMESPACE_BUILDING_SHARED
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitivePlacementStrategy::_CopyKeyPointsTo
+(
+    ArcPlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    if (keyPoints.empty())
+        return;
+
+    switch (other.GetPlacementMethod())
+        {
+        case ArcPlacementMethod::StartCenter:
+        case ArcPlacementMethod::StartEndMid:
+        case ArcPlacementMethod::StartMidEnd:
+            {
+            other.AddKeyPoint(keyPoints.front());
+            }
+        default:
+            break;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitivePlacementStrategy::_CopyKeyPointsTo
+(
+    LinePlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    if (keyPoints.empty())
+        return;
+
+    other.AddKeyPoint(keyPoints.front());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitivePlacementStrategy::_CopyKeyPointsTo
+(
+    LineStringPlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    if (keyPoints.empty())
+        return;
+
+    for (DPoint3dCR keyPoint : keyPoints)
+        other.AddKeyPoint(keyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitivePlacementStrategy::_CopyKeyPointsTo
+(
+    SplineControlPointsPlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    if (keyPoints.empty())
+        return;
+
+    for (DPoint3dCR keyPoint : keyPoints)
+        other.AddKeyPoint(keyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitivePlacementStrategy::_CopyKeyPointsTo
+(
+    SplineThroughPointsPlacementStrategyR other
+) const
+    {
+    BeAssert(!IsDynamicKeyPointSet());
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    if (keyPoints.empty())
+        return;
+
+    for (DPoint3dCR keyPoint : keyPoints)
+        other.AddKeyPoint(keyPoint);
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017

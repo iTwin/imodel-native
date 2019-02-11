@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/PointPlacementStrategy.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,6 +28,12 @@ struct PointPlacementStrategy : public LineStringPlacementStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+
+        virtual void _CopyKeyPointsTo(ArcPlacementStrategyR) const override {}
+        virtual void _CopyKeyPointsTo(LinePlacementStrategyR) const override {}
+        virtual void _CopyKeyPointsTo(LineStringPlacementStrategyR) const override {}
+        virtual void _CopyKeyPointsTo(SplineControlPointsPlacementStrategyR) const override {}
+        virtual void _CopyKeyPointsTo(SplineThroughPointsPlacementStrategyR) const override {}
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static PointPlacementStrategyPtr Create(PointManipulationStrategyR manipulationStrategy) { return new PointPlacementStrategy(manipulationStrategy); }
