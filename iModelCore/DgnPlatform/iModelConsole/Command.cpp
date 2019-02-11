@@ -2,7 +2,7 @@
 |
 |     $Source: iModelConsole/Command.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
@@ -1772,7 +1772,7 @@ void CreateClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
         else
             IModelConsole::WriteLine("Created or updated ECClass views in the file.");
         }
-    else
+    else if (args.empty()) // If user passed in classNames that failed to parse, don't default to creating classviews for everything
         {
         if (SUCCESS != session.GetFile().GetECDbHandle()->Schemas().CreateClassViewsInDb())
             IModelConsole::WriteErrorLine("Failed to create ECClass views in the file.");
