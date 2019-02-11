@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/CurvePrimitiveManipulationStrategy_Test.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
@@ -36,7 +36,8 @@ struct TestCurvePrimitiveMS : CurvePrimitiveManipulationStrategy
         virtual bool _IsContinious() const override { return false; }
         virtual bool _IsComplete() const override { return false; }
         virtual bool _CanAcceptMorePoints() const override { return true; }
-        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override { return bvector<IGeometryPtr>(); }
+        virtual bvector<ConstructionGeometry> _FinishConstructionGeometry() const override { return bvector<ConstructionGeometry>(); }
+        virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid; }
 
     public:
         static TestCurvePrimitiveMSPtr Create() { return new TestCurvePrimitiveMS(); }

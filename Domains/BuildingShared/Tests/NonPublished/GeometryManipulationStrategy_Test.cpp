@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/GeometryManipulationStrategy_Test.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
@@ -23,7 +23,8 @@ struct GeometryManipulationStrategyTests : public BuildingSharedTestFixtureBase
             virtual ICurvePrimitivePtr _FinishPrimitive() const override { return nullptr; }
             virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { return nullptr; }
             virtual CurvePrimitiveManipulationStrategyPtr _Clone() const override { return nullptr; }
-            virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override { return bvector<IGeometryPtr>(); }
+            virtual bvector<ConstructionGeometry> _FinishConstructionGeometry() const override { return bvector<ConstructionGeometry>(); }
+            virtual ICurvePrimitive::CurvePrimitiveType _GetResultCurvePrimitiveType() const override { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid; }
         };
     };
 

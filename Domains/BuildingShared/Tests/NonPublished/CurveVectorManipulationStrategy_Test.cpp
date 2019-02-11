@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/CurveVectorManipulationStrategy_Test.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
@@ -264,12 +264,14 @@ TEST_F(CurveVectorManipulationStrategyTestFixture, FinishConstructionGeometry)
     sut->AppendKeyPoint({1,1,0});
     sut->AppendKeyPoint({2,1,0});
     sut->AppendKeyPoint({2,0,0});
-    bvector<IGeometryPtr> cGeom1 = sut->FinishConstructionGeometry();
+    bvector<ConstructionGeometry> cGeom1 = sut->FinishConstructionGeometry();
     ASSERT_EQ(2, cGeom1.size());
     ASSERT_TRUE(cGeom1[0].IsValid());
     ASSERT_TRUE(cGeom1[1].IsValid());
-    ICurvePrimitivePtr cGeom1PointString = cGeom1[0]->GetAsICurvePrimitive();
-    ICurvePrimitivePtr cGeom1LineString = cGeom1[1]->GetAsICurvePrimitive();
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_SplinePolePoints, cGeom1[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_SplinePoleLines, cGeom1[1].GetType());
+    ICurvePrimitivePtr cGeom1PointString = cGeom1[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom1LineString = cGeom1[1].GetGeometry()->GetAsICurvePrimitive();
     ASSERT_TRUE(cGeom1PointString.IsValid());
     ASSERT_TRUE(cGeom1LineString.IsValid());
     bvector<DPoint3d> points1 {{0,0,0},{0,1,0},{1,1,0},{2,1,0},{2,0,0}};
@@ -282,12 +284,39 @@ TEST_F(CurveVectorManipulationStrategyTestFixture, FinishConstructionGeometry)
     sut->ChangeDefaultPlacementStrategy(ArcPlacementMethod::StartMidEnd);
     sut->AppendKeyPoint({3,1,0});
     sut->AppendDynamicKeyPoint({4,0,0});
+    sut->AppendDynamicKeyPoint({3,-1,0});
+    bvector<ConstructionGeometry> cGeom2 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(4, cGeom2.size());
+    ASSERT_TRUE(cGeom2[0].IsValid());
+    ASSERT_TRUE(cGeom2[1].IsValid());
+    ASSERT_TRUE(cGeom2[2].IsValid());
+    ASSERT_TRUE(cGeom2[3].IsValid());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToEnd, cGeom2[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToStart, cGeom2[1].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenter, cGeom2[2].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcInfiniteLine, cGeom2[3].GetType());
+    ICurvePrimitivePtr centerToEndCP2 = cGeom2[0].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerToStartCP2 = cGeom2[1].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr centerCP2 = cGeom2[2].GetGeometry()->GetAsICurvePrimitive();
+    ICurvePrimitivePtr infLineCP2 = cGeom2[3].GetGeometry()->GetAsICurvePrimitive();
+    ASSERT_TRUE(centerToEndCP2.IsValid());
+    ASSERT_TRUE(centerToStartCP2.IsValid());
+    ASSERT_TRUE(centerCP2.IsValid());
+    ASSERT_TRUE(infLineCP2.IsValid());
+    ICurvePrimitivePtr expectedCenterToEndCP2 = ICurvePrimitive::CreateLine(DSegment3d::From({3,0,0}, {3,-1,0}));
+    ICurvePrimitivePtr expectedCenterToStartCP2 = ICurvePrimitive::CreateLine(DSegment3d::From({3,0,0}, {2,0,0}));
+    DPoint3d expectedCenter2 = DPoint3d::From(3, 0, 0);
+    ICurvePrimitivePtr expectedCenterCP2 = ICurvePrimitive::CreatePointString(&expectedCenter2, 1);
+    ICurvePrimitivePtr expectedInfLineCP2 = ICurvePrimitive::CreateLine(DSegment3d::From({2,0,0}, {3,1,0}));
+    ASSERT_TRUE(centerToEndCP2->IsSameStructureAndGeometry(*expectedCenterToEndCP2));
+    ASSERT_TRUE(centerToStartCP2->IsSameStructureAndGeometry(*expectedCenterToStartCP2));
+    ASSERT_TRUE(centerCP2->IsSameStructureAndGeometry(*expectedCenterCP2));
+    ASSERT_TRUE(infLineCP2->IsSameStructureAndGeometry(*expectedInfLineCP2));
+
     sut->AppendKeyPoint({3,-1,0});
-    bvector<IGeometryPtr> cGeom2 = sut->FinishConstructionGeometry();
-    ASSERT_EQ(1, cGeom2.size());
-    ASSERT_TRUE(cGeom2.front().IsValid());
-    ICurvePrimitivePtr cGeom2CP = cGeom2.front()->GetAsICurvePrimitive();
-    ASSERT_TRUE(cGeom2CP.IsValid());
-    ICurvePrimitivePtr expectedCGeom2CP = ICurvePrimitive::CreateLineString({{3,-1,0},{3,0,0},{2,0,0}});
-    ASSERT_TRUE(cGeom2CP->IsSameStructureAndGeometry(*expectedCGeom2CP));
+    bvector<ConstructionGeometry> cGeom3 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(3, cGeom3.size());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToEnd, cGeom3[0].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenterToStart, cGeom3[1].GetType());
+    ASSERT_EQ(CONSTRUCTION_GEOMTYPE_ArcCenter, cGeom3[2].GetType());
     }

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/CurveVectorPlacementStrategyTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
@@ -535,4 +535,49 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLineString_MetesAndBounds)
     CurveVectorPtr cvFinal = sut->Finish();
     ASSERT_TRUE(cvFinal.IsValid());
     ASSERT_TRUE(cvFinal->IsSameStructureAndGeometry(*expectedCvFinal));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorPlacementStrategyTests, ChangeDefaultPlacementStrategy)
+    {
+    CurveVectorPlacementStrategyPtr sut = CurveVectorPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
+    sut->SetProperty("JUST_TO_TRIGGER_PRIMITIVE_STRATEGY_INIT", false);
+
+    sut->ChangeDefaultPlacementStrategy(ArcPlacementMethod::StartMidEnd);
+    if (true)
+        {
+        sut->AddKeyPoint({1,0,0});
+        sut->AddKeyPoint({0,1,0});
+        sut->AddDynamicKeyPoint({-1,0,0});
+
+        CurveVectorPtr expected = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, {
+            ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({1,0,0},{0,1,0},{-1,0,0})),
+            ICurvePrimitive::CreateLine(DSegment3d::From({-1,0,0},{1,0,0}))
+        });
+        CurveVectorPtr actual = sut->Finish(true);
+        ASSERT_TRUE(actual.IsValid());
+        actual->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
+        ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*actual, *expected));
+        }
+
+    sut->ChangeDefaultPlacementStrategy(ArcPlacementMethod::StartEndMid); // keeps the start point
+    if (true)
+        {
+        sut->AddKeyPoint({-3,0,0});
+        sut->AddDynamicKeyPoint({-1,2,0});
+
+        CurveVectorPtr expected = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, {
+            ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({1,0,0}, {-1,2,0}, {-3,0,0})),
+            ICurvePrimitive::CreateLine(DSegment3d::From({-3,0,0}, {1,0,0}))
+        });
+        CurveVectorPtr actual = sut->Finish(true);
+        ASSERT_TRUE(actual.IsValid());
+        actual->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
+        ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*actual, *expected));
+        }
     }
