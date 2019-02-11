@@ -36,6 +36,9 @@ struct CurvePrimitiveStrategyContainer
         ArcPlacementMethod m_defaultArcPlacementMethod;
         LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
 
+        void CreateNext(CurvePrimitiveManipulationStrategyPtr&, CurvePrimitivePlacementStrategyPtr&) const;
+        void PrepareNextStrategyAfterTypeOrPlacementChange();
+
     public:
         CurvePrimitiveStrategyContainer();
 
@@ -51,6 +54,7 @@ struct CurvePrimitiveStrategyContainer
         bool IsEmpty() const;
         bool IsComplete() const;
         bool CanAcceptMorePoints() const;
+        void ResetDynamicKeyPoint();
         
         bvector<PrimitiveStrategyWithKeyPointIndexRange> GetStrategies(size_t keyPointIndex) const;
         bvector<CurvePrimitiveManipulationStrategyPtr> const& GetManipulationStrategies() const { return m_primitiveManipulationStrategies; }

@@ -38,6 +38,10 @@ struct CurvePrimitivePlacementStrategy : public GeometryPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitive::CurvePrimitiveType GetResultCurvePrimitiveType() const;
         bool IsEmpty() const;
+
+        //! Copies properties, key points (if they make sense), etc...
+        //! Ignores dynamic key points.
+        void PrepareReplacement(CurvePrimitivePlacementStrategyR replacement);
     };
 
 END_BUILDING_SHARED_NAMESPACE
