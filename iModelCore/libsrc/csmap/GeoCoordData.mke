@@ -2,7 +2,7 @@
 #
 #     $Source: GeoCoordData.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 #----------------------------------------------------------------
@@ -40,8 +40,8 @@ always:
 # Note that compiled binary dictionary is now built compile time and not 
 # source code controlled.
 always:
-    CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
-    CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
+    ~linkfile "$(OutputRootDir)build/csmap/OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
+    ~linkfile "$(OutputRootDir)build/csmap/OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
 	$(OutputRootDir)build/csmap/cs_comp.exe -b $(csDictionarySourcesDir) $(OutputRootDir)build/csmap/
 
 #---------------------------------------------------------------------
@@ -51,11 +51,11 @@ always:
 #---------------------------------------------------------------------
 %if defined(Minimal)
 always:
-    CreateSymLinks.py   -f"$(GeoCoordData)datum.dty=$(OutputRootDir)build/csmap/datum.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)GeodeticPath.dty=$(OutputRootDir)build/csmap/GeodeticPath.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)GeodeticTransform.dty=$(OutputRootDir)build/csmap/GeodeticTransform.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)ellipsoid.dty=$(OutputRootDir)build/csmap/ellipsoid.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)license.txt=$(csDictionariesDir)license.txt"
+    ~linkfile "$(GeoCoordData)datum.dty=$(OutputRootDir)build/csmap/datum.dty"
+    ~linkfile "$(GeoCoordData)GeodeticPath.dty=$(OutputRootDir)build/csmap/GeodeticPath.dty"
+    ~linkfile "$(GeoCoordData)GeodeticTransform.dty=$(OutputRootDir)build/csmap/GeodeticTransform.dty"
+    ~linkfile "$(GeoCoordData)ellipsoid.dty=$(OutputRootDir)build/csmap/ellipsoid.dty"
+    ~linkfile "$(GeoCoordData)license.txt=$(csDictionariesDir)license.txt"
 
 %endif
 
@@ -75,36 +75,36 @@ always:
 
 #    Geodetic Data Catalog files, which are used in conjunction with .las, .los files:
 always:
-    CreateSymLinks.py   -f"$(GeoCoordData)GeoidHeight.gdc=$(csDictionariesDir)GeoidHeight.gdc"
-    CreateSymLinks.py   -f"$(GeoCoordData)Vertcon.gdc=$(csDictionariesDir)Vertcon.gdc"
+    ~linkfile "$(GeoCoordData)GeoidHeight.gdc=$(csDictionariesDir)GeoidHeight.gdc"
+    ~linkfile "$(GeoCoordData)Vertcon.gdc=$(csDictionariesDir)Vertcon.gdc"
 
 always:
-    CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty=$(OutputRootDir)build/csmap/coordsys.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty.xml=$(csDictionarySourcesDir)coordsys.dty.xml"
-    CreateSymLinks.py   -f"$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionarySourcesDir)UserOverrideGeodeticTransformSeed.asc"
-    CreateSymLinks.py   -f"$(GeoCoordData)NameMapper.csv=$(csDictionariesDir)NameMapper.csv"
-    CreateSymLinks.py   -f"$(GeoCoordData)WW15MGH.GRD=$(csDictionariesDir)WW15MGH.GRD"
-    CreateSymLinks.py   -f"$(GeoCoordData)WW15MGH._96=$(csDictionariesDir)WW15MGH._96"
-    CreateSymLinks.py   -f"$(GeoCoordData)OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
-    CreateSymLinks.py   -f"$(GeoCoordData)OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
-    CreateSymLinks.py   -d"$(GeoCoordData)Australia=$(csDictionariesDir)Australia"
-    CreateSymLinks.py   -d"$(GeoCoordData)Canada=$(csDictionariesDir)Canada"
-    CreateSymLinks.py   -d"$(GeoCoordData)Brazil=$(csDictionariesDir)Brazil"
-    CreateSymLinks.py   -d"$(GeoCoordData)France=$(csDictionariesDir)France"
-    CreateSymLinks.py   -d"$(GeoCoordData)Germany=$(csDictionariesDir)Germany"
-    CreateSymLinks.py   -d"$(GeoCoordData)Japan=$(csDictionariesDir)Japan"
-    CreateSymLinks.py   -d"$(GeoCoordData)NewZealand=$(csDictionariesDir)NewZealand"
-    CreateSymLinks.py   -d"$(GeoCoordData)SouthAfrica=$(csDictionariesDir)SouthAfrica"
-    CreateSymLinks.py   -d"$(GeoCoordData)Spain=$(csDictionariesDir)Spain"
-    CreateSymLinks.py   -d"$(GeoCoordData)Switzerland=$(csDictionariesDir)Switzerland"
-    CreateSymLinks.py   -d"$(GeoCoordData)Venezuela=$(csDictionariesDir)Venezuela"
-    CreateSymLinks.py   -d"$(GeoCoordData)Portugal=$(csDictionariesDir)Portugal"
-    CreateSymLinks.py   -d"$(GeoCoordData)Slovakia=$(csDictionariesDir)Slovakia"
-    CreateSymLinks.py   -d"$(GeoCoordData)UK=$(csDictionariesDir)UK"
-    CreateSymLinks.py   -d"$(GeoCoordData)USA/HARN=$(csDictionariesDir)USA/HARN"
-    CreateSymLinks.py   -d"$(GeoCoordData)USA/VERTCON=$(csDictionariesDir)USA/VERTCON"
-    CreateSymLinks.py   -d"$(GeoCoordData)USA/NSRS2007=$(csDictionariesDir)USA/NSRS2007"
-    CreateSymLinks.py   -d"$(GeoCoordData)USA/NSRS2011=$(csDictionariesDir)USA/NSRS2011"
+    ~linkfile "$(GeoCoordData)coordsys.dty=$(OutputRootDir)build/csmap/coordsys.dty"
+    ~linkfile "$(GeoCoordData)coordsys.dty.xml=$(csDictionarySourcesDir)coordsys.dty.xml"
+    ~linkfile "$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionarySourcesDir)UserOverrideGeodeticTransformSeed.asc"
+    ~linkfile "$(GeoCoordData)NameMapper.csv=$(csDictionariesDir)NameMapper.csv"
+    ~linkfile "$(GeoCoordData)WW15MGH.GRD=$(csDictionariesDir)WW15MGH.GRD"
+    ~linkfile "$(GeoCoordData)WW15MGH._96=$(csDictionariesDir)WW15MGH._96"
+    ~linkfile "$(GeoCoordData)OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
+    ~linkfile "$(GeoCoordData)OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
+    ~linkdir  "$(GeoCoordData)Australia=$(csDictionariesDir)Australia"
+    ~linkdir  "$(GeoCoordData)Canada=$(csDictionariesDir)Canada"
+    ~linkdir  "$(GeoCoordData)Brazil=$(csDictionariesDir)Brazil"
+    ~linkdir  "$(GeoCoordData)France=$(csDictionariesDir)France"
+    ~linkdir  "$(GeoCoordData)Germany=$(csDictionariesDir)Germany"
+    ~linkdir  "$(GeoCoordData)Japan=$(csDictionariesDir)Japan"
+    ~linkdir  "$(GeoCoordData)NewZealand=$(csDictionariesDir)NewZealand"
+    ~linkdir  "$(GeoCoordData)SouthAfrica=$(csDictionariesDir)SouthAfrica"
+    ~linkdir  "$(GeoCoordData)Spain=$(csDictionariesDir)Spain"
+    ~linkdir  "$(GeoCoordData)Switzerland=$(csDictionariesDir)Switzerland"
+    ~linkdir  "$(GeoCoordData)Venezuela=$(csDictionariesDir)Venezuela"
+    ~linkdir  "$(GeoCoordData)Portugal=$(csDictionariesDir)Portugal"
+    ~linkdir  "$(GeoCoordData)Slovakia=$(csDictionariesDir)Slovakia"
+    ~linkdir  "$(GeoCoordData)UK=$(csDictionariesDir)UK"
+    ~linkdir  "$(GeoCoordData)USA/HARN=$(csDictionariesDir)USA/HARN"
+    ~linkdir  "$(GeoCoordData)USA/VERTCON=$(csDictionariesDir)USA/VERTCON"
+    ~linkdir  "$(GeoCoordData)USA/NSRS2007=$(csDictionariesDir)USA/NSRS2007"
+    ~linkdir  "$(GeoCoordData)USA/NSRS2011=$(csDictionariesDir)USA/NSRS2011"
 %endif
     
 %if !defined (Minimal)
