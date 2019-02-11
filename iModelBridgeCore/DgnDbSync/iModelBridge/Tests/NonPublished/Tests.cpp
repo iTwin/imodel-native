@@ -165,8 +165,8 @@ struct TestSourceItemWithId : iModelBridgeSyncInfoFile::ISourceItem
     {
     Utf8String m_id;
     Utf8String m_content;
-
-    TestSourceItemWithId(Utf8StringCR id, Utf8StringCR content) : m_id(id), m_content(content) {}
+    Utf8String m_type;
+    TestSourceItemWithId(Utf8StringCR id, Utf8StringCR content, Utf8StringCR type) : m_id(id), m_content(content), m_type(type) {}
     Utf8String _GetId() override  {return m_id;}
     double _GetLastModifiedTime() override {return 0.0;}
     Utf8String _GetHash() override
@@ -219,8 +219,8 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     TestSourceItemNoId i1NoId("i1NoId initial");
     // Items in scope2
     iModelBridgeSyncInfoFile::ROWID scope2;
-    TestSourceItemWithId i0WithId("0", "i0WithId initial");
-    TestSourceItemWithId i1WithId("1", "i1WithId initial");
+    TestSourceItemWithId i0WithId("0", "i0WithId initial", "Foo");
+    TestSourceItemWithId i1WithId("1", "i1WithId initial", "Foo");
 
 
     Utf8CP itemKind = "";
@@ -533,10 +533,8 @@ END_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 {
-    TestSourceItemWithId m_foo_i0;
-    TestSourceItemWithId m_foo_i1;
-    TestSourceItemWithId m_bar_i0;
-    TestSourceItemWithId m_bar_i1;
+    std::vector <TestSourceItemWithId> m_foo_items;
+    
     TestIModelHubFwkClientForBridges& m_testIModelHubClientForBridges;
     iModelBridgeSyncInfoFile::ROWID m_docScopeId;
     bool m_jobTransChanged = false;
@@ -633,12 +631,13 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
     iModelBridgeTests_Test1_Bridge(TestIModelHubFwkClientForBridges& tc)
         :
         iModelBridgeWithSyncInfoBase(),
-        m_foo_i0("0", "foo i0 - initial"),
-        m_foo_i1("1", "foo i1 - initial"),
-        m_bar_i0("0", "bar i0 - initial"),
-        m_bar_i1("1", "bar i1 - initial"),
         m_testIModelHubClientForBridges(tc)
-        {}
+        {
+        m_foo_items.push_back(TestSourceItemWithId("0", "foo i0 - initial", "Foo"));
+        m_foo_items.push_back(TestSourceItemWithId("1", "foo i1 - initial", "Foo"));
+        m_foo_items.push_back(TestSourceItemWithId("0", "bar i0 - initial", "Bar"));
+        m_foo_items.push_back(TestSourceItemWithId("1", "bar i1 - initial", "Bar"));
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -767,15 +766,10 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
     ASSERT_EQ(m_expect.jobTransChanged, m_jobTransChanged);
 
     // Convert the "items" in my (non-existant) source file.
-    if (_GetParams().GetInputFileName() == L"Foo")
+    for (auto item : m_foo_items)
         {
-        ConvertItem(m_foo_i0, *changeDetector);
-        ConvertItem(m_foo_i1, *changeDetector);
-        }
-    else
-        {
-        ConvertItem(m_bar_i0, *changeDetector);
-        ConvertItem(m_bar_i1, *changeDetector);
+        if (item.m_type.EqualsI(Utf8String(_GetParams().GetInputFileName())))
+            ConvertItem(item, *changeDetector);
         }
 
     //  Garbage-collect the elements that were abandoned.
@@ -860,7 +854,7 @@ TEST_F(iModelBridgeTests, Test1)
     if (true)
         {
         // Modify an item 
-        testBridge.m_foo_i0.m_content = "changed";
+        testBridge.m_foo_items[0].m_content = "changed";
 
         // and run an update
         // This time, we expect to find the repo and briefcase already there.
