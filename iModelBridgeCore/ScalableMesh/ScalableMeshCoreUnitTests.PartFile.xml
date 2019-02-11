@@ -7,7 +7,7 @@
       <SubProduct ProductName="ScalableMeshUnitTests"/>
     </Part>
 
-    <Part Name="RunScalableMeshUnitTests" BentleyBuildMakeFile="Tests/GTests/RunScalableMeshUnitTests.mke" BMakeOptions="+dCOMPILE_PUBLISHED_TESTS +dUSE_PUBLIC_PUBLISHED_HEADERS"  ExcludePlatforms="iOSX86,iOSARM">
+    <Part Name="RunScalableMeshUnitTests" BentleyBuildMakeFile="Tests/GTests/RunScalableMeshUnitTests.mke" BentleyBuildMakeOptions="+dCOMPILE_PUBLISHED_TESTS +dUSE_PUBLIC_PUBLISHED_HEADERS"  ExcludePlatforms="iOSX86,iOSARM">
         <SubPart PartName="ScalableMesh-Data" PartFile="ScalableMesh-Data" Repository="ScalableMesh-Data"/>
         <SubPart PartName="ScalableMeshUnitTestsExe"/>
     </Part>
