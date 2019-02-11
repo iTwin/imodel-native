@@ -2,7 +2,7 @@
 #
 #     $Source: PublicAPI/PublicApi.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
@@ -32,7 +32,7 @@ cleanopt =
 
 always:
     PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(scope1Arg) $(cleanopt) -x$(TARGET_PLATFORM)
-    @CreateSymLinks.py -d"$(BuildContext)$(OutputApiDir)=$(genDir)"
+    ~linkdir "$(BuildContext)$(OutputApiDir)=$(genDir)"
 
 #### Old
 
