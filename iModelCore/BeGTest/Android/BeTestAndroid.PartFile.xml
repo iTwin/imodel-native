@@ -22,10 +22,10 @@
         </Bindings>
     </Part>
 
-    <Part Name="BuildApk" BentleyBuildMakeFile="BuildApk.mke" BMakeOptions="+dBETEST_RUN_TESTS"  ExcludeLibType="Dynamic" OnlyPlatforms="Android*">
+    <Part Name="BuildApk" BentleyBuildMakeFile="BuildApk.mke" BentleyBuildMakeOptions="+dBETEST_RUN_TESTS"  ExcludeLibType="Dynamic" OnlyPlatforms="Android*">
     </Part>
 
-    <Part Name="RunBeTestAndroid" DeferType="RunUnitTests" BentleyBuildMakeFile="RunBeTestAndroid.mke" BMakeOptions="+dBETEST_RUN_TESTS" OnlyPlatforms="Android*">
+    <Part Name="RunBeTestAndroid" DeferType="RunUnitTests" BentleyBuildMakeFile="RunBeTestAndroid.mke" BentleyBuildMakeOptions="+dBETEST_RUN_TESTS" OnlyPlatforms="Android*">
         <SubProduct ProductName="BeTestAndroid"/>
     </Part>
 
