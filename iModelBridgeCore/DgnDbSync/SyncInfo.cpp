@@ -1270,9 +1270,9 @@ SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::Creat
     return aspect;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
 SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(DgnElementR repositoryLink, Utf8StringCR schemaName)
     {
     auto stmt = repositoryLink.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind='Schema' AND Identifier=?)");
@@ -1286,63 +1286,79 @@ SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAs
     return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(repositoryLink, id).m_instance.get());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspect(DgnElementCR repositoryLink, Utf8StringCR schemaName)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspect(DgnDbR db, Utf8StringCR schemaName)
     {
-    auto stmt = repositoryLink.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind='Schema' AND Identifier=?)");
-    stmt->BindId(1, repositoryLink.GetElementId());
+    auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind='Schema' AND Identifier=?)");
+    stmt->BindText(1, schemaName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return nullptr;
+
+    auto scopeId = stmt->GetValueId<RepositoryLinkId>(0);
+    auto id = stmt->GetValueId<BeSQLite::EC::ECInstanceId>(1);
+    DgnElementPtr repositoryLink = db.Elements().GetForEdit<RepositoryLink>(scopeId);
+
+    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspect(*repositoryLink, id).m_instance.get());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspect(DgnDbR db, RepositoryLinkId scopeId, Utf8StringCR schemaName)
+    {
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind='Schema' AND Identifier=?)");
+    stmt->BindId(1, scopeId);
     stmt->BindText(2, schemaName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
 
     auto id = stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0);
-
-    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspect(repositoryLink, id).m_instance.get());
+    DgnElementPtr repositoryLink = db.Elements().GetForEdit<RepositoryLink>(scopeId);
+    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspect(*repositoryLink, id).m_instance.get());
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, SchemaExternalSourceAspect::Type& mappingType, Utf8CP v8SchemaName, RepositoryLinkId fileId)
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+uint32_t SyncInfo::SchemaExternalSourceAspect::GetChecksum()
     {
-    Utf8String ecsql = "SELECT Version, Checksum, JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Identifier=? and Kind='Schema'";
-    if (fileId.IsValid())
-        ecsql.append(" AND Scope.Id=? ");
-
-    auto stmt = GetDgnDb()->GetPreparedECSqlStatement(ecsql.c_str());
-
-    stmt->BindText(1, v8SchemaName, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    if (fileId.IsValid())
-        stmt->BindId(2, fileId);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return false;
-
-    schemaKey.m_schemaName = WString(v8SchemaName).c_str();
-    Utf8String version = stmt->GetValueText(0);
-    Utf8String checksum = stmt->GetValueText(1);
-    Utf8String jsonProp = stmt->GetValueText(2);
-    rapidjson::Document doc;
-    doc.Parse(jsonProp.c_str());
-    mappingType = doc["isDynamic"].IsTrue() ? SchemaExternalSourceAspect::Type::Dynamic : SchemaExternalSourceAspect::Type::Identity;
-
-    uint32_t versionWrite;
-    ECN::SchemaKey::ParseVersionString(schemaKey.m_versionMajor, versionWrite, schemaKey.m_versionMinor, version.c_str());
-
-    BE_STRING_UTILITIES_UTF8_SSCANF(checksum.c_str(), "%" PRIu32, &schemaKey.m_checkSum);
-
-    return true;
+    auto state = GetSourceState();
+    uint32_t checksum;
+    BE_STRING_UTILITIES_UTF8_SSCANF(state.m_checksum.c_str(), "%" PRIu32, &checksum);
+    return checksum;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   11/2014
-//---------------------------------------------------------------------------------------
-bool SyncInfo::ContainsECSchema(Utf8CP v8SchemaName)
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+uint32_t SyncInfo::SchemaExternalSourceAspect::GetVersionMajor()
     {
-    auto stmt = GetDgnDb()->GetPreparedECSqlStatement("SELECT NULL FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Identifier=? AND Kind='Schema'");
-    stmt->BindText(1, v8SchemaName, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    return stmt->Step() == BE_SQLITE_ROW;
+    auto state = GetSourceState();
+    uint32_t versionMajor, versionWrite, versionMinor;
+    ECN::SchemaKey::ParseVersionString(versionMajor, versionWrite, versionMinor, state.m_version.c_str());
+    return versionMajor;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+uint32_t SyncInfo::SchemaExternalSourceAspect::GetVersionMinor()
+    {
+    auto state = GetSourceState();
+    uint32_t versionMajor, versionWrite, versionMinor;
+    ECN::SchemaKey::ParseVersionString(versionMajor, versionWrite, versionMinor, state.m_version.c_str());
+    return versionMinor;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+SyncInfo::SchemaExternalSourceAspect::Type SyncInfo::SchemaExternalSourceAspect::GetType()
+    {
+    auto prop = GetProperties();
+    return prop["isDynamic"].IsTrue() ? SchemaExternalSourceAspect::Type::Dynamic : SchemaExternalSourceAspect::Type::Identity;
     }
 
 //---------------------------------------------------------------------------------------

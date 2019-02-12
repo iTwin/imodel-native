@@ -2892,12 +2892,13 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
     ECObjectsV8::SchemaKey existingSchemaKey;
     SyncInfo::SchemaExternalSourceAspect::Type existingMappingType = SyncInfo::SchemaExternalSourceAspect::Type::Identity;
     
-    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), RepositoryLinkId()))
+    SyncInfo::SchemaExternalSourceAspect existing = SyncInfo::SchemaExternalSourceAspect::GetAspect(GetDgnDb(), schemaName);
+    if (existing.IsValid())
         {
         //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
         //and also check whether the existing one and the new one are compatible.
 
-        if (existingMappingType == SyncInfo::SchemaExternalSourceAspect::Type::Dynamic)
+        if (existing.GetType() == SyncInfo::SchemaExternalSourceAspect::Type::Dynamic)
             {
             if (!isDynamicSchema)
                 {
@@ -2919,17 +2920,17 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                 return BSISUCCESS;
                 }
 
-            const int majorDiff = existingSchemaKey.GetVersionMajor() - schemaKey.GetVersionMajor();
-            const int minorDiff = existingSchemaKey.GetVersionMinor() - schemaKey.GetVersionMinor();
+            const int majorDiff = existing.GetVersionMajor() - schemaKey.GetVersionMajor();
+            const int minorDiff = existing.GetVersionMinor() - schemaKey.GetVersionMinor();
             const int existingToNewVersionDiff = majorDiff != 0 ? majorDiff : minorDiff;
 
             if (existingToNewVersionDiff >= 0)
                 {
-                if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
+                if (existingToNewVersionDiff == 0 && existing.GetChecksum() != schemaKey.m_checkSum)
                     {
                     Utf8String error;
                     error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
-                                  Utf8String(existingSchemaKey.GetFullSchemaName().c_str()).c_str(), existingSchemaKey.m_checkSum,
+                                  Utf8String(schemaKey.GetFullSchemaName().c_str()).c_str(), existing.GetChecksum(),
                                   Converter::IssueReporter::FmtModel(v8Model).c_str(), schemaKey.m_checkSum);
                     ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                     }
@@ -2952,7 +2953,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                             return BSISUCCESS;
                             }
                         }
-                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP())))
+                    else if (SyncInfo::SchemaExternalSourceAspect::GetAspect(GetDgnDb(), Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()), schemaName).IsValid())
                         return BSISUCCESS;
                     }
                 }
@@ -3650,7 +3651,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {
         //schemas not captured in sync info are system schemas which we don't consider during conversion
-        if (!GetSyncInfo().ContainsECSchema(Utf8String(entry.RelationshipSchemaName.c_str()).c_str()))
+        if (!BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(Utf8String(entry.RelationshipSchemaName.c_str())))
             continue;
 
         V8ECInstanceKey v8SourceKey(ECClassName(Utf8String(entry.SourceSchemaName.c_str()).c_str(), Utf8String(entry.SourceClassName.c_str()).c_str()),

@@ -388,9 +388,14 @@ struct SyncInfo
             //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file.
             DGNDBSYNC_EXPORT static SchemaExternalSourceAspect CreateAspect(DgnElementId repositoryId, Utf8StringCR schemaName, uint32_t v8ProfileVersionMajor, uint32_t v8ProfileVersionMinor,
                                                                             bool isDynamic, uint32_t checksum, DgnDbR db);
-            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspect(DgnElementCR repositoryLink, Utf8StringCR schemaName);
+            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspect(DgnDbR db, Utf8StringCR schemaName);
+            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspect(DgnDbR db, RepositoryLinkId scopeId, Utf8StringCR schemaName);
             DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspectForEdit(DgnElementR repositoryLink, Utf8StringCR schemaName);
 
+            Type GetType();
+            uint32_t GetChecksum();
+            uint32_t GetVersionMajor();
+            uint32_t GetVersionMinor();
         };
 
     struct SchemaExternalSourceAspectIterator : ExternalSourceAspectIterator<SchemaExternalSourceAspect>
@@ -556,8 +561,6 @@ public:
 
     //! @name ECSchemas
     //! @{
-    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, SchemaExternalSourceAspect::Type& mappingType, Utf8CP v8SchemaName, RepositoryLinkId fileId);
-    DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName);
     DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId);
     //! @}
 
