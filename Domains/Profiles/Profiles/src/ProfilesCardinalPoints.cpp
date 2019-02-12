@@ -153,8 +153,9 @@ CardinalPoint createStandardCardinalPoint (StandardCardinalPoint type, Profile c
     IGeometryPtr shapePtr = profile.GetShape();
     BeAssert (shapePtr.IsValid());
 
-    DRange3d shapeRange = {};
-    BeAssert (shapePtr->TryGetRange (shapeRange));
+    DRange3d shapeRange = {0};
+    if (!shapePtr->TryGetRange (shapeRange))
+        shapeRange = DRange3d {0};
 
     double const halfWidth = shapeRange.XLength() / 2.0;
     double const halfDepth = shapeRange.YLength() / 2.0;
