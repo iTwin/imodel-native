@@ -1352,9 +1352,6 @@ void RootModelConverter::CreatePresentationRules()
 //---------------------------------------------------------------------------------------
 BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationships()
     {
-    if (BentleyApi::SUCCESS != m_syncInfo.CheckNamedGroupTable())
-        return BSIERROR;
-
     for (auto const& modelMapping : m_v8ModelMappings)
         {
         if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
@@ -1364,7 +1361,7 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationships()
             return BSIERROR;
         }
 
-    return m_syncInfo.FinalizeNamedGroups();
+    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1423,7 +1420,6 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                         error.Sprintf("Failed to add child element %s to group %" PRIu64 "", Converter::IssueReporter::FmtElement(memberEh).c_str(), m_parentId.GetValue());
                         m_converter.ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                         }
-                    m_converter.GetSyncInfo().AddNamedGroupEntry(m_parentId, childElementId);
                     }
 
                 return DgnV8Api::MemberTraverseStatus::Continue;
