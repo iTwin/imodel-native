@@ -1021,6 +1021,7 @@ private:
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
     bool                    UpdateModelspaceView (ViewControllerP view);
     bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
+    BentleyStatus           UpdateRepositoryLink (DwgDbDatabaseP dwg = nullptr);
     DgnCategoryId           FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
     DgnSubCategoryId        FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
 

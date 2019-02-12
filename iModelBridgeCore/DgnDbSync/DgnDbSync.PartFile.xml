@@ -360,15 +360,11 @@
         <Directories DirectoryListName="Tests"/>
     </Product>
 
-    <Part Name="RunV8ConverterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunDgnV8ConverterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="DgnV8ConverterTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnV8ConverterTests.log</Files>
         </Bindings>
-    </Part>
-
-    <Part Name="RunDgnV8ConverterTests" DeferType="RunUnitTests" >
-        <SubPart PartName="RunV8ConverterTests" />
     </Part>
 
     <!-- Memory leak testing of DgnV8Converter tests. Only called on demand -->
