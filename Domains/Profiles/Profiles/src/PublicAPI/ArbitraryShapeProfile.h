@@ -46,6 +46,7 @@ protected:
     PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
 
 private:
+    virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateShapeGeometry() const override;
 
 public:

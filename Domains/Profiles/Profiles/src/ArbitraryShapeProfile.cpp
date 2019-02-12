@@ -37,6 +37,22 @@ ArbitraryShapeProfile::ArbitraryShapeProfile (CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool ArbitraryShapeProfile::_Validate() const
+    {
+    if (!T_Super::_Validate())
+        return false;
+
+    // TODO Karolis: Validate geometry:
+    // - it must be a 2d geometry (bounding box with z == 0)
+    // - it must lie on XY plane
+    // - it must be of single perimeter
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ArbitraryShapeProfile::_CreateShapeGeometry() const
     {
     return m_geometryPtr;
