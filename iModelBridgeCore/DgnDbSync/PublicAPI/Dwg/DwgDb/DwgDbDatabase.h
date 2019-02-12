@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Dwg/DwgDb/DwgDbDatabase.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,6 +56,8 @@ public:
 
     DWGDB_EXPORT DwgDbStatus        GetFileIdPolicy (uint32_t& id, uint32_t& policy);
     DWGDB_EXPORT DwgDbStatus        SetFileIdPolicy (uint32_t id, uint32_t policy);
+    DWGDB_EXPORT DwgDbStatus        GetRepositoryLinkId (uint64_t& linkId);
+    DWGDB_EXPORT DwgDbStatus        SetRepositoryLinkId (uint64_t linkId);
     DWGDB_EXPORT DwgDbObjectId      GetModelspaceId ();
     DWGDB_EXPORT DwgDbObjectId      GetPaperspaceId ();
     DWGDB_EXPORT DwgDbObjectId      GetBlockTableId () const;
