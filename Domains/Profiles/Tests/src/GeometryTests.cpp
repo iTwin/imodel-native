@@ -387,6 +387,24 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
         InsertProfileGeometry<ArbitraryCompositeProfile> (ArbitraryCompositeProfile::CreateParams (GetModel(), "4 Angle shape", components));
         }
 
+        { // Arbitrary shape profile - X shape
+        bvector<DPoint3d> points =
+            {
+            DPoint3d::From (-4.0, -0.5), DPoint3d::From (-4.0, 0.5), DPoint3d::From (-0.5, 0.5), DPoint3d::From (-0.5, 4.0),
+            DPoint3d::From (0.5, 4.0), DPoint3d::From (0.5, 0.5), DPoint3d::From (4.0, 0.5), DPoint3d::From (4.0, -0.5),
+            DPoint3d::From (0.5, -0.5), DPoint3d::From (0.5, -4.0), DPoint3d::From (-0.5, -4.0), DPoint3d::From (-0.5, -0.5)
+            };
+        CurveVectorPtr curveVectorPtr = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString (points));
+        IGeometryPtr geometryPtr = IGeometry::Create (curveVectorPtr);
+
+        DMatrix4d rotation = DMatrix4d::From (RotMatrix::FromVectorAndRotationAngle (DVec3d::From (0.0, 0.0, 1.0), PI / 4.0));
+        Transform transform;
+        transform.InitFrom (rotation);
+        geometryPtr->TryTransformInPlace (transform);
+
+        InsertProfileGeometry<ArbitraryShapeProfile> (ArbitraryShapeProfile::CreateParams (GetModel(), "Arbitrary shape - X shape", geometryPtr));
+        }
+
         {
         CShapeProfilePtr baseProfilePtr = InsertElement<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "C shape for derived profile", 6.0, 6.0, 0.75, 0.75));
 
