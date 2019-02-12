@@ -71,6 +71,7 @@ struct SyncInfo
             static constexpr Utf8CP GeomPart = "GeomPart";
             static constexpr Utf8CP ViewDefinition = "ViewDefinition";
             static constexpr Utf8CP URI = "URI";
+            static constexpr Utf8CP Schema = "Schema";
             };
         };
 
@@ -377,12 +378,28 @@ struct SyncInfo
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect GetAspect(DgnGeometryPartCR el);
         };
 
-    enum class ECSchemaMappingType
+    //! Multiple versions of a schema can exist within a dgn.  This stores the source of each version.  The versions are merged together and that single merged schema is then imported.
+    //! As there is no Schema element, we attach the schema source info to each Repository it came from.  On subsequent upgrades, if either an existing version was modified or a new version
+    //! is discovered, the schemas a re-merged and re-imported.
+    struct SchemaExternalSourceAspect : ExternalSourceAspect
         {
-        Identity = 1, //!< Mapped as is
-        Dynamic = 2 //!< if multiple dynamic schemas exist, they will be merged during conversion
+        private:
+            SchemaExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        public:
+            enum class Type { Identity, Dynamic}; // WARNING: Persistent values - do not change
+
+            //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file.
+            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect CreateAspect(DgnElementId repositoryId, Utf8StringCR schemaName, uint32_t v8ProfileVersionMajor, uint32_t v8ProfileVersionMinor,
+                                                                            bool isDynamic, uint32_t checksum, DgnDbR db);
+            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspect(DgnElementCR repositoryLink, Utf8StringCR schemaName);
+            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspectForEdit(DgnElementR repositoryLink, Utf8StringCR schemaName);
+
         };
 
+    struct SchemaExternalSourceAspectIterator : ExternalSourceAspectIterator<SchemaExternalSourceAspect>
+        {
+        SchemaExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP wh = "") : ExternalSourceAspectIterator(db, scope, ExternalSourceAspect::Kind::Schema, wh) {}
+        };
 
     //! An Id that is per-file
     template<typename IDTYPE> struct FileBasedId
@@ -542,10 +559,9 @@ public:
 
     //! @name ECSchemas
     //! @{
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertECSchema(ECN::ECSchemaId&, DgnV8FileR, Utf8CP v8SchemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic, uint32_t checksum) const;
-    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName, RepositoryLinkId fileId) const;
-    DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName) const;
-    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId) const;
+    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, SchemaExternalSourceAspect::Type& mappingType, Utf8CP v8SchemaName, RepositoryLinkId fileId);
+    DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName);
+    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId);
     //! @}
 
     //! @name NamedGroups - The index is dropped on the ElementRefersToElements table while inserting named group members.  This was to allow for fast inserts, but as a result, lookups are slow and so
