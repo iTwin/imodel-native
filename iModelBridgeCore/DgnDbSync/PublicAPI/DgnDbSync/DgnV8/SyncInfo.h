@@ -297,19 +297,16 @@ struct SyncInfo
 
     struct LevelExternalSourceAspect : ExternalSourceAspect
         {
+        enum class Type {Spatial, Drawing}; // WARNING: Persistent values - do not change
+
         private:
         static Utf8String FormatSourceId(DgnV8Api::LevelId v8Id) {return FormatV8ElementId(v8Id);}
         LevelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
-        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const&, DgnV8ModelCR, Converter&);
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const&, DgnV8ModelCR, Type, Converter&);
 
         public:
-        static constexpr Utf8CP json_v8LevelName = "v8LevelName";
-        static constexpr Utf8CP json_v8ModelId = "v8ModelId";
-
-        enum class Type {Spatial, Drawing}; // WARNING: Persistent values - do not change
-
         //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file. Caller must call AddAspect, passing in the Category element.
-        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnV8Api::LevelHandle const&, DgnV8ModelCR, Converter&);
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnV8Api::LevelHandle const&, DgnV8ModelCR, Type, Converter&);
         DGNDBSYNC_EXPORT static LevelExternalSourceAspect LevelExternalSourceAspect::FindAspectByV8Model(DgnSubCategoryCR, DgnV8ModelCR v8Model);
 
         DGNDBSYNC_EXPORT static BentleyStatus FindFirstSubCategory(DgnSubCategoryId&, DgnV8ModelCR v8Model, uint32_t flid, Type ltype, Converter& converter);

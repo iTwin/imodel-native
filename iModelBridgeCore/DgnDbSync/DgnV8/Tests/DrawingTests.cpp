@@ -1164,7 +1164,7 @@ struct SheetCompositionTests : public ConverterTestBaseFixture
 
         return model.IsValid () ? model->ToSheetModel () : nullptr;
         }
-    void AnalyzeProxyGraphics(std::vector<BentleyApi::DRange3d>& dgRanges, DrawingModelR drawingModel);
+    void AnalyzeProxyGraphics(std::vector<Utf8String>& identifiers, std::vector<BentleyApi::DRange3d>& dgRanges, DrawingModelR drawingModel);
     void FindSheetModelSource(DgnV8Api::ModelId& v8SheetModelId, DgnDbR db, DgnModelId sheetModelId);
     void AnalyzeDrawingModels(std::vector<DgnElementId>& drawingElementIds, int& attachmentAspectCount, DgnDbR db);
     void CheckExtractedDrawingGraphics(
@@ -1286,31 +1286,24 @@ void SheetCompositionTests::AnalyzeDrawingModels(std::vector<DgnElementId>& draw
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<BentleyApi::DRange3d>& dgRanges, DrawingModelR drawingModel)
+void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<Utf8String>& identifiers, std::vector<BentleyApi::DRange3d>& dgRanges, DrawingModelR drawingModel)
     {
     auto& db = drawingModel.GetDgnDb();
 
     // Find all ExternalSourceAspects on all DrawingGraphics in the DrawingModel
     auto selGraphics = db.GetPreparedECSqlStatement(
-        "SELECT x.Identifier, x.Scope.Id, dg.ECInstanceId, x.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_DrawingGraphic) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
+        "SELECT x.Identifier, dg.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_DrawingGraphic) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
         " WHERE dg.Model.Id=? and x.Kind='ProxyGraphic'");
     selGraphics->BindId(1, drawingModel.GetModelId());
     
     while (BE_SQLITE_ROW == selGraphics->Step())
         {
         Utf8String sourceId = selGraphics->GetValueText(0);
-        DgnElementId scopeId = selGraphics->GetValueId<DgnElementId>(1);
-        DgnElementId dgEid = selGraphics->GetValueId<DgnElementId>(2);
-        auto aspectId = selGraphics->GetValueId<EC::ECInstanceId>(3);
+        DgnElementId dgEid = selGraphics->GetValueId<DgnElementId>(1);
 
         auto dgEl = db.Elements().Get<DrawingGraphic>(dgEid);
-        auto scopeEl = db.Elements().GetElement(scopeId);
-        printf("SourceId: %s scopeId=%lld (%s) dgEid=%lld (%s)", sourceId.c_str(), scopeId.GetValue(), scopeEl->GetElementClass()->GetFullName(), dgEid.GetValue(), dgEl->GetElementClass()->GetFullName());
             
-        auto aspect = iModelExternalSourceAspect::GetAspect(*dgEl, aspectId);
-        auto aspectDump = aspect.FormatForDump(db, true, true);
-        printf("%s\n", aspectDump.c_str());
-
+        identifiers.push_back(sourceId);
         dgRanges.push_back(dgEl->GetPlacement().CalculateRange());
         }
 
@@ -1367,25 +1360,14 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
         auto drawingModel = drawing->GetSub<DrawingModel>();
         ASSERT_TRUE(drawingModel.IsValid());
 
-        AnalyzeProxyGraphics(dgRanges, *drawingModel);
+        std::vector<Utf8String> identifiers;
+        AnalyzeProxyGraphics(identifiers, dgRanges, *drawingModel);
         ASSERT_EQ(expectedDrawingGraphicCount, dgRanges.size());
         }
 
     if (true)
         {
         /*
-        V8FileEditor v8editor;
-        v8editor.Open(m_v8FileName);
-
-        auto selSheetModelSourceId = db->GetPreparedECSqlStatement("SELECT x.Identifier from " BIS_SCHEMA(BIS_CLASS_Sheet) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
-                                                        " WHERE x.Element.Id=? and x.Kind='Model'");
-        selSheetModelSourceId->BindId(1, sheetModel->GetModeledElementId());
-        ASSERT_EQ(BE_SQLITE_ROW, selSheetModelSourceId->Step());
-        DgnV8Api::ModelId v8SheetModelId;
-        ASSERT_EQ(1, sscanf(selSheetModelSourceId->GetValueText(0), "%d", &v8SheetModelId));
-
-
-        auto v8SheetModel = v8editor.m_file->LoadRootModelById(nullptr, v8SheetModelId, true, true, false);
         ASSERT_TRUE(nullptr != v8SheetModel);
         */
 
@@ -1395,6 +1377,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
     DoUpdate(m_dgnDbFileName, m_v8FileName);
 
     // Verify that *nothing changed*
+    std::vector<Utf8String> identifiersBeforeDelete;
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
@@ -1419,13 +1402,67 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
 
         // Verify that there are the same number of DrawingGraphics and that they did not change in size, location, or rotation
         std::vector<BentleyApi::DRange3d> dgRangesAfterUpdate;
-        AnalyzeProxyGraphics(dgRangesAfterUpdate, *drawingModel);
+        AnalyzeProxyGraphics(identifiersBeforeDelete, dgRangesAfterUpdate, *drawingModel);
         ASSERT_EQ(dgRangesAfterUpdate.size(), dgRanges.size()) << "No change expected in the number of DrawingGraphics";
         for (size_t i=0; i<dgRanges.size(); ++i)
             {
             ASSERT_TRUE(dgRangesAfterUpdate[i].IsEqual(dgRanges[i], 1.0e-10)) << "No change expected in the range of an DrawingGraphic";
             }
         }
+
+    // Delete the top element from the "Top_Bottom" model and then update
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+
+        auto v8ModelId = v8editor.m_file->FindModelIdByName(L"Front_Back");
+        auto v8Model = v8editor.m_file->LoadRootModelById(nullptr, v8ModelId, true, true, false);
+
+        DgnV8Api::EditElementHandle eh(DgnV8Api::ElementId(87757), v8Model);
+        ASSERT_TRUE(eh.IsValid());
+        ASSERT_EQ(0, eh.DeleteFromModel());
+        v8editor.m_file->ProcessChanges(DgnV8Api::DgnSaveReason::ApplInitiated);
+        }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    //      Verify that 1 DrawingGraphic disappeared
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    
+        BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
+        ASSERT_TRUE (nullptr != sheetModel);
+
+        DgnV8Api::ModelId v8SheetModelId{};
+        FindSheetModelSource(v8SheetModelId, *db, sheetModel->GetModelId());
+        ASSERT_EQ(expectedV8SheetModelId, v8SheetModelId);
+
+        std::vector<DgnElementId> drawingElementIds;
+        int attachmentAspectCount = 0;
+        AnalyzeDrawingModels(drawingElementIds, attachmentAspectCount, *db);
+        ASSERT_EQ(expectedDrawingElementCount, drawingElementIds.size());
+        ASSERT_EQ(expectedAttachmentAspectCount, attachmentAspectCount);
+
+        auto drawing = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
+        ASSERT_TRUE(drawing.IsValid());
+        auto drawingModel = drawing->GetSub<DrawingModel>();
+        ASSERT_TRUE(drawingModel.IsValid());
+
+        // Verify that there is one fewer DrawingGraphic element. The others should not have changed in size, location, or rotation
+        std::vector<BentleyApi::DRange3d> dgRangesAfterDelete;
+        std::vector<Utf8String> identifiersAfterDelete;
+        AnalyzeProxyGraphics(identifiersAfterDelete, dgRangesAfterDelete, *drawingModel);
+        ASSERT_EQ(dgRangesAfterDelete.size(), dgRanges.size() - 1) << "One fewer DrawingGraphic element expected";
+        for (size_t i=0; i<dgRangesAfterDelete.size(); ++i)
+            {
+            auto iOld = std::find(identifiersBeforeDelete.begin(), identifiersBeforeDelete.end(), identifiersAfterDelete[i]);
+            auto iOldOffset = iOld - identifiersBeforeDelete.begin();
+            ASSERT_TRUE(dgRangesAfterDelete[i].IsEqual(dgRanges[iOldOffset], 1.0e-10)) << "No change expected in the range of an DrawingGraphic";
+            }
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**

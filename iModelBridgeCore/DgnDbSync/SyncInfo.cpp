@@ -425,36 +425,29 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
     DgnElementId repositoryLinkId = converter.GetRepositoryLinkId(*v8Model.GetDgnFileP());
     BeAssert(repositoryLinkId.IsValid());
     Utf8String v8LevelId = FormatSourceId(levelId);
-    Utf8String v8ModelId = V8ModelExternalSourceAspect::FormatSourceId(v8Model);
     auto desiredCategoryClassId = converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, (Type::Spatial == ltype)? BIS_CLASS_SpatialCategory: BIS_CLASS_DrawingCategory);
-    
+
+    /* Do not join bis.externalsourceaspect to bis.subcategory. That one join causes a sub-query and an inner join (i.e., two more selects), 
+    all just to verify that the XSA belongs to a SubCategory element.
+    We don't need all of that, as long as we know that only SubCategory elements have the 'Level' Kind of XSAs.
+
+    Also, to avoid yet another select on the elements (definitions) table, to check that the level type (drawing or spatial) was as specified,
+    we duplicate that information into the 'Level' XSA itself.
+
+    Tricky: to avoid multiple calls to json_extract (which parses the JSON text each time), we specify multiple properties to
+    extract. That returns an array of values, formatting as JSON text. That's why we have to bind a text value to match it.
+    */
     auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_SubCategory) " e"
-        " WHERE (x.Element.Id=e.ECInstanceId AND x.Scope.Id=? AND x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.v8ModelId') = ?)");
+        "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x "
+        " WHERE (x.Scope.Id=? AND x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.v8ModelId', '$.levelType') = ?)");
     aspectStmt->BindId(1, repositoryLinkId);
     aspectStmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     aspectStmt->BindText(3, v8LevelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    aspectStmt->BindText(4, v8ModelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-
-    BeSQLite::EC::CachedECSqlStatementPtr catClassStmt;
+    aspectStmt->BindText(4, Utf8PrintfString("[%d,%d]", v8Model.GetModelId(), (int)ltype).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     while (BE_SQLITE_ROW == aspectStmt->Step())
         {
         subCatId = aspectStmt->GetValueId<DgnSubCategoryId>(0);
-
-        // Must be a SubCategory of the requested type of Category (spatial or drawing)
-        if (!catClassStmt.IsValid())
-            catClassStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
-                "SELECT c.ECClassId FROM " BIS_SCHEMA(BIS_CLASS_Category) " c JOIN " BIS_SCHEMA(BIS_CLASS_SubCategory) " s ON c.ECInstanceId=s.Parent.Id"
-                " WHERE s.ECInstanceId=?");
-
-        catClassStmt->Reset();
-        catClassStmt->BindId(1, subCatId);
-        if (BE_SQLITE_ROW != catClassStmt->Step())
-            continue;
-        if (catClassStmt->GetValueId<ECN::ECClassId>(0) != desiredCategoryClassId)
-            continue;
-
         return BSISUCCESS;
         }
     return BSIERROR;
@@ -463,7 +456,7 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Converter& converter)
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Type ctype, Converter& converter)
     {
     BeAssert(scopeId.IsValid());
 
@@ -478,11 +471,11 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateA
     LevelExternalSourceAspect aspect(instance.get());
     
     Utf8String v8LevelName(vlevel.GetName());
-    Utf8String v8ModelId = V8ModelExternalSourceAspect::FormatSourceId(v8Model);
 
     rapidjson::Document json(rapidjson::kObjectType);
     auto& allocator = json.GetAllocator();
-    json.AddMember("v8ModelId", rapidjson::Value(v8ModelId.c_str(), allocator), allocator);
+    json.AddMember("v8ModelId", (int)v8Model.GetModelId(), allocator); // int32_t
+    json.AddMember("levelType", (int)ctype, allocator);
     json.AddMember("v8LevelName", rapidjson::Value(v8LevelName.c_str(), allocator), allocator);
     aspect.SetProperties(json);
 
@@ -492,9 +485,9 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Converter& converter)
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Type ltype, Converter& converter)
     {
-    return CreateAspect(converter.GetRepositoryLinkId(*v8Model.GetDgnFileP()), vlevel, v8Model, converter);
+    return CreateAspect(converter.GetRepositoryLinkId(*v8Model.GetDgnFileP()), vlevel, v8Model, ltype, converter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -518,7 +511,7 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::InsertLevel(DgnSubCategoryId subca
             return aspect;
         }
 
-    auto aspect = LevelExternalSourceAspect::CreateAspect(vlevel, v8model, m_converter);
+    auto aspect = LevelExternalSourceAspect::CreateAspect(vlevel, v8model, ltype, m_converter);
     aspect.AddAspect(*subCatEl);
     subCatEl->Update();
     return aspect;
@@ -534,7 +527,7 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::FindAsp
         " WHERE (Element.Id=? AND Kind=? AND json_extract(JsonProperties, '$.v8ModelId') = ?)");
     stmt->BindId(1, el.GetElementId());
     stmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->BindText(3, FormatV8ModelId(v8Model.GetModelId()).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindInt(3, (int)v8Model.GetModelId());
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
     return LevelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0)).m_instance.get());
