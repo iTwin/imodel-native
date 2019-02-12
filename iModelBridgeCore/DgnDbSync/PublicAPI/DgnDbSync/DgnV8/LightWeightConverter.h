@@ -61,12 +61,12 @@ struct LightWeightConverter
 
         virtual DgnStyleId FindLineStyle(double& unitsScale, bool& foundStyle, Int32 v8Id);
         virtual BeSQLite::DbResult InsertLineStyle(DgnStyleId, double unitsScale, Int32 v8Id);
-        virtual DgnSubCategoryId GetSubCategory(uint32_t v8levelid, SyncInfo::Level::Type ltype);
+        virtual DgnSubCategoryId GetSubCategory(uint32_t v8levelid, SyncInfo::LevelExternalSourceAspect::Type ltype);
 
         void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d);
         bool InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context);
 
-        virtual DgnSubCategoryId GetSubCategory(uint32_t v8levelid, DgnV8ModelCR, SyncInfo::Level::Type ltype) 
+        virtual DgnSubCategoryId GetSubCategory(uint32_t v8levelid, DgnV8ModelCR, SyncInfo::LevelExternalSourceAspect::Type ltype) 
             {
             return GetSubCategory(v8levelid, ltype);
             };
@@ -190,7 +190,7 @@ struct LightWeightConverter
                 {
                 private:
                     bool                         m_isElement;
-                    SyncInfo::V8FileSyncInfoId   m_v8fileId;             //  Foreign file ID or RSC handle
+                    RepositoryLinkId   m_v8fileId;             //  Foreign file ID or RSC handle
                     DgnV8Api::ElementId          m_v8componentKey;       //  Element ID or RSC ID
                     uint32_t                     m_v8componentType;      //  LsResourceType or LsElementType
                 public:

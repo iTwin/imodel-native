@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: DgnV8/DynamicSchemaGenerator/DgnV8Tags.cpp $
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 
@@ -361,10 +361,10 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<Dg
 
     if (DbResult::BE_SQLITE_OK != m_dgndb->CreateTable(TEMP_TAG_MAP_TABLE,
         "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "V8FileSyncInfoId INTEGER NOT NULL,"
+        "V8FileSyncInfoId BIGINT NOT NULL,"
         "V8TagModelId INTEGER NOT NULL,"
         "V8TagElementId INTEGER NOT NULL,"
-        "V8TargetFileId INTEGER NOT NULL,"
+        "V8TargetFileId BIGINT NOT NULL,"
         "V8TargetElementId INTEGER NOT NULL"
         ))
         { BeAssert(false); return; }
@@ -396,10 +396,10 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<Dg
                 continue;
             
             insertTagRecord->Reset();
-            insertTagRecord->BindInt(1, GetV8FileSyncInfoIdFromAppData(*v8TagEh.GetDgnFileP()).GetValue());
+            insertTagRecord->BindId(1, GetRepositoryLinkId(*v8TagEh.GetDgnFileP()));
             insertTagRecord->BindInt(2, v8TagEh.GetDgnModelP()->GetModelId());
             insertTagRecord->BindInt64(3, v8TagEh.GetElementId());
-            insertTagRecord->BindInt(4, GetV8FileSyncInfoIdFromAppData(*v8TargetEh.GetDgnFileP()).GetValue());
+            insertTagRecord->BindId(4, GetRepositoryLinkId(*v8TargetEh.GetDgnFileP()));
             insertTagRecord->BindInt64(5, v8TargetEh.GetElementId());
             insertTagRecord->Step();
             }
@@ -420,10 +420,10 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<Dg
     // Iterate over each target element that has tags associated with it.
     while (DbResult::BE_SQLITE_ROW == selectTargets->Step())
         {
-        SyncInfo::V8FileSyncInfoId targetFileId(selectTargets->GetValueInt(0));
+        auto targetFileId = selectTargets->GetValueId<RepositoryLinkId>(0);
         DgnV8Api::ElementId targetElementId = selectTargets->GetValueInt64(1);
         
-        bvector<DgnV8FileP>::const_iterator foundV8TargetFile = std::find_if(v8Files.begin(), v8Files.end(), [&](DgnV8FileP v8File) { return targetFileId == GetV8FileSyncInfoIdFromAppData(*v8File); });
+        bvector<DgnV8FileP>::const_iterator foundV8TargetFile = std::find_if(v8Files.begin(), v8Files.end(), [&](DgnV8FileP v8File) { return targetFileId == GetRepositoryLinkId(*v8File); });
         if (v8Files.end() == foundV8TargetFile)
             { BeAssert(false); continue; }
 
@@ -438,14 +438,14 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<Dg
             " WHERE V8TargetFileId=? AND V8TargetElementId=?"
             );
 
-        selectTags->BindInt(1, targetFileId.GetValue());
+        selectTags->BindId(1, targetFileId);
         selectTags->BindInt64(2, targetElementId);
 
         // Then iterate over every tag element associated to the current target element.
         while (DbResult::BE_SQLITE_ROW == selectTags->Step())
             {
-            SyncInfo::V8FileSyncInfoId tagFileId(selectTags->GetValueInt(0));
-            bvector<DgnV8FileP>::const_iterator foundV8File = std::find_if(v8Files.begin(), v8Files.end(), [&](DgnV8FileP v8File) { return tagFileId == GetV8FileSyncInfoIdFromAppData(*v8File); });
+            auto tagFileId = selectTags->GetValueId<RepositoryLinkId>(0);
+            bvector<DgnV8FileP>::const_iterator foundV8File = std::find_if(v8Files.begin(), v8Files.end(), [&](DgnV8FileP v8File) { return tagFileId == GetRepositoryLinkId(*v8File); });
             
             if (v8Files.end() == foundV8File)
                 { BeAssert(false); continue; }

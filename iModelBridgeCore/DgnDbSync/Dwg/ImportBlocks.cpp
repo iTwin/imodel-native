@@ -43,6 +43,19 @@ DwgImporter::SharedPartKey::SharedPartKey ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgImporter::SharedPartKey::IsValid () const
+    {
+    for (int i = 0; i < MD5::HashBytes; i++)
+        {
+        if (m_keyValue.m_buffer[i] != 0)
+            return  true;
+        }
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 bool DwgImporter::SharedPartKey::operator < (SharedPartKey const& rho) const
     {
     BeAssert (this->IsValid() && rho.IsValid() && "Uninitialized SharePartKey!");

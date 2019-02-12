@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/SheetAttachmentViewHelper.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -29,7 +29,7 @@ struct SheetAttachmentViewHelper
 
     void SetViewFlags(DisplayStyleR dstyle);
 
-    void SetCategories(ViewDefinitionR viewDef, SyncInfo::Level::Type ltype);
+    void SetCategories(ViewDefinitionR viewDef, SyncInfo::LevelExternalSourceAspect::Type ltype);
 
     SheetAttachmentViewHelper(Converter& converter, DgnAttachmentCR v8DgnAttachment, ResolvedModelMapping const& sheetModelMapping, 
                                 DgnV8ViewInfoCP v8SheetModelView, ViewFactory& nvvf);
@@ -132,7 +132,7 @@ DrawingViewDefinitionPtr DrawingViewHelper::CreateView()
     DrawingViewDefinitionPtr view = new DrawingViewDefinition(*definitionModel, m_name.c_str(), m_drawingModel.GetModelId(), *catSel, *dstyle);
 
     SetViewGeometry(*view);
-    SetCategories(*view, SyncInfo::Level::Type::Drawing);
+    SetCategories(*view, SyncInfo::LevelExternalSourceAspect::Type::Drawing);
     SetViewFlags(view->GetDisplayStyle());
 
     // We are creating drawing entirely from displayed geometry - so turn on
@@ -171,7 +171,7 @@ DrawingViewDefinitionPtr DrawingViewHelper::CreateView()
         turnOnAllCategoriesUsedInModel(view->GetCategorySelector(), m_drawingModel);
     else
         {
-        SetCategories(*view, SyncInfo::Level::Type::Drawing);
+        SetCategories(*view, SyncInfo::LevelExternalSourceAspect::Type::Drawing);
         m_converter._TurnOnExtractionCategories(view->GetCategorySelector());   // NB! The drawing model might contain the results of pulling in proxy graphics from 3D attachments. Make sure the proxies are displayed, too.
         }
 
@@ -202,7 +202,7 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     m_converter.CreateModelSet(view->GetModelSelector().GetModelsR(), m_spatialModel, *m_v8DgnAttachment.GetDgnModelP(), m_converter.GetRootTrans());
     SetViewGeometry(*view);     // (depends on modelselector, so populate that first!)
     
-    SetCategories(*view, SyncInfo::Level::Type::Spatial);
+    SetCategories(*view, SyncInfo::LevelExternalSourceAspect::Type::Spatial);
 
     SetViewFlags(view->GetDisplayStyle());
     auto& env = view->GetDisplayStyle3d().GetEnvironmentDisplayR();
@@ -217,7 +217,7 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     if (m_v8DgnAttachment.IsCameraOn())
         {
         Transform thisTrans = m_converter.ComputeAttachmentTransform(m_converter.GetRootTrans(), m_v8DgnAttachment);
-        ResolvedModelMapping modelMapping = m_converter.FindFirstModelMappedTo(*m_v8DgnAttachment.GetDgnModelP());
+        ResolvedModelMapping modelMapping = m_converter.FindFirstResolvedModelMapping(*m_v8DgnAttachment.GetDgnModelP());
         if (modelMapping.IsValid())
             {
             DPoint3d    eyePoint;
@@ -261,7 +261,7 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateModifiedCopyOfNamedView(DgnVie
 
     // And, we will create the category selector based on the attachment
     newView->SetCategorySelector(*new CategorySelector(*definitionModel, m_name.c_str()));
-    SetCategories(*newView, SyncInfo::Level::Type::Spatial);
+    SetCategories(*newView, SyncInfo::LevelExternalSourceAspect::Type::Spatial);
 
     newView->SetIsPrivate(true);
     newView->GetDisplayStyle().SetIsPrivate(true);
@@ -298,7 +298,7 @@ DrawingViewDefinitionPtr DrawingViewHelper::CreateModifiedCopyOfNamedView(DgnVie
 
     // And, we will create the category selector based on the attachment
     newView->SetCategorySelector(*new CategorySelector(*definitionModel, m_name.c_str()));
-    SetCategories(*newView, SyncInfo::Level::Type::Spatial);
+    SetCategories(*newView, SyncInfo::LevelExternalSourceAspect::Type::Spatial);
 
     newView->SetIsPrivate(true);
     newView->GetDisplayStyle().SetIsPrivate(true);
@@ -358,7 +358,7 @@ void SpatialViewHelper::SetViewGeometry(SpatialViewDefinitionR spatialView)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SheetAttachmentViewHelper::SetCategories(ViewDefinitionR viewDef, SyncInfo::Level::Type ltype)
+void SheetAttachmentViewHelper::SetCategories(ViewDefinitionR viewDef, SyncInfo::LevelExternalSourceAspect::Type ltype)
     {
     DgnV8ViewInfoCP viewInfo = m_v8SheetViewInfo;
 
@@ -503,11 +503,14 @@ DgnViewId Converter::SheetsGetViewForAttachment(bool isFromProxyGraphics, Geomet
     if ((prov.m_changeType == IChangeDetector::ChangeType::Update) && newView.IsValid())
         UpdateViewChildren(*newView, DgnViewId(prov.GetExistingElementId().GetValue()));
 
-    // Update the BIM and SyncInfo as needed (or if needed) for the ViewDefinition element itself.
+    // Update the BIM as needed (or if needed) for the ViewDefinition element itself.
     ElementConversionResults results;
     results.m_element = newView.get();  // (results.m_element is a Ptr that adds a ref to the newView element)
     ProcessConversionResults(results, prov, v8AttachmentEh, sheetModelMapping);
-    return DgnViewId(results.m_mapping.m_elementId.GetValueUnchecked());
+
+    if (!results.m_mapping.IsValid())
+        return DgnViewId();
+    return DgnViewId(results.m_mapping.GetElementId().GetValue());
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

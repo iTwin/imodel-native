@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/LinkConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -216,7 +216,7 @@ BentleyStatus LinkConverter::RecordProcessedElement(DgnV8EhCR v8eh, DgnElementId
     CachedStatementPtr stmt;
     m_converter.GetDgnDb().GetCachedStatement(stmt, "INSERT INTO " TEMP_LINK_SOURCES_TABLE " (V8FileSyncInfoId, V8ElementId, V9ElementId) VALUES(?,?,?)");
 
-    SyncInfo::V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP());
+    RepositoryLinkId v8FileId = Converter::GetRepositoryLinkIdFromAppData(*v8eh.GetDgnFileP());
     stmt->BindInt(1, v8FileId.GetValue());
 
     DgnV8Api::ElementId v8ElementId = v8eh.GetElementId();
@@ -236,7 +236,7 @@ bool LinkConverter::WasElementProcessed(DgnV8EhCR v8eh) const
     CachedStatementPtr stmt;
     m_converter.GetDgnDb().GetCachedStatement(stmt, "SELECT V9ElementId FROM " TEMP_LINK_SOURCES_TABLE " WHERE V8FileSyncInfoId=? AND V8ElementId=?");
 
-    SyncInfo::V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP());
+    RepositoryLinkId v8FileId = Converter::GetRepositoryLinkIdFromAppData(*v8eh.GetDgnFileP());
     stmt->BindInt(1, v8FileId.GetValue());
 
     DgnV8Api::ElementId v8ElementId = v8eh.GetElementId();

@@ -234,13 +234,15 @@ BentleyStatus Converter::GenerateThumbnails()
             {
             AddTasks(DgnV8Api::MAX_VIEWS);
 
+            DgnElementId repositoryLinkId = GetRepositoryLinkId(*mainViewGroup->GetDgnFileP());
+
             for (int iView=0; iView<DgnV8Api::MAX_VIEWS; ++iView)
                 {
                 ReportProgress();
                 DgnViewId viewId;
-                double lmt;
-                Utf8String v8ViewName;
-                if (!GetSyncInfo().TryFindView(viewId, lmt, v8ViewName, mainViewGroup->GetViewInfo(iView)))
+                SyncInfo::ViewDefinitionExternalSourceAspect aspect(nullptr);
+                std::tie(aspect, viewId) = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(repositoryLinkId, mainViewGroup->GetViewInfo(iView), GetDgnDb());
+                if (!viewId.IsValid())
                     continue;
                 auto view = ViewDefinition::Get(*m_dgndb, viewId);
                 if (!view.IsValid())

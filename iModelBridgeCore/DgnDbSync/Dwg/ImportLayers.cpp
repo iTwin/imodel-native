@@ -382,7 +382,7 @@ BentleyStatus   DwgImporter::_ImportLayerSection ()
 void            DwgImporter::InitUncategorizedCategory ()
     {
     static Utf8CP s_name = "0";
-    DefinitionModelP    definitionModel = this->GetOrCreateJobDefinitionModel().get ();
+    auto definitionModel = this->GetOptions().GetMergeDefinitions() ? &m_dgndb->GetDictionaryModel() : this->GetOrCreateJobDefinitionModel().get();
     if (nullptr == definitionModel)
         {
         this->ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "SpartialCategory");
@@ -400,23 +400,11 @@ void            DwgImporter::InitUncategorizedCategory ()
         {
         DgnCode categoryCode = SpatialCategory::CreateCode (*definitionModel, s_name);
         m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
-        if (!m_uncategorizedCategoryId.IsValid() && this->GetOptions().GetMergeDefinitions())
-            {
-            // try BisCore.Dictionary model for "0" which might be created from DgnV8Bridge:
-            categoryCode = SpatialCategory::CreateCode (m_dgndb->GetDictionaryModel(), s_name);
-            m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId (m_dgndb->GetDictionaryModel(), categoryCode.GetValueUtf8());
-            }
         }
     else
         {
         DgnCode categoryCode = DrawingCategory::CreateCode (*definitionModel, s_name);
         m_uncategorizedCategoryId = DrawingCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
-        if (!m_uncategorizedCategoryId.IsValid() && this->GetOptions().GetMergeDefinitions())
-            {
-            // try BisCore.Dictionary model for "0" which might be created from DgnV8Bridge:
-            categoryCode = DrawingCategory::CreateCode (m_dgndb->GetDictionaryModel(), s_name);
-            m_uncategorizedCategoryId = DrawingCategory::QueryCategoryId (m_dgndb->GetDictionaryModel(), categoryCode.GetValueUtf8());
-            }
         }
 
     if (m_uncategorizedCategoryId.IsValid())
