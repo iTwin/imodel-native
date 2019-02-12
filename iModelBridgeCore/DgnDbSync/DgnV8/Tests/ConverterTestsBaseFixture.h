@@ -54,6 +54,7 @@ struct ConverterTestBaseFixture : public testing::Test
     RepositoryLinkCPtr FindRepositoryLinkByFilename(DgnDbR db, BentleyApi::BeFileNameCR filename) {auto id = FindRepositoryLinkIdByFilename(db, filename); return db.Elements().Get<RepositoryLink>(id);} 
 
     static BentleyApi::BeFileName GetOutputDir();
+    static BentleyApi::BeFileName GetTempDir();
     BentleyApi::BeFileName GetInputFileName(BentleyApi::WCharCP filename);
     BentleyApi::BeFileName GetOutputFileName(BentleyApi::WCharCP filename);
     void MakeWritableCopyOf(BentleyApi::BeFileName& fnoutFile, BentleyApi::WCharCP filename);

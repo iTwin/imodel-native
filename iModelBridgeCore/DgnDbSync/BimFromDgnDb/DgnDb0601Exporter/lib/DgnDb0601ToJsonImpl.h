@@ -85,6 +85,7 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         ECN::ECClassCP      m_pointCloudModelClass;
         ECN::ECClassCP      m_threeMxModelClass;
         ECN::ECClassCP      m_rasterFileModelClass;
+        ECN::ECClassCP      m_geometricQuantities;
 
         Dgn::DgnElementId        m_jobSubjectId;
         Dgn::DgnElementId        m_documentListModelId;

@@ -31,7 +31,6 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 #define SYNC_TABLE_ECSchema     SYNCINFO_TABLE("ECSchema")
 #define SYNC_TABLE_NamedGroups  SYNCINFO_TABLE("NamedGroups")
-#define SYNC_TABLE_Imagery      SYNCINFO_TABLE("Imagery")
 
 struct Converter;
 struct SyncInfo;
@@ -57,8 +56,8 @@ struct SyncInfo
       protected:
         friend struct SyncInfo;
         ExternalSourceAspect(ECN::IECInstance* i) : iModelExternalSourceAspect(i) {}
-        static Utf8String FormatV8ElementId(DgnV8Api::ElementId v8Id) {return Utf8PrintfString("%llu", v8Id);}  // DgnV8Api::ElementId is a UInt64
-        static Utf8String FormatV8ModelId(DgnV8Api::ModelId v8Id) {return Utf8PrintfString("%ld", v8Id);}       // DgnV8Api::ModelId is a Int32
+        static Utf8String FormatV8ElementId(DgnV8Api::ElementId v8Id) {char buf[32]; BeStringUtilities::FormatUInt64(buf, v8Id); return buf;}  // DgnV8Api::ElementId is a UInt64
+        static Utf8String FormatV8ModelId(DgnV8Api::ModelId v8Id) {char buf[32]; return itoa(v8Id, buf, 10);}       // DgnV8Api::ModelId is a Int32
         BeSQLite::EC::ECInstanceId GetSoleAspectIdByKind(DgnElementCR el, Utf8CP kind);
 
       public:
@@ -71,6 +70,8 @@ struct SyncInfo
             static constexpr Utf8CP Level = "Level";
             static constexpr Utf8CP GeomPart = "GeomPart";
             static constexpr Utf8CP ViewDefinition = "ViewDefinition";
+            static constexpr Utf8CP URI = "URI";
+            static constexpr Utf8CP Schema = "Schema";
             };
         };
 
@@ -79,10 +80,20 @@ struct SyncInfo
     //! Information about a file on disk. This struct captures the information that can be extracted from the disk file itself.
     struct DiskFileInfo
         {
-        uint64_t m_lastModifiedTime; // (Unix time in seconds)
-        uint64_t m_fileSize;
-        BentleyApi::BentleyStatus GetInfo (BentleyApi::BeFileNameCR);
+        uint64_t m_lastModifiedTime{}; // (Unix time in seconds)
+        uint64_t m_fileSize{};
+        BentleyStatus GetInfo (BentleyApi::BeFileNameCR);
         DiskFileInfo() {m_lastModifiedTime = m_fileSize = 0;}
+        bool IsEqual(DiskFileInfo const& o) {return m_lastModifiedTime == o.m_lastModifiedTime && m_fileSize == o.m_fileSize;}
+        };
+
+    //! Information about a path that might be a disk file or might be a URL
+    struct UriContentInfo : DiskFileInfo
+        {
+        Utf8String m_eTag;    // Set if path is a URI
+        
+        BentleyStatus GetInfo(Utf8StringCR pathOrUrl);
+        bool IsEqual(UriContentInfo const& o) {return DiskFileInfo::IsEqual(o) && m_eTag == o.m_eTag;}
         };
 
     //! Information about a file. This struct captures the information that can be extracted from the v8 file itself.
@@ -107,15 +118,39 @@ struct SyncInfo
 
         RepositoryLinkId GetRepositoryLinkId() const {return RepositoryLinkId(GetElementId().GetValueUnchecked());}
         DGNDBSYNC_EXPORT Utf8String GetFileName() const;
+        DGNDBSYNC_EXPORT StableIdPolicy GetStableIdPolicy() const;
+        // WIP_EXTERNAL_SOURCE_ASPECT - combine the following methods into one that fills in a V8FileInfo object
         DGNDBSYNC_EXPORT uint64_t GetFileSize() const;
         DGNDBSYNC_EXPORT uint64_t GetLastModifiedTime() const;
         DGNDBSYNC_EXPORT double GetLastSaveTime() const;
-        DGNDBSYNC_EXPORT StableIdPolicy GetStableIdPolicy() const;
         };
 
     struct RepositoryLinkExternalSourceAspectIterator : ExternalSourceAspectIterator<RepositoryLinkExternalSourceAspect>
         {
         RepositoryLinkExternalSourceAspectIterator(DgnDbR db, Utf8CP wh = nullptr) : ExternalSourceAspectIterator(db, db.Elements().GetRootSubjectId(), ExternalSourceAspect::Kind::RepositoryLink, wh) {}
+        };
+
+    //! Aspect that tracks the content of a URI. Will also work with a filepath.
+    //! This is a lot like RepositoryLinkExternalSourceAspect. We make it separate just to keep things clear, as apps tend to think of RepostoryLinks as
+    //! corresponding directly to documents in ProjectWise or another DMS. In the case of PW, the document is expected to have document properties, RBAC, etc. 
+    //! UriExternalSourceAspect is for the general/generic case of sourcing data from a URI with nothing implied about what the resource is or if it has metadata or not.
+    struct UriExternalSourceAspect : ExternalSourceAspect
+        {
+        private:
+        UriExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        public:
+        static UriExternalSourceAspect CreateAspect(DgnElementId repositoryLinkId, Utf8CP filename, UriContentInfo const&, Utf8CP rdsId, Converter&);
+        static UriExternalSourceAspect GetAspect(DgnElementCR);
+        static UriExternalSourceAspect GetAspect(DgnElementId eid, DgnDbR db) {auto el = db.Elements().GetElement(eid); return el.IsValid()? GetAspect(*el): UriExternalSourceAspect(nullptr);}
+        static UriExternalSourceAspect GetAspectForEdit(DgnElementR);
+
+        Utf8String GetFilenameOrUrl() const {return GetIdentifier();}
+
+        Utf8String GetSourceGuid() const; // The Source GUID may be empty and can change over time. That is why it is not the Identifier (or incorporated in it).
+        void SetSourceGuid(Utf8StringCR);
+
+        void GetInfo(UriContentInfo&) const;
+        void SetInfo(UriContentInfo const&);
         };
 
     //! Aspect stored on a Model element to a) identify the source V8 model and b) store additional qualifying information, such as a transform, that is applied during conversion
@@ -262,20 +297,17 @@ struct SyncInfo
 
     struct LevelExternalSourceAspect : ExternalSourceAspect
         {
+        enum class Type {Spatial, Drawing}; // WARNING: Persistent values - do not change
+
         private:
         static Utf8String FormatSourceId(DgnV8Api::LevelId v8Id) {return FormatV8ElementId(v8Id);}
         LevelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
-        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const&, DgnV8ModelCR, Converter&);
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const&, DgnV8ModelCR, Type, Converter&);
 
         public:
-        static constexpr Utf8CP json_v8LevelName = "v8LevelName";
-        static constexpr Utf8CP json_v8ModelId = "v8ModelId";
-
-        enum class Type {Spatial, Drawing}; // WARNING: Persistent values - do not change
-
         //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file. Caller must call AddAspect, passing in the Category element.
-        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnV8Api::LevelHandle const&, DgnV8ModelCR, Converter&);
-        DGNDBSYNC_EXPORT static LevelExternalSourceAspect LevelExternalSourceAspect::GetAspect(DgnSubCategoryCR);
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnV8Api::LevelHandle const&, DgnV8ModelCR, Type, Converter&);
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect LevelExternalSourceAspect::FindAspectByV8Model(DgnSubCategoryCR, DgnV8ModelCR v8Model);
 
         DGNDBSYNC_EXPORT static BentleyStatus FindFirstSubCategory(DgnSubCategoryId&, DgnV8ModelCR v8Model, uint32_t flid, Type ltype, Converter& converter);
         };
@@ -343,12 +375,28 @@ struct SyncInfo
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect GetAspect(DgnGeometryPartCR el);
         };
 
-    enum class ECSchemaMappingType
+    //! Multiple versions of a schema can exist within a dgn.  This stores the source of each version.  The versions are merged together and that single merged schema is then imported.
+    //! As there is no Schema element, we attach the schema source info to each Repository it came from.  On subsequent upgrades, if either an existing version was modified or a new version
+    //! is discovered, the schemas a re-merged and re-imported.
+    struct SchemaExternalSourceAspect : ExternalSourceAspect
         {
-        Identity = 1, //!< Mapped as is
-        Dynamic = 2 //!< if multiple dynamic schemas exist, they will be merged during conversion
+        private:
+            SchemaExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        public:
+            enum class Type { Identity, Dynamic}; // WARNING: Persistent values - do not change
+
+            //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file.
+            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect CreateAspect(DgnElementId repositoryId, Utf8StringCR schemaName, uint32_t v8ProfileVersionMajor, uint32_t v8ProfileVersionMinor,
+                                                                            bool isDynamic, uint32_t checksum, DgnDbR db);
+            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspect(DgnElementCR repositoryLink, Utf8StringCR schemaName);
+            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspectForEdit(DgnElementR repositoryLink, Utf8StringCR schemaName);
+
         };
 
+    struct SchemaExternalSourceAspectIterator : ExternalSourceAspectIterator<SchemaExternalSourceAspect>
+        {
+        SchemaExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP wh = "") : ExternalSourceAspectIterator(db, scope, ExternalSourceAspect::Kind::Schema, wh) {}
+        };
 
     //! An Id that is per-file
     template<typename IDTYPE> struct FileBasedId
@@ -508,10 +556,9 @@ public:
 
     //! @name ECSchemas
     //! @{
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertECSchema(ECN::ECSchemaId&, DgnV8FileR, Utf8CP v8SchemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic, uint32_t checksum) const;
-    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName, RepositoryLinkId fileId) const;
-    DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName) const;
-    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId) const;
+    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, SchemaExternalSourceAspect::Type& mappingType, Utf8CP v8SchemaName, RepositoryLinkId fileId);
+    DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName);
+    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId);
     //! @}
 
     //! @name NamedGroups - The index is dropped on the ElementRefersToElements table while inserting named group members.  This was to allow for fast inserts, but as a result, lookups are slow and so
@@ -538,44 +585,13 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus FinalizeNamedGroups();
     //! @}
 
-    //! Checks to see if the View syncinfo table exists.  This is only necessary when updating imodels created early during the EAP process.  Will create the table if it doesn't exist
-    bool EnsureImageryTableExists();
-
-    //! Record the provenance for reality data (raster, PointCloud, ThreeMx, ScalableMesh, etc.  
-    //! @param[in] modeledElementId - ElementId that models this element.  Only one entry per elementId is allowed
-    //! @param[in] filename - Filename (or URL) to the imagery
-    //! @param[in] lastModifiedTime - Time the file was last modified
-    //! @param[in] fileSize - Size of the image file
-    //! @param[in] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
-    //! @param[in] rdsId - Guid from the reality data server
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertImageryFile(DgnElementId modeledElementId, RepositoryLinkId filesiid, Utf8CP filename, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId);
-
     //! Checks to see if the given V8File has any associated image files and if so, checks each one to see if it has changed
     //! @param[in] fileId - SyncInfo id of the V8File
-    DGNDBSYNC_EXPORT bool ModelHasChangedImagery(RepositoryLinkId fileId);
+    DGNDBSYNC_EXPORT bool FileHasChangedUriContent(RepositoryLinkId fileId);
 
-    //! Looks for an entry for the given modeledElementId
-    //! @param[in] modeledElementId - ElementId of the model to look for
-    //! @param[out] lastModifiedTime - last modified time of the imagery
-    //! @param[out] fileSize - size of the imagery file
-    //! @param[out] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
-    //! @param[out] rdsId - Guid from the reality data server
-    DGNDBSYNC_EXPORT bool TryFindImageryFile(DgnElementId modeledElementId, Utf8StringR filename, uint64_t& lastModifiedTime, uint64_t &fileSize, Utf8StringR etag, Utf8StringR rdsId);
-
-    //! Updates the entry for an imagery file
-    //! @param[in] modeledElementId - ElementId of the model to look for
-    //! @param[in] lastModifiedTime - last modified time of the imagery
-    //! @param[in] fileSize - size of the imagery file
-    //! @param[in] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
-    //! @param[in] rdsId - Guid from the reality data server
-    DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateImageryFile(DgnElementId modeledElementId, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId);
-
-    //! Given a filename, will get the current info about the file
-    //! @param[in] filename - Path to either local file or the URL of the imagery
-    //! @param[in] currentModifiedTime - last modified time if a local file
-    //! @param[in] currentFileSize - file size of a local file
-    //! @param[in] currentEtag - Web server's unique marker for the given URL
-    DGNDBSYNC_EXPORT void GetCurrentImageryInfo(Utf8StringCR filename, uint64_t& currentLastModifiedTime, uint64_t& currentFileSize, Utf8StringR currentEtag);
+    //! Checks to see if the given element a) is based on remote imagery data, and if so b) has the remote data changed.
+    //! Returns false if the element is not based on remote imagery data.
+    DGNDBSYNC_EXPORT bool HasUriContentChanged(DgnElementId eid);
 
     Converter& GetConverter() const {return m_converter;}
     };
