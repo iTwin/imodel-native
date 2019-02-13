@@ -2,7 +2,7 @@
 |
 |  $Source: tests/Published/UnitsTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -107,6 +107,22 @@ TEST_F(UnitsTests, EveryPhenomenonHasAtleastOneUnit)
         {
         EXPECT_NE(0, phenomenon->GetUnits().size()) << "The Phenomenon '" << phenomenon->GetName().c_str() << "' has no units.";
         }
+    }
+
+struct TestUnit : Unit
+    {
+    public:
+        TestUnit(Utf8CP name) : Unit(name) {};
+    };
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                 02/18
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, IsSIReturnsFalseWhenNoUnitSystemSet)
+    {
+    TestUnit unit("Banana");
+
+    ASSERT_FALSE(unit.IsSI()) << "No UnitSystem is set so false should be returned";
     }
 
 /*---------------------------------------------------------------------------------**//**

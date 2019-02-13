@@ -2,7 +2,7 @@
 |
 |  $Source: tests/Published/CompositeValueTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -325,6 +325,54 @@ TEST_F(FormatCompositeStringTest, CompositeValueUsesThousandSeparatorForLastUnit
 // CompositeValueSpecJsonTest
 //===================================================
 
+void validateSpecJson(CompositeValueSpecCP spec, Utf8StringCR expectedJson, Units::IUnitsContextCP unitsContext, bool verbose = false)
+    {
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    Json::Value comp;
+    spec->ToJson(comp, verbose);
+    EXPECT_TRUE(root.ToString() == comp.ToString()) << FormattingTestUtils::JsonComparisonString(comp, root);
+
+    //FromJson
+    CompositeValueSpec compSpec;
+    CompositeValueSpec::FromJson(compSpec, root, unitsContext);
+    Json::Value roundTrip;
+    compSpec.ToJson(roundTrip, verbose);
+    EXPECT_TRUE(roundTrip.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(roundTrip, root);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Colin.Kerr                          01/19
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CompositeValueSpecJsonTest, TestDefaultAndEmptySpacerRoundTrips)
+    {
+    CompositeValueSpec spec(*s_mile); // Default Spacer (is space)
+    Json::Value json;
+    spec.ToJson(json);
+
+    auto expectedJson = R"json({
+                                "includeZero": true,
+                                "units": [
+                                        {
+                                        "name": "MILE"
+                                        }
+                                    ]
+                                })json";
+    validateSpecJson(&spec, expectedJson, s_unitsContext);
+
+    spec.SetSpacer(""); // Set so no spacer is used
+    expectedJson = R"json({
+                        "includeZero": true,
+                        "spacer": "",
+                        "units": [
+                                {
+                                "name": "MILE"
+                                }
+                            ]
+                        })json";
+    validateSpecJson(&spec, expectedJson, s_unitsContext);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Kyle.Abramowitz                      04/18
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -361,18 +409,7 @@ TEST_F(CompositeValueSpecJsonTest, JsonTest)
                                         }
                                     ]
                                 })json";
-    Json::Value root;
-    Json::Reader::Parse(expectedJson, root);
-    Json::Value comp;
-    spec.ToJson(comp);
-    EXPECT_TRUE(root.ToString() == comp.ToString()) << FormattingTestUtils::JsonComparisonString(comp, root);
-
-    //FromJson
-    CompositeValueSpec compSpec;
-    CompositeValueSpec::FromJson(compSpec, root, s_unitsContext);
-    Json::Value roundTrip;
-    compSpec.ToJson(roundTrip);
-    EXPECT_TRUE(roundTrip.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(roundTrip, root);
+    validateSpecJson(&spec, expectedJson, s_unitsContext);
     }
 
 //---------------------------------------------------------------------------------------
@@ -407,18 +444,8 @@ TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
                                         }
                                     ]
                                 })json";
-    Json::Value root;
-    Json::Reader::Parse(expectedJson, root);
-    Json::Value comp;
-    spec.ToJson(comp, true);
-    EXPECT_TRUE(root.ToString() == comp.ToString()) << FormattingTestUtils::JsonComparisonString(comp, root);
-
-    //FromJson
-    CompositeValueSpec compSpec;
-    CompositeValueSpec::FromJson(compSpec, root, s_unitsContext);
-    Json::Value roundTrip;
-    compSpec.ToJson(roundTrip, true);
-    EXPECT_TRUE(roundTrip.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(roundTrip, root);
+    
+    validateSpecJson(&spec, expectedJson, s_unitsContext, true);
     }
 
 
