@@ -54,6 +54,7 @@
     <None Include="Tests.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\ArbitraryCenterLineShapeTests.cpp" />
     <ClCompile Include="src\ArbitraryCompositeProfileTests.cpp" />
     <ClCompile Include="src\AsymmetricIShapeProfileTests.cpp" />
     <ClCompile Include="src\CapsuleProfileTests.cpp" />

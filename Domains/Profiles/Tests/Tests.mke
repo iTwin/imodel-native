@@ -93,6 +93,8 @@ $(o)DoubleCShapeProfileTests.obj        : $(BEGTEST_INPUT)DoubleCShapeProfileTes
 
 $(o)ArbitraryCompositeProfileTests.obj  : $(BEGTEST_INPUT)ArbitraryCompositeProfileTests.cpp ${MultiCompileDepends}
 
+$(o)ArbitraryCenterLineProfileTests.obj : $(BEGTEST_INPUT)ArbitraryCenterLineProfileTests.cpp ${MultiCompileDepends}
+
 $(o)DerivedProfileTests.obj             : $(BEGTEST_INPUT)DerivedProfileTests.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
