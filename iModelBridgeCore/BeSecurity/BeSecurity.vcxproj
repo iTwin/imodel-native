@@ -33,6 +33,7 @@
     <ClInclude Include="BEKeychainItem.h" />
     <ClInclude Include="libsrc\KeychainItemWrapper\KeychainItemWrapper.h" />
     <ClInclude Include="PublicAPI\BeSecurity\BeSecurity.h" />
+    <ClInclude Include="PublicAPI\BeSecurity\SecureLocalState.h" />
     <ClInclude Include="PublicAPI\BeSecurity\SecureStore.h" />
   </ItemGroup>
   <ItemGroup>
