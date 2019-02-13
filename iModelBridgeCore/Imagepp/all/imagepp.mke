@@ -9,6 +9,11 @@ BUILD_NO_STACK_CHECK        = 1
 
 %include mdl.mki
 
+# Too many instances of this for me to fix during initial port.
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG")
+    LLVMCppCompOpts + -Wno-cast-qual
+%endif
+
 #----------------------------------------------------------
 # Set and then include the CompileOptionsMki file.
 # It is needed and also %included by PreCompileHeader.mki

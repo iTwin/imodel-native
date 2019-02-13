@@ -282,7 +282,7 @@ public:
      the method should be template overlaoded.
     -----------------------------------------------------------------------------*/
     static DataType EPSILON_MULTIPLICATOR() {
-        return numeric_limits<DataType>::epsilon();
+        return std::numeric_limits<DataType>::epsilon();
         }
 
     /**----------------------------------------------------------------------------
@@ -293,7 +293,7 @@ public:
      datatype multiplied by EPSILON_MULTIPLICATOR() for this same datatype.
     -----------------------------------------------------------------------------*/
     static DataType MAX_EPSILON() {
-        return (numeric_limits<DataType>::epsilon());
+        return (std::numeric_limits<DataType>::epsilon());
         }
 
 #ifdef __HMR_DEBUG

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPageDescriptor.hpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRFPageDescriptor
@@ -307,7 +307,7 @@ inline HFCPtr<HPMAttributeSet>& HRFPageDescriptor::GetTagsPtr() const
     {
     HPRECONDITION(!m_EmptyPage);
 
-    return (HFCPtr<HPMAttributeSet>&)m_pListOfTag;
+    return const_cast<HFCPtr<HPMAttributeSet>&>(m_pListOfTag);
     }
 
 //-----------------------------------------------------------------------------

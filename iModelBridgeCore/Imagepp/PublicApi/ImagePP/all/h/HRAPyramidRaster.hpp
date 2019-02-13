@@ -21,7 +21,7 @@ BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 inline HRARasterIterator* HRAPyramidRaster::CreateIterator (const HRAIteratorOptions& pi_rOptions) const
     {
-    return new HRAPyramidRasterIterator (HFCPtr<HRAPyramidRaster>((HRAPyramidRaster*)this),
+    return new HRAPyramidRasterIterator (HFCPtr<HRAPyramidRaster>(const_cast<HRAPyramidRaster*>(this)),
                                          pi_rOptions,
                                          FindTheBestResolution(pi_rOptions.GetPhysicalCoordSys()));
     }

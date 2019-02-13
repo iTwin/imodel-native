@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFUtils.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -124,8 +124,8 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_RationalValue = ((NegativeValueForRationalErInfo*)&pi_rObj)->m_RationalValue;
-            m_TagName      = ((NegativeValueForRationalErInfo*)&pi_rObj)->m_TagName;
+            m_RationalValue = ((NegativeValueForRationalErInfo const*)&pi_rObj)->m_RationalValue;
+            m_TagName      = ((NegativeValueForRationalErInfo const*)&pi_rObj)->m_TagName;
             return *((ErInfo*)this);
             }
 
@@ -147,8 +147,8 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_Offset = ((CannotWritePWblobErInfo*)&pi_rObj)->m_Offset;
-            m_Length = ((CannotWritePWblobErInfo*)&pi_rObj)->m_Length;
+            m_Offset = ((CannotWritePWblobErInfo const*)&pi_rObj)->m_Offset;
+            m_Length = ((CannotWritePWblobErInfo const*)&pi_rObj)->m_Length;
             return *((ErInfo*)this);
             }
 
@@ -169,7 +169,7 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_MagicNb = ((BadMagicNbErInfo*)&pi_rObj)->m_MagicNb;
+            m_MagicNb = ((BadMagicNbErInfo const*)&pi_rObj)->m_MagicNb;
             return *((ErInfo*)this);
             }
 
@@ -190,7 +190,7 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_VersionNb = ((BadVersionNbErInfo*)&pi_rObj)->m_VersionNb;
+            m_VersionNb = ((BadVersionNbErInfo const*)&pi_rObj)->m_VersionNb;
             return *((ErInfo*)this);
             }
 
@@ -211,7 +211,7 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_BlockNb = ((BadBlockNbErInfo*)&pi_rObj)->m_BlockNb;
+            m_BlockNb = ((BadBlockNbErInfo const*)&pi_rObj)->m_BlockNb;
             return *((ErInfo*)this);
             }
 
@@ -234,9 +234,9 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_BlockNb = ((BlockIOErInfo*)&pi_rObj)->m_BlockNb;
-            m_Offset  = ((BlockIOErInfo*)&pi_rObj)->m_Offset;
-            m_Length  = ((BlockIOErInfo*)&pi_rObj)->m_Length;
+            m_BlockNb = ((BlockIOErInfo const*)&pi_rObj)->m_BlockNb;
+            m_Offset  = ((BlockIOErInfo const*)&pi_rObj)->m_Offset;
+            m_Length  = ((BlockIOErInfo const*)&pi_rObj)->m_Length;
             return *((ErInfo*)this);
             }
 
@@ -257,7 +257,7 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_CompressionType = ((UnknownCompressionErInfo*)&pi_rObj)->m_CompressionType;
+            m_CompressionType = ((UnknownCompressionErInfo const*)&pi_rObj)->m_CompressionType;
             return *((ErInfo*)this);
             }
 
@@ -278,7 +278,7 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_GeoKey = ((InvalidGeotiffCountOrIndexErInfo*)&pi_rObj)->m_GeoKey;
+            m_GeoKey = ((InvalidGeotiffCountOrIndexErInfo const*)&pi_rObj)->m_GeoKey;
             return *((ErInfo*)this);
             }
 
@@ -300,8 +300,8 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_GeoKey = ((InvalidGeotiffTagErInfo*)&pi_rObj)->m_GeoKey;
-            m_Tag    = ((InvalidGeotiffTagErInfo*)&pi_rObj)->m_Tag;
+            m_GeoKey = ((InvalidGeotiffTagErInfo const*)&pi_rObj)->m_GeoKey;
+            m_Tag    = ((InvalidGeotiffTagErInfo const*)&pi_rObj)->m_Tag;
             return *((ErInfo*)this);
             }
 
@@ -322,7 +322,7 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_Tag = ((UnknownTagEnumErInfo*)&pi_rObj)->m_Tag;
+            m_Tag = ((UnknownTagEnumErInfo const*)&pi_rObj)->m_Tag;
             return *((ErInfo*)this);
             }
 
@@ -345,9 +345,9 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_Type      = ((WrongTagDataTypeErInfo*)&pi_rObj)->m_Type;
-            m_TagName   = ((WrongTagDataTypeErInfo*)&pi_rObj)->m_TagName;
-            m_TagFileNb = ((WrongTagDataTypeErInfo*)&pi_rObj)->m_TagFileNb;
+            m_Type      = ((WrongTagDataTypeErInfo const*)&pi_rObj)->m_Type;
+            m_TagName   = ((WrongTagDataTypeErInfo const*)&pi_rObj)->m_TagName;
+            m_TagFileNb = ((WrongTagDataTypeErInfo const*)&pi_rObj)->m_TagFileNb;
             return *((ErInfo*)this);
             }
 
@@ -371,10 +371,10 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_TagFileNb = ((UnknownTagErInfo*)&pi_rObj)->m_TagFileNb;
-            m_Type      = ((UnknownTagErInfo*)&pi_rObj)->m_Type;
-            m_Length    = ((UnknownTagErInfo*)&pi_rObj)->m_Length;
-            m_Offset    = ((UnknownTagErInfo*)&pi_rObj)->m_Offset;
+            m_TagFileNb = ((UnknownTagErInfo const*)&pi_rObj)->m_TagFileNb;
+            m_Type      = ((UnknownTagErInfo const*)&pi_rObj)->m_Type;
+            m_Length    = ((UnknownTagErInfo const*)&pi_rObj)->m_Length;
+            m_Offset    = ((UnknownTagErInfo const*)&pi_rObj)->m_Offset;
             return *((ErInfo*)this);
             }
 
@@ -395,7 +395,7 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_TagFile = ((UnkwnownFirstTagErInfo*)&pi_rObj)->m_TagFile;
+            m_TagFile = ((UnkwnownFirstTagErInfo const*)&pi_rObj)->m_TagFile;
 
             return *((ErInfo*)this);
             }
@@ -419,9 +419,9 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_DataLength = ((TagIOErInfo*)&pi_rObj)->m_DataLength;
-            m_TagName    = ((TagIOErInfo*)&pi_rObj)->m_TagName;
-            m_TagFileNb  = ((TagIOErInfo*)&pi_rObj)->m_TagFileNb;
+            m_DataLength = ((TagIOErInfo const*)&pi_rObj)->m_DataLength;
+            m_TagName    = ((TagIOErInfo const*)&pi_rObj)->m_TagName;
+            m_TagFileNb  = ((TagIOErInfo const*)&pi_rObj)->m_TagFileNb;
             return *((ErInfo*)this);
             }
 
@@ -444,9 +444,9 @@ public:
 
         virtual ErInfo& operator=(const ErInfo& pi_rObj)
             {
-            m_TagName       = ((BadTagCountIOErInfo*)&pi_rObj)->m_TagName;
-            m_Count         = ((BadTagCountIOErInfo*)&pi_rObj)->m_Count;
-            m_ExpectedCount = ((BadTagCountIOErInfo*)&pi_rObj)->m_ExpectedCount;
+            m_TagName       = ((BadTagCountIOErInfo const*)&pi_rObj)->m_TagName;
+            m_Count         = ((BadTagCountIOErInfo const*)&pi_rObj)->m_Count;
+            m_ExpectedCount = ((BadTagCountIOErInfo const*)&pi_rObj)->m_ExpectedCount;
             return *((ErInfo*)this);
             }
 
