@@ -2,7 +2,7 @@
 |
 |  $Source: DgnV8/Tests/ConvertToDgnDbElementExtensionTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -86,7 +86,7 @@ void            ConvertToDgnDbElementExtensionTests::TearDown()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConvertToDgnDbElementExtensionTests, IsPreConvertCalled)
     {
-    LineUpFiles(L"AddResourceFileToFwkDb.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"AddResourceFileToFwkDb.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     DgnV8Api::ElementId eid1;

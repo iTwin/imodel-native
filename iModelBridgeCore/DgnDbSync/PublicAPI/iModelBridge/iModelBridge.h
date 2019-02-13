@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridge.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,8 +15,11 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
-#include <WebServices/Client/ClientInfo.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
+
+BEGIN_BENTLEY_NAMESPACE namespace WebServices {
+typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
+} END_BENTLEY_NAMESPACE
 
 #ifdef __IMODEL_BRIDGE_BUILD__
     #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
@@ -40,8 +43,16 @@
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
-#define SOURCEINFO_ECSCHEMA_NAME            "SourceInfo"
-#define SOURCEINFO_CLASS_SoureElementInfo   "SourceElementInfo"
+#define XTRN_SRC_ASPCT_ECSCHEMA_NAME            "BisCore"
+#define XTRN_SRC_ASPCT_SCHEMA(name)             XTRN_SRC_ASPCT_ECSCHEMA_NAME "." name
+#define XTRN_SRC_ASPCT_CLASS                    "ExternalSourceAspect"
+#define XTRN_SRC_ASPCT_FULLCLASSNAME            XTRN_SRC_ASPCT_SCHEMA(XTRN_SRC_ASPCT_CLASS)
+#define XTRN_SRC_ASPCT_Scope                    "Scope"
+#define XTRN_SRC_ASPCT_Identifier               "Identifier"
+#define XTRN_SRC_ASPCT_Kind                     "Kind"
+#define XTRN_SRC_ASPCT_Version                  "Version"
+#define XTRN_SRC_ASPCT_Checksum                 "Checksum"
+#define XTRN_SRC_ASPCT_JsonProperties           "JsonProperties"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -373,10 +384,10 @@ BentleyStatus SampleBridge::_DetectDeletedDocuments()
         {
         Utf8String docId = documentInSyncInfo.GetSourceIdentity().GetId();
 
-        if (IsDocumentAssignedToJob(docId))   // This is how to check if the document still exists.
-            continue;                         //  If it does, do nothing.
+        if (IsDocumentInRegistry(docId))    // If the document is in the document registry at all, that means that a) the document exists, and b) the job scheduler assigned the document to this bridge.
+            continue;                       // So, if the doc exists and is still assigned to me, then don't delete it.
 
-        // Infer that that document was deleted. 
+        // Infer that that document was deleted (or possibly reassigned)
 
         // Delete related elements and models in the briefcase
         ...
@@ -529,6 +540,12 @@ struct iModelBridge
         Utf8String   m_jobRunCorrelationId;
         IDmsSupport* m_dmsSupport;
 
+        Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
+        int                                     m_environment;    //!< Connect environment. Should match UrlProvider::Environment
+        Utf8String                              m_iModelHubUserName;
+        Utf8String                              m_projectGuid;
+
+        bool m_wantProvenanceInBim {};
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
@@ -632,9 +649,26 @@ struct iModelBridge
         void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
         void SetDmsSupportLibrary (IDmsSupport* dmsAccessor) { m_dmsSupport  = dmsAccessor;}
         IDmsSupport* GetDmsSupportLibrary() { return m_dmsSupport; }
-	    //! Check if a document is assigned to this job or not.
+
+        void SetWantProvenanceInBim(bool v) { m_wantProvenanceInBim = v; }
+        bool GetWantProvenanceInBim() const { return m_wantProvenanceInBim; }
+
+        Utf8String GetiModelName() const { return m_repositoryName; }
+        void SetiModelName(Utf8StringCR repositoryName)  { m_repositoryName = repositoryName; }
+
+        //UrlProvider::Environment
+        int GetUrlEnvironment() const { return m_environment; }
+        void SetUrlEnvironment(int env)  { m_environment = env; }
+
+        Utf8String GetUserName() const { return m_iModelHubUserName; }
+        void SetUserName(Utf8StringCR name) { m_iModelHubUserName = name; }
+
+        Utf8String GetProjectGuid() const { return m_projectGuid; }
+        void SetProjectGuid(Utf8StringCR projectGuid) { m_projectGuid = projectGuid; }
+
+	    //! Check if a document is in the document registry
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
-	    IMODEL_BRIDGE_EXPORT bool IsDocumentAssignedToJob(Utf8StringCR docId) const;
+	    IMODEL_BRIDGE_EXPORT bool IsDocumentInRegistry(Utf8StringCR docId) const;
 
 	    //! Check if the specified file is assigned to this bridge or not.
 	    IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
@@ -869,7 +903,7 @@ public:
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
 
-    //! Get the transform, if any, that the bridge should pre-multiply to the normal transform that it computes and applied to all converted spatial data.
+    //! Get the transform, if any, that the bridge should pre-multiply to the normal transform that it computes and applies to all converted spatial data.
     //! The job's spatial data transform can come from a command-line parameter or from a property of the job subject element in the iModel. In case both are specified,
     //! the transform specified on the command line is pre-multiplied to the transform specified by the job subject.
     //! @param[in] params The bridge's parameters
@@ -879,6 +913,8 @@ public:
 
     Transform GetSpatialDataTransform(SubjectCR jobSubject) {return GetSpatialDataTransform(_GetParams(), jobSubject);}
 
+    //! Test two transforms for equality, using the minimum tolerance possible
+    IMODEL_BRIDGE_EXPORT static bool AreTransformsEqual(Transform const& t1, Transform const& t2);
 
     //! @name Font Resolution
     //! @{
@@ -892,9 +928,9 @@ public:
     //! @name Document Properties Helper Functions
     //! @{
 
-    //! Check if a document is assigned to this job or not.
+    //! Check if this document is in the document registry
     //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
-    bool IsDocumentAssignedToJob(Utf8StringCR docId) const {return GetParamsCR().IsDocumentAssignedToJob(docId);}
+    bool IsDocumentInRegistry(Utf8StringCR docId) const {return GetParamsCR().IsDocumentInRegistry(docId);}
 
     //! Check if the specified file is assigned to this bridge or not.
     bool IsFileAssignedToBridge(BeFileNameCR fn) const {return GetParamsCR().IsFileAssignedToBridge(fn);}
@@ -1001,9 +1037,10 @@ public:
 
     //! Default implementation to create a bridge job name. The function uses details from params. The resulting string will be unique within an iModel.
     //! @param bridgeSpecificSuffix A suffix specfic to a bridge that can be used to store additional information.
-    //! @param db The iModel to test for subject name uniqueness
+    //! @param parent The parent subject, which will be the parent of the JobSubject element and is the "scope" in which the subject name must be unique. For most bridges,
+    //! This should be a Subject that identifies the root file.
     //! @param params The bridge parameters structure
-    IMODEL_BRIDGE_EXPORT static Utf8String ComputeJobSubjectName(DgnDbCR db, Params const& params, Utf8StringCR bridgeSpecificSuffix);
+    IMODEL_BRIDGE_EXPORT static Utf8String ComputeJobSubjectName(SubjectCR parent, Params const& params, Utf8StringCR bridgeSpecificSuffix);
 
     //! @}
 
@@ -1018,7 +1055,13 @@ public:
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
 
+    //! @name Feature Flags
+    //! @{
+
+    IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
+
     IMODEL_BRIDGE_EXPORT static bool WantModelProvenanceInBim(DgnDbR db);
+    //! @}
     };
 
 //=======================================================================================

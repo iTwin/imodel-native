@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/DgnDb0601Exporter/exe/DgnDb0601Exporter.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -20,17 +20,7 @@ DGNDB06_USING_NAMESPACE_BENTLEY_LOGGING
 DGNDB06_USING_NAMESPACE_BENTLEY_SQLITE
 DGNDB06_USING_NAMESPACE_BENTLEY_DGN
 
-#if defined (__BIMTELEPORTER_BUILD__)
-#   define BIMTELEPORTER_EXPORT      EXPORT_ATTRIBUTE
-#else
-#   define BIMTELEPORTER_EXPORT      IMPORT_ATTRIBUTE
-#endif
-
-#define BIM_EXPORTER_NAMESPACE_NAME BimTeleporter
-#define BEGIN_BIM_EXPORTER_NAMESPACE namespace BentleyG0601 { namespace Dgn { namespace BIM_EXPORTER_NAMESPACE_NAME {
-#define END_BIM_EXPORTER_NAMESPACE   } } }
-
-BEGIN_BIM_EXPORTER_NAMESPACE
+BEGIN_BIM_FROM_DGNDB_NAMESPACE
 
 struct BimExporter0601
     {
@@ -53,8 +43,8 @@ struct BimExporter0601
 
     public:
         //! wmain should call this to run the job.
-        BIMTELEPORTER_EXPORT int Run(int argc, WCharCP argv[]);
+        int Run(int argc, WCharCP argv[]);
 
     };
 
-END_BIM_EXPORTER_NAMESPACE
+END_BIM_FROM_DGNDB_NAMESPACE

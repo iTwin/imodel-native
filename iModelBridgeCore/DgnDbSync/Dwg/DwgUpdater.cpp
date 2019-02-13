@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgUpdater.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
@@ -778,11 +778,19 @@ BentleyStatus DwgImporter::_DetectDeletedDocuments ()
 
     for (auto file : files)
         {
-        // check the file GUID per PW:
+        // check the file GUID per PW, or check the local file path (when run on command line, VSTS 54783):
+        bool    docExists = false;
         BeGuid  docGuid;
         auto name = file.GetUniqueName ();
-        if (docGuid.FromString(name.c_str()) == BSISUCCESS && this->GetOptions().IsDocumentAssignedToJob(name))
+        if (docGuid.FromString(name.c_str()) == BSISUCCESS)
+            docExists = this->GetOptions().IsDocumentInRegistry(name);
+        else
+            docExists = BeFileName(file.GetDwgName().c_str(), true).DoesPathExist ();
+
+        if (docExists)
             continue;
+
+        LOG.tracev ("Document %s has been detected for deletion.", name.c_str());
 
         // need to delete this file - walk through all model mappings in the sync info:
         DwgSyncInfo::ModelIterator  modelMaps(db, "DwgFileId=?");

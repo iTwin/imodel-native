@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/LightWeightConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -152,7 +152,7 @@ LightWeightLineStyleConverter::V8Location::V8Location(DgnV8Api::LsCacheComponent
     //  we don't try to check location based on RscFileHandle.  We only do a file test
     //  if the component definition comes from an element.
     //   if (m_isElement)
-    //       m_v8fileId = Converter::GetV8FileSyncInfoIdFromAppData(*lsLoc->GetSourceFile());
+    //       m_v8fileId = Converter::GetRepositoryLinkId(*lsLoc->GetSourceFile());
 
     m_v8componentType = (uint32_t) lsLoc->GetElementType();
     }
@@ -898,7 +898,7 @@ DbResult LightWeightConverter::InsertLineStyle(DgnStyleId newId, double componen
 // @bsimethod                                    Vern.Francisco                      12/17
 // +---------------+---------------+---------------+---------------+---------------+------
 
-DgnSubCategoryId LightWeightConverter::GetSubCategory(uint32_t v8levelid, SyncInfo::Level::Type ltype)
+DgnSubCategoryId LightWeightConverter::GetSubCategory(uint32_t v8levelid, SyncInfo::LevelExternalSourceAspect::Type ltype)
     {
 
     DgnV8Api::LevelCache const& lc = m_v8Model->GetLevelCache();
@@ -966,7 +966,7 @@ DgnSubCategoryId LightWeightConverter::ConvertLevelToSubCategory(DgnV8Api::Level
 
     // NEEDSWORK LevelMap cache is needed. 
 
-    //m_syncInfo.InsertLevel(dbSubCategoryId, SyncInfo::V8ModelSource(v8Model), level);
+    //m_syncInfo.InsertLevel(dbSubCategoryId, v8Model, level);
     return dbSubCategoryId;
     }
 

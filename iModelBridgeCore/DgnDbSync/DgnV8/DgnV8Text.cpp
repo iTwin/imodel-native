@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DgnV8Text.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -648,7 +648,8 @@ void ConvertV8TextToDgnDbExtension::_ProcessResults(ElementConversionResults& re
     if (v8DisplayHandler->Is3dElem(v8Eh.GetElementCP()) && !v8mm.GetDgnModel().Is3d())
         {
         Bentley::DVec3d flattenDir = Bentley::DVec3d::From(0, 0, 1);
-        v8DisplayHandler->ConvertTo2d(v8eeh, (Bentley::Transform const&)(v8mm.GetTransform()), flattenDir);
+        auto transform = v8mm.GetTransform();
+        v8DisplayHandler->ConvertTo2d(v8eeh, (Bentley::Transform const&)(transform), flattenDir);
         LOG.infov("Flattening 3d text element %d to a 2d element since it is in a 2d model.\n", v8Eh.GetElementId());
         }
 

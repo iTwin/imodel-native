@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeFwk.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -104,7 +104,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     BentleyStatus BootstrapBriefcase(bool& createdNewRepo);
     BentleyStatus GetSchemaLock();
     BentleyStatus ImportDgnProvenance(bool& madeChanges);
-    BentleyStatus ImportElementAspectSchema(bool& madeChanges);
     
     enum class SyncState
         {
@@ -127,7 +126,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         {
         bool       m_skipAssignmentCheck = false;
         bool       m_createRepositoryIfNecessary = false;
-        bool       m_storeElementIdsInBIM {};
+        bool       m_wantProvenanceInBim {};
         bool       m_mergeDefinitions = true;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
@@ -192,6 +191,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String          m_bcsProjectId;       //!< iModelHub project 
         Utf8String          m_repositoryName;     //!< A repository in the iModelHub project
         Http::Credentials   m_credentials;        //!< User credentials
+        Utf8String          m_callBackurl;       //! < The OIDC callback url to receive access token
+        BeSQLite::BeBriefcaseId m_briefcaseId;     //! optional briefcaseId if the bim file is missing.
         WebServices::UrlProvider::Environment m_environment;    //!< Connect environment
         uint8_t             m_maxRetryCount = 3;  //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         bvector<WString>    m_bargs;
@@ -200,7 +201,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BentleyStatus Validate(int argc, WCharCP argv[]);
         static void PrintUsage();
         bool ParsedAny() const {return m_parsedAny;}
-        WebServices::IConnectTokenProviderPtr m_tokenProvider;
         };
 
     struct DmsServerArgs
@@ -307,6 +307,7 @@ protected:
 
     BentleyStatus ParseDocProps();
 
+    void ReportFeatureFlags();
     void GetMutexName(wchar_t* buf, size_t bufLen);
     int RunExclusive(int argc, WCharCP argv[]);
     BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
@@ -385,6 +386,8 @@ public:
             logger->messagev(severity, "%s|%.0f millisecs", formattedDescription.c_str(), stopWatch.GetElapsedSeconds() * 1000.0);
             }
         }
+
+    BeSQLite::BeBriefcaseId GetBriefcaseId();
 };
 
 END_BENTLEY_DGN_NAMESPACE

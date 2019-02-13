@@ -69,7 +69,7 @@
 #include    <Teigha/Kernel/Include/Gi/GiBaseVectorizer.h>
 #include    <Teigha/Kernel/Include/Gi/GiPolyline.h>
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && (DWGDB_ToolkitMajorRelease < 19)
 #include    <Teigha/Kernel/Extensions/win/Crypt/WinNTCrypt.h>     // needed for DWG password
 #endif
 

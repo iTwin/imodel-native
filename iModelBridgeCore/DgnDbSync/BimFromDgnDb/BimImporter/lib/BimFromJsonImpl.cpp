@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/BimFromJsonImpl.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -54,6 +54,7 @@ BimFromJsonImpl::BimFromJsonImpl(DgnDb* dgndb, bool setQuietAssertions) : m_dgnd
 
     m_meter = DgnPlatformLib::GetHost().GetProgressMeter();
     m_importTimer.Init(false);
+    m_counter = 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -149,9 +150,9 @@ BentleyStatus BimFromJsonImpl::ImportJson(folly::ProducerConsumerQueue<BentleyB0
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
     {
-    auto jsonString = entry.toStyledString();
     if (m_file.IsOpen())
         {
+        auto jsonString = entry.toStyledString();
         m_file.Write(nullptr, jsonString.c_str(), static_cast<uint32_t>(jsonString.size()));
         }
 
@@ -247,15 +248,7 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
     else if (objectType.Equals(JSON_TYPE_LineStyleElement))
         reader = new LineStyleReader(this);
     else if (objectType.Equals(JSON_TYPE_LinkTable))
-        {
         reader = new LinkTableReader(this);
-        if (nullptr != m_meter)
-            {
-            Json::Value links = entry[JSON_OBJECT_KEY];
-            if (links.isArray())
-                m_meter->AddTasks(links.size());
-            }
-        }
     else if (objectType.Equals(JSON_TYPE_ElementGroupsMembers))
         reader = new ElementGroupsMembersReader(this);
     else if (objectType.Equals(JSON_TYPE_ElementHasLinks))
@@ -268,12 +261,16 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
         reader = new PlanReader(this);
     else if (objectType.Equals(JSON_TYPE_Baseline))
         reader = new BaselineReader(this);
+    else if (objectType.Equals(JSON_TYPE_TimeSpan))
+        reader = new TimeSpanReader(this);
     else if (objectType.Equals(JSON_TYPE_PropertyData))
         reader = new PropertyDataReader(this);
     else if (objectType.Equals(JSON_TYPE_EmbeddedFile))
         reader = new EmbeddedFileReader(this);
-    else if (objectType.Equals(JSON_TYPE_GenericElementAspect))
-        reader = new GenericElementAspectReader(this);
+    else if (objectType.Equals(JSON_TYPE_ElementMultiAspect))
+        reader = new ElementAspectReader(this, false);
+    else if (objectType.Equals(JSON_TYPE_ElementUniqueAspect))
+        reader = new ElementAspectReader(this, true);
     else if (objectType.Equals(JSON_TYPE_TextAnnotationData))
         reader = new TextAnnotationDataReader(this);
     else if (objectType.Equals(JSON_TYPE_PointCloudModel))
@@ -299,6 +296,9 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
 
     if (objectType.Equals(JSON_TYPE_Schema))
         m_importTimer.Start();
+
+    if (++m_counter % 5000 == 0)
+        m_dgndb->SaveChanges();
 
     return SUCCESS;
     }

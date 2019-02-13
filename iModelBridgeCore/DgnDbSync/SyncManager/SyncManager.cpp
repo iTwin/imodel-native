@@ -2,7 +2,7 @@
 |
 |     $Source: SyncManager/SyncManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SyncManagerInternal.h"
@@ -471,14 +471,14 @@ DgnDwgConverterBase::DgnDwgConverterBase(BeFileNameCR exePathname, WCharCP input
     {
     m_inExtensions.push_back(inputExtension);
     
-    m_outExtensions.push_back(L"ibim");
+    m_outExtensions.push_back(L"bim");
     m_outExtensions.push_back(L"imodel");
 
-    m_logExtension = L"ibim-issues";
+    m_logExtension = L"bim-issues";
     
-    m_interimExtensions.push_back(L"ibim.syncinfo");
-    m_interimExtensions.push_back(L"ibim.syncinfo-journal");
-    m_interimExtensions.push_back(L"ibim-journal");
+    m_interimExtensions.push_back(L"bim.syncinfo");
+    m_interimExtensions.push_back(L"bim.syncinfo-journal");
+    m_interimExtensions.push_back(L"bim-journal");
     }
 
 //---------------------------------------------------------------------------------------

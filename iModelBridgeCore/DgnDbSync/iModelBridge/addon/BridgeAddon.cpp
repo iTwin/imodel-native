@@ -2,18 +2,21 @@
 |
 |     $Source: iModelBridge/addon/BridgeAddon.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-// #include "BridgeAddon.h"
 #include <cstdio>
 #include <atlbase.h> 
-
-#include <iModelBridge/iModelBridgeFwk.h>
 #include <json/value.h>
 #include <node-addon-api/napi.h>
+#include <iModelBridge/iModelBridgeFwk.h>
 
+#include "OidcTokenProvider.h"
+
+USING_NAMESPACE_BENTLEY_HTTP
+USING_NAMESPACE_BENTLEY_DGN
 using namespace Napi;
+
 #include "BridgeAddon.h"
 
 namespace BridgeNative {
@@ -38,25 +41,25 @@ namespace BridgeNative {
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Sam.Wilson                      02/18
     +---------------+---------------+---------------+---------------+---------------+------*/
-    //static void logMessageToSEQ(Utf8CP category, Utf8CP msg)
-    //    {
-    //    auto env = BridgeNative::s_logger.Env();
-    //    Napi::HandleScope scope(env);
+    static void logMessageToSEQ(Utf8CP category, Utf8CP msg)
+       {
+       auto env = BridgeNative::s_logger.Env();
+       Napi::HandleScope scope(env);
 
-    //    Utf8CP fname = "logError";
+       Utf8CP fname = "logError";
 
-    //    auto method = BridgeNative::s_logger.Get(fname).As<Napi::Function>();
-    //    if (method == env.Undefined())
-    //        {
-    //        //Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
-    //        return;
-    //        }
+       auto method = BridgeNative::s_logger.Get(fname).As<Napi::Function>();
+       if (method == env.Undefined())
+           {
+           //Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
+           return;
+           }
 
-    //    auto catJS = Napi::String::New(env, category);
-    //    auto msgJS = Napi::String::New(env, msg);
+       auto catJS = Napi::String::New(env, category);
+       auto msgJS = Napi::String::New(env, msg);
 
-    //    method({catJS, msgJS});
-    //    }
+       method({catJS, msgJS});
+       }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    John.Majerle                      02/18
@@ -93,51 +96,7 @@ namespace BridgeNative {
 
         method({ msgJS });
         }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    John.Majerle                      02/18
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static Napi::String RequestToken() 
-        {
-        Napi::String result;
-
-        auto env = BridgeNative::s_JobUtility.Env();
-        Napi::HandleScope scope(env);
-
-        Utf8CP fname = "requestToken";
-
-        auto method = BridgeNative::s_JobUtility.Get(fname).As<Napi::Function>();
-        if (method == env.Undefined())
-            {
-            //Napi::Error::New(env, "Invalid JobUtility").ThrowAsJavaScriptException();
-            result = Napi::String::New(env, "");
-            return result;
-            }
-
-        result = method({ }).ToString();
-        return result;
-        }
-
-    // static Napi::Promise RequestToken() 
-    //     {
-    //     auto env = BridgeNative::s_JobUtility.Env();
-    //     Napi::HandleScope scope(env);
-
-    //     Utf8CP fname = "requestToken";
-
-    //     auto method = BridgeNative::s_JobUtility.Get(fname).As<Napi::Function>();
-    //     if (method == env.Undefined())
-    //         {
-    //         Napi::Error::New(env, "Invalid JobUtility").ThrowAsJavaScriptException();
-    //         }
-
-    //     // [NEEDSWORK] method() returns a Napi::Value that is really a Promise.  How to get at it?
-    //     //                      ...try studying Napi::AsyncWorker: https://github.com/nodejs/node-addon-api/blob/master/doc/async_worker.md
-    //     Napi::Promise result = method({ }).As<Promise>();;
-
-    //     return result;
-    //     }
-    }  
+    }  // End namespace BridgeNative
 
 Value _RunBridge(const CallbackInfo& info) 
     {
@@ -184,6 +143,30 @@ wchar_t const** argv = argptrs.data();\
     }\
 }
 
+#define SET_ARG_NO_VALUE(MEMBER, COMMAND) \
+{\
+    if(json.isMember(MEMBER)) { \
+        args.push_back(WPrintfString(L"--%s", COMMAND));\
+    }\
+}
+
+// Note: Used by OidcTokenProvider.cpp.
+Napi::Function RequestTokenFunction() 
+    {
+    auto env = BridgeNative::s_JobUtility.Env();
+    Napi::HandleScope scope(env);
+
+    Utf8CP fname = "requestToken";
+
+    auto method = BridgeNative::s_JobUtility.Get(fname).As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        Napi::Error::New(env, "Invalid JobUtility function: requestToken").ThrowAsJavaScriptException();
+        }
+
+    return method;
+    }
+
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    John.Majerle                      10/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -191,33 +174,24 @@ int RunBridge(Env env, const char* jsonString)
     {
     int status = 1;  // Assume failure
 
-    // [NEEDSWORK] Convert all printf statements to  BridgeNative::logMessageToSEQ() after refactor to pass correct category string (see imodel02 source)
-    printf("printf: BridgeAddon.cpp: RunBridge() jsonString = %s\n", jsonString);   // [NEEDSWORK] This line just for testing.  Remove later.
+    printf("BridgeAddon.cpp: RunBridge() jsonString = %s\n", jsonString);           // [NEEDSWORK] This line just for testing.  Remove later.
  
-    //BridgeNative::logMessageToSEQ("INFO", "BridgeAddon.cpp: RunBridge()");        // [NEEDSWORK] This line just for testing.  Remove later.
+    BridgeNative::logMessageToSEQ("INFO", "BridgeAddon.cpp: RunBridge() BEGIN");        
     BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() BEGIN");                 // [NEEDSWORK] This line just for testing.  Remove later.
     
     // Convert JSON string into a JSON object
     Json::Value json;
     Json::Reader::Parse(jsonString, json); 
 
-    // [NEEDSWORK] This block just for testing.  Remove later.
-    // BridgeNative::logMessage("BridgeAddon.cpp: List of json members:");
-    // bvector<Utf8String> memberNames = json.getMemberNames();
-    // for(unsigned int ii = 0; ii < memberNames.size(); ++ii) {
-    //     BentleyB0200::Utf8String memberName = memberNames[ii];
-    //     Json::Value value = json[memberName];
-    //     printf("printf: BridgeAddon.cpp: RunBridge() json[%s] = %s\n", memberName.c_str(), value.toStyledString().c_str());
-    // }
-
     bvector<WString> args;
 
     args.push_back(L"BridgeAddon");    
 
     // Required
-    SET_ARG("server_user", L"server-user")                  
-    SET_ARG("server_password", L"server-password") 
+    SET_ARG("server_user", L"server-user")                  // [NEEDSWORK] Deprecated but still supported.  Use server_oidcCallBackUrl instead.
+    SET_ARG("server_password", L"server-password")          // [NEEDSWORK] Deprecated but still supported.  Use server_oidcCallBackUrl instead.
     SET_ARG("server_project", L"server-project") 
+    SET_ARG("server_oidcCallBackUrl", L"server-oidcCallBackUrl") 
     SET_ARG("server_repository", L"server-repository") 
     SET_ARG("server_environment", L"server-environment") 
 
@@ -229,61 +203,73 @@ int RunBridge(Env env, const char* jsonString)
     SET_ARG("fwk_input", L"fwk-input") 
 
     // Optional 
-    SET_ARG("server_project_guid", "server-project-guid"); 
-    SET_ARG("fwk_bridge_regsubkey", "fwk-bridge-regsubkey");
-    SET_ARG("fwk_input_sheet", "fwk-input-sheet");
-    SET_ARG("fwk_revision_comment", "fwk-revision-comment");
-    SET_ARG("fwk_logging_config_file", "fwk-logging-config-file");
-    SET_ARG("fwk_argsJson", "fwk-argsJson");
-    SET_ARG("fwk_max_wait", "fwk_max-wait");
-    SET_ARG("fwk_jobrun_guid", "fwk-jobrun-guid");
-    SET_ARG("fwk_imodelbank_url", "fwk-imodelbank-url");    
-    SET_ARG("fwk_jobrequest_guid", "fwk-jobrequest-guid");  
-    SET_ARG("fwk_create_repository_if_necessary", "fwk-create-repository-if-necessary");  
+    SET_ARG("server_project_guid", L"server-project-guid"); 
+    SET_ARG("fwk_bridge_regsubkey", L"fwk-bridge-regsubkey");
+    SET_ARG("fwk_input_sheet", L"fwk-input-sheet");
+    SET_ARG("fwk_revision_comment", L"fwk-revision-comment");
+    SET_ARG("fwk_logging_config_file", L"fwk-logging-config-file");
+    SET_ARG("fwk_argsJson", L"fwk-argsJson");
+    SET_ARG("fwk_max_wait", L"fwk_max-wait");
+    SET_ARG("fwk_jobrun_guid", L"fwk-jobrun-guid");
+    SET_ARG("fwk_imodelbank_url", L"fwk-imodelbank-url");    
+    SET_ARG("fwk_jobrequest_guid", L"fwk-jobrequest-guid");  
+    SET_ARG("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary"); 
+
+    SET_ARG_NO_VALUE("fwk_skip_assignment_check", L"fwk-skip-assignment-check");
+     
     
     bvector<WCharCP> argptrs;
     MAKE_ARGC_ARGV(argptrs, args);
 
     if(1 == argc) {
         BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() No valid members passed in json");
+        BridgeNative::logMessageToSEQ("ERROR", "BridgeAddon.cpp: RunBridge() No valid members passed in json"); 
         return status;    
     }
 
-    // [NEEDSWORK] This block just for testing.  Remove later.
+    // [NEEDSWORK] This block just for testing.  Remove b4fore deployment!!!.
     BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() argv[]:");
     for(int ii = 0; ii < argc; ++ii) {
         char buffer [MAX_PATH];
         sprintf(buffer, "BridgeAddon.cpp: argv[%d] = %S", ii, argv[ii]);
         BridgeNative::logMessage(buffer);
     }
-
-    // [NEEDSWORK] Simulate a long running process by sleeping for 30 seconds
-    //             Note: BridgeNative::RequestToken() returns a Promise, not a string.  I don't know how to 'await' its execution.
-    // BeThreadUtilities::BeSleep(10000);
-    // Napi::String encodedToken = BridgeNative::RequestToken();  
-    // BridgeNative::logMessage(encodedToken.Utf8Value().c_str());                                
-    // BeThreadUtilities::BeSleep(10000);
-    //status = 0;     // Indicate success
-    
+   
     try {
         Dgn::iModelBridgeFwk app;
 
+        // Initialze the bridge processor
         if (BentleyApi::BSISUCCESS != app.ParseCommandLine(argc, argv)) {
             BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() ParseCommandLine failure");
             return status;
         }
 
+        // Establish a bridge token provider 
+        // if(json.isMember("encodedToken")) { 
+        //     // Pull the initial token value from the json object
+        //     Utf8String encodedToken = json.get("encodedToken", "").asString();
+
+        //     std::shared_ptr<OidcTokenProvider> provider = std::make_shared<OidcTokenProvider>(encodedToken);
+        //     app.SetTokenProvider(provider);
+        // }
+
+        // Executed the bridge process
         status = app.Run(argc, argv);
 
-        char buffer [MAX_PATH];
-        sprintf(buffer, "BridgeAddon.cpp: RunBridge() Run completed with status = %d", status);
-        BridgeNative::logMessage(buffer);
+        {
+            char buffer [MAX_PATH];
+            sprintf(buffer, "BridgeAddon.cpp: RunBridge() Run completed with status = %d", status);
+            BridgeNative::logMessage(buffer);            
+        }
+
     } catch (...) {
-        BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() exception occurred bridging the file");
+        BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() exception occurred during bridging");
+        BridgeNative::logMessageToSEQ("ERROR", "BridgeAddon.cpp: RunBridge() exception occurred during bridging"); 
         return status;
     }
 
     BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() END"); // [NEEDSWORK] This line just for testing.  Remove later.
+    BridgeNative::logMessageToSEQ("INFO", "BridgeAddon.cpp: RunBridge() END");       
 
     return status;
     }

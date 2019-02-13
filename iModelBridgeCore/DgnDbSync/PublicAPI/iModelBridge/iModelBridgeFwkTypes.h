@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeFwkTypes.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,6 +29,12 @@ struct IModelBridgeRegistry : IRefCounted
     virtual void          _DiscoverInstalledBridges() = 0;
     virtual BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) = 0;
     virtual ~IModelBridgeRegistry() {}
+    };
+
+
+struct iModelBridgeFeatureFlag
+    {
+    static constexpr CharCP WantProvenanceInBim = "IMODEL_BRIDGE_WANT_PROVENANCE_IN_BIM";
     };
 
 END_BENTLEY_DGN_NAMESPACE

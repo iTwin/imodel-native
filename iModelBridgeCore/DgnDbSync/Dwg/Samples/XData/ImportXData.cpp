@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Samples/XData/ImportXData.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ImportXData.h"
@@ -168,6 +168,24 @@ BentleyStatus   ImportXData::_ImportEntity (ElementImportResults& results, Eleme
 
     if (BSISUCCESS != status)
         LOG.error ("Failed adding xdata to DgnElement as Adhoc properties!");
+
+    return  status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus   ImportXData::_ImportEntityByProtocolExtension (ElementImportResults& results, ElementImportInputs& inputs, DwgProtocolExtension& entityExt)
+    {
+    // Create a DgnElement by DwgProtocolExtension. Keep in mind that _ConvertToBim may or may not call ImportXData::_ImportEntity.
+    DgnElementP dgnElement = nullptr;
+    ProtocolExtensionContext context(inputs, results);
+    auto status = entityExt._ConvertToBim (context, *this);
+    if (BSISUCCESS != status || nullptr == (dgnElement = results.GetImportedElement()))
+        {
+        LOG.errorv ("Failed creating DgnElement for entity %lld by protocol extension!", inputs.GetEntity().GetObjectId().ToUInt64());
+        return  status;
+        }
 
     return  status;
     }

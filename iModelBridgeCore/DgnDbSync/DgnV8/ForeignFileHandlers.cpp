@@ -171,11 +171,15 @@ void Converter::RegisterForeignFileTypes (BentleyApi::BeFileNameCR v8dir, Bentle
     module we use here only depends on DgnPlatform, and does not depend on PowerPlatform.
     In essense, the implementation module is only a subset of the MDL file handler.
     -----------------------------------------------------------------------------------*/
-    V8ForeignFileType*  filetypeInstance = new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DWG, "dwg", "DwgDgnIO2018.dll", v8dir, &realdwgDir);
+#ifndef RealDwgVersion
+    #error Must define RealDwgVersion!!
+#endif
+    static Utf8PrintfString s_dwgioName("DwgDgnIO%d.dll", RealDwgVersion);
+    V8ForeignFileType*  filetypeInstance = new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DWG, "dwg", s_dwgioName.c_str(), v8dir, &realdwgDir);
     if (nullptr == filetypeInstance)
         return;
 
-    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DXF, "dxf", "DwgDgnIO2018.dll", v8dir, &realdwgDir));
+    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DXF, "dxf", s_dwgioName.c_str(), v8dir, &realdwgDir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::ThreeDS, "3ds", "3dsfileioImp.dll", v8dir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::OBJ, "obj", "objfileioImp.dll", v8dir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::SKP, "skp", "skpfileioImp.dll", v8dir));
@@ -186,7 +190,7 @@ void Converter::RegisterForeignFileTypes (BentleyApi::BeFileNameCR v8dir, Bentle
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::Acute3D, "3sm", "MrMeshFileIO.dll", v8dir));
 
     // Add the wildcard DWG as the last entry to give other FileIO's a chance, before unnecessarily loading lots of RealDWG DLL's.
-    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DWG, "*", "DwgDgnIO2018.dll", v8dir, &realdwgDir));
+    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DWG, "*", s_dwgioName.c_str(), v8dir, &realdwgDir));
     }
 
 /*---------------------------------------------------------------------------------**//**

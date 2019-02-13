@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\BentleyBuild\PartFile.xsd">
 
     <Part Name="VersionedV8_InternalSDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
       <NuGetPackage targetFramework="native">V8_InternalSDKNuget</NuGetPackage>
@@ -60,7 +60,7 @@
     </Part>
 
 
-    <Part Name="ScalableMeshV8SDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" BMakeOptions="+dDGNV8_DGNPLATFORM_SDK=$(BuildContext)SdkSources\ScalableMeshSDK\" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="ScalableMeshV8SDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" BentleyBuildMakeOptions="+dDGNV8_DGNPLATFORM_SDK=$(BuildContext)SdkSources\ScalableMeshSDK\" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SdkSource>ScalableMeshSDK</SdkSource>
         <Bindings>
             <PublicAPI ProductDirectoryName="VersionedDgnV8Api" Domain="VersionedDgnV8Api" />
@@ -356,19 +356,15 @@
         <Directories DirectoryListName="Tests"/>
     </Product>
 
-    <Part Name="RunV8ConverterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunDgnV8ConverterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="DgnV8ConverterTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnV8ConverterTests.log</Files>
         </Bindings>
     </Part>
 
-    <Part Name="RunDgnV8ConverterTests" DeferType="RunUnitTests" >
-        <SubPart PartName="RunV8ConverterTests" />
-    </Part>
-
     <!-- Memory leak testing of DgnV8Converter tests. Only called on demand -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64">
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=DgnV8ConverterTests" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="DgnV8ConverterTests" />
     </Part>
@@ -397,7 +393,7 @@
         <SubPart PartName="DwgConverter" PartFile="DwgConverter"/>
     </Part>
 
-    <Part Name="BimFromDgnDbPublicApi" BentleyBuildMakeFile="BimFromDgnDb/BimFromDgnDb.prewire.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64">
+    <Part Name="BimFromDgnDbPublicApi" BentleyBuildMakeFile="BimFromDgnDb/BimFromDgnDb.prewire.mke" OnlyPlatforms="x64,iOSARM64,AndroidARM64">
         <Bindings>
             <PublicAPI Domain="BimFromDgnDb" />
         </Bindings>
@@ -409,12 +405,14 @@
         <SubPart PartName="BimFromDgnDb-Xliffs"/>
     </Part>
     
-    <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64" ApiNumber="M02">
+    <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,iOSARM64,AndroidARM64" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"      Repository="DgnPlatform"/>
         <SubPart PartName="ECPresentation"  PartFile="ECPresentation"   Repository="ECPresentation"/>
         <SubPart PartName="Planning"        PartFile="Planning"         Repository="DgnDomains-Planning"/>
         <SubPart PartName="Raster"              PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ScalableMeshSchemaMobile"  PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="BimFromDgnDbPublicApi"/>
         <Bindings>
@@ -436,11 +434,11 @@
         <SubPart PartName="BimFromJsonSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\BimImporter.exe</Files>
-            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimUpgrader.logging.config.xml</Files>
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimFromDgnDb.logging.config.xml</Files>
         </Bindings>
     </Part>
 
-    <Part Name="BimUpgraderExe" BentleyBuildMakeFile="BimFromDgnDb/BimUpgrader/BimUpgrader.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
+    <Part Name="BimUpgraderExe" BentleyBuildMakeFile="BimFromDgnDb/BimUpgrader/BimUpgrader.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="BimFromJson"/>
         <SubPart PartName="DgnDb0601ToJson" PartFile="BimUpgrader" />
         <SubPart PartName="BimFromDgnDb" />
@@ -451,7 +449,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BimFromDgnDb" BentleyBuildMakeFile="BimFromDgnDb/src/BimFromDgnDb.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64" ApiNumber="M02">
+    <Part Name="BimFromDgnDb" BentleyBuildMakeFile="BimFromDgnDb/src/BimFromDgnDb.mke" OnlyPlatforms="x64,iOSARM64" ApiNumber="M02">
         <SubPart PartName="BimFromJson"/>
         <SubPart PartName="DgnDb0601ToJson" PartFile="BimUpgrader" />
         <Bindings>
@@ -486,6 +484,21 @@
         <Directories DirectoryListName="BimUpgraderDirList" />
     </Product>
 
+    <Part Name="BimUpgraderTestsExe" BentleyBuildMakeFile="BimFromDgnDb/Tests/Tests.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="GTestDependencies"/>
+        <SubPart PartName="DgnDbCreator" PartFile="BimUpgrader" />
+        <SubPart PartName="BimFromDgnDb"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/BimUpgraderTests.exe</Files>
+        </Bindings>
+    </Part>
+    
+    <Product Name="BimUpgraderTests">
+        <SubPart PartName="BimUpgraderTestsExe" />
+        <Directories DirectoryListName="BimUpgraderDirList"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+    </Product>
+    
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->

@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgDb/DwgDbCompileOptions.mki $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #
@@ -15,22 +15,41 @@
 #   DEBUG_TEIGHA_DLL=<delivery_path>    <= root folder where you have unzipped Teigha's Debug build.
 #
 %if !defined (__mdlMKI__)
+    %include mdl.mki
+%endif
 
 %if $(DWGTOOLKIT) == "RealDwg"
     %if !defined (VendorVersion)
-        VendorVersion = 2018
+        VendorVersion = 2019
+    %endif
+
+    ## RealDWG appends a version suffix to its core lib names:
+    %if $(VendorVersion) == 2016
+        ToolkitLibSuffix = 20
+    %elif $(VendorVersion) == 2017
+        ToolkitLibSuffix = 21
+    %elif $(VendorVersion) == 2018
+        ToolkitLibSuffix = 22
+    %elif $(VendorVersion) == 2019
+        ToolkitLibSuffix = 23
+    %else
+        %error Missing ToolkitLibSuffix for a newer version of RealDWG?
     %endif
 
     %if $(VendorVersion) <= 2016
         OVERRIDE_DEFAULT_VC_TOOLSET = VS2012
     %endif
-%endif
+
+%else
+
     %if !defined (VendorVersion)
-        VendorVersion = 4.3.1
+        VendorVersion = 190815
     %endif
 
-    %include mdl.mki
-%endif
+    ## OpenDWG does not have a suffix in its core lib names:
+    ToolkitLibSuffix    =
+
+%endif  # DWGTOOLKIT_
 
 DgnDbSyncPubApi     = $(SrcRoot)DgnDbSync/PublicAPI/
 DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
@@ -62,8 +81,6 @@ DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
     CCompOpts + -wd5043
 
 %if defined (DEBUG_TEIGHA_SOURCE)
-    # C4005: 'WIN32_LEAN_AND_MEAN' : macro redefinition in ExSystemServices.cpp
-    CCompOpts + -wd4005
     # C4996: 'std::copy_backward::_Unchecked_iterators::_Deprecate' unsafe in ..\VC\INCLUDE\xutility
     CCompOpts + -D_SCL_SECURE_NO_WARNINGS
 %endif
@@ -78,7 +95,7 @@ DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
 %endif  # MSVC_VERSION
 
 
-%if $(VendorVersion) == "4.1.1"
+%if $(VendorVersion) < 40301
     Kernel = Core
     Drawing = Core
 %else
@@ -96,7 +113,11 @@ ToolkitGripPoints   = $(ToolkitRoot)$(Drawing)/Examples/GripPoints/
 ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
 
 %if $(TARGET_PLATFORM)=="Windows"
-    ToolkitCryptInc = $(ToolkitRoot)$(Drawing)/Extensions/win/Crypt/
+    %if $(VendorVersion) < 190815
+        ToolkitCryptInc = $(ToolkitRoot)$(Drawing)/Extensions/win/Crypt/
+    %else
+        ToolkitCryptInc = $(ToolkitRoot)$(Drawing)/Extensions/ExServices/
+    %endif
 %endif
 
 %elif $(DWGTOOLKIT) == "RealDwg"
@@ -105,11 +126,6 @@ ToolkitRoot         = $(BuildContext)VendorAPI/Realdwg$(VendorVersion)/
 ToolkitCoreInc      = $(ToolkitRoot)
 ToolkitBaseInc      = $(ToolkitCoreInc)RealDwg/Base/
 ToolkitLibs         = $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/
-
-%if defined(MSVC_VERSION)
-    # adding -Ignore:4099 in link opts does not stop treating warning as error!
-    NOSTRICT        = 1
-%endif
 
 %else
 

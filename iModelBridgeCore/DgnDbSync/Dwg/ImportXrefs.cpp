@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportXrefs.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -227,7 +227,7 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
             DwgFileVersion  version = DwgFileVersion::Invalid;
 
             // try creating a new DwgDb for the xref, but do not allow circular referencing:
-            if (!m_xrefDatabase.IsValid() && !m_resolvedPath.EqualsI(importer.GetRootDwgFileName()) && DwgHelper::SniffDwgFile (m_resolvedPath, &version))
+            if (!m_xrefDatabase.IsValid() && !m_resolvedPath.EqualsI(importer.GetRootDwgFileName()) && DwgHelper::SniffDwgFile(m_resolvedPath, &version))
                 {
                 Utf8String  verstr = DwgHelper::GetStringFromDwgVersion (version);
                 importer.SetStepName (ProgressMessage::STEP_OPENINGFILE(), m_resolvedPath.c_str(), verstr.c_str());
@@ -253,7 +253,10 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
             return  BSISUCCESS;
             }
 
-        importer.ReportError (IssueCategory::DiskIO(), Issue::FileFilteredOut(), Utf8String(m_savedPath.c_str()).c_str());
+        if (m_savedPath.find(importer.GetRootDwgFileName().GetFileNameAndExtension().c_str()) >= 0)
+            ;   // do nothing now - will warn about the circular xRef when its instance is processed!
+        else
+            importer.ReportError (IssueCategory::DiskIO(), Issue::XrefFileFilteredOut(), Utf8String(m_savedPath.c_str()).c_str());
         }
 
     m_resolvedPath.clear ();

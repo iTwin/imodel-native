@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Samples/XData/ImportXData.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,6 +21,7 @@
 #include <Dwg/DwgImporter.h>
 #include <Dwg/DwgHelper.h>
 #include <Dwg/DwgBridge.h>
+#include <Dwg/ProtocalExtensions.h>
 
 // _ImportGroup will demonstrate how to create a GenericGroup element.
 #include <DgnPlatform/GenericDomain.h>
@@ -92,14 +93,22 @@ public:
     //
     // Override _ImportEntity to convert both entity and its xdata
     //
-    // This method is called on all entities seen in both the modelspace and paperpsaces. It is not called
-    // on entities in a block definition as there no such a concept of cell exists in DgnDb.  It is called
-    // in both initial import as well as incremental job run.  The caller handles the change detection,
+    // This method is called on entities that are seen in both the modelspace and paperpsaces, and that are not
+    // implemented by DwgProtocolExtension.  A protocol extended entity is routed to _ImportEntityByProtocolExtension.
+    // The mehod is not called on entities in a block definition as there is no such a concept of cell exists in DgnDb.
+    // It is called in both initial import as well as incremental job run.  The caller handles the change detection,
     // element insertion and element updates.  It is important that you do not insert DgnDb element in this
     // call.  Fill ElementImportResults with new elements you have created to represent the input DWG entity,
     // but do not insert them - leave the insertion to the caller.
     //
     virtual BentleyStatus   _ImportEntity (ElementImportResults& results, ElementImportInputs& inputs) override;
+    //
+    // Override _ImportEntityByProtocolExtension for entities not routed through _ImportEntity
+    //
+    // This method supplements above _ImportEntity, i.e. if an entity implemented by DwgProtocolExtension, this method
+    // will called first.  The protocol extension may optionally fallback to call _ImportEntity.
+    //
+    virtual BentleyStatus   _ImportEntityByProtocolExtension (ElementImportResults& results, ElementImportInputs& inputs, DwgProtocolExtension& entityExt) override;
     //
     // Override _ImportGroup to create & insert a DgnDb group element from a DWG group.
     //

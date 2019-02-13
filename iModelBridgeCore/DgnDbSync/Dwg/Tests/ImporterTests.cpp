@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Tests/ImporterTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImporterTests.h"
@@ -19,7 +19,7 @@ BentleyApi::BeFileName ImporterTests::GetIBimFileName(BentleyApi::BeFileName& in
     {
     BentleyApi::BeFileName ibimFile(inFile.GetDirectoryName(inFile.c_str()));
     ibimFile.AppendToPath(inFile.GetFileNameWithoutExtension().c_str());
-    ibimFile.AppendExtension(L"ibim");
+    ibimFile.AppendExtension(L"bim");
     return ibimFile;
     }
 /*---------------------------------------------------------------------------------**//**

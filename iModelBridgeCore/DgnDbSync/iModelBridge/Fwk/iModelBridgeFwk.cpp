@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/iModelBridgeFwk.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -22,6 +22,7 @@
 #include "../iModelBridgeHelpers.h"
 #include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
+#include "../iModelBridgeLdClient.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -235,6 +236,7 @@ void iModelBridgeFwk::InitLogging()
     NativeLogging::LoggingConfig::SetSeverity(L"ECDb", NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnCore", NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnV8Converter", NativeLogging::LOG_TRACE);
+    // NativeLogging::LoggingConfig::SetSeverity(L"Changeset", NativeLogging::LOG_TRACE);
     //NativeLogging::LoggingConfig::SetSeverity(L"BeSQLite", NativeLogging::LOG_TRACE);
     }
 
@@ -434,7 +436,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-storeElementIdsInBIM"))
             {
-            m_storeElementIdsInBIM = true;
+            m_wantProvenanceInBim = true;
             continue;
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-mergeDefinitions"))
@@ -1036,6 +1038,16 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
             }
         }
 
+    if (!m_briefcaseName.DoesPathExist())
+        {
+        BeSQLite::BeBriefcaseId briefcaseId = GetBriefcaseId();
+        if (GetBriefcaseId().IsValid())
+            {
+            if (BSISUCCESS != m_client->RestoreBriefcase(m_briefcaseName, m_briefcaseBasename.c_str(), briefcaseId))
+                return BSIERROR;
+            }
+        }
+
     return BSISUCCESS;
     }
 
@@ -1090,6 +1102,15 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
+    if (m_useIModelHub)
+        {
+        params.SetUrlEnvironment(m_iModelHubArgs->m_environment);
+        params.SetiModelName(m_iModelHubArgs->m_repositoryName);
+        params.SetUserName(m_iModelHubArgs->m_credentials.GetUsername());
+        params.SetProjectGuid(m_iModelHubArgs->m_bcsProjectId);
+        }
+    params.SetWantProvenanceInBim(m_jobEnvArgs.m_wantProvenanceInBim || m_bridge->TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim));
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1349,7 +1370,16 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (BentleyStatus::SUCCESS != LoadBridge())
         return RETURN_STATUS_CONVERTER_ERROR;
 
-    // Initialize the DgnPlatformLib Host.
+    //Initialize the launch darkly client;
+    if (m_useIModelHub)
+        {
+        iModelBridgeLdClient& client = iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment);
+        client.SetUserName(m_iModelHubArgs->m_credentials.GetUsername().c_str());
+        client.SetProjectDetails(m_iModelHubArgs->m_repositoryName.c_str(), m_iModelHubArgs->m_bcsProjectId.c_str());
+        if (SUCCESS != client.InitClient())
+            LOG.errorv(L"Error initializing launch darkly.");
+        }
+    // Initialize the DgnViewLib Host.
     m_repoAdmin = new FwkRepoAdmin(*this);  // TRICKY: This is ultimately passed to the host as a host variable, and host terimation will delete it.
     iModelBridge::Params params;
     SetBridgeParams(params, m_repoAdmin);
@@ -1444,6 +1474,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     //We are done processing the dgn db file. Release the bridge
     if (SUCCESS != ReleaseBridge())
         LOG.errorv(L"%s - Memory leak. This bridge was not released properly.", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
+    
+    if (m_useIModelHub)
+        iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).Close();
 
     return status;
     }
@@ -1540,7 +1573,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
         // another briefcase pushed schema changes after this briefcase last pulled.
         // If so, then we have to pull before re-trying.
         GetLogger().infov("SchemaUpgrade failed. Pulling.");
-        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
+        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
         oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
         m_briefcaseDgnDb = DgnDb::OpenDgnDb(&dbres, m_briefcaseName, oparams);
         Briefcase_PullMergePush("");    // TRICKY Only Briefcase_PullMergePush contains the mergeschemachanges logic. Briefcase_PullAndMerge does not.
@@ -1632,51 +1665,6 @@ BentleyStatus   iModelBridgeFwk::ImportDgnProvenance(bool& madeChanges)
     return BSISUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
-    {
-    if (!m_jobEnvArgs.m_storeElementIdsInBIM)
-        return BSISUCCESS;
-
-    if (m_briefcaseDgnDb->Schemas().ContainsSchema(SOURCEINFO_ECSCHEMA_NAME))
-        return BSISUCCESS;
-
-    BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    schemaPathname.AppendToPath(L"ECSchemas/Application/SourceInfo.ecschema.xml");
-
-    if (!schemaPathname.DoesPathExist())
-        {
-        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
-        return BSIERROR;
-        }
-
-    ECN::ECSchemaPtr schema;
-    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
-    schemaContext->AddSchemaLocater(m_briefcaseDgnDb->GetSchemaLocater());
-    ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schema, schemaPathname.GetName(), *schemaContext);
-
-    // CreateSearchPathSchemaFileLocater
-    if (ECN::SchemaReadStatus::Success != status)
-        {
-        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
-        return BSIERROR;
-        }
-
-    if (SUCCESS != GetSchemaLock())
-        {
-        GetLogger().fatal("GetSchemaLock failed for ImportElementAspectSchema after all the retries. Ignoring.");
-        return BSIERROR;
-        }
-
-    bvector<ECN::ECSchemaCP> schemas;
-    schemas.push_back(schema.get());
-    if (SchemaStatus::Success != m_briefcaseDgnDb->ImportV8LegacySchemas(schemas))
-        return BSIERROR;
-
-    return BSISUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -1709,11 +1697,7 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
 
     GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
     bool importedAspectSchema = false;
-    if (BSISUCCESS != ImportElementAspectSchema(importedAspectSchema))
-        {
-        GetLogger().error("Importing Element Aspect schema failed.");
-        }
-
+    
     BeAssert(!m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation());
 
     m_briefcaseDgnDb->BriefcaseManager().StartBulkOperation();
@@ -1872,12 +1856,14 @@ int iModelBridgeFwk::UpdateExistingBim()
         return BentleyStatus::ERROR;
 
     bool holdsSchemaLock = false;
-
+    bool madeChanges = false;
     if (true)
         {
         iModelBridgeCallTerminate callTerminate(*m_bridge);
 
         GetLogger().infov("bridge:%s iModel:%s - Opening briefcase II.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+
+        ReportFeatureFlags();
 
         // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
         bool madeSchemaChanges = false;
@@ -1912,8 +1898,8 @@ int iModelBridgeFwk::UpdateExistingBim()
             GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);                  // === SCHEMA LOCK
             return RETURN_STATUS_LOCAL_ERROR;                                                    // === SCHEMA LOCK
             }                                                                                    // === SCHEMA LOCK
-                                                                                                 // === SCHEMA LOCK
-        if (iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb) || hasChanges) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+        madeChanges = iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb) || hasChanges;          // === SCHEMA LOCK
+        if (madeChanges) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
             {                                                                                    // === SCHEMA LOCK
             if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))                 // === SCHEMA LOCK
                 return RETURN_STATUS_SERVER_ERROR;                                               // === SCHEMA LOCK
@@ -1960,7 +1946,11 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
-
+    //This allow SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
+    madeChanges |= iModelBridge::AnyTxns(*m_briefcaseDgnDb);
+    if (madeChanges)
+        m_briefcaseDgnDb->ExecuteSql("ANALYZE");
+    //
     dbres = m_briefcaseDgnDb->SaveChanges();
 
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
@@ -2056,7 +2046,7 @@ void iModelBridgeFwk::LogStderr()
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::iModelBridgeFwk()
-:m_logProvider(NULL), m_dmsSupport(NULL)
+:m_logProvider(nullptr), m_dmsSupport(nullptr), m_bridge(nullptr)
     {
     m_client = nullptr;
     m_bcMgrForBridges = new IBriefcaseManagerForBridges(*this);
@@ -2105,6 +2095,18 @@ void iModelBridgeFwk::ReportIssue(WStringCR msg)
         return;
         }
     tf->PutLine(msg.c_str(), true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::ReportFeatureFlags()
+    {
+    if (m_bridge != nullptr)
+        {
+        if (m_bridge->_GetParams().GetWantProvenanceInBim())
+            GetLogger().info("FeatureFlag.WantProvenanceInBim = 1");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2250,12 +2252,20 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
     return *m_registry;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2018
+* @bsimethod                                    Abeesh.Basheer                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::SetTokenProvider(WebServices::IConnectTokenProviderPtr provider)
+BeSQLite::BeBriefcaseId iModelBridgeFwk::GetBriefcaseId()
     {
-    if (m_useIModelHub && NULL != m_iModelHubArgs)
-        m_iModelHubArgs->m_tokenProvider = provider;
+    if (!m_useIModelHub)
+        return BeSQLite::BeBriefcaseId();
+
+    if (m_iModelHubArgs->m_briefcaseId.IsValid())
+        return m_iModelHubArgs->m_briefcaseId;
+
+    uint32_t bcid;
+    if (BE_SQLITE_ROW != m_stateDb.QueryProperty(&bcid, sizeof(bcid), s_briefcaseIdPropSpec))
+        return BeSQLite::BeBriefcaseId();
+
+    return BeSQLite::BeBriefcaseId(bcid);
     }

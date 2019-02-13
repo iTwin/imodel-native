@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportEntities.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -510,6 +510,22 @@ bool            IsWeightByBlock () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+Render::FillDisplay GetFillDisplay () const
+    {
+    /*-----------------------------------------------------------------------------------
+    Get fill display from m_fillType, which may be set by an object enabler.
+    A LWPolyline is never filled, but its OE may call _SetFill (unexpected though)!
+    -----------------------------------------------------------------------------------*/
+    auto lwpline = DwgDbPolyline::Cast (this->GetSourceEntity());
+    if (nullptr != lwpline)
+        return  Render::FillDisplay::Never;
+
+    return DwgGiFillType::Always == m_filltype ? Render::FillDisplay::Always : Render::FillDisplay::Never;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void    GetDisplayParams (Render::GeometryParams& params)
     {
     /*-----------------------------------------------------------------------------------
@@ -531,7 +547,7 @@ void    GetDisplayParams (Render::GeometryParams& params)
         }
 
     // set effective fill color
-    params.SetFillDisplay(DwgGiFillType::Always == m_filltype ? Render::FillDisplay::Always : Render::FillDisplay::Never);
+    params.SetFillDisplay (this->GetFillDisplay());
     if (params.GetFillDisplay() != Render::FillDisplay::Never)
         {
         GradientSymbPtr     dgnGradient = GradientSymb::Create ();
@@ -1424,9 +1440,19 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
         return  BSIERROR;
         }
 
+    // unmirror text on XY plane
+    DVec3d xAxis, zAxis;
+    xAxis.Normalize (xdir);
+    zAxis.Normalize (normal);
+    if (fabs(zAxis.z + 1.0) < 0.001)
+        {
+        xAxis.Negate ();
+        zAxis.Negate ();
+        }
+
     // get ECS - do not compound it with currTrans - handled in central factory.
     RotMatrix   ecs;
-    DwgHelper::ComputeMatrixFromXZ (ecs, xdir, normal);
+    DwgHelper::ComputeMatrixFromXZ (ecs, xAxis, zAxis);
 
     dgnText->SetText (textString.c_str());
     dgnText->SetOrigin (position);
@@ -1608,23 +1634,23 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgS
     // draw underlines and overlines decorated by the escape codes:
     for (auto const& underline : underlines)
         {
-        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLine (underline);
-        if (primitive.IsValid())
-            this->AppendGeometry (*primitive.get());
+        ICurvePrimitivePtr  line = ICurvePrimitive::CreateLine (underline);
+        if (line.IsValid())
+            this->AppendGeometry (*line.get());
         }
     for (auto const& overline : overlines)
         {
-        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLine (overline);
-        if (primitive.IsValid())
-            this->AppendGeometry (*primitive.get());
+        ICurvePrimitivePtr  line = ICurvePrimitive::CreateLine (overline);
+        if (line.IsValid())
+            this->AppendGeometry (*line.get());
         }
 
     // now draw strike through
     if (giStyle.IsStrikethrough())
         {
-        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLine (strikeThrough);
-        if (primitive.IsValid())
-            this->AppendGeometry (*primitive.get());
+        ICurvePrimitivePtr  line = ICurvePrimitive::CreateLine (strikeThrough);
+        if (line.IsValid())
+            this->AppendGeometry (*line.get());
         }
     }
 
@@ -1645,6 +1671,7 @@ virtual void    _Xline (DPoint3dCR point1, DPoint3dCR point2) override
 
     // shooting the vector from point1 to a far distance
     DSegment3d  line;
+    line.InitZero ();
     line.point[1].SumOf (point1, vector, length);
 
     // shooting the inverted vector to a far distance
@@ -1742,6 +1769,9 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
         // trivial reject the entity if it is clipped away as a whole
         if (nullptr != m_spatialFilter && m_spatialFilter->IsEntityFilteredOut(*child.get()))
             return;
+        // skip this entity if it should not be drawn
+        if (this->SkipBlockChildGeometry(child.get()))
+            return;
 
         // give protocal extensions a chance to create their own geometry:
         if (this->CreateBlockChildGeometry(child.get()) == BSISUCCESS)
@@ -1770,12 +1800,36 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
         }
 
     // for a nested a block reference followed by attributes, draw attributes now:
-    DwgDbBlockReferenceCP   blockRef = DwgDbBlockReference::Cast (child.get());
-    if (nullptr != blockRef)
-        this->DrawBlockAttributes (*blockRef);
+    DwgDbEntityP    entity = child.get ();
+    if (nullptr != entity)
+        {
+        DwgDbBlockReferenceCP   blockRef = DwgDbBlockReference::Cast (entity);
+        if (nullptr != blockRef)
+            this->DrawBlockAttributes (*blockRef);
 
-    if (!child.IsNull())
         m_drawParams.CopyFrom (savedParams);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            SkipBlockChildGeometry (DwgDbEntityCP entity)
+    {
+    if (nullptr == entity)
+        return  true;
+
+    // filter out geometries on layer Defpoints if their parent is of a dimension that is not displayed:
+    bool shouldSkip = false;
+    auto dwg = entity->GetDatabase ();
+    bool isOnDefpoints = dwg.IsValid() && entity->GetLayerId() == dwg->GetLayerDefpointsId();
+    if (isOnDefpoints && nullptr != m_entity && m_entity->IsDimension())
+        {
+        DwgDbLayerTableRecordPtr parentLayer(m_entity->GetLayerId(), DwgDbOpenMode::ForRead);
+        shouldSkip = parentLayer.OpenStatus() == DwgDbStatus::Success && (parentLayer->IsOff() || parentLayer->IsFrozen());
+        }
+
+    return  shouldSkip;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1783,7 +1837,7 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   CreateBlockChildGeometry (DwgDbEntityCP entity)
     {
-    auto* objExt = DwgProtocalExtension::Cast (entity->QueryX(DwgProtocalExtension::Desc()));
+    auto* objExt = DwgProtocolExtension::Cast (entity->QueryX(DwgProtocolExtension::Desc()));
     if (nullptr == objExt)
         return  BSIERROR;
 
@@ -2126,6 +2180,7 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
     m_is3d = m_inputs.GetTargetModelR().Is3d ();
     m_canCreateSharedParts = m_importer.GetOptions().IsBlockAsSharedParts ();
     m_sourceBlockId.SetNull ();
+    m_sourceLayerId.SetNull ();
 
     // find the element handler
     m_elementHandler = dgn_ElementHandler::Element::FindHandler (m_inputs.GetTargetModelR().GetDgnDb(), m_inputs.GetClassId());
@@ -2151,6 +2206,7 @@ void    ElementFactory::SetDefaultCreation ()
         insert->GetBlockTransform (blockTrans);
 
         m_sourceBlockId = insert->GetBlockTableRecordId ();
+        m_sourceLayerId = insert->GetLayerId ();
 
         // don't need to create shared parts for an anoymouse block
         DwgDbBlockTableRecordPtr    block (m_sourceBlockId, DwgDbOpenMode::ForRead);
@@ -2307,6 +2363,15 @@ void    ElementFactory::Validate2dTransform (TransformR transform) const
             {
             angles = YawPitchRollAngles (AngleInDegrees::FromDegrees(0.0), angles.GetPitch(), angles.GetRoll());
             transform = Transform::FromProduct (transform, angles.ToTransform(DPoint3d::FromZero()));
+            // reset near zero rotation components which will cause GeometryBuilder to fail
+            for (int i = 0; i < 3; i++)
+                {
+                for (int j = 0; j < 3; j++)
+                    {
+                    if (fabs(transform.form3d[i][j]) < 1.0e-4)
+                        transform.form3d[i][j] = 0.0;
+                    }
+                }
             }
         // and has no z-translation:
         placementPoint.z = 0.0;
@@ -2475,7 +2540,7 @@ BentleyStatus   ElementFactory::CreateSharedParts ()
 
     // cache the parts created for this block
     auto& blockPartsMap = m_importer.GetBlockPartsR ();
-    DwgImporter::SharedPartKey  key(m_sourceBlockId, m_basePartScale);
+    DwgImporter::SharedPartKey  key(m_sourceBlockId, m_sourceLayerId, m_basePartScale);
     blockPartsMap.insert (DwgImporter::T_BlockPartsEntry(key, parts));
 
     // create part elements from the part cache:
@@ -2822,7 +2887,7 @@ bool            DwgImporter::_SkipEmptyElement (DwgDbEntityCP entity)
     if (nullptr != blockRef)
         {
         DwgDbObjectIteratorPtr  attrIter = blockRef->GetAttributeIterator ();
-        if (attrIter->IsValid() && attrIter->IsValid())
+        if (attrIter.IsValid() && attrIter->IsValid())
             {
             attrIter->Start ();
             if (!attrIter->Done())
@@ -2868,10 +2933,6 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     // prepare for import
     PrepareEntityForImport (drawParams, geomFactory, entity);
 
-#if defined (BENTLEYCONFIG_PARASOLID)
-    PSolidKernelManager::StartSession ();
-#endif
-
     // draw entity and create geometry from it in our factory:
     try
         {
@@ -2892,10 +2953,6 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     // create elements from collected geometries
     ElementFactory  elemFactory(results, inputs, createParams, *this);
     status = elemFactory.CreateElements (&geometryMap);
-
-#if defined (BENTLEYCONFIG_PARASOLID)
-    PSolidKernelManager::StopSession ();
-#endif
 
     if (BSISUCCESS == status)
         m_entitiesImported++;
@@ -3085,6 +3142,15 @@ bool            DwgImporter::_FilterEntity (ElementImportInputs& inputs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::_ImportEntityByProtocolExtension (ElementImportResults& results, ElementImportInputs& inputs, DwgProtocolExtension& objExt)
+    {
+    ProtocolExtensionContext context(inputs, results);
+    return objExt._ConvertToBim (context, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, ElementImportInputs& inputs)
     {
     // if the entity is extended to support ToDgnDb method, let it take over the importing:
@@ -3092,18 +3158,9 @@ BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, Elemen
     if (entity.IsNull())
         return  BSIERROR;
 
-    DwgProtocalExtension*   objExt = DwgProtocalExtension::Cast (entity->QueryX(DwgProtocalExtension::Desc()));
+    DwgProtocolExtension*   objExt = DwgProtocolExtension::Cast (entity->QueryX(DwgProtocolExtension::Desc()));
     if (nullptr != objExt)
-        {
-        ProtocalExtensionContext context(inputs, results);
-        return objExt->_ConvertToBim (context, *this);
-        }
-
-    DwgDbBlockReferenceP    insert = DwgDbBlockReference::Cast (entity);
-    if (nullptr != insert && insert->IsXAttachment())
-        return  this->_ImportXReference (results, inputs);
-    else if (nullptr != insert)
-        return  this->_ImportBlockReference (results, inputs);
+        return  this->_ImportEntityByProtocolExtension (results, inputs, *objExt);
 
     return  this->_ImportEntity (results, inputs);
     }
@@ -3364,97 +3421,6 @@ DgnClassId      DwgImporter::_GetElementType (DwgDbBlockTableRecordCR block)
         }
 
     return DgnClassId (elementClass->GetId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DwgImporter::SharedPartKey::operator < (SharedPartKey const& rho) const
-    {
-    if (m_blockId == rho.GetBlockId())
-        return m_basePartScale < rho.GetBasePartScale() && fabs(m_basePartScale - rho.GetBasePartScale()) > 1.0e-5;
-    return m_blockId < rho.GetBlockId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs)
-    {
-    BentleyStatus   status = BSIERROR;
-    DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(inputs.GetEntityP());
-    if (nullptr == insert)
-        {
-        BeAssert (false && "Not a DwgDbBlockReference!");
-        return  status;
-        }
-
-    /*-----------------------------------------------------------------------------------
-    We attempt to use shared parts for a block, but we first have to check:
-    a) if the block transform is valid for shared parts, and
-    b) if the block has been been previously imported as shared parts.
-    -----------------------------------------------------------------------------------*/
-    auto found = m_blockPartsMap.end ();
-
-    // get the transform of the insert entity:
-    auto blockTrans = Transform::FromIdentity ();
-    insert->GetBlockTransform (blockTrans);
-
-    // attempt to create shared parts from a block only if that is what the user wants:
-    double  partScale = 0.0;
-    bool    canShareParts = this->GetOptions().IsBlockAsSharedParts ();
-    if (canShareParts)
-        {
-        auto blockToModel = Transform::FromProduct (inputs.GetTransform(), blockTrans);
-        canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockToModel);
-        }
-
-    if (canShareParts)
-        {
-        // user wants shared parts, and block transform is valid for shared parts, now search the parts cache:
-        SharedPartKey key(insert->GetBlockTableRecordId(), partScale);
-        found = m_blockPartsMap.find (key);
-        }
-
-    if (found == m_blockPartsMap.end())
-        {
-        // either can't share parts or parts cache not found - import the new insert entity from cratch:
-        status = this->_ImportEntity (results, inputs);
-        }
-    else
-        {
-        // found parts from the cache - create elements from them:
-        ElementCreateParams  params(inputs.GetTargetModelR());
-        status = this->_GetElementCreateParams (params, inputs.GetTransform(), inputs.GetEntity());
-        if (BSISUCCESS != status)
-            return  status;
-
-        ElementFactory  elemFactory(results, inputs, params, *this);
-        elemFactory.SetCreateSharedParts (true);
-        elemFactory.SetBaseTransform (blockTrans);
-
-        // we should have avoided a transform not supported by shared parts
-        BeAssert (elemFactory.CanCreateSharedParts() && "Shared parts cannot be created for this insert!!");
-
-        // create elements from the block-parts cache
-        status = elemFactory.CreatePartElements (found->second);
-        }
-    if (status != BSISUCCESS)
-        return  status;
-
-    // get imported DgnElement
-    DgnElementP     hostElement = nullptr;
-    if (BSISUCCESS == status)
-        hostElement = results.GetImportedElement ();
-
-    if (nullptr == hostElement)
-        return  BSIERROR;
-
-    // create elements from attributes attached to the block reference:
-    AttributeFactory        attribFactory(*this, *hostElement, results, inputs);
-    attribFactory.CreateElements (*insert);
-
-    return  status;
     }
 
 /*---------------------------------------------------------------------------------**//**

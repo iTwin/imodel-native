@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/V8AttachmentTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -30,7 +30,7 @@ struct V8AttachmentTests : public ConverterTestBaseFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, AttachSameFile)
     {
-    LineUpFiles(L"SameFile.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SameFile.bim", L"Test3d.dgn", false);
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
@@ -93,7 +93,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, AttachDifferentFile)
     {
-    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"DifferentFile.bim", L"Test3d.dgn", false);
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
     size_t originalModelCount = 0;
@@ -140,7 +140,7 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, ElementUpdateInReferenceFile)
     {
-    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", true);
+    LineUpFiles(L"DifferentFile.bim", L"Test3d.dgn", true);
     int originalGeomModelCount = 0;
     if (true)
         {
@@ -179,7 +179,7 @@ TEST_F(V8AttachmentTests, ElementUpdateInReferenceFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, AddAttachments)
     {
-    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", true);
+    LineUpFiles(L"DifferentFile.bim", L"Test3d.dgn", true);
     int originalGeomModelCount = 0;
     if (true)
         {
@@ -213,7 +213,7 @@ TEST_F(V8AttachmentTests, AddAttachments)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, DeleteAttachment)
     {
-    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", true);
+    LineUpFiles(L"DifferentFile.bim", L"Test3d.dgn", true);
     int originalGeomModelCount = 0;
     if (true)
         {
@@ -260,7 +260,7 @@ TEST_F(V8AttachmentTests, DeleteAttachment)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, UnDisplayedReference)
     {
-    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", true);
+    LineUpFiles(L"DifferentFile.bim", L"Test3d.dgn", true);
     int originalGeomModelCount = 0;
     if (true)
         {
@@ -395,7 +395,7 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, Attach3dm)
     {
-    LineUpFiles(L"rhino.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"rhino.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"HumanHead.3dm");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
@@ -407,7 +407,7 @@ TEST_F(V8AttachmentTests, Attach3dm)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, Attach3ds)
     {
-    LineUpFiles(L"3ds.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"3ds.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"bed.3ds");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
@@ -419,7 +419,7 @@ TEST_F(V8AttachmentTests, Attach3ds)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, AttachFbx)
     {
-    LineUpFiles(L"fbx.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"fbx.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"candles.fbx");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
@@ -431,7 +431,7 @@ TEST_F(V8AttachmentTests, AttachFbx)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, AttachIfc)
     {
-    LineUpFiles(L"ifc.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ifc.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"roof.ifc");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
@@ -456,7 +456,7 @@ TEST_F(V8AttachmentTests, AttachIfc)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, AttachObj)
     {
-    LineUpFiles(L"obj.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"obj.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"bottle.obj");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
@@ -469,7 +469,7 @@ TEST_F(V8AttachmentTests, AttachObj)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, AttachSkp)
     {
-    LineUpFiles(L"sketchup.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"sketchup.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"Kubelis.skp");
     DoConvert(m_dgnDbFileName, m_v8FileName); 

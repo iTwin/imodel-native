@@ -3,9 +3,57 @@
 
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
 
-    <ECEntityClass typeName="SourceElementInfo" >
+    <ECEntityClass typeName="ExternalSourceAspect" displayLabel="External Source Aspect" description="A bis:ElementMultiAspect that stores syncrhonization information for a bis:Element originating from an external source.">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="SourceId" typeName="string" />
-        <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json"/>
+        <ECCustomAttributes>
+            <DbIndexList xmlns="ECDbMap.2.0">
+                <Indexes>
+                    <DbIndex>
+                        <Name>ix_bis_ExternalSourceAspect_Source</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>Scope.Id</string>
+                            <string>Kind</string>
+                            <string>Identifier</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </DbIndexList>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Scope" relationshipName="ElementScopesExternalSourceIdentifier" direction="Backward" displayLabel="Scope" description="The context in which the combination of (Kind, Identifier) identifies the object uniquely within the source repository. Scope is the Id of a bis:Element in the iModel (not the source) that corresponds to the scope or container in the source that owns, contains, or qualifies the identity of the source object.">
+            <!-- IsNullable=False -->
+        </ECNavigationProperty>
+        <ECProperty propertyName="Identifier" typeName="string" description="The identifier of the object in the source repository">
+            <!-- IsNullable=False -->
+        </ECProperty>
+        <ECProperty propertyName="Kind" typeName="string" description="The kind of object within the source repository">
+            <!-- IsNullable=False -->
+        </ECProperty>
+        <ECProperty propertyName="Version" typeName="string" description="An optional value that is typically a version number or a psuedo version number like last modified time. It will be used by the synchronization process to detect that a source object is unchanged so that computing a cryptographic hash can be avoided. If present, this value must be guaranteed to change when any of the source object's content changes.">
+            <!-- IsNullable=True -->
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Checksum" typeName="string" description="The cryptographic hash (any algorithm) of the source object's content. It must be guaranteed to change when the source object's content changes.">
+            <!-- IsNullable=False -->
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" description="A place where additional JSON properties can be stored. For example, provenance information or properties relating to the synchronization process.">
+            <!-- IsNullable=True -->
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
+    <ECRelationshipClass typeName="ElementScopesExternalSourceIdentifier" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(1..1)" roleLabel="scopes" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is scoped by" polymorphic="true">
+            <Class class="ExternalSourceAspect"/>
+        </Target>
+    </ECRelationshipClass>
 </ECSchema>

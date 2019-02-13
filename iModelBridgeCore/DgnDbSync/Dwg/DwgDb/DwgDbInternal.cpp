@@ -2,16 +2,27 @@
 |
 |     $Source: Dwg/DwgDb/DwgDbInternal.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+// quiet static analysis warnings through toolkit's header files
+#pragma warning(disable:6001)
+#pragma warning(disable:6011)
+#pragma warning(disable:6244)
+#pragma warning(disable:6387)
+
 #include "DwgDbInternal.h"
+
+#pragma warning(default:6001)
+#pragma warning(default:6011)
+#pragma warning(default:6244)
+#pragma warning(default:6387)
 
 /*---------------------------------------------------------------------------------------
     Enable Windows Cryptographic API for OpenDWG
 ---------------------------------------------------------------------------------------*/
 #if defined (DWGTOOLKIT_OpenDwg)
-    #if (defined (WINNT) || defined(WIN32))
+    #if (defined (WINNT) || defined(WIN32)) && (DWGDB_ToolkitMajorRelease < 19)
         #include <Teigha/Kernel/Extensions/win/Crypt/WinNTCrypt.cpp>
     #endif
     
@@ -130,13 +141,16 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
 
 #elif DWGTOOLKIT_RealDwg
 
-    acrxRegisterService (NAME_DwgProtocalExtension);
+    acrxRegisterService (NAME_DwgProtocolExtension);
+    // load point cloud DBX for DwgDbPointCloudEx
     acrxLoadModule (L"AcDbPointCloudObj.dbx", 0);
 #if VendorVersion == 2017
     // demand loading image OE resulted in a RealDWG2017 crash - TFS 615432
     acrxLoadModule (L"acISMobj21.dbx", 0);
 #endif
+    // load light DBX for DwgDbLight
     acrxLoadModule (L"AcSceneOE.dbx", 0);
+    // load model doc DBX for DwgDbViewBorder
     acrxLoadModule (L"AcModelDocObj.dbx", 0);
 
     AcDbRasterImage::rxInit ();

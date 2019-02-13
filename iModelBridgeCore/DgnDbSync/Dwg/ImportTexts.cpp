@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportTexts.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -386,10 +386,10 @@ BentleyStatus   DwgImporter::WorkingFonts::LoadOSFonts ()
         {
         DgnFontPtr  font = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry(fontName.c_str());
         WorkingFont workingfont(BeFileName(), font.get());
-        Utf8String  fontName = font->GetName ();
-        fontName.ToLower ();
+        Utf8String  name = font->GetName ();
+        name.ToLower ();
 
-        m_truetypeFonts.insert (T_FontEntry(fontName, workingfont));
+        m_truetypeFonts.insert (T_FontEntry(name, workingfont));
         m_dwgImporter.Progress ();
         }
     return  BSISUCCESS;

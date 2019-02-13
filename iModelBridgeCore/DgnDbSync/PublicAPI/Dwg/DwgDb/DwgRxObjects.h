@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Dwg/DwgDb/DwgRxObjects.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,8 +10,8 @@
 #include    <Dwg/DwgDb/DwgDbCommon.h>
 
 
-// Protocal Extension Class name
-#define NAME_DwgProtocalExtension   L"DwgProtocalExtension"
+// Protocol Extension Class name
+#define NAME_DwgProtocolExtension   L"DwgProtocolExtension"
 
 #ifdef DWGTOOLKIT_OpenDwg
 typedef OdPseudoConstructorType     PseudoConstructor;

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ECTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -394,7 +394,7 @@ void ECConversionTests::VerifyECXAttributes(BentleyApi::Dgn::DgnElementCPtr bime
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECConversionTests, VerifyLimitsForArrayPropertyAfterConversion)
     {
-    LineUpFiles(L"VerifyLimitsForArrayPropertyAfterConversion.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"VerifyLimitsForArrayPropertyAfterConversion.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -438,7 +438,7 @@ TEST_F(ECConversionTests, VerifyLimitsForArrayPropertyAfterConversion)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, ECXAdata)
     {
-    LineUpFiles(L"ECXAdata.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ECXAdata.bim", L"Test3d.dgn", false);
     DgnV8Api::DgnModelStatus modelStatus;
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -512,7 +512,7 @@ TEST_F(ECConversionTests, ECXAdata)
 //--------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, ECXA2d)
     {
-    LineUpFiles(L"ECXA2d.ibim", L"Test2d.dgn", false);
+    LineUpFiles(L"ECXA2d.bim", L"Test2d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -543,289 +543,11 @@ TEST_F(ECConversionTests, ECXA2d)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            01/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, UpdateWithChangedSchema)
-    {
-    LineUpFiles(L"UpdateWithChangedSchema.ibim", L"Test3d.dgn", false);
-
-    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-    ECObjectsV8::ECSchemaPtr schema;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
-
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
-    DgnV8Api::ElementId eid;
-    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
-    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
-    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"TestClass");
-    v8editor.Save();
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    {
-    ECObjectsV8::ECClassP newClass;
-    schema->CreateClass(newClass, L"NewClass");
-    EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*schema, *(v8editor.m_file)));
-    v8editor.Save();
-    }
-
-    DoUpdate(m_dgnDbFileName, m_v8FileName, true, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            01/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, UpdateWithChangedSchema_VersionUpdate)
-    {
-    LineUpFiles(L"UpdateWithChangedSchema.ibim", L"Test3d.dgn", false);
-
-    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-    ECObjectsV8::ECSchemaPtr schema;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
-
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
-    DgnV8Api::ElementId eid;
-    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
-    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
-    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"TestClass");
-    v8editor.Save();
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    {
-    schema->SetVersionMinor(3);
-    ECObjectsV8::ECClassP newClass;
-    schema->CreateClass(newClass, L"NewClass");
-    EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*schema, *(v8editor.m_file)));
-    v8editor.Save();
-    }
-
-    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
-
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
-    ASSERT_TRUE(nullptr != ecSchema);
-
-    ASSERT_TRUE(nullptr != ecSchema->GetClassCP("NewClass"));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            01/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, UpdateWithNewSchema)
-    {
-    LineUpFiles(L"UpdateWithNewSchema.ibim", L"Test3d.dgn", false);
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-    ECObjectsV8::ECSchemaPtr schema;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
-
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
-    v8editor.Save();
-
-    DgnV8Api::ElementId eid;
-    v8editor.AddLine(&eid);
-    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
-    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
-    v8editor.Save();
-
-    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
-    EXPECT_EQ(1, m_count);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingOldSchemas)
-    {
-    LineUpFiles(L"UpdateWithNewSchemaReferencingOldSchemas.ibim", L"Test3d.dgn", false);
-    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Foo" isDomainClass="True">
-                <ECProperty propertyName="Foo" typeName="string" />
-            </ECClass>
-        </ECSchema>)xml";
-
-    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-    ECObjectsV8::ECSchemaPtr refSchema;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
-
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
-    DgnV8Api::ElementId eid;
-    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
-    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
-    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, refSchema->GetName().c_str(), L"Foo");
-    v8editor.Save();
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    Utf8CP testSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="RefSchema" version="1.1" prefix="ts" />
-            <ECClass typeName="Child" isDomainClass="True">
-                <BaseClass>ts:Foo</BaseClass>
-                <ECProperty propertyName="Bar" typeName="string" />
-            </ECClass>
-        </ECSchema>)xml";
-
-    ECObjectsV8::ECSchemaPtr schema2;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema2, testSchema, *schemaContext));
-
-    v8editor.Open(m_v8FileName);
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
-    v8editor.Save();
-
-    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingNewSchemas)
-    {
-    LineUpFiles(L"UpdateWithNewSchemaReferencingNewSchemas.ibim", L"Test3d.dgn", false);
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Foo" isDomainClass="True">
-                <ECProperty propertyName="Foo" typeName="string" />
-            </ECClass>
-        </ECSchema>)xml";
-
-    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-    ECObjectsV8::ECSchemaPtr refSchema;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
-
-    Utf8CP testSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="RefSchema" version="1.1" prefix="ts" />
-            <ECClass typeName="Child" isDomainClass="True">
-                <BaseClass>ts:Foo</BaseClass>
-                <ECProperty propertyName="Bar" typeName="string" />
-            </ECClass>
-        </ECSchema>)xml";
-
-    ECObjectsV8::ECSchemaPtr schema2;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema2, testSchema, *schemaContext));
-
-
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
-
-    DgnV8Api::ElementId eid;
-    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
-    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
-    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema2->GetName().c_str(), L"Child");
-
-    v8editor.Save();
-
-    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
-
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
-    ASSERT_TRUE(nullptr != ecSchema);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, UpdateWithNewSchemaAndChangedOldSchemas)
-    {
-    LineUpFiles(L"UpdateWithNewSchemaAndChangedOldSchemas.ibim", L"Test3d.dgn", false);
-    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Foo" isDomainClass="True">
-                <ECProperty propertyName="Foo" typeName="string" />
-            </ECClass>
-        </ECSchema>)xml";
-
-    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-    ECObjectsV8::ECSchemaPtr refSchema;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
-
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
-    DgnV8Api::ElementId eid;
-    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
-    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
-    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, refSchema->GetName().c_str(), L"Foo");
-    v8editor.Save();
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    Utf8CP testSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="RefSchema" version="1.1" prefix="ts" />
-            <ECClass typeName="Child" isDomainClass="True">
-                <BaseClass>ts:Foo</BaseClass>
-                <ECProperty propertyName="Bar" typeName="string" />
-            </ECClass>
-        </ECSchema>)xml";
-
-    ECObjectsV8::ECSchemaPtr schema2;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema2, testSchema, *schemaContext));
-
-    v8editor.Open(m_v8FileName);
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
-    DgnV8Api::ElementId eid2;
-    v8editor.AddLine(&eid2, nullptr, DPoint3d::FromOne());
-    DgnV8Api::ElementHandle eh2(eid2, v8editor.m_defaultModel);
-    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
-    v8editor.CreateInstanceOnElement(createdDgnECInstance2, eh2, v8editor.m_defaultModel, schema2->GetName().c_str(), L"Child");
-
-    v8editor.Save();
-
-    {
-    ECObjectsV8::ECClassP newClass;
-    refSchema->CreateClass(newClass, L"NewClass");
-    refSchema->SetVersionMinor(refSchema->GetVersionMinor() + 1);
-    EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*refSchema, *(v8editor.m_file)));
-    v8editor.Save();
-    }
-
-    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("RefSchema");
-    ASSERT_TRUE(nullptr != ecSchema);
-
-    ASSERT_TRUE(nullptr != ecSchema->GetClassCP("NewClass"));
-
-    ecSchema = db->Schemas().GetSchema("TestSchema");
-    ASSERT_TRUE(nullptr != ecSchema);
-    ASSERT_TRUE(nullptr != ecSchema->GetClassCP("Child"));
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithNewElementWithInstance)
     {
-    LineUpFiles(L"UpdateWithNewElement.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithNewElement.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -863,7 +585,7 @@ TEST_F(ECConversionTests, UpdateWithNewElementWithInstance)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithNewElementAndNoPreviousECData)
     {
-    LineUpFiles(L"UpdateWithNewElement.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateWithNewElement.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -895,7 +617,7 @@ TEST_F(ECConversionTests, UpdateWithNewElementAndNoPreviousECData)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateExistingWithNewInstance)
     {
-    LineUpFiles(L"UpdateExistingWithNewInstance.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateExistingWithNewInstance.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -939,7 +661,7 @@ TEST_F(ECConversionTests, UpdateExistingWithNewInstance)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithSecondaryInstances)
     {
-    LineUpFiles(L"UpdateUsingSecondary.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateUsingSecondary.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -992,7 +714,7 @@ TEST_F(ECConversionTests, UpdateWithSecondaryInstances)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, CreateSecondaryInstanceWithProperties)
     {
-    LineUpFiles(L"UpdateUsingSecondary.idgndb", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateUsingSecondary.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1045,7 +767,7 @@ TEST_F(ECConversionTests, CreateSecondaryInstanceWithProperties)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdatePropertyValueOnExistingInstance)
     {
-    LineUpFiles(L"UpdateExistingWithNewInstance.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"UpdateExistingWithNewInstance.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1101,14 +823,14 @@ TEST_F(ECConversionTests, UpdatePropertyValueOnExistingInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo;
+        SyncInfoReader syncInfo(m_params);
         syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
+        RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        DgnModelId editModelId;
+        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
         DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, eidWithInst);
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eidWithInst);
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
@@ -1129,7 +851,7 @@ TEST_F(ECConversionTests, UpdatePropertyValueOnExistingInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECConversionTests, CellWithInstance)
     {
-    LineUpFiles(L"Cell.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Cell.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1170,7 +892,7 @@ TEST_F(ECConversionTests, CellWithInstance)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
     {
-    LineUpFiles(L"Calculated.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Calculated.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1286,7 +1008,7 @@ TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpecUsingRelated)
     {
-    LineUpFiles(L"CalculatedRelated.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"CalculatedRelated.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1491,7 +1213,7 @@ TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpecUsingRelated)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, IGeometryValue)
     {
-    LineUpFiles(L"IGeometryValue.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"IGeometryValue.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1545,7 +1267,7 @@ TEST_F(ECConversionTests, IGeometryValue)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, CreateOnType66)
     {
-    LineUpFiles(L"Type66.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Type66.bim", L"Test3d.dgn", false);
     DgnV8Api::DgnModelStatus modelStatus;
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;

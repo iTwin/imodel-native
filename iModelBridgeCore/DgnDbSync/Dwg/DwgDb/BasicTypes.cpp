@@ -133,7 +133,7 @@ bool        DwgTransparency::IsByBlock () const { return T_Super::isByBlock(); }
 bool        DwgTransparency::IsByAlpha () const { return T_Super::isByAlpha(); }
 bool        DwgTransparency::IsClear () const   { return T_Super::isClear(); }
 uint32_t    DwgTransparency::SerializeOut () const { return T_Super::serializeOut(); }
-DwgTransparency::DwgTransparency ()             { ; }
+DwgTransparency::DwgTransparency () : DWGCM_Type(Transparency)() { ; }
 DwgTransparency::~DwgTransparency ()            { ; }
 
 double      DwgDbDate::GetJulianFraction () const { return T_Super::julianFraction(); }

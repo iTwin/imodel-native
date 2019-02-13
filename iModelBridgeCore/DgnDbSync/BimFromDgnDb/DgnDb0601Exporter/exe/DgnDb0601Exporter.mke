@@ -2,11 +2,11 @@
 #
 #     $Source: BimFromDgnDb/DgnDb0601Exporter/exe/DgnDb0601Exporter.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
-cdefs + -D__BIMTELEPORTER_BUILD__
+cdefs + -D__BIM_FROM_DGNDB_BUILD__
 %include mdl.mki
 
 appName     = DgnDb0601Exporter
@@ -30,7 +30,7 @@ always:
     ~mkdir $(o)
 
 PublicApi = $(SrcRoot)DgnDbSync\PublicApi\BimFromDgnDb/
-HeaderFiles = $(PublicApi)BimFromDgnDb.h $(PublicApi)JsonFromDgnDb0601.h
+HeaderFiles = $(PublicApi)BimFromDgnDb.h $(PublicApi)DgnDb0601ToJson.h
 
 $(o)DgnDb0601Exporter.obj: $(baseDir)DgnDb0601Exporter.cpp $(HeaderFiles)
 
@@ -45,7 +45,7 @@ EXE_DEST     = $(o)
 EXE_NAME     = $(appname)
 EXE_OBJS     = $(o)DgnDb0601Exporter.obj 
 EXE_LOPT1    = -entry:wmainCRTStartup
-LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnDb0601Exporter.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnDb0601ToJson.lib
 LINKER_LIBRARIES  + $(DgnDbLibs)Bentley.lib
 LINKER_LIBRARIES  + $(DgnDbLibs)BeSQLite.lib
 LINKER_LIBRARIES  + $(DgnDbLibs)BeSQLiteEC.lib
@@ -64,6 +64,6 @@ always:
     ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
 
 # *** NB: Keep the name of the logging config file consistent
-$(BuildContext)Delivery/BimTeleporter.logging.config.xml : $(baseDir)../../logging.config.xml
+$(BuildContext)Delivery/BimFromDgnDb.logging.config.xml : $(baseDir)../../logging.config.xml
     $(LinkFirstDepToFirstTarget)
 

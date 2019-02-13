@@ -2,7 +2,7 @@
 |
 |  $Source: PrivateAPI/iModelBridge/FakeRegistry.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,7 +19,7 @@ struct FakeRegistry : public iModelBridgeRegistryBase
     FakeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbName);
     void AddBridge(WStringCR bridgeName, std::function<T_iModelBridge_getAffinity> const& affinityCalc);
     virtual BentleyStatus ComputeBridgeAffinityToDocument(iModelBridgeWithAffinity& affinity, BeFileNameCR affinityPath, BeFileNameCR filePath) override;
-    void WriteAssignments();
+    BentleyStatus WriteAssignments();
     void Save();
     BeSQLite::DbResult Open() { return OpenOrCreateStateDb(); }
     };

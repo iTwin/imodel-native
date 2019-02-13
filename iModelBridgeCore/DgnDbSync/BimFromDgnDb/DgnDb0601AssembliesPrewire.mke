@@ -2,7 +2,7 @@
 #
 #     $Source: BimFromDgnDb/DgnDb0601AssembliesPrewire.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 PolicyFile=$(SrcRoot)bsicommon/sharedmki/AssertCommonCompileLinkPolicy.mki
@@ -131,7 +131,7 @@ always:
    !~@mkdir ${DeliveryDgnDbPlatformAssets}
    CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)ECSchemas=$(SourceAssets)ECSchemas"
    CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)sqlang=$(SourceAssets)sqlang"
-   CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)icudt62l.dat=$(SourceAssets)icudt62l.dat"
+   CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)icudt63l.dat=$(SourceAssets)icudt63l.dat"
 %if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
    CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)lastresortfonts=$(SourceAssets)lastresortfonts"
    CreateSymLinks.py -f"$(DeliveryDgnDbPlatformLibs)BeJsonCpp.pdb=$(DgnDbDlls)BeJsonCpp.pdb"

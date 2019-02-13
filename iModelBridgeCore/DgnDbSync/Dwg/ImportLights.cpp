@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportLights.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -11,12 +11,12 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgLightExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgLightExt)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgLightExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
+BentleyStatus   DwgLightExt::_ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer)
     {
     m_dwgLight = DwgDbLight::Cast (context.GetEntityPtrR().get());
     if (nullptr == m_dwgLight || !context.GetModel().Is3d())
