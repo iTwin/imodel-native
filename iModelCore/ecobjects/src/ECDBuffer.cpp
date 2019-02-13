@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -3858,13 +3858,10 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
         
         pNullflagsCurrent = pNullflagsStart + ((m_postAllocatedArrayCount - i) / BITS_PER_NULLFLAGSBITMASK);
         nullflagsBitmask = 0x01 << ((m_postAllocatedArrayCount - i) % BITS_PER_NULLFLAGSBITMASK);        
-        NullflagsBitmask newNullFlags = *pNullflagsCurrent;
         if (isNull && 0 == (*pNullflagsCurrent & nullflagsBitmask))
-            newNullFlags |= nullflagsBitmask; // turn on the null bit
+            (*pNullflagsCurrent) |= nullflagsBitmask; // turn on the null bit
         else if (!isNull && nullflagsBitmask == (*pNullflagsCurrent & nullflagsBitmask))
-            newNullFlags ^= nullflagsBitmask; // turn off the null bit
-
-        m_instance.ModifyData (pNullflagsCurrent, newNullFlags);
+            (*pNullflagsCurrent) ^= nullflagsBitmask; // turn off the null bit
         }
         
     // initilize inserted nullflags bits

@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECDBufferTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -588,6 +588,45 @@ TEST_F(ECDBufferTests, ArraysAreNotNull)
     ECValue v;
     EXPECT_EQ(ECObjectsStatus::Success, instance->GetValue(v, "Array"));
     EXPECT_FALSE(v.IsNull());
+    }
+
+struct ECDBufferTester : MemoryECInstanceBase
+    {
+public:
+    StandaloneECEnablerCR m_enabler;
+    IECInstanceP _GetAsIECInstance() const override { return nullptr; }
+    ClassLayoutCR _GetClassLayout() const override { return m_enabler.GetClassLayout(); }
+    
+    ECDBufferTester (StandaloneECEnablerCR enabler) : MemoryECInstanceBase(enabler.GetClassLayout(), 42, false, enabler.GetClass()), m_enabler(enabler) {};
+    ECObjectsStatus InsertArrayElementsAt(Utf8CP propertyAccessString, uint32_t index, uint32_t count)
+        {
+        uint32_t propIdx;
+        m_enabler.GetPropertyIndex(propIdx, propertyAccessString);
+        return InsertNullArrayElementsAt(propIdx, index, count);
+        }
+    };
+
+//---------------------------------------------------------------------------------------//
+//* @bsimethod                                                    Colin.Kerr        02/19
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(ECDBufferTests, ECDBufferCanInsertArrayEntriesWhenUsingWriteBuffer)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "Test", "ts", 1, 0, 0);
+    ECEntityClassP ecClass;
+    schema->CreateEntityClass(ecClass, "Test");
+    PrimitiveArrayECPropertyP arrayProp;
+    ecClass->CreatePrimitiveArrayProperty(arrayProp, "Array", PRIMITIVETYPE_String);
+
+    ECDBufferTester tester(*ecClass->GetDefaultStandaloneEnabler());
+    tester.InsertArrayElementsAt("Array", 0, 4);
+    ECValue v;
+    EXPECT_EQ(ECObjectsStatus::Success, tester.GetValueFromMemory(v, "Array", true, 1));
+    EXPECT_TRUE(v.IsNull());
+
+    tester.InsertArrayElementsAt("Array", 0, 4);
+    EXPECT_EQ(ECObjectsStatus::Success, tester.GetValueFromMemory(v, "Array", true, 1));
+    EXPECT_TRUE(v.IsNull());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

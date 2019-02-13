@@ -38,18 +38,18 @@
         <SubPart PartName="ECObjectsBuildCodeSamples" />
     </Part>
 
-    <Part Name="ECObjectsExtractCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECObjects/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECObjects/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/ECObjects">
+    <Part Name="ECObjectsExtractCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BentleyBuildMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECObjects/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECObjects/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/ECObjects">
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
             <Directory SourceName="Dox/Extractions/ECObjects" SubPartDirectory="Dox/Extractions/ECObjects"/>
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsBuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECObjects/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecobjectssamplecode">
+    <Part Name="ECObjectsBuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BentleyBuildMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECObjects/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecobjectssamplecode">
         <SubPart PartName="ECObjectsNative" />
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson">
         <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
@@ -78,7 +78,7 @@
     <!-- ********************** -->
     <!-- The following parts build the stand-alone ECObjects unit tests (from the same unit test source). -->
     <!-- ProductDirectoryNames below are listed in the BeGTest part file, in directory list: CollectionProduct -->
-    <Part Name="ECObjectsUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
+    <Part Name="ECObjectsUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/BuildPlatformUnitTests.mke" BentleyBuildMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="PublishedApi"/>
     </Part>
@@ -168,7 +168,7 @@
     </Part>
 
     <!-- Memory leak testing of ECObjects tests. Only called on demand -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECObjects-Gtest -dGTEST_NAME=ECObjectsTest" OnlyPlatforms="x64">
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECObjects-Gtest -dGTEST_NAME=ECObjectsTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="ECObjects-Gtest" />
     </Part>
