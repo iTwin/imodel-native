@@ -1564,6 +1564,66 @@ TEST_F(ECSchemaTests, UpdateWithNewSchemaAndChangedOldSchemas)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, SequentialProcessing)
+    {
+    // This test mimics multiple bridges being processed sequentially.  The first bridge will find TestSchema and an instance of TestInstance, thereby properly classifying
+    // 'ClassA'.  On a subsequent update (or second bridge), the same TestSchema is found (but in an unprocessed file) from which an instance of the unused 'SecondClass' is found.
+    // The schema should be re-analyzed an imported, thereby properly classifying 'SecondClass'
+
+    // Unfortunately, this doesn't work because the schemas are not updated in this workflow.  The logic does not look at the checksums of the schemas to see if they have changed, only the
+    // version numbers.
+    LineUpFiles(L"SequentialProcessing.bim", L"Test3d.dgn", false);
+    ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
+    ECObjectsV8::ECClassP ecClass;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == schema->CreateClass(ecClass, L"SecondClass"));
+    ECObjectsV8::PrimitiveECPropertyP ecProperty;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == ecClass->CreatePrimitiveProperty(ecProperty, L"IntProp", ECObjectsV8::PrimitiveType::PRIMITIVETYPE_Integer));
+
+    DgnV8Api::ElementId eid;
+    ImportSchemaAndAddInstance(m_v8FileName, eid, schema);
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    {
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+    VerifyElement(eid, "ClassA", true);
+    }
+
+    BentleyApi::BeFileName secondV8File = GetOutputFileName(L"SecondV8.dgn");
+    BentleyApi::BeFileName seedFile = GetInputFileName(L"Test3d.dgn");
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(seedFile, secondV8File)) << "Unable to copy file \nSource: [" << Utf8String(seedFile.c_str()).c_str() << "]\nDestination: [" << Utf8String(secondV8File
+                                                                                                                                                                                                                                   .c_str()).c_str() << "]";
+    V8FileEditor v8editor2;
+    v8editor2.Open(secondV8File);
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor2.m_file)));
+    v8editor2.Save();
+
+    DgnV8Api::ElementId eid2;
+    v8editor2.AddLine(&eid2);
+    DgnV8Api::ElementHandle eh(eid2, v8editor2.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"ClassB"));
+    //EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"SecondClass"));
+
+    DoConvert(m_dgnDbFileName, secondV8File);
+    {
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    VerifyElement(eid, "ClassA", true); // Verify first element is still there and properly classified
+
+    auto rlink2 = FindRepositoryLinkIdByFilename(*db, secondV8File);
+
+    VerifyElement(eid2, "ClassB", true, rlink2); 
+    //VerifyElement(eid2, "SecondClass", false);
+    }
+
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                    Carole.MacDonald            01/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 struct SkipSchemaImportTests : public ConverterTestBaseFixture

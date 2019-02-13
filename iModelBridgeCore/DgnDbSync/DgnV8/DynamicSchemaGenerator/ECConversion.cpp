@@ -653,19 +653,22 @@ BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR
             Utf8PrintfString info("Multiple rules for ECClass '%s'. Using %s and creating a secondary Aspect class.", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(rule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
             Update(converter, existingClassId, rule, true);
+            return BSISUCCESS;
             }
         else if (rule == BisConversionRule::ToAspectOnly)
             {
             Utf8PrintfString info("Multiple rules for ECClass '%s'. Using %s and creating a secondary Aspect class.", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(existingRule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
             Update(converter, existingClassId, existingRule, true);
+            return BSISUCCESS;
             }
-        else
+        else if (existingRule != BisConversionRule::ToDefaultBisBaseClass)
             {
             Utf8PrintfString info("Ambiguous conversion rules found for ECClass '%s': %s versus %s. Keeping the previous one", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(existingRule), BisConversionRuleHelper::ToString(rule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
+            return BSISUCCESS;
             }
-        return BSISUCCESS;
+        return Update(converter, existingClassId, rule, hasSecondary);
         }
 
     return DoInsert(converter.GetDgnDb(), v8ClassName, rule);
