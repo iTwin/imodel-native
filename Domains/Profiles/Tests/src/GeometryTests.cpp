@@ -244,7 +244,7 @@ void GeometryTestCase::InsertPhysicalElementForCenterLineProfile (ProfilePtr pro
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GeometryTestCase, ProfilesGemetry)
+TEST_F(GeometryTestCase, ProfilesGeometry)
     {
     InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_Plain", 6, 10, 1, 1, 0, 0));
     InsertProfileGeometry<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "CShape_FilletAndRoundedEdge", 6, 10, 1, 1, 0.5, 0.5));
@@ -405,7 +405,30 @@ TEST_F(GeometryTestCase, ProfilesGemetry)
         InsertProfileGeometry<ArbitraryShapeProfile> (ArbitraryShapeProfile::CreateParams (GetModel(), "Arbitrary shape - X shape", geometryPtr));
         }
 
-        {
+        { // ARbitrary CenterrLine profile - Half pipe (Single curve primitive)
+        DEllipse3d halfArc = DEllipse3d::FromPointsOnArc (DPoint3d::From (-2.0, 2.0), DPoint3d::From (0.0, 0.0), DPoint3d::From (2.0, 2.0));
+        ICurvePrimitivePtr curvePtr = ICurvePrimitive::CreateArc (halfArc);
+
+        ArbitraryCenterLineProfile::CreateParams params (GetModel(), "Arbitrary CenterLine - Half pipe", IGeometry::Create (curvePtr), 0.5);
+        InsertCenterlineProfileGeometry<ArbitraryCenterLineProfile> (params);
+        }
+
+        { // Arbitrary CenterLine profile - S shape (Curve vector)
+        DEllipse3d topArc = DEllipse3d::FromPointsOnArc (DPoint3d::From (1.5, 1.5), DPoint3d::From (-1.5, 1.5), DPoint3d::From (0.0, 0.0));
+        ICurvePrimitivePtr topCurvePtr = ICurvePrimitive::CreateArc (topArc);
+
+        DEllipse3d bottomArc = DEllipse3d::FromPointsOnArc (DPoint3d::From (0.0, 0.0), DPoint3d::From (1.5, -1.5), DPoint3d::From (-1.5, -1.5));
+        ICurvePrimitivePtr bottomCurvePtr = ICurvePrimitive::CreateArc (bottomArc);
+
+        CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+        curves->Add (topCurvePtr);
+        curves->Add (bottomCurvePtr);
+
+        ArbitraryCenterLineProfile::CreateParams params (GetModel(), "Arbitrary CenterLine - S shape", IGeometry::Create (curves), 0.5);
+        InsertCenterlineProfileGeometry<ArbitraryCenterLineProfile> (params);
+        }
+
+        { // Derived profile examples
         CShapeProfilePtr baseProfilePtr = InsertElement<CShapeProfile> (CShapeProfile::CreateParams (GetModel(), "C shape for derived profile", 6.0, 6.0, 0.75, 0.75));
 
         InsertProfileGeometry<DerivedProfile> (DerivedProfile::CreateParams (GetModel(), "Derived - offseted C (2.0 xAxis)", *baseProfilePtr,
