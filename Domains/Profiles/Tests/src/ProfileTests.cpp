@@ -263,15 +263,13 @@ TEST_F (ProfileTestCase, GetCardinalPoints_InsertedInstance_19StandardPoints)
 TEST_F (ProfileTestCase, GetCardinalPoints_InsertedInstance_StandardPointsInsertedAtBeggining)
     {
     LShapeProfilePtr profilePtr = CreateProfile ("P");
-
-    FAIL() << "Platfrom bug when performing DgnElement::InsertPropertyArrayItems ... Uncomment when this doesn't crash";
-    /*profilePtr->AddCustomCardinalPoint (CardinalPoint ("test", DPoint2d::From (1.0, 2.0)));
+    profilePtr->AddCustomCardinalPoint (CardinalPoint ("test", DPoint2d::From (1.0, 2.0)));
     profilePtr->Insert();
 
     bvector<CardinalPoint> cardinalPoints = profilePtr->GetCardinalPoints();
     ASSERT_EQ (20, cardinalPoints.size());
     ASSERT_STREQ ("BottomLeft", cardinalPoints[0].name.c_str()) << "StandardCardinal points should be inserted at the beggining of the array";
-    ASSERT_STREQ ("test", cardinalPoints[19].name.c_str()) << "Custom, user-defined cardinal points should be at the end of the array.";*/
+    ASSERT_STREQ ("test", cardinalPoints[19].name.c_str()) << "Custom, user-defined cardinal points should be at the end of the array.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -340,10 +338,9 @@ TEST_F (ProfileTestCase, AddCustomCardinalPoint_NewCustomPoint_Success)
     CardinalPoint point ("test", DPoint2d::From (1.0, 2.0));
     ASSERT_EQ (DgnDbStatus::Success, profilePtr->AddCustomCardinalPoint (point));
 
-    FAIL() << "Platfrom bug when performing DgnElement::InsertPropertyArrayItems ... Uncomment when this doesn't crash";
-    /*DgnDbStatus status;
+    DgnDbStatus status;
     profilePtr->Insert (&status);
-    ASSERT_EQ (DgnDbStatus::Success, status);*/
+    ASSERT_EQ (DgnDbStatus::Success, status);
     }
 
 /*---------------------------------------------------------------------------------**//**
