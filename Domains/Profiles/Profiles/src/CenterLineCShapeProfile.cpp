@@ -25,7 +25,8 @@ CenterLineCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CenterLineCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double wallThickness, double girth /*= 0.0*/, double filletRadius /*= 0.0*/)
+CenterLineCShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth,
+                                                     double wallThickness, double girth, double filletRadius)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
       , flangeWidth (flangeWidth)
       , depth (depth)
@@ -85,7 +86,7 @@ bool CenterLineCShapeProfile::_Validate() const
             ProfilesProperty::IsLessOrEqual (filletRadius, depth / 2.0 - wallThickness);
         }
 
-    return isValid ;
+    return isValid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,7 +102,7 @@ double CenterLineCShapeProfile::GetFlangeWidth() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineCShapeProfile::SetFlangeWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_FlangeWidth, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_FlangeWidth, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,7 +118,7 @@ double CenterLineCShapeProfile::GetDepth() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineCShapeProfile::SetDepth (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_Depth, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_Depth, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,7 +134,7 @@ double CenterLineCShapeProfile::GetFilletRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineCShapeProfile::SetFilletRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_FilletRadius, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_FilletRadius, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,7 +150,7 @@ double CenterLineCShapeProfile::GetGirth() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineCShapeProfile::SetGirth (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_Girth, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_CenterLineCShapeProfile_Girth, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -160,22 +161,13 @@ bool CenterLineCShapeProfile::_CreateGeometry()
     if (!T_Super::_CreateGeometry())
         return false;
 
-    IGeometryPtr centerLineGeometryPtr = CreateCenterLineGeometry();
-
+    IGeometryPtr centerLineGeometryPtr = ProfilesGeometry::CreateCenterLineForCShape (*this);
     if (centerLineGeometryPtr.IsNull())
         return false;
 
     SetCenterLine (*centerLineGeometryPtr);
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr CenterLineCShapeProfile::CreateCenterLineGeometry()
-    {
-    return ProfilesGeometry::CreateCenterLineForCShape (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -49,9 +49,6 @@ protected:
     virtual IGeometryPtr _CreateShapeGeometry() const override; //!< @private
     virtual bool _CreateGeometry() override; //!< @private
 
-private:
-    IGeometryPtr CreateCenterLineGeometry();
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineLShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CenterLineLShapeProfile)

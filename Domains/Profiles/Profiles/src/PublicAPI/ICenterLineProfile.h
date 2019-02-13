@@ -23,11 +23,14 @@ protected:
 public:
     PROFILES_EXPORT IGeometryPtr GetCenterLine() const;
 
+    // TODO Karolis: Add docs
     PROFILES_EXPORT double GetWallThickness() const;
+    // TODO Karolis: Add docs
     PROFILES_EXPORT void SetWallThickness (double value);
 
 protected:
-    PROFILES_EXPORT void SetCenterLine(IGeometry const& val);
+    //! @private
+    PROFILES_EXPORT void SetCenterLine (IGeometry const& val);
 
     }; // ICenterLineProfile
 

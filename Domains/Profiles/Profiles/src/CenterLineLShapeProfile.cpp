@@ -25,7 +25,8 @@ CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double wallThickness, double girth,  double filletRadius /*= 0.0*/)
+CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth,
+                                                     double wallThickness, double girth, double filletRadius)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
       , width (width)
       , depth (depth)
@@ -41,10 +42,8 @@ CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 CenterLineLShapeProfile::CenterLineLShapeProfile (CreateParams const& params)
     : T_Super (params)
     {
-    if (false != params.m_isLoadingElement)
-        {
+    if (params.m_isLoadingElement)
         return;
-        }
 
     SetWidth (params.width);
     SetDepth (params.depth);
@@ -102,7 +101,7 @@ double CenterLineLShapeProfile::GetWidth() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineLShapeProfile::SetWidth (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Width, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Width, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,7 +117,7 @@ double CenterLineLShapeProfile::GetDepth() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineLShapeProfile::SetDepth (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Depth, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Depth, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,7 +133,7 @@ double CenterLineLShapeProfile::GetFilletRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineLShapeProfile::SetFilletRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_FilletRadius, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_FilletRadius, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -150,7 +149,7 @@ double CenterLineLShapeProfile::GetGirth() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineLShapeProfile::SetGirth (double value)
     {
-    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Girth, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_CenterLineLShapeProfile_Girth, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -161,22 +160,13 @@ bool CenterLineLShapeProfile::_CreateGeometry()
     if (!T_Super::_CreateGeometry())
         return false;
 
-    IGeometryPtr centerLineGeometryPtr = CreateCenterLineGeometry();
-
+    IGeometryPtr centerLineGeometryPtr = ProfilesGeometry::CreateCenterLineForLShape (*this);
     if (centerLineGeometryPtr.IsNull())
         return false;
 
     SetCenterLine (*centerLineGeometryPtr);
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr CenterLineLShapeProfile::CreateCenterLineGeometry()
-    {
-    return ProfilesGeometry::CreateCenterLineForLShape (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

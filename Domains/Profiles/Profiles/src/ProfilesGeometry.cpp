@@ -19,6 +19,9 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ICurvePrimitivePtr createArcBetweenLines (ICurvePrimitivePtr& firstLinePtr, ICurvePrimitivePtr& secondLinePtr, double arcRadius)
     {
+    if (BeNumerical::IsEqualToZero (arcRadius))
+        return nullptr;
+
     DSegment3d const* pFirstLineSegment = firstLinePtr->GetLineCP();
     DSegment3d const* pSecondLineSegment = secondLinePtr->GetLineCP();
     if (pFirstLineSegment == nullptr || pSecondLineSegment == nullptr)
@@ -33,11 +36,6 @@ static ICurvePrimitivePtr createArcBetweenLines (ICurvePrimitivePtr& firstLinePt
     if (!firstLineEndPoint.IsEqual (secondLineStartPoint))
         {
         BeAssert (false && "first line should end where the second one starts");
-        return nullptr;
-        }
-
-    if (BeNumerical::IsEqualToZero(arcRadius))
-        {
         return nullptr;
         }
 
@@ -133,22 +131,11 @@ IGeometryPtr ProfilesGeometry::CreateCShape (CShapeProfile const& profile)
     ICurvePrimitivePtr bottomFlangeEdgeLine = ICurvePrimitive::CreateLine (bottomFlangEdge, bottomRight);
     ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
     ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (bottomLeft, topLeft);
-    ICurvePrimitivePtr topFlangeEdgeArc = nullptr;
-    ICurvePrimitivePtr bottomFlangeEdgeArc = nullptr;
-    ICurvePrimitivePtr bottomInnerCornerArc = nullptr;
-    ICurvePrimitivePtr topInnerCornerArc = nullptr;
 
-    if (profile.GetFlangeEdgeRadius() > 0.0)
-        {
-        topFlangeEdgeArc = createArcBetweenLines (topFlangeEdgeLine, topFlangeSlopeLine, flangeEdgeRadius);
-        bottomFlangeEdgeArc = createArcBetweenLines (bottomFlangeSlopeLine, bottomFlangeEdgeLine, flangeEdgeRadius);
-        }
-
-    if (profile.GetFilletRadius() > 0.0)
-        {
-        topInnerCornerArc = createArcBetweenLines (topFlangeSlopeLine, innerWebLine, filletRadius);
-        bottomInnerCornerArc = createArcBetweenLines (innerWebLine, bottomFlangeSlopeLine, filletRadius);
-        }
+    ICurvePrimitivePtr topFlangeEdgeArc = createArcBetweenLines (topFlangeEdgeLine, topFlangeSlopeLine, flangeEdgeRadius);
+    ICurvePrimitivePtr bottomFlangeEdgeArc = createArcBetweenLines (bottomFlangeSlopeLine, bottomFlangeEdgeLine, flangeEdgeRadius);
+    ICurvePrimitivePtr bottomInnerCornerArc = createArcBetweenLines (topFlangeSlopeLine, innerWebLine, filletRadius);
+    ICurvePrimitivePtr topInnerCornerArc = createArcBetweenLines (innerWebLine, bottomFlangeSlopeLine, filletRadius);
 
     bvector<ICurvePrimitivePtr> orderedCurves =
         {
@@ -208,21 +195,15 @@ IGeometryPtr ProfilesGeometry::CreateIShape (IShapeProfile const& profile)
     ICurvePrimitivePtr topLeftFlangeEdgeArc = nullptr;
     ICurvePrimitivePtr topLeftFlangeEdgeLine = ICurvePrimitive::CreateLine (topLeftFlangeEdge, topLeft);
 
-    if (profile.GetFlangeEdgeRadius() > 0.0)
-        {
-        topRightFlangeEdgeArc = createArcBetweenLines (topRightFlangeEdgeLine, topRightFlangeSlopeLine, flangeEdgeRadius);
-        bottomRightFlangeEdgeArc = createArcBetweenLines (bottomRightFlangeSlopeLine, bottomRightFlangeEdgeLine, flangeEdgeRadius);
-        bottomLeftFlangeEdgeArc = createArcBetweenLines (bottomLeftFlangeEdgeLine, bottomLeftFlangeSlopeLine, flangeEdgeRadius);
-        topLeftFlangeEdgeArc = createArcBetweenLines (topLeftFlangeSlopeLine, topLeftFlangeEdgeLine, flangeEdgeRadius);
-        }
+    topRightFlangeEdgeArc = createArcBetweenLines (topRightFlangeEdgeLine, topRightFlangeSlopeLine, flangeEdgeRadius);
+    bottomRightFlangeEdgeArc = createArcBetweenLines (bottomRightFlangeSlopeLine, bottomRightFlangeEdgeLine, flangeEdgeRadius);
+    bottomLeftFlangeEdgeArc = createArcBetweenLines (bottomLeftFlangeEdgeLine, bottomLeftFlangeSlopeLine, flangeEdgeRadius);
+    topLeftFlangeEdgeArc = createArcBetweenLines (topLeftFlangeSlopeLine, topLeftFlangeEdgeLine, flangeEdgeRadius);
 
-    if (profile.GetFilletRadius() > 0.0)
-        {
-        topRightInnerCornerArc = createArcBetweenLines (topRightFlangeSlopeLine, innerRightWebLine, filletRadius);
-        bottomRightInnerCornerArc = createArcBetweenLines (innerRightWebLine, bottomRightFlangeSlopeLine, filletRadius);
-        bottomLeftInnerCornerArc = createArcBetweenLines (bottomLeftFlangeSlopeLine, innerLeftWebLine, filletRadius);
-        topLeftInnerCornerArc = createArcBetweenLines (innerLeftWebLine, topLeftFlangeSlopeLine, filletRadius);
-        }
+    topRightInnerCornerArc = createArcBetweenLines (topRightFlangeSlopeLine, innerRightWebLine, filletRadius);
+    bottomRightInnerCornerArc = createArcBetweenLines (innerRightWebLine, bottomRightFlangeSlopeLine, filletRadius);
+    bottomLeftInnerCornerArc = createArcBetweenLines (bottomLeftFlangeSlopeLine, innerLeftWebLine, filletRadius);
+    topLeftInnerCornerArc = createArcBetweenLines (innerLeftWebLine, topLeftFlangeSlopeLine, filletRadius);
 
     bvector<ICurvePrimitivePtr> orderedCurves =
         {
@@ -289,29 +270,17 @@ IGeometryPtr ProfilesGeometry::CreateAsymmetricIShape (AsymmetricIShapeProfile c
     ICurvePrimitivePtr topLeftFlangeEdgeArc = nullptr;
     ICurvePrimitivePtr topLeftFlangeEdgeLine = ICurvePrimitive::CreateLine (topLeftFlangeEdge, topLeft);
 
-    if (topFlangeEdgeRadius > 0.0)
-        {
-        topRightFlangeEdgeArc = createArcBetweenLines (topRightFlangeEdgeLine, topRightFlangeSlopeLine, topFlangeEdgeRadius);
-        topLeftFlangeEdgeArc = createArcBetweenLines (topLeftFlangeSlopeLine, topLeftFlangeEdgeLine, topFlangeEdgeRadius);
-        }
+    topRightFlangeEdgeArc = createArcBetweenLines (topRightFlangeEdgeLine, topRightFlangeSlopeLine, topFlangeEdgeRadius);
+    topLeftFlangeEdgeArc = createArcBetweenLines (topLeftFlangeSlopeLine, topLeftFlangeEdgeLine, topFlangeEdgeRadius);
 
-    if (bottomFlangeEdgeRadius > 0.0)
-        {
-        bottomRightFlangeEdgeArc = createArcBetweenLines (bottomRightFlangeSlopeLine, bottomRightFlangeEdgeLine, bottomFlangeEdgeRadius);
-        bottomLeftFlangeEdgeArc = createArcBetweenLines (bottomLeftFlangeEdgeLine, bottomLeftFlangeSlopeLine, bottomFlangeEdgeRadius);
-        }
+    bottomRightFlangeEdgeArc = createArcBetweenLines (bottomRightFlangeSlopeLine, bottomRightFlangeEdgeLine, bottomFlangeEdgeRadius);
+    bottomLeftFlangeEdgeArc = createArcBetweenLines (bottomLeftFlangeEdgeLine, bottomLeftFlangeSlopeLine, bottomFlangeEdgeRadius);
 
-    if (topFlangeFilletRadius > 0.0)
-        {
-        topRightInnerCornerArc = createArcBetweenLines (topRightFlangeSlopeLine, innerRightWebLine, topFlangeFilletRadius);
-        topLeftInnerCornerArc = createArcBetweenLines (innerLeftWebLine, topLeftFlangeSlopeLine, topFlangeFilletRadius);
-        }
+    topRightInnerCornerArc = createArcBetweenLines (topRightFlangeSlopeLine, innerRightWebLine, topFlangeFilletRadius);
+    topLeftInnerCornerArc = createArcBetweenLines (innerLeftWebLine, topLeftFlangeSlopeLine, topFlangeFilletRadius);
 
-    if (bottomFlangeFilletRadius > 0.0)
-        {
-        bottomRightInnerCornerArc = createArcBetweenLines (innerRightWebLine, bottomRightFlangeSlopeLine, bottomFlangeFilletRadius);
-        bottomLeftInnerCornerArc = createArcBetweenLines (bottomLeftFlangeSlopeLine, innerLeftWebLine, bottomFlangeFilletRadius);
-        }
+    bottomRightInnerCornerArc = createArcBetweenLines (innerRightWebLine, bottomRightFlangeSlopeLine, bottomFlangeFilletRadius);
+    bottomLeftInnerCornerArc = createArcBetweenLines (bottomLeftFlangeSlopeLine, innerLeftWebLine, bottomFlangeFilletRadius);
 
     bvector<ICurvePrimitivePtr> orderedCurves =
         {
@@ -359,14 +328,10 @@ IGeometryPtr ProfilesGeometry::CreateLShape (LShapeProfile const& profile)
     ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
     ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (bottomLeft, topLeft);
 
-    if (edgeRadius > 0.0)
-        {
-        webEdgeArc = createArcBetweenLines (topLine, webSlopeLine, edgeRadius);
-        bottomRigthEdgeArc = createArcBetweenLines (flangeSlopeLine, rightLine, edgeRadius);
-        }
+    webEdgeArc = createArcBetweenLines (topLine, webSlopeLine, edgeRadius);
+    bottomRigthEdgeArc = createArcBetweenLines (flangeSlopeLine, rightLine, edgeRadius);
 
-    if (filletRadius > 0.0)
-        bottomInnerCornerArc = createArcBetweenLines (webSlopeLine, flangeSlopeLine, filletRadius);
+    bottomInnerCornerArc = createArcBetweenLines (webSlopeLine, flangeSlopeLine, filletRadius);
 
     bvector<ICurvePrimitivePtr> orderedCurves =
         {
@@ -425,26 +390,17 @@ IGeometryPtr ProfilesGeometry::CreateTShape (TShapeProfile const& profile)
     ICurvePrimitivePtr topLeftFlangeEdgeArc = nullptr;
     ICurvePrimitivePtr topLeftFlangeEdgeLine = ICurvePrimitive::CreateLine (topLeftFlangeEdge, topLeft);
 
-    if (flangeEdgeRadius > 0.0)
-        {
-        topRightFlangeEdgeArc = createArcBetweenLines (topRightFlangeEdgeLine, topRightFlangeSlopeLine, flangeEdgeRadius);
-        topLeftFlangeEdgeArc = createArcBetweenLines (topLeftFlangeSlopeLine, topLeftFlangeEdgeLine, flangeEdgeRadius);
-        }
+    topRightFlangeEdgeArc = createArcBetweenLines (topRightFlangeEdgeLine, topRightFlangeSlopeLine, flangeEdgeRadius);
+    topLeftFlangeEdgeArc = createArcBetweenLines (topLeftFlangeSlopeLine, topLeftFlangeEdgeLine, flangeEdgeRadius);
 
-    if (webEdgeRadius > 0.0)
-        {
-        bottomRightWebEdgeArc = createArcBetweenLines (innerRightWebLine, bottomLine, webEdgeRadius);
-        bottomLeftWebEdgeArc = createArcBetweenLines (bottomLine, innerLeftWebLine, webEdgeRadius);
+    bottomRightWebEdgeArc = createArcBetweenLines (innerRightWebLine, bottomLine, webEdgeRadius);
+    bottomLeftWebEdgeArc = createArcBetweenLines (bottomLine, innerLeftWebLine, webEdgeRadius);
 
-        if (bottomLine->GetLineCP()->Length() == 0.0)
-            bottomLine = nullptr;
-        }
+    if (BeNumerical::IsEqualToZero (bottomLine->GetLineCP()->Length()))
+        bottomLine = nullptr;
 
-    if (filletRadius > 0.0)
-        {
-        topRightInnerCornerArc = createArcBetweenLines (topRightFlangeSlopeLine, innerRightWebLine, filletRadius);
-        topLeftInnerCornerArc = createArcBetweenLines (innerLeftWebLine, topLeftFlangeSlopeLine, filletRadius);
-        }
+    topRightInnerCornerArc = createArcBetweenLines (topRightFlangeSlopeLine, innerRightWebLine, filletRadius);
+    topLeftInnerCornerArc = createArcBetweenLines (innerLeftWebLine, topLeftFlangeSlopeLine, filletRadius);
 
     bvector<ICurvePrimitivePtr> orderedCurves =
         {
@@ -591,17 +547,11 @@ IGeometryPtr ProfilesGeometry::CreateZShape (ZShapeProfile const& profile)
     ICurvePrimitivePtr topFlangeEdgeArc = nullptr;
     ICurvePrimitivePtr topLeftFlangeEdgeLine = ICurvePrimitive::CreateLine (topFlangeEdge, topLeft);
 
-    if (profile.GetFlangeEdgeRadius() > 0.0)
-        {
-        bottomFlangeEdgeArc = createArcBetweenLines (bottomFlangeSlopeLine, bottomFlangeEdgeLine, flangeEdgeRadius);
-        topFlangeEdgeArc = createArcBetweenLines (topFlangeSlopeLine, topLeftFlangeEdgeLine, flangeEdgeRadius);
-        }
+    bottomFlangeEdgeArc = createArcBetweenLines (bottomFlangeSlopeLine, bottomFlangeEdgeLine, flangeEdgeRadius);
+    topFlangeEdgeArc = createArcBetweenLines (topFlangeSlopeLine, topLeftFlangeEdgeLine, flangeEdgeRadius);
 
-    if (profile.GetFilletRadius() > 0.0)
-        {
-        bottomInnerCornerArc = createArcBetweenLines (rightWebLine, bottomFlangeSlopeLine, filletRadius);
-        topInnerCornerArc = createArcBetweenLines (leftWebLine, topFlangeSlopeLine, filletRadius);
-        }
+    bottomInnerCornerArc = createArcBetweenLines (rightWebLine, bottomFlangeSlopeLine, filletRadius);
+    topInnerCornerArc = createArcBetweenLines (leftWebLine, topFlangeSlopeLine, filletRadius);
 
     bvector<ICurvePrimitivePtr> orderedCurves =
         {
@@ -654,7 +604,6 @@ static IGeometryPtr createCenterLineLShape(double halfWidth, double halfDepth, d
     ICurvePrimitivePtr innerTopArcLine = createArcBetweenLines(innerLeftLine, innerTopLine, innerFilletRadius);
     ICurvePrimitivePtr innerGirthConnectLine = ICurvePrimitive::CreateLine(tl_innerGirth, tl_outerGirth);
 
-
     bvector<ICurvePrimitivePtr> curves =
         {
         outerTopLine, outerTopLeftArcLine, outerLeftLine,
@@ -699,7 +648,6 @@ static IGeometryPtr createCenterLineLShape(double halfWidth, double halfDepth, d
     return createGeometryFromPrimitiveArray(curves);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -711,14 +659,10 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineLShape(CenterLineLShapeProfile co
     double const innerFilletRadius = profile.GetFilletRadius();
     double const girth = profile.GetGirth();
 
-    if (BeNumerical::IsEqualToZero(girth))
-        {
-        return createCenterLineLShape(halfWidth, halfDepth, wallThickness, innerFilletRadius, innerFilletRadius + wallThickness);
-        }
+    if (BeNumerical::IsEqualToZero (girth))
+        return createCenterLineLShape (halfWidth, halfDepth, wallThickness, innerFilletRadius, innerFilletRadius + wallThickness);
     else
-        {
-        return createCenterLineLShape(halfWidth, halfDepth, wallThickness, innerFilletRadius, innerFilletRadius + wallThickness, girth);
-        }
+        return createCenterLineLShape (halfWidth, halfDepth, wallThickness, innerFilletRadius, innerFilletRadius + wallThickness, girth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -822,14 +766,10 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     double const filletRadius = profile.GetFilletRadius();
     double const girth = profile.GetGirth();
 
-    if (BeNumerical::IsEqualToZero(girth))
-        {
+    if (BeNumerical::IsEqualToZero (girth))
         return createCenterLineCShape (halfWidth, halfDepth, wallThickness, filletRadius, filletRadius + wallThickness);
-        }
     else
-        {
         return createCenterLineCShape (halfWidth, halfDepth, wallThickness, filletRadius, filletRadius + wallThickness, girth);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -894,6 +834,149 @@ IGeometryPtr ProfilesGeometry::CreateArbitraryCenterLineShape (IGeometry const& 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDepth, double wallThickness, double filletRadius)
+    {
+    double halfWallThickness = wallThickness / 2.0;
+
+    DPoint3d const tr_Apex = { halfWidth, halfDepth - halfWallThickness, 0.0 };
+    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth - halfWallThickness, 0.0 };
+    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
+    DPoint3d const br_Apex = { halfWidth, -(halfDepth - halfWallThickness), 0.0 };
+
+    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (tr_Apex, tl_Apex);
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (tl_Apex, bl_Apex);
+    ICurvePrimitivePtr topleftArc = createArcBetweenLines(topLine, leftLine, filletRadius);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bl_Apex, br_Apex);
+    ICurvePrimitivePtr bottomleftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
+
+    bvector<ICurvePrimitivePtr> curves =
+        {
+        topLine, topleftArc, leftLine, bottomleftArc, bottomLine,
+        };
+
+    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDepth, double wallThickness, double filletRadius, double girth)
+    {
+    double halfWallThickness = wallThickness / 2.0;
+
+    DPoint3d const tr_Apex = { halfWidth - halfWallThickness, halfDepth - halfWallThickness, 0.0 };
+    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth - halfWallThickness, 0.0 };
+    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
+    DPoint3d const br_Apex = { halfWidth - halfWallThickness, -(halfDepth - halfWallThickness), 0.0 };
+
+    DPoint3d const tr_Girth = { halfWidth - halfWallThickness, halfDepth - girth, 0.0 };
+    DPoint3d const br_Girth = { halfWidth - halfWallThickness, -(halfDepth - girth), 0.0 };
+
+    ICurvePrimitivePtr topGirthLine = ICurvePrimitive::CreateLine (tr_Girth, tr_Apex);
+    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (tr_Apex, tl_Apex);
+    ICurvePrimitivePtr topGirthArc = createArcBetweenLines(topGirthLine, topLine, filletRadius);
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (tl_Apex, bl_Apex);
+    ICurvePrimitivePtr topleftArc = createArcBetweenLines(topLine, leftLine, filletRadius);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bl_Apex, br_Apex);
+    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
+    ICurvePrimitivePtr bottomGirthLine = ICurvePrimitive::CreateLine (br_Apex, br_Girth);
+    ICurvePrimitivePtr bottomGirthArc = createArcBetweenLines(bottomLine, bottomGirthLine, filletRadius);
+
+    bvector<ICurvePrimitivePtr> curves =
+        {
+        topGirthLine, topGirthArc, topLine,
+        topleftArc, leftLine, bottomLeftArc, bottomLine,
+        bottomGirthArc, bottomGirthLine,
+        };
+
+    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateCenterLineForCShape (CenterLineCShapeProfile const& profile)
+    {
+    double const halfWidth = profile.GetFlangeWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const wallThickness = profile.GetWallThickness();
+    double const filletRadius = profile.GetFilletRadius();
+    double const girth = profile.GetGirth();
+
+    if (BeNumerical::IsEqualToZero (girth))
+        return createCenterLineForCShape (halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0);
+    else
+        return createCenterLineForCShape (halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0, girth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createCenterLineForLShape (double halfWidth, double halfDepth, double wallThickness, double filletRadius)
+    {
+    double halfWallThickness = wallThickness / 2.0;
+
+    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth, 0.0 };
+    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
+    DPoint3d const br_Apex = { halfWidth, -(halfDepth - halfWallThickness), 0.0 };
+
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine(tl_Apex, bl_Apex);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine(bl_Apex, br_Apex);
+    ICurvePrimitivePtr bottomleftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
+
+    bvector<ICurvePrimitivePtr> curves = { leftLine, bottomleftArc, bottomLine };
+    return createGeometryFromPrimitiveArray (curves, CurveVector::BOUNDARY_TYPE_Open);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createCenterLineForLShape(double halfWidth, double halfDepth, double wallThickness, double filletRadius, double girth)
+    {
+    double halfWallThickness = wallThickness / 2.0;
+
+    DPoint3d const tr_Girth = { -(halfWidth - girth), halfDepth - halfWallThickness, 0.0 };
+    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth - halfWallThickness, 0.0 };
+    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
+    DPoint3d const br_Apex = { halfWidth - halfWallThickness, -(halfDepth - halfWallThickness), 0.0 };
+    DPoint3d const br_Girth = { (halfWidth - halfWallThickness), -(halfDepth - girth), 0.0 };
+
+    ICurvePrimitivePtr topGirthLine = ICurvePrimitive::CreateLine (tr_Girth, tl_Apex);
+    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (tl_Apex, bl_Apex);
+    ICurvePrimitivePtr topLeftArc = createArcBetweenLines (topGirthLine, leftLine, filletRadius);
+    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bl_Apex, br_Apex);
+    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines (leftLine, bottomLine, filletRadius);
+    ICurvePrimitivePtr rightGirthLine = ICurvePrimitive::CreateLine (br_Apex, br_Girth);
+    ICurvePrimitivePtr bottomRightArc = createArcBetweenLines (bottomLine, rightGirthLine, filletRadius);
+
+    bvector<ICurvePrimitivePtr> curves =
+        {
+        topGirthLine, topLeftArc, leftLine, bottomLeftArc, bottomLine, bottomRightArc, rightGirthLine,
+        };
+
+    return createGeometryFromPrimitiveArray (curves, CurveVector::BOUNDARY_TYPE_Open);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateCenterLineForLShape(CenterLineLShapeProfile const& profile)
+    {
+    double const halfWidth = profile.GetWidth() / 2.0;
+    double const halfDepth = profile.GetDepth() / 2.0;
+    double const wallThickness = profile.GetWallThickness();
+    double const filletRadius = profile.GetFilletRadius();
+    double const girth = profile.GetGirth();
+
+    if (BeNumerical::IsEqualToZero (girth))
+        return createCenterLineForLShape (halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0);
+    else
+        return createCenterLineForLShape (halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0, girth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateCircle (CircleProfile const& profile)
@@ -949,7 +1032,7 @@ IGeometryPtr ProfilesGeometry::CreateEllipse (EllipseProfile const& profile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void appendRectangleToCurveVector (CurveVectorPtr& curveVector, double width, double depth, double roundingRadius)
     {
-    BeAssert (curveVector->size() == 0);
+    BeAssert (curveVector->empty());
 
     double const halfWidth = width / 2.0;
     double const halfDepth = depth / 2.0;
@@ -964,23 +1047,19 @@ static void appendRectangleToCurveVector (CurveVectorPtr& curveVector, double wi
     ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bottomRight, bottomLeft);
     ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (bottomLeft, topLeft);
 
-    ICurvePrimitivePtr topRightArc, bottomRightArc, bottomLeftArc, topLeftArc;
-    if (roundingRadius > DBL_EPSILON)
-        {
-        topRightArc = createArcBetweenLines (topLine, rightLine, roundingRadius);
-        bottomRightArc = createArcBetweenLines (rightLine, bottomLine, roundingRadius);
-        bottomLeftArc = createArcBetweenLines (bottomLine, leftLine, roundingRadius);
-        topLeftArc = createArcBetweenLines (leftLine, topLine, roundingRadius);
+    ICurvePrimitivePtr topRightArc = createArcBetweenLines (topLine, rightLine, roundingRadius);
+    ICurvePrimitivePtr bottomRightArc = createArcBetweenLines (rightLine, bottomLine, roundingRadius);
+    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines (bottomLine, leftLine, roundingRadius);
+    ICurvePrimitivePtr topLeftArc = createArcBetweenLines (leftLine, topLine, roundingRadius);
 
-        if (BeNumerical::IsLessOrEqualToZero (topLine->GetLineCP()->Length()))
-            topLine = nullptr;
-        if (BeNumerical::IsLessOrEqualToZero (rightLine->GetLineCP()->Length()))
-            rightLine = nullptr;
-        if (BeNumerical::IsLessOrEqualToZero (bottomLine->GetLineCP()->Length()))
-            bottomLine = nullptr;
-        if (BeNumerical::IsLessOrEqualToZero (leftLine->GetLineCP()->Length()))
-            leftLine = nullptr;
-        }
+    if (BeNumerical::IsLessOrEqualToZero (topLine->GetLineCP()->Length()))
+        topLine = nullptr;
+    if (BeNumerical::IsLessOrEqualToZero (rightLine->GetLineCP()->Length()))
+        rightLine = nullptr;
+    if (BeNumerical::IsLessOrEqualToZero (bottomLine->GetLineCP()->Length()))
+        bottomLine = nullptr;
+    if (BeNumerical::IsLessOrEqualToZero (leftLine->GetLineCP()->Length()))
+        leftLine = nullptr;
 
     ICurvePrimitivePtr orderedCurves[] = { topLine, topRightArc, rightLine, bottomRightArc, bottomLine, bottomLeftArc, leftLine, topLeftArc };
     for (auto const& curvePtr : orderedCurves)
@@ -1273,157 +1352,6 @@ IGeometryPtr ProfilesGeometry::CreateDerivedShape (DerivedProfile const& profile
     BeAssert (transform.InitFrom (transformMatrix));
 
     return baseProfile.GetShape()->Clone (transform);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDepth, double wallThickness, double filletRadius)
-    {
-    double halfWallThickness = wallThickness / 2.0;
-
-    DPoint3d const tr_Apex = { halfWidth, halfDepth - halfWallThickness, 0.0 };
-    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth - halfWallThickness, 0.0 };
-    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
-    DPoint3d const br_Apex = { halfWidth, -(halfDepth - halfWallThickness), 0.0 };
-
-    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (tr_Apex, tl_Apex);
-    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (tl_Apex, bl_Apex);
-    ICurvePrimitivePtr topleftArc = createArcBetweenLines(topLine, leftLine, filletRadius);
-    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bl_Apex, br_Apex);
-    ICurvePrimitivePtr bottomleftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
-
-    bvector<ICurvePrimitivePtr> curves =
-        {
-        topLine, topleftArc, leftLine, bottomleftArc, bottomLine,
-        };
-
-    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IGeometryPtr createCenterLineForCShape (double halfWidth, double halfDepth, double wallThickness, double filletRadius, double girth)
-    {
-    double halfWallThickness = wallThickness / 2.0;
-
-    DPoint3d const tr_Apex = { halfWidth - halfWallThickness, halfDepth - halfWallThickness, 0.0 };
-    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth - halfWallThickness, 0.0 };
-    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
-    DPoint3d const br_Apex = { halfWidth - halfWallThickness, -(halfDepth - halfWallThickness), 0.0 };
-
-    DPoint3d const tr_Girth = { halfWidth - halfWallThickness, halfDepth - girth, 0.0 };
-    DPoint3d const br_Girth = { halfWidth - halfWallThickness, -(halfDepth - girth), 0.0 };
-
-    ICurvePrimitivePtr topGirthLine = ICurvePrimitive::CreateLine (tr_Girth, tr_Apex);
-    ICurvePrimitivePtr topLine = ICurvePrimitive::CreateLine (tr_Apex, tl_Apex);
-    ICurvePrimitivePtr topGirthArc = createArcBetweenLines(topGirthLine, topLine, filletRadius);
-    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (tl_Apex, bl_Apex);
-    ICurvePrimitivePtr topleftArc = createArcBetweenLines(topLine, leftLine, filletRadius);
-    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bl_Apex, br_Apex);
-    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
-    ICurvePrimitivePtr bottomGirthLine = ICurvePrimitive::CreateLine (br_Apex, br_Girth);
-    ICurvePrimitivePtr bottomGirthArc = createArcBetweenLines(bottomLine, bottomGirthLine, filletRadius);
-
-    bvector<ICurvePrimitivePtr> curves =
-        {
-        topGirthLine, topGirthArc, topLine,
-        topleftArc, leftLine, bottomLeftArc, bottomLine,
-        bottomGirthArc, bottomGirthLine,
-        };
-
-    return createGeometryFromPrimitiveArray(curves, CurveVector::BOUNDARY_TYPE_Open);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateCenterLineForCShape (CenterLineCShapeProfile const& profile)
-    {
-    double const halfWidth = profile.GetFlangeWidth() / 2.0;
-    double const halfDepth = profile.GetDepth() / 2.0;
-    double const wallThickness = profile.GetWallThickness();
-    double const filletRadius = profile.GetFilletRadius();
-    double const girth = profile.GetGirth();
-
-    if (BeNumerical::IsEqualToZero(girth))
-        return createCenterLineForCShape (halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0);
-    else
-        return createCenterLineForCShape (halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0, girth);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IGeometryPtr createCenterLineForLShape (double halfWidth, double halfDepth, double wallThickness, double filletRadius)
-    {
-    double halfWallThickness = wallThickness / 2.0;
-
-    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth, 0.0 };
-    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
-    DPoint3d const br_Apex = { halfWidth, -(halfDepth - halfWallThickness), 0.0 };
-
-    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine(tl_Apex, bl_Apex);
-    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine(bl_Apex, br_Apex);
-    ICurvePrimitivePtr bottomleftArc = createArcBetweenLines(leftLine, bottomLine, filletRadius);
-
-    bvector<ICurvePrimitivePtr> curves =
-        {
-        leftLine, bottomleftArc, bottomLine,
-        };
-
-    return createGeometryFromPrimitiveArray (curves, CurveVector::BOUNDARY_TYPE_Open);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IGeometryPtr createCenterLineForLShape(double halfWidth, double halfDepth, double wallThickness, double filletRadius, double girth)
-    {
-    double halfWallThickness = wallThickness / 2.0;
-
-    DPoint3d const tr_Girth = { -(halfWidth - girth), halfDepth - halfWallThickness, 0.0 };
-    DPoint3d const tl_Apex = { -(halfWidth - halfWallThickness), halfDepth - halfWallThickness, 0.0 };
-    DPoint3d const bl_Apex = { -(halfWidth - halfWallThickness), -(halfDepth - halfWallThickness), 0.0 };
-    DPoint3d const br_Apex = { halfWidth - halfWallThickness, -(halfDepth - halfWallThickness), 0.0 };
-    DPoint3d const br_Girth = { (halfWidth - halfWallThickness), -(halfDepth - girth), 0.0 };
-
-    ICurvePrimitivePtr topGirthLine = ICurvePrimitive::CreateLine (tr_Girth, tl_Apex);
-    ICurvePrimitivePtr leftLine = ICurvePrimitive::CreateLine (tl_Apex, bl_Apex);
-    ICurvePrimitivePtr topLeftArc = createArcBetweenLines (topGirthLine, leftLine, filletRadius);
-    ICurvePrimitivePtr bottomLine = ICurvePrimitive::CreateLine (bl_Apex, br_Apex);
-    ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines (leftLine, bottomLine, filletRadius);
-    ICurvePrimitivePtr rightGirthLine = ICurvePrimitive::CreateLine (br_Apex, br_Girth);
-    ICurvePrimitivePtr bottomRightArc = createArcBetweenLines (bottomLine, rightGirthLine, filletRadius);
-
-    bvector<ICurvePrimitivePtr> curves =
-        {
-        topGirthLine, topLeftArc, leftLine, bottomLeftArc, bottomLine, bottomRightArc, rightGirthLine,
-        };
-
-    return createGeometryFromPrimitiveArray (curves, CurveVector::BOUNDARY_TYPE_Open);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateCenterLineForLShape(CenterLineLShapeProfile const& profile)
-    {
-    double const halfWidth = profile.GetWidth() / 2.0;
-    double const halfDepth = profile.GetDepth() / 2.0;
-    double const wallThickness = profile.GetWallThickness();
-    double const filletRadius = profile.GetFilletRadius();
-    double const girth = profile.GetGirth();
-
-    if (BeNumerical::IsEqualToZero(girth))
-        {
-        return createCenterLineForLShape(halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0);
-        }
-    else
-        {
-        return createCenterLineForLShape(halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0, girth);
-        }
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
