@@ -56,7 +56,7 @@
     </Part>
     <!-- ******************************** Unit Tests ************************************** -->
     
-    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="GeoCoord" />
         <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
         <Bindings>

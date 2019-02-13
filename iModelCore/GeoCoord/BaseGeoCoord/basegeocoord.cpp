@@ -10467,17 +10467,21 @@ bool shallowCompare
     // NAD83 is considered coincident to WGS84 and so is NSRS11 (NAD83/2011) but there exists a complex geodetic transformation
     // path between NAD83 to NSRS11 that must be applied anyway for these source and target.
     if (datumsEquivalent)
-        {    
+    {
         CSDatumConvert* theDatumConverterDirect = CSMap::CSdtcsu(&datum1, &datum2);
         // If datum converter can be created we cannot judge the equivalence.
         // We will consider the datums equal since in all likelyhood they effectively are.
         if (NULL == theDatumConverterDirect)
             return true;
 
-        // The datum transformation must contain a null transformation only
-        if (theDatumConverterDirect->xfrmCount != 1 || (false == theDatumConverterDirect->xforms[0]->isNullXfrm))
-            datumsEquivalent = false;
+        // The datum transformation must contain a null transformation only (or no transformation)
+        if (theDatumConverterDirect->xfrmCount != 0)
+        {
+            if (theDatumConverterDirect->xfrmCount != 1 || (false == theDatumConverterDirect->xforms[0]->isNullXfrm))
+                datumsEquivalent = false;
         }
+        CSMap::CS_dtcls(theDatumConverterDirect);
+    }
 
     return datumsEquivalent;
     }
