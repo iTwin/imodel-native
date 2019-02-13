@@ -14,8 +14,8 @@
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
-#define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
-#define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
+#define COMPARE_VALUES_TOLERANCE(val0, val1, tol) { if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false; }
+#define COMPARE_VALUES(val0, val1) { if (val0 < val1) return true; if (val0 > val1) return false; }
 
 // #define DEBUG_DISPLAY_PARAMS_CACHE
 
@@ -455,6 +455,16 @@ double GlyphCache::s_tolerances[GlyphCache::kTolerance_COUNT] =
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SurfaceMaterial::SurfaceMaterial(MaterialR material, TextureMapping::Trans2x3 const* transform) : m_material(&material)
+    {
+    m_textureMapping = material.GetTextureMapping();
+    if (m_textureMapping.IsValid() && nullptr != transform)
+        m_textureMapping.SetTransform(*transform);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayParams::InitGeomParams(DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
@@ -543,7 +553,7 @@ DisplayParams DisplayParams::ForLinear(GraphicParamsCR gf, GeometryParamsCP geom
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels pixels, MaterialP mat, GradientSymbCP grad, TextureMappingCP tex,
+void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels pixels, SurfaceMaterialCR mat,
     FillFlags fillFlags, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
     {
     InitGeomParams(catId, subCatId, geomClass);
@@ -551,16 +561,11 @@ void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t wi
     m_lineColor = AdjustTransparency(lineColor);
     m_fillColor = AdjustTransparency(fillColor);
     m_fillFlags = fillFlags;
-    m_material = mat;
-    m_gradient = grad;
+    m_surfaceMaterial = mat;
     m_width = width;
     m_linePixels = pixels;
     
-    if (nullptr == mat && nullptr != tex)
-        m_textureMapping = *tex;
-
-    BeAssert(m_gradient.IsNull() || m_textureMapping.IsValid());
-    BeAssert(m_gradient.IsNull() || m_gradient->GetRefCount() > 1); // assume caller allocated on heap...
+    BeAssert(nullptr == m_surfaceMaterial.GetGradient() || m_surfaceMaterial.GetTextureMapping().IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -600,16 +605,14 @@ DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, 
             }
         }
 
+    SurfaceMaterial surfMat;
     auto grad = gf.GetGradientSymb();
-    TextureMapping tex;
-    TextureMappingP pTex = nullptr;
     if (nullptr != grad)
-        {
-        tex = TextureMapping(*sys._GetTexture(*grad, db));
-        pTex = &tex;
-        }
+        surfMat = SurfaceMaterial(TextureMapping(*sys._GetTexture(*grad, db)), grad);
+    else if (nullptr != gf.GetMaterial())
+        surfMat = SurfaceMaterial(*gf.GetMaterial(), gf.GetMaterialUVDetail().GetTransform());
 
-    return DisplayParams(gf.GetLineColor(), gf.GetFillColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), gf.GetMaterial(), grad, pTex, fillFlags, catId, subCatId, geomClass);
+    return DisplayParams(gf.GetLineColor(), gf.GetFillColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), surfMat, fillFlags, catId, subCatId, geomClass);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -646,10 +649,11 @@ DisplayParams::RegionEdgeType DisplayParams::GetRegionEdgeType() const
     if (HasBlankingFill())
         return RegionEdgeType::None;
 
-    if (m_gradient.IsValid())
+    auto grad = GetSurfaceMaterial().GetGradient();
+    if (nullptr != grad)
         {
         // Even if the gradient is not outlined, produce an outline to be displayed as the region's edges when fill ViewFlag is off.
-        if (m_gradient->GetIsOutlined() || FillFlags::None == (GetFillFlags() & FillFlags::Always))
+        if (grad->GetIsOutlined() || FillFlags::None == (GetFillFlags() & FillFlags::Always))
             return RegionEdgeType::Outline;
         else
             return RegionEdgeType::None;
@@ -687,8 +691,7 @@ DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureCR texture) const
 DisplayParamsCPtr DisplayParams::CloneWithTextureOverride(TextureMappingCR textureMapping) const
     {
     auto clone = new DisplayParams(*this);
-    clone->m_textureMapping = textureMapping;
-    clone->m_material = nullptr;
+    clone->m_surfaceMaterial = SurfaceMaterial(textureMapping);
 
     return clone;
     }
@@ -786,8 +789,9 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetLineWidth());
     TEST_LESS_THAN(GetLinePixels());
     TEST_LESS_THAN(GetFillFlags());
-    TEST_LESS_THAN(GetMaterial());
-    TEST_LESS_THAN(GetTextureMapping().GetTexture());
+
+    if (GetSurfaceMaterial().IsLessThan(rhs.GetSurfaceMaterial(), purpose))
+        return true;
 
     // Region outline produces a polyline which is considered an edge of a region surface
     TEST_LESS_THAN(WantRegionOutline());
@@ -797,7 +801,7 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         TEST_LESS_THAN(HasFillTransparency());
         TEST_LESS_THAN(HasLineTransparency());
 
-        if (GetTextureMapping().IsValid())
+        if (GetSurfaceMaterial().GetTextureMapping().IsValid())
             TEST_LESS_THAN(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses color).
 
 #if defined(DEBUG_DISPLAY_PARAMS_CACHE)
@@ -816,6 +820,34 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SurfaceMaterial::IsLessThan(SurfaceMaterialCR rhs, ComparePurpose purpose) const
+    {
+    TEST_LESS_THAN(IsValid());
+    if (!IsValid())
+        return false;
+
+    TEST_LESS_THAN(GetMaterial());
+    TEST_LESS_THAN(GetTextureMapping().GetTexture());
+    if (ComparePurpose::Merge == purpose)
+        return true;
+
+    auto tol = DoubleOps::SmallCoordinateRelTol();
+    auto const& lmat = GetTextureMapping().GetParams().m_textureMat2x3;
+    auto const& rmat = rhs.GetTextureMapping().GetParams().m_textureMat2x3;
+    for (auto i = 0; i < 2; i++)
+        {
+        for (auto j = 0; j < 3; j++)
+            {
+            COMPARE_VALUES_TOLERANCE(lmat.m_val[i][j], rmat.m_val[i][j], tol);
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
@@ -826,10 +858,11 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetType());
     TEST_EQUAL(IgnoresLighting());
     TEST_EQUAL(GetLineWidth());
-    TEST_EQUAL(GetMaterial());
     TEST_EQUAL(GetLinePixels());
     TEST_EQUAL(GetFillFlags());
-    TEST_EQUAL(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
+
+    if (!GetSurfaceMaterial().IsEqualTo(rhs.GetSurfaceMaterial(), purpose))
+        return false;
 
     // Region outline produces a polyline which is considered an edge of a region surface
     TEST_EQUAL(WantRegionOutline());
@@ -838,7 +871,7 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
         {
         TEST_EQUAL(HasFillTransparency());
         TEST_EQUAL(HasLineTransparency());
-        if (GetTextureMapping().IsValid())
+        if (GetSurfaceMaterial().GetTextureMapping().IsValid())
             TEST_EQUAL(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses color).
 
         return true;
@@ -851,6 +884,21 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetClass());
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SurfaceMaterial::IsEqualTo(SurfaceMaterialCR rhs, ComparePurpose purpose) const
+    {
+    TEST_EQUAL(IsValid());
+    if (!IsValid())
+        return true;
+
+    TEST_EQUAL(GetMaterial());
+    TEST_EQUAL(GetTextureMapping().GetTexture());
+
+    return ComparePurpose::Merge == purpose || GetTextureMapping().GetParams().m_textureMat2x3.AlmostEqual(rhs.GetTextureMapping().GetParams().m_textureMat2x3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2133,7 +2181,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP());
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetSurfaceMaterial().GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), nullptr);
 
             meshBuilder.EndPolyface();
             }
@@ -2644,8 +2692,8 @@ bool MeshArgs::Init(MeshCR mesh)
     if (!mesh.GetDisplayParams().IgnoresLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
         Set(m_normals, mesh.Normals());
 
-    m_texture = const_cast<TextureP>(mesh.GetDisplayParams().GetTextureMapping().GetTexture()); // ###TODO: constness...
-    m_material = mesh.GetDisplayParams().GetMaterial();
+    m_texture = const_cast<TextureP>(mesh.GetDisplayParams().GetSurfaceMaterial().GetTextureMapping().GetTexture()); // ###TODO: constness...
+    m_material = mesh.GetDisplayParams().GetSurfaceMaterial().GetMaterial();
     m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
     m_isPlanar = mesh.IsPlanar();
     m_is2d = mesh.Is2d();
@@ -2739,7 +2787,7 @@ bool PolylineArgs::Init(MeshCR mesh)
     if (displayParams.WantRegionOutline())
         {
         // This polyline is behaving as the edges of a region surface.
-        if (nullptr == displayParams.GetGradient() || displayParams.GetGradient()->GetIsOutlined())
+        if (nullptr == displayParams.GetSurfaceMaterial().GetGradient() || displayParams.GetSurfaceMaterial().GetGradient()->GetIsOutlined())
             m_flags.SetIsNormalEdge();
         else
             m_flags.SetIsOutlineEdge(); // edges only displayed if fill undisplayed...
@@ -3445,25 +3493,24 @@ DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCa
         {
         case Type::Mesh:
             {
-            MaterialPtr mat;
-            TextureMapping tex;
-            TextureMappingCP pTex = nullptr;
+            SurfaceMaterial surfMat;
             if (materialId.IsValid())
                 {
                 // NB: For now, we will never have a persistent material with a non-persistent texture (so ignore texMap arg)
-                mat = renderSys._GetMaterial(materialId, dgnDb);
+                MaterialPtr mat = renderSys._GetMaterial(materialId, dgnDb);
+                if (mat.IsValid())
+                    surfMat = SurfaceMaterial(*mat);
                 }
             else if (nullptr != gradient)
                 {
-                tex = TextureMapping(*renderSys._GetTexture(*gradient, dgnDb));
-                pTex = &tex;
+                surfMat = SurfaceMaterial(TextureMapping(*renderSys._GetTexture(*gradient, dgnDb)), gradient);
                 }
             else if (texMap.IsValid())
                 {
-                pTex = &texMap;
+                surfMat = SurfaceMaterial(texMap);
                 }
 
-            return new DisplayParams(lineColor, fillColor, width, linePixels, mat.get(), gradient, pTex, fillFlags, catId, subCatId, geomClass);
+            return new DisplayParams(lineColor, fillColor, width, linePixels, surfMat, fillFlags, catId, subCatId, geomClass);
             }
         case Type::Linear:
             {
@@ -3472,7 +3519,7 @@ DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCa
         case Type::Text:
             {
             auto params = new DisplayParams(lineColor, catId, subCatId, geomClass);
-            params->m_textureMapping = texMap;
+            params->m_surfaceMaterial = SurfaceMaterial(texMap);
             return params;
             }
         default:

@@ -536,12 +536,49 @@ struct TextureMapping
         FrontProject      = 8, //<! Only valid for lights.
     };
 
+    //=======================================================================================
+    //! A 2x3 2d transform applied to UV parameters.
+    //! See RenderingAsset::Trans2x3Builder.
+    // @bsistruct                                                   Paul.Connelly   01/19
+    //=======================================================================================
     struct Trans2x3
     {
         double m_val[2][3];
         Trans2x3() {}
-        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
+        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12)
+            {
+            m_val[0][0] = t00;
+            m_val[0][1] = t01;
+            m_val[0][2] = t02;
+            m_val[1][0] = t10;
+            m_val[1][1] = t11;
+            m_val[1][2] = t12;
+            }
+
+        static Trans2x3 FromIdentity() { return Trans2x3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0); }
+        void InitIdentity() { *this = FromIdentity(); }
+        bool IsIdentity() const
+            {
+            return 1.0 == m_val[0][0] && 0.0 == m_val[0][1] && 0.0 == m_val[0][2]
+                && 0.0 == m_val[1][0] && 1.0 == m_val[1][1] && 0.0 == m_val[1][2];
+            }
+
+        bool AlmostEqual(Trans2x3 const& rhs) const;
+
         Transform GetTransform() const;
+
+        Json::Value ToJson() const;
+        static Trans2x3 FromJson(JsonValueCR);
+    };
+
+    //=======================================================================================
+    //! Parameters controlling the material projection.
+    // @bsistruct                                                   Paul.Connelly   01/19
+    //=======================================================================================
+    struct ProjectionInfo
+    {
+        // ###TODO: These are just placeholders for now...
+        DVec3d m_offset, m_scale, m_rotation;
     };
 
     struct Params
@@ -551,12 +588,12 @@ struct TextureMapping
         Mode m_mapMode;
         bool m_worldMapping;
 
-        explicit Params(Mode mode=Mode::Parametric, Trans2x3 const& trans=Trans2x3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0), double weight=1.0, bool worldMapping=false)
+        explicit Params(Mode mode=Mode::Parametric, Trans2x3 const& trans=Trans2x3::FromIdentity(), double weight=1.0, bool worldMapping=false)
             : m_textureMat2x3(trans), m_textureWeight(weight), m_mapMode(mode), m_worldMapping(worldMapping) { }
 
         void SetMode(Mode val) {m_mapMode=val;}
         void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
-        void SetTransform(Trans2x3* val) {m_textureMat2x3 = nullptr != val ? *val : Trans2x3();} //<! Set Texture 2x3 transform
+        void SetTransform(Trans2x3 const* val) {m_textureMat2x3 = nullptr != val ? *val : Trans2x3();} //<! Set Texture 2x3 transform
         void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
 
         BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
@@ -573,6 +610,57 @@ public:
     bool IsValid() const { return m_texture.IsValid(); }
     TextureCP GetTexture() const { return m_texture.get(); }
     Params const& GetParams() const { return m_params; }
+    void SetTransform(Trans2x3 const& transform) { m_params.m_textureMat2x3 = transform; }
+};
+
+//=======================================================================================
+//! Additional parameters controlling how a material's UV params are computed.
+//! For materials using one of the projection TextureMapping modes, a ProjectionInfo is
+//! required.
+//! For non-projection mapping modes, an optional transform can be supplied.
+//! when computing UV params, a base 2d transform is computed from the material properties.
+//! If the MaterialUVDetail defines its own transform, it overrides the material's
+//! computed transform.
+//! See RenderingAsset::Trans2x3Builder for a convenient way to construct or modify such
+//! a transform.
+// @bsistruct                                                   Paul.Connelly   01/19
+//=======================================================================================
+struct MaterialUVDetail
+{
+private:
+    enum class Type { None, Transform, Projection };
+    Type    m_type;
+    union
+        {
+        TextureMapping::Trans2x3        m_transform;
+        TextureMapping::ProjectionInfo  m_projection;
+        };
+public:
+    MaterialUVDetail() : m_type(Type::None) { }
+
+    bool HasTransform() const { return Type::Transform == m_type; }
+    bool HasProjection() const { return Type::Projection == m_type; }
+    bool HasDetail() const { return Type::None != m_type; }
+
+    TextureMapping::Trans2x3 const* GetTransform() const { return HasTransform() ? &m_transform : nullptr; }
+    TextureMapping::ProjectionInfo const* GetProjection() const { return HasProjection() ? &m_projection : nullptr; }
+
+    void Clear() { m_type = Type::None; }
+    void SetTransform(TextureMapping::Trans2x3 const& transform)
+        {
+        if (!transform.IsIdentity())
+            {
+            m_type = Type::Transform;
+            m_transform = transform;
+            }
+        else
+            {
+            Clear();
+            }
+        }
+    void SetProjection(TextureMapping::ProjectionInfo const& projection) { m_type = Type::Projection; m_projection = projection; }
+
+    bool IsEquivalent(MaterialUVDetailCR rhs) const;
 };
 
 //=======================================================================================
@@ -1050,6 +1138,7 @@ private:
     DgnCategoryId m_categoryId; //!< the Category Id on which the geometry is drawn.
     DgnSubCategoryId m_subCategoryId; //!< the SubCategory Id that controls the appearance of subsequent geometry.
     RenderMaterialId m_materialId; //!< render material Id.
+    MaterialUVDetail m_materialUVDetail;
     int32_t m_elmPriority = 0; //!< display priority (applies to 2d only)
     int32_t m_netPriority = 0; //!< net display priority for element/category (applies to 2d only)
     uint32_t m_weight = 0;
@@ -1090,6 +1179,7 @@ public:
     void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency; m_resolved = false;}
     void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority; m_resolved = false;} // Set display priority (2d only).
     void SetMaterialId(RenderMaterialId materialId) {m_appearanceOverrides.m_material = true; m_materialId = materialId;}
+    void SetMaterialUVDetail(MaterialUVDetailCR detail) {m_materialUVDetail = detail;}
     void SetPatternParams(PatternParamsP patternParams) {m_pattern = patternParams;}
 
     //! @cond DONTINCLUDEINDOC
@@ -1160,6 +1250,7 @@ public:
 
     //! Get render material.
     RenderMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId;}
+    MaterialUVDetailCR GetMaterialUVDetail() const {return m_materialUVDetail;}
 
     //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
@@ -1211,6 +1302,7 @@ private:
     TexturePtr m_lineTexture;
     MaterialPtr m_material;
     GradientSymbPtr m_gradient;
+    MaterialUVDetail m_materialUVDetail;
 
 public:
 
@@ -1261,6 +1353,7 @@ public:
 
     //! Get the render material.
     MaterialP GetMaterial() const {return m_material.get();}
+    MaterialUVDetailCR GetMaterialUVDetail() const {return m_materialUVDetail;}
 
     //@}
 
@@ -1306,7 +1399,7 @@ public:
 
     //! Set the render material.
     void SetMaterial(MaterialP material) {m_material = material;}
-
+    void SetMaterialUVDetail(MaterialUVDetailCR detail) {m_materialUVDetail = detail;}
     //@}
 
     static GraphicParams FromSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, LinePixels linePixels=LinePixels::Solid)
@@ -1457,7 +1550,6 @@ protected:
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
     virtual bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) {return true;}
     virtual bool _WantStrokePattern(PatternParamsCR pattern) {return true;}
-    DGNPLATFORM_EXPORT virtual bool _WantPreBakedBody(IBRepEntityCR body); // By default, returns true if parasolid is not supported, or if the body contains no curved faces or edges.
 
     virtual void _AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) { _AddBSplineCurve(curve, filled); }
     virtual void _AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) { _AddBSplineCurve2d(curve, filled, zDepth); }
@@ -1484,7 +1576,6 @@ public:
     bool IsViewCoordinates() const {return m_createParams.IsViewCoordinates();}
     bool WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) { return _WantStrokeLineStyle(symb, facetOptions); }
     bool WantStrokePattern(PatternParamsCR pattern) { return _WantStrokePattern(pattern); }
-    bool WantPreBakedBody(IBRepEntityCR body) { return _WantPreBakedBody(body); }
 
     bool IsOpen() const {return _IsOpen();}
 

@@ -360,6 +360,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(MaterialUVDetail)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(TextureMapping)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(SceneLights)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(System)
@@ -419,6 +420,7 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id tha
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup GROUP_DgnCategory
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that refers to a ViewDefinition.
 BEBRIEFCASEBASED_ID_SUBCLASS(RenderMaterialId, DgnElementId) //!< An element Id that refers to a RenderMaterial.
+BEBRIEFCASEBASED_ID_SUBCLASS(RepositoryLinkId, DgnElementId) //!< An element Id that refers to a RepositoryLink.
 
 BESERVER_ISSUED_ID_CLASS(CodeSpecId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)

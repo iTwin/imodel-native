@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SnapContext.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1851,13 +1851,13 @@ bool ProcessEntry(GeometryCollection::Iterator const& iter, bool preFiltered, Dg
 
     OnHitChanged();
 
-    if (!preFiltered || iter.IsBRepPolyface())
+    if (!preFiltered)
         {
         // If we found an edge within locate tolerance, it's good enough and we can stop slogging through the geometry stream...
         if (m_hitDistanceView < m_snapAperture)
             return true;
 
-        return false; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
+        return false; // Keep going...
         }
 
     return true;

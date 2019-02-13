@@ -3,7 +3,7 @@
 
 |     $Source: DgnCore/CacheTileWriter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -145,7 +145,7 @@ BentleyStatus  CreateDisplayParamJson(Json::Value& matJson, MeshCR mesh,  Displa
         matJson["subCategoryId"] = displayParams.GetSubCategoryId().ToHexStr();
 
     // ###TODO: Support non-persistent materials if/when necessary...
-    auto material = displayParams.GetMaterial();
+    auto material = displayParams.GetSurfaceMaterial().GetMaterial();
     if (nullptr != material && material->GetKey().IsPersistent())
         {
         matJson["materialId"] = material->GetKey().GetId().ToHexStr();
@@ -164,13 +164,13 @@ BentleyStatus  CreateDisplayParamJson(Json::Value& matJson, MeshCR mesh,  Displa
     matJson["lineWidth"]  = displayParams.GetLineWidth();
     matJson["linePixels"] = (uint32_t) displayParams.GetLinePixels();     // Edges?
 
-    if (nullptr != displayParams.GetGradient())
-        matJson["gradient"] = displayParams.GetGradient()->ToJson();
+    if (nullptr != displayParams.GetSurfaceMaterial().GetGradient())
+        matJson["gradient"] = displayParams.GetSurfaceMaterial().GetGradient()->ToJson();
 
-    TextureCP texture = displayParams.GetTextureMapping().GetTexture();
+    TextureCP texture = displayParams.GetSurfaceMaterial().GetTextureMapping().GetTexture();
     if (nullptr != texture)
         {
-        if (texture->GetKey().IsValid() && SUCCESS != AddTextureJson(displayParams.GetTextureMapping(), matJson))
+        if (texture->GetKey().IsValid() && SUCCESS != AddTextureJson(displayParams.GetSurfaceMaterial().GetTextureMapping(), matJson))
             return ERROR;
         }
 
