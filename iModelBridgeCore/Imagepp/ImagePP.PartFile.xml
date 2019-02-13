@@ -49,7 +49,7 @@
 
     <Part Name="GdalData" BentleyBuildMakeFile="ext/gdal/GdalData.mke" OnlyPlatforms="x86,x64">
         <Bindings>
-            <Directory ProductDirectoryName="Assets" ProductSubDirectory="Gdal" SourceName="Delivery\GdalData" Feature="GdalData" FeatureDefault="No"/>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="Gdal_Data" SourceName="Delivery\GdalData" Feature="GdalData" FeatureDefault="Yes"/>
         </Bindings>
     </Part>
     <!-- Why so many jpeg libs?
