@@ -7,10 +7,43 @@
 //:>+--------------------------------------------------------------------------------------
 #include "ScalableMeshPCH.h"
 #include <ImagePP/h/ImageppAPI.h>
-#ifndef VANCOUVER_API
 #include "HPUPacket.h"
+#ifndef VANCOUVER_API
    
 namespace HPU {       
+
+    HCDPacket& Packet::EditPacket()
+    {
+        HPRECONDITION(!IsSharedPacket());
+        return *m_pDataPacket;
+    }
+
+    const HCDPacket& Packet::GetPacket() const
+    {
+        return *m_pDataPacket;
+    }
+
+    Packet::iterator Packet::BeginEdit()
+    {
+        return Edit();
+    }
+
+    Packet::iterator Packet::EndEdit()
+    {
+        return Edit() + GetSize();
+    }
+
+    Packet::iterator Packet::Erase(const_iterator  pi_Position,
+        size_t          pi_Size)
+    {
+        return Erase(pi_Position, pi_Position + pi_Size);
+    }
+
+    void swap(Packet& pio_rLeft,
+        Packet& pio_rRight)
+    {
+        pio_rLeft.Swap(pio_rRight);
+    }
 
 /*---------------------------------------------------------------------------------**//**`
 * @description  Construct a packet around a c string. Packet will contain the string
@@ -100,41 +133,6 @@ Packet::~Packet ()
 
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @description  Returns an iterator (pointer) to the beginning of the packet data.
-* @bsimethod                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline Packet::iterator Packet::BufferBegin () const
-    {
-    return m_pDataPacket->GetBufferAddress();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Returns an iterator (pointer) to the end of the packet data.
-* @bsimethod                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline Packet::iterator Packet::BufferEnd () const
-    {
-    return m_pDataPacket->GetBufferAddress() + m_pDataPacket->GetDataSize();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Returns a const iterator (pointer) to the beginning of the packet data.
-* @bsimethod                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline Packet::const_iterator Packet::Begin () const
-    {
-    return BufferBegin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Returns a const iterator (pointer) to the end of the packet data.
-* @bsimethod                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline Packet::const_iterator Packet::End () const
-    {
-    return BufferEnd();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @description  Returns a const pointer to the packet data.

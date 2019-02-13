@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -56,6 +56,16 @@ typedef uint8_t byte;
 #define IMAGEPP_NAMESPACE_NAME ImagePP
 #endif
 
+
+#ifdef VANCOUVER_API
+    #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
+#else
+    #ifdef DGNDB06_API
+        #define CLIP_VECTOR_NAMESPACE 
+    #else
+        #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
+    #endif
+#endif
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -210,6 +220,7 @@ enum class SMTextureType
 enum class SMNodeViewStatus
     {
     NotVisible = 0,
+    NotLoaded,
     TooCoarse,
     Fine
     };

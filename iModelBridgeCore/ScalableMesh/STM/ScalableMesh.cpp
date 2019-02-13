@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -38,9 +38,7 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/IScalableMeshSources.h>
 
 #include "ScalableMesh/ScalableMeshLib.h"
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
-#endif
 
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshInfo.h"
@@ -65,7 +63,7 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/IScalableMeshPublisher.h>
 
 #ifndef VANCOUVER_API
-#include <DgnPlatform\DgnGeoCoord.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 #endif
 
 
@@ -844,9 +842,7 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
     
         m_useTempPath = true;
 
-#ifndef LINUX_SCALABLEMESH_BUILD    
     SetDataSourceAccount(nullptr);
-#endif
 }
 
 
@@ -1243,13 +1239,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         ISMDataStoreTypePtr<Extent3dType> dataStore;
         if (!isSingleFile)
             {
-#ifndef LINUX_SCALABLEMESH_BUILD
             m_streamingSettings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(m_path);
 
             if (!m_streamingSettings->IsValid())
                 return ERROR;
             if (m_streamingSettings->IsDataFromRDS())
-                m_smRDSProvider = IScalableMeshRDSProvider::Create(m_streamingSettings->GetUtf8ProjectID(), m_streamingSettings->GetUtf8GUID());
+                m_smRDSProvider = IScalableMeshRDSProvider::Create("https://" + m_streamingSettings->GetUtf8ServerID() + ".bentley.com/", m_streamingSettings->GetUtf8ProjectID(), m_streamingSettings->GetUtf8GUID());
             m_isCesium3DTiles = m_streamingSettings->IsCesium3DTiles();
             m_isFromStubFile = m_streamingSettings->IsStubFile();
 
@@ -1275,7 +1270,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     (!m_streamingSettings->GetGCSString().empty() && !LoadGCSFrom(m_streamingSettings->GetGCSString())))
                 return BSIERROR; // Error loading layer gcs
             }
-#endif
             }
         else
             {
@@ -1989,7 +1983,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
             const IDTMSource& source = *sourceIt;
             if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE)
                 {  
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
 				HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(source.GetPath()));
 #else
 				HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(Utf8String(source.GetPath())));
@@ -3285,7 +3279,7 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 +----------------------------------------------------------------------------*/
 template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress)
     {
-#if NEED_SAVE_AS_IN_IMPORT_DLL
+#if defined(NEED_SAVE_AS_IN_IMPORT_DLL) && !defined(DGNDB06_API)
     // Create Scalable Mesh at output path
     StatusInt status;
     IScalableMeshNodeCreatorPtr scMeshDestination = IScalableMeshNodeCreator::GetFor(destination.c_str(), status);
@@ -3339,6 +3333,8 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& des
         if (SUCCESS != destMeshSourceEdit->SaveToFile())
             return ERROR;
         }
+#else
+    assert(!"_SaveAs not yet implemented on this code base");
 #endif
     return SUCCESS;
     }
@@ -3349,7 +3345,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& des
 template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId) const
     {
 
-#if NEED_SAVE_AS_IN_IMPORT_DLL
+#if defined(NEED_SAVE_AS_IN_IMPORT_DLL) && !defined(DGNDB06_API)
     if (m_scmIndexPtr == nullptr) return ERROR;
 
     StatusInt status;
@@ -3478,6 +3474,8 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     // Force save of root tileset and take into account coverages
     rootTileset->Close<Extent3dType>();
     return status;
+#else
+    assert(!"_Generate3DTiles not yet implemented on this code base");
 #endif
 
     return SUCCESS;
@@ -3527,7 +3525,9 @@ template <class POINT>  SMStatus                      ScalableMesh<POINT>::_Dete
 */
 
         StatusInt openStatus;
-        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(terrainAbsName, false, openStatus));
+                                                                       
+        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(WString(terrainAbsName.c_str()), false, openStatus));
+
         if (openStatus && smSQLiteFile != nullptr)
             {
  /*           m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
@@ -3538,6 +3538,8 @@ template <class POINT>  SMStatus                      ScalableMesh<POINT>::_Dete
 
 
     createdTerrain = terrainAbsName;
+#else
+    assert(!"_DetectGroundForRegion not yet implemented on this code base");
 #endif
 	return SMStatus::S_SUCCESS;
     }
@@ -3635,7 +3637,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
         DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnModel));
         return this->_Reproject(newDgnGcsPtr.get(), dgnModel);
         }
-    else 
     #endif
     
     // Greate a GCS from the ScalableMesh
@@ -3660,6 +3661,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
                                                            0, scaleUorPerMeters, 0, 0.0,
                                                            0, 0, scaleUorPerMeters, 0.0);
 
+    //auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
     auto coordInterp = GeoCoordinates::GeoCoordInterpretation::Cartesian;
        #ifndef LINUX_SCALABLEMESH_BUILD
     if (this->IsCesium3DTiles())
@@ -3668,17 +3670,17 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
         if (!tileToDb.IsIdentity())
             {
             computedTransform = Transform::FromProduct(computedTransform, tileToDb);
+            auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
+            if(!tileToECEF.IsIdentity())
+                {
+                Transform ecefToTile;
+                ecefToTile.InverseOf(tileToECEF);
+                computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
+                }
             }
         else
             { // tile coordinates are not transformed, therefore they must be interpreted as XYZ coordinates
             coordInterp = GeoCoordinates::GeoCoordInterpretation::XYZ;
-            }
-        auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
-        if (!tileToECEF.IsIdentity())
-            {
-            Transform ecefToTile;
-            ecefToTile.InverseOf(tileToECEF);
-            computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
             }
         }
         #endif
@@ -3735,7 +3737,10 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 #else
 template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP targetCS, DgnDbR dgnProject)
     {
-    #ifndef LINUX_SCALABLEMESH_BUILD
+#ifdef DGNDB06_API
+    assert(!"ERROR - BIM0200 code not ported");
+    return BSIERROR;
+#else
     if (this->IsCesium3DTiles() && targetCS == nullptr && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
         {
         // Fall back on the GCS saved in the SM metadata for Cesium tilesets
@@ -3752,34 +3757,34 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
         DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnProject));
         return this->_Reproject(newDgnGcsPtr.get(), dgnProject);
         }
-#endif
-    // Greate a GCS from the ScalableMesh
-    GeoCoords::GCS gcs(this->GetGCS());
 
     DPoint3d globalOrigin = dgnProject.GeoLocation().GetGlobalOrigin();
 
-    Transform computedTransform = Transform::FromIdentity();
+    // Greate a GCS from the ScalableMesh
+    GeoCoords::GCS gcs(this->GetGCS());
+    GeoCoords::Unit unit(gcs.GetHorizontalUnit());
+    double scaleUorPerMeters = unit.GetRatioToBase();
+
+    Transform computedTransform = Transform::FromScaleFactors(scaleUorPerMeters, scaleUorPerMeters, scaleUorPerMeters);
     auto coordInterp = Dgn::GeoCoordInterpretation::Cartesian;
     if (this->IsCesium3DTiles())
         {
-        #ifndef LINUX_SCALABLEMESH_BUILD
         auto tileToDb = m_streamingSettings->GetTileToDbTransform();
         if (!tileToDb.IsIdentity())
             {
             computedTransform = Transform::FromProduct(computedTransform, tileToDb);
+            auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
+            if(!tileToECEF.IsIdentity())
+                {
+                Transform ecefToTile;
+                ecefToTile.InverseOf(tileToECEF);
+                computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
+                }
             }
         else
             { // tile coordinates are not transformed, therefore they must be interpreted as XYZ coordinates
             coordInterp = Dgn::GeoCoordInterpretation::XYZ;
             }
-        auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
-        if (!tileToECEF.IsIdentity())
-            {
-            Transform ecefToTile;
-            ecefToTile.InverseOf(tileToECEF);
-            computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
-            }
-            #endif
         }
 
     if (gcs.HasGeoRef())
@@ -3829,6 +3834,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
         }
 
     return _SetReprojection(*targetCS, computedTransform);
+#endif
     }
 #endif
 

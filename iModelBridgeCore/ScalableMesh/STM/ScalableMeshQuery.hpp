@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:45 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1632,27 +1632,28 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
             if (clips != nullptr /*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
                 {
                 bmap<size_t, uint64_t> idsForPrimitives;
-                for (size_t n = 0; n < clips->size(); n++) idsForPrimitives[n] = uint64_t (-1);
+                for (size_t n = 0; n < clips->size(); n++) idsForPrimitives[n] = n;
                 MeshClipper clipper;
                 PolyfaceHeaderPtr polyface;
                 clipper.SetClipGeometry(idsForPrimitives, clips.get());
                 clipper.SetSourceMesh(meshPtr->GetPolyfaceQuery());
                 clipper.ComputeClip();
-                clipper.GetInteriorRegion(polyface);
-
-                // Clear mesh
-                meshPtr = ScalableMeshMesh::Create();
-
-                // Reconstruct mesh with new polyface
-                if (polyface != nullptr)
+                MeshClipper::RegionResult clipResult = clipper.GetInteriorRegion(polyface);
+                if(clipResult == MeshClipper::RegionResult::Success || clipResult == MeshClipper::RegionResult::NoData)
                     {
-                    meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
-                                        polyface->PointIndex().size(), polyface->PointIndex().data(),
-                                        0, 0, 0,
-                                        polyface->Param().size(), polyface->Param().data(),
-                                        polyface->ParamIndex().data());
-                    }
+                    // Clear mesh
+                    meshPtr = ScalableMeshMesh::Create(); 
 
+                    // Reconstruct mesh with new polyface
+                    if(polyface != nullptr)
+                        {
+                        meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
+                                            polyface->PointIndex().size(), polyface->PointIndex().data(),
+                                            0, 0, 0,
+                                            polyface->Param().size(), polyface->Param().data(),
+                                            polyface->ParamIndex().data());
+                        }
+                    }
                 }
 
             if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())
@@ -3306,7 +3307,19 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 
 template <class POINT> SMNodeViewStatus ScalableMeshNode<POINT>::_IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const
-    {
+    {        
+    if (this->m_node->m_SMIndex->IsFromCesium())
+        {        
+        if (!this->m_node->IsLoaded())
+            {            
+            assert(this->m_node->m_SMIndex->GetDataStore() != nullptr);
+            if (this->m_node->m_SMIndex->GetDataStore()->GetNodeHeaderLocation(this->m_node->GetBlockID().m_integerID) == SMNodeHeaderLocation::Network)
+                {
+                return SMNodeViewStatus::NotLoaded;
+                }           
+            }
+        }
+
     ISMPointIndexQuery<POINT, Extent3dType>* queryObjectP;
 
     BENTLEY_NAMESPACE_NAME::ScalableMesh::BuildQueryObject<POINT>(queryObjectP, 0/*pQueryExtentPts*/, 0/*nbQueryExtentPts*/, viewDependentQueryParams, nullptr);

@@ -2,18 +2,20 @@
 |
 |     $Source: STM/ImportPlugins/PODImporter_dgndb.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
-/*
+
+#ifdef DGNDB06_API
 #include <PointoolsVortexAPI_DLL/vortexLicense.c>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_ResultCodes.h>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp>
-*/
+#endif
+
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include <ScalableMesh\Import\Plugin\TypeConversionFilterV0.h>

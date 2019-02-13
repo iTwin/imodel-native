@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:41:29 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -298,6 +298,12 @@ void IScalableMeshSourceCreator::SetCreationCompleteness(ScalableMeshCreationCom
     {
     assert(creationCompleteness >= 0 && creationCompleteness < SCM_CREATION_COMPLETENESS_QTY);
     dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_sourceCreationCompleteness = creationCompleteness;
+    }
+
+void IScalableMeshSourceCreator::SetSplitThreshold(uint32_t splitThreshold)
+    {
+    assert(splitThreshold >= 50);
+    dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_splitThreshold = splitThreshold;
     }
 
 void IScalableMeshSourceCreator::SetSourcesDirty()
@@ -602,7 +608,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     else
         {
         assert(m_sourceCreationMethod == SCM_CREATION_METHOD_ONE_SPLIT);
-        splitThreshold = SM_ONE_SPLIT_THRESHOLD;
+        splitThreshold = m_splitThreshold;
         }
     
     CreateDataIndex(pDataIndex, true, splitThreshold);
@@ -851,14 +857,14 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #endif
 
             if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, depth, false))
-                return BSIERROR;
+                return BSIERROR;    
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastStitchingDuration += clock() - startClock;
             startClock = clock();
 #endif
 
-            pDataIndex->CutTiles(SM_ONE_SPLIT_THRESHOLD);
+            pDataIndex->CutTiles(m_splitThreshold);
 
 #ifdef SCALABLE_MESH_ATP
             s_getLastClippingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -1395,6 +1401,16 @@ int IScalableMeshSourceCreator::Impl::LoadSources(SMSQLiteFilePtr& smSQLiteFile)
 
     return (success) ? BSISUCCESS : BSIERROR;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                  Mathieu.St-Pierre   02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void IScalableMeshSourceCreator::Impl::SetSplitThreshold(uint32_t splitThreshold)
+    {
+    m_splitThreshold = splitThreshold;
+    }    
+
 
 int IScalableMeshSourceCreator::Impl::SaveSources(SMSQLiteFilePtr& smSQLiteFile)
 {

@@ -28,7 +28,7 @@ always:
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
-CCompOpts + -openmp -bigobj -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
+CCompOpts + -openmp -bigobj -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR -Zc:twoPhase-
 
 #Uncomment this to allow generating design meshes
 #CCompOpts + -DWIP_MESH_IMPORT 
@@ -65,7 +65,7 @@ CCompOpts + -wd4091
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -Zc:twoPhase-
 CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
 %include $(SharedMki)PreCompileHeader.mki
 
@@ -378,7 +378,10 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
 	$(ContextSubpartsLibs)RealityPlatformTools.lib \
-    $(ContextSubpartsLibs)CCApi.lib\
+    $(ContextSubpartsLibs)CCApi.lib \
+    $(ContextSubpartsLibs)BeHttp.lib \
+    $(ContextSubpartsLibs)BeFolly.lib \
+    $(ContextSubpartsLibs)BeXml.lib
 
 #	    $(ContextSubpartsLibs)wastorage.lib \
 

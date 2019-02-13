@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 11:02:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -28,7 +28,12 @@ typedef RefCountedPtr<GenerationTask> GenerationTaskPtr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreator::Impl
     {
+
+    friend struct IScalableMeshSourceCreatorWorker;
+
     private:
+
+        
 
         ScalableMeshDb* m_smDb;
         ScalableMeshDb* m_smSisterDb;
@@ -44,7 +49,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         HFCPtr<MeshIndexType> GetDataIndex();
 
         
-        void GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks);
+        void GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);
         
         void GetTaskPlanFileName(BeFileName& taskPlanFileName) const;
 
@@ -74,7 +79,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         virtual                             ~Impl();
 
         
-        StatusInt                    CreateGenerationTasks();
+        StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName);
         
         StatusInt                    CreateMeshTasks();        
 
@@ -86,7 +91,9 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         StatusInt                    ProcessStitchTask(BeXmlNodeP pXmlTaskNode);
 
-        StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode);        
+        StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode);       
+
+        StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode);         
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

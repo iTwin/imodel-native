@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.h $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -19,13 +19,9 @@
 #include "Stores/SMStoreUtils.h"
 #include <condition_variable>
 #include <json/json.h>
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
 #define SESSION_NAME DataSource::SessionName
-#else
-class DataSourceSessionName;
-#define SESSION_NAME DataSourceSessionName
-#endif
+
 #include <queue>
 #include <map>
 #include <iomanip>
@@ -80,10 +76,10 @@ public:
     typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMGroupGlobalParameters> Ptr;
 
 public:
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     DataSourceAccount*                  GetDataSourceAccount();
     const DataSource::SessionName &     GetDataSourceSessionName();
-#endif
+
     StrategyType                        GetStrategyType() { return m_strategyType; }
     uint32_t                            GetNextNodeID() { return m_nextNodeID++; }
     WString                             GetWellKnownText() { return m_wktStr; }
@@ -100,7 +96,7 @@ private:
     SMGroupGlobalParameters& operator=(const SMGroupGlobalParameters&) = delete;
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
 #endif
 
@@ -108,9 +104,9 @@ private:
 
     StrategyType                m_strategyType = NORMAL;
     DataSourceAccount*          m_dataSourceAccount = nullptr;
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     DataSource::SessionName     m_dataSourceSessionName;
-#endif
+
     std::atomic<uint32_t>       m_nextNodeID = {0};
     WString                     m_wktStr;
     };
@@ -137,7 +133,7 @@ private:
     SMGroupCache(node_header_cache* nodeCache);
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     virtual uint32_t _GetExcessiveRefCountThreshold() const override;
 #endif
 
@@ -176,8 +172,8 @@ struct SMGroupNodeIds : bvector<uint64_t> {
     uint64_t m_sizeOfRawHeaders;
     };
 
-template <typename Type, typename Queue = std::queue<Type>>
-class SMNodeDistributor : public Queue, std::mutex, std::condition_variable, public HFCShareableObject<SMNodeDistributor<Type, Queue> > {
+template <typename Type, typename Queue = std::deque<Type>>
+class SMNodeDistributor : public Queue, public std::mutex, std::condition_variable, public HFCShareableObject<SMNodeDistributor<Type, Queue> > {
     typename Queue::size_type capacity;
     unsigned int m_concurrency;
     bool m_done = false;
@@ -279,17 +275,23 @@ SMNodeDistributor(Function function
         if (Queue::size() == capacity)
             {
             static std::atomic<uint64_t> lastNumberOfItems = {Queue::size()};
-            while (!wait_for(lock, 1000ms, [this]
+            while(Queue::size() < capacity / 2)
                 {
-                return Queue::size() < capacity / 2;
-                }))
+                lock.unlock();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                lock.lock();
+                }
+            //while (!wait_for(lock, 1000ms, [this]
+            //    {
+            //    return Queue::size() < capacity / 2;
+            //    }))
                 {
                // std::lock_guard<mutex> clk(s_consoleMutex);
                // std::cout << "\r  Speed : " << lastNumberOfItems - Queue::size() << " items/second     Remaining : " << Queue::size() << "                         ";
                 lastNumberOfItems = Queue::size();
                 }
             }
-        Queue::push(std::forward<Type>(value));
+        Queue::push_back(std::forward<Type>(value));
         if (notify) notify_one();
         }
 
@@ -305,11 +307,19 @@ SMNodeDistributor(Function function
         {
         std::unique_lock<std::mutex> lock(*this);
         bool areThreadsFinished = false;
-        while (!wait_for(lock, 1000ms, function) || !areThreadsFinished)
+        size_t speed = Queue::size();
+        while (!areThreadsFinished)
             {
-			if (function()) //allow a yield after progress finishes, to leave time for all threads to return
-				wait_for(lock, 1000ms);
-            for (auto state : m_threadStates)
+            size_t size_before = Queue::size();
+            lock.unlock();
+            if(function())
+                { //allow a yield after progress finishes, to leave time for all threads to return
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+            lock.lock();
+            speed = size_before - Queue::size();
+            LOG.infov("nodes/sec: %f, remaining: %f", speed, Queue::size());
+            for(auto state : m_threadStates)
                 {
                 if (!(areThreadsFinished = state.second == ThreadState::IDLE))
                     break;
@@ -323,6 +333,9 @@ SMNodeDistributor(Function function
         {
         std::unique_lock<std::mutex> lock(*this);
         bool areThreadsFinished = false;
+        auto startSize = Queue::size();
+        size_t speed = Queue::size();
+        auto startTime = clock();
         while (true)
             {
             for (auto state : m_threadStates)
@@ -332,8 +345,13 @@ SMNodeDistributor(Function function
                 }
             if (!Queue::empty() || !areThreadsFinished)
                 {
-                assert(lock.owns_lock());
-                wait_for(lock, 1000ms);
+                size_t size_before = Queue::size();
+                lock.unlock();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                lock.lock();
+                speed = size_before - Queue::size();
+                auto elapsedTime = (float)((clock() - startTime) / CLOCKS_PER_SEC);
+                LOG.infov("nodes/sec: %f    avg: %f    remaining: %d", (float)speed, (float)(startSize - Queue::size()) / elapsedTime, Queue::size());
                 }
             else
                 {
@@ -363,8 +381,8 @@ private:
             if (!Queue::empty()) {
                 assert(lock.owns_lock());
                 Type item{ std::move(Queue::front()) };
-                Queue::pop();
-                notify_one();
+                Queue::pop_front();
+                //notify_one();
                 m_threadStates[std::this_thread::get_id()] = ThreadState::WORKING;
                 lock.unlock();
                 process(item);
@@ -407,8 +425,8 @@ private:
 			if (!Queue::empty()) {
 				assert(lock.owns_lock());
 				Type item{ std::move(Queue::front()) };
-				Queue::pop();
-				notify_one();
+				Queue::pop_front();
+				//notify_one();
 				m_threadStates[std::this_thread::get_id()] = ThreadState::WORKING;
 				lock.unlock();
 				if (is_process_ready(item))
@@ -419,7 +437,7 @@ private:
 				else
 				{
 					lock.lock();
-					Queue::push(std::move(item));
+					Queue::push_back(std::move(item));
 				}
 			}
 			else if (m_done) {
@@ -485,7 +503,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ADD_GROUPING_STRATEGY_FRIENDSHIPS
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
     private:
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
 #endif
@@ -509,9 +527,9 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         SMGroupGlobalParameters::Ptr m_parametersPtr;
         SMGroupCache::Ptr            m_groupCachePtr;
         bool m_isRoot = false;
-#ifndef LINUX_SCALABLEMESH_BUILD
+
         DataSourceURL m_url;
-#endif
+
         bvector<uint8_t> m_rawHeaders;
         std::unordered_map<uint64_t, Json::Value*> m_tileTreeMap;
         SMNodeGroupPtr m_ParentGroup;
@@ -589,13 +607,11 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bvector<Byte>::pointer GetRawHeaders(const size_t& offset) { return m_rawHeaders.data() + offset; }
 
-#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceURL GetDataURLForNode(HPMBlockID blockID);
 
         DataSourceURL GetURL();
 
         void SetURL(DataSourceURL url);
-#endif
 
         Json::Value GetJsonHeader(const uint64_t& id) 
             {
@@ -684,10 +700,10 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool IsRoot() { return m_isRoot; }
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+
         DataSourceAccount   *           GetDataSourceAccount(void);
         const DataSource::SessionName & GetDataSourceSessionName(void);
-#endif
+
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {
@@ -722,9 +738,9 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             assert(!"Please use a strategy to save a group!");
             }
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+
         DataSource *InitializeDataSource();
-#endif
+
 
         StatusInt Load();
 
@@ -813,18 +829,22 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             m_isRoot = m_ParentGroup == nullptr;
 
             BeFileName outDir(m_outputDirPath.c_str());
-            if (!outDir.IsDirectory())
+            if (!BeFileName::IsDirectory(outDir.c_str()))
                 {
                 BeFileNameStatus status = BeFileName::CreateNewDirectory(m_outputDirPath.c_str());
                 BeAssert(BeFileNameStatus::Success == status);
                 }
             }
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+
         bool DownloadFromID(std::vector<DataSourceBuffer::BufferData>& dest)
             {
             wchar_t buffer[10000];
+#if _WIN32
             swprintf(buffer, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
+#else
+            swprintf(buffer, 10000, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
+#endif
 
             return DownloadBlob(dest, DataSourceURL(buffer));
             }
@@ -832,7 +852,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         bool DownloadCesiumTileset(const DataSourceURL& url, Json::Value& tileset);
 
         bool DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, const DataSourceURL& url);
-#endif
+
 
         uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData);
 
@@ -954,7 +974,7 @@ class SMGroupingStrategy
         GeoCoordinates::BaseGCSCPtr m_sourceGCS;
         GeoCoordinates::BaseGCSCPtr m_destinationGCS;
         Transform m_rootTransform;
-        Transform m_transform;
+        Transform m_transform = Transform::FromIdentity();
         bool m_isClipBoundary = false;
         uint64_t m_clipID = -1;
     };
@@ -983,7 +1003,7 @@ template<class EXTENT> void SMGroupingStrategy<EXTENT>::SaveAllOpenGroups(bool s
         if (!saveRoot && group->IsRoot()) continue;
         if (!group->IsEmpty() && !group->IsFull())
             {
-            group->Close<EXTENT>();
+            group->template Close<EXTENT>();
             }
         }
     }
@@ -1086,7 +1106,7 @@ size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTE
     {
     // Fetch node header data
     size_t headerSize = 0;
-        #ifndef LINUX_SCALABLEMESH_BUILD
+
     std::unique_ptr<Byte> headerData = nullptr;
     SMStreamingStore<EXTENT>::SerializeHeaderToBinary(&pi_NodeHeader, headerData, headerSize);
 
@@ -1095,7 +1115,7 @@ size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTE
     pi_Group->AppendHeader((uint64_t)pi_NodeHeader.m_id.m_integerID, headerData.get(), headerSize);
 
     this->Apply(pi_NodeHeader, pi_Group);
-#endif
+
     return headerSize;
     }
 
@@ -1154,10 +1174,14 @@ void SMBentleyGroupingStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) 
     if (m_Mode == SMGroupGlobalParameters::StrategyType::VIRTUAL) return; // Don't need to save virtual groups, they will use normal headers to retrieve node header data
     if (pi_Group->IsEmpty()) return;
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     WString path(pi_Group->m_outputDirPath + L"\\g_");
     wchar_t buffer[10000];
+#if _WIN32
     swprintf(buffer, L"%s%lu.bin", path.c_str(), pi_Group->GetID());
+#else
+	swprintf(buffer, 10000, L"%s%lu.bin", path.c_str(), pi_Group->GetID());
+#endif
     std::wstring group_filename(buffer);
     BeFile file;
     if (OPEN_OR_CREATE_FILE(file, group_filename.c_str(), BeFileAccess::Write))
@@ -1184,7 +1208,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) 
         }
 
     file.Close();
-#endif
+
     }
 
 /**---------------------------------------------------------------------------------------------
@@ -1273,11 +1297,11 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
         this->m_transform.Multiply(pi_NodeHeader.m_contentExtent, pi_NodeHeader.m_contentExtent);
         TilePublisher::WriteBoundingVolume(nodeTile, pi_NodeHeader.m_contentExtent);
         }
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
     pi_Group->Append3DTile(pi_NodeHeader.m_id.m_integerID, pi_NodeHeader.m_parentNodeID.m_integerID, nodeTile);
     this->m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, 0);
-   #endif
+ 
     return 0;
     }
 
@@ -1370,34 +1394,31 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         auto wktString = pi_Group->GetParameters()->GetWellKnownText();
         if (!wktString.empty())
             SMMasterHeader["GCS"] = Utf8String(wktString.c_str());
-#ifndef VANCOUVER_API
-		SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
-#else
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToUtf8String();
+#else        
+        SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
 #endif
 
-        SMMasterHeader["tileToDb"] = Json::Value(Json::arrayValue);
-        Transform tileToDb;
-        tileToDb.InverseOf(this->m_transform);
-        matrix = DMatrix4d::From(tileToDb);
-        for (size_t i = 0; i<4; i++)
-            for (size_t j = 0; j<4; j++)
-                SMMasterHeader["tileToDb"].append(matrix.coff[j][i]);
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;
 
     auto utf8TileTree = Json::FastWriter().write(tileSet);
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     WString path(pi_Group->m_outputDirPath + L"\\n_");
     wchar_t buffer[10000];
+#if _WIN32
     swprintf(buffer, L"%s%lu.json", path.c_str(), pi_Group->GetID());
+#else
+    swprintf(buffer, 10000, L"%s%lu.json", path.c_str(), pi_Group->GetID());
+#endif
     std::wstring group_filename(buffer);
 
     BeFile file;
     BeFileStatus status;
     int numRetries = 0;
-    while (numRetries < 10 && BeFileStatus::FileNotFoundError != (status = file.Open(group_filename.c_str(), BeFileAccess::Write)))
+    while (numRetries < 10 && BeFileStatus::FileNotFoundError != (status = OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write)))
         {
         BeThreadUtilities::BeSleep(100);
         ++numRetries;
@@ -1417,5 +1438,5 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         {
         LOG.errorv("Failed to open or create json file [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
         }
-#endif
+
     }

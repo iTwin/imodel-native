@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:10 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,7 +47,31 @@ struct DimensionType
         IMPORT_DLLE                             ~Register                      ();
         };
 
-    struct Info;
+    /*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Raymond.Gauthier   07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+    struct Info
+    {
+        const WString                m_name;
+        size_t                          m_size;
+
+        explicit                        Info(const WChar*      name,
+            size_t              size)
+            : m_name(name),
+            m_size(size)
+        {
+        }
+
+        bool                            operator==                         (const Info&         rhs) const
+        {
+            return m_name == rhs.m_name;
+        }
+        bool                            operator<                          (const Info&         rhs) const
+        {
+            return m_name < rhs.m_name;
+        }
+    };
 private:
     ID                                          m_id;
     const Info*                                 m_infoP;     

@@ -26,7 +26,7 @@
 #include <ImagePP/all/h/HCPGCoordModel.h>
 
 
-#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include <ScalableMesh/IScalableMeshProgressiveQuery.h>
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include "SMMeshIndex.h"

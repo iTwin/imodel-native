@@ -61,8 +61,12 @@ StatusInt GeneratorTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData
             HFCPtr<HRFRasterFile>  pRasterFile;
             HFCPtr<HRARaster>      pRaster;
 
+#ifdef DGNDB06_API
+            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+#else
             Utf8String pathUtf8(path);
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(pathUtf8), TRUE);
+#endif
 
             pRasterFile = GenericImprove(pRasterFile,/* HRFiTiffCacheFileCreator::GetInstance()*/NULL, true, true);
 

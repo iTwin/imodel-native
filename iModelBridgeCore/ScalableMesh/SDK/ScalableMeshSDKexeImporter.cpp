@@ -5,7 +5,7 @@
 
 #include <windows.h>   
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #else
     USING_NAMESPACE_BENTLEY_DGN

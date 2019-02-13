@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMMemoryPool.h $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -517,7 +517,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
             }
 #endif
 
-        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId)
+        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId, bool loadBlock = true)
             : SMMemoryPoolGenericBlobItem<DataType>(nullptr,dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {
             m_dataStore = dataStore;
@@ -525,9 +525,13 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
             if (this->m_size > 0)
                 {
                 this->m_data = (Byte*)new DataType();
-                HPMBlockID blockID = HPMBlockID(this->m_nodeId);
-                size_t nbBytesLoaded = m_dataStore->LoadBlock((DataType*)this->m_data, this->m_size, blockID);
-                this->m_size = nbBytesLoaded;
+
+                if (loadBlock)
+                    {
+                    HPMBlockID blockID = HPMBlockID(this->m_nodeId);
+                    size_t nbBytesLoaded = m_dataStore->LoadBlock((DataType*)this->m_data, this->m_size, blockID);
+                    this->m_size = nbBytesLoaded;
+                    }
                 }
             }
 

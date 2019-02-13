@@ -150,8 +150,8 @@
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore  -c
-bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore   </NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>call bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore  -c
+call bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore   </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore   -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\PublicAPI;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\VendorAPI</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
@@ -224,8 +224,8 @@ bb -ax64 -p ScalableMeshCore -f  ScalableMeshCore -r  ScalableMesh re  ScalableM
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>VANCOUVER_API;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore  -c
-bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore   </NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>call bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore  -c
+call bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore   </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 -p ScalableMeshCore -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCore   -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel;$(ProjectDir)PublicAPI\ScalableMesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\DgnDisplay\PublicAPI;$(OutRoot)Winx64\BuildContexts\Bentley\PublicAPI;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\PublicAPI;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\VendorAPI</NMakeIncludeSearchPath>
     <IncludePath>C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
