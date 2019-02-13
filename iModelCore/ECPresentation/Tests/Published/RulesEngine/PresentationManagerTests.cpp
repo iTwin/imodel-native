@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/RulesEngine/PresentationManagerTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationManagerTests.h"
@@ -82,6 +82,7 @@ void RulesDrivenECPresentationManagerTests::SetUp()
 
     m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
     IECPresentationManager::RegisterImplementation(m_manager);
+    m_manager->SetLocalizationProvider(new SQLangLocalizationProvider());
 
     m_locater = TestRuleSetLocater::Create();
     m_manager->GetLocaters().RegisterLocater(*m_locater);
@@ -206,7 +207,7 @@ Utf8String RulesDrivenECPresentationManagerTests::GetDisplayLabel(IECInstanceCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerTests, InitializesUserSettings)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     m_manager->SetLocalState(&localState);
 
     ASSERT_TRUE(m_manager->GetUserSettings("MyRulesetId").GetSettingValue("TestSetting").empty());

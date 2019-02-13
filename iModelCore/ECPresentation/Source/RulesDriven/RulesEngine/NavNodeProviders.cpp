@@ -2,12 +2,13 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/NavNodeProviders.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
+#include "ECSchemaHelper.h"
 #include "NavNodeProviders.h"
 #include "NavNodesDataSource.h"
 #include "NavNodesCache.h"
@@ -1217,6 +1218,66 @@ bvector<NavigationQueryPtr> QueryBasedSpecificationNodesProvider::CreateQueries(
     return bvector<NavigationQueryPtr>();
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2015
++===============+===============+===============+===============+===============+======*/
+struct SpecificationChildrenChecker : PresentationRuleSpecificationVisitor
+    {
+    private:
+        NavNodesProviderContext const& m_context;
+        bool m_result = false;
+
+    private:
+        void DetermineChildren(RelatedInstanceNodesSpecification const& specification)
+            {
+            RequiredRelationDirection ruleDirection = specification.GetRequiredRelationDirection();
+
+            Utf8StringCR allSchemaClassNames = specification.GetRelationshipClassNames();
+            SupportedRelationshipClassInfos relationships = m_context.GetSchemaHelper().GetECRelationshipClasses(allSchemaClassNames);
+
+            for (SupportedRelationshipClassInfo const& relationshipInfo : relationships)
+                {
+                // Retrieve relationship class
+                ECRelationshipClassCR relationshipClass = relationshipInfo.GetClass();
+
+                if (RequiredRelationDirection::RequiredRelationDirection_Both == ruleDirection)
+                    {
+                    // If either source or target has multiplicity higher than 0, return true
+                    ECRelationshipConstraintCR sourceConstraint = relationshipClass.GetSource();
+                    ECRelationshipConstraintCR targetConstraint = relationshipClass.GetTarget();
+
+                    if (sourceConstraint.GetMultiplicity().GetLowerLimit() > 0 ||
+                        targetConstraint.GetMultiplicity().GetLowerLimit() > 0)
+                        {
+                        m_result = true;
+                        return;
+                        }
+                    }
+                else
+                    {
+                    // If target has multiplicity higher than 0, return true
+                    // Note. If both relationship and rule are reversed or both are not reversed, target = rel.Target. Otherwise target = rel.Source. 
+                    bool ruleDirectionForward = ruleDirection == RequiredRelationDirection::RequiredRelationDirection_Forward;
+                    bool relDirectionForward = relationshipClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward;
+                    ECRelationshipConstraintCR targetConstraint = (ruleDirectionForward == relDirectionForward) ? relationshipClass.GetTarget() : relationshipClass.GetSource();
+                    if (targetConstraint.GetMultiplicity().GetLowerLimit() > 0)
+                        {
+                        m_result = true;
+                        return;
+                        }
+                    }
+                }
+            }
+
+    protected:
+        void _Visit(RelatedInstanceNodesSpecification const& specification) override { DetermineChildren(specification); }
+
+    public:
+        SpecificationChildrenChecker(NavNodesProviderContextCR context) : m_context(context) {}
+        bool AlwaysHasChildren() const { return m_result; }
+    };
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1224,6 +1285,12 @@ bool QueryBasedSpecificationNodesProvider::_HasNodes() const
     {
     if (ChildrenHint::Always == m_specification.GetHasChildren())
         return true;
+
+    SpecificationChildrenChecker visitor(GetContext());
+    m_specification.Accept(visitor);
+    if (visitor.AlwaysHasChildren())
+        return true;
+
     return MultiNavNodesProvider::_HasNodes();
     }
 

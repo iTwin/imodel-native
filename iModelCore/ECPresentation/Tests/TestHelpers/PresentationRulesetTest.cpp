@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TestHelpers/PresentationRulesetTest.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -17,25 +17,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
-
-//=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            07/2018
-//=======================================================================================
-struct StubLocalState : IJsonLocalState
-    {
-    bmap<Utf8String, Utf8String> m_map;
-    void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
-        {
-        Utf8String nskey = Utf8String(nameSpace).append(":").append(key);
-        m_map[nskey] = value;
-        }
-    Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
-        {
-        Utf8String nskey = Utf8String(nameSpace).append(":").append(key);
-        auto iter = m_map.find(nskey);
-        return (m_map.end() != iter) ? iter->second : "";
-        }
-    };
 
 //------------------------------------------------------------------------------------------
 // @bsimethod                                    David.Le                          09/2016
@@ -174,7 +155,7 @@ PresentationRulesetTester::PresentationRulesetTester(BeTest::Host& host, BeFileN
     host.GetTempDir(temporaryDirectory);
     RulesDrivenECPresentationManager::Paths paths(assetsDirectory, temporaryDirectory);
 
-    m_localState = new StubLocalState();
+    m_localState = new RuntimeJsonLocalState();
 
     m_presentationManager = new RulesDrivenECPresentationManager(m_connections, paths);
     m_presentationManager->GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(rulesetsDir.GetNameUtf8().c_str()));

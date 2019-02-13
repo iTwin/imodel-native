@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/RulesEngine/PresentationManagerNavigationTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationManagerTests.h"
@@ -28,6 +28,7 @@ struct RulesDrivenECPresentationManagerNavigationTests : RulesDrivenECPresentati
     void SetUp() override
         {
         RulesDrivenECPresentationManagerTests::SetUp();
+        m_manager->SetLocalizationProvider(new SQLangLocalizationProvider());
         m_schema = s_project->GetECDb().Schemas().GetSchema("RulesEngineTest");
         ASSERT_TRUE(nullptr != m_schema);
         

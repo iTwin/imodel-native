@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECExpressionContextsProviderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -39,7 +39,7 @@ struct ECExpressionContextsProviderTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     static IConnectionPtr s_connection;
-    StubLocalState m_localState;
+    RuntimeJsonLocalState m_localState;
     TestUserSettings m_userSettings;
     Utf8String m_locale;
     
@@ -475,11 +475,30 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_InstanceNode_IsOf
     IECInstancePtr instance = ECInstanceTestsHelper::CreateInstance("DerivedA", GetSchema());
     TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection, m_locale, m_userSettings, nullptr));
-    ECValue resultValue = EvaluateAndGetResult("ParentNode.IsOfClass(\"ClassA\", \"TestSchema\")", *ctx);
+    ECValue resultValue = EvaluateAndGetResult("ParentNode.IsOfClass (\"ClassA\", \"TestSchema\")", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
     ASSERT_TRUE(resultValue.GetBoolean());
  
     resultValue = EvaluateAndGetResult("ParentNode.IsOfClass(\"Struct1\", \"TestSchema\")", *ctx);
+    ASSERT_TRUE(resultValue.IsBoolean());
+    ASSERT_FALSE(resultValue.GetBoolean());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_Instance_IsOfClass)
+    {
+    ECClassCP instanceClass = GetSchema().GetClassCP("DerivedA");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_connection->GetECDb(), *instanceClass, nullptr, true);
+
+    TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
+    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection, m_locale, m_userSettings, nullptr));
+    ECValue resultValue = EvaluateAndGetResult("ParentNode.ECInstance.IsOfClass (\"ClassA\", \"TestSchema\")", *ctx);
+    ASSERT_TRUE(resultValue.IsBoolean());
+    ASSERT_TRUE(resultValue.GetBoolean());
+
+    resultValue = EvaluateAndGetResult("ParentNode.ECInstance.IsOfClass(\"Struct1\", \"TestSchema\")", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
     ASSERT_FALSE(resultValue.GetBoolean());
     }

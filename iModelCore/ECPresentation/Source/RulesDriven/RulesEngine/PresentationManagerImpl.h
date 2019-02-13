@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PresentationManagerImpl.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,6 +57,7 @@ private:
     IJsonLocalState* m_localState;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     IPropertyCategorySupplier* m_categorySupplier;
+    ILocalizationProvider const* m_localizationProvider;
     bset<IECInstanceChangeHandlerPtr, IECInstanceChangeHandlerPtrComparer> m_ecInstanceChangeHandlers;
     bvector<ECInstanceChangeEventSourcePtr> m_ecInstanceChangeEventSources;
     CompositeUpdateRecordsHandler* m_compositeUpdateRecordsHandler;
@@ -108,6 +109,8 @@ public:
     IUserSettingsManager& GetUserSettingsManager() const {return *m_userSettings;}
     bvector<ECInstanceChangeEventSourcePtr> const& GetECInstanceChangeEventSources() const {return m_ecInstanceChangeEventSources;}
     bset<IECInstanceChangeHandlerPtr, IECInstanceChangeHandlerPtrComparer> const& GetECInstanceChangeHandlers() const {return m_ecInstanceChangeHandlers;}
+    ECPRESENTATION_EXPORT void SetLocalizationProvider(ILocalizationProvider const* provider);
+    ILocalizationProvider const* GetLocalizationProvider() const { return m_localizationProvider; }
 
 /** @name General */
 /** @{ */

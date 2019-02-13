@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/NavigationQueryBuilderTests_RelatedInstanceNodes.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
@@ -275,6 +275,28 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_IsOfCla
     ASSERT_TRUE(query.IsValid());
     
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("RelatedInstanceNodes_InstanceFilter_IsOfClassFunction", spec);
+    EXPECT_TRUE(expected->IsEqual(*query))
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_AllowsAccessingParentNode)
+    {    
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Sprocket"));
+    Cache(*parentNode);
+
+    RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, 
+        "this.Description = parent.Description", RequiredRelationDirection_Backward, "", "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget");
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    ASSERT_EQ(1, queries.size());
+
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+    
+    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery(BeTest::GetNameOfCurrentTest(), spec);
     EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();

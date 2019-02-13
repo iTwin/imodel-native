@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECInstanceChangeHandlers.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -11,14 +11,33 @@
 #include "NavigationQuery.h"
 #include "LoggingHelper.h"
 
+//=======================================================================================
+// @bsiclass                                    Haroldas.Vitunskas              01/2019
+//=======================================================================================
+struct ECInstanceChangeHandlerSetup
+    {
+    private:
+        IECInstanceChangeHandler& m_handler;
+
+    public:
+        ECInstanceChangeHandlerSetup(IECInstanceChangeHandler& handler, ILocalizationProvider const* provider) : m_handler(handler) { m_handler.SetLocalizationProvider(provider); }
+        ~ECInstanceChangeHandlerSetup() { m_handler.SetLocalizationProvider(nullptr); }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetErrorMessage(L10N::NameSpace const& ns, L10N::StringId const& stringId)
+static Utf8String GetErrorMessage(ILocalizationProvider const* provider, L10N::NameSpace const& ns, L10N::StringId const& stringId)
     {
-    Utf8String msg = IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{RulesEngineL10N::GetNameSpace(), RulesEngineL10N::ERROR_ECInstanceChangeResult_CantChangeECInstance()});
-    msg.append(" - ").append(IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{ns, stringId}));
-    return msg;
+    if (nullptr != provider)
+        {
+        Utf8String msg = provider->GetString("", bvector<Utf8CP>{RulesEngineL10N::GetNameSpace(), RulesEngineL10N::ERROR_ECInstanceChangeResult_CantChangeECInstance()});
+        msg.append(" - ").append(provider->GetString("", bvector<Utf8CP>{ns, stringId}));
+
+        return msg;
+        }
+    
+    return BeStringUtilities::Join(bvector<Utf8CP>{RulesEngineL10N::GetNameSpace(), RulesEngineL10N::ERROR_ECInstanceChangeResult_CantChangeECInstance(), " - ", ns, stringId});
     }
 
 typedef bmap<bpair<IECInstanceChangeHandler*, ECClassCP>, bool> ECClassChangeHandlerChecksCache;
@@ -46,7 +65,7 @@ bvector<ECInstanceChangeResult> ECInstanceChangesDirector::Handle(IConnectionCR 
     bvector<ECInstanceChangeResult> results;
     if (connection.IsReadOnly())
         {
-        results.resize(infos.size(), ECInstanceChangeResult::Error(GetErrorMessage(RulesEngineL10N::GetNameSpace(), RulesEngineL10N::ERROR_ECInstanceChangeResult_ConnectionReadOnly())));
+        results.resize(infos.size(), ECInstanceChangeResult::Error(GetErrorMessage(m_provider, RulesEngineL10N::GetNameSpace(), RulesEngineL10N::ERROR_ECInstanceChangeResult_ConnectionReadOnly())));
         LoggingHelper::LogMessage(Log::Update, "The connection is read-only - can not change ECInstances.", NativeLogging::LOG_WARNING);
         return results;
         }
@@ -58,6 +77,13 @@ bvector<ECInstanceChangeResult> ECInstanceChangesDirector::Handle(IConnectionCR 
         bool didSucceed = false;
         for (IECInstanceChangeHandlerPtr const& handler : m_handlers)
             {
+            if (handler.IsNull())
+                {
+                BeAssert(false);
+                continue;
+                }
+
+            ECInstanceChangeHandlerSetup(*handler, m_provider);
             if (CanHandle(checksCache, *handler, connection.GetECDb(), info.GetPrimaryInstanceClass()))
                 {
                 ECInstanceChangeResult result = handler->Change(connection.GetECDb(), info, propertyAccessor, value);
@@ -71,7 +97,7 @@ bvector<ECInstanceChangeResult> ECInstanceChangesDirector::Handle(IConnectionCR 
             }
         if (!didSucceed)
             {
-            results.push_back(ECInstanceChangeResult::Error(GetErrorMessage(RulesEngineL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown())));
+            results.push_back(ECInstanceChangeResult::Error(GetErrorMessage(m_provider, RulesEngineL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown())));
             LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("ECInstance change for ECClass %s could not be handled", 
                 info.GetPrimaryInstanceClass().GetFullName()).c_str(), NativeLogging::LOG_ERROR);
             }
@@ -107,7 +133,7 @@ ECInstanceChangeResult DefaultECInstanceChangeHandler::_Change(ECDbR connection,
     if (!stmt.Prepare(connection, stmtStr.c_str()).IsSuccess())
         {
         BeAssert(false);
-        return ECInstanceChangeResult::Error(GetErrorMessage(RulesEngineL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown()));
+        return ECInstanceChangeResult::Error(GetErrorMessage(GetLocalizationProvider(), RulesEngineL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown()));
         }
 
     BoundQueryECValue(value).Bind(stmt, 1);
@@ -116,7 +142,7 @@ ECInstanceChangeResult DefaultECInstanceChangeHandler::_Change(ECDbR connection,
     if (BE_SQLITE_DONE != stmt.Step())
         {
         BeAssert(false);
-        return ECInstanceChangeResult::Error(GetErrorMessage(RulesEngineL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown()));
+        return ECInstanceChangeResult::Error(GetErrorMessage(GetLocalizationProvider(), RulesEngineL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown()));
         }
 
     return ECInstanceChangeResult::Success(value);

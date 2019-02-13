@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/PresentationManagerImplTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
@@ -26,6 +26,7 @@ struct RulesDrivenECPresentationManagerImplTests : ECPresentationTest
     RulesDrivenECPresentationManagerImpl* m_impl;
     TestCategorySupplier m_categorySupplier;
     TestRuleSetLocaterPtr m_locater;
+    ILocalizationProvider* m_localizationProvider;
     
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -65,10 +66,12 @@ void RulesDrivenECPresentationManagerImplTests::SetUp()
     ECPresentationTest::SetUp();    
     m_locater = TestRuleSetLocater::Create();
     RulesDrivenECPresentationManagerImpl::Params params(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+    m_localizationProvider = new SQLangLocalizationProvider();
     params.SetDisableDiskCache(true);
     m_impl = new RulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManagerDependenciesFactory(), params);
     m_impl->SetCategorySupplier(&m_categorySupplier);
     m_impl->GetLocaters().RegisterLocater(*m_locater);
+    //m_impl->SetLocalizationProvider(m_localizationProvider);
     m_connections.NotifyConnectionOpened(s_project->GetECDb());
     m_connection = m_connections.GetConnection(s_project->GetECDb());
     }
@@ -80,6 +83,7 @@ void RulesDrivenECPresentationManagerImplTests::TearDown()
     {
     m_connection = nullptr;
     DELETE_AND_CLEAR(m_impl);
+    DELETE_AND_CLEAR(m_localizationProvider);
     }
 
 struct NeverCanceledToken : ICancelationToken
@@ -152,6 +156,7 @@ struct RulesDrivenECPresentationManagerImplRequestCancelationTests : RulesDriven
     virtual void SetUp() override
         {
         RulesDrivenECPresentationManagerImplTests::SetUp();
+        m_impl->SetLocalizationProvider(new SQLangLocalizationProvider());
         m_ruleset = CreateRuleSet();
         m_locater->AddRuleSet(*m_ruleset);
         }
