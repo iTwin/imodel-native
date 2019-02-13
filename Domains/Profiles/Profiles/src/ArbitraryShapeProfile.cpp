@@ -16,10 +16,20 @@ HANDLER_DEFINE_MEMBERS (ArbitraryShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+ArbitraryShapeProfile::CreateParams::CreateParams (DgnModel const& model, DgnClassId const& classId, Utf8CP pName, IGeometryPtr const& geometryPtr)
+    : T_Super (model, classId, pName)
+    , geometryPtr (geometryPtr)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 ArbitraryShapeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , geometryPtr (geometryPtr)
-    {}
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
@@ -40,6 +50,9 @@ ArbitraryShapeProfile::ArbitraryShapeProfile (CreateParams const& params)
 bool ArbitraryShapeProfile::_Validate() const
     {
     if (!T_Super::_Validate())
+        return false;
+
+    if (m_geometryPtr.IsNull())
         return false;
 
     // TODO Karolis: Validate geometry:

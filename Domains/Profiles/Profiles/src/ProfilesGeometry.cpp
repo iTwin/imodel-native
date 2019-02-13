@@ -833,6 +833,67 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineCShape(CenterLineCShapeProfile co
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createArbitraryCenterLineShape (CurveVectorPtr const& curvesPtr, double wallThickness)
+    {
+    if (curvesPtr.IsNull())
+        return nullptr;
+
+    CurveOffsetOptions curveOffsetOptions (wallThickness / 2.0);
+
+    CurveVectorCPtr rightOffsetedCurvesPtr = curvesPtr->CloneOffsetCurvesXY (curveOffsetOptions);
+    CurveVectorCPtr leftOffsetedCurvesPtr = curvesPtr->CloneReversed()->CloneOffsetCurvesXY (curveOffsetOptions);
+
+    DPoint3d rightStart, rightEnd, leftStart, leftEnd;
+    rightOffsetedCurvesPtr->GetStartEnd (rightStart, rightEnd);
+    leftOffsetedCurvesPtr->GetStartEnd (leftStart, leftEnd);
+
+    ICurvePrimitivePtr firstCapPtr = ICurvePrimitive::CreateLine (rightEnd, leftStart);
+    ICurvePrimitivePtr secondCapPtr = ICurvePrimitive::CreateLine (leftEnd, rightStart);
+
+    // Note: adding a whole curveVector to combinedCurves creates an invalid geometry,
+    // adding primitives one by one seems to work fine ..
+    CurveVectorPtr combinedCurves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    for (ICurvePrimitivePtr const& curvePtr : *rightOffsetedCurvesPtr)
+        combinedCurves->Add (curvePtr);
+    combinedCurves->Add (firstCapPtr);
+    for (ICurvePrimitivePtr const& curvePtr : *leftOffsetedCurvesPtr)
+        combinedCurves->Add (curvePtr);
+    combinedCurves->Add (secondCapPtr);
+
+    return IGeometry::Create (combinedCurves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static IGeometryPtr createArbitraryCenterLineShape (ICurvePrimitivePtr const& singleCurvePtr, double wallThickness)
+    {
+    if (singleCurvePtr.IsNull())
+        return nullptr;
+
+    CurveVectorPtr curvesPtr = CurveVector::Create (singleCurvePtr->Clone());
+    return createArbitraryCenterLineShape (curvesPtr, wallThickness);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateArbitraryCenterLineShape (IGeometry const& centerLine, double wallThickness)
+    {
+    switch (centerLine.GetGeometryType())
+        {
+        case IGeometry::GeometryType::CurvePrimitive:
+            return createArbitraryCenterLineShape (centerLine.GetAsICurvePrimitive(), wallThickness);
+        case IGeometry::GeometryType::CurveVector:
+            return createArbitraryCenterLineShape (centerLine.GetAsCurveVector(), wallThickness);
+        default:
+            return nullptr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateCircle (CircleProfile const& profile)
@@ -1364,6 +1425,5 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineForLShape(CenterLineLShapeProfile
         return createCenterLineForLShape(halfWidth, halfDepth, wallThickness, filletRadius + wallThickness / 2.0, girth);
         }
     }
-
 
 END_BENTLEY_PROFILES_NAMESPACE

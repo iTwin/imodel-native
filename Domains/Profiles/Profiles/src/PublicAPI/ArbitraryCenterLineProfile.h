@@ -22,15 +22,36 @@ struct ArbitraryCenterLineProfile : ArbitraryShapeProfile, ICenterLineProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_ArbitraryCenterLineProfile, ArbitraryShapeProfile);
     friend struct ArbitraryCenterLineProfileHandler;
 
-protected:
-    //! @private
-    explicit ArbitraryCenterLineProfile (CreateParams const& params) : T_Super (params) {}
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (ArbitraryCenterLineProfile)
+
+    public:
+        //! Constructor to initialize members.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
+        //! @param[in] geometryPtr CenterLine geometry used to generate the shape for this profile.
+        //! @param[in] wallThickness Constant thickness of profile walls.
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr, double wallThickness);
+
+    public:
+        //! Constant thickness of profile walls.
+        double wallThickness;
+        };
+
+private:
+    explicit ArbitraryCenterLineProfile (CreateParams const& params);
+
+    virtual bool _Validate() const override;
+    virtual bool _CreateGeometry() override;
+    virtual IGeometryPtr _CreateShapeGeometry() const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryCenterLineProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (ArbitraryCenterLineProfile)
 
-    PROFILES_EXPORT static ArbitraryCenterLineProfilePtr Create (/*TODO: args*/);
+    PROFILES_EXPORT static ArbitraryCenterLineProfilePtr Create (CreateParams const& params) { return new ArbitraryCenterLineProfile (params); }
 
     }; // ArbitraryCenterLineProfile
 

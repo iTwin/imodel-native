@@ -26,6 +26,10 @@ public:
         {
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (ArbitraryShapeProfile)
 
+    protected:
+        //! @private
+        explicit CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName, IGeometryPtr const& geometryPtr);
+
     public:
         //! Constructor to initialize members.
         //! @param[in] model DgnModel that the Profile will be associated to.
@@ -42,11 +46,13 @@ protected:
     //! @private
     explicit ArbitraryShapeProfile (CreateParams const& params);
 
+        //! @private
+    virtual bool _Validate() const override;
+
     //! @private
     PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
 
 private:
-    virtual bool _Validate() const override;
     virtual IGeometryPtr _CreateShapeGeometry() const override;
 
 public:
@@ -59,7 +65,7 @@ public:
     //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static ArbitraryShapeProfilePtr Create (CreateParams const& params) { return new ArbitraryShapeProfile (params); }
 
-private:
+protected:
     IGeometryPtr m_geometryPtr;
 
     }; // ArbitraryShapeProfile
