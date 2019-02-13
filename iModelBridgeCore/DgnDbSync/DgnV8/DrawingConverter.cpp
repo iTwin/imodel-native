@@ -1246,7 +1246,7 @@ bool CreateOrUpdateDrawingGraphics()
             if (m_converter.IsUpdating())
                 v8SectionedElementPathsSeen.insert(v8SectionedElementPath); // Note that we don't care if the original sectioned element still exists or not. We care if the *proxy graphics* for that element still exist.
             
-            bset<DgnCategoryId>     seenCategories;
+            DgnCategoryIdSet seenCategories;
             for (auto& bycategory : byElement.second)
                 {
                 modified = true;
@@ -1260,11 +1260,9 @@ bool CreateOrUpdateDrawingGraphics()
                     m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), "drawing extraction");
                     }
                 }
-#ifdef WIP_EXTERNAL_SOURCE_ASPECT // _DetectedDeletedExtractionGraphicsCategories
             if (m_converter.IsUpdating() &&
-                m_converter._DetectedDeletedExtractionGraphicsCategories(v8SectionedElementPath, seenCategories))
+                m_converter.DetectedDeletedExtractionGraphicsCategories(m_masterModelMapping.GetDgnModel(), v8SectionedElementPath, seenCategories))
                 modified = true;
-#endif
             }
         }
 
@@ -1490,14 +1488,10 @@ bool Converter::DetectDeletedExtractionGraphics(ResolvedModelMapping const& root
     stmt->BindId(1, rootParentModel.GetDgnModel().GetModelId());
     stmt->BindText(2, SyncInfo::ExternalSourceAspect::Kind::ProxyGraphic, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
-    printf("DetectDeletedExtractionGraphics\n");
-
     bset<DgnElementId> tbd;
     while (BE_SQLITE_ROW == stmt->Step())
         {
         auto pathStored = stmt->GetValueText(0);
-        printf("%s\n", pathStored);
-
 
         if (v8SectionedElementPathsSeen.find(pathStored) != v8SectionedElementPathsSeen.end())
             continue;
@@ -1507,6 +1501,34 @@ bool Converter::DetectDeletedExtractionGraphics(ResolvedModelMapping const& root
 
         tbd.insert(stmt->GetValueId<DgnElementId>(1));
         }
+
+    if (tbd.empty())
+        return false;
+
+    for (auto eid: tbd)
+        {
+        GetDgnDb().Elements().Delete(eid);
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      2/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::DetectedDeletedExtractionGraphicsCategories(DgnModelR proxyGraphicScope, Utf8StringCR sectionedV8ElementPath, DgnCategoryIdSet const& seenCategories)
+    {
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT dg.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GraphicalElement2d) " dg, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
+        " WHERE x.Element.Id=dg.ECInstanceId AND x.Scope.Id=? AND x.Kind='ProxyGraphic' AND x.Identifier=? AND NOT InVirtualSet(?, dg.Category.Id)");
+    int col=1;
+    stmt->BindId(col++, proxyGraphicScope.GetModelId());
+    stmt->BindText(col++, sectionedV8ElementPath.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindVirtualSet(col++, seenCategories);
+
+    bset<DgnElementId> tbd;
+    while (BE_SQLITE_ROW == stmt->Step())
+        tbd.insert(stmt->GetValueId<DgnElementId>(0));
 
     if (tbd.empty())
         return false;
