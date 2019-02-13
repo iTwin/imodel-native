@@ -921,9 +921,11 @@ private:
     bvector<Utf8String> m_usedClasses;
     Utf8String m_ecsql;
     RefCountedPtr<CallNode const> m_currentValueListMethodNode;
-    bool m_inArguments;
-    bool m_ignoreArguments;
-    bool m_inStructProperty;
+    bool m_skipNextArgumentsOpeningBrace;
+    bool m_ignoreNextArguments;
+    int32_t m_inArguments;
+    int32_t m_ignoreArguments;
+    int32_t m_inStructProperty;
     ExpressionToken m_previousToken;
     bvector<Utf8String> m_nodesStack;
 
@@ -1049,9 +1051,10 @@ private:
     void HandleScopeEnd()
         {
         if (m_inStructProperty)
+            {
             Append("]");
-
-        m_inStructProperty = false;
+            m_inStructProperty--;
+            }
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -1100,6 +1103,7 @@ private:
             m_usedClasses.push_back(qualifiedClassName);
             }
 
+        m_skipNextArgumentsOpeningBrace = true;
         return true;
         }
 
@@ -1182,7 +1186,7 @@ private:
             info.RelatedClassNames.SchemaName.c_str(), info.RelatedClassNames.ClassName.c_str(),
             info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str());
         m_ecsql.append(ecsql);
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1223,7 +1227,7 @@ private:
             info.ThisColumn.ClassIdColumnName.c_str(), prefix.c_str(), info.ThisColumn.InstanceIdColumnName.c_str(), prefix.c_str(),
             info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str());
         m_ecsql.append(ecsql);
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1260,7 +1264,7 @@ private:
             info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str(),
             info.ThisColumn.ClassIdColumnName.c_str(), prefix.c_str(), info.ThisColumn.InstanceIdColumnName.c_str(), prefix.c_str());
         m_ecsql.append(ecsql);
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1270,7 +1274,7 @@ private:
     bool HandleValueListMethodSpecialCase(CallNodeCR node)
         {
         m_currentValueListMethodNode = &node;
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1291,7 +1295,7 @@ private:
         Append(FUNCTION_NAME_InVariableIntValues);
         StartArguments(*args);
         args->GetArgument(0)->Traverse(*this);
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1316,11 +1320,11 @@ private:
         bool isGetUserSettingIntValuesSpecialCase = (0 == strcmp("GetVariableIntValues", m_currentValueListMethodNode->GetMethodName()));
         if (!isGetUserSettingIntValuesSpecialCase)
             {
-            m_ignoreArguments = true;
+            m_ignoreNextArguments = true;
             args->Traverse(*this);
             }
 
-        m_inArguments = true;
+        m_skipNextArgumentsOpeningBrace = true;
         return true;
         }
 
@@ -1366,7 +1370,6 @@ private:
             return;
 
         Append(nodeCopy->ToString());
-        m_inArguments = false;
         }
     
     /*-----------------------------------------------------------------------------**//**
@@ -1414,14 +1417,13 @@ private:
         else
             {
             Append("IN ");
-            m_inArguments = false;
-            StartArguments(*m_currentValueListMethodNode);
+            m_inArguments--;
             m_currentValueListMethodNode->GetArguments()->Traverse(*this);
             }
 
         m_currentValueListMethodNode = nullptr;
-        m_inArguments = true;
-        m_ignoreArguments = true;
+        m_inArguments++;
+        m_ignoreArguments++;
         }
     
     /*-----------------------------------------------------------------------------**//**
@@ -1477,20 +1479,39 @@ public:
     bool ProcessUnits(UnitSpecCR) override {BeAssert(false); return false;}
     bool StartArguments(NodeCR) override
         {
-        if (!m_inArguments && !m_ignoreArguments)
-            Append("(", false);
-        m_inArguments = true;
+        if (m_ignoreNextArguments)
+            {
+            m_ignoreArguments++;
+            m_ignoreNextArguments = false;
+            }
+        else if (m_ignoreArguments)
+            {
+            m_ignoreArguments++;
+            }
+        else
+            {
+            if (!m_skipNextArgumentsOpeningBrace)
+                Append("(", false);
+            else
+                m_skipNextArgumentsOpeningBrace = false;
+            }
+        m_inArguments++;
         return true;
         }
     bool EndArguments(NodeCR) override
         {
-        if (!m_ignoreArguments)
+        if (m_ignoreArguments)
+            {
+            m_ignoreArguments--;
+            }
+        else
             {
             HandleScopeEnd();
-            Append(")");
+            if (m_inArguments)
+                Append(")");
             }
-        m_ignoreArguments = false;
-        m_inArguments = false;
+        if (m_inArguments)
+            m_inArguments--;
 
         // create an aggregated arguments' string and append it to the 
         // call node so it represents the whole call node
@@ -1536,9 +1557,9 @@ public:
 
         HandleScopeEnd();
 
-        m_inStructProperty = (TOKEN_Dot == node.GetOperation());
-        if (m_inStructProperty)
+        if ((TOKEN_Dot == node.GetOperation()))
             {
+            m_inStructProperty++;
             Append(".");
             Append("[");
             }
@@ -1630,7 +1651,8 @@ public:
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
     ECExpressionToECSqlConverter() 
-        : m_inArguments(false), m_inStructProperty(false), m_ignoreArguments(false), m_previousToken(TOKEN_Unrecognized)
+        : m_inArguments(0), m_inStructProperty(0), m_ignoreArguments(0), m_previousToken(TOKEN_Unrecognized), 
+        m_skipNextArgumentsOpeningBrace(false), m_ignoreNextArguments(false)
         {}
     
     /*-----------------------------------------------------------------------------**//**

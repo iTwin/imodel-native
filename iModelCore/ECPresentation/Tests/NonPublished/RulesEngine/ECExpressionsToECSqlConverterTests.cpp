@@ -60,8 +60,17 @@ TEST_F(ECExpressionsToECSqlConverterTests, Parens)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("LOWER(Test) ~ \"aaa\" OR LOWER(some_func(Label, 111)) LIKE \"Te\\_st\"");
-    ASSERT_STREQ("CAST(LOWER([Test]) AS TEXT) LIKE 'aaa' ESCAPE '\\' OR CAST(LOWER(some_func([Label], 111)) AS TEXT) LIKE 'Te\\_st' ESCAPE \'\\\'", ecsql.c_str());
+    Utf8String ecsql = m_helper.ConvertToECSql("this.Test ~ \"aaa\"");
+    ASSERT_STREQ("CAST([this].[Test] AS TEXT) LIKE 'aaa' ESCAPE \'\\\'", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase_WithFunction)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("LOWER(this.Test) ~ \"aaa\"");
+    ASSERT_STREQ("CAST(LOWER([this].[Test]) AS TEXT) LIKE 'aaa' ESCAPE \'\\\'", ecsql.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -298,13 +307,46 @@ TEST_F(ECExpressionsToECSqlConverterTests, VariableIntValuesSpecialCase)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCase)
+TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingProperty)
     {
     Utf8String ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => x = this.SomeProperty.Id)");
     EXPECT_STREQ("[this].[SomeProperty].[Id] IN (1, 2, 3, '4')", ecsql.c_str());
+    }
 
-    ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => this.SomeProperty.Id = x)");
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingProperty_Reverse)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => this.SomeProperty.Id = x)");
     EXPECT_STREQ("[this].[SomeProperty].[Id] IN (1, 2, 3, '4')", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingFunctionCall)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(\"a\", \"b\").AnyMatch(x => x = upper(this.SomeProperty.Id))");
+    EXPECT_STREQ("upper([this].[SomeProperty].[Id]) IN ('a', 'b')", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingFunctionCall_Reverse)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(\"a\", \"b\").AnyMatch(x => upper(this.SomeProperty.Id) = x)");
+    EXPECT_STREQ("upper([this].[SomeProperty].[Id]) IN ('a', 'b')", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ValueSetWithFunctionCallAnyMatchSpecialCase)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(upper(\"a\")).AnyMatch(x => x = this.SomeProperty)");
+    EXPECT_STREQ("[this].[SomeProperty] IN (upper('a'))", ecsql.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
