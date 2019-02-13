@@ -23,6 +23,15 @@
         </Bindings>
     </Part>
 
+    <Part Name="Core_DgnDb06" BentleyBuildMakeFile="core\coreDgnDb_DgnDb06.mke" ApiNumber="G" OnlyPlatforms="x86,x64">
+        <SubPart PartName="HeaderFiles"/>
+        <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)TerrainModelCore$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
+        </Bindings>
+    </Part>
+
     <Part Name="CoreStatic" BentleyBuildMakeFile="Core/coreDgnDb.mke" ApiNumber="M02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
         <SubPart PartName="HeaderFiles" LibType="Static"/>
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" LibType="Static"/>
@@ -33,6 +42,10 @@
 
     <Part Name="inroadstmDgnDb" BentleyBuildMakeFile="formats\inroadstm\inroadstmDgnDb.mke" BentleyBuildMakeOptions="-dCreate_Static_Libraries=1">
         <SubPart PartName="Core" />
+    </Part>
+
+    <Part Name="inroadstmDgnDb_DgnDb06" BentleyBuildMakeFile="formats\inroadstm\inroadstmDgnDb.mke" BentleyBuildMakeOptions="-dCreate_Static_Libraries=1">
+        <SubPart PartName="Core_DgnDb06" />
     </Part>
 
     <Part Name="Formats" BentleyBuildMakeFile="formats\formatsDgnDb.mke" ApiNumber="M02">
@@ -49,6 +62,21 @@
         </Bindings>
     </Part>
 
+
+    <Part Name="Formats_DgnDb06" BentleyBuildMakeFile="Formats\formatsDgnDb_DgnDb06.mke" ApiNumber="G">
+        <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
+        <SubPart PartName="Core_DgnDb06" />
+        <SubPart PartName="inroadstmDgnDb_DgnDb06" />
+        <SubPart PartName="BeSQLite"   PartFile="BeSQLite"  Repository="BeSQLite" />
+        <SubPart PartName="BeXmlDll"   PartFile="BeLibxml2" Repository="libsrc-libxml2" />
+        <SubPart PartName="GeoCoord"   PartFile="GeoCoord"  Repository="GeoCoord" />
+        <SubPart PartName="ImagePPDll" PartFile="ImagePP"   Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>Delivery\$(shlibprefix)TerrainModelFormats$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery\$(libprefix)TerrainModelFormats$(libext)</Libs>
+        </Bindings>
+    </Part>
+
     <Part Name="AutomaticGroundDetection" BentleyBuildMakeFile="AutomaticGroundDetection\AutomaticGroundDetectionDgnDb.mke" ApiNumber="M02">      
       <SubPart PartName="Core" />
       <SubPart PartName="Formats" />      
@@ -59,5 +87,17 @@
         <Libs>Delivery\$(libprefix)AutomaticGroundDetection$(libext)</Libs>
       </Bindings>
     </Part>
+
+    <Part Name="AutomaticGroundDetection_DgnDb06" BentleyBuildMakeFile="AutomaticGroundDetection\AutomaticGroundDetectionDgnDb_DgnDb06.mke" ApiNumber="G">
+        <SubPart PartName="Core_DgnDb06" />
+        <SubPart PartName="Formats_DgnDb06" />        
+        <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />
+        <!--<SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />-->
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)AutomaticGroundDetection$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery\$(libprefix)AutomaticGroundDetection$(libext)</Libs>
+        </Bindings>
+    </Part>
+
 
 </BuildContext>

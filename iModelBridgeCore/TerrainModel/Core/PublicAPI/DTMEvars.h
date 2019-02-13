@@ -20,18 +20,6 @@
 BENTLEYDTM_EXPORT extern double  DTM_PYE,DTM_2PYE ;
 extern FILE    *fpLOG ; 
 /*
-** Temporary Arrays For Transitioning From Data Objects To Tin Objects
-*/
-extern long         numTmpFeatureCodes;
-extern long         *tmpFeatureCodeP ;
-extern DTMUserTag *tmpUserTagP ; 
-/*
-**  Global Error Message
-*/
-extern thread_local long    DTM_DTM_ERROR_STATUS ;
-extern thread_local long    DTM_DTM_ERROR_NUMBER ;
-extern thread_local char    DTM_DTM_ERROR_MESSAGE[256] ;
-/*
 **  Global Variables
 */  
 extern long    DTM_LAST_DAT_FILE_TYPE ;
@@ -54,16 +42,10 @@ BENTLEYDTM_EXPORT extern double  DTM_PYE,DTM_2PYE ;
 /*
 ** Temporary Arrays For Transitioning From Data Objects To Tin Objects
 */
-extern long         numTmpFeatureCodes;
-extern long         *tmpFeatureCodeP ;
-extern DTMUserTag *tmpUserTagP ; 
+//extern long         numTmpFeatureCodes;
+//extern long         *tmpFeatureCodeP ;
+//extern DTMUserTag *tmpUserTagP ; 
 
-/*
-**  Global Error Message
-*/
-extern thread_local long    DTM_DTM_ERROR_STATUS ;
-extern thread_local long    DTM_DTM_ERROR_NUMBER ;
-extern thread_local char    DTM_DTM_ERROR_MESSAGE[256] ;   
 /*
 **  Global Variables
 */  
@@ -84,6 +66,7 @@ BENTLEYDTM_EXPORT extern long DTM_NUM_PROCESSORS            ;     //  Number Of 
 BENTLEYDTM_EXPORT extern long DTM_GEOPAK_ACTIVE             ;     //  Set to 1 If Geopak Active
 
 #endif
+
 /*__PUBLISH_SECTION_START__*/
 #endif
      
