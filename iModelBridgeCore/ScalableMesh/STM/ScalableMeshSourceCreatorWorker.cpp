@@ -490,6 +490,28 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<Generati
     int nbResolutions = (int)(pDataIndex->GetDepth() + 1);
 
     GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions);
+             
+#if !defined(NDEBUG) && defined(_WIN32)                            
+
+    size_t totalNbNodes = 0;
+    size_t totalNbNodesToStitch = 0;
+
+    for (auto& task : toExecuteTasks)
+        {
+        for (auto& resToGen : task->m_resolutionToGenerate)
+            {
+            totalNbNodes += resToGen.m_nodeIds.size();
+            totalNbNodesToStitch += resToGen.m_nodeStitchIds.size();
+            }
+        }
+
+    double independentStitchingPercentage = (double)totalNbNodesToStitch / totalNbNodes;
+
+    wchar_t text_buffer[1000] = { 0 }; //temporary buffer
+    swprintf(text_buffer, _countof(text_buffer), L"Nb Nodes To Mesh : %zd    Nb Nodes To Stich : %zd   Ratio : %.2f \r\n", totalNbNodes, totalNbNodesToStitch, independentStitchingPercentage); 
+    OutputDebugStringW(text_buffer); // print
+
+#endif
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
