@@ -1,0 +1,28 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: TestImpactAnalysis/RunRequiredTests.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+ResultsCapture=$(OutputRootDir)LogFiles/RunRequiredTests/ExecutionLogs/
+
+%if defined (REP_NAME)
+	%if defined (COMP_NAME_NAME)
+		always:
+			python $(_MakeFilePath)RunRequiredTests.py --repoName=$(REP_NAME) --comp=$(COMP_NAME)
+	%else
+		always:
+			python $(_MakeFilePath)RunRequiredTests.py --repoName=$(REP_NAME)
+	%endif
+%else
+	always:
+		python $(_MakeFilePath)RunRequiredTests.py
+%endif
+
+always:
+	python $(SrcRoot)BeGTest\gtest\CheckLogfilesForFailures.py $[@dir $(ResultsCapture)]
+	
+%message ..Tests finished.
+

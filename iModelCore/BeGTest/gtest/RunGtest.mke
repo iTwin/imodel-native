@@ -62,24 +62,29 @@ always:
 	%ifdef ONLY_TEST_CHANGES
 		%message Run only required tests
 		always:
-			python $(SrcRoot)DgnDbTestingScripts/TestImpactAnalysis/FindRequiredTests.py --gtestName=$(GTEST_NAME)
+			python $(SrcRoot)imodel02/TestingScripts/TestImpactAnalysis/FindRequiredTests.py --gtestName=$(GTEST_NAME)
 
 		REQ_TESTS_DIR=$(OutputRootDir)LogFiles/RunRequiredTests/
-		GTEST_FILTER_FILE=$(REQ_TESTS_DIR)$(GTEST_NAME)_command.txt
-		%iffile $(GTEST_FILTER_FILE) 
-			%if $[@readfile $(GTEST_FILTER_FILE)] !=" " 
-				GTEST_FILTER=$[@readfile $(GTEST_FILTER_FILE)]
+		NOTNEEDED_FILE=$(REQ_TESTS_DIR)$(GTEST_NAME)_NotNeeded.txt
+		%iffile $(NOTNEEDED_FILE)
+			%message Tests are outside scope of ONLY_TEST_CHANGES
+		%else
+			GTEST_FILTER_FILE=$(REQ_TESTS_DIR)$(GTEST_NAME)_command.txt
+			%iffile $(GTEST_FILTER_FILE) 
+				%if $[@readfile $(GTEST_FILTER_FILE)] !=" " 
+					GTEST_FILTER=$[@readfile $(GTEST_FILTER_FILE)]
+				%endif
 			%endif
-		%endif
-		%ifndef GTEST_FILTER 
-			#No need to run tests.
-			%message Skipping test execution
-			always:
-				>$(LogDir)test.log
-				[==========] No tests are affected by current change.
-				[==========] 0 tests from 0 test cases ran. (0 ms total)
-				<
-				~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+			%ifndef GTEST_FILTER 
+				#No need to run tests.
+				%message Skipping test execution
+				always:
+					>$(LogDir)test.log
+					[==========] No tests are affected by current change.
+					[==========] 0 tests from 0 test cases ran. (0 ms total)
+					<
+					~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+			%endif
 		%endif
 	%endif
 	
@@ -96,7 +101,7 @@ always:
 		$(exeName)
 		<
 		%ifdef GTEST_FILTER
-			python $(SrcRoot)DgnDbTestingScripts/TestImpactAnalysis/CreateBatch.py $(exeName) "$(GTEST_EXTRA_ARGS) $(GTEST_FILTER)" $(SrcRoot)imodel02/iModelCore/BeGTest/gtest/TeeGtest.py $(ResultsCapture)
+			python $(SrcRoot)imodel02/TestingScripts/TestImpactAnalysis/CreateBatch.py $(exeName) "$(GTEST_EXTRA_ARGS) $(GTEST_FILTER)" $(SrcRoot)imodel02/iModelCore/BeGTest/gtest/TeeGtest.py $(ResultsCapture)
 		%else			
 			>$(LogDir)run.bat
 			$(exeName) $(GTEST_EXTRA_ARGS) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)		

@@ -45,7 +45,8 @@ Components = {'Bentley':                {'dll': 'BentleyM02.dll', 'exe': 'Bentle
               'Licensing':               {'dll': 'Licensing.dll', 'exe': 'LicensingTest',
                                          'ignore':['LicensingCrossPlatform','Tests','UnitTests'],
                                          'pdb': ['Licensing'],
-                                         'owner': 'Jeff Marker'},
+                                         'owner': 'Jeff Marker',
+                                          'repo': ['imodel02', 'imodelCore', 'LicensingCrossPlatform']},
               'WSClient':               {'dll': 'WebServicesClientB02.dll', 'exe': 'WSClientTest',
                                          'ignore':['WSClient','Tests','UnitTests'],
                                          'pdb': ['WSClient', 'Client'],
@@ -128,7 +129,7 @@ def IgnorePathForComp(compToFind):
     ignore = IgnoreForComp(compToFind)
     if ignore is None:
         return None
-    ignorePath = os.getenv('SrcRoot')
+    ignorePath = os.path.join(os.getenv('SrcRoot'), 'imodel02', 'iModelCore')
     for path in ignore:
         ignorePath = os.path.join(ignorePath, path)
     ignorePath = os.path.join(ignorePath, 'ignore_list.txt')
@@ -185,7 +186,7 @@ def TiaMapPathForComp(compToFind):
     exeName = ExeForComp(compToFind)
     if exeName is None:
         return None
-    mapRoot = os.path.join(os.getenv('SrcRoot'), 'DgnDbTestingScripts', 'TestImpactAnalysis', 'TIAMaps')
+    mapRoot = os.path.join(os.getenv('SrcRoot'), 'imodel02', 'TestingScripts', 'TestImpactAnalysis', 'TIAMaps')
     if compToFind.lower() == 'dgnv8converter': # it has different naming convention
         tiaPath = os.path.join(mapRoot, 'TIAMap_' +compToFind+ '_Bentley.txt')
     else:
