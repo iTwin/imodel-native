@@ -252,7 +252,9 @@
     <None Include="ECSql\parser\sqlflex.l" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ECSchemas\ECDbChange.01.00.01.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbChange.01.00.01.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="ECSchemas\ECDbFileInfo.02.00.01.ecschema.xml">
       <SubType>Designer</SubType>
     </Xml>
