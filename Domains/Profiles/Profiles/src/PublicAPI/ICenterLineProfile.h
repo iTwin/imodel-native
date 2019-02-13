@@ -12,7 +12,8 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
-//! 
+//! Mixin class used to decorate "CenterLine" profiles.
+//! @details See CenterLineLShapeProfile, CenterLineCShapeProfile, CenterLine
 //! @ingroup GROUP_ParametricProfiles
 //=======================================================================================
 struct ICenterLineProfile : NonCopyableClass

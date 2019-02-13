@@ -106,8 +106,10 @@ public:
         {
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (Profile)
 
-    public:
+    protected:
+        //! @private
         virtual ~CreateParams() = default;
+        //! @private
         explicit CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName);
 
     public:

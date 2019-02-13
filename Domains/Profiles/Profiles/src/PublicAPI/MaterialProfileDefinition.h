@@ -11,9 +11,6 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-//! @defgroup GROUP_MaterialProfiles MaterialProfile Classes
-//! Classes defining a Material and Profile pair.
-
 //=======================================================================================
 //! A resource defining Material and Profile pair.
 //! @ingroup GROUP_MaterialProfiles

@@ -12,9 +12,6 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-//! @defgroup GROUP_ParametricProfiles Parametric Profiles
-//! Group of SinglePerimeterProfile's that are is guaranteed to have the center of the bounding box at (0, 0).
-
 //=======================================================================================
 //! A SinglePerimeterProfile that is guaranteed to have the center of the bounding box at (0, 0).
 //! @ingroup GROUP_ParametricProfiles

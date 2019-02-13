@@ -110,7 +110,7 @@
     <ClCompile Include="src\ProfileTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
-    <ClCompile Include="src\ArbitraryCenterLineShapeTests.cpp">
+    <ClCompile Include="src\ArbitraryCenterLineProfileTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
   </ItemGroup>

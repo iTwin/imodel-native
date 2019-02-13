@@ -12,9 +12,6 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-//! @defgroup GROUP_CompositeProfiles Composite Profiles
-//! Group of Profile's that are comprised of multiple SinglePerimeterProfile's.
-
 //=======================================================================================
 //! A Profile comprised of multiple SinglePerimeterProfile's.
 //! @ingroup GROUP_CompositeProfiles

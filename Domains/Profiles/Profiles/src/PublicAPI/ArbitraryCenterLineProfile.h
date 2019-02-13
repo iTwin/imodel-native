@@ -14,8 +14,9 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
-//! TODO Karolis: Add description
-//! @ingroup GROUP_SinglePerimeterProfiles
+//! Arbitrary center-line profile whose 2d geometry is constructed from a single curve
+//! or vector of curves defining a center-line.
+//! @ingroup GROUP_SinglePerimeterProfiles GROUP_CenterLineProfiles
 //=======================================================================================
 struct ArbitraryCenterLineProfile : ArbitraryShapeProfile, ICenterLineProfile
     {
@@ -29,6 +30,7 @@ public:
 
     public:
         //! Constructor to initialize members.
+        //! @details Geometry must be of type IGeometry::GeometryType::CurvePrimitive or IGeometry::GeometryType::CurveVector.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] geometryPtr CenterLine geometry used to generate the shape for this profile.
