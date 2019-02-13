@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/iModelTestsBase.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,6 @@ BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 struct iModelTestsBase : public IntegrationTestsBase
 {
 protected:
-    static DgnDbPtr             s_db;
     static iModelConnectionPtr  s_connection;
     static iModelInfoPtr        s_info;
     iModelInfoPtr               m_info;

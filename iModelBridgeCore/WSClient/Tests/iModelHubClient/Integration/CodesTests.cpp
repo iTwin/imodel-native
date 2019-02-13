@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/CodesTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -631,7 +631,7 @@ TEST_F(CodesTests, PlantScenario)
 
     PhysicalModelPtr physicalModel = CreateModel(TestCodeName().c_str(), db);
     ASSERT_TRUE(physicalModel.IsValid());
-    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), "DefaultCategory");
+    DgnCategoryId categoryId = GetOrCreateDefaultCategory(db);
     ASSERT_TRUE(categoryId.IsValid());
 
     CodeSpecPtr unitCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Unit", CodeScopeSpec::CreateModelScope());

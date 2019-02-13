@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/PerformanceTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Helpers.h"
@@ -76,22 +76,24 @@ struct PerformanceTests : public IntegrationTestsBase
 
     virtual void SetUp() override
         {
+        auto imodelName = GetTestiModelName();
         IntegrationTestsBase::SetUp();
-        ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName()));
+        ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, imodelName));
 
-        DgnDbPtr db = CreateTestDb();
-        ASSERT_TRUE(db.IsValid());
-        MultiAspectHandlerDomain::GetDomain().ImportSchema(*db);
-        ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
-
-        iModelResult imodelResult = CreateiModel(db);
+        iModelResult imodelResult = CreateEmptyiModel(imodelName);
         ASSERT_SUCCESS(imodelResult);
         m_info = imodelResult.GetValue();
 
         BriefcaseResult briefcaseResult = iModelHubHelpers::AcquireAndOpenBriefcase(s_client, m_info);
         ASSERT_SUCCESS(briefcaseResult);
         m_briefcase = briefcaseResult.GetValue();
-        m_model = CreateModel(TestCodeName().c_str(), m_briefcase->GetDgnDb());
+        DgnDbR db = m_briefcase->GetDgnDb();
+
+        MultiAspectHandlerDomain::GetDomain().ImportSchema(db);
+        ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+
+        m_model = CreateModel(TestCodeName().c_str(), db);
+        GetOrCreateDefaultCategory(db);
 
         auto pushResult = m_briefcase->PullMergeAndPush(nullptr, true)->GetResult();
         ASSERT_SUCCESS(pushResult);
@@ -184,7 +186,7 @@ struct PerformanceTests : public IntegrationTestsBase
     void CreateElement(GenericPhysicalObjectPtr& element, DgnModelPtr model, ECSqlStatement& stmt)
         {
         const ECInstanceId id(s_elementId++);
-        DgnCategoryId catId = (*SpatialCategory::MakeIterator(model->GetDgnDb()).begin()).GetId<DgnCategoryId>();
+        DgnCategoryId catId = GetOrCreateDefaultCategory(model->GetDgnDb());
         element = GenericPhysicalObject::Create(*model->ToPhysicalModelP(), catId);
 
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("ECInstanceId"), id));
@@ -223,7 +225,7 @@ struct PerformanceTests : public IntegrationTestsBase
         {
         ECSqlStatement stmt;
         Utf8String insertECSql;
-        DgnCategoryId catId = (*SpatialCategory::MakeIterator(model->GetDgnDb()).begin()).GetId<DgnCategoryId>();
+        DgnCategoryId catId = GetOrCreateDefaultCategory(model->GetDgnDb());
         auto elmnt = GenericPhysicalObject::Create(*model->ToPhysicalModelP(), catId);
         auto ecClass = elmnt->GetElementClass();
         insertECSql = Utf8String("INSERT INTO ");
@@ -257,7 +259,7 @@ struct PerformanceTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     RefCountedPtr<TestMultiAspect> CreateAspect(DgnModelPtr model, Utf8CP aspectName="Test")
         {
-        DgnCategoryId catId = (*SpatialCategory::MakeIterator(model->GetDgnDb()).begin()).GetId<DgnCategoryId>();
+        DgnCategoryId catId = GetOrCreateDefaultCategory(model->GetDgnDb());
         RefCountedPtr<TestMultiAspect> aspect = TestMultiAspect::Create(aspectName);
         auto element = GenericPhysicalObject::Create(*model->ToPhysicalModelP(), catId);
 
@@ -583,7 +585,7 @@ TEST_F(PerformanceTests, PushLocks)
     StopWatch timer(true);
     db.SaveChanges();
     result = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
-    ExpectAllLocksCount(*m_briefcase, postRequestSize + 2);
+    ExpectAllLocksCount(*m_briefcase, postRequestSize + 3);
     EXPECT_SUCCESS(result);
     timer.Stop();
     LogTiming(timer, postRequestSize, result.IsSuccess());
@@ -669,9 +671,8 @@ TEST_F(PerformanceTests, RetrieveFractionOfAllAvailableLocks)
     auto totalGetSize = finalGetRequestSize;
     auto aspectModel1 = CreateAspect(m_model);
 
-    auto locksCountBeforePush = m_briefcase->GetiModelConnection().QueryAllLocks()->GetResult().GetValue().size();
-
     m_briefcase->GetiModelConnection().RelinquishCodesLocks(m_briefcase->GetBriefcaseId());
+
     BriefcaseResult briefcaseResult = iModelHubHelpers::AcquireAndOpenBriefcase(s_client, m_info);
     ASSERT_SUCCESS(briefcaseResult);
     auto secondBriefcase = briefcaseResult.GetValue();
@@ -683,6 +684,8 @@ TEST_F(PerformanceTests, RetrieveFractionOfAllAvailableLocks)
     auto aspectModel2 = CreateAspect(secondModel, TestCodeName(2).c_str());
 
     auto currentGetRequestSize = 0;
+    auto additionalLocks = 2; //Db and Model
+
     while (currentGetRequestSize < finalGetRequestSize)
         {
         currentGetRequestSize += oneGetRequestSize;
@@ -694,7 +697,7 @@ TEST_F(PerformanceTests, RetrieveFractionOfAllAvailableLocks)
         while (i < getRequestAttempts)
             {
             StopWatch timer(true);
-            auto isPassed = ExpectLocksCountByBriefcase(*secondBriefcase, currentGetRequestSize + locksCountBeforePush);
+            auto isPassed = ExpectLocksCountByBriefcase(*secondBriefcase, currentGetRequestSize + additionalLocks);
             timer.Stop();
             LogTiming(timer, currentGetRequestSize, currentGetRequestSize * 2, isPassed, ++i);
             }

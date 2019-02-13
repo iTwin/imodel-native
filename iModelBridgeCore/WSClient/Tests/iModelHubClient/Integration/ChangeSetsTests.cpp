@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/ChangeSetsTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -47,6 +47,7 @@ bool IsDirEmpty(BeFileName dirToCheck)
 struct ChangeSetsTests : public iModelTestsBase
     {
     BriefcasePtr m_briefcase = nullptr;
+    static BriefcasePtr s_briefcase;
 
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
@@ -54,7 +55,7 @@ struct ChangeSetsTests : public iModelTestsBase
     static void SetUpTestCase()
         {
         iModelTestsBase::SetUpTestCase();
-        iModelHubHelpers::AcquireAndAddChangeSets(s_client, s_info, 3);
+        s_briefcase = iModelHubHelpers::AcquireAndAddChangeSets(s_client, s_info, 3);
         }
 
     /*--------------------------------------------------------------------------------------+
@@ -62,10 +63,13 @@ struct ChangeSetsTests : public iModelTestsBase
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void TearDownTestCase()
         {
+        if (s_briefcase.IsValid())
+            {
+            s_briefcase = nullptr;
+            }
         iModelTestsBase::TearDownTestCase();
         }
     
-
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -105,6 +109,7 @@ struct ChangeSetsTests : public iModelTestsBase
         return CreateModel(GetTestInfo().name(), briefcase.GetDgnDb());
         }
     };
+BriefcasePtr ChangeSetsTests::s_briefcase = nullptr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Algirdas.Mikoliunas    07/2017
@@ -113,8 +118,7 @@ TEST_F(ChangeSetsTests, PushToEmptyiModel)
     {
     m_imodelName = GetTestiModelName();
     ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, m_imodelName));
-    DgnDbPtr db = CreateTestDb();
-    iModelResult createResult = CreateiModel(db);
+    iModelResult createResult = CreateEmptyiModel(m_imodelName);
     ASSERT_SUCCESS(createResult);
 
     BriefcaseResult acquireResult = iModelHubHelpers::AcquireAndOpenBriefcase(s_client, createResult.GetValue(), false);
@@ -340,7 +344,7 @@ TEST_F(ChangeSetsTests, CancelDownloadChangeSets)
     // Act
     SimpleCancellationTokenPtr cancellationToken = SimpleCancellationToken::Create();
     TestsProgressCallback callback;
-    ChangeSetsTaskPtr changeSetsTask = s_connection->DownloadChangeSetsAfterId("", s_db->GetDbGuid(), callback.Get(), cancellationToken);
+    ChangeSetsTaskPtr changeSetsTask = s_connection->DownloadChangeSetsAfterId("", s_briefcase->GetDgnDb().GetDbGuid(), callback.Get(), cancellationToken);
     changeSetsTask->Execute();
     cancellationToken->SetCanceled();
     BeThreadUtilities::BeSleep(5000);

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/iModelTestsBase.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -11,7 +11,6 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 
-DgnDbPtr iModelTestsBase::s_db = nullptr;
 iModelConnectionPtr iModelTestsBase::s_connection = nullptr;
 iModelInfoPtr iModelTestsBase::s_info = nullptr;
 
@@ -27,8 +26,7 @@ void iModelTestsBase::SetUpTestCase(RequestBehaviorOptions behaviourOptions)
     ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, TestCaseiModelName()));
 
     //Create iModel with no changesets
-    s_db = CreateTestDb(TestCaseiModelName());
-    iModelResult result = CreateiModel(s_db);
+    iModelResult result = CreateEmptyiModel(TestCaseiModelName(), true);
     ASSERT_SUCCESS(result);
     s_info = result.GetValue();
     s_connection = CreateiModelConnection(s_info);
@@ -39,8 +37,6 @@ void iModelTestsBase::SetUpTestCase(RequestBehaviorOptions behaviourOptions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelTestsBase::TearDownTestCase()
     {
-    if (s_db.IsValid())
-        s_db = nullptr;
     if (s_connection.IsValid())
         s_connection = nullptr;
     if (s_info.IsValid())
@@ -124,8 +120,7 @@ iModelConnectionPtr iModelTestsBase::CreateNonAdminConnection()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelTestsBase::CreateTestiModel()
     {
-    DgnDbPtr db = CreateTestDb();
-    iModelResult result = IntegrationTestsBase::CreateiModel(db);
+    iModelResult result = IntegrationTestsBase::CreateEmptyiModel(GetTestiModelName());
     ASSERT_SUCCESS(result);
     m_info = result.GetValue();
     }

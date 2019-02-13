@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/IntegrationTestsBase.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsBase.h"
@@ -168,6 +168,14 @@ iModelResult IntegrationTestsBase::CreateiModel(DgnDbPtr db, bool expectSuccess)
     /*auto mockHandler = std::make_shared<MockIMSHttpHandler>();
     s_client->SetHttpHandler(mockHandler);*/
     return iModelHubHelpers::CreateNewiModel(s_client, db, s_projectId, expectSuccess);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelResult IntegrationTestsBase::CreateEmptyiModel(Utf8StringCR name, bool expectSuccess)
+    {
+    return iModelHubHelpers::CreateEmptyiModel(*s_client, s_projectId, name, "", expectSuccess);
     }
 
 /*--------------------------------------------------------------------------------------+

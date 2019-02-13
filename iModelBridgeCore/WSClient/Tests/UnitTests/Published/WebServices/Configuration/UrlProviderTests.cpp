@@ -525,7 +525,7 @@ TEST_F(UrlDescriptorTests, GetBuddiUrl_UrlDescriptorWithEmptyName_EmptyString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetStoredEnvironment_FreshLocalState_ReturnsFalse)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Environment env = (UrlProvider::Environment)123;
     EXPECT_FALSE(UrlProvider::GetStoredEnvironment(localState, env));
     EXPECT_EQ(123, env);
@@ -536,7 +536,7 @@ TEST_F(UrlProviderTests, GetStoredEnvironment_FreshLocalState_ReturnsFalse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetStoredEnvironment_InitializedLocalState_ReturnsTrueAndEnvironment)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
     UrlProvider::Uninitialize();
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/IntegrationTestsBase.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,6 +33,7 @@ struct IntegrationTestsBase : public ::testing::Test
         static Dgn::DgnDbPtr CreateTestDb(Utf8StringCR name);
 
         static iModelResult CreateiModel(DgnDbPtr db, bool expectSuccess = true);
+        static iModelResult CreateEmptyiModel(Utf8StringCR name, bool expectSuccess = true);
         static iModelConnectionPtr CreateiModelConnection(iModelInfoPtr info);
 
         virtual Utf8String GetTestiModelName();
