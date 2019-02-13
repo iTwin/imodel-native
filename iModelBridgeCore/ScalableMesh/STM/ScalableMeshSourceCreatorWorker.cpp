@@ -408,9 +408,14 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
     //if (smNode->GetNodePtr()->GetCount() < pointThreshold)
     if (GetTotalCountWithSubResolutions(smNode->GetNodePtr(), nbResolutions, nbResolutions - 1) < pointThreshold)
         {        
-        CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions);
-
         childrenGroupingSize = smNode->GetNodePtr()->GetCount();
+
+        //Dont add empty branch.
+        if (childrenGroupingSize > 0)
+            {
+            CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions);
+            }
+        
         return;
         }
 
