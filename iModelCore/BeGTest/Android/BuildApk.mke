@@ -2,7 +2,7 @@
 #
 #     $Source: Android/BuildApk.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #
@@ -19,15 +19,14 @@
 %endif
 
 baseDir             = $(_MakeFilePath)
-outputDir           = $(OutputRootDir)build/$(TEST_COLLECTION_PRODUCT)/
-mainDir             = $(outputDir)project/app/src/main/
-libsDir             = $(outputDir)project/app/libs/
-androidTestDir      = $(outputDir)project/app/src/androidTest/
-testApk             = $(outputDir)project/app/build/outputs/apk/debug/Test-debug.apk
-testRunner          = $(outputDir)project/app/build/outputs/apk/androidTest/debug/Test-debug-androidTest.apk
+outputDir           = $(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/$(TEST_SHORT_NAME)/
+mainDir             = $(outputDir)prj/src/main/
+libsDir             = $(outputDir)prj/libs/
+androidTestDir      = $(outputDir)prj/src/androidTest/
+testApk             = $(outputDir)prj/app/build/outputs/apk/debug/Test-debug.apk
+testRunner          = $(outputDir)prj/app/build/outputs/apk/androidTest/debug/Test-debug-androidTest.apk
 
 adbCmd              = ${ANDROID_SDK_ROOT}/platform-tools/adb
-
 
 always:
     !~@mkdir $(outputDir)Scripts
@@ -39,7 +38,7 @@ always:
 #--------------------------------------------------------------------------------------
 #   Build library
 #--------------------------------------------------------------------------------------
-DGNCLIENT_APP_ProjectRoot = ${outputDir}/project/
+DGNCLIENT_APP_ProjectRoot = ${outputDir}/prj/
 GRADLE_TASKS = build assembleAndroidTest
 
 %message BuildContext = $(BuildContext)
