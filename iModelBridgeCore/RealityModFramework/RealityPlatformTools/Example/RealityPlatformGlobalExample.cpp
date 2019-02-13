@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/RealityPlatformGlobalExample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -187,7 +187,7 @@ class RealityPlatformClient
                                 {
                                 // Set call backs ... notice to value provided for the progress callback indicating
                                 // the frequency (a a percentage of downloaded file) to call the callback
-                                pDownload->SetProgressCallBack(DownloadProgressCallback, 0.1);
+                                pDownload->SetProgressCallBack(DownloadProgressCallback, 0.1f);
                                 pDownload->SetStatusCallBack(DownloadStatusCallback);
                                 pDownload->SetHeartbeatCallBack(HeartbeatCallBack);
                                 RealityDataDownload::DownloadReportCR downloadReport = pDownload->Perform();

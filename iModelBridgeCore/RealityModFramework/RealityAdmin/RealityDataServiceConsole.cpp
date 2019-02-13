@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/RealityDataServiceConsole.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1911,7 +1911,7 @@ void RealityDataConsole::MassUnlink()
         RawServerResponse relationResponse = RawServerResponse();
         WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
 
-        for (int i = 0; i < m_serverNodes.size(); ++i)
+        for (size_t i = 0; i < m_serverNodes.size(); ++i)
             {
             relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), projectId);
             WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
@@ -1939,7 +1939,7 @@ void RealityDataConsole::ForceMassUnlink()
     RawServerResponse relationResponse = RawServerResponse();
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
 
-    for (int i = 0; i < m_serverNodes.size(); ++i)
+    for (size_t i = 0; i < m_serverNodes.size(); ++i)
         {
         idReq = RealityDataRelationshipByRealityDataIdRequest(m_serverNodes[i].GetInstanceId());
         entities = RealityDataService::Request(idReq, projectResponse);
@@ -1995,7 +1995,7 @@ void RealityDataConsole::MassDelete()
 
     bvector<Utf8String> errors = bvector<Utf8String>();
 
-    for(int i = 0; i < m_serverNodes.size(); ++i)
+    for(size_t i = 0; i < m_serverNodes.size(); ++i)
         {
         realityDataReq = RealityDataDelete(m_serverNodes[i].GetInstanceId());
         rawResponse = RealityDataService::BasicRequest(&realityDataReq);
@@ -2007,7 +2007,7 @@ void RealityDataConsole::MassDelete()
     if(!errors.empty())
         {
         DisplayInfo("There was an error removing the following items:\n", DisplayOption::Error);
-        for(int i = 0 ; i < errors.size() ; ++ i ) 
+        for(size_t i = 0 ; i < errors.size() ; ++ i ) 
             DisplayInfo(errors[i], DisplayOption::Error);
         }
 

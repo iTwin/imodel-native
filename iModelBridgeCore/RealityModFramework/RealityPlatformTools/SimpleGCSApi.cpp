@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: RealityPlatformTools/SimpleGCSApi.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <iostream>
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/DateTime.h>
@@ -9,8 +16,33 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
+static RealityDataDownload_ProgressCallBack s_optionalProgressCallback = nullptr;
+
+static RealityDataDownload_StatusCallBack s_optionalStatusCallback = nullptr;
+
+static float s_progressStep = 0.01f;
+
+void GCSRequestManager::SetProgressCallBack(RealityDataDownload_ProgressCallBack callback, float progressStep)
+    {
+    s_optionalProgressCallback = callback;
+    s_progressStep = progressStep;
+    }
+
+float GCSRequestManager::GetProgressStep()
+    {
+    return s_progressStep;
+    }
+
+void GCSRequestManager::SetStatusCallback(RealityDataDownload_StatusCallBack callback)
+    {
+    s_optionalStatusCallback = callback;
+    }
+
 int GCSRequestManager::GCS_progress_func(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal)
     {
+    if(s_optionalProgressCallback != nullptr)
+        return s_optionalProgressCallback(index, pClient, ByteCurrent, ByteTotal);
+
     int ret = 0;
 
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
@@ -22,6 +54,9 @@ int GCSRequestManager::GCS_progress_func(int index, void *pClient, size_t ByteCu
 
 void GCSRequestManager::GCS_status_func(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
+    if (s_optionalStatusCallback != nullptr)
+        return s_optionalStatusCallback(index, pClient, ErrorCode, pMsg);
+
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
     GCSRequestManager::Report(Utf8PrintfString("****** Status: (%d) ErrCode: %d - fromCache(%d) - (%s) <%ls>\n", index, ErrorCode, pEntry->fromCache, pMsg, pEntry->filename.c_str()));
 
@@ -62,17 +97,26 @@ void GCSRequestManager::Setup(Utf8String serverUrl, RPT_DownloadFunction downloa
     Utf8String serverName = serverUrl;
     if(serverName.empty())
         serverName = MakeBuddiCall(L"ContextServices");
-    WSGServer server = WSGServer(serverName, false);
 
-    RawServerResponse versionResponse = RawServerResponse();
-    Utf8String version = server.GetVersion(versionResponse);
-    if (versionResponse.responseCode > 399 || version.empty())
+    if(!serverName.empty() && GeoCoordinationService::GetServerName() != serverName)
         {
-        ReportError("cannot reach server");
-        return;
-        }
+        WSGServer server = WSGServer(serverName, false);
 
-    GeoCoordinationService::SetServerComponents(serverName, version, "IndexECPlugin--Server", "RealityModeling");
+        RawServerResponse versionResponse = RawServerResponse();
+        Utf8String version = server.GetVersion(versionResponse);
+        if (versionResponse.responseCode > 399 || version.empty())
+            {
+            ReportError("cannot reach server");
+            return;
+            }
+
+        GeoCoordinationService::SetServerComponents(serverName, version, "IndexECPlugin--Server", "RealityModeling");
+        }
+    }
+
+void GCSRequestManager::SetProjectId(Utf8StringCR projectId)
+    {
+    GeoCoordinationService::SetProjectId(projectId);
     }
 
 void GCSRequestManager::SetDownloadFunction(RPT_DownloadFunction downloadCallback)
@@ -84,7 +128,7 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
     BeFileName certificatePath, RealityDataDownload_ProxyCallBack proxyCallback)
     {
     int classMask = 0;
-    for(int i = 0; i < classes.size(); ++i)
+    for(size_t i = 0; i < classes.size(); ++i)
         classMask |= classes[i];
 
     SpatialEntityWithDetailsSpatialRequest spatialReq = SpatialEntityWithDetailsSpatialRequest(footprint, classMask);
@@ -132,8 +176,14 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
         return;
         }
 
+    SimpleFileDownload(packagePath, path, certificatePath, proxyCallback);
+    }
+
+void GCSRequestManager::SimpleFileDownload(BeFileName xrdpPath, BeFileName downloadPath,
+    BeFileName certificatePath, RealityDataDownload_ProxyCallBack proxyCallback)
+    {
     WString parseError = L"";
-    RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityConversionTools::PackageFileToDownloadOrder(packagePath, &parseError, path);
+    RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityConversionTools::PackageFileToDownloadOrder(xrdpPath, &parseError, downloadPath);
 
     if(!parseError.empty())
         {
@@ -152,7 +202,7 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
         submitReport = AlternateDownload(&report, downloadOrder, certificatePath, proxyCallback);
         }
 
-    if (submitReport)
+    if (submitReport && report != nullptr)
         {
         Report("-----Download Complete-----");
 
@@ -161,7 +211,8 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
 
         delete report;
 
-        BeFileName reportPath = path.PopDir();
+        downloadPath.PopDir();
+        BeFileName reportPath = downloadPath;
         reportPath.AppendToPath(L"report.xml");
 
         BeFile stream;
@@ -178,9 +229,14 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
         Utf8String distinctReportName = Utf8PrintfString("report-%s.xml", now.ToString().c_str());
         distinctReportName.ReplaceAll(":", ".");
 
-        DownloadReportUploadRequest upReq = DownloadReportUploadRequest(prep, distinctReportName, reportPath);
-        RawServerResponse upResponse = RawServerResponse();
-        GeoCoordinationService::Request(upReq, upResponse);
+        RealityPackageStatus status;
+        RealityDataPackagePtr package = RealityDataPackage::CreateFromFile(status, xrdpPath, &parseError);
+        if(status == RealityPackageStatus::Success)
+            {
+            DownloadReportUploadRequest upReq = DownloadReportUploadRequest(package->GetId(), distinctReportName, reportPath);
+            RawServerResponse upResponse = RawServerResponse();
+            GeoCoordinationService::Request(upReq, upResponse);
+            }
 
         reportPath.BeDeleteFile();
         }

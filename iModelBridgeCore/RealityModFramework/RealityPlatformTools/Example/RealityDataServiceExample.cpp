@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/RealityDataServiceExample.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     WString exeDir = exePath;
     size_t pos = exeDir.find_last_of(L"/\\");
     exeDir = exeDir.substr(0, pos + 1);
-    BeFileName fileName = BeFileName(exeDir);
+    BeFileName fileName = BeFileName(exeDir.c_str());
     fileName.AppendToPath(BeFileName("testFile"));
     BeFile file;
     file.Create(fileName.GetName(), true);

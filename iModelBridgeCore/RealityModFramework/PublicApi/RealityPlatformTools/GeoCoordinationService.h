@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatformTools/GeoCoordinationService.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@
 #include <RealityPlatform/SpatialEntity.h>
 
 #include <Bentley/BeFile.h>
-#include <Bentley/BeFilename.h>
+#include <Bentley/BeFileName.h>
 #include <Bentley/DateTime.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
@@ -70,7 +70,7 @@ protected:
     // Default constructor
     REALITYDATAPLATFORM_EXPORT GeoCoordinationServiceRequest() { m_validRequestString = false; }
 
-    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const = 0;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override = 0;
     };
 
 //=====================================================================================
@@ -128,7 +128,7 @@ public:
         { 
         m_validRequestString = false; 
         m_requestType = HttpRequestType::GET_Request; 
-        m_sort = false; 
+     //   m_sort = false; 
         m_startIndex = 0; 
         m_pageSize = 25; 
         }
@@ -468,7 +468,7 @@ public:
     //! schemaName is the name of the schema exposing the GeoCoordination Service classes. Default is "RealityModeling"
     //! All fields must be provided if used. Normally the present method shold only be used for development purposes
     //! When accessing one of the dev or qa version of GeoCoordination Service.
-    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName)
+    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8String projectId = "")
         {
         BeAssert(server.size() != 0);
         BeAssert(WSGProtocol.size() != 0);
@@ -479,6 +479,7 @@ public:
         s_geoCoordinationWSGProtocol = WSGProtocol;
         s_geoCoordinationRepoName = repoName;
         s_geoCoordinationSchemaName = schemaName;
+        s_geoCoordinationProjectId = projectId;
         }
 
     REALITYDATAPLATFORM_EXPORT static void SetErrorCallback(GeoCoordinationService_ErrorCallBack errorCallback) { s_errorCallback = errorCallback; }
@@ -500,6 +501,12 @@ public:
 
     //! Returns the name of the schema defining the classes exposed by the Service.
     REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetCertificatePath();
+
+    //! Returns the GUID for the currently associated project
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetProjectId();
+
+    //! Sets the GUID for the associated project
+    REALITYDATAPLATFORM_EXPORT static void SetProjectId(Utf8StringCR projectId);
 
     enum class InformationSource
         {
@@ -537,7 +544,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static void Request(const PreparedPackageRequest& request, BeFileName filename, RawServerResponse& rawResponse);
 
     //! Returns the description of the last Package requested by the current user
-    REALITYDATAPLATFORM_EXPORT static bvector<Utf8String> Request(const PreparedPackagesRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static void Request(const PreparedPackagesRequest& request, RawServerResponse& rawResponse, bvector<Utf8String>& packageIds);
 
     //! Returns the description of the last Package requested by the current user
     REALITYDATAPLATFORM_EXPORT static Utf8String Request(const LastPackageRequest& request, RawServerResponse& rawResponse);
@@ -561,7 +568,9 @@ public:
     static Utf8String s_geoCoordinationServer;
     static Utf8String s_geoCoordinationWSGProtocol;
     static Utf8String s_geoCoordinationRepoName;
+    static Utf8String s_geoCoordinationRepoNameWProjectId;
     static Utf8String s_geoCoordinationSchemaName;
+    static Utf8String s_geoCoordinationProjectId;
 
     static bool s_verifyPeer;
     static Utf8String s_certificatePath;

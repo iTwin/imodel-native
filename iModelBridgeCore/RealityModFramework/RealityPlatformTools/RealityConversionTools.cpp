@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/RealityConversionTools.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -958,7 +958,7 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
         return "";
 
     propertyString = propertyVector[0];
-    for(int i = 1; i < propertyVector.size(); ++i)
+    for(size_t i = 1; i < propertyVector.size(); ++i)
         {
         propertyString.append(",");
         propertyString.append(propertyVector[i]);
@@ -1270,27 +1270,27 @@ SpatialEntityMetadataPtr RealityConversionTools::JsonToSpatialEntityMetadata(Jso
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageStringToDownloadOrder(Utf8CP pSource, WStringP pParseError, BeFileNameCR destinationFolder)
+RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageStringToDownloadOrder(Utf8CP pSource, WStringP pParseError, BeFileNameCR destinationFolder, bool skipStreams)
     {
     RealityPlatform::RealityPackageStatus status = RealityPlatform::RealityPackageStatus::UnknownError;
 
     RealityPlatform::RealityDataPackagePtr package = RealityPlatform::RealityDataPackage::CreateFromString(status, pSource, pParseError);
     BeAssert(status == RealityPlatform::RealityPackageStatus::Success);
     
-    return PackageToDownloadOrder(package, destinationFolder);
+    return PackageToDownloadOrder(package, destinationFolder, skipStreams);
     }
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError, BeFileNameCR destinationFolder)
+RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError, BeFileNameCR destinationFolder, bool skipStreams)
     {
     RealityPlatform::RealityPackageStatus status = RealityPlatform::RealityPackageStatus::UnknownError;
 
     RealityPlatform::RealityDataPackagePtr package = RealityPlatform::RealityDataPackage::CreateFromFile(status, filename, pParseError);
     BeAssert(status == RealityPlatform::RealityPackageStatus::Success);
 
-    return PackageToDownloadOrder(package, destinationFolder);
+    return PackageToDownloadOrder(package, destinationFolder, skipStreams);
     }
 
 /*----------------------------------------------------------------------------------**//**
@@ -1337,7 +1337,7 @@ RealityDataDownload::sisterFileVector RealityConversionTools::SpatialEntityDataS
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder)
+RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder, bool skipStreams)
     {
     RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityDataDownload::Link_File_wMirrors_wSisters();
     
@@ -1389,18 +1389,31 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 
     bvector<PackageRealityDataPtr> modelFiles = package->GetModelGroup();
 
+    RealityDataDownload::mirrorWSistersVector mVector;
     for (PackageRealityDataPtr file : modelFiles)
-        downloadOrder.push_back(RealityDataToMirrorVector(*file, destinationFolder));
+        {
+        mVector = RealityDataToMirrorVector(*file, destinationFolder, skipStreams);
+        if(!mVector.empty())
+            downloadOrder.push_back(mVector);
+        }
 
     bvector<PackageRealityDataPtr> pinnedFiles = package->GetPinnedGroup();
 
     for (PackageRealityDataPtr file : pinnedFiles)
-        downloadOrder.push_back(RealityDataToMirrorVector(*file, destinationFolder));
+        {
+        mVector = RealityDataToMirrorVector(*file, destinationFolder, skipStreams);
+        if (!mVector.empty())
+            downloadOrder.push_back(mVector);
+        }
 
     bvector<PackageRealityDataPtr> undefinedfiles = package->GetUndefinedGroup();
 
 	for (PackageRealityDataPtr file : undefinedfiles)
-		downloadOrder.push_back(RealityDataToMirrorVector(*file, destinationFolder));
+        {
+        mVector = RealityDataToMirrorVector(*file, destinationFolder, skipStreams);
+        if (!mVector.empty())
+		    downloadOrder.push_back(mVector);
+        }
 
     return downloadOrder;
     }
@@ -1408,7 +1421,7 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                           11/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataDownload::mirrorWSistersVector RealityConversionTools::RealityDataToMirrorVector(const RealityPlatform::PackageRealityData& realityData, BeFileNameCR destinationFolder)
+RealityDataDownload::mirrorWSistersVector RealityConversionTools::RealityDataToMirrorVector(const RealityPlatform::PackageRealityData& realityData, BeFileNameCR destinationFolder, bool skipStreams)
     {
     RealityDataDownload::mirrorWSistersVector mVector = RealityDataDownload::mirrorWSistersVector();
 
@@ -1418,7 +1431,8 @@ RealityDataDownload::mirrorWSistersVector RealityConversionTools::RealityDataToM
 
     for (size_t i = 0; i < mirrorCount; ++i)
         {
-        mVector.push_back(SpatialEntityDataSourceToSisterVector(realityData.GetDataSource(i), destinationFolder));
+        if(!skipStreams || !realityData.GetDataSource(i).GetServerCP()->IsStreamed())
+            mVector.push_back(SpatialEntityDataSourceToSisterVector(realityData.GetDataSource(i), destinationFolder));
         }
     return mVector;
     }

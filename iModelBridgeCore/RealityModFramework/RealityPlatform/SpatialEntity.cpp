@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/SpatialEntity.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -461,7 +461,7 @@ Utf8StringCR SpatialEntity::GetProvider() const
     {
     if (m_provider.empty())
         {
-        for (int i = 0; i < m_DataSources.size(); ++i)
+        for (size_t i = 0; i < m_DataSources.size(); ++i)
             {
             m_provider = m_DataSources[i]->GetProvider();
             if (m_provider.empty())
@@ -481,7 +481,7 @@ Utf8StringCR SpatialEntity::GetProviderName() const
     {
     if (m_providerName.empty())
         {
-        for (int i = 0; i < m_DataSources.size(); ++i)
+        for (size_t i = 0; i < m_DataSources.size(); ++i)
         {
             m_providerName = m_DataSources[i]->GetProviderName();
             if (m_providerName.empty())
@@ -513,7 +513,7 @@ SpatialEntityMetadataCP SpatialEntity::GetMetadataCP() const
     { 
     if(m_pMetadata == nullptr)
         {
-        for(int i = 0; i < m_DataSources.size(); ++i)
+        for(size_t i = 0; i < m_DataSources.size(); ++i)
             {
             m_pMetadata = m_DataSources[i]->GetMetadataP();
             if(m_pMetadata != nullptr)
@@ -528,7 +528,7 @@ SpatialEntityMetadataP SpatialEntity::GetMetadataP()
     {
     if (m_pMetadata == nullptr)
         {
-        for (int i = 0; i < m_DataSources.size(); ++i)
+        for (size_t i = 0; i < m_DataSources.size(); ++i)
             {
             m_pMetadata = m_DataSources[i]->GetMetadataP();
             if (m_pMetadata != nullptr)

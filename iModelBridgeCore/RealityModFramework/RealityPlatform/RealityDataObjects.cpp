@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealityDataObjects.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -142,7 +142,11 @@ RealityDataDocument::RealityDataDocument(Json::Value jsonInstance)
         if (jsonInstance["properties"].isMember("ContentType") && !jsonInstance["properties"]["ContentType"].isNull())
             m_contentType = jsonInstance["properties"]["ContentType"].asCString(); 
         if (jsonInstance["properties"].isMember("Size") && !jsonInstance["properties"]["Size"].isNull())
+#if _WIN32
             m_size = _atoi64(jsonInstance["properties"]["Size"].asCString()); 
+#else
+            m_size = strtoull(jsonInstance["properties"]["Size"].asCString(), nullptr, 10);
+#endif
         }
     }
 

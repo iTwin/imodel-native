@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/SimpleRDSApiExample.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -79,7 +79,7 @@ Utf8String CreateUpload()
     WString exeDir = exePath;
     size_t pos = exeDir.find_last_of(L"/\\");
     exeDir = exeDir.substr(0, pos + 1);
-    BeFileName outDir = BeFileName(exeDir);
+    BeFileName outDir = BeFileName(exeDir.c_str());
     outDir.AppendToPath(L"SimpleRDSApiTestDirectory");
     WString directory(outDir);
     if (BeFileName::DoesPathExist(directory.c_str()))
@@ -178,7 +178,7 @@ void FolderOperations(Utf8String guid)
     WString exeDir = exePath;
     size_t pos = exeDir.find_last_of(L"/\\");
     exeDir = exeDir.substr(0, pos + 1);
-    BeFileName outDir = BeFileName(exeDir);
+    BeFileName outDir = BeFileName(exeDir.c_str());
     outDir.AppendToPath(L"SimpleRDSApiTestDirectory");
     WString directory(outDir);
 
@@ -213,7 +213,7 @@ void DocumentOperations(Utf8String guid)
     WString exeDir = exePath;
     size_t pos = exeDir.find_last_of(L"/\\");
     exeDir = exeDir.substr(0, pos + 1);
-    BeFileName outDir = BeFileName(exeDir);
+    BeFileName outDir = BeFileName(exeDir.c_str());
     outDir.AppendToPath(L"SimpleRDSApiTestDirectory");
     WString directory(outDir);
 
@@ -244,7 +244,7 @@ void DownloadModify(Utf8String guid)
     WString exeDir = exePath;
     size_t pos = exeDir.find_last_of(L"/\\");
     exeDir = exeDir.substr(0, pos + 1);
-    BeFileName outDir = BeFileName(exeDir);
+    BeFileName outDir = BeFileName(exeDir.c_str());
     outDir.AppendToPath(L"SimpleRDSApiTestDirectory");
     WString directory(outDir);
 

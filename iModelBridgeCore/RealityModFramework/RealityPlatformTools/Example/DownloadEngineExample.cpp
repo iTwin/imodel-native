@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/DownloadEngineExample.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -83,7 +83,7 @@ static WString createDirWithHash(Utf8StringCR uri, WStringCR tempPath, uint64_t 
     BeStringUtilities::Split(pathComponents[pathComponents.size() - 1].c_str(), L".", filenameComponents);
 
     // Creating one directory per file because we'll need to unzip it into the directory
-    BeFileName separatedDirectoryForZip(tempPath);
+    BeFileName separatedDirectoryForZip(tempPath.c_str());
     WString filenameTemp = filenameComponents[0];
 
     // Creating the MD5 hash
@@ -295,7 +295,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);
     if (pDownload != NULL)
         {
-        pDownload->SetProgressCallBack(callback_progress_func, 0.1);
+        pDownload->SetProgressCallBack(callback_progress_func, 0.1f);
         pDownload->SetStatusCallBack(callback_status_func);
         pDownload->Perform();
         }
