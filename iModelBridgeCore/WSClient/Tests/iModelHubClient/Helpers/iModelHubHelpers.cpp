@@ -2,14 +2,13 @@
 |
 |     $Source: Tests/iModelHubClient/Helpers/iModelHubHelpers.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <OidcNativeClient/OidcNative.h>
 #include "iModelHubHelpers.h"
 #include "IntegrationTestsSettings.h"
 #include "TestsProgressCallback.h"
-#include "StubLocalState.h"
 #include "DgnPlatformHelpers.h"
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/Connect/SimpleConnectTokenProvider.h>
@@ -140,6 +139,16 @@ namespace iModelHubHelpers
     iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR projectId, bool expectSuccess)
         {
         return CreateNewiModel(*client, *db, projectId, expectSuccess);
+        }
+    
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             01/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR projectId, Utf8StringCR name, Utf8StringCR description, bool expectSuccess)
+        {
+        auto createResult = client.CreateEmptyiModel(projectId, name, description)->GetResult();
+        EXPECT_RESULT(createResult, expectSuccess);
+        return createResult;
         }
 
     /*--------------------------------------------------------------------------------------+
@@ -580,12 +589,32 @@ namespace iModelHubHelpers
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void AcquireAndAddChangeSets(ClientPtr client, iModelInfoPtr info, uint32_t count)
+    BriefcasePtr AcquireAndAddChangeSets(ClientPtr client, iModelInfoPtr info, uint32_t count)
         {
         BriefcaseResult acquireResult = AcquireAndOpenBriefcase(client, info, true, true);
-        ASSERT_SUCCESS(acquireResult);
+        EXPECT_SUCCESS(acquireResult);
         BriefcasePtr briefcase = acquireResult.GetValue();
-        ASSERT_SUCCESS(AddChangeSets(briefcase, count, true));
+        EXPECT_SUCCESS(AddChangeSets(briefcase, count, true));
+        return briefcase;
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             01/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void PushDefaultView(ClientPtr client, iModelInfoPtr info)
+        {
+        // Create model and insert view
+        BriefcaseResult acquireResult = AcquireAndOpenBriefcase(client, info, true, true);
+        EXPECT_SUCCESS(acquireResult);
+        BriefcasePtr briefcase = acquireResult.GetValue();
+
+        PhysicalModelPtr model = CreateModel("DefaultModel", briefcase->GetDgnDb());
+        EXPECT_TRUE(model.IsValid());
+        InsertSpatialView(*model, "DefaultView");
+        briefcase->GetDgnDb().SaveChanges();
+
+        ChangeSetsResult pushResult = PullMergeAndPush(briefcase, true, false);
+        EXPECT_SUCCESS(pushResult);
         }
 
     /*--------------------------------------------------------------------------------------+

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/Error.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,8 +61,9 @@ public:
         JobSchedulingFailed,
         ConflictsAggregate,
         FailedToGetProjectById,
-        
+
         DatabaseOperationFailed,
+        SQLiteOperationFailed,
 
         //Long Running Processes Errors
         FileIsNotYetInitialized = 100,

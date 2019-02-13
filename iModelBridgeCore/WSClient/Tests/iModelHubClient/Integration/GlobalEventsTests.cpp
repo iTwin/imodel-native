@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/GlobalEventsTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -38,7 +38,6 @@ struct ExpectedEventIdentifier
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GlobalEventsTests : IntegrationTestsBase
     {
-    DgnDbPtr m_db;
     static ClientPtr s_serviceAccountClient;
     GlobalConnectionPtr m_globalConnection;
     GlobalEventManagerPtr m_eventManager;
@@ -68,7 +67,6 @@ struct GlobalEventsTests : IntegrationTestsBase
     void SetUp() override
         {
         IntegrationTestsBase::SetUp();
-        m_db = CreateTestDb();
 
         bmap<Utf8String, Utf8String> requestOptions = bmap<Utf8String, Utf8String>();
         auto behaviourOptions = RequestBehaviorOptions();
@@ -84,8 +82,6 @@ struct GlobalEventsTests : IntegrationTestsBase
     +---------------+---------------+---------------+---------------+---------------+------*/
     void TearDown() override
         {
-        if (m_db.IsValid())
-            m_db = nullptr;
         iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
 
         if(!Utf8String::IsNullOrEmpty(m_subscriptionId.c_str()))
@@ -98,9 +94,9 @@ struct GlobalEventsTests : IntegrationTestsBase
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Uzkuraitis              05/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    iModelResult CreateiModel(const bool expectSuccess = true) const
+    iModelResult CreateiModel(const bool expectSuccess = true)
         {
-        return IntegrationTestsBase::CreateiModel(m_db, expectSuccess);
+        return IntegrationTestsBase::CreateEmptyiModel(GetTestiModelName(), expectSuccess);
         }
 
     /*--------------------------------------------------------------------------------------+

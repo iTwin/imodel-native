@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/ConnectSignInManager.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -92,7 +92,6 @@ struct ConnectSignInManager : IConnectSignInManager, std::enable_shared_from_thi
         AsyncTaskPtr<WSConnectVoidResult> _SignOut() override;
         bool _IsSignedIn() const override;
         UserInfo _GetUserInfo() const override;
-        Utf8String _GetLastUsername() const override;
         IConnectTokenProviderPtr _GetTokenProvider(Utf8StringCR rpUri) const override;
         AuthenticationHandlerPtr _GetAuthenticationHandler
             (
@@ -100,7 +99,6 @@ struct ConnectSignInManager : IConnectSignInManager, std::enable_shared_from_thi
             IHttpHandlerPtr httpHandler = nullptr,
             HeaderPrefix prefix = HeaderPrefix::Token
             ) const override;
-        void _StoreSignedInUser() override;
 
     private:
         ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore, IConnectionClientInterfacePtr connectionClient);

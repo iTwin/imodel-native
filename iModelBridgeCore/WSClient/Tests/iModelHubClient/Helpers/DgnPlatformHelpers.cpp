@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Helpers/DgnPlatformHelpers.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnCoreAPI.h>
@@ -12,6 +12,10 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             01/2019
+//---------------------------------------------------------------------------------------
 Dgn::DgnCategoryId CreateCategory(Utf8CP name, DgnDbR db)
     {
     SpatialCategory category(db.GetDictionaryModel(), name, DgnCategory::Rank::User, "");
@@ -19,10 +23,33 @@ Dgn::DgnCategoryId CreateCategory(Utf8CP name, DgnDbR db)
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
 
+    if (db.IsBriefcase())
+        {
+        IBriefcaseManager::Request req;
+        db.BriefcaseManager().AcquireForElementInsert(category);
+        }
+
     auto persistentCategory = category.Insert(appearance);
     BeAssert(persistentCategory.IsValid());
+    db.SaveChanges();
 
     return persistentCategory->GetCategoryId();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             01/2019
+//---------------------------------------------------------------------------------------
+Dgn::DgnCategoryId GetOrCreateDefaultCategory(DgnDbR db)
+    {
+    auto iterator = SpatialCategory::MakeIterator(db);
+
+    // If category aleady exists - return it
+    if (iterator.begin() != iterator.end())
+        {
+        return (*iterator.begin()).GetId<DgnCategoryId>();
+        }
+
+    return CreateCategory("DefaultCategory", db);
     }
 
 //---------------------------------------------------------------------------------------
@@ -75,7 +102,7 @@ PhysicalModelPtr CreateModel(Utf8CP name, DgnDbR db)
 DgnElementPtr Create3dElement(DgnModelR model, DgnCodeCR code)
     {
     DgnDbR db = model.GetDgnDb();
-    DgnCategoryId catId = (*SpatialCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
+    DgnCategoryId catId = GetOrCreateDefaultCategory(db);
     DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
     if (!classId.IsValid() || !catId.IsValid())
         {
@@ -90,7 +117,7 @@ DgnElementPtr Create2dElement(DgnModelR model, DgnCodeCR code)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Annotation2d::GetHandler());
-    DgnCategoryId catId = (*SpatialCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
+    DgnCategoryId catId = GetOrCreateDefaultCategory(db);
     if (!classId.IsValid() || !catId.IsValid())
         {
         BeAssert(false);
@@ -179,12 +206,20 @@ void InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate)
     OrthographicViewDefinitionPtr viewDef = new OrthographicViewDefinition(dictionary, name, *new CategorySelector(dictionary, ""), *new DisplayStyle3d(dictionary, ""), *modelSelector);
     ASSERT_TRUE(viewDef.IsValid());
 
+    GetOrCreateDefaultCategory(db);
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     viewDef->SetIsPrivate(isPrivate);
     viewDef->SetStandardViewRotation(StandardView::Iso);
     viewDef->LookAtVolume(model.QueryModelRange());
+
+    if (db.IsBriefcase())
+        {
+        IBriefcaseManager::Request req;
+        db.BriefcaseManager().AcquireForElementInsert(*viewDef);
+        }
+
     viewDef->Insert();
     ASSERT_TRUE(viewDef->GetViewId().IsValid());
     }

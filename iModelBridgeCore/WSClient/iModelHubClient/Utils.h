@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/Utils.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,6 +90,7 @@ namespace ServerSchema
         static Utf8CP Description = "Description";
         static Utf8CP FileDescription = "FileDescription";
         static Utf8CP iModelDescription = "Description";
+        static Utf8CP iModelTemplate = "iModelTemplate";
         static Utf8CP UserCreated = "UserCreated";
         static Utf8CP UserOwned = "UserOwned";
         static Utf8CP CreatedDate = "CreatedDate";
@@ -157,6 +158,7 @@ namespace ServerSchema
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     static Utf8CP DiscardReservedCodes = "DiscardReservedCodes";
+    static Utf8CP iModelTemplateEmpty = "Empty";
     }
 
 namespace Locks

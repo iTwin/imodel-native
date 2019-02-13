@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Client/WSRepositoryClientTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -24,7 +24,7 @@ void WSRepositoryClientTests::SetUp()
     {
     WSClientBaseTest::SetUp();
 
-    m_localState = StubLocalState();
+    m_localState = RuntimeJsonLocalState();
 
     ConnectAuthenticationPersistence::CustomInitialize(&m_localState);
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);

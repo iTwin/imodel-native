@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WebServicesTestsHelper.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,6 @@
 #include <WebServices/Client/WSChangeset.h>
 #include <WebServices/Client/ObjectId.h>
 
-#include "../WebServices/Connect/StubLocalState.h"
 #include "../WebServices/Configuration/StubBuddiClient.h"
 
 #include "AsyncTestCheckpoint.h"

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/LRPTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsBase.h"
@@ -86,7 +86,7 @@ TEST_F(LRPTests, InitializeFileJob)
 
     //Check if codes are created and locks cleaned
     iModelHubHelpers::ExpectUnavailableCodesCount(briefcase, seedFileCodesCount + 2);
-     iModelHubHelpers::ExpectLocksCount(briefcase, 0);
+    iModelHubHelpers::ExpectLocksCount(briefcase, 0);
 
     // Change the file guid
     auto fileName = m_db->GetFileName();
@@ -104,5 +104,5 @@ TEST_F(LRPTests, InitializeFileJob)
 
     //Check if codes are created and locks cleaned
     iModelHubHelpers::ExpectUnavailableCodesCount(briefcase, seedFileCodesCount + 4);
-     iModelHubHelpers::ExpectLocksCount(briefcase, 0);
+    iModelHubHelpers::ExpectLocksCount(briefcase, 0);
     }
