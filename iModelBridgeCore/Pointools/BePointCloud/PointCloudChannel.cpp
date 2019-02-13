@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudChannel.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BePointCloudInternal.h"
@@ -37,7 +37,7 @@ PointCloudChannel::PointCloudChannel (WStringCR name,  WStringCP userInfo, unsig
 
     BuildPersistentName ();
 
-    PThandle handle =  ptCreatePointChannel ((wchar_t *)m_persistentName.c_str(), typesize, multiple, defValue, outofCore);
+    PThandle handle =  ptCreatePointChannel (const_cast<wchar_t*>(m_persistentName.c_str()), typesize, multiple, defValue, outofCore);
     m_channelHandle = PointCloudChannelHandle::Create (handle);
     }
 
@@ -82,7 +82,7 @@ PointCloudChannel::PointCloudChannel (PointCloudChannel& channel, WStringCR newN
     {
     BuildPersistentName ();
 
-    PThandle handle =  ptCopyPointChannel (channel.GetHandle(), (wchar_t *)m_persistentName.c_str(), m_outofCore);
+    PThandle handle =  ptCopyPointChannel (channel.GetHandle(), const_cast<wchar_t*>(m_persistentName.c_str()), m_outofCore);
     m_channelHandle = PointCloudChannelHandle::Create (handle);
     }
 
