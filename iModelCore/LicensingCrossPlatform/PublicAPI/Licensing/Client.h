@@ -16,7 +16,9 @@
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
- #include <Licensing/Utils/FeatureUserDataMap.h>
+#include <Licensing/Utils/FeatureUserDataMap.h>
+
+#include <Licensing/Utils/IBuddiProvider.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -56,7 +58,7 @@ public:
         );
 
 	LICENSING_EXPORT static ClientPtr CreateWithKey
-	(
+        (
 		Utf8StringCR accessKey, /** AccessKey */
 		ClientInfoPtr clientInfo, /** A ClientInfoPtr */
 		BeFileNameCR dbPath, /** Path for LicenseClient database */
@@ -64,7 +66,7 @@ public:
 		Utf8StringCR projectId = "", /** ProjectID string, defaults to an empty string */
 		Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
 		IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
-	);
+        );
 
 	//! StartApplication performs actions and creates threads required for usage posting and policy requests, returns LicenseStatus
     // TODO: Return more than BentleyStatus to indicate to the app if the user has rights to use this app or it's crippled etc...

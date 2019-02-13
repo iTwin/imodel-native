@@ -11,6 +11,7 @@
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
+#include <Licensing/Utils/IBuddiProvider.h>
 
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
@@ -34,12 +35,14 @@ protected:
     IDelayedExecutorPtr m_delayedExecutor;
     Utf8String m_featureString;
     Utf8String m_correlationId;
+    IBuddiProviderPtr m_buddiProvider;
 
 public:
     LICENSING_EXPORT FreeClientImpl
         (
         Utf8StringCR featureString,
-        IHttpHandlerPtr httpHandler
+        IHttpHandlerPtr httpHandler,
+        IBuddiProviderPtr buddiProvider
         );
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
 };

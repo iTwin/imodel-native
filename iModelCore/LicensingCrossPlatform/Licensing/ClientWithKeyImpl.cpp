@@ -26,6 +26,7 @@ ClientWithKeyImpl::ClientWithKeyImpl(
 	ClientInfoPtr clientInfo,
 	BeFileNameCR db_path,
 	bool offlineMode,
+    IBuddiProviderPtr buddiProvider,
 	Utf8StringCR projectId,
 	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
@@ -37,6 +38,7 @@ ClientWithKeyImpl::ClientWithKeyImpl(
 	m_clientInfo = clientInfo;
 	m_dbPath = db_path;
 	m_offlineMode = offlineMode;
+    m_buddiProvider = buddiProvider;
 	m_projectId = projectId;
 	m_featureString = featureString;
 	m_httpHandler = httpHandler;
@@ -102,7 +104,7 @@ folly::Future<folly::Unit> ClientWithKeyImpl::SendUsageRealtimeWithKey()
 	{
 	LOG.trace("ClientWithKeyImpl::SendUsageRealtimeWithKey");
 
-	auto url = UrlProvider::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
+    auto url = m_buddiProvider->UlasRealtimeLoggingBaseUrl();
 
 	url += "/" + m_accessKey;
 

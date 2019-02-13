@@ -25,6 +25,7 @@
     <ClInclude Include="Published\ClientTests.h" />
     <ClInclude Include="Published\DummyPolicyHelper.h" />
     <ClInclude Include="Published\GenerateSIDTests.h" />
+    <ClInclude Include="Published\Mocks\BuddiProviderMock.h" />
     <ClInclude Include="Published\PolicyTests.h" />
     <ClInclude Include="Published\PolicyTokenTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />

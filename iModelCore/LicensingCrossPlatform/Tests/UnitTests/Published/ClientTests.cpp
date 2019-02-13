@@ -29,6 +29,10 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 
+#include "Mocks/BuddiProviderMock.h"
+using ::testing::AtLeast;
+using ::testing::Return;
+
 #define TEST_PRODUCT_ID     "2545"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -87,7 +91,7 @@ BeFileName GetUsageDbPath()
     return path;
     }
 
-ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
@@ -110,23 +114,25 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         manager,
         dbPath,
         true,
+        buddiProvider,
         "",
         "",
         proxy);
     }
 
-FreeClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+FreeClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
 {
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-	return std::make_shared<FreeClientImpl>(
-		"",
-		proxy);
+    return std::make_shared<FreeClientImpl>(
+        "",
+        proxy,
+        buddiProvider);
 }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
 {
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
@@ -147,13 +153,15 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInte
 		clientInfo,
 		dbPath,
 		true,
+        buddiProvider,
 		"",
 		"",
 		proxy);
 }
 
+// Note: cannot use BuddiProvider mocks with clients created with the factory
 ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
-{
+    {
 	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
@@ -178,7 +186,7 @@ ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, I
 		"",
 		"",
 		proxy);
-}
+    }
 
 FreeClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
 {
@@ -221,17 +229,22 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInte
 
 ClientImplPtr CreateTestClient(bool signIn)
     {
-    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, nullptr);
+    }
+
+ClientImplPtr CreateTestClient(bool signIn, IBuddiProviderPtr buddiProvider)
+    {
+    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider);
     }
 
 ClientPtr CreateTestClientFromFactory(bool signIn)
-{
-	return CreateTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-}
-
-FreeClientImplPtr CreateFreeTestClient(bool signIn)
     {
-	return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+    return CreateTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+    }
+
+FreeClientImplPtr CreateFreeTestClient(bool signIn, IBuddiProviderPtr buddiProvider)
+    {
+	return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider);
     }
 
 FreeClientPtr CreateFreeTestClientFromFactory(bool signIn)
@@ -239,10 +252,10 @@ FreeClientPtr CreateFreeTestClientFromFactory(bool signIn)
 	return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
 }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn)
-{
-	return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-}
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider)
+    {
+    return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider);
+    }
 
 ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
 {
@@ -251,17 +264,17 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
 
 ClientImplPtr CreateTestClient(bool signIn, UrlProvider::Environment env)
     {
-    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), env, TEST_PRODUCT_ID);
+    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), env, TEST_PRODUCT_ID, nullptr);
     }
 
 ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor)
     {
-    return CreateTestClient(signIn, heartbeatInterval, timeRetriever, delayedExecutor, UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+    return CreateTestClient(signIn, heartbeatInterval, timeRetriever, delayedExecutor, UrlProvider::Environment::Qa, TEST_PRODUCT_ID, nullptr);
     }
 
 ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, Utf8StringCR productId)
     {
-    return CreateTestClient(signIn, heartbeatInterval, timeRetriever, delayedExecutor, UrlProvider::Environment::Qa, productId);
+    return CreateTestClient(signIn, heartbeatInterval, timeRetriever, delayedExecutor, UrlProvider::Environment::Qa, productId, nullptr);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -317,14 +330,26 @@ void ClientTests::SetUpTestCase()
 
 TEST_F(ClientTests, StartApplication_StopApplication_Success)
     {
-    auto client = CreateTestClient(true);
+    auto buddiProviderMock = std::shared_ptr<BuddiProviderMock>(new BuddiProviderMock());
+
+    EXPECT_CALL(*buddiProviderMock, EntitlementPolicyBaseUrl()) // called on StartApplication
+        .Times(AtLeast(1))
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api"));
+
+    auto client = CreateTestClient(true, buddiProviderMock); // makes a client instead of a clientImplPtr
     EXPECT_NE((int) client->StartApplication(), (int) LicenseStatus::Error);
     EXPECT_SUCCESS(client->StopApplication());
     }
 
 TEST_F(ClientTests, StartApplication_StopApplication_Repeat_Success)
-	{
-	auto client = CreateTestClient(true);
+    {
+    auto buddiProviderMock = std::shared_ptr<BuddiProviderMock>(new BuddiProviderMock());
+
+    EXPECT_CALL(*buddiProviderMock, EntitlementPolicyBaseUrl()) // called on StartApplication
+        .Times(AtLeast(1))
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api"));
+
+    auto client = CreateTestClient(true, buddiProviderMock); // makes a client instead of a clientImplPtr
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
 	EXPECT_SUCCESS(client->StopApplication());
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
@@ -332,8 +357,13 @@ TEST_F(ClientTests, StartApplication_StopApplication_Repeat_Success)
 	}
 
 TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplication_Success)
-	{
-	auto client = CreateFreeTestClient(true);
+    {
+    auto buddiProviderMock = std::make_shared<BuddiProviderMock>();
+
+    EXPECT_CALL(*buddiProviderMock, UlasRealtimeLoggingBaseUrl()) // called on TrackUsage()
+        .Times(AtLeast(1))
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi/"));
+    auto client = CreateFreeTestClient(true, buddiProviderMock);
 	Utf8String tokenstring = "b683fe041bfd1ef554599e69253271f5f6775eb7106514fa56e512040d635d4a";
 	auto version = BeVersion(1, 0);
 	Utf8String projectId = "00000000-0000-0000-0000-000000000000";
@@ -342,20 +372,28 @@ TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplication_Success)
 
 TEST_F(ClientTests, StartWithKeyApplication_StopApplication_Success)
 {
-	auto client = CreateWithKeyTestClient(true);
+    auto buddiProviderMock = std::make_shared<BuddiProviderMock>();
+
+    EXPECT_CALL(*buddiProviderMock, UlasRealtimeLoggingBaseUrl()) // called on SendUsageRealtimeWithKey() which is not currently called by StartApplication()
+        //.Times(AtLeast(1))
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi/"));
+
+	auto client = CreateWithKeyTestClient(true, buddiProviderMock);
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
 	EXPECT_SUCCESS(client->StopApplication());
 }
 
 TEST_F(ClientTests, StartApplicationFromFactory_Success)
-{
-	auto client = CreateTestClientFromFactory(true);
+    {
+    // Note: cannot use BuddiProvider mock with factory-created client
+    auto client = CreateTestClientFromFactory(true);
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
 	client->StopApplication();
-}
+    }
 
 TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplicationFromFactory_Success)
 {
+    // Note: cannot use mocks with the factory-created clients
 	auto client = CreateFreeTestClientFromFactory(true);
 	Utf8String tokenstring = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
 	auto version = BeVersion(1, 0);
@@ -365,6 +403,7 @@ TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplicationFromFactory_Success)
 
 TEST_F(ClientTests, StartWithKeyApplicationFromFactory_Success)
 {
+    // Note: cannot use BuddiProvider mock with factory-created client
 	auto client = CreateWithKeyTestClientFromFactory(true);
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
 	client->StopApplication();
@@ -374,7 +413,13 @@ TEST_F(ClientTests, GetCertificate_Success)
     {
     Utf8String cert;
 
-    auto client = CreateTestClient(true);
+    auto buddiProviderMock = std::shared_ptr<BuddiProviderMock>(new BuddiProviderMock());
+
+    EXPECT_CALL(*buddiProviderMock, EntitlementPolicyBaseUrl()) // called on GetCertificate
+        .Times(AtLeast(1))
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api"));
+
+    auto client = CreateTestClient(true, buddiProviderMock);
 
     EXPECT_NO_THROW(cert = client->GetCertificate().get());
     EXPECT_NE(cert.empty(), true);
@@ -382,7 +427,13 @@ TEST_F(ClientTests, GetCertificate_Success)
 
 TEST_F(ClientTests, GetPolicy_Success)
     {
-    auto client = CreateTestClient(true);
+    auto buddiProviderMock = std::shared_ptr<BuddiProviderMock>(new BuddiProviderMock());
+
+    EXPECT_CALL(*buddiProviderMock, EntitlementPolicyBaseUrl()) // called on GetPolicy
+        .Times(AtLeast(1))
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api"));
+
+    auto client = CreateTestClient(true, buddiProviderMock);
 
     auto policyToken = client->GetPolicy().get();
     EXPECT_NE(policyToken, nullptr);
@@ -398,7 +449,7 @@ Response StubHttpResponse()
 
 TEST_F(ClientTests, GetCertificate_Success_Mock)
     {
-    auto url = "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api/PolicyTokenSigningCertificate";
+    auto url = "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api";
 
     GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, [=] (Http::RequestCR request)
@@ -412,8 +463,14 @@ TEST_F(ClientTests, GetCertificate_Success_Mock)
     }
 
 TEST_F(ClientTests, GetProductStatus_Test)
-	{
-	auto client = CreateTestClient(true);
+    {
+    auto buddiProviderMock = std::shared_ptr<BuddiProviderMock>(new BuddiProviderMock());
+
+    EXPECT_CALL(*buddiProviderMock, EntitlementPolicyBaseUrl()) // called on StartApplication
+        .Times(AtLeast(1))
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api"));
+
+    auto client = CreateTestClient(true, buddiProviderMock);
 	client->StartApplication();
 	// Add policies with unique ProductIds for testing multiple cases
 	Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
@@ -472,8 +529,14 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	}
 
 TEST_F(ClientTests, CleanUpPolicies_Success)
-	{
-	auto client = CreateTestClient(true);
+    {
+    auto buddiProviderMock = std::shared_ptr<BuddiProviderMock>(new BuddiProviderMock());
+
+    EXPECT_CALL(*buddiProviderMock, EntitlementPolicyBaseUrl()) // called on StartApplication
+        .Times(AtLeast(1))
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api"));
+
+    auto client = CreateTestClient(true, buddiProviderMock);
 	client->StartApplication();
 	// create expired/invalid and valid policies and add them to database
 	Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
@@ -513,7 +576,14 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
 
 TEST_F(ClientTests, SendUsageLogs_Success)
     {
-    auto client = CreateTestClient(true, UrlProvider::Environment::Qa);
+    auto buddiProviderMock = std::shared_ptr<BuddiProviderMock>(new BuddiProviderMock());
+
+    EXPECT_CALL(*buddiProviderMock, UlasLocationBaseUrl())
+        .Times(AtLeast(1)) 
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.ULAS.LocationService/LocationSvcWebApi"));
+
+    auto client = CreateTestClient(true, buddiProviderMock);
+    //auto client = CreateTestClient(true, UrlProvider::Environment::Qa); // Qa is the default
     ASSERT_NE(client, nullptr);
 
     SCVWritter writter;
@@ -547,7 +617,15 @@ TEST_F(ClientTests, SendUsageLogs_Success)
 
 TEST_F(ClientTests, SendFeatureLogs_Success)
     {
-    auto client = CreateTestClient(true, UrlProvider::Environment::Qa);
+    auto buddiProviderMock = std::shared_ptr<BuddiProviderMock>(new BuddiProviderMock());
+
+    EXPECT_CALL(*buddiProviderMock, UlasLocationBaseUrl())
+        .Times(AtLeast(1))
+        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.ULAS.LocationService/LocationSvcWebApi"));
+
+    auto client = CreateTestClient(true, buddiProviderMock);
+
+    //auto client = CreateTestClient(true, UrlProvider::Environment::Qa); // Qa is the default
     ASSERT_NE(client, nullptr);
 
     SCVWritter writter;

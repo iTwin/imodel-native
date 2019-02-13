@@ -95,6 +95,9 @@
     <ClInclude Include="Published\Utils\FeatureUserDataMapTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Published\Mocks\BuddiProviderMock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

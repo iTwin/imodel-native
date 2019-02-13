@@ -26,6 +26,8 @@
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
+#include <Licensing/Utils/IBuddiProvider.h>
+
 // Log Posting Sources
 #define LOGPOSTINGSOURCE_REALTIME           "RealTime"
 #define LOGPOSTINGSOURCE_OFFLINE            "Offline"
@@ -65,6 +67,7 @@ protected:
     Utf8String m_correlationId;
     bool m_offlineMode;
     bool m_stopApplicationCalled;
+    IBuddiProviderPtr m_buddiProvider;
 
     // Policy
 	std::shared_ptr<Policy> m_policy;
@@ -121,6 +124,7 @@ public:
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR db_path,
         bool offlineMode,
+        IBuddiProviderPtr buddiProvider,
         Utf8StringCR projectId,
         Utf8StringCR featureString,
         IHttpHandlerPtr httpHandler

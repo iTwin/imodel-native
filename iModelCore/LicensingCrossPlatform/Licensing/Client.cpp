@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Client.h>
+#include <Licensing/Utils/BuddiProvider.h>
 #include "ClientImpl.h"
 #include "ClientWithKeyImpl.h"
 
@@ -37,8 +38,9 @@ Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
 )
     {
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler)));
-	}
+    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
+    return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, buddiProvider, projectId, featureString, httpHandler)));
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -54,7 +56,8 @@ ClientPtr Client::CreateWithKey
 	IHttpHandlerPtr httpHandler
 )
 {
-	return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, projectId, featureString, httpHandler)));
+    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
+    return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, buddiProvider, projectId, featureString, httpHandler)));
 }
 
 /*--------------------------------------------------------------------------------------+

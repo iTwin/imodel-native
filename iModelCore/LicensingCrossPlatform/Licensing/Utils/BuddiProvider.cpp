@@ -1,46 +1,41 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/FreeClient.cpp $
+|     $Source: Licensing/Utils/BuddiProvider.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 
-#include <Licensing/FreeClient.h>
 #include <Licensing/Utils/BuddiProvider.h>
-#include "FreeClientImpl.h"
+#include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_LICENSING
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-FreeClient::FreeClient
-(
-    std::shared_ptr<struct IFreeClient> implementation
-)
+Utf8String BuddiProvider::UlasLocationBaseUrl()
 {
-    m_impl = implementation;
+    // NOTE: as of 2/2019 UrlProvider's DefaultUrls for this are old (only are used if call to buddi fails)
+    return UrlProvider::Urls::UsageLoggingServicesLocation.Get();
 }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-FreeClientPtr FreeClient::Create
-(
-    Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler
-)
+Utf8String BuddiProvider::UlasRealtimeLoggingBaseUrl()
 {
-    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    return std::shared_ptr<FreeClient>(new FreeClient(std::make_shared<FreeClientImpl>(featureString, httpHandler, buddiProvider)));
+    // Ulas Posting Service url is not in UrlProvider by name
+    // TODO: make this a generic buddi lookup method with buddiName (string) as input?
+    return UrlProvider::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
 }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> FreeClient::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
+Utf8String BuddiProvider::EntitlementPolicyBaseUrl()
 {
-    return m_impl->TrackUsage(accessToken, version, projectId);
+    return UrlProvider::Urls::EntitlementPolicyService.Get();
 }

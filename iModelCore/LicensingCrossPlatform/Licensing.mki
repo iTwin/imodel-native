@@ -31,6 +31,8 @@ Headers + $(PublicApiDir)Utils/SCVWritter.h
 Headers + $(PublicApiDir)Utils/TimeRetriever.h
 Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
 Headers + $(PublicApiDir)Utils/DateHelper.h
+Headers + $(PublicApiDir)Utils/IBuddiProvider.h
+Headers + $(PublicApiDir)Utils/BuddiProvider.h
 
 
 #---------------------------------------------------------------------------------------+
@@ -65,5 +67,7 @@ $(o)DelayedExecutor$(oext)           : $(SourceDir)Utils/DelayedExecutor.cpp $(H
 $(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)FeatureUserDataMap$(oext)        : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)BuddiProvider$(oext)             : $(SourceDir)Utils/BuddiProvider.cpp $(Headers) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

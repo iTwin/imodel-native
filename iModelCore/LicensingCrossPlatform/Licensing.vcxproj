@@ -15,6 +15,7 @@
     <ClCompile Include="Licensing\Policy.cpp" />
     <ClCompile Include="Licensing\PolicyToken.cpp" />
     <ClCompile Include="Licensing\UsageDb.cpp" />
+    <ClCompile Include="Licensing\Utils\BuddiProvider.cpp" />
     <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
     <ClCompile Include="Licensing\GenerateSID.cpp" />
     <ClCompile Include="Licensing\Utils\FeatureUserDataMap.cpp" />
@@ -30,6 +31,8 @@
     <ClInclude Include="Licensing\IClient.h" />
     <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
     <ClInclude Include="Licensing\IFreeClient.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\BuddiProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\IBuddiProvider.h" />
     <ClInclude Include="PublicAPI\Licensing\FreeClient.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\DateHelper.h" />
     <ClInclude Include="Licensing\FreeApplicationPolicyHelper.h" />

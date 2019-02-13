@@ -28,6 +28,7 @@ public:
 		ClientInfoPtr clientInfo,
 		BeFileNameCR db_path,
 		bool offlineMode,
+        IBuddiProviderPtr buddiProvider,
 		Utf8StringCR projectId,
 		Utf8StringCR featureString,
 		IHttpHandlerPtr httpHandler

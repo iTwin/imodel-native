@@ -24,7 +24,8 @@ USING_NAMESPACE_BENTLEY_LICENSING
 FreeClientImpl::FreeClientImpl
 (
 	Utf8StringCR featureString,
-	IHttpHandlerPtr httpHandler
+    IHttpHandlerPtr httpHandler,
+    IBuddiProviderPtr buddiProvider
 )
 	{
 	m_userInfo = ConnectSignInManager::UserInfo();
@@ -34,6 +35,7 @@ FreeClientImpl::FreeClientImpl
 	m_clientInfo = std::make_shared<ClientInfo>("FreeApplication",BeVersion(1,0),"FreeGUID",deviceInfo,"FreeDescriptor");
 	m_featureString = featureString;
 	m_httpHandler = httpHandler;
+    m_buddiProvider = buddiProvider;
 	m_correlationId = BeGuid(true).ToString();
 	m_timeRetriever = TimeRetriever::Get();
 	m_delayedExecutor = DelayedExecutor::Get();
@@ -48,7 +50,7 @@ folly::Future<BentleyStatus> FreeClientImpl::TrackUsage(Utf8StringCR accessToken
     // Send real time usage
     LOG.trace("TrackUsage");
 
-    auto url = UrlProvider::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
+    auto url = m_buddiProvider->UlasRealtimeLoggingBaseUrl();
 
     HttpClient client(nullptr, m_httpHandler);
     auto uploadRequest = client.CreateRequest(url, "POST");

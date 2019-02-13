@@ -31,6 +31,7 @@ ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 bool offlineMode,
+IBuddiProviderPtr buddiProvider,
 Utf8StringCR projectId,
 Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
@@ -40,6 +41,7 @@ m_clientInfo(clientInfo),
 m_authProvider(authenticationProvider),
 m_dbPath(dbPath),
 m_featureString(featureString),
+m_buddiProvider(buddiProvider),
 m_httpHandler(httpHandler)
     {
     m_usageDb = std::make_unique<UsageDb>();
@@ -665,7 +667,7 @@ folly::Future<folly::Unit> ClientImpl::SendUsageLogs(BeFileNameCR usageCSV, Utf8
     {
     LOG.debug("ClientImpl::SendUsageLogs");
 
-    auto url = UrlProvider::Urls::UsageLoggingServicesLocation.Get();
+    auto url = m_buddiProvider->UlasLocationBaseUrl();
     url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(),
                             m_clientInfo->GetLanguage().c_str());
 
@@ -710,7 +712,7 @@ folly::Future<folly::Unit> ClientImpl::SendFeatureLogs(BeFileNameCR featureCSV, 
     {
     LOG.debug("ClientImpl::SendFeatureLogs");
 
-    auto url = UrlProvider::Urls::UsageLoggingServicesLocation.Get();
+    auto url = m_buddiProvider->UlasLocationBaseUrl();
     url += Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(),
                             m_clientInfo->GetLanguage().c_str());
 
@@ -755,7 +757,7 @@ folly::Future<Utf8String> ClientImpl::PerformGetPolicyRequest()
     {
     LOG.debug("ClientImpl::PerformGetPolicyRequest");
 
-    auto url = UrlProvider::Urls::EntitlementPolicyService.Get() + "/GetPolicy";
+    auto url = m_buddiProvider->EntitlementPolicyBaseUrl() + "/GetPolicy";
 
     LOG.debugv("ClientImpl::PerformGetPolicyRequest - EntitlementPolicyService: %s", url.c_str());
 
@@ -804,7 +806,7 @@ folly::Future<Utf8String> ClientImpl::GetCertificate()
     {
     LOG.debug("ClientImpl::GetCertificate");
 
-    auto url = UrlProvider::Urls::EntitlementPolicyService.Get() + "/PolicyTokenSigningCertificate";
+    auto url = m_buddiProvider->EntitlementPolicyBaseUrl() + "/PolicyTokenSigningCertificate";
 
     LOG.debugv("GetCertificate - EntitlementPolicyService: %s", url.c_str());
 
