@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurveLocationDetailPair.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -67,7 +67,7 @@ CurveLocationDetailPair::CurveLocationDetailPair(
     ICurvePrimitiveCP curve0, double a0, 
     ICurvePrimitiveCP curve1, double a1
     )
-    : detailA (curve0), detailB ()
+    : detailA (curve0), detailB (curve1)
     {
     detailA.a = a0;
     detailB.a = a1;
