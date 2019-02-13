@@ -24,7 +24,7 @@
 
     </Part>
     <!-- The following parts allow to share gdal with Vortex using older compilers -->
-    <Part Name="GdalLibVC11"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2012=1" OnlyPlatforms="x86,x64">
+    <Part Name="GdalLibVC11"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BentleyBuildMakeOptions="+dBUILD_USING_VS2012=1" OnlyPlatforms="x86,x64">
         <SubPart PartName="ZLib" />
         <SubPart PartName="JpegLib" />
         <SubPart PartName="PngLib" />
@@ -35,7 +35,7 @@
             <Libs>Delivery/$(stlibprefix)IppGdalLibVC11$(stlibdebugext)</Libs>
         </Bindings>
     </Part>
-    <Part Name="GdalLibVC8"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2005=1" OnlyPlatforms="x86,x64">
+    <Part Name="GdalLibVC8"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BentleyBuildMakeOptions="+dBUILD_USING_VS2005=1" OnlyPlatforms="x86,x64">
         <SubPart PartName="ZLib" />
         <SubPart PartName="JpegLib" />
         <SubPart PartName="PngLib" />
@@ -68,7 +68,7 @@
         </Bindings>
     </Part-->
 
-    <Part Name="Jpeg12BitsLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke" BMakeOptions="+dJPEGLIB_SUPPORT_12BITS"> 
+    <Part Name="Jpeg12BitsLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke" BentleyBuildMakeOptions="+dJPEGLIB_SUPPORT_12BITS"> 
         <Bindings>
             <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)IppJpeg12Bits$(stlibext)</Libs>
             <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)IppJpeg12Bits$(stlibdebugext)</Libs>
@@ -185,7 +185,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests"/>
         <SubPart PartName="UnitTests-Common"/>
         <Bindings>
@@ -193,7 +193,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-FileFormat" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=FileFormat">
+    <Part Name="UnitTests-FileFormat" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=FileFormat">
         <SubPart PartName="PrewireForUnitTests"/>
         <SubPart PartName="UnitTests-Common"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
@@ -270,7 +270,7 @@
     <!--                ********************** -->
     <!--                **** AndroidJUnit **** -->
     <!--                ********************** -->
-    <Part Name="AndroidJUnit-TestCollection" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit-TestCollection" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dTEST_SHORT_NAME=IppTst -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="ImagePP-TestCollection"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>

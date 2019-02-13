@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/ImagePPInternal/gra/DownSampling.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -696,7 +696,7 @@ void AverageStretch_N(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, siz
                 for (uint64_t line = 0; line < n; ++line)
                     {
                     BeAssert((inY + line) < inHeight);
-                    Data_T const* pSrcLine = (Data_T*)(pInData + (inY + line)*inPitch);
+                    Data_T const* pSrcLine = (Data_T const*)(pInData + (inY + line)*inPitch);
                     for (uint64_t col = 0; col < n; ++col)
                         sum += pSrcLine[(inX + col)*ChannelCount_T + channel];
                     }
@@ -713,7 +713,7 @@ void AverageStretch_N(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, siz
                 for (uint64_t line = 0; line < n; ++line)
                     {
                     BeAssert((inY + line) < inHeight);
-                    Data_T const* pSrcLine = (Data_T*)(pInData + (inY + line)*inPitch);
+                    Data_T const* pSrcLine = (Data_T const*)(pInData + (inY + line)*inPitch);
                     for (uint64_t col = 0; col < n; ++col)
                         sum += pSrcLine[(min(inX + col, srcLastX))*ChannelCount_T + channel];
                     }
@@ -735,7 +735,7 @@ void AverageStretch_N(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, siz
                 sum = 0;
                 for (uint64_t line = 0; line < n; ++line)
                     {
-                    Data_T const* pSrcLine = (Data_T*)(pInData + (min(inY + line, srcLastY))*inPitch);
+                    Data_T const* pSrcLine = (Data_T const*)(pInData + (min(inY + line, srcLastY))*inPitch);
                     for (uint64_t col = 0; col < n; ++col)
                         sum += pSrcLine[(min(inX + col, srcLastX))*ChannelCount_T + channel];
                     }

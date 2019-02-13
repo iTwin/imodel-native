@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DPolygonOfSegments.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -152,11 +152,11 @@ inline HGF2DSimpleShape::RotationDirection HGF2DPolygonOfSegments::CalculateRota
     if (!m_RotationDirectionUpToDate)
         {
         // Cast out of const
-        HGF2DSimpleShape::RotationDirection*   pTheDirection = (HGF2DSimpleShape::RotationDirection*)&m_RotationDirection;
+        HGF2DSimpleShape::RotationDirection*   pTheDirection = const_cast<HGF2DSimpleShape::RotationDirection*>(&m_RotationDirection);
 
         *pTheDirection = (CalculateRawArea() < 0.0 ? HGF2DSimpleShape::CW : HGF2DSimpleShape::CCW);
 
-        (*((bool*)&m_RotationDirectionUpToDate)) = true;
+        (*(const_cast<bool*>(&m_RotationDirectionUpToDate))) = true;
         }
 
     return(m_RotationDirection);
