@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/SyncInfo.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -68,28 +68,6 @@ struct SyncInfo
                 Utf8String GetName() { return m_name; }
             };
 
-        struct ModelIterator : BeSQLite::DbTableIterator
-            {
-            ModelIterator(DgnDbCR db, Utf8CP where);
-            struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-                {
-                private:
-                    friend struct ModelIterator;
-                    Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
-
-                public:
-                    int64_t GetRowId();
-                    DgnModelId GetSourceId();
-                    DgnModelId GetTargetId();
-                    Utf8CP GetName();
-                    Entry const& operator* () const { return *this; }
-                };
-            typedef Entry const_iterator;
-            typedef Entry iterator;
-            const_iterator begin() const;
-            const_iterator end() const { return Entry(NULL, false); }
-            };
-
         struct ElementMapping
             {
             private:
@@ -106,28 +84,6 @@ struct SyncInfo
                 DgnElementId GetTargetId() { return m_targetId; }
             };
 
-        struct ElementIterator : BeSQLite::DbTableIterator
-            {
-            ElementIterator(DgnDbCR db, Utf8CP where);
-            struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-                {
-                private:
-                    friend struct ElementIterator;
-                    Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
-
-                public:
-                    int64_t GetRowId();
-                    DgnElementId GetSourceId();
-                    DgnElementId GetTargetId();
-                    Utf8CP GetName();
-                    Entry const& operator* () const { return *this; }
-                };
-            typedef Entry const_iterator;
-            typedef Entry iterator;
-            const_iterator begin() const;
-            const_iterator end() const { return Entry(NULL, false); }
-            };
-
     private:
         BimFromJsonImpl& m_importer;
         DgnDb* m_dgnDb;
@@ -139,6 +95,7 @@ struct SyncInfo
         bmap<DgnFontId, DgnFontId> m_fontMap;
         bmap<DgnStyleId, DgnStyleId> m_styleMap;
         bmap<LsComponentId, LsComponentId> m_componentMap;
+        bmap<BeSQLite::EC::ECInstanceId, BeSQLite::EC::ECInstanceId> m_aspectMapping;
 
     protected:
         BentleyStatus PerformVersionChecks();
@@ -193,6 +150,9 @@ struct SyncInfo
         //! @param[in] targetId The model id of the target Bis model
         //! @param[in[ sourceId The model id of the source dgndb model
         BentleyStatus InsertModel(ModelMapping& minfo, DgnModelId target, DgnModelId source, Utf8String name);
+
+        BentleyStatus InsertAspect(BeSQLite::EC::ECInstanceId oldId, BeSQLite::EC::ECInstanceId newId);
+        BeSQLite::EC::ECInstanceId LookupAspect(BeSQLite::EC::ECInstanceId oldId);
 
         BentleyStatus InsertCodeSpec(CodeSpecId oldId, CodeSpecId newId);
         CodeSpecId LookupCodeSpec(CodeSpecId oldId);

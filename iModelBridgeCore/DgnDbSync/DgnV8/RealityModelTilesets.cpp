@@ -242,27 +242,20 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             return ERROR;
             }
 
-        BeFileName file(fileName.c_str());
-        uint64_t currentLastModifiedTime;
-        uint64_t currentFileSize;
-        Utf8String currentEtag;
-        GetSyncInfo().GetCurrentImageryInfo(fileName, currentLastModifiedTime, currentFileSize, currentEtag);
+        SyncInfo::UriContentInfo currentInfo;
+        currentInfo.GetInfo(fileName);
 
-        uint64_t existingLastModifiedTime;
-        uint64_t existingFileSize;
-        Utf8String existingEtag;
+        auto imageryXsa = SyncInfo::UriExternalSourceAspect::GetAspect(*GetDgnDb().Elements().GetElement(model->GetModeledElementId()));
         Utf8String rdsId;
         bool isUpdate = false;
-        if (GetSyncInfo().TryFindImageryFile(model->GetModeledElementId(), fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
+        if (imageryXsa.IsValid())
             {
-            if (!existingEtag.empty())
-                {
-                if (existingEtag.Equals(currentEtag))
-                    continue;
-                }
-            else if (currentLastModifiedTime == existingLastModifiedTime && currentFileSize == existingFileSize && !Utf8String::IsNullOrEmpty(rdsId.c_str()))
+            SyncInfo::UriContentInfo storedInfo;
+            imageryXsa.GetInfo(storedInfo);
+            rdsId = imageryXsa.GetSourceGuid();
+            if (storedInfo.IsEqual(currentInfo) && !rdsId.empty())
                 continue;
-            isUpdate = !Utf8String::IsNullOrEmpty(rdsId.c_str());
+            isUpdate = !rdsId.empty();
             }
 
         // Only get to this point if it is a new image or if it is an existing image that has been modified
@@ -381,8 +374,12 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             }
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
-        m_syncInfo.UpdateImageryFile(model->GetModeledElementId(), currentLastModifiedTime, currentFileSize, currentEtag.c_str(), identifier.c_str());
 
+        auto modeledElement = GetDgnDb().Elements().GetForEdit<DgnElement>(model->GetModeledElementId());
+        imageryXsa = SyncInfo::UriExternalSourceAspect::GetAspectForEdit(*modeledElement);
+        imageryXsa.SetInfo(currentInfo);
+        imageryXsa.SetSourceGuid(identifier);
+        modeledElement->Update();
         }
 
     return BSISUCCESS;

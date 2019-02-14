@@ -891,11 +891,11 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
     T_BuilderMap                                m_builders;
     T_SourceIdPathMap                           m_idPaths;
     ResolvedModelMapping const&                 m_parentModelMapping;
-    ResolvedModelMapping const&                 m_masterModelMapping;
+    ResolvedModelMapping const&                 m_masterModelMapping; // The root parent model
     Bentley::DgnModelRefP                       m_currentModelRef;
     ModelRefInfo                                m_currentModelInfo;
     Converter&                                  m_converter;
-    std::set<DgnV8ModelRefCP>                   m_attachmentsUnchanged;
+    std::set<DgnAttachmentCP>                   m_attachmentsUnchanged;
 
     T_ModelRefInfoMap                           m_modelRefInfoMap;
     bool                                        m_doClip = true;
@@ -1246,7 +1246,7 @@ bool CreateOrUpdateDrawingGraphics()
             if (m_converter.IsUpdating())
                 v8SectionedElementPathsSeen.insert(v8SectionedElementPath); // Note that we don't care if the original sectioned element still exists or not. We care if the *proxy graphics* for that element still exist.
             
-            bset<DgnCategoryId>     seenCategories;
+            DgnCategoryIdSet seenCategories;
             for (auto& bycategory : byElement.second)
                 {
                 modified = true;
@@ -1260,19 +1260,15 @@ bool CreateOrUpdateDrawingGraphics()
                     m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), "drawing extraction");
                     }
                 }
-#ifdef WIP_EXTERNAL_SOURCE_ASPECT // _DetectedDeletedExtractionGraphicsCategories
             if (m_converter.IsUpdating() &&
-                m_converter._DetectedDeletedExtractionGraphicsCategories(v8SectionedElementPath, seenCategories))
+                m_converter.DetectedDeletedExtractionGraphicsCategories(m_masterModelMapping.GetDgnModel(), v8SectionedElementPath, seenCategories))
                 modified = true;
-#endif
             }
         }
 
-#ifdef WIP_EXTERNAL_SOURCE_ASPECT // _DetectDeletedExtractionGraphics
     if (m_converter.IsUpdating() &&
-        m_converter._DetectDeletedExtractionGraphics(m_parentModelMapping, v8SectionedElementPathsSeen, m_attachmentsUnchanged))
+        m_converter.DetectDeletedExtractionGraphics(m_masterModelMapping, v8SectionedElementPathsSeen, m_attachmentsUnchanged))
         modified = true;
-#endif
 
     return !m_converter.IsUpdating() || modified;
     }
@@ -1299,7 +1295,7 @@ protected:
 MergeProxyGraphicsDrawGeom&             m_output;
 Converter&                              m_converter;
 bool                                    m_mergeGraphicsForRenderedViews;
-ResolvedModelMapping const&             m_masterModelMapping;   // The model that contains the reference attachments - needed for ExternalSourceAspects
+ResolvedModelMapping const&             m_masterModelMapping;   // The root parent model
 
 virtual bool _WantUndisplayed () { return false; }
 virtual bool _HandleRefAsViewlet (DgnAttachmentCR thisRef) override  { return false; }
@@ -1450,6 +1446,100 @@ void Process(ViewportR viewport, DgnV8Api::DgnModelRef* baseModelRef)
 
 }; // MergeDrawingContext
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      2/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool hasAnyPrefix(Utf8CP pathStr, bset<Utf8String> pathsToIgnore)
+    {
+    auto pathlen = strlen(pathStr);
+    if (0 == pathlen)
+        return false;
+
+    ScopedArray<Utf8Char> pathBuf(pathlen+1);
+    auto path = pathBuf.GetData();
+    strcpy (path, pathStr);
+    Utf8P end = path + pathlen;
+    for (;;)
+        {
+        if (pathsToIgnore.find(path) != pathsToIgnore.end())
+            return true;
+            
+        while ((*--end  != '/') && (end > path))
+            ;
+        if (end == path)
+            break;
+        *end = '\0';
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      2/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::DetectDeletedExtractionGraphics(ResolvedModelMapping const& rootParentModel, bset<Utf8String> const& v8SectionedElementPathsSeen, std::set<DgnAttachmentCP> const& attachmentsUnchanged)
+    {
+    bset<Utf8String> pathsToIgnore;
+    for (auto attachmentUnchanged : attachmentsUnchanged)
+        {
+        pathsToIgnore.insert(ComputeV8AttachmentIdPath(*attachmentUnchanged));
+        }
+
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT Identifier, Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ((Scope.Id = ?) AND (Kind=?))");
+    stmt->BindId(1, rootParentModel.GetDgnModel().GetModelId());
+    stmt->BindText(2, SyncInfo::ExternalSourceAspect::Kind::ProxyGraphic, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+    bset<DgnElementId> tbd;
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto pathStored = stmt->GetValueText(0);
+
+        if (v8SectionedElementPathsSeen.find(pathStored) != v8SectionedElementPathsSeen.end())
+            continue;
+
+        if (hasAnyPrefix(pathStored, pathsToIgnore))
+            continue;
+
+        tbd.insert(stmt->GetValueId<DgnElementId>(1));
+        }
+
+    if (tbd.empty())
+        return false;
+
+    for (auto eid: tbd)
+        {
+        GetDgnDb().Elements().Delete(eid);
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      2/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::DetectedDeletedExtractionGraphicsCategories(DgnModelR proxyGraphicScope, Utf8StringCR sectionedV8ElementPath, DgnCategoryIdSet const& seenCategories)
+    {
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT dg.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GraphicalElement2d) " dg, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
+        " WHERE x.Element.Id=dg.ECInstanceId AND x.Scope.Id=? AND x.Kind='ProxyGraphic' AND x.Identifier=? AND NOT InVirtualSet(?, dg.Category.Id)");
+    int col=1;
+    stmt->BindId(col++, proxyGraphicScope.GetModelId());
+    stmt->BindText(col++, sectionedV8ElementPath.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindVirtualSet(col++, seenCategories);
+
+    bset<DgnElementId> tbd;
+    while (BE_SQLITE_ROW == stmt->Step())
+        tbd.insert(stmt->GetValueId<DgnElementId>(0));
+
+    if (tbd.empty())
+        return false;
+
+    for (auto eid: tbd)
+        {
+        GetDgnDb().Elements().Delete(eid);
+        }
+
+    return true;
+    }
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     02/2013

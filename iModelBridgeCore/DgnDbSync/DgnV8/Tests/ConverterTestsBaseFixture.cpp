@@ -83,9 +83,10 @@ void ConverterTestBaseFixture::SetUp()
     m_count = 0;
     m_opts.m_useTiledConverter = false;
     BentleyApi::BeFileName::CreateNewDirectory(GetOutputDir());
+    BentleyApi::BeFileName::CreateNewDirectory(GetTempDir());
 
-    BentleyApi::BeTest::GetHost().GetTempDir(m_seedDgnDbFileName);
-    m_seedDgnDbFileName.AppendToPath(L"testSeed.bim");
+    BentleyApi::BeTest::GetHost().GetDocumentsRoot(m_seedDgnDbFileName);
+    m_seedDgnDbFileName.AppendToPath(L"run\\testSeed.bim");
     static bool s_isSeedCreated;
     if (!s_isSeedCreated)
         {
@@ -157,7 +158,16 @@ BentleyApi::BeFileName ConverterTestBaseFixture::GetOutputDir()
     {
     BentleyApi::BeFileName filepath;
     BentleyApi::BeTest::GetHost().GetOutputRoot(filepath);
-    filepath.AppendToPath(L"Output");
+    return filepath;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BeFileName ConverterTestBaseFixture::GetTempDir()
+    {
+    BentleyApi::BeFileName filepath;
+    BentleyApi::BeTest::GetHost().GetTempDir(filepath);
     return filepath;
     }
 

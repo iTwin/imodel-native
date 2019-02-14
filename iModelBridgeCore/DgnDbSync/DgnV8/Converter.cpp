@@ -2772,36 +2772,37 @@ void Converter::AddModelRequiringRealityTiles(DgnModelId id, Utf8StringCR source
     m_modelsRequiringRealityTiles.Insert(id, bpair<Utf8String, RepositoryLinkId>(sourceFile, fileId));
 
     BeFileName file(sourceFile.c_str());
-    uint64_t currentLastModifiedTime;
-    uint64_t currentFileSize;
-    Utf8String currentEtag;
-    GetSyncInfo().GetCurrentImageryInfo(sourceFile, currentLastModifiedTime, currentFileSize, currentEtag);
+    SyncInfo::UriContentInfo currentInfo;
+    currentInfo.GetInfo(sourceFile);       // TODO: What to do if we can't get current info (e.g., server is down and we can't get eTag?)
 
-    uint64_t existingLastModifiedTime;
-    uint64_t existingFileSize;
-    Utf8String existingEtag;
-    Utf8String rdsId;
     bool isUpdate = false;
 
     DgnElementId modeledElementId(DgnElementId(id.GetValue()));
     Utf8String fileName = Utf8String(sourceFile.c_str());
-    if (GetSyncInfo().TryFindImageryFile(modeledElementId, fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
+    auto existingAspect = SyncInfo::UriExternalSourceAspect::GetAspect(*GetDgnDb().Elements().GetElement(modeledElementId));
+    if (existingAspect.IsValid())
         {
-        if (!existingEtag.empty())
-            {
-            if (existingEtag.Equals(currentEtag))
-                return;
-            }
-        else if (currentLastModifiedTime == existingLastModifiedTime && currentFileSize == existingFileSize)
+        SyncInfo::UriContentInfo existingInfo;
+        existingAspect.GetInfo(existingInfo);
+
+        if (existingInfo.IsEqual(currentInfo))
             return;
+
         isUpdate = true;
         }
 
+    auto el = GetDgnDb().Elements().GetForEdit<DgnElement>(modeledElementId);
     if (isUpdate)
-        m_syncInfo.UpdateImageryFile(modeledElementId, currentLastModifiedTime, currentFileSize, currentEtag.c_str(), "");
+        {
+        auto aspect = SyncInfo::UriExternalSourceAspect::GetAspectForEdit(*el);
+        aspect.SetInfo(currentInfo);
+        }
     else
-        m_syncInfo.InsertImageryFile(modeledElementId, fileId, sourceFile.c_str(), currentLastModifiedTime, currentFileSize, currentEtag.c_str(), "");
-
+        {
+        auto aspect = SyncInfo::UriExternalSourceAspect::CreateAspect(fileId, sourceFile.c_str(), currentInfo, "", *this);
+        aspect.AddAspect(*el);
+        }
+    el->Update();
     }
 
 //---------------------------------------------------------------------------------------

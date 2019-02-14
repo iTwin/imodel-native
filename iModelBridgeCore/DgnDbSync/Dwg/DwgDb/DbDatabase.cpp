@@ -9,6 +9,7 @@
 
 #define     DWGDB_FILEIDPOLICY_KEY          L"FILEIDPOLICY"
 #define     DWGDB_FILEIDPOLICY_FORMAT       "%I32u+%I32u"
+#define     DWGDB_REPOSITORYLINK_KEY        L"REPOSITORYLINKID"
 
 USING_NAMESPACE_DWGDB
 
@@ -214,7 +215,7 @@ DwgString       DwgDbDatabase::GetFileName () const
 DwgDbStatus     DwgDbDatabase::SetFileIdPolicy (uint32_t id, uint32_t policy)
     {
     char    keynvalue[248];
-    sprintf (keynvalue, DWGDB_FILEIDPOLICY_FORMAT, id, policy);
+    ::sprintf (keynvalue, DWGDB_FILEIDPOLICY_FORMAT, id, policy);
 
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbDatabaseSummaryInfoPtr  summaryInfo = oddbGetSummaryInfo (this);
@@ -262,7 +263,7 @@ DwgDbStatus     DwgDbDatabase::GetFileIdPolicy (uint32_t& id, uint32_t& policy)
         OdString    value;
         if (summaryInfo->getCustomSummaryInfo(DWGDB_FILEIDPOLICY_KEY, value) && !value.isEmpty())
             {
-            sscanf (static_cast<const char*>(value), DWGDB_FILEIDPOLICY_FORMAT, &id, &policy);
+            ::sscanf (static_cast<const char*>(value), DWGDB_FILEIDPOLICY_FORMAT, &id, &policy);
 
             return  DwgDbStatus::Success;
             }
@@ -284,6 +285,87 @@ DwgDbStatus     DwgDbDatabase::GetFileIdPolicy (uint32_t& id, uint32_t& policy)
             if (::sscanf(str.utf8Ptr(), DWGDB_FILEIDPOLICY_FORMAT, &id, &policy) != 2)
                 id = policy = 0;
 #endif
+            }
+        
+        delete summaryInfo;
+
+        return  ToDwgDbStatus(es);
+        }
+#endif
+
+    return  DwgDbStatus::UnknownError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbDatabase::SetRepositoryLinkId (uint64_t linkId)
+    {
+    char    keynvalue[248];
+    ::sprintf (keynvalue, "%I64u", linkId);
+
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbDatabaseSummaryInfoPtr  summaryInfo = oddbGetSummaryInfo (this);
+    if (!summaryInfo.isNull())
+        {
+        summaryInfo->setCustomSummaryInfo (DWGDB_REPOSITORYLINK_KEY, OdString(keynvalue));
+        oddbPutSummaryInfo (summaryInfo);
+        return  DwgDbStatus::Success;
+        }
+
+#elif DWGTOOLKIT_RealDwg
+    AcDbDatabaseSummaryInfo*    summaryInfo = nullptr;
+    if (Acad::eOk == acdbGetSummaryInfo(this, summaryInfo) && nullptr != summaryInfo)
+        {
+        AcString idString(keynvalue);
+        auto es = summaryInfo->setCustomSummaryInfo (DWGDB_REPOSITORYLINK_KEY, idString.kwszPtr());
+        if (Acad::eKeyNotFound == es)
+            es = summaryInfo->addCustomSummaryInfo (DWGDB_REPOSITORYLINK_KEY, idString.kwszPtr());
+        if (Acad::eOk == es)
+            es = acdbPutSummaryInfo (summaryInfo);
+        delete summaryInfo;
+        return  ToDwgDbStatus(es);
+        }
+#endif
+
+    return  DwgDbStatus::UnknownError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbDatabase::GetRepositoryLinkId (uint64_t& linkId)
+    {
+    linkId = 0;
+
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbDatabaseSummaryInfoPtr  summaryInfo = oddbGetSummaryInfo (this);
+    if (!summaryInfo.isNull())
+        {
+        OdString    value;
+        if (summaryInfo->getCustomSummaryInfo(DWGDB_REPOSITORYLINK_KEY, value) && !value.isEmpty())
+            {
+            ::sscanf (static_cast<const char*>(value), "%I64u", &linkId);
+            return  DwgDbStatus::Success;
+            }
+        }
+
+#elif DWGTOOLKIT_RealDwg
+    AcDbDatabaseSummaryInfo*    summaryInfo = nullptr;
+    if (Acad::eOk == acdbGetSummaryInfo(this, summaryInfo) && nullptr != summaryInfo)
+        {
+        ACHAR*  value = nullptr;
+        auto    es = summaryInfo->getCustomSummaryInfo (DWGDB_REPOSITORYLINK_KEY, value);
+        if (Acad::eOk == es && nullptr != value && 0 != value[0])
+            {
+            AcString    str(value);
+#if VendorVersion < 2017
+            auto chars = str.kszPtr ();
+#else
+            auto chars = str.utf8Ptr ();
+#endif
+            if (::sscanf(chars, "%I64u", &linkId) != 1)
+                linkId = 0;
             }
         
         delete summaryInfo;

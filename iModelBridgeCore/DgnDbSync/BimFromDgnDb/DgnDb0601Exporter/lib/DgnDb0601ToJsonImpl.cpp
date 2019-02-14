@@ -61,7 +61,7 @@ static Utf8CP const JSON_TYPE_Texture = "Texture";
 static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
-static Utf8CP const JSON_TYPE_TimeSpan = "TimeSpan";
+/*unused*/ //static Utf8CP const JSON_TYPE_TimeSpan = "TimeSpan";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
 static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
@@ -469,11 +469,11 @@ bool DgnDb0601ToJsonImpl::ExportDgnDb()
         return false;
     LogPerformanceMessage(timer, "Export Textures");
 
-    if (m_dgndb->Schemas().ContainsECSchema("Planning"))
-        {
-        if (SUCCESS != (stat = ExportTimelines()))
-            return false;
-        }
+    //if (m_dgndb->Schemas().ContainsECSchema("Planning"))
+    //    {
+    //    if (SUCCESS != (stat = ExportTimelines()))
+    //        return false;
+    //    }
 
     if (SUCCESS != (stat = ExportExtraTables("rv", "VisualizationRuleSet")))
         return false;
@@ -514,10 +514,10 @@ bool DgnDb0601ToJsonImpl::ExportDgnDb()
             return false;
         if (SUCCESS != (stat = ExportLinkTables("Planning", "ActivityHasConstraint")))
             return false;
-        if (SUCCESS != (stat = ExportLinkTables("Planning", "WorkBreakdownHasTimeSpans", "WorkBreakdownOwnsTimeSpans")))
-            return false;
-        if (SUCCESS != (stat = ExportLinkTables("Planning", "ActivityHasTimeSpans", "ActivityOwnsTimeSpans")))
-            return false;
+        //if (SUCCESS != (stat = ExportLinkTables("Planning", "WorkBreakdownHasTimeSpans", "WorkBreakdownOwnsTimeSpans")))
+        //    return false;
+        //if (SUCCESS != (stat = ExportLinkTables("Planning", "ActivityHasTimeSpans", "ActivityOwnsTimeSpans")))
+        //    return false;
         }
 
     LogPerformanceMessage(timer, "Export EC Relationships");
@@ -547,6 +547,8 @@ void DgnDb0601ToJsonImpl::CalculateEntities()
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_ElementGroupsMembers ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_TextAnnotationData ");
     sql.append("UNION ALL SELECT count(*) as rows FROM _dgn_ElementAspect ");
+    if (m_dgndb->Schemas().ContainsECSchema("Planning"))
+        sql.append("UNION ALL SELECT count(*) as rows FROM bp_ActivityAffectsElements ");
     sql.append(") u");
     
     Statement stmt;
@@ -2229,8 +2231,8 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
 
     if (ecClass->GetName().Equals("ElementExternalKey"))
         return SUCCESS;
-    if (ecClass->GetName().Equals("Timeline"))
-        return SUCCESS;
+    //if (ecClass->GetName().Equals("Timeline"))
+    //    return SUCCESS;
 
     Utf8PrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     if (aspectId.IsValid())
@@ -2267,20 +2269,44 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
             Utf8String tmp = obj["$ECClassKey"].asString();
             obj[JSON_CLASSNAME] = tmp.c_str();
             }
-        
+
+        if (obj.isMember("ElementId"))
+            {
+            MakeNavigationProperty(obj, "Element", IdToString(obj["ElementId"].asCString()).c_str());
+            obj.removeMember("ElementId");
+            }
+            // ElementUniqueAspect uses the same id for the aspect id and the element id
+        else
+            {
+            MakeNavigationProperty(obj, "Element", IdToString(obj["$ECInstanceId"].asCString()).c_str());
+            }
+
+
         if (obj[JSON_CLASSNAME].asString().Equals("Planning.TimeSpan"))
             {
             MakeNavigationProperty(obj, "Baseline", IdToString(obj["TimelineId"].asCString()).c_str());
             obj.removeMember("TimelineId");
-            entry[JSON_TYPE_KEY] = JSON_TYPE_TimeSpan;
-            }
-        if (obj.isMember("ElementId"))
-            MakeNavigationProperty(obj, "Element", IdToString(obj["ElementId"].asCString()).c_str());
-        // ElementUniqueAspect uses the same id for the aspect id and the element id
-        else
-            MakeNavigationProperty(obj, "Element", IdToString(obj["$ECInstanceId"].asCString()).c_str());
+            MakeNavigationProperty(obj, "Element", IdToString(obj["ParentId"].asCString()).c_str());
+            uint64_t elementId;
+            BeStringUtilities::ParseUInt64(elementId, obj["ParentId"].asCString());
 
-        obj.removeMember("ElementId");
+            obj.removeMember("ParentId");
+            ECClassCP ecClass = m_dgndb->Elements().GetElement(DgnElementId(elementId))->GetElementClass();
+            if (ecClass->Is(m_activityClass))
+                obj["Element"]["relClassName"] = "Planning.ActivityOwnsTimeSpans";
+            else
+                obj["Element"]["relClassName"] = "Planning.WorkBreakdownOwnsTimeSpans";
+
+            entry[JSON_TYPE_KEY] = JSON_TYPE_ElementMultiAspect;
+            }
+        else if (ecClass->GetName().Equals("Timeline"))
+            {
+            obj[JSON_CLASSNAME] = "Planning.Baseline";
+            MakeNavigationProperty(obj, "Element", IdToString(obj["PlanId"].asCString()).c_str());
+            obj.removeMember("PlanId");
+            obj["Element"]["relClassName"] = "Planning.PlanOwnsBaselines";
+            entry[JSON_TYPE_KEY] = JSON_TYPE_ElementMultiAspect;
+            }
 
         obj.removeMember("$ECClassKey");
         obj.removeMember("$ECClassId");

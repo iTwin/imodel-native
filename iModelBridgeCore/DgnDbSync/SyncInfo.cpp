@@ -104,38 +104,7 @@ BentleyStatus SyncInfo::CreateTables()
         }
 
 
-    if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)))
-        {
-        m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema),
-                         "V8Id INTEGER PRIMARY KEY,"
-                         "RepositoryLinkId BIGINT NOT NULL,"
-                         "V8Name TEXT NOT NULL,"
-                         "V8VersionMajor INTEGER NOT NULL,"
-                         "V8VersionMinor INTEGER NOT NULL,"
-                         "MappingType INTEGER NOT NULL,"
-                         "LastModified TIMESTAMP,"
-                         "Digest INTEGER");
-
-        m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Imagery),
-                         "ElementId BIGINT PRIMARY KEY, "
-                         "RepositoryLinkId BIGINT,"
-                         "Filename TEXT NOT NULL,"
-                         "LastModified BIGINT,"
-                         "FileSize BIGINT,"
-                         "ETag TEXT,"
-                         "RDSId TEXT");
-        m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
-
-        //need a unique index to ensure uniqueness for schemas based on checksum
-        Utf8String ddl;
-        ddl.Sprintf("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_variantxml_uix ON "  SYNC_TABLE_ECSchema "(V8Name, RepositoryLinkId, Digest);");
-        MUSTBEOK(m_dgndb->ExecuteSql(ddl.c_str()));
-        //need a index on the entire table for fast look ups
-        MUSTBEOK(m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_ix ON "  SYNC_TABLE_ECSchema "(V8Name);"));
-
-        CreateNamedGroupTable(true);
-        }
-
+    CreateNamedGroupTable();
     CreateECTables();
 
     m_dgndb->SaveChanges();
@@ -270,8 +239,6 @@ DgnStyleId SyncInfo::FindLineStyle(double&unitsScale, bool& foundStyle, V8StyleI
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SyncInfo::DiskFileInfo::GetInfo(BeFileNameCR fileName)
     {
-    // *** WIP_CONVERTER - get file time IN FILETIME (hectonanoseconds), NOT SECONDS!
-
     time_t mtime;
     if (BeFileName::GetFileSize(m_fileSize, fileName.c_str()) != BeFileNameStatus::Success
         || BeFileName::GetFileTime(nullptr, nullptr, &mtime, fileName.c_str()) != BeFileNameStatus::Success)
@@ -453,36 +420,28 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
     DgnElementId repositoryLinkId = converter.GetRepositoryLinkId(*v8Model.GetDgnFileP());
     BeAssert(repositoryLinkId.IsValid());
     Utf8String v8LevelId = FormatSourceId(levelId);
-    Utf8String v8ModelId = V8ModelExternalSourceAspect::FormatSourceId(v8Model);
-    auto desiredCategoryClassId = converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, (Type::Spatial == ltype)? BIS_CLASS_SpatialCategory: BIS_CLASS_DrawingCategory);
-    
+
+    /* Do not join bis.externalsourceaspect to bis.subcategory. That one join causes a sub-query and an inner join (i.e., two more selects), 
+    all just to verify that the XSA belongs to a SubCategory element.
+    We don't need all of that, as long as we know that only SubCategory elements have the 'Level' Kind of XSAs.
+
+    Also, to avoid yet another select on the elements (definitions) table, to check that the level type (drawing or spatial) was as specified,
+    we duplicate that information into the 'Level' XSA itself.
+
+    Tricky: to avoid multiple calls to json_extract (which parses the JSON text each time), we specify multiple properties to
+    extract. That returns an array of values, formatting as JSON text. That's why we have to bind a text value to match it.
+    */
     auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x, " BIS_SCHEMA(BIS_CLASS_SubCategory) " e"
-        " WHERE (x.Element.Id=e.ECInstanceId AND x.Scope.Id=? AND x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.v8ModelId') = ?)");
+        "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x "
+        " WHERE (x.Scope.Id=? AND x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.v8ModelId', '$.levelType') = ?)");
     aspectStmt->BindId(1, repositoryLinkId);
     aspectStmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     aspectStmt->BindText(3, v8LevelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    aspectStmt->BindText(4, v8ModelId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-
-    BeSQLite::EC::CachedECSqlStatementPtr catClassStmt;
+    aspectStmt->BindText(4, Utf8PrintfString("[%d,%d]", v8Model.GetModelId(), (int)ltype).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     while (BE_SQLITE_ROW == aspectStmt->Step())
         {
         subCatId = aspectStmt->GetValueId<DgnSubCategoryId>(0);
-
-        // Must be a SubCategory of the requested type of Category (spatial or drawing)
-        if (!catClassStmt.IsValid())
-            catClassStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
-                "SELECT c.ECClassId FROM " BIS_SCHEMA(BIS_CLASS_Category) " c JOIN " BIS_SCHEMA(BIS_CLASS_SubCategory) " s ON c.ECInstanceId=s.Parent.Id"
-                " WHERE s.ECInstanceId=?");
-
-        catClassStmt->Reset();
-        catClassStmt->BindId(1, subCatId);
-        if (BE_SQLITE_ROW != catClassStmt->Step())
-            continue;
-        if (catClassStmt->GetValueId<ECN::ECClassId>(0) != desiredCategoryClassId)
-            continue;
-
         return BSISUCCESS;
         }
     return BSIERROR;
@@ -491,7 +450,7 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Converter& converter)
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Type ctype, Converter& converter)
     {
     BeAssert(scopeId.IsValid());
 
@@ -506,11 +465,11 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateA
     LevelExternalSourceAspect aspect(instance.get());
     
     Utf8String v8LevelName(vlevel.GetName());
-    Utf8String v8ModelId = V8ModelExternalSourceAspect::FormatSourceId(v8Model);
 
     rapidjson::Document json(rapidjson::kObjectType);
     auto& allocator = json.GetAllocator();
-    json.AddMember("v8ModelId", rapidjson::Value(v8ModelId.c_str(), allocator), allocator);
+    json.AddMember("v8ModelId", (int)v8Model.GetModelId(), allocator); // int32_t
+    json.AddMember("levelType", (int)ctype, allocator);
     json.AddMember("v8LevelName", rapidjson::Value(v8LevelName.c_str(), allocator), allocator);
     aspect.SetProperties(json);
 
@@ -520,9 +479,9 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Converter& converter)
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::CreateAspect(DgnV8Api::LevelHandle const& vlevel, DgnV8ModelCR v8Model, Type ltype, Converter& converter)
     {
-    return CreateAspect(converter.GetRepositoryLinkId(*v8Model.GetDgnFileP()), vlevel, v8Model, converter);
+    return CreateAspect(converter.GetRepositoryLinkId(*v8Model.GetDgnFileP()), vlevel, v8Model, ltype, converter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -537,9 +496,16 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::InsertLevel(DgnSubCategoryId subca
 
     auto existingSubCatId = FindSubCategory(vlevel.GetLevelId(), v8model, ltype);
     if (existingSubCatId.IsValid())
-        return LevelExternalSourceAspect::GetAspect(*GetDgnDb()->Elements().Get<DgnSubCategory>(existingSubCatId));
+        {
+        // Make sure this is not a dup. We store only 1 aspect per V8Model. On the other hand, many levels from different V8Models
+        // may be mapped to the same SubCategory. We check here to see if this level from this V8Model has already been added.
+        // Don't know why that happens ... multiple self refs??
+        auto aspect = LevelExternalSourceAspect::FindAspectByV8Model(*GetDgnDb()->Elements().Get<DgnSubCategory>(existingSubCatId), v8model);
+        if (aspect.IsValid())
+            return aspect;
+        }
 
-    auto aspect = LevelExternalSourceAspect::CreateAspect(vlevel, v8model, m_converter);
+    auto aspect = LevelExternalSourceAspect::CreateAspect(vlevel, v8model, ltype, m_converter);
     aspect.AddAspect(*subCatEl);
     subCatEl->Update();
     return aspect;
@@ -548,10 +514,17 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::InsertLevel(DgnSubCategoryId subca
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::GetAspect(DgnSubCategoryCR el)
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::FindAspectByV8Model(DgnSubCategoryCR el, DgnV8ModelCR v8Model)
     {
-    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::Level);
-    return LevelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, id).m_instance.get());
+    auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT ECInstanceId, JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME
+        " WHERE (Element.Id=? AND Kind=? AND json_extract(JsonProperties, '$.v8ModelId') = ?)");
+    stmt->BindId(1, el.GetElementId());
+    stmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindInt(3, (int)v8Model.GetModelId());
+    if (BE_SQLITE_ROW != stmt->Step())
+        return nullptr;
+    return LevelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0)).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -954,7 +927,10 @@ SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSou
     auto rlink = db.Elements().Get<RepositoryLink>(ei.elementId);
     if (!rlink.IsValid())
         return RepositoryLinkExternalSourceAspect(nullptr);
-    return RepositoryLinkExternalSourceAspect(ExternalSourceAspect::GetAspect(*rlink, SyncInfo::GetSoleAspectIdByKind(*rlink, Kind::RepositoryLink)).m_instance.get());
+    auto id = SyncInfo::GetSoleAspectIdByKind(*rlink, Kind::RepositoryLink);
+    if (!id.IsValid())
+        return nullptr;
+    return RepositoryLinkExternalSourceAspect(ExternalSourceAspect::GetAspect(*rlink, id).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -962,7 +938,10 @@ SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSou
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(RepositoryLinkR el)
     {
-    return RepositoryLinkExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, SyncInfo::GetSoleAspectIdByKind(el, Kind::RepositoryLink)).m_instance.get());
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::RepositoryLink);
+    if (!id.IsValid())
+        return nullptr;
+    return RepositoryLinkExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, id).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -970,7 +949,10 @@ SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSou
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(RepositoryLinkCR el)
     {
-    return RepositoryLinkExternalSourceAspect(ExternalSourceAspect::GetAspect(el, SyncInfo::GetSoleAspectIdByKind(el, Kind::RepositoryLink)).m_instance.get());
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::RepositoryLink);
+    if (!id.IsValid())
+        return nullptr;
+    return RepositoryLinkExternalSourceAspect(ExternalSourceAspect::GetAspect(el, id).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1036,14 +1018,10 @@ SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::C
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::GetAspect(DgnGeometryPartCR el)
     {
-    // There's only one source aspect on a geompart element, so no need for an aspectid
-#ifdef TEST_EXTERNAL_SOURCE_ASPECT
-        {
-        auto count = GetAllByKind(el, Kind::GeomPart).size();
-        BeAssert((0 == count) || (1 == count));
-        }
-#endif
-    return GeomPartExternalSourceAspect(ExternalSourceAspect::GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::Level);
+    if (!id.IsValid())
+        return nullptr;
+    return GeomPartExternalSourceAspect(ExternalSourceAspect::GetAspect(el, id).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1109,14 +1087,10 @@ Utf8String SyncInfo::ViewDefinitionExternalSourceAspect::GetV8ViewName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::GetAspect(ViewDefinitionCR el)
     {
-    // There's only one source aspect on a ViewDefinition element, so no need for an aspectid
-#ifdef TEST_EXTERNAL_SOURCE_ASPECT
-        {        
-        auto count = GetAllByKind(el, Kind::ViewDefinition).size();
-        BeAssert((0 == count) || (1 == count));
-        }
-#endif
-    return ViewDefinitionExternalSourceAspect(ExternalSourceAspect::GetAspect(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::ViewDefinition);
+    if (!id.IsValid())
+        return nullptr;
+    return ViewDefinitionExternalSourceAspect(ExternalSourceAspect::GetAspect(el, id).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1124,14 +1098,10 @@ SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSou
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::ViewDefinitionExternalSourceAspect SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectForEdit(ViewDefinitionR el)    // non-const version, used for editing
     {
-    // There's only one source aspect on a ViewDefinition element, so no need for an aspectid
-#ifdef TEST_EXTERNAL_SOURCE_ASPECT
-        {        
-        auto count = GetAllByKind(el, Kind::ViewDefinition).size();
-        BeAssert((0 == count) || (1 == count));
-        }
-#endif
-    return ViewDefinitionExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, BeSQLite::EC::ECInstanceId()).m_instance.get());
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::ViewDefinition);
+    if (!id.IsValid())
+        return nullptr;
+    return ViewDefinitionExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, id).m_instance.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1272,84 +1242,94 @@ void SyncInfo::GetLastError(BeSQLite::DbResult& result, Utf8String& descr)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   11/2014
-//---------------------------------------------------------------------------------------
-DbResult SyncInfo::InsertECSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId, DgnV8FileR v8File,
-                                  Utf8CP v8SchemaName, uint32_t v8ProfileVersionMajor, uint32_t v8ProfileVersionMinor,
-                                  bool isDynamic, uint32_t checksum) const
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::CreateAspect(DgnElementId scopeId, Utf8StringCR schemaName, uint32_t v8ProfileVersionMajor, uint32_t v8ProfileVersionMinor,
+                                                                                        bool isDynamic, uint32_t checksum, DgnDbR db)
     {
-    insertedSchemaId;
+    BeAssert(scopeId.IsValid());
 
-    BeAssert(checksum != 0);
+    auto aspectClass = GetAspectClass(db);
+    if (nullptr == aspectClass)
+        return SchemaExternalSourceAspect(nullptr);
 
-    RepositoryLinkId v8FileId = m_converter.GetRepositoryLinkId(v8File);
-    if (!v8FileId.IsValid() || Utf8String::IsNullOrEmpty(v8SchemaName))
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
+    SourceState state;
+    state.m_version = ECN::SchemaKey::FormatLegacySchemaVersion(v8ProfileVersionMajor, v8ProfileVersionMinor);
+    state.m_checksum.Sprintf("%02" PRIu32, checksum);
 
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "INSERT OR REPLACE INTO " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)
-                                                    " (RepositoryLinkId,V8Name,V8VersionMajor,V8VersionMinor,MappingType,LastModified,Digest) VALUES (?,?,?,?,?,?,?)"))
-        {
-        BeAssert(false && "Could not retrieve cached SyncInfo statement.");
-        return BE_SQLITE_ERROR;
-        }
+    auto instance = CreateInstance(scopeId, Kind::Schema, schemaName, &state, *aspectClass);
+    SchemaExternalSourceAspect aspect(instance.get());
 
-    stmt->BindId(1, v8FileId);
-    stmt->BindText(2, v8SchemaName, Statement::MakeCopy::No);
-    stmt->BindInt(3, v8ProfileVersionMajor);
-    stmt->BindInt(4, v8ProfileVersionMinor);
-    stmt->BindInt(5, (int) (isDynamic ? ECSchemaMappingType::Dynamic : ECSchemaMappingType::Identity));
+    rapidjson::Document json(rapidjson::kObjectType);
+    auto& allocator = json.GetAllocator();
 
-    double nowJd = -1.0;
-    if (DateTime::GetCurrentTimeUtc().ToJulianDay(nowJd) != SUCCESS)
-        {
-        BeAssert(false && "Failed to convert current date time to Julian Day.");
-        return BE_SQLITE_ERROR;
-        }
+    json.AddMember("isDynamic", rapidjson::Value(isDynamic), allocator);
+    aspect.SetProperties(json);
 
-    stmt->BindDouble(6, nowJd);
-    stmt->BindInt(7, checksum);
+    return aspect;
+    }
 
-    if (BE_SQLITE_DONE != stmt->Step())
-        return BE_SQLITE_ERROR;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(DgnElementR repositoryLink, Utf8StringCR schemaName)
+    {
+    auto stmt = repositoryLink.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind='Schema' AND Identifier=?)");
+    stmt->BindId(1, repositoryLink.GetElementId());
+    stmt->BindText(2, schemaName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return nullptr;
 
-    insertedSchemaId = BECN::ECSchemaId((uint64_t) m_dgndb->GetLastInsertRowId());
-    return BE_SQLITE_OK;
+    auto id = stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+
+    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(repositoryLink, id).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspect(DgnElementCR repositoryLink, Utf8StringCR schemaName)
+    {
+    auto stmt = repositoryLink.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind='Schema' AND Identifier=?)");
+    stmt->BindId(1, repositoryLink.GetElementId());
+    stmt->BindText(2, schemaName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return nullptr;
+
+    auto id = stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+
+    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspect(repositoryLink, id).m_instance.get());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
-bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& mappingType, Utf8CP v8SchemaName, RepositoryLinkId fileId) const
+bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, SchemaExternalSourceAspect::Type& mappingType, Utf8CP v8SchemaName, RepositoryLinkId fileId)
     {
-    //first check whether we need to capture this schema or not
-    CachedStatementPtr stmt = nullptr;
-    Utf8String sql("SELECT V8VersionMajor, V8VersionMinor, Digest, MappingType FROM "
-                  SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)
-                  " WHERE V8Name=?");
+    Utf8String ecsql = "SELECT Version, Checksum, JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Identifier=? and Kind='Schema'";
     if (fileId.IsValid())
-        sql.append("and RepositoryLinkId = ? ");
+        ecsql.append(" AND Scope.Id=? ");
 
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, sql.c_str()))
-        {
-        BeAssert(false);
-        return false;
-        }
+    auto stmt = GetDgnDb()->GetPreparedECSqlStatement(ecsql.c_str());
 
-    stmt->BindText(1, v8SchemaName, Statement::MakeCopy::No);
+    stmt->BindText(1, v8SchemaName, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     if (fileId.IsValid())
         stmt->BindId(2, fileId);
     if (BE_SQLITE_ROW != stmt->Step())
         return false;
 
     schemaKey.m_schemaName = WString(v8SchemaName).c_str();
-    schemaKey.m_versionMajor = (uint32_t) stmt->GetValueInt(0);
-    schemaKey.m_versionMinor = (uint32_t) stmt->GetValueInt(1);
-    schemaKey.m_checkSum = (uint32_t) stmt->GetValueInt(2);
-    mappingType = (ECSchemaMappingType) stmt->GetValueInt(3);
+    Utf8String version = stmt->GetValueText(0);
+    Utf8String checksum = stmt->GetValueText(1);
+    Utf8String jsonProp = stmt->GetValueText(2);
+    rapidjson::Document doc;
+    doc.Parse(jsonProp.c_str());
+    mappingType = doc["isDynamic"].IsTrue() ? SchemaExternalSourceAspect::Type::Dynamic : SchemaExternalSourceAspect::Type::Identity;
+
+    uint32_t versionWrite;
+    ECN::SchemaKey::ParseVersionString(schemaKey.m_versionMajor, versionWrite, schemaKey.m_versionMinor, version.c_str());
+
+    BE_STRING_UTILITIES_UTF8_SSCANF(checksum.c_str(), "%" PRIu32, &schemaKey.m_checkSum);
 
     return true;
     }
@@ -1357,32 +1337,19 @@ bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMapping
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   11/2014
 //---------------------------------------------------------------------------------------
-bool SyncInfo::ContainsECSchema(Utf8CP v8SchemaName) const
+bool SyncInfo::ContainsECSchema(Utf8CP v8SchemaName)
     {
-    CachedStatementPtr stmt = nullptr;
-    auto stat = m_dgndb->GetCachedStatement(stmt, "SELECT NULL FROM " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) " WHERE V8Name=?");
-    if (BE_SQLITE_OK != stat)
-        {
-        BeAssert(false && "Could not retrieve cached SyncInfo statement.");
-        return BE_SQLITE_ERROR;
-        }
-
-    stmt->BindText(1, v8SchemaName, Statement::MakeCopy::No);
+    auto stmt = GetDgnDb()->GetPreparedECSqlStatement("SELECT NULL FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Identifier=? AND Kind='Schema'");
+    stmt->BindText(1, v8SchemaName, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     return stmt->Step() == BE_SQLITE_ROW;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId) const
+DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT V8Name, Digest FROM " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) " WHERE RepositoryLinkId=?"))
-        {
-        BeAssert(false && "Could not retrieve cached SyncInfo statement.");
-        return BE_SQLITE_ERROR;
-        }
-
+    auto stmt = GetDgnDb()->GetPreparedECSqlStatement("SELECT Identifier, Checksum FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Scope.Id=? AND Kind='Schema'");
     stmt->BindId(1, fileId);
     while (BE_SQLITE_ROW == stmt->Step())
         {
@@ -1392,45 +1359,14 @@ DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInf
     return BE_SQLITE_OK;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            05/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SyncInfo::CreateNamedGroupTable(bool createIndex)
-    {
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups), "SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL");
-    if (createIndex)
-        MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
-
-    return BentleyApi::SUCCESS;
-    }
-
-#define SYNC_TABLE_master SYNCINFO_ATTACH("sqlite_master")
 #define TEMPTABLE_ATTACH(name) "temp." name
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SyncInfo::CheckNamedGroupTable()
+BentleyStatus SyncInfo::CreateNamedGroupTable()
     {
-    Statement stmt;
-    Utf8PrintfString query("SELECT name, tbl_name FROM %s WHERE type='table' AND name='%s'", SYNC_TABLE_master, SYNC_TABLE_NamedGroups);
-
-    if (BE_SQLITE_OK != stmt.Prepare(*m_dgndb, query.c_str()))
-        return BentleyApi::ERROR;
-
-    if (BE_SQLITE_ROW == stmt.Step())
-        {
-        // create the temp table for storing new entries
-        MUSTBEOK(m_dgndb->ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL);"));
-        return SUCCESS;
-        }
-
-    // If we didn't find an existing NamedGroups table, that means this is an update using an older syncinfo database.  We need to create a new NamedGroups table and populate it
-    // with existing named group members.
-    if (BentleyApi::SUCCESS != CreateNamedGroupTable(false))
-        return BentleyApi::ERROR;
-
-    Utf8CP sql = "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "(SourceId, TargetId) SELECT SourceId, TargetId from bis_ElementRefersToElements b, ec_Class e, ec_Schema s where b.ECClassId = e.Id and e.Name='ElementGroupsMembers' and e.SchemaId = s.Id and s.Name='BisCore'";
+    MUSTBEOK(m_dgndb->ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL);"));
+    Utf8CP sql = "INSERT INTO " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) "(SourceId, TargetId) SELECT SourceId, TargetId from bis_ElementRefersToElements b, ec_Class e, ec_Schema s where b.ECClassId = e.Id and e.Name='ElementGroupsMembers' and e.SchemaId = s.Id and s.Name='BisCore'";
     Statement groups;
     if (BE_SQLITE_OK != groups.Prepare(*m_dgndb, sql))
         return BentleyApi::ERROR;
@@ -1439,12 +1375,9 @@ BentleyStatus SyncInfo::CheckNamedGroupTable()
         {
         return ERROR;
         }
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
+    MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
 
-    // create the temp table for storing new entries
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL);"));
-
-    return BentleyApi::SUCCESS;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1453,7 +1386,7 @@ BentleyStatus SyncInfo::CheckNamedGroupTable()
 bool SyncInfo::IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetId)
     {
     CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) " WHERE SourceId=? AND TargetId=?");
+    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " WHERE SourceId=? AND TargetId=?");
     if (!stmt.IsValid())
         return BentleyApi::ERROR;
 
@@ -1463,200 +1396,158 @@ bool SyncInfo::IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetI
     return (BE_SQLITE_ROW == stmt->Step());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            05/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SyncInfo::AddNamedGroupEntry(DgnElementId sourceId, DgnElementId targetId)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::UriExternalSourceAspect SyncInfo::UriExternalSourceAspect::CreateAspect(DgnElementId repositoryLinkId, Utf8CP filename, UriContentInfo const& info, Utf8CP rdsId, Converter& converter)
     {
-    CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "INSERT INTO " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId, TargetId) VALUES(?, ?)");
-    if (!stmt.IsValid())
-        return BentleyApi::ERROR;
+    auto aspectClass = GetAspectClass(converter.GetDgnDb());
 
-    stmt->BindId(1, sourceId);
-    stmt->BindId(2, targetId);
-    if (BE_SQLITE_DONE != stmt->Step())
-        return ERROR;
-    return BentleyApi::SUCCESS;
+    SourceState ss;
+    iModelExternalSourceAspect::UInt64ToString(ss.m_version, info.m_lastModifiedTime);
+    auto instance = CreateInstance(repositoryLinkId, Kind::URI, filename, &ss, *aspectClass);
+    
+    UriExternalSourceAspect aspect(instance.get());
+    
+    rapidjson::Document json(rapidjson::kObjectType);
+    auto& allocator = json.GetAllocator();
+    json.AddMember("fileSize", rapidjson::Value(iModelExternalSourceAspect::UInt64ToString(info.m_fileSize).c_str(), allocator), allocator);
+    json.AddMember("eTag", rapidjson::Value(info.m_eTag.c_str(), allocator), allocator);
+    json.AddMember("rdsId", rapidjson::Value(rdsId? rdsId: "", allocator), allocator);
+    aspect.SetProperties(json);
+
+    return aspect;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            05/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SyncInfo::FinalizeNamedGroups()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::UriExternalSourceAspect SyncInfo::UriExternalSourceAspect::GetAspectForEdit(DgnElementR el)
     {
-    MUSTBEOK(m_dgndb->ExecuteSql("DROP INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix"));
-
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId, TargetId) SELECT SourceId, TargetId FROM " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups)))
-        return BentleyApi::ERROR;
-
-    if (BE_SQLITE_DONE != stmt.Step())
-        return ERROR;
-
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
-    return BentleyApi::SUCCESS;
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::URI);
+    if (!id.IsValid())
+        return nullptr;
+    return UriExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, id).m_instance.get());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool SyncInfo::EnsureImageryTableExists()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::UriExternalSourceAspect SyncInfo::UriExternalSourceAspect::GetAspect(DgnElementCR el)
     {
-    if (m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_Imagery)))
-        return true;
-
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Imagery),
-                         "ElementId BIGINT PRIMARY KEY, "
-                         "Filename TEXT NOT NULL,"
-                         "LastModified BIGINT,"
-                         "FileSize BIGINT,"
-                         "ETag TEXT,"
-                         "RDSId TEXT");
-    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
-
-    return true;
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::URI);
+    if (!id.IsValid())
+        return nullptr;
+    return UriExternalSourceAspect(ExternalSourceAspect::GetAspect(el, id).m_instance.get());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BeSQLite::DbResult SyncInfo::InsertImageryFile(DgnElementId modeledElementId, RepositoryLinkId filesiid, Utf8CP filename, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::UriExternalSourceAspect::GetInfo(UriContentInfo& info) const
     {
-    EnsureImageryTableExists();
+    auto ss = GetSourceState();
+    info.m_lastModifiedTime = iModelExternalSourceAspect::UInt64FromString(ss.m_version.c_str());
 
-    Statement stmt;
-    stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "(ElementId, RepositoryLinkId, Filename, LastModified, FileSize, ETag, RDSId) VALUES (?,?,?,?,?,?,?)");
-    int col = 1;
-    stmt.BindId(col++, modeledElementId);
-    stmt.BindId(col++, filesiid);
-    stmt.BindText(col++, filename, Statement::MakeCopy::No);
-    stmt.BindUInt64(col++, lastModifiedTime);
-    stmt.BindUInt64(col++, fileSize);
-    stmt.BindText(col++, etag, Statement::MakeCopy::No);
-    stmt.BindText(col++, rdsId, Statement::MakeCopy::No);
-    auto res = stmt.Step();
-    return res;
+    auto props = GetProperties();
+    info.m_fileSize = iModelExternalSourceAspect::UInt64FromString(props["fileSize"].GetString());
+    info.m_eTag = props["eTag"].GetString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::UriExternalSourceAspect::SetInfo(UriContentInfo const& info)
+    {
+    auto ss = GetSourceState();
+    iModelExternalSourceAspect::UInt64ToString(ss.m_version, info.m_lastModifiedTime);
+    SetSourceState(ss);
+
+    auto props = GetProperties();
+    props["fileSize"] = rapidjson::Value(iModelExternalSourceAspect::UInt64ToString(info.m_fileSize).c_str(), props.GetAllocator());
+    props["eTag"] = rapidjson::Value(info.m_eTag.c_str(), props.GetAllocator());
+    SetProperties(props);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SyncInfo::UriExternalSourceAspect::GetSourceGuid() const
+    {
+    auto props = GetProperties();
+    return props["rdsId"].GetString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::UriExternalSourceAspect::SetSourceGuid(Utf8StringCR rdsid)
+    {
+    auto props = GetProperties();
+    props["rdsId"] = rapidjson::Value(rdsid.c_str(), props.GetAllocator());
+    SetProperties(props);
     }
 
 static bool isHttp(Utf8CP str) { return (0 == strncmp("http:", str, 5) || 0 == strncmp("https:", str, 6)); }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2018
+// @bsimethod                                    Sam.Wilson                      1/19
 //---------------+---------------+---------------+---------------+---------------+-------
-void SyncInfo::GetCurrentImageryInfo(Utf8StringCR fileName, uint64_t& currentLastModifiedTime, uint64_t& currentFileSize, Utf8StringR currentEtag)
+BentleyStatus SyncInfo::UriContentInfo::GetInfo(Utf8StringCR uri)
     {
-    BeFileName beFile(fileName.c_str());
-    if (beFile.DoesPathExist())
-        {
-        time_t mtime = 0;
-        uint64_t tempFileSize;
+    m_eTag.clear();
+    
+    if (!isHttp(uri.c_str()))
+        return DiskFileInfo::GetInfo(BeFileName(uri.c_str(), true));
 
-        if (BeFileName::GetFileSize(tempFileSize, beFile) != BeFileNameStatus::Success
-            || BeFileName::GetFileTime(nullptr, nullptr, &mtime, beFile) != BeFileNameStatus::Success)
-            {
-            Utf8PrintfString msg("Unable to get file info for '%s'", fileName.c_str());
-            //ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
-            }
-        currentLastModifiedTime = mtime;
-        currentFileSize = tempFileSize;
-        }
-    else if (isHttp(fileName.c_str()))
-        {
-        BentleyApi::Http::Request request(fileName, "HEAD");
-        folly::Future<BentleyApi::Http::Response> response = request.Perform().wait();
-        if (BentleyApi::Http::HttpStatus::OK == response.value().GetHttpStatus())
-            {
-            auto headers = response.value().GetHeaders();
-            Utf8String etag = headers.GetETag();
-            currentEtag = etag;
-            }
-        }
+    BentleyApi::Http::Request request(uri, "HEAD");
+    folly::Future<BentleyApi::Http::Response> response = request.Perform().wait();
+    if (BentleyApi::Http::HttpStatus::OK != response.value().GetHttpStatus())
+        return BSIERROR;
+
+    auto headers = response.value().GetHeaders();
+    m_eTag = headers.GetETag();
+    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2018
+// @bsimethod                                    Sam.Wilson                      1/19
 //---------------+---------------+---------------+---------------+---------------+-------
-bool SyncInfo::ModelHasChangedImagery(RepositoryLinkId filesiid)
+bool SyncInfo::FileHasChangedUriContent(RepositoryLinkId repositoryLinkId)
     {
-    EnsureImageryTableExists();
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT Filename, LastModified, FileSize, ETag FROM "
-                                                    SYNCINFO_ATTACH(SYNC_TABLE_Imagery)
-                                                    " WHERE RepositoryLinkId=?"))
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    if (!filesiid.IsValid())
+    // TODO: Select all ImageXSAs where scope.id = repositoryLinkId
+    if (!repositoryLinkId.IsValid())
         return false;
 
-    stmt->BindId(1, filesiid);
+    auto stmt = GetDgnDb()->GetPreparedECSqlStatement("SELECT Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Scope.Id=? AND Kind=?");
+    stmt->BindId(1, repositoryLinkId);
+    stmt->BindText(2, UriExternalSourceAspect::Kind::URI, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        Utf8String fileName = stmt->GetValueText(0);
-        uint64_t lastModifiedTime = stmt->GetValueUInt64(1);
-        uint64_t fileSize = stmt->GetValueUInt64(2);
-        Utf8String etag = stmt->GetValueText(3);
-
-        uint64_t currentModifiedTime = 0;
-        uint64_t currentFileSize = 0;
-        Utf8String currentEtag;
-        GetCurrentImageryInfo(fileName, currentModifiedTime, currentFileSize, currentEtag);
-
-        if (currentModifiedTime != lastModifiedTime || currentFileSize != fileSize || !currentEtag.Equals(etag))
+        if (HasUriContentChanged(stmt->GetValueId<DgnElementId>(0)))
             return true;
         }
     return false;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2018
+// @bsimethod                                    Sam.Wilson                      1/19
 //---------------+---------------+---------------+---------------+---------------+-------
-bool SyncInfo::TryFindImageryFile(DgnElementId modeledElementId, Utf8StringR fileName, uint64_t& lastModifiedTime, uint64_t &fileSize, Utf8StringR etag, Utf8StringR rdsId)
+bool SyncInfo::HasUriContentChanged(DgnElementId eid)
     {
-    EnsureImageryTableExists();
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT Filename, LastModified, FileSize, ETag, RDSId FROM "
-                                                    SYNCINFO_ATTACH(SYNC_TABLE_Imagery)
-                                                    " WHERE ElementId=?"))
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    stmt->BindId(1, modeledElementId);
-    DbResult rc = stmt->Step();
-    if (BE_SQLITE_ROW != rc)
+    auto aspect = UriExternalSourceAspect::GetAspect(eid, *GetDgnDb());
+    if (!aspect.IsValid())
         return false;
 
-    int col = 0;
-    fileName = stmt->GetValueText(col++);
-    lastModifiedTime = stmt->GetValueUInt64(col++);
-    fileSize = stmt->GetValueUInt64(col++);
-    etag = stmt->GetValueText(col++);
-    rdsId = stmt->GetValueText(col++);
-    return true;
-    }
+    UriContentInfo storedInfo;
+    aspect.GetInfo(storedInfo);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BeSQLite::DbResult SyncInfo::UpdateImageryFile(DgnElementId modeledElementId, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId)
-    {
-    EnsureImageryTableExists();
+    UriContentInfo currentInfo;
+    if (BSISUCCESS != currentInfo.GetInfo(aspect.GetFilenameOrUrl()))
+        return false;
 
-    Statement stmt;
-    stmt.Prepare(*m_dgndb, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) " SET LastModified=?, FileSize=?, ETag=?, RDSId=? WHERE(ElementId=?)");
-    int col = 1;
-    stmt.BindUInt64(col++, lastModifiedTime);
-    stmt.BindUInt64(col++, fileSize);
-    stmt.BindText(col++, etag, Statement::MakeCopy::No);
-    stmt.BindText(col++, rdsId, Statement::MakeCopy::No);
-    stmt.BindId(col++, modeledElementId);
-    return stmt.Step();
-
+    return !currentInfo.IsEqual(storedInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**

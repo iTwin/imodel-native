@@ -109,27 +109,9 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
         if (v8mm.GetDgnModel().IsSpatialModel() && converter.HasRootTransChanged())
             res.m_changeType = ChangeType::Update;
 
-        // If the element is reality data, then need to check if the image file has changed
-        Utf8String fileName;
-        uint64_t existingLastModifiedTime;
-        uint64_t existingFileSize;
-        Utf8String existingEtag;
-        Utf8String rdsId; // unnecessary but the method requires it
-        if (converter.GetSyncInfo().TryFindImageryFile(res.m_v8ElementAspect.GetElementId(), fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
-            {
-            uint64_t currentLastModifiedTime;
-            uint64_t currentFileSize;
-            Utf8String currentEtag;
-            converter.GetSyncInfo().GetCurrentImageryInfo(fileName, currentLastModifiedTime, currentFileSize, currentEtag);
-
-            if (!existingEtag.empty())
-                {
-                if (!existingEtag.Equals(currentEtag))
-                    res.m_changeType = ChangeType::Update;
-                }
-            else if (currentLastModifiedTime != existingLastModifiedTime || currentFileSize != existingFileSize)
-                res.m_changeType = ChangeType::Update;
-            }
+        // If the element is reality data, then check if the image file has changed
+        if (converter.GetSyncInfo().HasUriContentChanged(res.m_v8ElementAspect.GetElementId()))
+            res.m_changeType = ChangeType::Update;
         }
 
     return (ChangeType::None != res.m_changeType);
@@ -174,7 +156,7 @@ bool ChangeDetector::_ShouldSkipFile(Converter& converter, DgnV8FileCR v8file)
         return false;
 
     // if it hasn't changed per the "last saved time", don't bother with it.
-    if (!s_doFileSaveTimeCheck || converter.GetSyncInfo().HasLastSaveTimeChanged(v8file) || converter.GetSyncInfo().ModelHasChangedImagery(converter.GetRepositoryLinkId(v8file)))
+    if (!s_doFileSaveTimeCheck || converter.GetSyncInfo().HasLastSaveTimeChanged(v8file) || converter.GetSyncInfo().FileHasChangedUriContent(converter.GetRepositoryLinkId(v8file)))
         return false;
 
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
