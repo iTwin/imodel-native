@@ -12,7 +12,7 @@
       <SubPart PartName="RunGtest" />
     </Part>
 
-  <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BMakeOptions="-dGTEST_PRODUCT=ScalableMesh-Gtest -dGTEST_NAME=ScalableMeshTest  -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ScalableMesh -dBEGTEST_BREAK_ON_FAILURE"  OnlyPlatforms="x86,x64,MacOs*,Linux*">
+  <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ScalableMesh-Gtest -dGTEST_NAME=ScalableMeshTest  -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ScalableMesh -dBEGTEST_BREAK_ON_FAILURE"  OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ScalableMesh-Gtest"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
   </Part>
