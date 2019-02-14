@@ -2,7 +2,7 @@
 |
 |     $Source: iModelDmsSupport/PWWorkspaceHelper.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PWWorkspaceHelper.h"
@@ -169,14 +169,14 @@ bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
     LPCWSTR monikerArray = &pwMoniker[0];
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, AAMONIKERF_DONT_VALIDATE))
         {
-        LOG.errorv("Cannot call  aaApi_StringsToMonikers for document %s", pwMoniker.c_str());
+        LOG.errorv(L"Cannot call  aaApi_StringsToMonikers for document %ls", pwMoniker.c_str());
         return false;
         }
     
     LPCWSTR datasourceName = aaApi_GetDatasourceNameFromMoniker(moniker);
     if (NULL == datasourceName)
         {
-        LOG.errorv("Cannot call  aaApi_GetDatasourceNameFromMoniker for document %s", pwMoniker.c_str());
+        LOG.errorv(L"Cannot call  aaApi_GetDatasourceNameFromMoniker for document %ls", pwMoniker.c_str());
         aaApi_Free(moniker);
         return false;
         }
