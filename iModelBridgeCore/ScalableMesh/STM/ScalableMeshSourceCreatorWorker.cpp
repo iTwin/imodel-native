@@ -323,7 +323,6 @@ uint64_t GetTotalCountWithSubResolutions(const HFCPtr<SMPointIndexNode<DPoint3d,
     return totalCount;         
     }
 
-
 struct GenerationTask;
 
 typedef RefCountedPtr<GenerationTask> GenerationTaskPtr;
@@ -334,12 +333,12 @@ struct GenerationTask : public RefCountedBase
         {             
         m_orderId = 0;
         m_totalNbPoints = 0;
-        m_groupRootNode = rootNode;
+        m_groupRootNodes.push_back(rootNode);
         m_resolutionToGenerate.resize(nbResolutions);
 
         bvector<IScalableMeshNodePtr> groupNodes;
-
-        AccumulateNodes(groupNodes, currentTasks, m_groupRootNode);
+   
+        AccumulateNodes(groupNodes, currentTasks, rootNode);
 
         for (auto& node : groupNodes)
             {
@@ -374,10 +373,13 @@ struct GenerationTask : public RefCountedBase
         {        
         for (auto& task : currentTasks)
             {
-            if (task->m_groupRootNode->GetNodeId() == currentNode->GetNodeId())
-                {                
-                m_orderId = max(m_orderId, task->m_orderId + 1);
-                return;
+            for (auto& rootNode : task->m_groupRootNodes)
+                {
+                if (rootNode->GetNodeId() == currentNode->GetNodeId())
+                    {                
+                    m_orderId = max(m_orderId, task->m_orderId + 1);
+                    return;
+                    }
                 }
             }
 
@@ -400,9 +402,9 @@ struct GenerationTask : public RefCountedBase
     /*
     void SetGroupRootNode(int nbResolutions, bvector<IScalableMeshNodePtr>& groupRootNode)
         {
-        m_groupRootNode = groupRootNode;
+        m_groupRootNodes = groupRootNode;
         m_resolutionToGenerate.resize(nbResolutions);
-        AccumulateNodes(m_groupRootNode);            
+        AccumulateNodes(m_groupRootNodes);            
         }
         */
     
@@ -411,8 +413,8 @@ struct GenerationTask : public RefCountedBase
         ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
 
         m_resolutionToGenerate[currentNode->GetLevel()].m_nodeIds.push_back(currentNode->GetNodeId());
-        //m_totalNbPoints += currentNode->GetPointCount();
-        m_totalNbPoints += GetTotalCountWithSubResolutions(smNode->GetNodePtr(), m_resolutionToGenerate.size(), currentNode->GetLevel());
+        
+        m_totalNbPoints += smNode->GetNodePtr()->GetCount() / std::pow(4, m_resolutionToGenerate.size() - currentNode->GetLevel() - 1);            
         }            
 
     void MergeGenerationTask(const GenerationTaskPtr& newGenerationTask, HFCPtr<MeshIndexType> pDataIndex)
@@ -425,14 +427,15 @@ struct GenerationTask : public RefCountedBase
             m_resolutionToGenerate[levelInd].Merge(newGenerationTask->m_resolutionToGenerate[levelInd], pDataIndex);
             }          
 
-        m_totalNbPoints += newGenerationTask->m_totalNbPoints;
-        m_totalNbPoints = m_totalNbPoints;        
+        m_totalNbPoints += newGenerationTask->m_totalNbPoints;        
+        m_groupRootNodes.insert(m_groupRootNodes.end(), newGenerationTask->m_groupRootNodes.begin(), newGenerationTask->m_groupRootNodes.end());
         }        
     
-    IScalableMeshNodePtr     m_groupRootNode;
-    bvector<NodesToGenerate> m_resolutionToGenerate;
-    uint32_t                 m_orderId;
-    uint64_t                 m_totalNbPoints;
+    //The root nodes and all their children, up to any children being root nodes into another generation tasks, are part of this GenerationTask.
+    bvector<IScalableMeshNodePtr> m_groupRootNodes; 
+    bvector<NodesToGenerate>      m_resolutionToGenerate;
+    uint32_t                      m_orderId;
+    uint64_t                      m_totalNbPoints;
     };
 
 
@@ -440,20 +443,20 @@ struct GenerationTask : public RefCountedBase
 
 size_t ComputeCommonAncestorLevel(const GenerationTaskPtr& generationTask1, const GenerationTaskPtr& generationTask2)
     {        
-    IScalableMeshNodePtr parentNode1 = generationTask1->m_groupRootNode->GetParentNode();
-    IScalableMeshNodePtr parentNode2 = generationTask2->m_groupRootNode->GetParentNode();
+    IScalableMeshNodePtr parentNode1 = generationTask1->m_groupRootNodes.front()->GetParentNode();
+    IScalableMeshNodePtr parentNode2 = generationTask2->m_groupRootNodes.front()->GetParentNode();
 
     assert(parentNode1 != nullptr || parentNode2 != nullptr);
 
     if (parentNode1 == nullptr)
         {
-        size_t commonAncestorLevel = generationTask2->m_groupRootNode->GetLevel() - generationTask1->m_groupRootNode->GetLevel();
+        size_t commonAncestorLevel = generationTask2->m_groupRootNodes.front()->GetLevel() - generationTask1->m_groupRootNodes.front()->GetLevel();
         return commonAncestorLevel;
         }
 
     if (parentNode2 == nullptr)
         {
-        size_t commonAncestorLevel = generationTask1->m_groupRootNode->GetLevel() - generationTask2->m_groupRootNode->GetLevel();
+        size_t commonAncestorLevel = generationTask1->m_groupRootNodes.front()->GetLevel() - generationTask2->m_groupRootNodes.front()->GetLevel();
         return commonAncestorLevel;
         }
 
@@ -473,8 +476,8 @@ size_t ComputeCommonAncestorLevel(const GenerationTaskPtr& generationTask1, cons
         parentNode2 = parentNode2->GetParentNode();
         }
 
-    size_t commonAncestorLevel1 = generationTask1->m_groupRootNode->GetLevel() - parentNode1->GetLevel();
-    size_t commonAncestorLevel2 = generationTask2->m_groupRootNode->GetLevel() - parentNode2->GetLevel();
+    size_t commonAncestorLevel1 = generationTask1->m_groupRootNodes.front()->GetLevel() - parentNode1->GetLevel();
+    size_t commonAncestorLevel2 = generationTask2->m_groupRootNodes.front()->GetLevel() - parentNode2->GetLevel();
     
     return max(commonAncestorLevel1, commonAncestorLevel2);                
     }
@@ -689,7 +692,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         workerNode->AddAttributeStringValue("smName", smFileName.c_str());
 
         /*
-         IScalableMeshNodePtr     m_groupRootNode;
+         IScalableMeshNodePtr     m_groupRootNodes;
     bvector<NodesToGenerate> m_resolutionToGenerate;
     uint32_t                 m_orderId;
     uint64_t                 m_totalNbPoints;
