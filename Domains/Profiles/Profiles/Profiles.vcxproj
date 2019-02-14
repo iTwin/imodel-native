@@ -103,13 +103,15 @@
     <ClCompile Include="src\RoundedRectangleProfile.cpp" />
     <ClCompile Include="src\SchifflerizedLShapeProfile.cpp" />
     <ClCompile Include="src\SinglePerimeterProfile.cpp" />
+    <ClCompile Include="src\StandardCatalogCodeAspect.cpp" />
     <ClCompile Include="src\TrapeziumProfile.cpp" />
     <ClCompile Include="src\TShapeProfile.cpp" />
     <ClCompile Include="src\TTShapeProfile.cpp" />
     <ClCompile Include="src\ZShapeProfile.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\PrivateAPI\ProfilesCardinalPoints.h" />
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesCardinalPoints.h" />
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\StandardCatalogCodeAspect.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ArbitraryCompositeProfileAspect.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesLogging.h" />
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesQuery.h" />

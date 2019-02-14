@@ -8,6 +8,7 @@
 #include "ProfilesPch.h"
 #include <Profiles\ProfilesApi.h>
 #include <ProfilesInternal\ArbitraryCompositeProfileAspect.h>
+#include <ProfilesInternal\StandardCatalogCodeAspect.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -50,6 +51,7 @@ ProfilesDomain::ProfilesDomain() : DgnDomain (PRF_SCHEMA_NAME, "Bentley Profiles
     RegisterHandler (DoubleLShapeProfileHandler::GetHandler());
     RegisterHandler (ArbitraryCompositeProfileHandler::GetHandler());
     RegisterHandler (ArbitraryCompositeProfileAspectHandler::GetHandler());
+    RegisterHandler (StandardCatalogCodeAspectHandler::GetHandler());
     RegisterHandler (MaterialProfileDefinitionHandler::GetHandler());
     RegisterHandler (MaterialProfileHandler::GetHandler());
     }

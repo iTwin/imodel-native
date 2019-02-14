@@ -206,6 +206,9 @@
     <ClCompile Include="src\ProfilesPch.cpp">
       <Filter>Pch</Filter>
     </ClCompile>
+    <ClCompile Include="src\StandardCatalogCodeAspect.cpp">
+      <Filter>Src\PrivateAPI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\Profile.h">
@@ -334,7 +337,10 @@
     <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ArbitraryCompositeProfileAspect.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
-    <ClInclude Include="src\PrivateAPI\ProfilesCardinalPoints.h">
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\StandardCatalogCodeAspect.h">
+      <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesCardinalPoints.h">
       <Filter>PrivateAPI</Filter>
     </ClInclude>
     <ClInclude Include="src\ProfilesPch.h">

@@ -122,10 +122,16 @@ IGeometryPtr ArbitraryCompositeProfile::_UpdateShapeGeometry (Profile const& rel
 +---------------+---------------+---------------+---------------+---------------+------*/
 static AspectVector queryAspects (ArbitraryCompositeProfile& profile)
     {
-    AspectVector aspects;
-    ECClass const* pAspectClass = profile.GetDgnDb().Schemas().GetClass (PRF_SCHEMA_NAME, PRF_CLASS_ArbitraryCompositeProfileAspect);
+    ECClass const* pAspectClass = ArbitraryCompositeProfileAspect::QueryClass (profile.GetDgnDb());
+    if (pAspectClass == nullptr)
+        {
+        BeAssert (false);
+        return AspectVector();
+        }
 
+    AspectVector aspects;
     ElementAspectIterator aspectIterator = profile.MakeAspectIterator();
+
     for (ElementAspectIteratorEntry const& aspectEntry : aspectIterator)
         {
         ArbitraryCompositeProfileAspectPtr aspectPtr = DgnElement::MultiAspect::GetP<ArbitraryCompositeProfileAspect>

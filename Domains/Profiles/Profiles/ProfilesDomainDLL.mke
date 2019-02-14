@@ -54,6 +54,8 @@ $(o)ProfilesProperty$(oext) : $(appSrc)ProfilesProperty.cpp ${MultiCompileDepend
 
 $(o)ProfilesQuery$(oext) : $(appSrc)ProfilesQuery.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesQuery.h
 
+$(o)StandardCatalogCodeAspect$(oext) : $(appSrc)StandardCatalogCodeAspect.cpp ${MultiCompileDepends} $(appPrivateApi)StandardCatalogCodeAspect.h
+
 $(o)AsymmetricIShapeProfile$(oext) : $(appSrc)AsymmetricIShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)AsymmetricIShapeProfile.h
 
 $(o)BentPlateProfile$(oext) : $(appSrc)BentPlateProfile.cpp ${MultiCompileDepends} $(appPublicApi)BentPlateProfile.h
