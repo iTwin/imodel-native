@@ -6,7 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Client.h>
-#include <Licensing/Utils/BuddiProvider.h>
+#include "Providers/BuddiProvider.h"
+#include "Providers/PolicyProvider.h"
 #include "ClientImpl.h"
 #include "ClientWithKeyImpl.h"
 
@@ -39,7 +40,8 @@ IHttpHandlerPtr httpHandler
 )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, buddiProvider, projectId, featureString, httpHandler)));
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, authenticationProvider, httpHandler);
+    return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, buddiProvider, policyProvider, projectId, featureString, httpHandler)));
     }
 
 /*--------------------------------------------------------------------------------------+

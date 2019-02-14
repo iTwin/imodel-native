@@ -26,7 +26,8 @@
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
-#include <Licensing/Utils/IBuddiProvider.h>
+#include "Providers/IBuddiProvider.h"
+#include "Providers/IPolicyProvider.h"
 
 // Log Posting Sources
 #define LOGPOSTINGSOURCE_REALTIME           "RealTime"
@@ -68,6 +69,7 @@ protected:
     bool m_offlineMode;
     bool m_stopApplicationCalled;
     IBuddiProviderPtr m_buddiProvider;
+    IPolicyProviderPtr m_policyProvider;
 
     // Policy
 	std::shared_ptr<Policy> m_policy;
@@ -125,6 +127,7 @@ public:
         BeFileNameCR db_path,
         bool offlineMode,
         IBuddiProviderPtr buddiProvider,
+        IPolicyProviderPtr policyProvider,
         Utf8StringCR projectId,
         Utf8StringCR featureString,
         IHttpHandlerPtr httpHandler
@@ -139,8 +142,8 @@ public:
     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
     LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
 
-    // Policy
-    LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
+    // Policy -> moved to Provider
+    //LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
     
     // Product status

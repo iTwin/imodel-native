@@ -11,10 +11,11 @@
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
-#include <Licensing/Utils/IBuddiProvider.h>
 
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
+
+#include "Providers/IBuddiProvider.h"
 
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE

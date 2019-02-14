@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/Mocks/BuddiProviderMock.h $
+|     $Source: Licensing/Providers/BuddiProvider.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,18 +8,18 @@
 #pragma once
 
 #include <Licensing/Licensing.h>
-#include "../../../../Licensing/Providers/IBuddiProvider.h"
+#include <Licensing/LicenseStatus.h>
 
-#include "../TestsHelper.h"
+#include "IBuddiProvider.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
-struct BuddiProviderMock : IBuddiProvider
+struct BuddiProvider : IBuddiProvider
 {
 public:
-    MOCK_METHOD0(UlasLocationBaseUrl, Utf8String());
-    MOCK_METHOD0(EntitlementPolicyBaseUrl, Utf8String());
-    MOCK_METHOD0(UlasRealtimeLoggingBaseUrl, Utf8String());
+    Utf8String UlasLocationBaseUrl();
+    Utf8String EntitlementPolicyBaseUrl();
+    Utf8String UlasRealtimeLoggingBaseUrl();
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

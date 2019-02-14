@@ -31,9 +31,10 @@ Headers + $(PublicApiDir)Utils/SCVWritter.h
 Headers + $(PublicApiDir)Utils/TimeRetriever.h
 Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
 Headers + $(PublicApiDir)Utils/DateHelper.h
-Headers + $(PublicApiDir)Utils/IBuddiProvider.h
-Headers + $(PublicApiDir)Utils/BuddiProvider.h
-
+Headers + $(SourceDir)Providers/IPolicyProvider.h
+Headers + $(SourceDir)Providers/PolicyProvider.h
+Headers + $(SourceDir)Providers/IBuddiProvider.h
+Headers + $(SourceDir)Providers/BuddiProvider.h
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
@@ -68,6 +69,8 @@ $(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Hea
 
 $(o)FeatureUserDataMap$(oext)        : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
 
-$(o)BuddiProvider$(oext)             : $(SourceDir)Utils/BuddiProvider.cpp $(Headers) ${MultiCompileDepends}
+$(o)BuddiProvider$(oext)             : $(SourceDir)Providers/BuddiProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)PolicyProvider$(oext)            : $(SourceDir)Providers/PolicyProvider.cpp $(Headers) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

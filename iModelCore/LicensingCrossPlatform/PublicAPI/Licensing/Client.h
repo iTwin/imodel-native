@@ -18,8 +18,6 @@
 
 #include <Licensing/Utils/FeatureUserDataMap.h>
 
-#include <Licensing/Utils/IBuddiProvider.h>
-
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 

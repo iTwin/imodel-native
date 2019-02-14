@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/Mocks/BuddiProviderMock.h $
+|     $Source: Licensing/Providers/IPolicyProvider.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,18 +8,21 @@
 #pragma once
 
 #include <Licensing/Licensing.h>
-#include "../../../../Licensing/Providers/IBuddiProvider.h"
+#include <Licensing/LicenseStatus.h>
 
-#include "../TestsHelper.h"
+#include <WebServices/Configuration/UrlProvider.h>
+
+#include "../Policy.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
-struct BuddiProviderMock : IBuddiProvider
+typedef std::shared_ptr<struct IPolicyProvider> IPolicyProviderPtr;
+
+struct IPolicyProvider
 {
 public:
-    MOCK_METHOD0(UlasLocationBaseUrl, Utf8String());
-    MOCK_METHOD0(EntitlementPolicyBaseUrl, Utf8String());
-    MOCK_METHOD0(UlasRealtimeLoggingBaseUrl, Utf8String());
+    virtual folly::Future<std::shared_ptr<Policy>> GetPolicy() = 0;
+    virtual ~IPolicyProvider() {};
 };
 
 END_BENTLEY_LICENSING_NAMESPACE
