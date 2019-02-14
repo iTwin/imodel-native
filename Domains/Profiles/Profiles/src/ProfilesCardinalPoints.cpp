@@ -100,7 +100,7 @@ static uint32_t getCardinalPointsArraySize (Profile const& profile)
 * in \p structValue, error code otherwise.
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus findCardinalPointECValue (Profile const& profile, Utf8String const& name, ECValue& structValue, uint32_t* pIndex = nullptr)
+static DgnDbStatus findCardinalPointECValue (Profile const& profile, Utf8String const& name, ECValue& structValue, uint32_t* pIndex = nullptr)
     {
     uint32_t arraySize = getCardinalPointsArraySize (profile);
     for (uint32_t i = 0; i < arraySize; ++i)
@@ -127,7 +127,7 @@ DgnDbStatus findCardinalPointECValue (Profile const& profile, Utf8String const& 
 * Construct CardinalPoint struct from an IECInstance representing it.
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-CardinalPoint cardinalPointFromECValue (ECValue const& ecValue)
+static CardinalPoint cardinalPointFromECValue (ECValue const& ecValue)
     {
     BeAssert (ecValue.IsStruct());
 
@@ -144,11 +144,30 @@ CardinalPoint cardinalPointFromECValue (ECValue const& ecValue)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Calculate geometric centroid of a geometry.
+* NOTE: This could be optimized for symetric profiles on both axis (e.g. IShapeProifle)
+* because their geometric centroid is (0, 0)
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static DPoint2d getGeometricCentroid (IGeometry const& geometry)
+    {
+    CurveVectorPtr curvesPtr = geometry.GetAsCurveVector();
+    BeAssert (curvesPtr.IsValid());
+
+    DPoint3d centroid;
+    double area;
+    if (curvesPtr->CentroidAreaXY (centroid, area))
+        return DPoint2d::From (centroid.x, centroid.y);
+    else
+        return DPoint2d::From (0.0, 0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Construct standard CardinalPoint struct by enumeration.
 * NOTE: ShearPoint and GeometricCentroid cardinal point locations are currently not supported.
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-CardinalPoint createStandardCardinalPoint (StandardCardinalPoint type, Profile const& profile)
+static CardinalPoint createStandardCardinalPoint (StandardCardinalPoint type, Profile const& profile)
     {
     IGeometryPtr shapePtr = profile.GetShape();
     BeAssert (shapePtr.IsValid());
@@ -172,7 +191,17 @@ CardinalPoint createStandardCardinalPoint (StandardCardinalPoint type, Profile c
         case StandardCardinalPoint::TopLeft:        return CardinalPoint (pName, DPoint2d::From (-halfWidth, halfDepth));
         case StandardCardinalPoint::TopCenter:      return CardinalPoint (pName, DPoint2d::From (0.0, halfDepth));
         case StandardCardinalPoint::TopRight:       return CardinalPoint (pName, DPoint2d::From (halfWidth, halfDepth));
-        // ShearPoint and GeometricCentroid cardinal point locations are currently not supported.
+        case StandardCardinalPoint::GeometricCentroid:
+            return CardinalPoint (pName, getGeometricCentroid (*shapePtr));
+        case StandardCardinalPoint::BottomInLineWithGeometricCentroid:
+            return CardinalPoint (pName, DPoint2d::From (getGeometricCentroid (*shapePtr).x, -halfDepth));
+        case StandardCardinalPoint::LeftInLineWithGeometricCentroid:
+            return CardinalPoint (pName, DPoint2d::From (-halfWidth, getGeometricCentroid (*shapePtr).y));
+        case StandardCardinalPoint::RightInLineWithGeometricCentroid:
+            return CardinalPoint (pName, DPoint2d::From (halfWidth, getGeometricCentroid (*shapePtr).y));
+        case StandardCardinalPoint::TopInLineWithGeometricCentroid:
+            return CardinalPoint (pName, DPoint2d::From (getGeometricCentroid (*shapePtr).x, halfDepth));
+        // ShearPoint cardinal point locations are currently not supported.
         default:
             return CardinalPoint (pName, DPoint2d::From (0.0, 0.0));
         }

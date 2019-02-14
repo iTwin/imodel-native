@@ -221,49 +221,67 @@ TEST_F (ProfileTestCase, GetCardinalPoints_InsertedInstance_19StandardPoints)
     bvector<CardinalPoint> cardinalPoints = profilePtr->GetCardinalPoints();
     ASSERT_EQ (19, cardinalPoints.size()) << "Inserted profile should have 19 standard cardinal points";
 
-    ASSERT_STREQ ("BottomLeft", cardinalPoints[0].name.c_str());
-    ASSERT_STREQ ("BottomCenter", cardinalPoints[1].name.c_str());
-    ASSERT_STREQ ("BottomRight", cardinalPoints[2].name.c_str());
-    ASSERT_STREQ ("MidDepthLeft", cardinalPoints[3].name.c_str());
-    ASSERT_STREQ ("MidDepthCenter", cardinalPoints[4].name.c_str());
-    ASSERT_STREQ ("MidDepthRight", cardinalPoints[5].name.c_str());
-    ASSERT_STREQ ("TopLeft", cardinalPoints[6].name.c_str());
-    ASSERT_STREQ ("TopCenter", cardinalPoints[7].name.c_str());
-    ASSERT_STREQ ("TopRight", cardinalPoints[8].name.c_str());
-    ASSERT_STREQ ("GeometricCentroid", cardinalPoints[9].name.c_str());
-    ASSERT_STREQ ("BottomInLineWithGeometricCentroid", cardinalPoints[10].name.c_str());
-    ASSERT_STREQ ("LeftInLineWithGeometricCentroid", cardinalPoints[11].name.c_str());
-    ASSERT_STREQ ("RightInLineWithGeometricCentroid", cardinalPoints[12].name.c_str());
-    ASSERT_STREQ ("TopInLineWithGeometricCentroid", cardinalPoints[13].name.c_str());
-    ASSERT_STREQ ("ShearCenter", cardinalPoints[14].name.c_str());
-    ASSERT_STREQ ("BottomInLineWithShearCenter", cardinalPoints[15].name.c_str());
-    ASSERT_STREQ ("LeftInLineWithShearCenter", cardinalPoints[16].name.c_str());
-    ASSERT_STREQ ("RightInLineWithShearCenter", cardinalPoints[17].name.c_str());
-    ASSERT_STREQ ("TopInLineWithShearCenter", cardinalPoints[18].name.c_str());
+    EXPECT_STREQ ("BottomLeft", cardinalPoints[0].name.c_str());
+    EXPECT_STREQ ("BottomCenter", cardinalPoints[1].name.c_str());
+    EXPECT_STREQ ("BottomRight", cardinalPoints[2].name.c_str());
+    EXPECT_STREQ ("MidDepthLeft", cardinalPoints[3].name.c_str());
+    EXPECT_STREQ ("MidDepthCenter", cardinalPoints[4].name.c_str());
+    EXPECT_STREQ ("MidDepthRight", cardinalPoints[5].name.c_str());
+    EXPECT_STREQ ("TopLeft", cardinalPoints[6].name.c_str());
+    EXPECT_STREQ ("TopCenter", cardinalPoints[7].name.c_str());
+    EXPECT_STREQ ("TopRight", cardinalPoints[8].name.c_str());
+    EXPECT_STREQ ("GeometricCentroid", cardinalPoints[9].name.c_str());
+    EXPECT_STREQ ("BottomInLineWithGeometricCentroid", cardinalPoints[10].name.c_str());
+    EXPECT_STREQ ("LeftInLineWithGeometricCentroid", cardinalPoints[11].name.c_str());
+    EXPECT_STREQ ("RightInLineWithGeometricCentroid", cardinalPoints[12].name.c_str());
+    EXPECT_STREQ ("TopInLineWithGeometricCentroid", cardinalPoints[13].name.c_str());
+    EXPECT_STREQ ("ShearCenter", cardinalPoints[14].name.c_str());
+    EXPECT_STREQ ("BottomInLineWithShearCenter", cardinalPoints[15].name.c_str());
+    EXPECT_STREQ ("LeftInLineWithShearCenter", cardinalPoints[16].name.c_str());
+    EXPECT_STREQ ("RightInLineWithShearCenter", cardinalPoints[17].name.c_str());
+    EXPECT_STREQ ("TopInLineWithShearCenter", cardinalPoints[18].name.c_str());
 
-    ASSERT_DOUBLE_EQ (-1.0, cardinalPoints[0].location.x);
-    ASSERT_DOUBLE_EQ (-1.0, cardinalPoints[0].location.y);
-    ASSERT_DOUBLE_EQ (0.0, cardinalPoints[1].location.x);
-    ASSERT_DOUBLE_EQ (-1.0, cardinalPoints[1].location.y);
-    ASSERT_DOUBLE_EQ (1.0, cardinalPoints[2].location.x);
-    ASSERT_DOUBLE_EQ (-1.0, cardinalPoints[2].location.y);
-    ASSERT_DOUBLE_EQ (-1.0, cardinalPoints[3].location.x);
-    ASSERT_DOUBLE_EQ (0.0, cardinalPoints[3].location.y);
-    ASSERT_DOUBLE_EQ (0.0, cardinalPoints[4].location.x);
-    ASSERT_DOUBLE_EQ (0.0, cardinalPoints[4].location.y);
-    ASSERT_DOUBLE_EQ (1.0, cardinalPoints[5].location.x);
-    ASSERT_DOUBLE_EQ (0.0, cardinalPoints[5].location.y);
-    ASSERT_DOUBLE_EQ (-1.0, cardinalPoints[6].location.x);
-    ASSERT_DOUBLE_EQ (1.0, cardinalPoints[6].location.y);
-    ASSERT_DOUBLE_EQ (0.0, cardinalPoints[7].location.x);
-    ASSERT_DOUBLE_EQ (1.0, cardinalPoints[7].location.y);
-    ASSERT_DOUBLE_EQ (1.0, cardinalPoints[8].location.x);
-    ASSERT_DOUBLE_EQ (1.0, cardinalPoints[8].location.y);
+    // Basic bounding box points
+    EXPECT_DOUBLE_EQ (-1.0, cardinalPoints[0].location.x);
+    EXPECT_DOUBLE_EQ (-1.0, cardinalPoints[0].location.y);
+    EXPECT_DOUBLE_EQ (0.0, cardinalPoints[1].location.x);
+    EXPECT_DOUBLE_EQ (-1.0, cardinalPoints[1].location.y);
+    EXPECT_DOUBLE_EQ (1.0, cardinalPoints[2].location.x);
+    EXPECT_DOUBLE_EQ (-1.0, cardinalPoints[2].location.y);
+    EXPECT_DOUBLE_EQ (-1.0, cardinalPoints[3].location.x);
+    EXPECT_DOUBLE_EQ (0.0, cardinalPoints[3].location.y);
+    EXPECT_DOUBLE_EQ (0.0, cardinalPoints[4].location.x);
+    EXPECT_DOUBLE_EQ (0.0, cardinalPoints[4].location.y);
+    EXPECT_DOUBLE_EQ (1.0, cardinalPoints[5].location.x);
+    EXPECT_DOUBLE_EQ (0.0, cardinalPoints[5].location.y);
+    EXPECT_DOUBLE_EQ (-1.0, cardinalPoints[6].location.x);
+    EXPECT_DOUBLE_EQ (1.0, cardinalPoints[6].location.y);
+    EXPECT_DOUBLE_EQ (0.0, cardinalPoints[7].location.x);
+    EXPECT_DOUBLE_EQ (1.0, cardinalPoints[7].location.y);
+    EXPECT_DOUBLE_EQ (1.0, cardinalPoints[8].location.x);
+    EXPECT_DOUBLE_EQ (1.0, cardinalPoints[8].location.y);
 
-    for (int i = 9; i < 19; ++i)
+    DPoint3d centroid;
+    double area;
+    ASSERT_TRUE (profilePtr->GetShape()->GetAsCurveVector()->CentroidAreaXY (centroid, area));
+
+    // Geometric centroid points
+    EXPECT_DOUBLE_EQ (centroid.x, cardinalPoints[9].location.x);
+    EXPECT_DOUBLE_EQ (centroid.y, cardinalPoints[9].location.y);
+    EXPECT_DOUBLE_EQ (centroid.x, cardinalPoints[10].location.x);
+    EXPECT_DOUBLE_EQ (-1.0, cardinalPoints[10].location.y);
+    EXPECT_DOUBLE_EQ (-1.0, cardinalPoints[11].location.x);
+    EXPECT_DOUBLE_EQ (centroid.y, cardinalPoints[11].location.y);
+    EXPECT_DOUBLE_EQ (1.0, cardinalPoints[12].location.x);
+    EXPECT_DOUBLE_EQ (centroid.y, cardinalPoints[12].location.y);
+    EXPECT_DOUBLE_EQ (centroid.x, cardinalPoints[13].location.x);
+    EXPECT_DOUBLE_EQ (1.0, cardinalPoints[13].location.y);
+
+    // Shear points
+    for (int i = 14; i < 19; ++i)
         {
-        ASSERT_DOUBLE_EQ (0.0, cardinalPoints[i].location.x);
-        ASSERT_DOUBLE_EQ (0.0, cardinalPoints[i].location.y);
+        EXPECT_DOUBLE_EQ (0.0, cardinalPoints[i].location.x);
+        EXPECT_DOUBLE_EQ (0.0, cardinalPoints[i].location.y);
         }
     }
 

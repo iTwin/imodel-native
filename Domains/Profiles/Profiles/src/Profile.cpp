@@ -124,6 +124,7 @@ bool Profile::_CreateGeometry()
     if (geometryPtr.IsNull())
         return false;
 
+    BeAssert (geometryPtr->GetGeometryType() == IGeometry::GeometryType::CurveVector);
     SetShape (*geometryPtr);
 
     return true;
