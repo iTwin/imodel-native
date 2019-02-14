@@ -231,29 +231,81 @@ uint32_t IScalableMeshSourceCreatorWorker::Impl::GetNbNodesPerTask(size_t nbNode
 
 struct NodesToGenerate
     {   
-    bool              m_isSorted = false;
+    bool              m_isNodeIdsSorted = false;
+    bool              m_isNodeStitchIdsSorted = false;
     //uint64_t          m_levelId;
     bvector<uint64_t> m_nodeIds; //Node ID to mesh and filter.
     bvector<uint64_t> m_nodeStitchIds; //Node ID to stitch. Should be a subset of m_nodeId
 
     bool FindNode(uint64_t nodeId)
         {
-        if (m_isSorted == false)
+        if (m_isNodeIdsSorted == false)
             {
             std::sort(m_nodeIds.begin(), m_nodeIds.end());
+            m_isNodeIdsSorted = true;
             }  
 
         return std::binary_search(m_nodeIds.begin(), m_nodeIds.end(), nodeId);
         }
+    
+    bool FindStitchNode(uint64_t stitchNodeId)
+        {
+        if (m_isNodeStitchIdsSorted == false)
+            {
+            std::sort(m_nodeStitchIds.begin(), m_nodeStitchIds.end());
+            m_isNodeStitchIdsSorted = true;
+            }  
 
+        return std::binary_search(m_nodeStitchIds.begin(), m_nodeStitchIds.end(), stitchNodeId);
+        }
 
+    bool IsStitchable(IScalableMeshNodePtr node)
+        {
+        bool areAllNeighborFound = true; 
 
-    /*
-    void Merge(const NodesToGenerate& nodesToGenerate)
+        for (char relativePosX = -1; relativePosX <= 1 && areAllNeighborFound; relativePosX++)
+            for (char relativePosY = -1; relativePosY <= 1 && areAllNeighborFound; relativePosY++)
+                for (char relativePosZ = -1; relativePosZ <= 1 && areAllNeighborFound; relativePosZ++)
+                    {
+                    bvector<IScalableMeshNodePtr> neighborNodes = node->GetNeighborAt(relativePosX, relativePosY, relativePosZ);
+                    for (auto& neighborNode : neighborNodes)
+                        {
+                        if (!FindNode(neighborNode->GetNodeId()))
+                            areAllNeighborFound = false;
+                        }
+                    }
+
+        return areAllNeighborFound;
+        }
+
+    void Merge(const NodesToGenerate& nodesToGenerate, HFCPtr<MeshIndexType> pDataIndex)
         {        
         m_nodeIds.insert(m_nodeIds.end(), nodesToGenerate.m_nodeIds.begin(), nodesToGenerate.m_nodeIds.end());
+        m_nodeStitchIds.insert(m_nodeStitchIds.end(), nodesToGenerate.m_nodeStitchIds.begin(), nodesToGenerate.m_nodeStitchIds.end());
+        m_isNodeIdsSorted = false;
+        m_isNodeStitchIdsSorted = false;
+
+        for (auto& nodeId : m_nodeIds)
+            {
+            if (!FindStitchNode(nodeId))
+                {
+                HPMBlockID blockID(nodeId);
+
+                HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> meshNode((SMPointIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());            
+                meshNode->NeedToLoadNeighbors(true);        
+                meshNode->Load();
+
+                IScalableMeshNodePtr smNodePtr;  
+                smNodePtr = new ScalableMeshNode<DPoint3d>(meshNode);
+                
+                if (IsStitchable(smNodePtr))
+                    {
+                    m_nodeStitchIds.push_back(nodeId);
+                    m_isNodeStitchIdsSorted = false;
+                    }                    
+                }
+            }
         }
-        */
     };
 
 
@@ -297,6 +349,7 @@ struct GenerationTask : public RefCountedBase
 
         for (auto& node : groupNodes)
             {
+            /*
             bool isNeighborFound = true; 
 
             for (char relativePosX = -1; relativePosX <= 1 && isNeighborFound; relativePosX++)
@@ -310,8 +363,9 @@ struct GenerationTask : public RefCountedBase
                                 isNeighborFound = false;
                             }
                         }
-                        
-            if (isNeighborFound)
+*/
+
+            if (m_resolutionToGenerate[node->GetLevel()].IsStitchable(node)) 
                 m_resolutionToGenerate[node->GetLevel()].m_nodeStitchIds.push_back(node->GetNodeId());
             }
         }
@@ -359,21 +413,21 @@ struct GenerationTask : public RefCountedBase
         m_resolutionToGenerate[currentNode->GetLevel()].m_nodeIds.push_back(currentNode->GetNodeId());
         //m_totalNbPoints += currentNode->GetPointCount();
         m_totalNbPoints += GetTotalCountWithSubResolutions(smNode->GetNodePtr(), m_resolutionToGenerate.size(), currentNode->GetLevel());
-        }    
+        }            
 
-    /*
-    void MergeGenerationTask(GenerationTask& generationTask)
-        {
-        assert(generationTask.m_resolutionToGenerate.size() == m_resolutionToGenerate.size());
+    void MergeGenerationTask(const GenerationTaskPtr& newGenerationTask, HFCPtr<MeshIndexType> pDataIndex)
+        {                        
+        assert(newGenerationTask->m_resolutionToGenerate.size() == m_resolutionToGenerate.size());
+        assert(newGenerationTask->m_orderId == m_orderId);
 
         for (uint32_t levelInd = 0; levelInd < m_resolutionToGenerate.size(); levelInd++)
             {
-            m_resolutionToGenerate[levelInd].Merge(generationTask.m_resolutionToGenerate[levelInd]);
+            m_resolutionToGenerate[levelInd].Merge(newGenerationTask->m_resolutionToGenerate[levelInd], pDataIndex);
             }          
 
-        m_totalNbPoints += generationTask.m_totalNbPoints;
-        }
-        */
+        m_totalNbPoints += newGenerationTask->m_totalNbPoints;
+        m_totalNbPoints = m_totalNbPoints;        
+        }        
     
     IScalableMeshNodePtr     m_groupRootNode;
     bvector<NodesToGenerate> m_resolutionToGenerate;
@@ -381,12 +435,82 @@ struct GenerationTask : public RefCountedBase
     uint64_t                 m_totalNbPoints;
     };
 
-void CreateGenerationTask(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& groupRootNode, int nbResolutions)
-    {           
+
+#define MAX_COMMON_ANCESTOR 1
+
+size_t ComputeCommonAncestorLevel(const GenerationTaskPtr& generationTask1, const GenerationTaskPtr& generationTask2)
+    {        
+    IScalableMeshNodePtr parentNode1 = generationTask1->m_groupRootNode->GetParentNode();
+    IScalableMeshNodePtr parentNode2 = generationTask2->m_groupRootNode->GetParentNode();
+
+    assert(parentNode1 != nullptr || parentNode2 != nullptr);
+
+    if (parentNode1 == nullptr)
+        {
+        size_t commonAncestorLevel = generationTask2->m_groupRootNode->GetLevel() - generationTask1->m_groupRootNode->GetLevel();
+        return commonAncestorLevel;
+        }
+
+    if (parentNode2 == nullptr)
+        {
+        size_t commonAncestorLevel = generationTask1->m_groupRootNode->GetLevel() - generationTask2->m_groupRootNode->GetLevel();
+        return commonAncestorLevel;
+        }
+
+    while (parentNode1->GetLevel() > parentNode2->GetLevel())
+        {
+        parentNode1 = parentNode1->GetParentNode();
+        }
+
+    while (parentNode2->GetLevel() > parentNode1->GetLevel())
+        {
+        parentNode2 = parentNode2->GetParentNode();
+        }
+
+    while (parentNode1->GetNodeId() != parentNode2->GetNodeId())
+        {
+        parentNode1 = parentNode1->GetParentNode();
+        parentNode2 = parentNode2->GetParentNode();
+        }
+
+    size_t commonAncestorLevel1 = generationTask1->m_groupRootNode->GetLevel() - parentNode1->GetLevel();
+    size_t commonAncestorLevel2 = generationTask2->m_groupRootNode->GetLevel() - parentNode2->GetLevel();
+    
+    return max(commonAncestorLevel1, commonAncestorLevel2);                
+    }
+
+
+static bool s_doTaskMerging = true;
+
+void CreateGenerationTask(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& groupRootNode, int nbResolutions, uint64_t pointThreshold, HFCPtr<MeshIndexType> pDataIndex)
+    {             
     GenerationTaskPtr newGenerationTask = new GenerationTask(toExecuteTasks, nbResolutions, groupRootNode);    
     
     if (newGenerationTask->m_totalNbPoints > 0)    
-        toExecuteTasks.push_back(newGenerationTask);
+        {
+        bool isNewTaskMerged = false;
+        //Deep first accumulation means that closer nodes should be at the end of toExecuteTasks.
+        for (auto taskToExecute = toExecuteTasks.rbegin(); taskToExecute != toExecuteTasks.rend() && s_doTaskMerging; ++taskToExecute) 
+            {
+            if (newGenerationTask->m_orderId == (*taskToExecute)->m_orderId &&
+                newGenerationTask->m_totalNbPoints + (*taskToExecute)->m_totalNbPoints < pointThreshold)
+                {
+                size_t commonAncestorLevel = ComputeCommonAncestorLevel(*taskToExecute, newGenerationTask);
+
+                if (commonAncestorLevel <= MAX_COMMON_ANCESTOR)
+                    {                    
+                    (*taskToExecute)->MergeGenerationTask(newGenerationTask, pDataIndex);
+                    isNewTaskMerged = true;
+                    break;
+                    }               
+                }            
+            }
+
+        if (!isNewTaskMerged)
+            {
+            toExecuteTasks.push_back(newGenerationTask);
+            }
+        }
 #ifndef NDEBUG
     else
         {
@@ -398,7 +522,7 @@ void CreateGenerationTask(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableM
 #endif
     }
 
-void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& currentNode, uint64_t pointThreshold, int& childrenGroupingSize, int nbResolutions)
+void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& currentNode, uint64_t pointThreshold, int& childrenGroupingSize, int nbResolutions, HFCPtr<MeshIndexType>& pDataIndex)
     {    
     ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
     assert(smNode != nullptr);
@@ -413,7 +537,7 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
         //Dont add empty branch.
         if (childrenGroupingSize > 0)
             {
-            CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions);
+            CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions, pointThreshold, pDataIndex);
             }
         
         return;
@@ -426,7 +550,7 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
         for (auto& node : childrenNodes)
             {
             int childGroupingSize = 0;
-            GroupNodes(toExecuteTasks, node, pointThreshold, childGroupingSize, nbResolutions);
+            GroupNodes(toExecuteTasks, node, pointThreshold, childGroupingSize, nbResolutions, pDataIndex);
             childrenGroupingSize += childGroupingSize;            
             }        
         }
@@ -436,7 +560,7 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
     if (parentNode == nullptr)
         {
         //Create final group
-        CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions);
+        CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions, pointThreshold, pDataIndex);
         //childrenGroupingSize = smNode->GetNodePtr()->GetCount();
         childrenGroupingSize = GetTotalCountWithSubResolutions(smNode->GetNodePtr(), nbResolutions, nbResolutions - 1);
         return;
@@ -449,7 +573,7 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
         //Will lead to group bigger than threshold but preferable than creating a group for each children, which can results in smaller group.
         assert(totalCountCurrentNode - childrenGroupingSize <= pointThreshold * 4);
 
-        CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions);        
+        CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions, pointThreshold, pDataIndex);        
         childrenGroupingSize = totalCountCurrentNode;
         return;
         }
@@ -489,7 +613,7 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<Generati
     int childrenGroupingSize = 0;     
     int nbResolutions = (int)(pDataIndex->GetDepth() + 1);
 
-    GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions);
+    GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions, pDataIndex);
              
 #if !defined(NDEBUG) && defined(_WIN32)                            
 
