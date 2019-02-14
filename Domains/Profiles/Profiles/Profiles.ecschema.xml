@@ -2,44 +2,11 @@
 <ECSchema schemaName="Profiles" alias="prf" description="EC Schema for Profiles" version="01.00.00" displayLabel="Profiles" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
 
-    <!-- Enumerations -->
-    <ECEnumeration typeName="DoubleLShapeProfileType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="LLBB" />
-        <ECEnumerator value="1" displayLabel="SLBB" />
-    </ECEnumeration>
-
-    <ECEnumeration typeName="MaterialProfileCategoryType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Load Bearing" />
-        <ECEnumerator value="1" displayLabel="Insulation" />
-        <ECEnumerator value="2" displayLabel="Finish" />
-    </ECEnumeration>
-
-  <!-- Mixins -->
-    <ECEntityClass typeName="ICenterLineProfile" modifier="Abstract" displayLabel="Center Line Profile Mixin">
-        <ECCustomAttributes>
-            <IsMixin xmlns="CoreCustomAttributes.1.0">
-                <AppliesToEntityClass>Profile</AppliesToEntityClass>
-            </IsMixin>
-        </ECCustomAttributes>
-        <ECProperty propertyName="CenterLine" typeName="Bentley.Geometry.Common.IGeometry" description="" />
-        <ECProperty propertyName="WallThickness" typeName="double" description="Constant thickness of profile walls." />
-    </ECEntityClass>
-
-    <!-- Aspects -->
     <ECStructClass typeName="CardinalPoint" description="2D location on the profile used to place and offset profiles when extruding them on curve members.">
         <ECProperty propertyName="Name" typeName="string" description="Name of the cardinal point, used to reference and distinquish cardinal points. Unique in the scope of a profile." />
         <ECProperty propertyName="Location" typeName="point2d" description="2D offset from the start of profiles coordinate system (0, 0) defining the location for the cardinal point." />
     </ECStructClass>
 
-    <ECEntityClass typeName="CustomCardinalPointsAspect">
-        <BaseClass>bis:ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0" />
-        </ECCustomAttributes>
-        <ECStructArrayProperty propertyName="Points" typeName="CardinalPoint" minOccurs="1" maxOccurs="unbounded" description="" />
-    </ECEntityClass>
-
-    <!-- Core Profile classes -->
     <ECEntityClass typeName="Profile" modifier="Abstract" description="A resource defining one or more 2D areas that may have voids.">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECCustomAttributes>
@@ -48,6 +15,16 @@
         <ECProperty propertyName="Name" typeName="string" description="Name of the profile. This property is also used as designation when referencing a profile from standard catalog." />
         <ECProperty propertyName="Shape" typeName="Bentley.Geometry.Common.IGeometry" description="2D geometry of the profile." />
         <ECStructArrayProperty propertyName="CardinalPoints" typeName="CardinalPoint" minOccurs="0" maxOccurs="unbounded" description="Array of published and custom (user defined) cardinal points of the profile." />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="StandardCatalogCodeAspect" modifier="Sealed">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Manufacturer" typeName="string" />
+        <ECProperty propertyName="StandardsOrganization" typeName="string" />
+        <ECProperty propertyName="Revision" typeName="string" />
     </ECEntityClass>
 
     <ECEntityClass typeName="SinglePerimeterProfile" modifier="Abstract" description="A Profile with a single outer perimiter.">
@@ -64,7 +41,6 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <!-- Letter shapes -->
     <ECEntityClass typeName="CShapeProfile" modifier="Sealed" description="A C shaped Profile similar to rolled steel C-shapes.">
         <BaseClass>ParametricProfile</BaseClass>
         <ECCustomAttributes>
@@ -192,7 +168,16 @@
         <ECProperty propertyName="FlangeSlope" typeName="double" description="Slope of the lower face of the top flange and of the upper face of the bottom flange. Non-zero in case of tapered flanges, 0 in case of parallel flanges, default 0 if not specified." />
     </ECEntityClass>
 
-    <!-- Center line shapes -->
+    <ECEntityClass typeName="ICenterLineProfile" modifier="Abstract" displayLabel="Center Line Profile Mixin">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.1.0">
+                <AppliesToEntityClass>Profile</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CenterLine" typeName="Bentley.Geometry.Common.IGeometry" description="" />
+        <ECProperty propertyName="WallThickness" typeName="double" description="Constant thickness of profile walls." />
+    </ECEntityClass>
+
     <ECEntityClass typeName="CenterLineCShapeProfile" modifier="Sealed" description="A C shaped Profile with rounded corners, similar to cold-formed steel C-shapes.">
         <BaseClass>ParametricProfile</BaseClass>
         <BaseClass>ICenterLineProfile</BaseClass>
@@ -332,7 +317,6 @@
         <ECProperty propertyName="Depth" typeName="double" description="Extent of the capsule in the direction of the y-axis." />
     </ECEntityClass>
 
-    <!-- Arbitrary single perimeter profile classes -->
     <ECEntityClass typeName="ArbitraryShapeProfile" modifier="None">
         <BaseClass>SinglePerimeterProfile</BaseClass>
         <ECCustomAttributes>
@@ -369,7 +353,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <!-- Composite Profile classes -->
     <ECEntityClass typeName="CompositeProfile" modifier="Abstract" description="A Profile comprised of multiple SinglePerimeterProfiles.">
         <BaseClass>Profile</BaseClass>
         <ECCustomAttributes>
@@ -404,6 +387,11 @@
             <Class class="SinglePerimeterProfile" />
         </Target>
     </ECRelationshipClass>
+
+    <ECEnumeration typeName="DoubleLShapeProfileType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="LLBB" />
+        <ECEnumerator value="1" displayLabel="SLBB" />
+    </ECEnumeration>
 
     <ECEntityClass typeName="DoubleLShapeProfile" modifier="Sealed" description="A CompositeProfile comprised of back-to-back Ls with the horizontal legs at the top of the Profile.">
         <BaseClass>CompositeProfile</BaseClass>
@@ -442,7 +430,12 @@
         </Target>
     </ECRelationshipClass>
 
-    <!-- Material Profile classes-->
+    <ECEnumeration typeName="MaterialProfileCategoryType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Load Bearing" />
+        <ECEnumerator value="1" displayLabel="Insulation" />
+        <ECEnumerator value="2" displayLabel="Finish" />
+    </ECEnumeration>
+
     <ECEntityClass typeName="MaterialProfileDefinition" modifier="abstract" description="Material Profile Definition">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECCustomAttributes>
@@ -484,4 +477,5 @@
             <Class class="Profile"/>
         </Target>
     </ECRelationshipClass>
+
 </ECSchema>
