@@ -68,7 +68,7 @@
 
     The @ref BentleyApi::BeSQLite::EC::ECSqlStatementCache "ECSqlStatementCache" helps prevent unnecessary repreparations of ECSQL. However, 
     the cache has to remove statements from the cache if the cache size is exceeded, leading to repreparations. This diagnostics
-    captures the activity in the cache.
+    captures the activity in the cache. Only work in a debug build.
 
     #### Example log4cxx config snippet
 

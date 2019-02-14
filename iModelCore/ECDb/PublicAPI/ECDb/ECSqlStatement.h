@@ -543,7 +543,7 @@ typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 //!
 //! ### Cache usage diagnostics
 //! As clients can only indirectly control the lifetime of statements in the cache, diagnostics can help
-//! applications analyze how often statements get popped out of the cache and later readded again. To enable 
+//! applications analyze how often statements get popped out of the cache and later readded again.This only run in a debug build. To enable 
 //! ECSqlStatement cache diagnostics:
 //! - turn on the log4cxx based @ref BentleyApi::NativeLogging "Bentley logging"
 //! - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the

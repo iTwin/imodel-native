@@ -42,7 +42,7 @@ uint32_t CachedECSqlStatement::Release()
 
     return countWas - 1;
     }
-
+#ifndef NDEBUG
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      02/2015
 //+===============+===============+===============+===============+===============+======
@@ -70,7 +70,7 @@ struct ECSqlStatementCacheDiagnostics
     public:
         static void Log(Utf8CP cacheName, uint32_t maxCacheSize, EventType, Utf8CP ecsql);
     };
-
+#endif //NDEBUG
 
 //*************************************************************************************
 // ECSqlStatementCache
@@ -83,7 +83,9 @@ ECSqlStatementCache::ECSqlStatementCache(uint32_t maxSize, Utf8CP name)
   m_name(name)
     {
     BeAssert(m_maxSize > 0);
+#ifndef NDEBUG
     ECSqlStatementCacheDiagnostics::Log(GetName(), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::CreatedCache, nullptr);
+#endif //NDEBUG
     }
 
 //---------------------------------------------------------------------------------------
@@ -148,7 +150,9 @@ CachedECSqlStatement* ECSqlStatementCache::FindEntry(ECDbCR ecdb, Db const* data
             // if statement > 1, the statement is currently in use, we can't share it
             if (stmt->GetRefCount() <= 1)
                 {
+#ifndef NDEBUG
                 ECSqlStatementCacheDiagnostics::Log(GetName(), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::GotFromCache, ecsql);
+#endif //NDEBUG
                 foundIt = it;
                 break;
                 }
@@ -171,14 +175,18 @@ void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR
     if (((uint32_t) m_entries.size()) >= m_maxSize) // if cache is full, remove oldest entry
         {
         CachedECSqlStatementPtr& last = m_entries.back();
+#ifndef NDEBUG        
         ECSqlStatementCacheDiagnostics::Log(GetName(), m_maxSize,  ECSqlStatementCacheDiagnostics::EventType::RemovedFromCache, last->GetECSql());
+#endif //NDEBUG
         last->m_isInCache = false; // this statement is no longer managed by this cache, don't let Release method call Reset/ClearBindings anymore
         m_entries.pop_back();
         }
 
     newEntry = new CachedECSqlStatement(*this, ecdb, datasource, token);
     m_entries.push_front(newEntry);
+#ifndef NDEBUG
     ECSqlStatementCacheDiagnostics::Log(GetName(), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::AddedToCache, ecsql);
+#endif //NDEBUG
     }
 
 //---------------------------------------------------------------------------------------
@@ -193,7 +201,9 @@ void ECSqlStatementCache::Empty()
         }
 
     m_entries.clear();
+#ifndef NDEBUG
     ECSqlStatementCacheDiagnostics::Log(GetName(), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::ClearedCache, nullptr);
+#endif //NDEBUG
     }
 
 //---------------------------------------------------------------------------------------
@@ -206,6 +216,7 @@ void ECSqlStatementCache::Log() const
         LOG.debugv("\t%s", stmt->GetECSql());
     }
 
+#ifndef NDEBUG
 //*************************************************************************************
 // ECSqlStatementCacheDiagnostics
 //*************************************************************************************
@@ -268,5 +279,6 @@ BentleyApi::NativeLogging::ILogger& ECSqlStatementCacheDiagnostics::GetLogger()
 
     return *s_logger;
     }
+#endif //NDEBUG
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
