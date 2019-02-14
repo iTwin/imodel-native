@@ -55,6 +55,21 @@ TEST_F (ProfileTestCase, SetStandardCatalogCode_ExistingCode_UpdatedCode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ProfileTestCase, Insert_StandardCatalogCodeSet_Success)
+    {
+    ProfilePtr profilePtr = CreateProfile();
+
+    profilePtr->SetName ("D");
+    profilePtr->SetStandardCatalogCode (StandardCatalogCode ("A", "B", "C"));
+
+    DgnDbStatus status;
+    profilePtr->Insert (&status);
+    ASSERT_EQ (DgnDbStatus::Success, status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProfileTestCase, SetStandardCatalogCode_NullPointer_RemovedCode)
     {
     ProfilePtr profilePtr = CreateProfile();
@@ -140,6 +155,28 @@ TEST_F (ProfileTestCase, GetStandardCatalogCode_ExistingCode_ValidValues)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ProfileTestCase, GetStandardCatalogCode_LoadedInstance_ValidValues)
+    {
+    ProfilePtr profilePtr = CreateProfile();
+    profilePtr->SetName ("test_designation");
+    profilePtr->SetStandardCatalogCode (StandardCatalogCode ("test_manufacturer", "test_organization", "test_revision"));
+
+    profilePtr->Insert();
+    DgnElementId profileId = profilePtr->GetElementId();
+
+    GetDb().Elements().ClearCache();
+    ProfileCPtr loadedProfilePtr = Profile::Get (GetDb(), profileId);
+
+    StandardCatalogCode catalogCode = loadedProfilePtr->GetStandardCatalogCode();
+    ASSERT_STREQ ("test_manufacturer", catalogCode.manufacturer.c_str());
+    ASSERT_STREQ ("test_organization", catalogCode.standardsOrganization.c_str());
+    ASSERT_STREQ ("test_revision", catalogCode.revision.c_str());
+    ASSERT_STREQ ("test_designation", catalogCode.designation.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProfileTestCase, GetCode_ExistingCode_CorrectFormatString)
     {
     ProfilePtr profilePtr = CreateProfile();
@@ -148,33 +185,6 @@ TEST_F (ProfileTestCase, GetCode_ExistingCode_CorrectFormatString)
 
     Utf8CP pCodeValue = profilePtr->GetCode().GetValue().GetUtf8CP();
     ASSERT_STREQ ("A:B:C:D", pCodeValue) << "StandardCatalogProfile CodeValue should be of format: '<Manufacturer>:<StandardsOrganization>:<Revision>:<Designation>'";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     02/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfileTestCase, GetStandardCatalogCode_InvalidCode_EmptyValues)
-    {
-    CodeSpecCPtr codeSpecPtr = GetDb().CodeSpecs().GetCodeSpec (PRF_CODESPEC_StandardCatalogProfile);
-    ProfilePtr profilePtr = CreateProfile();
-
-    // Missing D part
-    ASSERT_EQ (DgnDbStatus::Success, profilePtr->SetCode (codeSpecPtr->CreateCode ("A:B:C")));
-    StandardCatalogCode catalogCode = profilePtr->GetStandardCatalogCode();
-
-    ASSERT_STREQ ("", catalogCode.manufacturer.c_str());
-    ASSERT_STREQ ("", catalogCode.standardsOrganization.c_str());
-    ASSERT_STREQ ("", catalogCode.revision.c_str());
-    ASSERT_STREQ ("", catalogCode.designation.c_str());
-
-    // E should get ignored - validation for invalid (e.g. too long ones) values is not performed
-    ASSERT_EQ (DgnDbStatus::Success, profilePtr->SetCode (codeSpecPtr->CreateCode ("A:B:C:D:E")));
-    catalogCode = profilePtr->GetStandardCatalogCode();
-
-    ASSERT_STREQ ("A", catalogCode.manufacturer.c_str());
-    ASSERT_STREQ ("B", catalogCode.standardsOrganization.c_str());
-    ASSERT_STREQ ("C", catalogCode.revision.c_str());
-    ASSERT_STREQ ("D", catalogCode.designation.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
