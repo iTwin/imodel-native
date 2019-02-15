@@ -468,4 +468,22 @@ public:
     BentleyStatus   CreateElements (DwgImporter::T_BlockGeometryMap const* geometryMap);
     };  // ElementFactory
 
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          02/19
++===============+===============+===============+===============+===============+======*/
+struct RepositoryLinkFactory
+    {
+private:
+    DgnDbR      m_dgndb;
+    iModelBridge::Params const& m_bridgeparams;
+
+    Utf8String  ComputeURN (BeFileNameCR dwgFilename);
+
+public:
+    RepositoryLinkFactory (DgnDbR db, iModelBridge::Params const& bp) : m_dgndb(db), m_bridgeparams(bp) {}
+
+    DgnElementId    CreateOrUpdate (DwgDbDatabaseR dwg);
+    BentleyStatus   DeleteFromDb (BeFileNameCR dwgFileName);
+    };  // RepositoryFactory
+
 END_DWG_NAMESPACE

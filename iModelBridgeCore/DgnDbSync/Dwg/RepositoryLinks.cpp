@@ -12,26 +12,15 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          02/19
-+===============+===============+===============+===============+===============+======*/
-struct RepositoryLinkFactory
-{
-private:
-    DgnDbR          m_dgndb;
-    DwgDbDatabaseR  m_dwgdb;
-    BeFileName      m_dwgfilename;
-    iModelBridge::Params const& m_bridgeparams;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  ComputeURN ()
+Utf8String  RepositoryLinkFactory::ComputeURN (BeFileNameCR dwgFilename)
     {
-    Utf8String  urn (m_bridgeparams.QueryDocumentURN(m_dwgfilename));
+    Utf8String  urn (m_bridgeparams.QueryDocumentURN(dwgFilename));
     if (!iModelBridge::IsPwUrn(urn))
         {
-        urn = m_dwgfilename.GetUri ();
+        urn = dwgFilename.GetUri ();
         urn.ToLower ();
 
         // replace ':' with '|' after the drive letter:
@@ -45,20 +34,15 @@ Utf8String  ComputeURN ()
     return  urn;
     }
 
-public:
-RepositoryLinkFactory (DgnDbR db, DwgDbDatabaseR dwg, iModelBridge::Params const& bp) 
-    : m_dgndb(db), m_dwgdb(dwg), m_bridgeparams(bp)
-    {
-    m_dwgfilename.SetName (m_dwgdb.GetFileName().c_str());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId    CreateOrUpdate ()
+DgnElementId    RepositoryLinkFactory::CreateOrUpdate (DwgDbDatabaseR dwg)
     {
-    auto urn = this->ComputeURN ();
-    auto newLink = iModelBridge::MakeRepositoryLink (m_dgndb, m_bridgeparams, m_dwgfilename, urn, urn);
+    BeFileName  dwgFilename(dwg.GetFileName().c_str());
+
+    auto urn = this->ComputeURN (dwgFilename);
+    auto newLink = iModelBridge::MakeRepositoryLink (m_dgndb, m_bridgeparams, dwgFilename, urn, urn);
     if (!newLink.IsValid())
         return  DgnElementId();
 
@@ -70,7 +54,7 @@ DgnElementId    CreateOrUpdate ()
         auto existingHash = iModelBridge::ComputeRepositoryLinkHash (*existingLink);
         if (newHash.GetHashString().Equals(existingHash.GetHashString()))
             {
-            m_dwgdb.SetRepositoryLinkId (linkId.GetValue());
+            dwg.SetRepositoryLinkId (linkId.GetValue());
             return linkId;
             }
         }
@@ -80,12 +64,57 @@ DgnElementId    CreateOrUpdate ()
         return DgnElementId();
 
     linkId = updatedLink->GetElementId ();
-    m_dwgdb.SetRepositoryLinkId (linkId.GetValue());
+    dwg.SetRepositoryLinkId (linkId.GetValue());
 
     return linkId;
     }
 
-};  // RepositoryFactory
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   RepositoryLinkFactory::DeleteFromDb (BeFileNameCR dwgFilename)
+    {
+    auto urn = this->ComputeURN (dwgFilename);
+    auto newLink = iModelBridge::MakeRepositoryLink (m_dgndb, m_bridgeparams, dwgFilename, urn, urn);
+    if (!newLink.IsValid())
+        return  static_cast<BentleyStatus>(DgnDbStatus::BadElement);
+
+    auto linkId = newLink->GetElementId ();
+    if (!linkId.IsValid())
+        return  static_cast<BentleyStatus>(DgnDbStatus::InvalidId);
+
+    auto status = m_dgndb.Elements().Delete (linkId);
+
+    return  static_cast<BentleyStatus>(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::InsertElementHasLinks (DgnModelR model, DwgDbDatabaseR dwg)
+    {
+    BentleyStatus status = BentleyStatus::BSISUCCESS;
+
+    // if a Respository has not been created for this DWG, create one now:
+    uint64_t    savedId = 0;
+    if (dwg.GetRepositoryLinkId(savedId) != DwgDbStatus::Success || savedId == 0)
+        status = this->UpdateRepositoryLink (&dwg);
+
+    // get the RepositoryLinkId from the DWG
+    DgnDbStatus dbStatus = DgnDbStatus::InvalidId;
+    if (status == BSISUCCESS && dwg.GetRepositoryLinkId(savedId) == DwgDbStatus::Success && savedId != 0)
+        {
+        // update the ElementHasLinks for this model
+        DgnElementId    linkId(savedId);
+        dbStatus = iModelBridge::InsertElementHasLinksRelationship (model.GetDgnDb(), model.GetModeledElementId(), linkId);
+        }
+
+    if (dbStatus != DgnDbStatus::Success)
+        this->ReportError (IssueCategory::Briefcase(), Issue::Message(), Utf8PrintfString("failed to insert an ElementHasLinks relationship for model %s", model.GetName().c_str()).c_str());
+
+    status = static_cast <BentleyStatus> (dbStatus);
+    return  status;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/19
@@ -96,8 +125,14 @@ BentleyStatus   DwgImporter::UpdateRepositoryLink (DwgDbDatabaseP source)
     if (nullptr == dwg)
         return  BentleyStatus::BSIERROR;
 
-    RepositoryLinkFactory   factory(*m_dgndb, *dwg, this->GetOptions());
-    auto linkId = factory.CreateOrUpdate ();
+    RepositoryLinkFactory   factory(*m_dgndb, this->GetOptions());
+    auto linkId = factory.CreateOrUpdate (*dwg);
     
-    return  linkId.IsValid() ? BentleyStatus::BSISUCCESS : BentleyStatus::BSIERROR;
+    if (!linkId.IsValid())
+        {
+        this->ReportError (IssueCategory::Briefcase(), Issue::Message(), Utf8PrintfString("Failed to insert/update RepositoryLink for %ls", dwg->GetFileName().c_str()).c_str());
+        return  BentleyStatus::BSIERROR;
+        }
+
+    return  BentleyStatus::BSISUCCESS;
     }

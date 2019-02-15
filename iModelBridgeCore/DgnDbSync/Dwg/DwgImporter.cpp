@@ -929,19 +929,6 @@ DgnModelId      DwgImporter::CreateModel (DwgDbBlockTableRecordCR block, Utf8CP 
         return DgnModelId();
         }
 
-    // add an ElementHasLinks relationship for the model & its RepositoryLink:
-    auto dwg = block.GetDatabase ();
-    uint64_t savedId = 0;
-    if (dwg != nullptr && dwg->GetRepositoryLinkId(savedId) == DwgDbStatus::Success && savedId != 0)
-        {
-        DgnElementId    linkId(savedId);
-        iModelBridge::InsertElementHasLinksRelationship (*m_dgndb, modelElementId, linkId);
-        }
-    else
-        {
-        ReportError(IssueCategory::Unknown(), Issue::Message(), Utf8PrintfString("missing repository link for model %s", modelName).c_str());
-        }
-
     return model->GetModelId();
     }
 
@@ -1044,6 +1031,9 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
 
     // add a model map entry to syncInfo:
     modelMap = this->CreateAndInsertModelMap (model, dwgBlock, trans, xrefInsert, xrefDwg);
+
+    // add an ElementHasLinks relationship for the model & its RepositoryLink:
+    this->InsertElementHasLinks (*model, nullptr == xrefDwg ? *m_dwgdb : *xrefDwg);
 
     return  modelMap;
     }
@@ -1283,9 +1273,6 @@ ResolvedModelMapping DwgImporter::_ImportXrefModel (DwgDbBlockTableRecordCR bloc
         this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(block).c_str());
         return  modelMap;
         }
-
-    // creat or update doc codes for this file
-    this->UpdateRepositoryLink (xRefDwg);
 
     // if the instance is in the modelspace, add it to modelspace xref list:
     if (m_modelspaceId == parentId)
@@ -1998,7 +1985,6 @@ void            DwgImporter::_FinishImport ()
                 if (nullptr != (dwg = xref.GetDatabaseP()))
                     {
                     changeDetector._DetectDeletedElementsInFile (*this, *dwg);
-                    changeDetector._DetectDeletedModelsInFile (*this, *dwg);
                     }
                 }
             // done per file deletion
@@ -2007,6 +1993,7 @@ void            DwgImporter::_FinishImport ()
             changeDetector._DetectDeletedMaterials (*this);
             changeDetector._DetectDeletedViews (*this);
             changeDetector._DetectDeletedGroups (*this);
+            changeDetector._DetectDetachedXrefs (*this);
             }
 
         // update syncinfo for master DWG file
