@@ -562,8 +562,7 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporter& importer, DwgSyncI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_DetectDeletedModelsInFile (DwgImporter& importer, DwgDbDatabaseR dwg)
     {
-    DwgSyncInfo::ModelIterator iter (importer.GetDgnDb(), "DwgFileId=?");
-    iter.GetStatement()->BindInt(1, DwgSyncInfo::GetDwgFileId(dwg).GetValue());
+    DwgSyncInfo::ModelIterator iter (importer.GetDgnDb(), nullptr);
     _DetectDeletedModels (importer, iter);
     }
 
@@ -753,6 +752,49 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
         }
 
     m_viewsSeen.clear ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
+    {
+    auto&   db = importer.GetDgnDb ();
+    auto&   syncInfo = importer.GetSyncInfo ();
+    auto&   loadedXrefs = importer.GetLoadedXrefs ();
+    auto    rootfileId = DwgSyncInfo::DwgFileId::GetFrom (importer.GetDwgDb());
+
+    DwgSyncInfo::FileIterator files(db, nullptr);
+    for (auto file : files)
+        {
+        // skip the root file
+        if (file.GetSyncId() == rootfileId)
+            continue;
+        
+        bool    detached = true;
+        for (auto& xref : loadedXrefs)
+            {
+            auto dwg = xref.GetDatabaseP ();
+            if (nullptr != dwg && DwgSyncInfo::DwgFileId::GetFrom(*dwg) == file.GetSyncId())
+                {
+                uint64_t    savedId = 0;
+                detached = false;
+                break;
+                }
+            }
+
+        if (detached)
+            {
+            BeFileName  filename(file.GetDwgName().c_str());
+
+            LOG.tracev ("Deleting xRef entry %ls from syncInfo", filename.c_str());
+            syncInfo.DeleteFile (file.GetSyncId());
+
+            RepositoryLinkFactory   factory(db, importer.GetOptions());
+            if (factory.DeleteFromDb(filename) == BSISUCCESS)
+                LOG.tracev ("Deleted RepositoryLink %ls from bim", filename.c_str());
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

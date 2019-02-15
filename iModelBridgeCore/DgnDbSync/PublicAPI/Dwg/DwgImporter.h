@@ -251,6 +251,7 @@ struct IDwgChangeDetector
     virtual void _DetectDeletedMaterials (DwgImporter&) = 0;
     virtual void _DetectDeletedViews (DwgImporter&) = 0;
     virtual void _DetectDeletedGroups (DwgImporter&) = 0;
+    virtual void _DetectDetachedXrefs (DwgImporter&) = 0;
     //! @}
 };  // IDwgChangeDetector
 typedef std::unique_ptr <IDwgChangeDetector>    T_DwgChangeDetectorPtr;
@@ -1022,6 +1023,7 @@ private:
     bool                    UpdateModelspaceView (ViewControllerP view);
     bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
     BentleyStatus           UpdateRepositoryLink (DwgDbDatabaseP dwg = nullptr);
+    BentleyStatus           InsertElementHasLinks (DgnModelR model, DwgDbDatabaseR dwg);
     DgnCategoryId           FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
     DgnSubCategoryId        FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
 
@@ -1364,6 +1366,7 @@ public:
     DwgXRefHolder&              GetCurrentXRefHolder () { return m_currentXref; }
     DwgXRefHolder*              FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock, bool createIfNotFound = false);
     DwgDbDatabaseP              FindLoadedXRef (BeFileNameCR path);
+    T_LoadedXRefFiles&          GetLoadedXrefs () { return m_loadedXrefFiles; }
     //! Import a database-resident entity
     DWG_EXPORT BentleyStatus    ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a none database-resident entity in a desired block (must be a valid block)
@@ -1399,6 +1402,7 @@ public:
     void    _DetectDeletedMaterials (DwgImporter&) override {}
     void    _DetectDeletedViews (DwgImporter&) override {}
     void    _DetectDeletedGroups (DwgImporter&) override {}
+    void    _DetectDetachedXrefs (DwgImporter&) override {}
 
     //! always fills in element provenence and returns true
     DWG_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter*) override;
@@ -1455,6 +1459,7 @@ public:
     DWG_EXPORT void   _DetectDeletedMaterials (DwgImporter&) override;
     DWG_EXPORT void   _DetectDeletedViews (DwgImporter&) override;
     DWG_EXPORT void   _DetectDeletedGroups (DwgImporter&) override;
+    DWG_EXPORT void   _DetectDetachedXrefs (DwgImporter&) override;
     //! @}
 };  // UpdaterChangeDetector
 

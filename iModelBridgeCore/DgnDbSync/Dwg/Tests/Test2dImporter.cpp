@@ -13,6 +13,9 @@
 struct Test2dImporter : public DwgImporter
     {
     DEFINE_T_SUPER (DwgImporter)
+    Test2dImporter (DwgImporter::Options& options) : T_Super(options)
+        {
+        }
     DgnClassId _GetElementType (DwgDbBlockTableRecordCR block) override
         {
         return GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
@@ -26,13 +29,13 @@ struct Test2dImporter : public DwgImporter
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          02/19
 +===============+===============+===============+===============+===============+======*/
-struct Test2dBridge : DwgBridge
+struct Test2dBridge : public DwgBridge
 {
 DEFINE_T_SUPER (DwgBridge)
-public:
-BentleyStatus   RunCmdline (int argc, WCharCP argv[])
+DwgImporter*    _CreateDwgImporter () override
     {
-    return T_Super::RunAsStandaloneExe(argc, argv);
+    DwgImporter::Options* params = static_cast<DwgImporter::Options*> (&_GetParams());
+    return nullptr == params ? nullptr : new Test2dImporter(*params);
     }
 };  // Test2dBridge
 
