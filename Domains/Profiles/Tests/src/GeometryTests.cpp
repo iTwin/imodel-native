@@ -274,6 +274,10 @@ TEST_F(GeometryTestCase, ProfilesGeometry)
     InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_MaxFillet", 6, 10, 1, 2.5, 0.1));
     InsertProfileGeometry<LShapeProfile> (LShapeProfile::CreateParams (GetModel(), "LShape_SlopeAndRoundings", 6, 10, 1, 0.5, 0.5, Angle::FromRadians (PI / 32)));
 
+    InsertProfileGeometry<SchifflerizedLShapeProfile> (SchifflerizedLShapeProfile::CreateParams (GetModel(), "Schifflerized L - no rounding", 6.0, 0.5, 0.5), true);
+    InsertProfileGeometry<SchifflerizedLShapeProfile> (SchifflerizedLShapeProfile::CreateParams (GetModel(), "Schifflerized L", 6.0, 0.5, 1.0, 0.25, 0.5));
+    InsertProfileGeometry<SchifflerizedLShapeProfile> (SchifflerizedLShapeProfile::CreateParams (GetModel(), "Schifflerized L - max fillet", 6.0, 0.5, 1.0, 0.5, 0.25));
+
     InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_Plain",
                                           6, 10, 1, 1, 0, 0, Angle::FromRadians (0), 0, Angle::FromRadians (0)), true);
     InsertProfileGeometry<TShapeProfile> (TShapeProfile::CreateParams (GetModel(), "TShape_FilletAndRoundedEdge",
