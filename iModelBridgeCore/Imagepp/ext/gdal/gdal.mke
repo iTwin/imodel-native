@@ -922,11 +922,11 @@ LIB_OBJS    + $(o)$(appName)PCH$(oext)
 %include creatlib.mki
 
 CreateBuildContext:
-    CreateSymLinks.py -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)gcore/*.h" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/*.h" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/cpl_config.h.vc" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/cpl_config.h.an" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)ogr/*.h"
+    ~linkmultifiles "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)gcore/*.h"
+    ~linkmultifiles "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/*.h"
+    ~linkfile "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib/cpl_config.h.vc=$(ippGdalDir)port/cpl_config.h.vc"
+    ~linkfile "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib/cpl_config.h.an=$(ippGdalDir)port/cpl_config.h.an"
+    ~linkmultifiles "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)ogr/*.h"
 
 $(BuildContext)Delivery/gdal-notice.txt : $(ippGdalDir)gdal-notice.txt
     $(LinkFirstDepToFirstTarget)

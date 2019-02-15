@@ -24,7 +24,7 @@
 
     </Part>
     <!-- The following parts allow to share gdal with Vortex using older compilers -->
-    <Part Name="GdalLibVC11"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2012=1" OnlyPlatforms="x86,x64">
+    <Part Name="GdalLibVC11"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BentleyBuildMakeOptions="+dBUILD_USING_VS2012=1" OnlyPlatforms="x86,x64">
         <SubPart PartName="ZLib" />
         <SubPart PartName="JpegLib" />
         <SubPart PartName="PngLib" />
@@ -35,7 +35,7 @@
             <Libs>Delivery/$(stlibprefix)IppGdalLibVC11$(stlibdebugext)</Libs>
         </Bindings>
     </Part>
-    <Part Name="GdalLibVC8"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2005=1" OnlyPlatforms="x86,x64">
+    <Part Name="GdalLibVC8"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BentleyBuildMakeOptions="+dBUILD_USING_VS2005=1" OnlyPlatforms="x86,x64">
         <SubPart PartName="ZLib" />
         <SubPart PartName="JpegLib" />
         <SubPart PartName="PngLib" />
@@ -68,7 +68,7 @@
         </Bindings>
     </Part-->
 
-    <Part Name="Jpeg12BitsLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke" BMakeOptions="+dJPEGLIB_SUPPORT_12BITS"> 
+    <Part Name="Jpeg12BitsLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke" BentleyBuildMakeOptions="+dJPEGLIB_SUPPORT_12BITS"> 
         <Bindings>
             <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)IppJpeg12Bits$(stlibext)</Libs>
             <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)IppJpeg12Bits$(stlibdebugext)</Libs>
@@ -185,7 +185,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests"/>
         <SubPart PartName="UnitTests-Common"/>
         <Bindings>
@@ -193,7 +193,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-FileFormat" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=FileFormat">
+    <Part Name="UnitTests-FileFormat" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=FileFormat">
         <SubPart PartName="PrewireForUnitTests"/>
         <SubPart PartName="UnitTests-Common"/>
         <SubPart PartName="BeJsonCpp"           PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"    Repository="imodel02"/>

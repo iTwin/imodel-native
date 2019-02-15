@@ -13,6 +13,6 @@ PolicyFile= $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/AssertTerra
 always:
   ~mkdir  $(terrainModelBuildDir_)TestData
   ~mkdir  $(terrainModelBuildDir_)TestData\TerrainModelNet
-  @CreateSymLinks.py -d"$(terrainModelBuildDir_)TestData/TerrainModelNet/Bentley.Civil.Dtm.NUnit.dll=$(SrcRoot)TerrainModelTestData/bcTests/TestData/Bentley.Civil.Dtm.NUnit.dll"
-  @CreateSymLinks.py -d"$(terrainModelBuildDir_)TestData/TerrainModelNet/Bentley.Civil.Dtm.Light.NUnit.dll=$(SrcRoot)TerrainModelTestData/bcTests/TestData/Bentley.Civil.Dtm.Light.NUnit.dll"
-  @CreateSymLinks.py -d"$(BuildContext)TestData=$(terrainModelBuildDir_)TestData"
+  ~linkdir "$(terrainModelBuildDir_)TestData/TerrainModelNet/Bentley.Civil.Dtm.NUnit.dll=$(SrcRoot)TerrainModelTestData/bcTests/TestData/Bentley.Civil.Dtm.NUnit.dll"
+  ~linkdir "$(terrainModelBuildDir_)TestData/TerrainModelNet/Bentley.Civil.Dtm.Light.NUnit.dll=$(SrcRoot)TerrainModelTestData/bcTests/TestData/Bentley.Civil.Dtm.Light.NUnit.dll"
+  ~linkdir "$(BuildContext)TestData=$(terrainModelBuildDir_)TestData"

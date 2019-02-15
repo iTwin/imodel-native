@@ -28,6 +28,4 @@ ippExternalLibDir   = $(SrcImagepp)ext/
 
 # Wire in header files of private libs.
 always:
-   @CreateSymLinks.py -m"$(ippOutPrivateApi)ImagePPInternal/ext/MatrixFromTiePts=$(ippExternalLibDir)MatrixFromTiePts/h/MatrixFromTiePts.h"
-
-
+   ~linkfile "$(ippOutPrivateApi)ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h=$(ippExternalLibDir)MatrixFromTiePts/h/MatrixFromTiePts.h"

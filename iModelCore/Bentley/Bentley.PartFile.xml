@@ -34,7 +34,7 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="M02" BMakeOptions="+dTMP_BUILD_STATIC">
+    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="M02" BentleyBuildMakeOptions="+dTMP_BUILD_STATIC">
         <SubPart PartName="Base"/>
         <SubPart PartName="Icu" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="LoggingNative" />
@@ -44,7 +44,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
         <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
         <SubPart PartName="BentleyDll"/>
         <Bindings>
@@ -119,7 +119,7 @@
     </Part>
 
     <!-- Memory leak testing of Bentley tests -->
-<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=Bentley-Gtest -dGTEST_NAME=BentleyTest" OnlyPlatforms="x64">
+<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Bentley-Gtest -dGTEST_NAME=BentleyTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="Bentley-Gtest" />
     </Part>

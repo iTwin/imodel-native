@@ -7,5 +7,4 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 always:
-    @CreateSymLinks.py "$(BuildContext)PublicAPI/BentleyTest=$(_MakeFilePath)BentleyTest/PublicAPI"
-
+    ~linkfile "$(BuildContext)PublicAPI/BentleyTest=$(_MakeFilePath)BentleyTest/PublicAPI"

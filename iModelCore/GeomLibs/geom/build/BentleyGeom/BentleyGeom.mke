@@ -95,7 +95,6 @@ DLM_EXPORT_OBJS     = $(DLM_OBJECT_FILES)
 
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 DLM_NOENTRY         = 1
-DLM_SYMB_DEST       = $(baseGeom_symbols)
 
 # Temporary while working on static; it probably shouldn't be needed.
 LIB_PDB_SOURCE_DIR = $(DLM_OBJECT_DEST)

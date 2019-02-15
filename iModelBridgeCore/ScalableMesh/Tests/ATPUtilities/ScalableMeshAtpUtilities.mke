@@ -27,7 +27,7 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMeshAtpUtilities=$(publicApiDir)ScalableMeshAtpUtilities"
+   ~linkdir "$(BuildContext)PublicAPI/ScalableMeshAtpUtilities=$(publicApiDir)ScalableMeshAtpUtilities"
 
 CCompOpts + -openmp -bigobj -wd4091 -wd4312
 

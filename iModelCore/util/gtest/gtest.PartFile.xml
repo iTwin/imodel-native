@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <!-- Use part TestRunner instead. -->
-    <Part Name="TestRunnerBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="" ExcludePlatforms="AndroidARM*,AndroidX86">
+    <Part Name="TestRunnerBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BentleyBuildMakeOptions="" ExcludePlatforms="AndroidARM*,AndroidX86">
         <SubPart PartName="dbghelp"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"      Repository="bin-dbghelp" />
         <SubPart PartName="Base"              PartFile="iModelCore/Bentley/Bentley"                              Repository="imodel02" />
         <SubPart PartName="BentleyDll"        PartFile="iModelCore/Bentley/Bentley"                              Repository="imodel02" />
@@ -28,7 +28,7 @@
     </Part>
 
     <!-- Use part TestRunnerPagalloc instead. -->
-    <Part Name="TestRunnerPagallocBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="+dTOOLSUBS_AVAILABLE_FROM_GTEST" 
+    <Part Name="TestRunnerPagallocBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BentleyBuildMakeOptions="+dTOOLSUBS_AVAILABLE_FROM_GTEST" 
                                          ExcludePlatforms="AndroidARM*,AndroidX86" >
         <SubPart PartName="dbghelp"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"      Repository="bin-dbghelp" />
         <SubPart PartName="Base"              PartFile="iModelCore/Bentley/Bentley"                              Repository="imodel02" />
@@ -65,7 +65,7 @@
         <ProductDirectory Name="TestBin"                    Deliver="false"/>
     </ProductDirectoryList>
 
-    <Part Name="google_gtest_lib" DeferType="BuildUnitTests" BentleyBuildMakeFile="gtestlib.mke" BMakeOptions="" ExcludePlatforms="iOS*,WinRT*">
+    <Part Name="google_gtest_lib" DeferType="BuildUnitTests" BentleyBuildMakeFile="gtestlib.mke" BentleyBuildMakeOptions="" ExcludePlatforms="iOS*,WinRT*">
         <SubPart PartName="google_gtest"/>
         <Bindings>
             <Libs ProductDirectoryName="UnitTestLibs" Required="false">Delivery/$(stlibprefix)gtest$(stlibext)</Libs>

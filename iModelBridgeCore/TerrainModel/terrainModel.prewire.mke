@@ -28,21 +28,21 @@ always:
 
 
 always:
-  @CreateSymLinks.py "$(buildPublicAPI)TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
+  ~linkfile "$(buildPublicAPI)TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
 
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/TerrainModel=$(buildPublicAPI)TerrainModel"
+   ~linkdir "$(BuildContext)PublicAPI/TerrainModel=$(buildPublicAPI)TerrainModel"
 
 ## Move below into seperate prewires.
 
 always:
-   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/Core=$(TerrainModelCoreDir)PublicAPI"
+   ~linkdir "$(buildPublicAPI)TerrainModel/Core=$(TerrainModelCoreDir)PublicAPI"
 
 always:
-   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/Formats=$(TerrainModelFormatsDir)PublicAPI"
+   ~linkdir "$(buildPublicAPI)TerrainModel/Formats=$(TerrainModelFormatsDir)PublicAPI"
 
 always:
-   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/ElementHandler=$(TerrainModelElementHandlerDir)PublicAPI"
+   ~linkdir "$(buildPublicAPI)TerrainModel/ElementHandler=$(TerrainModelElementHandlerDir)PublicAPI"
 
 always:
-   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/Drainage=$(TerrainModelDrainageDir)PublicAPI"
+   ~linkdir "$(buildPublicAPI)TerrainModel/Drainage=$(TerrainModelDrainageDir)PublicAPI"

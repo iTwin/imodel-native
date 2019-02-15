@@ -72,10 +72,10 @@ $(BuildContext)Delivery/BeHttpIntegrationTests/Objects : ${o}
 o = $(PartBuildDir)$(BEGTEST_NAME)/Assets/
 
 $(o)Scripts/Executables:
-    @CreateSymLinks.py -d"$(o)Scripts/Executables=$(baseDir)Scripts/Executables"
+    ~linkdir "$(o)Scripts/Executables=$(baseDir)Scripts/Executables"
 
 $(o)Scripts/Resources/Data:
-    @CreateSymLinks.py -d"$(o)Scripts/Resources/Data=$(baseDir)Scripts/Resources/Data"
+    ~linkdir "$(o)Scripts/Resources/Data=$(baseDir)Scripts/Resources/Data"
 
 %ifnofile $(o)Scripts/Resources/Logs
 always:

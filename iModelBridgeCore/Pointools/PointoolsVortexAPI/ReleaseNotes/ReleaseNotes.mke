@@ -14,4 +14,4 @@ DeliveryDir=$(OutBuildContexts)PointoolsVortexAPI$(VSOutputSubfolder)/Delivery/
 PointoolsVortexAPI_ReleaseNotesFile=PointoolsVortexAPI-ReleaseNotes-$(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V).txt
 
 always:
-    @CreateSymLinks.py -f"$(DeliveryDir)${PointoolsVortexAPI_ReleaseNotesFile}"="${PointoolsVortexAPISrcDir}/ReleaseNotes/${PointoolsVortexAPI_ReleaseNotesFile}"
+    ~linkfile "$(DeliveryDir)${PointoolsVortexAPI_ReleaseNotesFile}"="${PointoolsVortexAPISrcDir}/ReleaseNotes/${PointoolsVortexAPI_ReleaseNotesFile}"

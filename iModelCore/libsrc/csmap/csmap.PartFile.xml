@@ -45,7 +45,7 @@
         <SubPart PartName="csmapStatic"/>
     </Part>
 
-    <Part Name="csmapStatic" BentleyBuildMakeFile="csmap.mke" BMakeOptions="+dCREATE_STATIC_LIBRARIES">
+    <Part Name="csmapStatic" BentleyBuildMakeFile="csmap.mke" BentleyBuildMakeOptions="+dCREATE_STATIC_LIBRARIES">
         <SubPart PartName="PublicAPI"/>
         <!-- This MKE file can also produce a shared library with MFC support; you will need to create another part if you want that. -->
         <Bindings>

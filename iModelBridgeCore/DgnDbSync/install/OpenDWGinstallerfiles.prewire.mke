@@ -16,8 +16,8 @@ OpenDWGInstallFiles    = $(BuildContext)OpenDWGInstallerFiles/
 # Symlink files needed for powerproduct build in BuildContext
 #----------------------------------------------------------------------*/
 always:
-    @CreateSymLinks.py -f"$(OpenDWGInstallFiles)OpenDWGBundle.bundle.wxs=$(_MakeFilePath)OpenDWGBundle.bundle.wxs"
-	@CreateSymLinks.py -f"$(OpenDWGInstallFiles)OpenDwgRegistryFrag.wxs=$(_MakeFilePath)OpenDwgRegistryFrag.wxs"
+    ~linkfile "$(OpenDWGInstallFiles)OpenDWGBundle.bundle.wxs=$(_MakeFilePath)OpenDWGBundle.bundle.wxs"
+	~linkfile "$(OpenDWGInstallFiles)OpenDwgRegistryFrag.wxs=$(_MakeFilePath)OpenDwgRegistryFrag.wxs"
 
 $(OpenDWGInstallFiles)OpenDWGInstaller.mki : $(_MakeFilePath)OpenDWGInstaller.mki
     $(LinkFirstDepToFirstTarget)

@@ -30,7 +30,7 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/PCLWrapper=$(publicApiDir)"
+   ~linkdir "$(BuildContext)PublicAPI/PCLWrapper=$(publicApiDir)"
 
 #----------------------------------------------------------------------
 #     Compile precompiled header

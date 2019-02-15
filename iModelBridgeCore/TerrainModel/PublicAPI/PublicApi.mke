@@ -32,7 +32,7 @@ cleanopt =
 
 always:
     PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(scope1Arg) $(cleanopt) -x$(TARGET_PLATFORM)
-    @CreateSymLinks.py -d"$(BuildContext)$(OutputApiDir)=$(genDir)"
+    ~linkdir "$(BuildContext)$(OutputApiDir)=$(genDir)"
 
 #### Old
 
@@ -157,6 +157,6 @@ $(build)TerrainModelFormatsPublicAPI.stamp : $(FilesToPublish)
 #    call $(GEMADIR)dtmfdf $< $@
 
 #always:
-#    @CreateSymLinks.py   -d"$(BuildContextPublicAPI)TerrainModel=$(terrainModel_includes)"
+#    ~linkdir "$(BuildContextPublicAPI)TerrainModel=$(terrainModel_includes)"
 
 %endif

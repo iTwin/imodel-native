@@ -22,11 +22,8 @@ always:
 #VendorAPIDir    = $(BuildContext)VendorAPI/$(appName)_DLL/
 #
 #always:
-#    @CreateSymLinks.py   -f"$(VendorAPIDir)VortexObjects/IClashNode.h=$(srcDir)include/vortexobjects/IClashNode.h"
-#    @CreateSymLinks.py   -f"$(VendorAPIDir)VortexObjects/IClashObject.h=$(srcDir)include/vortexobjects/IClashObject.h"
-#    @CreateSymLinks.py   -f"$(VendorAPIDir)VortexObjects/IClashObjectManager.h=$(srcDir)include/vortexobjects/IClashObjectManager.h"
-#    @CreateSymLinks.py   -f"$(VendorAPIDir)VortexObjects/IClashTree.h=$(srcDir)include/vortexobjects/IClashTree.h"
-#    @CreateSymLinks.py   -f"$(VendorAPIDir)VortexObjects/VortexObjects_import.h=$(srcDir)include/vortexobjects/VortexObjects_import.h"
-
-
-
+#    ~linkfile "$(VendorAPIDir)VortexObjects/IClashNode.h=$(srcDir)include/vortexobjects/IClashNode.h"
+#    ~linkfile "$(VendorAPIDir)VortexObjects/IClashObject.h=$(srcDir)include/vortexobjects/IClashObject.h"
+#    ~linkfile "$(VendorAPIDir)VortexObjects/IClashObjectManager.h=$(srcDir)include/vortexobjects/IClashObjectManager.h"
+#    ~linkfile "$(VendorAPIDir)VortexObjects/IClashTree.h=$(srcDir)include/vortexobjects/IClashTree.h"
+#    ~linkfile "$(VendorAPIDir)VortexObjects/VortexObjects_import.h=$(srcDir)include/vortexobjects/VortexObjects_import.h"

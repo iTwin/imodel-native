@@ -73,6 +73,5 @@ $(o)$(appName).exe.local:
     <
 
 always:
-    @CreateSymLinks.py "$(BuildContext)Delivery\$(appName).exe=$(o)$(appName).exe"
-    @CreateSymLinks.py "$(BuildContext)Delivery\$(appName).exe.local=$(o)$(appName).exe.local"    # Force stackwalker to use dbghelp.dll in the Product directory instead of searching for installed version.
-
+    ~linkfile "$(BuildContext)Delivery\$(appName).exe=$(o)$(appName).exe"
+    ~linkfile "$(BuildContext)Delivery\$(appName).exe.local=$(o)$(appName).exe.local"    # Force stackwalker to use dbghelp.dll in the Product directory instead of searching for installed version.

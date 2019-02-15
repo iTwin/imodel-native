@@ -14,8 +14,8 @@ DeliveryDir=$(BuildContext)/Delivery/
 # Symlink examples source
 #---------------------------------------------------------------------------------------------------------
 always:
-    @CreateSymLinks.py   -f"$(DeliveryDir)Examples/examples.sln"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/examples.sln"
-    @CreateSymLinks.py   -f"$(DeliveryDir)Examples/examples_2012.sln"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/examples_2012.sln"
-    @CreateSymLinks.py   -d"$(DeliveryDir)Examples/res"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/res"
-    @CreateSymLinks.py   -d"$(DeliveryDir)Examples/src"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/src"
-    @CreateSymLinks.py   -d"$(DeliveryDir)Examples/include"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/include"
+    ~linkfile "$(DeliveryDir)Examples/examples.sln"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/examples.sln"
+    ~linkfile "$(DeliveryDir)Examples/examples_2012.sln"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/examples_2012.sln"
+    ~linkdir "$(DeliveryDir)Examples/res"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/res"
+    ~linkdir "$(DeliveryDir)Examples/src"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/src"
+    ~linkdir "$(DeliveryDir)Examples/include"=$(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/Examples/include"

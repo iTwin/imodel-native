@@ -11,8 +11,7 @@ conversionDataSource  = $(SrcRoot)imodel02/iModelCore/Units/tests/ConversionData
 
 # Wire in conversion data
 always:
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)ConversionData=$(conversionDataSource)*.csv"
-
+    ~linkmultifiles "$(ContextDeliveryDir)ConversionData=$(conversionDataSource)*.csv"
 
 # Expose seed data as assets needed by ECObjects unit tests
 BEGTEST_ASSETS     + $(ContextDeliveryDir)ConversionData/

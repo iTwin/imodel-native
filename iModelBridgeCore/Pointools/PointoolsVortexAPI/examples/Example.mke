@@ -15,4 +15,4 @@
 DeliveryDir=$(BuildContext)/Delivery/
 
 always:
-    @CreateSymLinks.py   -d"$(DeliveryDir)Examples/$(Example)"=$(srcroot)/Pointools/PointoolsVortexAPI/Examples/$(Example)"
+    ~linkdir "$(DeliveryDir)Examples/$(Example)"=$(srcroot)/Pointools/PointoolsVortexAPI/Examples/$(Example)"

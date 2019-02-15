@@ -11,4 +11,4 @@
 
 always:
     !~@mkdir $(BuildContext)PublicAPI/WebServices
-    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Cache=$(_MakeFilePath)/PublicAPI/WebServices/Cache"
+    ~linkdir "$(BuildContext)PublicAPI/WebServices/Cache=$(_MakeFilePath)/PublicAPI/WebServices/Cache"

@@ -22,7 +22,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
+    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
         <SubPart PartName="PublicAPI" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
         <SubPart PartName="PublicAPI" />
         <Bindings>

@@ -16,4 +16,4 @@ DeliveryDir=$(OutBuildContexts)PointoolsVortexAPI$(VSOutputSubfolder)/Delivery/
 #---------------------------------------------------------------------------------------------------------
 
 always:
-    @CreateSymLinks.py   -d"$(OutBuildContexts)PointoolsVortexAPI$(VSOutputSubfolder)/Install/"=$(srcroot)/Pointools/Install/"
+    ~linkdir "$(OutBuildContexts)PointoolsVortexAPI$(VSOutputSubfolder)/Install/"=$(srcroot)/Pointools/Install/"

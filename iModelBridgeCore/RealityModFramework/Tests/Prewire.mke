@@ -23,4 +23,4 @@ $(BuildContext)Delivery/UnitTests/RealityPackage.1.0.xsd : $(_MakeFilePath)../Re
 
 # Wire in test data
 always:
-    @CreateSymLinks.py -d"$(ContextDeliveryDir)\TestData=$(_MakeFilePath)TestData"
+    ~linkdir "$(ContextDeliveryDir)\TestData=$(_MakeFilePath)TestData"

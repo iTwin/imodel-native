@@ -35,11 +35,8 @@ buildSolution:
 "$(ContextDeliveryDir)$(appName).dll" : "$(o)$(appName).dll"
     $(LinkFirstDepToFirstTarget)
 
-#python $(srcRoot)bsicommon\build\CreateSymLinks.py $(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\TerrainModel\Delivery\$(TargetFileName)=$(TargetPath)
-
 #----------------------------------------------------------------------
 # Expose our transkit directory for the transkit to see
 #----------------------------------------------------------------------
 always:
-    @CreateSymLinks.py  -d"$(ContextDeliveryDir)Transkit\ElementTemplate=$(baseDir)transkit"
-
+    ~linkdir "$(ContextDeliveryDir)Transkit\ElementTemplate=$(baseDir)transkit"

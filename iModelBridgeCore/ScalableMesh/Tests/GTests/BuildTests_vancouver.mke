@@ -70,4 +70,4 @@ GUNITTEST_NOEXEC = 1
 %include $(SharedMki)gunittest.mki
 
 always:
-    @CreateSymLinks.py "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
+    ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"

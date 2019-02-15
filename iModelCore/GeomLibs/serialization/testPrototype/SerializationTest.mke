@@ -88,4 +88,4 @@ GUNITTEST_NOEXEC=1
 %include $(SharedMki)gunittest.mki
 
 always:
-    @CreateSymLinks.py "$(BuildContext)Delivery/$(appName).exe=$(geomTestOut)$(appName)/$(appName).exe"
+    ~linkfile "$(BuildContext)Delivery/$(appName).exe=$(geomTestOut)$(appName)/$(appName).exe"

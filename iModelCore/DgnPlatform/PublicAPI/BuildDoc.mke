@@ -49,7 +49,7 @@ InputStamp     = $(InputDir).stamp
 includeDir = $(OutDgnPlatformBuild)doxygenInclude/
 always:
     !~@mkdir $(includeDir)
-   CreateSymLinks.py -d"$(includeDir)Bentley=$(BuildContextPublicApiDir)Bentley"
+   ~linkdir "$(includeDir)Bentley=$(BuildContextPublicApiDir)Bentley"
 
 DOXYGEN_INPUT  = $(InputDir)
 

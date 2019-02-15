@@ -22,4 +22,4 @@ $(readmeDir)readme.htm : $(baseDir)readme.htm
     >
 
 always:
-   @createsymlinks.py "$(BuildContext)Delivery/readme.htm=$(readmeDir)readme.htm"
+   ~linkfile "$(BuildContext)Delivery/readme.htm=$(readmeDir)readme.htm"

@@ -24,7 +24,7 @@ CommonLoggingSrc                            = $(SrcRoot)nuget/Common.Logging.3.3
 CommonLoggingCoreSrc                        = $(SrcRoot)nuget/Common.Logging.Core.3.3.1/lib/net40
 	
 always:
-@CreateSymLinks.py -f"$(BuildContext)Delivery/Microsoft.WindowsAzure.Configuration.dll = ${MicrosoftWindowsAzureConfigurationSrc}/Microsoft.WindowsAzure.Configuration.dll"
-@CreateSymLinks.py -f"$(BuildContext)Delivery/Microsoft.ServiceBus.dll = ${WindowsAzureServiceBusSrc}/Microsoft.ServiceBus.dll"
-@CreateSymLinks.py -f"$(BuildContext)Delivery/Bentley.SelectServer.SaaS.Client.dll = ${BentleySelectServerSaasClientSrc}/Bentley.SelectServer.SaaS.Client.dll"
-@CreateSymLinks.py -f"$(BuildContext)Delivery/Bentley.Discovery.Buddi.Client.dll = ${BentleyDiscoveryBuddiClientSrc}/Bentley.Discovery.Buddi.Client.dll"
+~linkfile "$(BuildContext)Delivery/Microsoft.WindowsAzure.Configuration.dll = ${MicrosoftWindowsAzureConfigurationSrc}/Microsoft.WindowsAzure.Configuration.dll"
+~linkfile "$(BuildContext)Delivery/Microsoft.ServiceBus.dll = ${WindowsAzureServiceBusSrc}/Microsoft.ServiceBus.dll"
+~linkfile "$(BuildContext)Delivery/Bentley.SelectServer.SaaS.Client.dll = ${BentleySelectServerSaasClientSrc}/Bentley.SelectServer.SaaS.Client.dll"
+~linkfile "$(BuildContext)Delivery/Bentley.Discovery.Buddi.Client.dll = ${BentleyDiscoveryBuddiClientSrc}/Bentley.Discovery.Buddi.Client.dll"

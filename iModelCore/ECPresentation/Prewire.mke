@@ -8,4 +8,4 @@
 %include mdl.mki
 
 always:
-    @CreateSymLinks.py "$(BuildContext)PublicAPI/ECPresentation = $(_MakeFilePath)/PublicAPI/ECPresentation"
+    ~linkdir "$(BuildContext)PublicAPI/ECPresentation = $(_MakeFilePath)/PublicAPI/ECPresentation"

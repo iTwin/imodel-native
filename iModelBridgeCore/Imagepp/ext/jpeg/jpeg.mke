@@ -166,13 +166,13 @@ LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 
 %if !defined(JPEGLIB_SUPPORT_12BITS)
 CreateBuildContext:
-    CreateSymLinks.py -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jpeglib.h" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jconfig.h" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jmorecfg.h" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jconfig.vc" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jconfig.dj" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jerror.h" \
-                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)transupp.h"
+    ~linkfile "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jpeglib.h"
+    ~linkfile "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jconfig.h"
+    ~linkfile "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jmorecfg.h"
+    ~linkfile "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jconfig.vc"
+    ~linkfile "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jconfig.dj"
+    ~linkfile "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jerror.h"
+    ~linkfile "$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)transupp.h"
 
 $(BuildContext)Delivery/jpeg-notice.txt : $(jpegSrcDir)jpeg-notice.txt
     $(LinkFirstDepToFirstTarget)

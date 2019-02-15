@@ -122,7 +122,5 @@ GUNITTEST_NOEXEC=1
 %include $(SharedMki)gunittest.mki
 
 always:
-    @CreateSymLinks.py "$(BuildContext)Delivery\$(executableName).exe=$(o)$(executableName).exe"
-    @CreateSymLinks.py "$(BuildContext)Delivery\$(appName).log.config.xml=$(baseDir)$(appName).log.config.xml"
-
-
+    ~linkfile "$(BuildContext)Delivery\$(executableName).exe=$(o)$(executableName).exe"
+    ~linkfile "$(BuildContext)Delivery\$(appName).log.config.xml=$(baseDir)$(appName).log.config.xml"

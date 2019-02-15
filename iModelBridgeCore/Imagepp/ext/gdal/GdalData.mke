@@ -29,6 +29,4 @@ always:
     ~@mkdir $(GdalData)
 
 always:
-    CreateSymLinks.py   -m"$(GdalData)=$(gdDataDir)*.*"
-    
-
+    ~linkmultifiles "$(GdalData)=$(gdDataDir)*.*"

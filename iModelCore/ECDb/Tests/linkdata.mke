@@ -9,5 +9,4 @@
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
 always:
-    @CreateSymLinks.py "$(BuildContext)Delivery/UnitTests/Documents=$(SrcRoot)DgnDbUnitTests/data"
-
+    ~linkdir "$(BuildContext)Delivery/UnitTests/Documents=$(SrcRoot)DgnDbUnitTests/data"

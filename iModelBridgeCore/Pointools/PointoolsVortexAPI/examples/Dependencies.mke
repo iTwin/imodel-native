@@ -35,15 +35,13 @@ VendorAPIDir = $(BuildContext)VendorAPI/
 #---------------------------------------------------------------------------------------------------------
 
 always:
-    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)glui/GL/*"
-    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)glew/GL/*"
-    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)OpenGLExt/GL/*"
-    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)freeglut/GL/*"
-    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)VendorAPI/GL/*"
+    ~linkmultifiles "$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)glui/GL/*"
+    ~linkmultifiles "$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)glew/GL/*"
+    ~linkmultifiles "$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)OpenGLExt/GL/*"
+    ~linkmultifiles "$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)freeglut/GL/*"
+    ~linkmultifiles "$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)VendorAPI/GL/*"
 
-	
 always:
-    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/bin/freeglut.dll"="$(SubPartsDir)Assemblies/freeglut.dll"
-    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/freeglut.lib"="$(SubPartsDir)Libs/freeglut.lib"
-    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/glui$(arch).lib"="$(SubPartsDir)StaticLibs/glui$(toolset).lib"
-	
+    ~linkfile "$(DeliveryDir)ExamplesDependencies/bin/freeglut.dll"="$(SubPartsDir)Assemblies/freeglut.dll"
+    ~linkfile "$(DeliveryDir)ExamplesDependencies/lib/freeglut.lib"="$(SubPartsDir)Libs/freeglut.lib"
+    ~linkfile "$(DeliveryDir)ExamplesDependencies/lib/glui$(arch).lib"="$(SubPartsDir)StaticLibs/glui$(toolset).lib"

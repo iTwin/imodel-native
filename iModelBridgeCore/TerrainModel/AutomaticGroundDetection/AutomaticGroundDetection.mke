@@ -30,8 +30,7 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/AutomaticGroundDetection/PublicAPI"
-  
+   ~linkdir "$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/AutomaticGroundDetection/PublicAPI"
 
 CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__
 

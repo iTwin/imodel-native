@@ -16,7 +16,7 @@ baseDir         = $(_MakeFilePath)
 
 CrawlerLibPublicAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/PublicAPI/CrawlerLib/
 always:
-    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)CrawlerLib=$(CrawlerLibPublicAPISrc)"
+    ~linkdir "$(BuildContextPublicApiDir)CrawlerLib=$(CrawlerLibPublicAPISrc)"
 
 PublicApiDir = $(OutBuildContexts)RealityModFramework/PublicAPI/CrawlerLib/
 

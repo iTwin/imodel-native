@@ -39,9 +39,9 @@ always:
 VendorAPIDir    = $(BuildContext)VendorAPI/PointoolsVortexAPI_FeatureExtract_DLL
 
 always:
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\GeomTypes.h=${SrcRoot}/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/GeomTypes.h"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexFeatureExtract.h=${SrcRoot}/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/VortexFeatureExtract.h"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexFeatureExtractAPI.h=${SrcRoot}/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/VortexFeatureExtractAPI.h"
+    ~linkfile "$(VendorAPIDir)\GeomTypes.h=${SrcRoot}/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/GeomTypes.h"
+    ~linkfile "$(VendorAPIDir)\VortexFeatureExtract.h=${SrcRoot}/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/VortexFeatureExtract.h"
+    ~linkfile "$(VendorAPIDir)\VortexFeatureExtractAPI.h=${SrcRoot}/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/VortexFeatureExtractAPI.h"
 
 #----------------------------------------------------------------------
 #       Build source files

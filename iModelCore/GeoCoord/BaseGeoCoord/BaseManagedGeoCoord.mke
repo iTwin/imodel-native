@@ -142,5 +142,4 @@ ASSEMBLY_TESTKEYFILE    =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
 # Expose our transkit directory for the transkit to see
 #----------------------------------------------------------------------
 always:
-    @CreateSymLinks.py  -d"$(ContextDeliveryDir)GeoCoordManaged\Transkit=$(baseDir)transkitManaged"
-
+    ~linkdir "$(ContextDeliveryDir)GeoCoordManaged\Transkit=$(baseDir)transkitManaged"

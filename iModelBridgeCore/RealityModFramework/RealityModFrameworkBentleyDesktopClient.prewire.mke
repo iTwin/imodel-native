@@ -11,12 +11,5 @@ BentleyDesktopClient_SubParts = $(BuildContext)SubParts/
 BDC_LKG = $(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/
 
 always:
-    @CreateSymLinks.py -d "$(BuildContext)PublicAPI/BentleyDesktopClient=$(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/PublicAPI"
-    @CreateSymLinks.py    "$(BuildContext)Delivery/CCApi.dll=$(BuildContext)SubParts/Files/CCApi.dll"
-
-
-
-
-
-
-
+    ~linkdir "$(BuildContext)PublicAPI/BentleyDesktopClient=$(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/PublicAPI"
+    ~linkfile "$(BuildContext)Delivery/CCApi.dll=$(BuildContext)SubParts/Files/CCApi.dll"

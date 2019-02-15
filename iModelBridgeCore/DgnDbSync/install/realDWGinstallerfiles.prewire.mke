@@ -16,9 +16,9 @@ RealDWGInstallFiles    = $(BuildContext)RealDWGInstallerFiles/
 # Symlink files needed for powerproduct build in BuildContext
 #----------------------------------------------------------------------*/
 always:
-    @CreateSymLinks.py -f"$(RealDWGInstallFiles)RealDWGBundle.bundle.wxs=$(_MakeFilePath)RealDWGBundle.bundle.wxs"
-    @CreateSymLinks.py -f"$(RealDWGInstallFiles)DwgRegistryFrag.wxs=$(_MakeFilePath)DwgRegistryFrag.wxs"
-    @CreateSymLinks.py -f"$(RealDWGInstallFiles)DwgMergeModuleFrag.wxs=$(_MakeFilePath)DwgMergeModuleFrag.wxs"
+    ~linkfile "$(RealDWGInstallFiles)RealDWGBundle.bundle.wxs=$(_MakeFilePath)RealDWGBundle.bundle.wxs"
+    ~linkfile "$(RealDWGInstallFiles)DwgRegistryFrag.wxs=$(_MakeFilePath)DwgRegistryFrag.wxs"
+    ~linkfile "$(RealDWGInstallFiles)DwgMergeModuleFrag.wxs=$(_MakeFilePath)DwgMergeModuleFrag.wxs"
 
 $(RealDWGInstallFiles)RealDWGInstaller.mki : $(_MakeFilePath)RealDWGInstaller.mki
     $(LinkFirstDepToFirstTarget)

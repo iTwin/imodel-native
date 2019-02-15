@@ -36,12 +36,9 @@ $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 # Symlink GeoCoord objs like it was part of the test. Everything will be link together.
-always:
-    @CreateSymLinks.py -m"$(BuildContext)Delivery/UnitTests/Objects/$(TestDir)/GeoCoordDllObjs=$(OutputRootDir)build/GeoCoord/GeoCoord/*$(oext)"
+# always:
+#     ~linkmultifiles "$(BuildContext)Delivery/UnitTests/Objects/$(TestDir)/GeoCoordDllObjs=$(OutputRootDir)build/GeoCoord/GeoCoord/*$(oext)"
 
 # deliver ignorelist.
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
-
-
-    

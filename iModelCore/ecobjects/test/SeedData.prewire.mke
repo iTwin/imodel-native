@@ -15,18 +15,18 @@ seedDataSource  = $(SrcRoot)imodel02/iModelCore/ecobjects/test/SeedData/
 always:
     !~@mkdir $(dataDir)
     !~@mkdir $(dataDir)ECObjectsTest_Data
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData=$(seedDataSource)*.xml"
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData=$(seedDataSource)*.json"
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/ur-PK/=$(ecobjectsSrc)test/SeedData/ur-PK/*.xml"
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/en-GB/=$(ecobjectsSrc)test/SeedData/en-GB/*.xml"
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/it/=$(ecobjectsSrc)test/SeedData/it/*.xml"
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/V3Conversion/=$(ecobjectsSrc)test/SeedData/V3Conversion/*.xml"
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/ECJson/=$(ecobjectsSrc)test/SeedData/ECJson/*.json"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData=$(seedDataSource)*.xml"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData=$(seedDataSource)*.json"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData/ur-PK/=$(ecobjectsSrc)test/SeedData/ur-PK/*.xml"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData/en-GB/=$(ecobjectsSrc)test/SeedData/en-GB/*.xml"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData/it/=$(ecobjectsSrc)test/SeedData/it/*.xml"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData/V3Conversion/=$(ecobjectsSrc)test/SeedData/V3Conversion/*.xml"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData/ECJson/=$(ecobjectsSrc)test/SeedData/ECJson/*.json"
 
 %ifdef winNT
 always:    
     $(unzipCmd) -n $(seedDataSource)performance.zip -d $(dataDir)ECObjectsTest_Data/
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/=$(dataDir)ECObjectsTest_Data/performance/*.xml"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData/=$(dataDir)ECObjectsTest_Data/performance/*.xml"
 %endif
 
 # Expose seed data as assets needed by ECObjects unit tests

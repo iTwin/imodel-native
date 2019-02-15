@@ -8,4 +8,4 @@
 %include mdl.mki
 
 always:
-    CreateSymLinks.py -d"$(BuildContext)/PublicAPI/BeTestAndroid=$(baseDir)"
+    ~linkdir "$(BuildContext)/PublicAPI/BeTestAndroid=$(baseDir)"

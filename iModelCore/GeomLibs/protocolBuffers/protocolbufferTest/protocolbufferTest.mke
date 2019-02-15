@@ -94,4 +94,4 @@ dirToSearch = $(GUnitTestDir)include/
 %include $(SharedMki)gunittest.mki
 
 always:
-    @CreateSymLinks.py "$(BuildContext)Delivery\$(appName).exe=$(o)$(appName).exe"
+    ~linkfile "$(BuildContext)Delivery\$(appName).exe=$(o)$(appName).exe"

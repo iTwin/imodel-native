@@ -18,7 +18,7 @@
     </Part>
 
     <Part Name="ECPresentation-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
-          BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedAPI +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
+          BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedAPI +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
         <SubPart PartName="ECPresentation-Library"/>
         <SubPart PartName="ECPresentation-PublicAPI"/>
         <SubPart PartName="PresentationRulesSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
@@ -64,14 +64,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="Docs-CodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/ECPresentation/Docs/Samples -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECPresentation/Docs/ExtractedSamples -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Delivery/Docs/Extractions">
+    <Part Name="Docs-CodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BentleyBuildMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/ECPresentation/Docs/Samples -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECPresentation/Docs/ExtractedSamples -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Delivery/Docs/Extractions">
         <SubPart PartName="ECPresentation-PublishedAPI" />
         <Bindings>
             <Directory SourceName="Delivery/Docs/Extractions" SubPartDirectory="Dox/Extractions/ECPresentation"/>
         </Bindings>        
     </Part>
 
-    <Part Name="Docs-BuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/ECPresentation/Docs/Samples -dBUILD_SAMPLE_CODE_SUB_DIR=ECPresentationSamples">
+    <Part Name="Docs-BuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BentleyBuildMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/ECPresentation/Docs/Samples -dBUILD_SAMPLE_CODE_SUB_DIR=ECPresentationSamples">
         <SubPart PartName="ECPresentation-PublishedAPI" />
         <SubPart PartName="ECPresentation-Library" />
     </Part>
@@ -298,7 +298,7 @@
     </Product>
 
     <!-- Memory leak testing -->
-<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x64">
+<!--     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="ECPresentation-Gtest" />
     </Part>

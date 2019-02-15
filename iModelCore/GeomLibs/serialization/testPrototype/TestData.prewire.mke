@@ -9,7 +9,4 @@
 
 # Wire in seed data
 always:
-    @CreateSymLinks.py -m"$(BuildContext)Delivery\TestData=$(SrcRoot)GeomLibsTestData/xmlSamples/*.xml"
-
-   
-
+    ~linkmultifiles "$(BuildContext)Delivery\TestData=$(SrcRoot)GeomLibsTestData/xmlSamples/*.xml"

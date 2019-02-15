@@ -549,7 +549,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityPlatformUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityPlatform">
+    <Part Name="RealityPlatformUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=RealityPlatform">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -557,7 +557,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityPlatformToolsUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityPlatformTools">
+    <Part Name="RealityPlatformToolsUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=RealityPlatformTools">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="RealityPlatformTools"/>
         <Bindings>
@@ -565,7 +565,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityAdminUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityAdmin">
+    <Part Name="RealityAdminUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=RealityAdmin">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="RealityAdmin" />
         <Bindings>
@@ -573,7 +573,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="CrawlerLibUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=CrawlerLib">
+    <Part Name="CrawlerLibUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=CrawlerLib">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="CrawlerLib"/>
         <Bindings>
@@ -581,7 +581,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="SpatioTemporalSelectorTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=SpatioTemporalSelector">
+    <Part Name="SpatioTemporalSelectorTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=SpatioTemporalSelector">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="SpatioTemporalSelector"/>
         <Bindings>
@@ -589,7 +589,7 @@
         </Bindings>
     </Part>
   
-    <Part Name="RealityPlatformToolsIntegrationTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityPlatformToolsIntegration">
+    <Part Name="RealityPlatformToolsIntegrationTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=RealityPlatformToolsIntegration">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="RealityPlatformTools"/>
         <Bindings>
@@ -597,7 +597,7 @@
         </Bindings>
     </Part>
   
-    <Part Name="RealityAdminIntegrationTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityAdminIntegration">
+    <Part Name="RealityAdminIntegrationTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=RealityAdminIntegration">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="RealityAdmin"/>
         <Bindings>
