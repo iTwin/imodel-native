@@ -31,7 +31,7 @@
         <SubPart PartName="RunUnitCppTest" PartFile="iModelCore/iModelCoreTesting" Repository="imodel02"/>
     </Part>
 
-    <Product Name="iModelCoreSDK" OnlyPlatforms="x64">
+    <Product Name="iModelCoreSDK" OnlyPlatforms="x64,linuxx64">
         <Directories DirectoryListName="iModelCoreSDKDirs"/>
         <SubPart PartName="iModelCore"/>
     </Product>
@@ -64,6 +64,7 @@
         <SubPart PartName="iModelCore" LibType="Static"/>
         <SubPart PartName="RunUnitTests" LibType="Static"/>
         <SubPart PartName="__ParasiteSubParts" LibType="Static"/>
+        <SubProduct ProductName="iModelCoreSDK" LibType="Static"/>
     </Part>
 
     <!--
