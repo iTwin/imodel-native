@@ -12,6 +12,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol) { if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false; }
+#define COMPARE_VALUES(val0, val1) { if (val0 < val1) return true; if (val0 > val1) return false; }
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
