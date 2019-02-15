@@ -279,9 +279,6 @@ void ChangeDetector::_DetectDeletedElements(Converter& converter, SyncInfo::V8El
         if (m_v8ModelsSkipped.find(elementInSyncInfo->GetModelId()) != m_v8ModelsSkipped.end()) // if we skipped this whole V8 model (e.g., because it was unchanged),
             continue;   // we don't expect any element from it to be in m_elementsSeen. Keep them all alive.
 
-#ifdef WIP_EXTERNAL_SOURCE_ASPECT // detect if any parent is in m_elementsSeen
-#endif
-
         // We did not encounter the V8 element that was mapped to this BIM element. We infer that the V8 element 
         // was deleted. Therefore, the update to the BIM is to delete the corresponding BIM element.
         converter._DeleteElement(previouslyConvertedElementId);
