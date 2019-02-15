@@ -1164,7 +1164,16 @@ struct SheetCompositionTests : public ConverterTestBaseFixture
 
         return model.IsValid () ? model->ToSheetModel () : nullptr;
         }
-    void AnalyzeProxyGraphics(std::vector<Utf8String>& identifiers, std::vector<BentleyApi::DRange3d>& dgRanges, DrawingModelR drawingModel);
+
+    struct DrawingGraphicInfo
+        {
+        DgnElementId elementId;
+        BentleyApi::Utf8String identifier;
+        DgnCategoryId categoryId;
+        BentleyApi::DRange3d range;
+        };
+
+    void AnalyzeProxyGraphics(std::vector<DrawingGraphicInfo>&, DrawingModelR drawingModel);
     void FindSheetModelSource(DgnV8Api::ModelId& v8SheetModelId, DgnDbR db, DgnModelId sheetModelId);
     void AnalyzeDrawingModels(std::vector<DgnElementId>& drawingElementIds, int& attachmentAspectCount, DgnDbR db);
     void CheckExtractedDrawingGraphics(
@@ -1274,8 +1283,8 @@ void SheetCompositionTests::AnalyzeDrawingModels(std::vector<DgnElementId>& draw
 
         auto el = db.Elements().GetElement(eid);
         auto aspect = iModelExternalSourceAspect::GetAspect(*el, aspectId);
-        auto aspectDump = aspect.FormatForDump(db, true, true);
-        printf("%s\n", aspectDump.c_str());
+        // auto aspectDump = aspect.FormatForDump(db, true, true);
+        // printf("%s\n", aspectDump.c_str());
 
         auto props = aspect.GetProperties();
         if (props.HasMember("v8AttachmentInfo"))
@@ -1286,30 +1295,31 @@ void SheetCompositionTests::AnalyzeDrawingModels(std::vector<DgnElementId>& draw
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<Utf8String>& identifiers, std::vector<BentleyApi::DRange3d>& dgRanges, DrawingModelR drawingModel)
+void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<DrawingGraphicInfo>& infos, DrawingModelR drawingModel)
     {
     auto& db = drawingModel.GetDgnDb();
 
     // Find all ExternalSourceAspects on all DrawingGraphics in the DrawingModel
     auto selGraphics = db.GetPreparedECSqlStatement(
-        "SELECT x.Identifier, dg.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_DrawingGraphic) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
+        "SELECT x.Identifier, dg.ECInstanceId, dg.Category.Id from " BIS_SCHEMA(BIS_CLASS_GraphicalElement2d) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
         " WHERE dg.Model.Id=? and x.Kind='ProxyGraphic'");
     selGraphics->BindId(1, drawingModel.GetModelId());
     
     while (BE_SQLITE_ROW == selGraphics->Step())
         {
-        Utf8String sourceId = selGraphics->GetValueText(0);
-        DgnElementId dgEid = selGraphics->GetValueId<DgnElementId>(1);
+        DrawingGraphicInfo info;
+        info.identifier = selGraphics->GetValueText(0);
+        info.categoryId = selGraphics->GetValueId<DgnCategoryId>(2);
+        info.elementId = selGraphics->GetValueId<DgnElementId>(1);
+        auto dgEl = db.Elements().Get<DrawingGraphic>(info.elementId);
+        info.range = dgEl->GetPlacement().CalculateRange();
 
-        auto dgEl = db.Elements().Get<DrawingGraphic>(dgEid);
-            
-        identifiers.push_back(sourceId);
-        dgRanges.push_back(dgEl->GetPlacement().CalculateRange());
+        infos.push_back(info);
         }
 
     // The loop above examined and counted the DrawingGraphic elements in the drawingModel that have XSAs.
     // In fact, *all* DrawingGraphic elements should have XSAs. The following check asserts that.
-    countElementsInModelByClass(drawingModel, getBisClassId(db, BIS_CLASS_DrawingGraphic), dgRanges.size());
+    countElementsInModelByClass(drawingModel, getBisClassId(db, BIS_CLASS_DrawingGraphic), infos.size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1323,7 +1333,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
     DgnV8Api::ModelId expectedV8SheetModelId
     )
     {
-    std::vector<BentleyApi::DRange3d> dgRanges;
+    std::vector<DrawingGraphicInfo> dgInfos;
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
@@ -1332,14 +1342,14 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
         for (auto entry: itModels)
             {
             auto el = db->Elements().GetElement(entry.GetElementId());
-            iModelExternalSourceAspect::Dump(*el, nullptr, BentleyApi::NativeLogging::SEVERITY::LOG_INFO);
+            // iModelExternalSourceAspect::Dump(*el, nullptr, BentleyApi::NativeLogging::SEVERITY::LOG_INFO);
             }
 
         auto itDrawingGraphics = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
         for (auto entry: itDrawingGraphics)
             {
             auto el = db->Elements().GetElement(entry.GetElementId());
-            iModelExternalSourceAspect::Dump(*el, nullptr, BentleyApi::NativeLogging::SEVERITY::LOG_INFO);
+            // iModelExternalSourceAspect::Dump(*el, nullptr, BentleyApi::NativeLogging::SEVERITY::LOG_INFO);
             }
 
         BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
@@ -1360,24 +1370,14 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
         auto drawingModel = drawing->GetSub<DrawingModel>();
         ASSERT_TRUE(drawingModel.IsValid());
 
-        std::vector<Utf8String> identifiers;
-        AnalyzeProxyGraphics(identifiers, dgRanges, *drawingModel);
-        ASSERT_EQ(expectedDrawingGraphicCount, dgRanges.size());
-        }
-
-    if (true)
-        {
-        /*
-        ASSERT_TRUE(nullptr != v8SheetModel);
-        */
-
+        AnalyzeProxyGraphics(dgInfos, *drawingModel);
+        ASSERT_EQ(expectedDrawingGraphicCount, dgInfos.size());
         }
 
     // Do an update *with no changes*
     DoUpdate(m_dgnDbFileName, m_v8FileName);
 
     // Verify that *nothing changed*
-    std::vector<Utf8String> identifiersBeforeDelete;
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
@@ -1401,16 +1401,16 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
         ASSERT_TRUE(drawingModel.IsValid());
 
         // Verify that there are the same number of DrawingGraphics and that they did not change in size, location, or rotation
-        std::vector<BentleyApi::DRange3d> dgRangesAfterUpdate;
-        AnalyzeProxyGraphics(identifiersBeforeDelete, dgRangesAfterUpdate, *drawingModel);
-        ASSERT_EQ(dgRangesAfterUpdate.size(), dgRanges.size()) << "No change expected in the number of DrawingGraphics";
-        for (size_t i=0; i<dgRanges.size(); ++i)
+        std::vector<DrawingGraphicInfo> infosAfterUpdate;
+        AnalyzeProxyGraphics(infosAfterUpdate, *drawingModel);
+        ASSERT_EQ(infosAfterUpdate.size(), dgInfos.size()) << "No change expected in the number of DrawingGraphics";
+        for (size_t i=0; i<dgInfos.size(); ++i)
             {
-            ASSERT_TRUE(dgRangesAfterUpdate[i].IsEqual(dgRanges[i], 1.0e-10)) << "No change expected in the range of an DrawingGraphic";
+            ASSERT_TRUE(infosAfterUpdate[i].range.IsEqual(dgInfos[i].range, 1.0e-10)) << "No change expected in the range of an DrawingGraphic";
             }
         }
 
-    // Delete the top element from the "Top_Bottom" model and then update
+    // Delete the top element from the "Front_Back" model and then update
     if (true)
         {
         V8FileEditor v8editor;
@@ -1451,18 +1451,167 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
         ASSERT_TRUE(drawingModel.IsValid());
 
         // Verify that there is one fewer DrawingGraphic element. The others should not have changed in size, location, or rotation
-        std::vector<BentleyApi::DRange3d> dgRangesAfterDelete;
-        std::vector<Utf8String> identifiersAfterDelete;
-        AnalyzeProxyGraphics(identifiersAfterDelete, dgRangesAfterDelete, *drawingModel);
-        ASSERT_EQ(dgRangesAfterDelete.size(), dgRanges.size() - 1) << "One fewer DrawingGraphic element expected";
-        for (size_t i=0; i<dgRangesAfterDelete.size(); ++i)
+        std::vector<DrawingGraphicInfo> infosAfterUpdate;
+        AnalyzeProxyGraphics(infosAfterUpdate, *drawingModel);
+        ASSERT_EQ(infosAfterUpdate.size(), dgInfos.size() - 1) << "One fewer DrawingGraphic element expected";
+        for (size_t i=0; i<infosAfterUpdate.size(); ++i)
             {
-            auto iOld = std::find(identifiersBeforeDelete.begin(), identifiersBeforeDelete.end(), identifiersAfterDelete[i]);
-            auto iOldOffset = iOld - identifiersBeforeDelete.begin();
-            ASSERT_TRUE(dgRangesAfterDelete[i].IsEqual(dgRanges[iOldOffset], 1.0e-10)) << "No change expected in the range of an DrawingGraphic";
+            auto iOld = std::find_if(dgInfos.begin(), dgInfos.end(), [&](DrawingGraphicInfo const& info) {return info.identifier == infosAfterUpdate[i].identifier;});
+            auto iOldOffset = iOld - dgInfos.begin();
+            ASSERT_TRUE(infosAfterUpdate[i].range.IsEqual(dgInfos[iOldOffset].range, 1.0e-10)) << "No change expected in the range of an DrawingGraphic";
             }
+
+        dgInfos = infosAfterUpdate;
         }
 
+    // Move a 3-D element and then update
+    if (true)
+         {
+         V8FileEditor v8editor;
+         v8editor.Open(m_v8FileName);
+
+         auto v8ModelId = v8editor.m_file->FindModelIdByName(L"Front_Back");
+         auto v8Model = v8editor.m_file->LoadRootModelById(nullptr, v8ModelId, true, true, false);
+
+         auto clipShapeLevel = v8editor.m_file->GetLevelCacheR().GetLevelByName(L"ClipShape", true);
+         ASSERT_TRUE(clipShapeLevel.IsValid());
+
+         DgnV8Api::EditElementHandle eh(DgnV8Api::ElementId(87764), v8Model); // a SmartSolid in model "Front_Back"
+         ASSERT_TRUE(eh.IsValid());
+         auto xlat = Bentley::Transform::FromIdentity();
+         xlat.SetTranslation(DPoint3d::FromOne());
+         ASSERT_EQ(0, eh.GetHandler().ApplyTransform(eh, DgnV8Api::TransformInfo(xlat)));
+         ASSERT_EQ(0, eh.ReplaceInModel(eh.GetElementRef()));
+
+         v8editor.m_file->ProcessChanges(DgnV8Api::DgnSaveReason::ApplInitiated);
+         }
+
+     DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+     //      Verify that we have the same number of Sheets, Drawings, and DrawingGraphics. Verify that one DrawingGraphic has moved
+     if (true)
+         {
+         DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+     
+         BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
+         ASSERT_TRUE (nullptr != sheetModel);
+
+         DgnV8Api::ModelId v8SheetModelId{};
+         FindSheetModelSource(v8SheetModelId, *db, sheetModel->GetModelId());
+         ASSERT_EQ(expectedV8SheetModelId, v8SheetModelId);
+
+         std::vector<DgnElementId> drawingElementIds;
+         int attachmentAspectCount = 0;
+         AnalyzeDrawingModels(drawingElementIds, attachmentAspectCount, *db);
+         ASSERT_EQ(expectedDrawingElementCount, drawingElementIds.size());
+         ASSERT_EQ(expectedAttachmentAspectCount, attachmentAspectCount);
+
+         auto drawing = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
+         ASSERT_TRUE(drawing.IsValid());
+         auto drawingModel = drawing->GetSub<DrawingModel>();
+         ASSERT_TRUE(drawingModel.IsValid());
+
+         std::vector<DrawingGraphicInfo> infosAfterUpdate;
+         AnalyzeProxyGraphics(infosAfterUpdate, *drawingModel);
+         ASSERT_EQ(infosAfterUpdate.size(), dgInfos.size());
+         for (size_t i=0; i<infosAfterUpdate.size(); ++i)
+            {
+            auto iOld = std::find_if(dgInfos.begin(), dgInfos.end(), [&](DrawingGraphicInfo const& info) {return info.identifier == infosAfterUpdate[i].identifier;});
+            auto iOldOffset = iOld - dgInfos.begin();
+
+            ASSERT_EQ(infosAfterUpdate[i].elementId, dgInfos[iOldOffset].elementId) << "The update should not have created or deleted any elements";
+
+            if (infosAfterUpdate[i].identifier.EndsWith("87764"))
+                {
+                ASSERT_FALSE(infosAfterUpdate[i].range.IsEqual(dgInfos[iOldOffset].range, 1.0e-10)) << "Range of DrawingGraphic corresponding to moved 3-D element should have changed";
+                }
+            else
+                {
+                ASSERT_TRUE(infosAfterUpdate[i].range.IsEqual(dgInfos[iOldOffset].range, 1.0e-10)) << "No other DrawingGraphic should have moved.";
+                }
+             }
+         }
+
+#ifdef WIP_DRAWING_CONVERTER // Can't explain results. Seem like converter should create two DrawingGraphics, each in a different Category:
+                             // one shape in Category "ClipShape" and all the rest in Category "Uncategorized". 
+                             // Instead, it creates only one DrawingGraphic, puts it in "ClipShape" ... and the DrawingGraphic is not displayed!
+    // Change the level of a 3-D element and then update
+   if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+
+        auto v8ModelId = v8editor.m_file->FindModelIdByName(L"Front_Back");
+        auto v8Model = v8editor.m_file->LoadRootModelById(nullptr, v8ModelId, true, true, false);
+
+        auto clipShapeLevel = v8editor.m_file->GetLevelCacheR().GetLevelByName(L"ClipShape", true);
+        ASSERT_TRUE(clipShapeLevel.IsValid());
+
+        DgnV8Api::EditElementHandle eh(DgnV8Api::ElementId(87764), v8Model); // a SmartSolid in model "Front_Back"
+        ASSERT_TRUE(eh.IsValid());
+        auto edP = eh.GetElementDescrP();
+        auto topShape = edP->h.firstElem->h.next;                // The top-most shape within the SmartSolid
+        ASSERT_EQ(87766, topShape);                                 
+        topShape->el.ehdr.level = clipShapeLevel->GetLevelId();
+        ASSERT_EQ(0, eh.ReplaceInModel(eh.GetElementRef()));
+
+        v8editor.m_file->ProcessChanges(DgnV8Api::DgnSaveReason::ApplInitiated);
+        }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    //      Verify that we have the same number of DrawingGraphicsd:
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    
+        BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
+        ASSERT_TRUE (nullptr != sheetModel);
+
+        DgnV8Api::ModelId v8SheetModelId{};
+        FindSheetModelSource(v8SheetModelId, *db, sheetModel->GetModelId());
+        ASSERT_EQ(expectedV8SheetModelId, v8SheetModelId);
+
+        std::vector<DgnElementId> drawingElementIds;
+        int attachmentAspectCount = 0;
+        AnalyzeDrawingModels(drawingElementIds, attachmentAspectCount, *db);
+        ASSERT_EQ(expectedDrawingElementCount, drawingElementIds.size());
+        ASSERT_EQ(expectedAttachmentAspectCount, attachmentAspectCount);
+
+        auto drawing = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
+        ASSERT_TRUE(drawing.IsValid());
+        auto drawingModel = drawing->GetSub<DrawingModel>();
+        ASSERT_TRUE(drawingModel.IsValid());
+
+        auto it = DrawingCategory::MakeIterator(*db, "WHERE CodeValue='ClipShape'");
+        auto iFound = it.begin();
+        ASSERT_TRUE(iFound != it.end());
+        DgnCategoryId clipShapeCategoryId = (*iFound).GetId<DgnCategoryId>();
+
+        // Verify that there are no changes in the graphics. The category of one DrawingGraphic should have changed.
+        std::vector<DrawingGraphicInfo> infosAfterUpdate;
+        AnalyzeProxyGraphics(infosAfterUpdate, *drawingModel);
+        ASSERT_EQ(infosAfterUpdate.size(), dgInfos.size());
+        for (size_t i=0; i<infosAfterUpdate.size(); ++i)
+            {
+            auto iOld = std::find_if(dgInfos.begin(), dgInfos.end(), [&](DrawingGraphicInfo const& info) {return info.identifier == infosAfterUpdate[i].identifier;});
+            auto iOldOffset = iOld - dgInfos.begin();
+            ASSERT_TRUE(infosAfterUpdate[i].range.IsEqual(dgInfos[iOldOffset].range, 1.0e-10)) << "No change expected in the range of an DrawingGraphic";
+
+            if (infosAfterUpdate[i].identifier.EndsWith("87764"))
+                {
+                ASSERT_NE(infosAfterUpdate[i].categoryId.GetValue(), dgInfos[iOldOffset].categoryId.GetValue());
+                ASSERT_EQ(infosAfterUpdate[i].categoryId.GetValue(), clipShapeCategoryId.GetValue());
+                ASSERT_NE(infosAfterUpdate[i].elementId, dgInfos[iOldOffset].elementId);
+                }
+            else
+                {
+                ASSERT_EQ(infosAfterUpdate[i].categoryId.GetValue(), dgInfos[iOldOffset].categoryId.GetValue());
+                ASSERT_EQ(infosAfterUpdate[i].elementId, dgInfos[iOldOffset].elementId);
+                }
+            }
+        }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
