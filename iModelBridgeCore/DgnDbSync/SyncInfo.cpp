@@ -116,7 +116,6 @@ BentleyStatus SyncInfo::CreateTables()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncInfo::CreateECTables()
     {
-    V8ECClassInfo::CreateTable(*m_dgndb);
     ECInstanceInfo::CreateTable(*m_dgndb);
     V8ECSchemaXmlInfo::CreateTable(*m_dgndb);
     V8ElementSecondaryECClassInfo::CreateTable(*m_dgndb);
@@ -1140,7 +1139,7 @@ BentleyStatus SyncInfo::OnAttach(DgnDb& project)
     {
     m_dgndb = &project;
 
-    if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)))
+    if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNCINFO_TABLE("ECInstance"))))
         {
         // We are creating a new syncinfo file
         Utf8String currentDbProfileVersion;
@@ -1376,13 +1375,14 @@ DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInf
     }
 
 #define TEMPTABLE_ATTACH(name) "temp." name
+#define TEMPTABLE_NamedGroups  "NamedGroups"
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SyncInfo::CreateNamedGroupTable()
     {
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL);"));
-    Utf8CP sql = "INSERT INTO " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) "(SourceId, TargetId) SELECT SourceId, TargetId from bis_ElementRefersToElements b, ec_Class e, ec_Schema s where b.ECClassId = e.Id and e.Name='ElementGroupsMembers' and e.SchemaId = s.Id and s.Name='BisCore'";
+    MUSTBEOK(m_dgndb->ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(TEMPTABLE_NamedGroups) " (SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL);"));
+    Utf8CP sql = "INSERT INTO " TEMPTABLE_ATTACH(TEMPTABLE_NamedGroups) "(SourceId, TargetId) SELECT SourceId, TargetId from bis_ElementRefersToElements b, ec_Class e, ec_Schema s where b.ECClassId = e.Id and e.Name='ElementGroupsMembers' and e.SchemaId = s.Id and s.Name='BisCore'";
     Statement groups;
     if (BE_SQLITE_OK != groups.Prepare(*m_dgndb, sql))
         return BentleyApi::ERROR;
@@ -1391,7 +1391,7 @@ BentleyStatus SyncInfo::CreateNamedGroupTable()
         {
         return ERROR;
         }
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
+    MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " TEMPTABLE_ATTACH(TEMPTABLE_NamedGroups) "_ng_uix ON " TEMPTABLE_NamedGroups "(SourceId, TargetId);"));
 
     return SUCCESS;
     }
@@ -1402,7 +1402,7 @@ BentleyStatus SyncInfo::CreateNamedGroupTable()
 bool SyncInfo::IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetId)
     {
     CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " WHERE SourceId=? AND TargetId=?");
+    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " TEMPTABLE_ATTACH(TEMPTABLE_NamedGroups) " WHERE SourceId=? AND TargetId=?");
     if (!stmt.IsValid())
         return BentleyApi::ERROR;
 

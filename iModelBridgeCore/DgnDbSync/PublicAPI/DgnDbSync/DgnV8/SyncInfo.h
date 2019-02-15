@@ -28,10 +28,6 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 #define SYNCINFO_ATTACH_ALIAS "SYNCINFO"
 #define SYNCINFO_TABLE(name)  "v8sync_" name
 #define SYNCINFO_ATTACH(name) SYNCINFO_ATTACH_ALIAS "." name
-
-#define SYNC_TABLE_ECSchema     SYNCINFO_TABLE("ECSchema")
-#define SYNC_TABLE_NamedGroups  SYNCINFO_TABLE("NamedGroups")
-
 struct Converter;
 struct SyncInfo;
 struct ResolvedModelMapping;

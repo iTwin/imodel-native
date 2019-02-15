@@ -2025,7 +2025,7 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
 
             BisConversionRule conversionRule;
             bool hasSecondary;
-            if (!V8ECClassInfo::TryFind(conversionRule, GetDgnDb(), v8ClassName, hasSecondary))
+            if (!V8ECClassInfo::TryFind(conversionRule, hasSecondary, GetDgnDb(), v8ClassName.GetClassFullName()))
                 {
                 continue;
                 }

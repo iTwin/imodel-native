@@ -125,8 +125,8 @@ bool SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, BECN::EC
     {
     BisConversionRule conversionRule;
     bool hasSecondary;
-    if (!V8ECClassInfo::TryFind(conversionRule, m_converter.GetDgnDb(),
-                                ECClassName(ecSchema.GetName().c_str(), serializedClassName.c_str()), hasSecondary))
+    Utf8PrintfString name("%s.%s", ecSchema.GetName().c_str(), serializedClassName.c_str());
+    if (!V8ECClassInfo::TryFind(conversionRule, hasSecondary, m_converter.GetDgnDb(), name))
         {
         BeAssert(false);
         return false;

@@ -586,36 +586,27 @@ Utf8CP V8ElementTypeHelper::ToString(V8ElementType v8ElementType)
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-bool V8ECClassInfo::TryFind(BECN::ECClassId& v8ClassId, BisConversionRule& rule, DgnDbR db, ECClassName const& v8ClassName, bool& hasSecondary)
+bool V8ECClassInfo::TryFind(BisConversionRule& rule, bool& hasSecondary, DgnDbR db, Utf8StringCR v8ClassName)
     {
-    if (!v8ClassName.IsValid())
-        {
-        BeAssert(false);
-        return false;
-        }
-
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT V8ClassId, BisConversionRule, HasSecondary FROM " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " WHERE V8SchemaName=? AND V8ClassName=?");
+
+    auto stat = db.GetCachedStatement(stmt, "SELECT StrData FROM " BEDB_TABLE_Property " WHERE Name=? AND NameSpace='dgn_V8'");
     if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement.");
-        return false;
-        }
+    {
+    BeAssert(false && "Could not retrieve cached statement.");
+    return false;
+    }
 
-    stmt->BindText(1, v8ClassName.GetSchemaName(), Statement::MakeCopy::No);
-    stmt->BindText(2, v8ClassName.GetClassName(), Statement::MakeCopy::No);
-
+    stmt->BindText(1, v8ClassName, BeSQLite::Statement::MakeCopy::No);
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        BeAssert(!stmt->IsColumnNull(0) && !stmt->IsColumnNull(1));
-
-        v8ClassId = stmt->GetValueId<BECN::ECClassId>(0);
-        rule = (BisConversionRule) stmt->GetValueInt(1);
-        hasSecondary = stmt->GetValueBoolean(2);
-
+        Json::Value  jsonObj;
+        if (!Json::Reader::Parse(stmt->GetValueText(0), jsonObj))
+            return false;
+        rule = (BisConversionRule) jsonObj["Rule"].asInt();
+        hasSecondary = jsonObj["HasSecondary"].asBool();
         return true;
         }
-
     return false;
     }
 
@@ -623,14 +614,14 @@ bool V8ECClassInfo::TryFind(BECN::ECClassId& v8ClassId, BisConversionRule& rule,
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR v8Eh, ECClassName const& v8ClassName, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, BisConversionTargetModelInfoCR targetModelInfo)
+BentleyStatus V8ECClassInfo::InsertOrUpdate(DynamicSchemaGenerator& converter, DgnV8EhCR v8Eh, ECClassName const& v8ClassName, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, BisConversionTargetModelInfoCR targetModelInfo)
     {
     const V8ElementType v8ElementType = V8ElementTypeHelper::GetType(v8Eh);
 
     BisConversionRule existingRule;
     BECN::ECClassId existingClassId;
-    bool hasSecondary;
-    const bool classInfoFound = TryFind(existingClassId, existingRule, converter.GetDgnDb(), v8ClassName, hasSecondary);
+    bool hasSecondary = false;
+    const bool classInfoFound = TryFind(existingRule, hasSecondary, converter.GetDgnDb(), v8ClassName.GetClassFullName());
 
     BisConversionRule rule = BisConversionRule::ToDefaultBisBaseClass;
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8Eh.GetHandler());
@@ -652,14 +643,14 @@ BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR
             {
             Utf8PrintfString info("Multiple rules for ECClass '%s'. Using %s and creating a secondary Aspect class.", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(rule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
-            Update(converter, existingClassId, rule, true);
+            Save(converter.GetDgnDb(), v8ClassName, rule, true);
             return BSISUCCESS;
             }
         else if (rule == BisConversionRule::ToAspectOnly)
             {
             Utf8PrintfString info("Multiple rules for ECClass '%s'. Using %s and creating a secondary Aspect class.", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(existingRule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
-            Update(converter, existingClassId, existingRule, true);
+            Save(converter.GetDgnDb(), v8ClassName, existingRule, true);
             return BSISUCCESS;
             }
         else if (existingRule != BisConversionRule::ToDefaultBisBaseClass)
@@ -668,41 +659,25 @@ BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
             return BSISUCCESS;
             }
-        return Update(converter, existingClassId, rule, hasSecondary);
+        return Save(converter.GetDgnDb(), v8ClassName, rule, hasSecondary);
         }
 
-    return DoInsert(converter.GetDgnDb(), v8ClassName, rule);
+    return Save(converter.GetDgnDb(), v8ClassName, rule, hasSecondary);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus V8ECClassInfo::InsertOrUpdate(DynamicSchemaGenerator& converter, ECClassName const& v8ClassName, BisConversionRule rule)
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus V8ECClassInfo::InsertOrUpdate(DynamicSchemaGenerator& gen, ECClassName const& className, BisConversionRule rule, bool hasSecondary)
     {
-    BisConversionRule existingRule;
-    BECN::ECClassId existingClassId;
-    bool hasSecondary;
-    if (TryFind(existingClassId, existingRule, converter.GetDgnDb(), v8ClassName, hasSecondary))
-        return Update(converter, existingClassId, rule, hasSecondary);
-
-    return Insert(converter, v8ClassName, rule);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     07/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, ECClassName const& v8ClassName, BisConversionRule rule)
-    {
-    return DoInsert(converter.GetDgnDb(), v8ClassName, rule);
+    return Save(gen.GetDgnDb(), className, rule, hasSecondary);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus V8ECClassInfo::DoInsert(DgnDbR db, ECClassName const& v8ClassName, BisConversionRule rule)
+BentleyStatus V8ECClassInfo::Save(DgnDbR db, ECClassName const& v8ClassName, BisConversionRule rule, bool hasSecondary)
     {
     if (!v8ClassName.IsValid())
         {
@@ -710,64 +685,24 @@ BentleyStatus V8ECClassInfo::DoInsert(DgnDbR db, ECClassName const& v8ClassName,
         return BSIERROR;
         }
 
-    CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " (V8SchemaName,V8ClassName,BisConversionRule) VALUES (?,?,?)");
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement.");
-        return BSIERROR;
-        }
+    Json::Value jsonObj;
+    jsonObj["Rule"] = (int) rule;
+    jsonObj["HasSecondary"] = hasSecondary;
+    return BeSQLite::DbResult::BE_SQLITE_OK == db.SavePropertyString(DgnV8Property::V8ECClass(v8ClassName.GetClassFullName().c_str()), jsonObj.ToString()) ? BSISUCCESS : BSIERROR;
 
-    stmt->BindText(1, v8ClassName.GetSchemaName(), Statement::MakeCopy::No);
-    stmt->BindText(2, v8ClassName.GetClassName(), Statement::MakeCopy::No);
-    stmt->BindInt(3, (int) rule);
+    //CachedStatementPtr stmt = nullptr;
+    //auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " (V8SchemaName,V8ClassName,BisConversionRule) VALUES (?,?,?)");
+    //if (stat != BE_SQLITE_OK)
+    //    {
+    //    BeAssert(false && "Could not retrieve cached statement.");
+    //    return BSIERROR;
+    //    }
 
-    return BE_SQLITE_DONE == stmt->Step() ? BSISUCCESS : BSIERROR;
-    }
+    //stmt->BindText(1, v8ClassName.GetSchemaName(), Statement::MakeCopy::No);
+    //stmt->BindText(2, v8ClassName.GetClassName(), Statement::MakeCopy::No);
+    //stmt->BindInt(3, (int) rule);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus V8ECClassInfo::Update(DynamicSchemaGenerator& converter, BECN::ECClassId v8ClassId, BisConversionRule rule, bool hasSecondary)
-    {
-    if (!v8ClassId.IsValid())
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-
-    CachedStatementPtr stmt = nullptr;
-    DbResult stat = converter.GetDgnDb().GetCachedStatement(stmt, "UPDATE " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " SET BisConversionRule=?, HasSecondary=? WHERE V8ClassId=?");
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement.");
-        return BSIERROR;
-        }
-
-    stmt->BindInt(1, (int) rule);
-    stmt->BindBoolean(2, hasSecondary);
-    stmt->BindId(3, v8ClassId);
-    return BE_SQLITE_DONE == stmt->Step() ? BSISUCCESS : BSIERROR;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus V8ECClassInfo::CreateTable(DgnDbR db)
-    {
-    if (db.TableExists(SYNCINFO_ATTACH(V8ECCLASS_TABLE)))
-        return BSISUCCESS;
-
-    if (BE_SQLITE_OK != db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " (V8ClassId INTEGER PRIMARY KEY, V8SchemaName TEXT NOT NULL, V8ClassName TEXT NOT NULL, BisConversionRule INTEGER NOT NULL, HasSecondary BOOL DEFAULT 0)"))
-        return BSIERROR;
-
-    if (BE_SQLITE_OK != db.ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(V8ECCLASS_TABLE) "_uix ON " V8ECCLASS_TABLE " (V8SchemaName, V8ClassName)"))
-        return BSIERROR;
-
-    return BSISUCCESS;
+    //return BE_SQLITE_DONE == stmt->Step() ? BSISUCCESS : BSIERROR;
     }
 
 //****************************************************************************************
@@ -2368,7 +2303,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3))
             v8ClassName = ECClassName("EWR", v8ClassName.GetClassName());
 
-        if (BentleyApi::SUCCESS != V8ECClassInfo::Insert(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModelInfo))
+        if (BentleyApi::SUCCESS != V8ECClassInfo::InsertOrUpdate(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModelInfo))
             return BSIERROR;
         if (!isPrimary && (BentleyApi::SUCCESS != V8ElementSecondaryECClassInfo::Insert(GetDgnDb(), v8Element, v8ClassName)))
             return BSIERROR;
@@ -3654,7 +3589,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {
         //schemas not captured in sync info are system schemas which we don't consider during conversion
-        if (!BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(Utf8String(entry.RelationshipSchemaName.c_str())))
+        if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(Utf8String(entry.RelationshipSchemaName.c_str())))
             continue;
 
         V8ECInstanceKey v8SourceKey(ECClassName(Utf8String(entry.SourceSchemaName.c_str()).c_str(), Utf8String(entry.SourceClassName.c_str()).c_str()),
@@ -3666,8 +3601,11 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
 
         BisConversionRule rule;
         bool hasSecondary;
-        if (!V8ECClassInfo::TryFind(rule, dgndb, v8RelName, hasSecondary))
+        if (!V8ECClassInfo::TryFind(rule, hasSecondary, dgndb, v8RelName.GetClassFullName()))
             {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Failed to find rule for %s.", v8RelName.GetClassFullName().c_str());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             BeAssert(false && "V8ECClassInfo should exist for relationship classes.");
             continue;
             }
