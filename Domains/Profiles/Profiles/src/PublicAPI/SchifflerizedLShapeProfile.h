@@ -50,10 +50,16 @@ public:
         //! @endGroup
         };
 
-protected:
-    explicit SchifflerizedLShapeProfile (CreateParams const& params); //!< @private
+private:
+    explicit SchifflerizedLShapeProfile (CreateParams const& params);
 
-    virtual bool _Validate() const override; //!< @private
+    virtual bool _Validate() const override;
+    IGeometryPtr _CreateShapeGeometry() const override;
+
+    bool ValidateThickness() const;
+    bool ValidateLegBendOffset() const;
+    bool ValidateFilletRadius() const;
+    bool ValidateEdgeRadius() const;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (SchifflerizedLShapeProfile)
@@ -65,13 +71,6 @@ public:
     //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static SchifflerizedLShapeProfilePtr Create (CreateParams const& params) { return new SchifflerizedLShapeProfile (params); }
 
-private:
-    bool ValidateThickness() const;
-    bool ValidateLegBendOffset() const;
-    bool ValidateFilletRadius() const;
-    bool ValidateEdgeRadius() const;
-
-public:
     //! @beginGroup
     PROFILES_EXPORT double GetLegLength() const; //!< Get the value of @ref CreateParams.legLength "LegLength"
     PROFILES_EXPORT void SetLegLength (double value); //!< Set the value for @ref CreateParams.legLength "LegLength"

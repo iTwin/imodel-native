@@ -13,14 +13,23 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * Creates geometry of an arc between the two lines with the given radius. First line
 * should end where the second line starts. First lines end point is adjusted to the
-* start point of the arc, second lines start point is adjusted to the end of the arc. If
-* arc radius is zero returns null, without adjusting start and end points for lines
+* start point of the arc, second lines start point is adjusted to the end of the arc.
+* If one of resulting line lengths is zero, its set to nullptr.
+* If arc radius is zero returns null, without adjusting start and end points for lines.
+* @param firstLinePtr[in/out] first line segment.
+* @param secondLinePtr[in/out] second line segment.
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ICurvePrimitivePtr createArcBetweenLines (ICurvePrimitivePtr& firstLinePtr, ICurvePrimitivePtr& secondLinePtr, double arcRadius)
     {
     if (BeNumerical::IsEqualToZero (arcRadius))
         return nullptr;
+
+    if (firstLinePtr.IsNull() || secondLinePtr.IsNull())
+        {
+        BeAssert (false);
+        return nullptr;
+        }
 
     DSegment3d const* pFirstLineSegment = firstLinePtr->GetLineCP();
     DSegment3d const* pSecondLineSegment = secondLinePtr->GetLineCP();
@@ -49,16 +58,21 @@ static ICurvePrimitivePtr createArcBetweenLines (ICurvePrimitivePtr& firstLinePt
     DVec3d bisector = DVec3d::FromSumOf (v1, v2);
     bisector.Normalize();
 
-    double const bisectorAngle = v1.SignedAngleTo (v2, bisector) / 2.0;
-    double const bisectorLength = arcRadius / std::sin (bisectorAngle);
-    double const lineOffset = bisectorLength * std::cos (bisectorAngle);
+    Angle const bisectorAngle = Angle::FromRadians (v1.SignedAngleTo (v2, bisector) / 2.0);
+    double const bisectorLength = arcRadius / bisectorAngle.Sin();
+    double const lineOffset = bisectorLength * bisectorAngle.Cos();
 
     DPoint3d const ellipseCenter = firstLineEndPoint + bisector * bisectorLength;
     DPoint3d const ellipseStart = firstLineEndPoint + v1 * lineOffset;
     DPoint3d const ellipseEnd = firstLineEndPoint + v2 * lineOffset;
 
     BeAssert (firstLinePtr->TrySetEnd (ellipseStart) && "Should be able to set end points of a single segment line");
+    if (BeNumerical::IsEqualToZero (pFirstLineSegment->Length()))
+        firstLinePtr = nullptr;
+
     BeAssert (secondLinePtr->TrySetStart (ellipseEnd) && "Should be able to set end points of a single segment line");
+    if (BeNumerical::IsEqualToZero (pSecondLineSegment->Length()))
+        secondLinePtr = nullptr;
 
     return ICurvePrimitive::CreateArc (DEllipse3d::FromArcCenterStartEnd (ellipseCenter, ellipseStart, ellipseEnd));
     }
@@ -341,6 +355,64 @@ IGeometryPtr ProfilesGeometry::CreateLShape (LShapeProfile const& profile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateSchifflerizedLShape (SchifflerizedLShapeProfile const& profile)
+    {
+    double const legLength = profile.GetLegLength();
+    double const thickness = profile.GetThickness();
+    double const halfWidth = legLength / 2.0;
+    double const halfDepth = legLength / 2.0;
+    double const legBendOffset = profile.GetLegBendOffset();
+    double const innerEdgeOffset = thickness / Angle::FromDegrees (15.0).Cos() * Angle::FromDegrees (15.0).Sin();
+    double const bentLegOuterLength = legLength - legBendOffset;
+    double const bentLegInnerLength = bentLegOuterLength - innerEdgeOffset;
+    Angle const horizontalLegBendAngle = Angle::FromDegrees (15.0);
+    Angle const verticalLegBendAngle = Angle::FromDegrees (75.0);
+
+    DPoint3d const outerLegJoint { -halfWidth, -halfDepth };
+    DPoint3d const innerLegJoint { -halfWidth + thickness, -halfDepth + thickness };
+    DPoint3d const verticalLegOuterBendPoint { -halfWidth, -halfDepth + legBendOffset };
+    DPoint3d const verticalLegInnerBendPoint { -halfWidth + thickness, -halfDepth + legBendOffset };
+    DPoint3d const verticalLegOuterEdge = verticalLegOuterBendPoint - DPoint3d { -bentLegOuterLength * verticalLegBendAngle.Cos(), -bentLegOuterLength * verticalLegBendAngle.Sin() };
+    DPoint3d const verticalLegInnerEdge = verticalLegInnerBendPoint - DPoint3d { -bentLegInnerLength * verticalLegBendAngle.Cos(), -bentLegInnerLength * verticalLegBendAngle.Sin() };
+    DPoint3d const horizontalLegOuterBendPoint { -halfWidth + legBendOffset, -halfDepth };
+    DPoint3d const horizontalLegInnerBendPoint { -halfWidth + legBendOffset, -halfDepth + thickness };
+    DPoint3d const horizontalLegOuterEdge = horizontalLegOuterBendPoint - DPoint3d { -bentLegOuterLength * horizontalLegBendAngle.Cos(), -bentLegOuterLength * horizontalLegBendAngle.Sin() };
+    DPoint3d const horizontalLegInnerEdge = horizontalLegInnerBendPoint - DPoint3d { -bentLegInnerLength * horizontalLegBendAngle.Cos(), -bentLegInnerLength * horizontalLegBendAngle.Sin() };
+
+    ICurvePrimitivePtr verticalLegOuterUnbentLine = ICurvePrimitive::CreateLine (outerLegJoint, verticalLegOuterBendPoint);
+    ICurvePrimitivePtr verticalLegOuterBentLine = ICurvePrimitive::CreateLine (verticalLegOuterBendPoint, verticalLegOuterEdge);
+    ICurvePrimitivePtr verticalLegEdgeLine = ICurvePrimitive::CreateLine (verticalLegOuterEdge, verticalLegInnerEdge);
+    ICurvePrimitivePtr verticalLegInnerBentLine = ICurvePrimitive::CreateLine (verticalLegInnerEdge, verticalLegInnerBendPoint);
+    ICurvePrimitivePtr verticalLegInnerUnbentLine = ICurvePrimitive::CreateLine (verticalLegInnerBendPoint, innerLegJoint);
+    ICurvePrimitivePtr horizontalLegInnerUnbentLine = ICurvePrimitive::CreateLine (innerLegJoint, horizontalLegInnerBendPoint);
+    ICurvePrimitivePtr horizontalLegInnerBentLine = ICurvePrimitive::CreateLine (horizontalLegInnerBendPoint, horizontalLegInnerEdge);
+    ICurvePrimitivePtr horizontalLegEdgeLine = ICurvePrimitive::CreateLine (horizontalLegInnerEdge, horizontalLegOuterEdge);
+    ICurvePrimitivePtr horizontalLegOuterBentLine = ICurvePrimitive::CreateLine (horizontalLegOuterEdge, horizontalLegOuterBendPoint);
+    ICurvePrimitivePtr horizontalLegOuterUnbentLine = ICurvePrimitive::CreateLine (horizontalLegOuterBendPoint, outerLegJoint);
+
+    ICurvePrimitivePtr verticalLegEdgeArc = createArcBetweenLines (verticalLegEdgeLine, verticalLegInnerBentLine, profile.GetEdgeRadius());
+    ICurvePrimitivePtr innerLegJointArc = createArcBetweenLines (verticalLegInnerUnbentLine, horizontalLegInnerUnbentLine, profile.GetFilletRadius());
+    ICurvePrimitivePtr horizontalLegEdgeArc = createArcBetweenLines (horizontalLegInnerBentLine, horizontalLegEdgeLine, profile.GetEdgeRadius());
+
+    bvector<ICurvePrimitivePtr> orderedCurves =
+        {
+        verticalLegOuterUnbentLine, verticalLegOuterBentLine, verticalLegEdgeLine, verticalLegEdgeArc, verticalLegInnerBentLine,
+        verticalLegInnerUnbentLine, innerLegJointArc, horizontalLegInnerUnbentLine, horizontalLegInnerBentLine, horizontalLegEdgeArc,
+        horizontalLegEdgeLine, horizontalLegOuterBentLine, horizontalLegOuterUnbentLine
+        };
+    IGeometryPtr geometryPtr = createGeometryFromPrimitiveArray (orderedCurves);
+
+    DMatrix4d rotation = DMatrix4d::From (RotMatrix::FromVectorAndRotationAngle (DVec3d::From (0.0, 0.0, 1.0), -PI / 4.0));
+    Transform transform;
+    transform.InitFrom (rotation);
+    geometryPtr->TryTransformInPlace (transform);
+
+    return geometryPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGeometryPtr ProfilesGeometry::CreateTShape (TShapeProfile const& profile)
@@ -395,9 +467,6 @@ IGeometryPtr ProfilesGeometry::CreateTShape (TShapeProfile const& profile)
 
     bottomRightWebEdgeArc = createArcBetweenLines (innerRightWebLine, bottomLine, webEdgeRadius);
     bottomLeftWebEdgeArc = createArcBetweenLines (bottomLine, innerLeftWebLine, webEdgeRadius);
-
-    if (BeNumerical::IsEqualToZero (bottomLine->GetLineCP()->Length()))
-        bottomLine = nullptr;
 
     topRightInnerCornerArc = createArcBetweenLines (topRightFlangeSlopeLine, innerRightWebLine, filletRadius);
     topLeftInnerCornerArc = createArcBetweenLines (innerLeftWebLine, topLeftFlangeSlopeLine, filletRadius);
@@ -492,13 +561,6 @@ IGeometryPtr ProfilesGeometry::CreateTTShape (TTShapeProfile const& profile)
     leftWebLeftEdgeArc = createArcBetweenLines (leftWebBottomLine, leftWebLeftSlopeLine, webEdgeRadius);
     leftWebLeftFilletArc = createArcBetweenLines (leftWebLeftSlopeLine, flangeLeftSlopeLine, filletRadius);
     flangeLeftEdgeArc = createArcBetweenLines (flangeLeftSlopeLine, flangeLeftLine, flangeEdgeRadius);
-
-    if (BeNumerical::IsEqualToZero (rightWebBottomLine->GetLineCP()->Length()))
-        rightWebBottomLine = nullptr;
-    if (BeNumerical::IsEqualToZero (leftWebBottomLine->GetLineCP()->Length()))
-        leftWebBottomLine = nullptr;
-    if (BeNumerical::IsEqualToZero (webSpacingLine->GetLineCP()->Length()))
-        webSpacingLine = nullptr;
 
     bvector<ICurvePrimitivePtr> orderedCurves =
         {
@@ -706,9 +768,9 @@ static IGeometryPtr createCenterLineCShape(double halfWidth, double halfDepth, d
 
     bvector<ICurvePrimitivePtr> curves =
         {
-        topOuterGirthLine,  topRightOuterArc, topOuterLine,
-        topLeftOuterArc,  leftOuterLine, bottomLeftOuterArc,
-        bottomOuterLine,  bottomGirthOuterArc, bottomGirthOuterLine,
+        topOuterGirthLine, topRightOuterArc, topOuterLine,
+        topLeftOuterArc, leftOuterLine, bottomLeftOuterArc,
+        bottomOuterLine, bottomGirthOuterArc, bottomGirthOuterLine,
         bottomGirthConnectLine, bottomGirthInnerLine, bottomGirthInnerArc,
         bottomInnerLine, bottomLeftInnerArc, leftInnerLine,
         topLeftInnerArc, topInnerLine, topGirthInnerArc,
@@ -748,8 +810,8 @@ static IGeometryPtr createCenterLineCShape (double halfWidth, double halfDepth, 
     bvector<ICurvePrimitivePtr> curves =
         {
         topOuterLine, leftOuterTopArc, leftOuterLine, leftOuterBottomArc, bottomOuterLine,
-        bottomLinesConnector,  bottomInnerLine, leftInnerBottomArc, leftInnerLine, leftInnerTopArc,
-        topInnerLine,  topLinesConnector,
+        bottomLinesConnector, bottomInnerLine, leftInnerBottomArc, leftInnerLine, leftInnerTopArc,
+        topInnerLine, topLinesConnector,
         };
 
     return createGeometryFromPrimitiveArray(curves);
@@ -1051,15 +1113,6 @@ static void appendRectangleToCurveVector (CurveVectorPtr& curveVector, double wi
     ICurvePrimitivePtr bottomRightArc = createArcBetweenLines (rightLine, bottomLine, roundingRadius);
     ICurvePrimitivePtr bottomLeftArc = createArcBetweenLines (bottomLine, leftLine, roundingRadius);
     ICurvePrimitivePtr topLeftArc = createArcBetweenLines (leftLine, topLine, roundingRadius);
-
-    if (BeNumerical::IsLessOrEqualToZero (topLine->GetLineCP()->Length()))
-        topLine = nullptr;
-    if (BeNumerical::IsLessOrEqualToZero (rightLine->GetLineCP()->Length()))
-        rightLine = nullptr;
-    if (BeNumerical::IsLessOrEqualToZero (bottomLine->GetLineCP()->Length()))
-        bottomLine = nullptr;
-    if (BeNumerical::IsLessOrEqualToZero (leftLine->GetLineCP()->Length()))
-        leftLine = nullptr;
 
     ICurvePrimitivePtr orderedCurves[] = { topLine, topRightArc, rightLine, bottomRightArc, bottomLine, bottomLeftArc, leftLine, topLeftArc };
     for (auto const& curvePtr : orderedCurves)

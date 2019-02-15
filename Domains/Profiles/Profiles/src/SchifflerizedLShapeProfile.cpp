@@ -6,8 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesPch.h"
-#include <Profiles\SchifflerizedLShapeProfile.h>
 #include <ProfilesInternal\ProfilesProperty.h>
+#include <ProfilesInternal\ProfilesGeometry.h>
+#include <Profiles\SchifflerizedLShapeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -67,6 +68,14 @@ bool SchifflerizedLShapeProfile::_Validate() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr SchifflerizedLShapeProfile::_CreateShapeGeometry() const
+    {
+    return ProfilesGeometry::CreateSchifflerizedLShape (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SchifflerizedLShapeProfile::ValidateThickness() const
@@ -84,7 +93,11 @@ bool SchifflerizedLShapeProfile::ValidateThickness() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SchifflerizedLShapeProfile::ValidateLegBendOffset() const
     {
-    return true;
+    double const legBendOffset = GetLegBendOffset();
+    bool const isPossitive = ProfilesProperty::IsGreaterThanZero (legBendOffset);
+    bool const isGreaterThanThickness = ProfilesProperty::IsGreaterOrEqual (legBendOffset, GetThickness());
+
+    return isPossitive && isGreaterThanThickness;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,7 +105,16 @@ bool SchifflerizedLShapeProfile::ValidateLegBendOffset() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SchifflerizedLShapeProfile::ValidateFilletRadius() const
     {
-    return true;
+    double const filletRadius = GetFilletRadius();
+    if (ProfilesProperty::IsEqualToZero (filletRadius))
+        return true;
+
+    double const availableFilletSpace = GetLegBendOffset() - GetThickness();
+
+    bool const isPossitive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
+    bool const fitsInAvailableSpace = ProfilesProperty::IsLessOrEqual (filletRadius, availableFilletSpace);
+
+    return isPossitive && fitsInAvailableSpace;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,7 +122,17 @@ bool SchifflerizedLShapeProfile::ValidateFilletRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SchifflerizedLShapeProfile::ValidateEdgeRadius() const
     {
-    return true;
+    double const edgeRadius = GetEdgeRadius();
+    if (ProfilesProperty::IsEqualToZero (edgeRadius))
+        return true;
+
+    double const bentLegLength = GetLegLength() - GetLegBendOffset();
+
+    bool const isPossitive = ProfilesProperty::IsGreaterOrEqualToZero (edgeRadius);
+    bool const fitsInLegLength = ProfilesProperty::IsLessOrEqual (edgeRadius, bentLegLength);
+    bool const fitsInThickness = ProfilesProperty::IsLessOrEqual (edgeRadius, GetThickness());
+
+    return isPossitive && fitsInLegLength && fitsInThickness;
     }
 
 /*---------------------------------------------------------------------------------**//**
