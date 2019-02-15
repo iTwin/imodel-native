@@ -213,7 +213,8 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
 
     if (!rlinkPost.IsValid())
         {
-        _OnFatalError();
+        Utf8PrintfString message("Failed to %s RepositoryLink %s", rlink->GetElementId().IsValid() ? "update" : "insert", codevalue.c_str());
+        OnFatalError(IssueCategory::Briefcase(), Issue::Error(), message.c_str());
         return RepositoryLinkId();
         }
 
