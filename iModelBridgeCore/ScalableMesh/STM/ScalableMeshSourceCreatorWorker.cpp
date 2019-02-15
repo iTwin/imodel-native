@@ -25,6 +25,18 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+//This value returns an estimation of the number of points in a node after filtering. 
+inline uint64_t GetNbObjectsEstimate(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> pNode, size_t nbResolutions)
+    {
+    return (double)pNode->GetCount() / (double)std::pow(4, nbResolutions - pNode->GetLevel() - 1);
+    }
+
+inline uint64_t GetNbObjectsEstimate(HFCPtr<SMMeshIndexNode<DPoint3d, Extent3dType>> pNode, size_t nbResolutions)
+    {
+    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> pPointIndexNode((SMPointIndexNode<DPoint3d, Extent3dType>*)pNode.GetPtr());
+    return GetNbObjectsEstimate(pPointIndexNode, nbResolutions);
+    }
+    
 StatusInt IScalableMeshSourceCreatorWorker::CreateMeshTasks() const
     {    
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateMeshTasks();
@@ -231,16 +243,17 @@ uint32_t IScalableMeshSourceCreatorWorker::Impl::GetNbNodesPerTask(size_t nbNode
 
 struct NodesToGenerate
     {   
+    bool              m_requireMeshingFiltering = true;
     bool              m_isNodeIdsSorted = false;
     bool              m_isNodeStitchIdsSorted = false;
     //uint64_t          m_levelId;
-    bvector<uint64_t> m_nodeIds; //Node ID to mesh and filter.
-    bvector<uint64_t> m_nodeStitchIds; //Node ID to stitch. Should be a subset of m_nodeId
+    bvector<uint64_t> m_nodeIds; //Node IDs to mesh and filter or just stitching depending on m_requireMeshingFiltering's value.
+    bvector<uint64_t> m_nodeStitchIds; //Node ID to stitch. Should be a subset of m_nodeId when m_requireMeshingFiltering is true.
 
-    bool FindNode(uint64_t nodeId)
+    bool FindNode(uint64_t nodeId) 
         {
         if (m_isNodeIdsSorted == false)
-            {
+            { 
             std::sort(m_nodeIds.begin(), m_nodeIds.end());
             m_isNodeIdsSorted = true;
             }  
@@ -248,7 +261,7 @@ struct NodesToGenerate
         return std::binary_search(m_nodeIds.begin(), m_nodeIds.end(), nodeId);
         }
     
-    bool FindStitchNode(uint64_t stitchNodeId)
+    bool FindStitchNode(uint64_t stitchNodeId) 
         {
         if (m_isNodeStitchIdsSorted == false)
             {
@@ -259,7 +272,18 @@ struct NodesToGenerate
         return std::binary_search(m_nodeStitchIds.begin(), m_nodeStitchIds.end(), stitchNodeId);
         }
 
-    bool IsStitchable(IScalableMeshNodePtr node)
+    void GetUnstitchedNodes(bvector<uint64_t>& nodeIds) 
+        {
+        for (auto& nodeId : m_nodeIds)
+            {
+            if (!FindStitchNode(nodeId))
+                {
+                nodeIds.push_back(nodeId);
+                }
+            }
+        }    
+
+    bool IsStitchable(IScalableMeshNodePtr& node) 
         {
         bool areAllNeighborFound = true; 
 
@@ -308,6 +332,46 @@ struct NodesToGenerate
         }
     };
 
+inline HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> GetMeshNode(uint64_t nodeId, bool needNeighbors, HFCPtr<MeshIndexType>& pDataIndex)
+    {    
+    HPMBlockID blockID(nodeId);
+    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
+
+    if (!meshNode->IsLoaded())
+        {
+        meshNode->NeedToLoadNeighbors(needNeighbors);
+        meshNode->Load();
+        return meshNode;
+        }
+    
+    if (!meshNode->IsNeighborsLoaded() && needNeighbors)
+        {
+        meshNode->Unload();
+        meshNode->NeedToLoadNeighbors(needNeighbors);
+        meshNode->Load();
+        }
+    
+    return meshNode;
+    }
+
+void GetNeighborNodeIds(bvector<uint64_t>& neighborNodeIds, uint64_t nodeId, HFCPtr<MeshIndexType>& pDataIndex)
+    {        
+    IScalableMeshNodePtr smNodePtr;  
+    HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> nodePtr(GetMeshNode(nodeId, true, pDataIndex).GetPtr());
+    smNodePtr = new ScalableMeshNode<DPoint3d>(nodePtr);
+                    
+    for (char relativePosX = -1; relativePosX <= 1; relativePosX++)
+        for (char relativePosY = -1; relativePosY <= 1; relativePosY++)
+            for (char relativePosZ = -1; relativePosZ <= 1; relativePosZ++)
+                {
+                bvector<IScalableMeshNodePtr> neighborNodes = smNodePtr->GetNeighborAt(relativePosX, relativePosY, relativePosZ);
+
+                for (auto& neighborNode : neighborNodes)
+                    {
+                    neighborNodeIds.push_back(neighborNode->GetNodeId());                    
+                    }
+                }    
+    }
 
 uint64_t GetTotalCountWithSubResolutions(const HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>& currentNode, uint64_t nbResolutions, uint64_t deepestRes)
     {
@@ -329,6 +393,14 @@ typedef RefCountedPtr<GenerationTask> GenerationTaskPtr;
 
 struct GenerationTask : public RefCountedBase
     {
+
+    GenerationTask(int nbResolutions)
+        {             
+        m_orderId = 0;
+        m_totalNbPoints = 0;        
+        m_resolutionToGenerate.resize(nbResolutions);        
+        }
+
     GenerationTask(bvector<GenerationTaskPtr>& currentTasks, int nbResolutions, IScalableMeshNodePtr& rootNode)
         {             
         m_orderId = 0;
@@ -407,14 +479,15 @@ struct GenerationTask : public RefCountedBase
         AccumulateNodes(m_groupRootNodes);            
         }
         */
-    
+
+   
     void AddNode(IScalableMeshNodePtr& currentNode)
         {                
         ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
 
         m_resolutionToGenerate[currentNode->GetLevel()].m_nodeIds.push_back(currentNode->GetNodeId());
-        
-        m_totalNbPoints += smNode->GetNodePtr()->GetCount() / std::pow(4, m_resolutionToGenerate.size() - currentNode->GetLevel() - 1);            
+
+        m_totalNbPoints += GetNbObjectsEstimate(smNode->GetNodePtr(), m_resolutionToGenerate.size());
         }            
 
     void MergeGenerationTask(const GenerationTaskPtr& newGenerationTask, HFCPtr<MeshIndexType> pDataIndex)
@@ -439,7 +512,7 @@ struct GenerationTask : public RefCountedBase
     };
 
 
-#define MAX_COMMON_ANCESTOR 1
+#define MAX_COMMON_ANCESTOR 3
 
 size_t ComputeCommonAncestorLevel(const GenerationTaskPtr& generationTask1, const GenerationTaskPtr& generationTask2)
     {        
@@ -599,9 +672,119 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
         }
         */
 
-
-
     return;
+    }
+
+
+void CreateGroupStitchingTasks(bvector<GenerationTaskPtr>& toExecuteTasks, uint32_t maxGroupSize, HFCPtr<MeshIndexType>& pDataIndex)
+    {
+    assert(toExecuteTasks.size() > 0);
+    bvector<GenerationTaskPtr> remainingGroupTasks;
+    remainingGroupTasks.insert(remainingGroupTasks.end(), toExecuteTasks.begin(), toExecuteTasks.end());
+
+    bvector<GenerationTaskPtr> groupStitchingTasks;
+
+    GenerationTaskPtr currentTask(new GenerationTask((uint32_t)toExecuteTasks[0]->m_resolutionToGenerate.size()));
+
+    uint32_t maxOrderId = 0;
+
+    for (auto& remaningGroupTask : remainingGroupTasks)
+        {
+        maxOrderId = max(maxOrderId, remaningGroupTask->m_orderId);        
+        }
+
+    maxOrderId += 1;
+    
+    auto remainingTaskIter = remainingGroupTasks.begin();
+
+    while (remainingTaskIter != remainingGroupTasks.end())
+        {
+        maxOrderId = max(maxOrderId, (*remainingTaskIter)->m_orderId);
+
+        for (size_t resInd = 0; resInd < (*remainingTaskIter)->m_resolutionToGenerate.size(); resInd++)        
+            {            
+            bvector<uint64_t> toStitchNodeIds;
+            (*remainingTaskIter)->m_resolutionToGenerate[resInd].GetUnstitchedNodes(toStitchNodeIds);
+
+            bset<uint64_t> allNeighborNodeIds;            
+
+            uint64_t totalPointsCount = 0;
+
+            for (auto& nodeId : toStitchNodeIds)
+                {
+                bvector<uint64_t> neighborNodeIds;
+                GetNeighborNodeIds(neighborNodeIds, nodeId, pDataIndex);
+                allNeighborNodeIds.insert(neighborNodeIds.begin(), neighborNodeIds.end());
+
+                HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> stitchNode = GetMeshNode(nodeId, false, pDataIndex);
+                totalPointsCount += GetNbObjectsEstimate(stitchNode, (*remainingTaskIter)->m_resolutionToGenerate.size());                
+                }
+
+            //Don't count neighbor nodes already required by previous node to stitch.
+            bvector<uint64_t> foundNodeIds; 
+            bvector<uint64_t> notFoundNodeIds; 
+
+            for (auto& neighborNodeId : allNeighborNodeIds)
+                {
+                if (currentTask->m_resolutionToGenerate[resInd].FindNode(neighborNodeId))
+                    {
+                    foundNodeIds.push_back(neighborNodeId);
+                    }
+                else
+                    {
+                    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> neighborNode = GetMeshNode(neighborNodeId, false, pDataIndex);                
+                    totalPointsCount += GetNbObjectsEstimate(neighborNode, (*remainingTaskIter)->m_resolutionToGenerate.size());                
+                    notFoundNodeIds.push_back(neighborNodeId);
+                    }
+                }
+            
+            if (currentTask->m_totalNbPoints + totalPointsCount > maxGroupSize)
+                {
+                toExecuteTasks.push_back(currentTask);
+                currentTask = new GenerationTask((uint32_t)toExecuteTasks[0]->m_resolutionToGenerate.size());                
+
+                for (auto& foundNodeId : foundNodeIds)
+                    {
+                    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> neighborNode = GetMeshNode(foundNodeId, false, pDataIndex);                
+                    totalPointsCount += GetNbObjectsEstimate(neighborNode, (*remainingTaskIter)->m_resolutionToGenerate.size());                                    
+                    }
+
+                notFoundNodeIds.insert(notFoundNodeIds.end(), foundNodeIds.begin(), foundNodeIds.end());
+                }
+
+            currentTask->m_resolutionToGenerate[resInd].m_requireMeshingFiltering = false;            
+            currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.end(), toStitchNodeIds.begin(), toStitchNodeIds.end());
+            currentTask->m_resolutionToGenerate[resInd].m_nodeIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeIds.end(), toStitchNodeIds.begin(), toStitchNodeIds.end());                        
+            currentTask->m_resolutionToGenerate[resInd].m_nodeIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeIds.end(), notFoundNodeIds.begin(), notFoundNodeIds.end());                        
+            currentTask->m_totalNbPoints += totalPointsCount;
+            currentTask->m_orderId = maxOrderId;
+            }    
+
+        remainingTaskIter++;
+        }
+
+    assert(currentTask->m_totalNbPoints > 0);
+    toExecuteTasks.push_back(currentTask);
+    
+    /*
+
+    size_t minAncestorLevel; 
+    size_t commonAncestorLevel = ComputeCommonAncestorLevel(*taskToExecute, newGenerationTask);
+
+    bool              m_requireMeshingFiltering = true;
+    bool              m_isNodeIdsSorted = false;
+    bool              m_isNodeStitchIdsSorted = false;
+    //uint64_t          m_levelId;
+    bvector<uint64_t> m_nodeIds; //Node IDs to mesh and filter or just stitching depending on m_requireMeshingFiltering's value.
+    bvector<uint64_t> m_nodeStitchIds; //Node ID to stitch. Should be a subset of m_nodeId when m_requireMeshingFiltering is true.    
+    */
+
+    /*
+     bvector<IScalableMeshNodePtr> m_groupRootNodes; 
+    bvector<NodesToGenerate>      m_resolutionToGenerate;
+    uint32_t                      m_orderId;
+    uint64_t                      m_totalNbPoints;
+    */
     }
 
 
@@ -631,7 +814,7 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<Generati
             totalNbNodesToStitch += resToGen.m_nodeStitchIds.size();
             }
         }
-
+        
     double independentStitchingPercentage = (double)totalNbNodesToStitch / totalNbNodes;
 
     wchar_t text_buffer[1000] = { 0 }; //temporary buffer
@@ -639,6 +822,9 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<Generati
     OutputDebugStringW(text_buffer); // print
 
 #endif
+
+    CreateGroupStitchingTasks(toExecuteTasks, maxGroupSize, pDataIndex);
+    maxGroupSize = maxGroupSize;
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
