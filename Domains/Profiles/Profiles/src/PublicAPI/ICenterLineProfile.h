@@ -22,16 +22,17 @@ protected:
     virtual ~ICenterLineProfile() = default;
 
 public:
+    //! @beginGroup
+    //! Get the IGeometry defining the center line of Profile.
+    //! @details Geometry is created during a db Insert or Update operation.
     PROFILES_EXPORT IGeometryPtr GetCenterLine() const;
 
-    // TODO Karolis: Add docs
-    PROFILES_EXPORT double GetWallThickness() const;
-    // TODO Karolis: Add docs
-    PROFILES_EXPORT void SetWallThickness (double value);
+    PROFILES_EXPORT double GetWallThickness() const; //!< Get the value of "WallThickness" property.
+    PROFILES_EXPORT void SetWallThickness (double value); //!< Set the value for "WallThickness" property
+    //! @endGroup
 
 protected:
-    //! @private
-    PROFILES_EXPORT void SetCenterLine (IGeometry const& val);
+    PROFILES_EXPORT void SetCenterLine (IGeometry const& val); //! @private
 
     }; // ICenterLineProfile
 
