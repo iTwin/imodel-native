@@ -394,7 +394,6 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
 // Rule: Class may not subclass the following Model types:
 //  - bis:SpatialLocationModel
 //  - bis:PhysicalModel
-//  - bis:GroupInformationModel
 //  - bis:InformationRecordModel
 //  - bis:DocumentListModel
 //  - bis:LinkModel
@@ -406,7 +405,6 @@ ECObjectsStatus CheckForModelBaseClasses(ECClassCR baseClass, ECClassCR entity)
     static bvector<Utf8String> notSubClassable = {
         "SpatialLocationModel",
         "PhysicalModel",
-        "GroupInformationModel",
         "InformationRecordModel",
         "DocumentListModel",
         "LinkModel",

@@ -2353,31 +2353,6 @@ TEST_F(SchemaValidatorTests, NoClassShouldSubclassSpatialLocationModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Joseph.Urbano                        08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaValidatorTests, NoClassShouldSubclassGroupInformationModel)
-    {
-    // Test that an entity class may not subclass bis:GroupInformationModel
-    ECSchemaPtr bisSchema;
-    ECEntityClassP bisEntity, bisGroupInformationModel;
-    ECSchemaPtr schema;
-    ECEntityClassP entity0, entity1;
-
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisGroupInformationModel, "GroupInformationModel"));
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "GoodEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
-
-    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class does not subclass bis:GroupInformationModel, so validation should succeed";
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisGroupInformationModel));
-    ASSERT_FALSE(validator.Validate(*schema)) << "Entity class subclasses bis:GroupInformationModel, so validation should fail";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Joseph.Urbano                        08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, NoClassShouldSubclassInformationRecordModel)
     {
     // Test that an entity class may not subclass bis:InformationRecordModel
