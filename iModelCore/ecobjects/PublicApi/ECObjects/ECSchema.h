@@ -1824,6 +1824,9 @@ public:
 
     ECClassType GetClassType() const {return _GetClassType();} //!< The type of derived ECClass this is
 
+    //! Is the class a Mixin.
+    //! Returns true if this class is an Entity class and has the CoreCustomAttributes:IsMixin custom attribute applied.
+    bool IsMixin() const {return IsEntityClass() && IsDefinedLocal("CoreCustomAttributes", "IsMixin");}
     bool IsEntityClass() const {return ECClassType::Entity == GetClassType();} //!< Is the class an entity class
     bool IsStructClass() const {return ECClassType::Struct == GetClassType();} //!< Is the class a struct class
     bool IsCustomAttributeClass() const {return ECClassType::CustomAttribute == GetClassType();} //!< Is the class a custom attribute class
@@ -2053,9 +2056,6 @@ public:
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
     ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
-    
-    //! Returns true if this class has the CoreCustomAttributes:IsMixin custom attribute applied.
-    bool IsMixin() const {return IsDefinedLocal("CoreCustomAttributes", "IsMixin");}
 
     //! Returns true if the provided mixin class can be applied to this class. 
     //! @remarks The mixin class can be applied to this class if this class is derived from the AppliesToEntityClass property defined in IsMixin custom attribute.

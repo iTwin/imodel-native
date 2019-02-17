@@ -2,18 +2,23 @@
 |
 |     $Source: src/ECSchemaValidator.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+
+#define EC_Class    "Class"
+#define EC_Source   "Source"
+#define EC_Target   "Target"
+#define EC_KOQ      "KindOfQuantity"
+
+#define BISCORE_SCHEMA_NAME                 "BisCore"
 #define BISCORE_CLASS_IParentElement        "BisCore:IParentElement"
 #define BISCORE_CLASS_ISubModeledElement    "BisCore:ISubModeledElement"
 #define ElementMultiAspect                  "ElementMultiAspect"
 #define ElementUniqueAspect                 "ElementUniqueAspect"
 #define ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
 #define ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
-#define LinkedElementId                     "LinkedElementId"
-#define MarkupSchema                        "Markup"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -66,7 +71,7 @@ void ECSchemaValidator::RunSchemaValidators(ECSchemaCR schema)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSchemaValidator::RunClassValidators(ECClassCR ecClass)
     {
-    LOG.debugv(FMTSTR_VALIDATION_START, "Class", ecClass.GetName().c_str());
+    LOG.debugv(FMTSTR_VALIDATION_START, EC_Class, ecClass.GetName().c_str());
     bool classValidated = true;
     for (auto const validator : m_classValidators)
         {
@@ -74,10 +79,10 @@ void ECSchemaValidator::RunClassValidators(ECClassCR ecClass)
             classValidated = false;
         }
     if (classValidated)
-        LOG.debugv(FMTSTR_VALIDATION_SUCCESS, "Class", ecClass.GetName().c_str());
+        LOG.debugv(FMTSTR_VALIDATION_SUCCESS, EC_Class, ecClass.GetName().c_str());
     else
         {
-        LOG.errorv(FMTSTR_VALIDATION_FAILURE, "Class", ecClass.GetName().c_str());
+        LOG.errorv(FMTSTR_VALIDATION_FAILURE, EC_Class, ecClass.GetName().c_str());
         m_validated = false;
         }
     }
@@ -87,7 +92,7 @@ void ECSchemaValidator::RunClassValidators(ECClassCR ecClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSchemaValidator::RunKindOfQuantityValidators(KindOfQuantityCR koq)
     {
-    LOG.debugv(FMTSTR_VALIDATION_START, "KindOfQuantity", koq.GetName().c_str());
+    LOG.debugv(FMTSTR_VALIDATION_START, EC_KOQ, koq.GetName().c_str());
     bool koqValidated = true;
     for (auto const validator : m_koqValidators)
         {
@@ -95,10 +100,10 @@ void ECSchemaValidator::RunKindOfQuantityValidators(KindOfQuantityCR koq)
             koqValidated = false;
         }
     if (koqValidated)
-        LOG.debugv(FMTSTR_VALIDATION_SUCCESS, "KindOfQuantity", koq.GetName().c_str());
+        LOG.debugv(FMTSTR_VALIDATION_SUCCESS, EC_KOQ, koq.GetName().c_str());
     else
         {
-        LOG.errorv(FMTSTR_VALIDATION_FAILURE, "KindOfQuantity", koq.GetName().c_str());
+        LOG.errorv(FMTSTR_VALIDATION_FAILURE, EC_KOQ, koq.GetName().c_str());
         m_validated = false;
         }
     }
@@ -137,30 +142,6 @@ bool ECSchemaValidator::Validate(ECSchemaCR schema)
     else
         LOG.errorv(FMTSTR_VALIDATION_FAILURE, "Schema", schema.GetName().c_str());
     return m_validated;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman              01/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaValidator::AddSchemaValidator(Validator<ECSchemaCR> validator)
-    {
-    m_schemaValidators.push_back(validator);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman              01/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaValidator::AddClassValidator(Validator<ECClassCR> validator)
-    {
-    m_classValidators.push_back(validator);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman              01/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaValidator::AddKindOfQuantityValidator(Validator<KindOfQuantityCR> validator)
-    {
-    m_koqValidators.push_back(validator);
     }
 
 //---------------------------------------------------------------------------------------
@@ -236,45 +217,46 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
                 }
             }
 
+        // RULE: A schema may not reference any ECXml less than EC3.1.
         if (refSchema->OriginalECXmlVersionLessThan(ECVersion::V3_1))
             {
-            LOG.errorv("Failed to validate '%s' since it references '%s' using EC%d.%d. A schema may not reference any EC2 or EC3.0 schemas.",
+            LOG.errorv("Failed to validate '%s' since it references '%s' using EC%" PRIu32 ".%" PRIu32 ". A schema may not reference any EC2 or EC3.0 schemas.",
                        schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str(), refSchema->GetOriginalECXmlVersionMajor(), refSchema->GetOriginalECXmlVersionMinor());
              status = ECObjectsStatus::Error;
             }
         }
 
     // RULE: Entity classes within the same schema should not have the same display label
-
     // skip this rule for dynamic schemas; show it only as a warning
     bool isDynamicSchema = schema.IsDynamicSchema();
 
     bvector<ECClassCP> entityClasses;
     for (ECClassCP ecClass : schema.GetClasses())
         {
-        if (ecClass->IsEntityClass() && !ecClass->GetEntityClassCP()->IsMixin())
+        if (!ecClass->IsEntityClass() || ecClass->IsMixin())
+            continue;
+
+        for (ECClassCP prevClass : entityClasses)
             {
-            for (ECClassCP prevClass : entityClasses)
+            if (ecClass->GetDisplayLabel().EqualsIAscii(prevClass->GetDisplayLabel()))
                 {
-                if (ecClass->GetDisplayLabel().EqualsIAscii(prevClass->GetDisplayLabel()))
+                Utf8String errMsg;
+                errMsg.Sprintf("Failed to validate '%s'. Entity classes '%s' and '%s' have the same display label '%s'",
+                    schema.GetFullSchemaName().c_str(), prevClass->GetFullName(), ecClass->GetFullName(), ecClass->GetDisplayLabel().c_str());
+
+                // make this a warning for dynamic schemas
+                if (isDynamicSchema)
                     {
-                    Utf8String errMsg;
-                    errMsg.Sprintf("Failed to validate '%s'. Entity classes '%s' and '%s' have the same display label '%s'",
-                        schema.GetFullSchemaName().c_str(), prevClass->GetFullName(), ecClass->GetFullName(), ecClass->GetDisplayLabel().c_str());
-
-                    // make this a warning for dynamic schemas
-                    if (isDynamicSchema)
-                        {
-                        LOG.warning(errMsg.c_str());
-                        continue;
-                        }
-
-                    LOG.error(errMsg.c_str());
-                    status = ECObjectsStatus::Error;
+                    LOG.warning(errMsg.c_str());
+                    continue;
                     }
+
+                LOG.error(errMsg.c_str());
+                status = ECObjectsStatus::Error;
                 }
-            entityClasses.push_back(ecClass);
             }
+
+        entityClasses.push_back(ecClass);
         }
 
     return status;
@@ -288,30 +270,35 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
-    // RULE: All classes should have a description
-    if (ecClass.GetDescription().empty())
-        {
+    // RULE: All classes should have a description (warn)
+    if (ecClass.GetInvariantDescription().empty())
         LOG.warningv("Class '%s' has no description. Please add a description.", ecClass.GetFullName());
-        }
 
-    bool IsModel = (!ecClass.GetSchema().GetName().EqualsI("BisCore")) && ecClass.Is("BisCore", "Model");
+    bool isModel = (!ecClass.GetSchema().GetName().EqualsI(BISCORE_SCHEMA_NAME)) && ecClass.Is(BISCORE_SCHEMA_NAME, "Model");
 
+    // RULE: Properties should have a description (warn)
     // RULE: Properties should not be of type long.
-    // RULE: All properties should have a description (warn)
     // RULE: All extended types of properties should be on the valid list
     // RULE: All Model subclasses outside of BisCore should not add properties
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
+        if (prop->GetInvariantDescription().empty())
+            LOG.warningv("Property '%s.%s' has no description. Please add a description.", ecClass.GetFullName(), prop->GetName().c_str());
+
         if (prop->GetTypeName().Equals("long") && !prop->GetIsNavigation())
             {
             LOG.errorv("Warning treated as error. Property '%s.%s' is of type 'long' and long properties are not allowed. Use int, double or if this represents a FK use a navigiation property",
                 ecClass.GetFullName(), prop->GetName().c_str());
             status = ECObjectsStatus::Error;
             }
-        if (prop->GetDescription().empty())
+
+        if (isModel && nullptr == prop->GetBaseProperty())
             {
-            LOG.warningv("Property '%s.%s' has no description. Please add a description.", ecClass.GetFullName(), prop->GetName().c_str());
+            status = ECObjectsStatus::Error;
+            LOG.errorv("Class '%s' adds property '%s.%s' despite being a subclass of 'BisCore:Model' defined outside 'BisCore'. Model subclasses should not add new properties.",
+                       ecClass.GetFullName(), ecClass.GetFullName(), prop->GetName().c_str());
             }
+
         if (prop->HasExtendedType())
             {
             static auto const IsValidExtendedType = [] (Utf8StringCR eType) -> bool
@@ -347,62 +334,56 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
                     status = ECObjectsStatus::Error;
                 }
             }
-        if (IsModel && nullptr == prop->GetBaseProperty())
-            {
-            status = ECObjectsStatus::Error;
-            LOG.errorv("Class '%s' adds property '%s.%s' despite being a subclass of 'BisCore:Model' defined outside 'BisCore'. Model subclasses should not add new properties.",
-                       ecClass.GetFullName(), ecClass.GetFullName(), prop->GetName().c_str());
-            }
         }
 
-    // RULE: No properties can have the same display label and category
-
-    // skip this rule for dynamic schemas; only show as a warning
+    // RULE: No properties can have the same display label and category, including properties that are not within a category.
+    // For dynamic schemas; only show as a warning
     bool isDynamicSchema = ecClass.GetSchema().IsDynamicSchema();
 
     bvector<ECPropertyP> propertiesList;
     for (ECPropertyP prop : ecClass.GetProperties(true))
         {
-        Utf8StringCR displayLabel = prop->GetDisplayLabel();
+        Utf8StringCR displayLabel = prop->GetInvariantDisplayLabel();
         PropertyCategoryCP category = prop->GetCategory();
 
         for (ECPropertyP prevProp : propertiesList)
             {
-            if (prevProp->GetDisplayLabel().EqualsIAscii(displayLabel))
+            if (!prevProp->GetInvariantDisplayLabel().EqualsIAscii(displayLabel))
+                continue;
+
+            PropertyCategoryCP prevCategory = prevProp->GetCategory();
+            if (prevCategory == nullptr && category == nullptr) // neither have defined category
                 {
-                PropertyCategoryCP prevCategory = prevProp->GetCategory();
-                if (prevCategory == nullptr && category == nullptr) // neither have defined category
+                Utf8String errMsg;
+                errMsg.Sprintf("Class '%s' has properties '%s' and '%s' with the same display label '%s'",
+                    ecClass.GetFullName(), prevProp->GetName().c_str(), prop->GetName().c_str(), displayLabel.c_str());
+
+                if (!isDynamicSchema)
                     {
-                    Utf8String errMsg;
-                    errMsg.Sprintf("Class '%s' has properties '%s' and '%s' with the same display label '%s'",
-                        ecClass.GetFullName(), prevProp->GetName().c_str(), prop->GetName().c_str(), displayLabel.c_str());
-
-                    if (!isDynamicSchema)
-                        {
-                        LOG.error(errMsg.c_str());
-                        status = ECObjectsStatus::Error;
-                        }
-                    else
-                        LOG.warning(errMsg.c_str());
+                    LOG.error(errMsg.c_str());
+                    status = ECObjectsStatus::Error;
                     }
-
-                if (prevCategory == nullptr || category == nullptr)
-                    continue;
-                if (prevCategory->GetFullName().EqualsIAscii(category->GetFullName()))
-                    {
-                    Utf8String errMsg;
-                    errMsg.Sprintf("Class '%s' has properties '%s' and '%s' with the same display label '%s' and category '%s'",
-                               ecClass.GetFullName(), prop->GetName().c_str(), prevProp->GetName().c_str(), displayLabel.c_str(), category->GetFullName().c_str());
-
-                    if (!isDynamicSchema)
-                        {
-                        LOG.error(errMsg.c_str());
-                        status = ECObjectsStatus::Error;
-                        }
-                    else
-                        LOG.warning(errMsg.c_str());
-                    }
+                else
+                    LOG.warning(errMsg.c_str());
                 }
+
+            if (prevCategory == nullptr || category == nullptr)
+                continue;
+
+            if (!prevCategory->GetFullName().EqualsIAscii(category->GetFullName()))
+                continue;
+
+            Utf8String errMsg;
+            errMsg.Sprintf("Class '%s' has properties '%s' and '%s' with the same display label '%s' and category '%s'",
+                        ecClass.GetFullName(), prop->GetName().c_str(), prevProp->GetName().c_str(), displayLabel.c_str(), category->GetFullName().c_str());
+
+            if (!isDynamicSchema)
+                {
+                LOG.error(errMsg.c_str());
+                status = ECObjectsStatus::Error;
+                }
+            else
+                LOG.warning(errMsg.c_str());
             }
         propertiesList.push_back(prop);
         }
@@ -410,54 +391,56 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     return status;
     }
 
+// Rule: Class may not subclass the following Model types:
+//  - bis:SpatialLocationModel
+//  - bis:PhysicalModel
+//  - bis:GroupInformationModel
+//  - bis:InformationRecordModel
+//  - bis:DocumentListModel
+//  - bis:LinkModel
+//  - bis:DefinitionModel
+//      - Except for DictionaryModel and RepositoryModel
+
 ECObjectsStatus CheckForModelBaseClasses(ECClassCR baseClass, ECClassCR entity)
     {
-    // Class may not subclass bis:SpatialLocationModel
-    if (baseClass.Is("BisCore", "SpatialLocationModel"))
+    static bvector<Utf8String> notSubClassable = {
+        "SpatialLocationModel",
+        "PhysicalModel",
+        "GroupInformationModel",
+        "InformationRecordModel",
+        "DocumentListModel",
+        "LinkModel",
+    };
+
+    if (0 == baseClass.GetSchema().GetName().CompareTo(BISCORE_SCHEMA_NAME))
         {
-        LOG.errorv("Entity class '%s' may not subclass bis:SpatialLocationModel.", entity.GetFullName());
-        return ECObjectsStatus::Error;
-        }
-    // Class may not subclass bis:PhysicalModel
-    if (baseClass.Is("BisCore", "PhysicalModel"))
-        {
-        LOG.errorv("Entity class '%s' may not subclass bis:PhysicalModel.", entity.GetFullName());
-        return ECObjectsStatus::Error;
-        }
-    // Class may not subclass bis:GroupInformationModel
-    if (baseClass.Is("BisCore", "GroupInformationModel"))
-        {
-        LOG.errorv("Entity class '%s' may not subclass bis:GroupInformationModel.", entity.GetFullName());
-        return ECObjectsStatus::Error;
-        }
-    // Class may not subclass bis:InformationRecordModel
-    if (baseClass.Is("BisCore", "InformationRecordModel"))
-        {
-        LOG.errorv("Entity class '%s' may not subclass bis:InformationRecordModel.", entity.GetFullName());
-        return ECObjectsStatus::Error;
-        }
-    // Class may not subclass bis:DocumentListModel
-    if (baseClass.Is("BisCore", "DocumentListModel"))
-        {
-        LOG.errorv("Entity class '%s' may not subclass bis:DocumentListModel.", entity.GetFullName());
-        return ECObjectsStatus::Error;
-        }
-    // Class may not subclass bis:LinkModel
-    if (baseClass.Is("BisCore", "LinkModel"))
-        {
-        LOG.errorv("Entity class '%s' may not subclass bis:LinkModel.", entity.GetFullName());
-        return ECObjectsStatus::Error;
-        }
-    // Class may not subclass bis:DefinitionModel, except for DictionaryModel and RepositoryModel
-    if (baseClass.Is("BisCore", "DefinitionModel"))
-        {
-        if (!(strcmp(entity.GetFullName(), "BisCore:DictionaryModel") == 0) && !(strcmp(entity.GetFullName(), "BisCore:RepositoryModel") == 0))
+        for (Utf8String& modelName : notSubClassable)
             {
-            LOG.errorv("Entity class '%s' may not subclass bis:DefinitionModel.", entity.GetFullName());
+            if (0 != baseClass.GetName().CompareTo(modelName.c_str()))
+                continue;
+
+            LOG.errorv("Entity class '%s' may not subclass bis:%s.", entity.GetFullName(), modelName.c_str());
             return ECObjectsStatus::Error;
             }
+
+        // Class may not subclass bis:DefinitionModel except for bis:Dictionary or bis:RepositoryModel.
+        if (0 == baseClass.GetName().CompareTo("DefinitionModel"))
+            {
+            if (0 != strcmp(entity.GetFullName(), "BisCore:DictionaryModel") && 0 != strcmp(entity.GetFullName(), "BisCore:RepositoryModel"))
+                {
+                LOG.errorv("Entity class '%s' may not subclass bis:DefinitionModel.", entity.GetFullName());
+                return ECObjectsStatus::Error;
+                }
+            }
         }
-    
+
+    const ECBaseClassesList& baseClassList = baseClass.GetBaseClasses();
+    for (ECBaseClassesList::const_iterator iter = baseClassList.begin(); iter != baseClassList.end(); ++iter)
+        {
+        if (ECObjectsStatus::Success != CheckForModelBaseClasses(**iter, entity))
+            return ECObjectsStatus::Error;
+        }
+
     return ECObjectsStatus::Success;
     }
 
@@ -466,7 +449,7 @@ ECObjectsStatus CheckForModelBaseClasses(ECClassCR baseClass, ECClassCR entity)
 //+---------------+---------------+---------------+---------------+---------------+------
 static ECObjectsStatus CheckBisAspects(bool& entityDerivesFromSpecifiedClass, ECClassCR entity, Utf8CP derivedClassName, Utf8CP derivedRelationshipClassName)
     {
-    if (ECClassModifier::Abstract == entity.GetClassModifier() || entity.GetName().Equals(derivedClassName) || !entity.Is("BisCore", derivedClassName))
+    if (ECClassModifier::Abstract == entity.GetClassModifier() || entity.GetName().Equals(derivedClassName) || !entity.Is(BISCORE_SCHEMA_NAME, derivedClassName))
         return ECObjectsStatus::Success;
 
     bool foundValidRelationshipConstraint = false;
@@ -478,7 +461,7 @@ static ECObjectsStatus CheckBisAspects(bool& entityDerivesFromSpecifiedClass, EC
         if (nullptr == relClass)
             continue;
 
-        if (!relClass->GetName().Equals(derivedRelationshipClassName) && relClass->Is("BisCore", derivedRelationshipClassName) &&
+        if (!relClass->GetName().Equals(derivedRelationshipClassName) && relClass->Is(BISCORE_SCHEMA_NAME, derivedRelationshipClassName) &&
             (relClass->GetTarget().SupportsClass(entity)) && !relClass->GetTarget().GetConstraintClasses()[0]->GetName().Equals(derivedClassName))
             {
             foundValidRelationshipConstraint = true;
@@ -519,37 +502,8 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
     if (!entityDerivesFromSpecifiedClass && (ECObjectsStatus::Success != CheckBisAspects(entityDerivesFromSpecifiedClass, entity, ElementUniqueAspect, ElementOwnsUniqueAspect)))
         status = ECObjectsStatus::Error;
 
-    // RULE: An Entity Class may not implement both bis:IParentElement and bis:ISubModeledElement.
-    bool foundIParentElement = false;
-    bool foundISubModelElement = false;
-    for (ECClassCP baseClass : entity.GetBaseClasses())
-        {
-        if (strcmp(baseClass->GetFullName(), BISCORE_CLASS_IParentElement) == 0)
-            foundIParentElement = true;
-        if (strcmp(baseClass->GetFullName(), BISCORE_CLASS_ISubModeledElement) == 0)
-            foundISubModelElement = true;
-
-        if (ECObjectsStatus::Success != CheckForModelBaseClasses(*baseClass, entity))
-            status = ECObjectsStatus::Error;
-        }
-    if (foundIParentElement && foundISubModelElement)
-        {
-        LOG.errorv("Entity class implements both bis:IParentElement and bis:ISubModeledElement. Entity Classes may implement bis:IParentElement or bis:ISubModeledElement but not both.");
-        status = ECObjectsStatus::Error;
-        }
-
-    // RULE: Class may not subclass bis:PhysicalModel
-    for (ECClassCP baseClass : entity.GetBaseClasses())
-        {
-        if (baseClass->Is("BisCore", "PhysicalModel"))
-            {
-            LOG.errorv("Entity class '%s' may not subclass bis:PhysicalModel.", entity.GetFullName());
-            status = ECObjectsStatus::Error;
-            }
-        }
-
     // RULE: Root entity classes must derive from the bis hierarchy.
-    auto const isBisCoreClass = [](ECClassCP entity) -> bool {return entity->GetSchema().GetName().Equals("BisCore");};
+    auto const isBisCoreClass = [](ECClassCP entity) -> bool {return entity->GetSchema().GetName().Equals(BISCORE_SCHEMA_NAME);};
     std::function<bool(ECClassCP entity)> derivesFromBisHierarchy = [&derivesFromBisHierarchy, &isBisCoreClass](ECClassCP entity) -> bool
         {
         return isBisCoreClass(entity) ||
@@ -562,18 +516,6 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
         {
         LOG.errorv("Root entity class '%s' does not derive from bis hierarchy", entity.GetFullName());
         status = ECObjectsStatus::Error;
-        }
-        // RULE: entity class may only have one entity base class
-        int numBaseClasses = 0;
-        for (ECClassCP baseClass : entity.GetBaseClasses())
-            {
-            if (!baseClass->GetEntityClassCP()->IsMixin())
-                numBaseClasses++;
-            }
-        if (numBaseClasses > 1)
-            {
-            LOG.errorv("Entity class '%s' inherits from more than one entity class", entity.GetFullName());
-            status = ECObjectsStatus::Error;
         }
 
     for (ECPropertyP prop : entity.GetProperties(false))
@@ -606,7 +548,6 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
 
     // mixin property may not override an inherited property
     bvector<bpair<ECPropertyP, ECClassP>> seenProperties;
-    
     auto const isPropertyMatch = [](bpair<ECPropertyP, ECClassP> propPair, ECPropertyP prop) -> bool
         {
         return propPair.first->GetName().EqualsIAscii(prop->GetName());
@@ -620,13 +561,30 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
             isMatch);
         };
 
-    // iterate through all inherited properties and check for duplicates
+    bool foundIParentElement = false;
+    bool foundISubModelElement = false;
+    int numBaseClasses = 0;
     for (ECClassP baseClass : entity.GetBaseClasses())
         {
+        if (!baseClass->GetEntityClassCP()->IsMixin())
+            numBaseClasses++;
+
+        if (0 == BeStringUtilities::Stricmp(baseClass->GetFullName(), BISCORE_CLASS_IParentElement))
+            foundIParentElement = true;
+        if (0 == BeStringUtilities::Stricmp(baseClass->GetFullName(), BISCORE_CLASS_ISubModeledElement))
+            foundISubModelElement = true;
+
+        // RULE: Class may not subclass certain BisCore Models
+        if (ECObjectsStatus::Success != CheckForModelBaseClasses(*baseClass, entity))
+            status = ECObjectsStatus::Error;
+
+        // iterate through all inherited properties and check for duplicates
         for (ECPropertyP prop : baseClass->GetProperties(true))
             {
             bpair<ECPropertyP, ECClassP>* propertyClassPair = findProperty(prop);
-            if (seenProperties.end() != propertyClassPair) // already seen property
+            if (seenProperties.end() == propertyClassPair)
+                seenProperties.push_back(make_bpair<ECPropertyP, ECClassP>(prop, baseClass));
+            else
                 {
                 if (prop != propertyClassPair->first)
                     {
@@ -648,11 +606,20 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
                         }
                     }
                 }
-            else
-                {
-                seenProperties.push_back(make_bpair<ECPropertyP, ECClassP>(prop, baseClass));
-                }
             }
+        }
+
+    if (numBaseClasses > 1)
+        {
+        LOG.errorv("Entity class '%s' inherits from more than one entity class", entity.GetFullName());
+        status = ECObjectsStatus::Error;
+        }
+
+    // RULE: An Entity Class may not implement both bis:IParentElement and bis:ISubModeledElement.
+    if (foundIParentElement && foundISubModelElement)
+        {
+        LOG.errorv("Entity class implements both bis:IParentElement and bis:ISubModeledElement. Entity Classes may implement bis:IParentElement or bis:ISubModeledElement but not both.");
+        status = ECObjectsStatus::Error;
         }
 
     return status;
@@ -692,7 +659,7 @@ ECObjectsStatus ECSchemaValidator::StructValidator(ECClassCR structClass)
     // RULE: Struct classes must not have base classes.
     if (structClass.HasBaseClasses())
         {
-        LOG.errorv("Struct class has base classes, but structs should not have base classes");
+        LOG.errorv("Struct class has base classes, but structs should not have base classes.");
         return ECObjectsStatus::Error;
         }
     return ECObjectsStatus::Success;
@@ -710,7 +677,7 @@ ECObjectsStatus ECSchemaValidator::CustomAttributeClassValidator(ECClassCR caCla
     // RULE: Custom attribute classes must not have base classes.
     if (caClass.HasBaseClasses())
         {
-        LOG.errorv("Custom Attribute class has base classes, but a custom attribute class should not have base classes");
+        LOG.errorv("Custom Attribute class has base classes, but a custom attribute class should not have base classes.");
         return ECObjectsStatus::Error;
         }
     return ECObjectsStatus::Success;
@@ -735,13 +702,13 @@ static ECObjectsStatus CheckStrength(ECRelationshipClassCP relClass)
         // RULE: Relationship classes must not have a source constraint multiplicity upper bound greater than 1 if the strength is embedding and the direction is forward.
         if (ECRelatedInstanceDirection::Forward == relClass->GetStrengthDirection() && relClass->GetSource().GetMultiplicity().GetUpperLimit() > 1)
             {
-            LOG.errorv("Relationship class has an 'embedding' strength with a forward direction so the source constraint may not have a multiplicity upper bound greater than 1");
+            LOG.errorv("Relationship class has an 'embedding' strength with a forward direction so the source constraint may not have a multiplicity upper bound greater than 1.");
             returnStatus = ECObjectsStatus::Error;
             }
         // RULE: Relationship classes must not have a target constraint multiplicity upper bound greater than 1 if the strength is embedding and the direction is backward.
         else if (ECRelatedInstanceDirection::Backward == relClass->GetStrengthDirection() && relClass->GetTarget().GetMultiplicity().GetUpperLimit() > 1)
             {
-            LOG.errorv("Relationship class has an 'embedding' strength with a backward direction so the target constraint may not have a multiplicity upper bound greater than 1");
+            LOG.errorv("Relationship class has an 'embedding' strength with a backward direction so the target constraint may not have a multiplicity upper bound greater than 1.");
             returnStatus = ECObjectsStatus::Error;
             }
 
@@ -761,16 +728,14 @@ static ECObjectsStatus CheckStrength(ECRelationshipClassCP relClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 static ECObjectsStatus CheckLocalDefinitions(ECRelationshipConstraintCR constraint, Utf8String constraintType)
     {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-
-    if (constraint.IsAbstractConstraintDefined() && constraint.GetConstraintClasses().size() == 1)
+    if (constraint.IsAbstractConstraintDefined() && 1 == constraint.GetConstraintClasses().size())
         {
         LOG.errorv("Relationship class has an abstract constraint, '%s', and only one concrete constraint set in '%s'",
             constraint.GetAbstractConstraint()->GetFullName(), constraintType.c_str());
-        status = ECObjectsStatus::Error;
+        return ECObjectsStatus::Error;
         }
 
-    return status;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -778,16 +743,14 @@ static ECObjectsStatus CheckLocalDefinitions(ECRelationshipConstraintCR constrai
 //+---------------+---------------+---------------+---------------+---------------+------
 static ECObjectsStatus CheckEndpointForElementAspect(ECRelationshipConstraintCR endpoint, Utf8CP classname, Utf8CP constraintType)
     {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-
     ECClassCP abstractClass = endpoint.GetAbstractConstraint();
     if (nullptr != abstractClass && abstractClass->Is("BisCore", "ElementAspect"))
         {
-        status = ECObjectsStatus::Error;
         LOG.errorv("Relationship class '%s' has ElementAspect '%s' listed as a %s. ElementAspects should not be at the receiving end of relationships.",
                    classname, abstractClass->GetFullName(), constraintType);
+        return ECObjectsStatus::Error;
         }
-    return status;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -811,24 +774,24 @@ ECObjectsStatus ECSchemaValidator::RelationshipValidator(ECClassCR ecClass)
     ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
 
     // RULE: Relationship classes must not have an abstract constraint if there is only one concrete constraint set.
-    if (ECObjectsStatus::Success != CheckLocalDefinitions(targetConstraint, "Target"))
+    if (ECObjectsStatus::Success != CheckLocalDefinitions(targetConstraint, EC_Target))
         status = ECObjectsStatus::Error;
-    if (ECObjectsStatus::Success != CheckLocalDefinitions(sourceConstraint, "Source"))
+    if (ECObjectsStatus::Success != CheckLocalDefinitions(sourceConstraint, EC_Source))
         status = ECObjectsStatus::Error;
 
     // RULE: ElementAspects should not be on receiving end of a relationship
     //       if not derived from ElementOwns.
-    if (relClass->Is("BisCore", ElementOwnsUniqueAspect) || relClass->Is("BisCore", ElementOwnsMultiAspects))
+    if (relClass->Is(BISCORE_SCHEMA_NAME, ElementOwnsUniqueAspect) || relClass->Is(BISCORE_SCHEMA_NAME, ElementOwnsMultiAspects))
         return status;
 
     if (ECRelatedInstanceDirection::Backward == relClass->GetStrengthDirection())
         {
-        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(sourceConstraint, relClass->GetFullName(), "Source"))
+        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(sourceConstraint, relClass->GetFullName(), EC_Source))
             status = ECObjectsStatus::Error;
         }
     else
         {
-        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(targetConstraint, relClass->GetFullName(), "Target"))
+        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(targetConstraint, relClass->GetFullName(), EC_Target))
             status = ECObjectsStatus::Error;
         }
     
