@@ -307,19 +307,32 @@ TEST_F(GeometryTestCase, ProfilesGeometry)
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_MaxFillet", 3.5, 10, 1, 1, 1.0, 0.1));
     InsertProfileGeometry<ZShapeProfile> (ZShapeProfile::CreateParams (GetModel(), "ZShape_SlopeAndRoundings", 3.5, 10, 1, 1, 0.5, 0.5, Angle::FromRadians (PI / 18)));
 
-    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape not rounded, with girth", 3.5, 10.0, 1.0, 1.3, 0.0), true);
-    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape not rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.0));
-    
-    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape rounded, with girth", 5.0, 10.0, 1.0, 1.18, 0.17));
-    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.17));
-    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape not rounded, with long girth", 3.5, 10.0, 1.0, 3.5, 0.0));
-    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape rounded, with long girth", 3.5, 10.0, 1.0, 3.5, 0.17));
+    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape filletRadius 0, girth 0",
+                                                              6.0, 10.0, 1.0, 0.0, 0.0), true);
+    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape girth 0",
+                                                              6.0, 10.0, 1.0, 0.0, 0.25));
+    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape filletRadius 0",
+                                                              6.0, 10.0, 1.0, 2.0, 0.0));
+    InsertCenterlineProfileGeometry<CenterLineCShapeProfile> (CenterLineCShapeProfile::CreateParams (GetModel(), "CenterLineCShape",
+                                                              6.0, 10.0, 1.0, 2.0, 0.25));
 
-    InsertCenterlineProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams (GetModel(), "CenterLineLShape not rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.0), true);
-    InsertCenterlineProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape not rounded, with girth", 3.5, 10.0, 1.0, 2.0, 0.0));
-    InsertCenterlineProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with girth", 3.5, 10.0, 1.0, 2.0, 0.17));
-    InsertCenterlineProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, without girth", 3.5, 10.0, 1.0, 0.0, 0.17));
-    InsertCenterlineProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape rounded, with long girth", 3.5, 10.0, 1.0, 6.0, 0.17));
+    InsertCenterlineProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams (GetModel(), "CenterLineLShape filletRadius 0, girth 0",
+                                                              6.0, 10.0, 1.0, 0.0, 0.0), true);
+    InsertCenterlineProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams (GetModel(), "CenterLineLShape rounded, without girth",
+                                                              6.0, 10.0, 1.0, 0.0, 0.25));
+    InsertCenterlineProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape filletRadius 0",
+                                                              6.0, 10.0, 1.0, 2.0, 0.0));
+    InsertCenterlineProfileGeometry<CenterLineLShapeProfile> (CenterLineLShapeProfile::CreateParams(GetModel(), "CenterLineLShape",
+                                                              6.0, 10.0, 1.0, 2.0, 0.25));
+
+    InsertCenterlineProfileGeometry<CenterLineZShapeProfile> (CenterLineZShapeProfile::CreateParams (GetModel(), "CenterLineZShape filletRadius 0, girth 0",
+                                                              3.5, 10.0, 1.0, 0.0, 0.0), true);
+    InsertCenterlineProfileGeometry<CenterLineZShapeProfile> (CenterLineZShapeProfile::CreateParams (GetModel(), "CenterLineZShape girth 0",
+                                                              3.5, 10.0, 1.0, 0.25, 0.0));
+    InsertCenterlineProfileGeometry<CenterLineZShapeProfile> (CenterLineZShapeProfile::CreateParams (GetModel(), "CenterLineZShape filletRadius 0",
+                                                              3.5, 10.0, 1.0, 0.0, 2.0));
+    InsertCenterlineProfileGeometry<CenterLineZShapeProfile> (CenterLineZShapeProfile::CreateParams (GetModel(), "CenterLineZShape",
+                                                              3.5, 10.0, 1.0, 0.25, 2.0));
 
     InsertProfileGeometry<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Circle", 3.0), true);
     InsertProfileGeometry<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "HollowCircle", 3.0, 0.5));
@@ -335,8 +348,6 @@ TEST_F(GeometryTestCase, ProfilesGeometry)
     InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_OuterRadius", 4.0, 6.0, 0.5, 0.0, 0.5));
     InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_InnerRadius", 4.0, 6.0, 0.5, 0.5, 0.0));
     InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_bothRadiuses", 4.0, 6.0, 0.5, 0.5, 0.5));
-    InsertProfileGeometry<HollowRectangleProfile> (HollowRectangleProfile::CreateParams (GetModel(), "HollowRectangle_MaxOuterRadiusAgainstInnerRadius",
-                                                   6.0, 6.0, 0.25, 0.5, 0.25 * (2.0 + std::sqrt (2.0)) + 0.49));
 
     InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium", 4.0, 6.0, 4.0, 1.0), true);
     InsertProfileGeometry<TrapeziumProfile> (TrapeziumProfile::CreateParams (GetModel(), "Trapezium wider top", 6.0, 4.0, 4.0, 0.0));
