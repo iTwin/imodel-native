@@ -13,13 +13,16 @@
 #include <ScalableMeshPCH.h>
 
 #include <process.h>
-
+#include <Bentley\BeDirectoryIterator.h>
 #include <BeXml/BeXml.h>
 #include "ImagePPHeaders.h"
 #include "ScalableMeshSourceCreatorWorker.h"
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 
+
+
 #define TASK_PER_WORKER 3
+#define TASK_PRIORITY_FOLDER_NAME L"TaskPriority"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
@@ -860,15 +863,27 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         }         
 
     wchar_t stringBuffer[100000];
+    uint32_t maxPriority = 0;
     
     for (size_t ind = 0; ind < generationTasks.size(); ind++)    
-        {        
-        if (generationTasks[ind]->m_orderId > 0)
-            continue;
-
+        {                              
         BeFileName meshTaskFile(taskDirectory);
 
-        swprintf(stringBuffer, L"Generate%zi.xml", ind);
+        maxPriority = max(maxPriority, generationTasks[ind]->m_orderId);
+
+        if (generationTasks[ind]->m_orderId > 0)
+            {            
+            swprintf(stringBuffer, L"\\%s%i\\", TASK_PRIORITY_FOLDER_NAME, generationTasks[ind]->m_orderId);
+            meshTaskFile.AppendToPath(stringBuffer);            
+
+            if (!meshTaskFile.DoesPathExist())
+                {
+                BeFileNameStatus status = BeFileName::CreateNewDirectory(meshTaskFile.c_str());
+                assert(status == BeFileNameStatus::Success);                
+                }
+            }
+
+        swprintf(stringBuffer, L"Generate%zi.xml", ind);        
         meshTaskFile.AppendString(stringBuffer);
         BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
         
@@ -889,7 +904,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         bvector<uint64_t> m_nodeIds; //Node ID to mesh and filter.
     bvector<uint64_t> m_nodeStitchIds; //Node ID to stitch. Should be a subset of m_nodeId
     */
-
+                        
         for (int resInd = (int)generationTasks[ind]->m_resolutionToGenerate.size() - 1; resInd >= 0; resInd--)
             {            
             assert(generationTasks[ind]->m_resolutionToGenerate[resInd].m_nodeStitchIds.size() == 0 || generationTasks[ind]->m_resolutionToGenerate[resInd].m_nodeIds.size() != 0);
@@ -899,19 +914,22 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
                 BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("MeshTiles", nullptr, workerNode));
                 WString tileList; 
 
+
+                bool needMeshingFiltering = generationTasks[ind]->m_resolutionToGenerate[resInd].m_requireMeshingFiltering;
                 bool needFiltering = false;
 
-                if (resInd != (int)generationTasks[ind]->m_resolutionToGenerate.size() - 1)
-                    needFiltering = true;
+                if (resInd != (int)generationTasks[ind]->m_resolutionToGenerate.size() - 1 && needMeshingFiltering)
+                    needFiltering = true;                
 
                 tileNode->AddAttributeBooleanValue("needFiltering", needFiltering);
-
+                tileNode->AddAttributeBooleanValue("needMeshing", needMeshingFiltering);
+                
                 for (auto& nodeId : generationTasks[ind]->m_resolutionToGenerate[resInd].m_nodeIds)
                     {
                     WPrintfString tileId(L"%u,", nodeId);
-                    tileList.append(tileId);                    
+                    tileList.append(tileId);
                     }
-
+                
                 tileNode->AddAttributeStringValue("ids", tileList.c_str());
 
                 if (generationTasks[ind]->m_resolutionToGenerate[resInd].m_nodeStitchIds.size() > 0)
@@ -926,7 +944,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
                         }
 
                     tileNode->AddAttributeStringValue("stitchIds", tileList.c_str());
-                    }  
+                    }                  
                 }
 
 #if 0 
@@ -951,6 +969,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         BeXmlStatus status = xmlDomPtr->ToFile(meshTaskFile, toStrOption, BeXmlDom::FILE_ENCODING_Utf8);
         assert(status == BEXML_Success);
         }
+
+
+    CreateTaskPlanForTaskGrouping(maxPriority, jobName, smFileName);
+
 
 #if 0
     wchar_t stringBuffer[100000];
@@ -986,10 +1008,34 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         assert(status == BEXML_Success);
         }
 #endif
+    
 
     return SUCCESS;
     }
 
+
+void IScalableMeshSourceCreatorWorker::Impl::CreateTaskPlanForTaskGrouping(uint32_t maxPriority, const WString& jobName, const BeFileName& smFileName)
+    {    
+    BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
+    BeXmlNodeP taskPlanNode(xmlDomPtr->AddNewElement("taskPlan", nullptr, nullptr));    
+    taskPlanNode->AddAttributeStringValue("jobName", jobName.c_str());
+    taskPlanNode->AddAttributeStringValue("smName", smFileName.c_str());
+        
+    for (uint32_t currentPriority = 1; currentPriority <= maxPriority; currentPriority++)
+        {
+        BeXmlNodeP stitchTaskNode(xmlDomPtr->AddNewElement("copyNextPriorityTasks", nullptr, taskPlanNode));
+        stitchTaskNode->AddAttributeUInt32Value("priority", currentPriority);        
+        }
+
+    BeFileName taskPlanFileName;
+
+    GetTaskPlanFileName(taskPlanFileName);
+    
+    BeXmlDom::ToStringOption toStrOption = (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent);
+
+    BeXmlStatus status = xmlDomPtr->ToFile(taskPlanFileName, toStrOption, BeXmlDom::FILE_ENCODING_Utf8);
+    assert(status == BEXML_Success);    
+    }
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateMeshTasks()
     {
@@ -1090,7 +1136,36 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateStitchTasks(uint32_t res
     return SUCCESS;
     }
 
+StatusInt IScalableMeshSourceCreatorWorker::Impl::CopyNextPriorityTasks(uint32_t priority)
+    {            
+    BeFileName taskDirectory(m_scmFileName);
+    taskDirectory = taskDirectory.GetDirectoryName();
+        
+    BeFileName nextPriorityTaskDir(taskDirectory);
 
+    wchar_t stringBuffer[1000];
+    swprintf(stringBuffer, L"\\%s%i\\", TASK_PRIORITY_FOLDER_NAME, priority);
+    nextPriorityTaskDir.AppendToPath(stringBuffer);
+    assert(nextPriorityTaskDir.DoesPathExist());
+
+    BeDirectoryIterator dirIter(nextPriorityTaskDir);
+
+    BeFileName name;
+    bool isDir;    
+        
+    for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())
+        {   
+        BeFileName newFileName(taskDirectory);
+        newFileName.AppendToPath(name.GetFileNameAndExtension().c_str());
+        BeFileNameStatus status = BeFileName::BeMoveFile(name, newFileName);
+        assert(BeFileNameStatus::Success == status);
+        }    
+
+    BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(nextPriorityTaskDir.c_str());
+    assert(BeFileNameStatus::Success == status);
+
+    return SUCCESS;
+    }
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateFilterTasks(uint32_t resolutionInd)
     {
@@ -1161,13 +1236,16 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     bvector<RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>>> generatedPtsNeighbors;
 
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>>     nodesToMesh;
+    bvector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>>    childrenNodesForFiltering;
     bvector<RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>>> ptsNeighbors;
 
     SMMeshDataToLoad meshDataToLoad;
-
     meshDataToLoad.m_features = true;
     meshDataToLoad.m_graph = true;
-            
+
+    SMMeshDataToLoad meshDataToFiltering;
+    meshDataToFiltering.m_ptIndices = false;
+                    
     do
         {
         assert(pChildNode != nullptr);
@@ -1212,8 +1290,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
             }
 
         bool needFiltering; 
+        bool needMeshing; 
 
         xmlStatus = pChildNode->GetAttributeBooleanValue(needFiltering, "needFiltering");
+        assert(xmlStatus == BEXML_Success);
+
+        xmlStatus = pChildNode->GetAttributeBooleanValue(needMeshing, "needMeshing");
         assert(xmlStatus == BEXML_Success);
 
         //Load all the nodes created during the indexing step. 
@@ -1241,6 +1323,32 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         
             meshNode->Load();
             meshNode->LoadData(&meshDataToLoad);
+
+            //
+            if (needFiltering)
+                {
+                HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> childNode(meshNode->GetSubNodeNoSplit());
+
+                if (childNode != nullptr)
+                    {
+                    childNode->NeedToLoadNeighbors(false);
+                    childNode->Load();
+                    childrenNodesForFiltering.push_back(childNode);
+                    //childNode->LoadData(&meshDataToFiltering);
+                    }
+                else
+                    {
+                    vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(meshNode->GetSubNodes());
+                    for (auto& childNode : childrenNodes)
+                        {
+                        childNode->NeedToLoadNeighbors(false);
+                        childNode->Load();
+                        childNode->LoadData(&meshDataToFiltering);
+                        childrenNodesForFiltering.push_back(childNode);
+                        }
+                    }                
+                }
+
             ptsNeighbors.push_back(meshNode->GetPointsPtr());
                         
             nodesToMesh.push_back(meshNode);            
@@ -1293,17 +1401,19 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 }
             }
             
-
         //Mesh tiles
-        for (auto& node : nodesToMesh)
+        if (needMeshing)
             {
-            assert(!node->m_nodeHeader.m_arePoints3d);
-
-            bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(node);
-
-            if (isMeshed)
+            for (auto& node : nodesToMesh)
                 {
-                node->SetDirty(true);
+                assert(!node->m_nodeHeader.m_arePoints3d);
+
+                bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(node);
+
+                if (isMeshed)
+                    {
+                    node->SetDirty(true);
+                    }
                 }
             }
 
@@ -1341,7 +1451,15 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     //Flush all the data on disk    
     OpenSqlFiles(false, true);
 
-    generatedPtsNeighbors.clear();
+    generatedPtsNeighbors.clear();    
+
+    for (auto& node : childrenNodesForFiltering)
+        {
+        node->Discard();        
+        node->Unload();
+        }
+
+    childrenNodesForFiltering.clear();
 
     for (auto& node : generatedNodes)
         {
@@ -1352,6 +1470,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         }
 
     generatedNodes.clear();
+
+
+    
 
     pDataIndex->Store();            
 
@@ -1939,8 +2060,6 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTaskPlan()
     }
 
 
-
-
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
     {
     BeFileName taskPlanFileName;
@@ -1994,20 +2113,32 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
 
         return SUCCESS_TASK_PLAN_COMPLETE;
         }
-
-    uint32_t resInd;
-
-    BeXmlStatus xmlStatus = pTaskNode->GetAttributeUInt32Value(resInd, "res");
-    assert(xmlStatus == BEXML_Success);
     
-    if (Utf8String(pTaskNode->GetName()).CompareTo("stitch") == 0)
+    if (Utf8String(pTaskNode->GetName()).CompareTo("stitch") == 0 || Utf8String(pTaskNode->GetName()).CompareTo("filter") == 0)
         {
-        CreateStitchTasks(resInd);        
+        uint32_t resInd;
+
+        BeXmlStatus xmlStatus = pTaskNode->GetAttributeUInt32Value(resInd, "res");
+        assert(xmlStatus == BEXML_Success);
+
+        if (Utf8String(pTaskNode->GetName()).CompareTo("filter") == 0)
+            {
+            CreateFilterTasks(resInd);
+            }
+        else
+            {
+            CreateStitchTasks(resInd);
+            }    
         }
     else
-    if (Utf8String(pTaskNode->GetName()).CompareTo("filter") == 0)
+    if (Utf8String(pTaskNode->GetName()).CompareTo("copyNextPriorityTasks") == 0)
         {
-        CreateFilterTasks(resInd);
+        uint32_t priority;
+
+        BeXmlStatus xmlStatus = pTaskNode->GetAttributeUInt32Value(priority, "priority");
+        assert(xmlStatus == BEXML_Success);        
+
+        CopyNextPriorityTasks(priority);
         }
     else
         {
