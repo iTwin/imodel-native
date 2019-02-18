@@ -148,8 +148,8 @@ IGeometryPtr ProfilesGeometry::CreateCShape (CShapeProfile const& profile)
 
     ICurvePrimitivePtr topFlangeEdgeArc = createArcBetweenLines (topFlangeEdgeLine, topFlangeSlopeLine, flangeEdgeRadius);
     ICurvePrimitivePtr bottomFlangeEdgeArc = createArcBetweenLines (bottomFlangeSlopeLine, bottomFlangeEdgeLine, flangeEdgeRadius);
-    ICurvePrimitivePtr bottomInnerCornerArc = createArcBetweenLines (topFlangeSlopeLine, innerWebLine, filletRadius);
-    ICurvePrimitivePtr topInnerCornerArc = createArcBetweenLines (innerWebLine, bottomFlangeSlopeLine, filletRadius);
+    ICurvePrimitivePtr topInnerCornerArc = createArcBetweenLines (topFlangeSlopeLine, innerWebLine, filletRadius);
+    ICurvePrimitivePtr bottomInnerCornerArc = createArcBetweenLines (innerWebLine, bottomFlangeSlopeLine, filletRadius);
 
     bvector<ICurvePrimitivePtr> orderedCurves =
         {
