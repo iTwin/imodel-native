@@ -599,14 +599,7 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
 
     WString wktStr;
 
-    if (meshP->GetBaseGCS() != nullptr)
-        {
-#ifdef VANCOUVER_API
-        meshP->GetBaseGCS()->GetWellKnownText(wktStr, BaseGCS::wktFlavorAutodesk);
-#else
-        meshP->GetBaseGCS()->GetWellKnownText(wktStr, BaseGCS::wktFlavorAutodesk, false);
-#endif
-        }
+    mesh->GetDbFile()->GetWkt(wktStr);
 
 
 
