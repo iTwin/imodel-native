@@ -113,7 +113,7 @@
         <ECProperty propertyName="LegLength" typeName="double" description="Leg length. Both vertical and horizontal legs are defined wiht equal length." />
         <ECProperty propertyName="Thickness" typeName="double" description="Constant wall thickness of profile." />
         <!-- Optional properties -->
-        <ECProperty propertyName="LegBendOffset" typeName="double" description="Offset defining where legs are bent. Offset is measured from start of the angle where the legs join." />
+        <ECProperty propertyName="LegBendOffset" typeName="double" description="Offset defining where legs are bent. Offset is measured from start of the angle (leg joint) plus leg thickness i.e. if LegBendOffset is zero, legs will be bent at distance equal to Thickness from the leg joint." />
         <ECProperty propertyName="FilletRadius" typeName="double" description="Fillet radius between legs. 0 if sharp-edged, default 0 if not specified." />
         <ECProperty propertyName="EdgeRadius" typeName="double" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
     </ECEntityClass>
