@@ -94,10 +94,13 @@ bool SchifflerizedLShapeProfile::ValidateThickness() const
 bool SchifflerizedLShapeProfile::ValidateLegBendOffset() const
     {
     double const legBendOffset = GetLegBendOffset();
-    bool const isPossitive = ProfilesProperty::IsGreaterThanZero (legBendOffset);
-    bool const isGreaterThanThickness = ProfilesProperty::IsGreaterOrEqual (legBendOffset, GetThickness());
+    if (ProfilesProperty::IsEqualToZero (legBendOffset))
+        return true;
 
-    return isPossitive && isGreaterThanThickness;
+    bool const isPossitive = ProfilesProperty::IsGreaterThanZero (legBendOffset);
+    bool const isLessThanAvailableLegLength = ProfilesProperty::IsLess (legBendOffset, GetLegLength() - GetThickness());
+
+    return isPossitive && isLessThanAvailableLegLength;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -109,12 +112,10 @@ bool SchifflerizedLShapeProfile::ValidateFilletRadius() const
     if (ProfilesProperty::IsEqualToZero (filletRadius))
         return true;
 
-    double const availableFilletSpace = GetLegBendOffset() - GetThickness();
-
     bool const isPossitive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
-    bool const fitsInAvailableSpace = ProfilesProperty::IsLessOrEqual (filletRadius, availableFilletSpace);
+    bool const isLessThanLegBendOffset = ProfilesProperty::IsLessOrEqual (filletRadius, GetLegBendOffset());
 
-    return isPossitive && fitsInAvailableSpace;
+    return isPossitive && isLessThanLegBendOffset;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -126,7 +127,7 @@ bool SchifflerizedLShapeProfile::ValidateEdgeRadius() const
     if (ProfilesProperty::IsEqualToZero (edgeRadius))
         return true;
 
-    double const bentLegLength = GetLegLength() - GetLegBendOffset();
+    double const bentLegLength = GetLegLength() - GetThickness() - GetLegBendOffset();
 
     bool const isPossitive = ProfilesProperty::IsGreaterOrEqualToZero (edgeRadius);
     bool const fitsInLegLength = ProfilesProperty::IsLessOrEqual (edgeRadius, bentLegLength);
@@ -148,7 +149,7 @@ double SchifflerizedLShapeProfile::GetLegLength() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchifflerizedLShapeProfile::SetLegLength (double value)
     {
-    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_LegLength, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_LegLength, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -164,7 +165,7 @@ double SchifflerizedLShapeProfile::GetThickness() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchifflerizedLShapeProfile::SetThickness (double value)
     {
-    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_Thickness, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_Thickness, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -180,7 +181,7 @@ double SchifflerizedLShapeProfile::GetLegBendOffset() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchifflerizedLShapeProfile::SetLegBendOffset (double value)
     {
-    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_LegBendOffset, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_LegBendOffset, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,7 +197,7 @@ double SchifflerizedLShapeProfile::GetFilletRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchifflerizedLShapeProfile::SetFilletRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_FilletRadius, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_FilletRadius, ECValue (value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -212,7 +213,7 @@ double SchifflerizedLShapeProfile::GetEdgeRadius() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchifflerizedLShapeProfile::SetEdgeRadius (double value)
     {
-    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius, ECN::ECValue (value));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius, ECValue (value));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

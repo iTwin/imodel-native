@@ -39,14 +39,20 @@ public:
 
     public:
         //! @beginGroup
-        double legLength = 0.0; //!< Leg length. @details Both vertical and horizontal legs are defined wiht equal length.
-        double thickness = 0.0; //!< Constant wall thickness of profile.
+        //! Leg length. @details Both vertical and horizontal legs are defined wiht equal length.
+        double legLength = 0.0;
+        //! Constant wall thickness of profile.
+        double thickness = 0.0;
         //! @endGroup
 
         //! @beginGroup
-        double legBendOffset = 0.0; //!< Offset defining where legs are bent. @details Offset is measured from start of the angle where the legs join.
-        double filletRadius = 0.0; //!< Fillet radius between legs. @details 0 if sharp-edged, default 0 if not specified.
-        double edgeRadius = 0.0; //!< Radius of flange edges. @details 0 if sharp-edged, default 0 if not specified.
+        //! Offset defining where legs are bent. @details Offset is measured from start of the angle (leg joint) plus
+        //! leg thickness i.e. if legBendOffset is zero, legs will be bent at distance equal to thickness from the leg joint.
+        double legBendOffset = 0.0;
+        //! Fillet radius between legs. @details 0 if sharp-edged, default 0 if not specified.
+        double filletRadius = 0.0;
+        //! Radius of flange edges. @details 0 if sharp-edged, default 0 if not specified.
+        double edgeRadius = 0.0;
         //! @endGroup
         };
 

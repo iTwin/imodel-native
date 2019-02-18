@@ -363,9 +363,9 @@ IGeometryPtr ProfilesGeometry::CreateSchifflerizedLShape (SchifflerizedLShapePro
     double const thickness = profile.GetThickness();
     double const halfWidth = legLength / 2.0;
     double const halfDepth = legLength / 2.0;
-    double const legBendOffset = profile.GetLegBendOffset();
+    double const legBendOffset = thickness + profile.GetLegBendOffset();
     double const innerEdgeOffset = thickness / Angle::FromDegrees (15.0).Cos() * Angle::FromDegrees (15.0).Sin();
-    double const bentLegOuterLength = legLength - legBendOffset;
+    double const bentLegOuterLength = legLength - thickness - legBendOffset;
     double const bentLegInnerLength = bentLegOuterLength - innerEdgeOffset;
     Angle const horizontalLegBendAngle = Angle::FromDegrees (15.0);
     Angle const verticalLegBendAngle = Angle::FromDegrees (75.0);
