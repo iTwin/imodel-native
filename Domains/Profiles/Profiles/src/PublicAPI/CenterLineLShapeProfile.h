@@ -39,7 +39,8 @@ public:
         //! @param[in] depth Profile's depth.
         //! @param[in] girth Profile's girth.
         //! @param[in] filletRadius Profile's inner fillet radius.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double wallThickness, double girth = 0.0, double filletRadius = 0.0);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth,
+            double wallThickness, double girth = 0.0, double filletRadius = 0.0);
 
     public:
         //! @beginGroup
@@ -54,12 +55,12 @@ public:
         //! @endGroup
         };
 
-protected:
-    explicit CenterLineLShapeProfile (CreateParams const& params); //!< @private
+private:
+    explicit CenterLineLShapeProfile (CreateParams const& params);
 
-    virtual bool _Validate() const override; //!< @private
-    virtual IGeometryPtr _CreateShapeGeometry() const override; //!< @private
-    virtual bool _CreateGeometry() override; //!< @private
+    virtual bool _Validate() const override;
+    virtual bool _CreateGeometry() override;
+    virtual IGeometryPtr _CreateShapeGeometry() const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineLShapeProfile)
@@ -71,7 +72,6 @@ public:
     //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static CenterLineLShapeProfilePtr Create (CreateParams const& params) { return new CenterLineLShapeProfile (params); }
 
-public:
     //! @beginGroup
     PROFILES_EXPORT double GetWidth() const; //!< Get the value of @ref CreateParams.width "Width"
     PROFILES_EXPORT void SetWidth (double value); //!< Set the value for @ref CreateParams.width "Width"

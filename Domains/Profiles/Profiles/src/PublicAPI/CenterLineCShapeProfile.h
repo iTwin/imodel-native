@@ -40,7 +40,9 @@ public:
         //! @param[in] wallThickness Profile's wall thickness.
         //! @param[in] girth Profile's girth.
         //! @param[in] filletRadius Profile's inner fillet radius.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double wallThickness, double girth = 0.0, double filletRadius = 0.0);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth,
+                                               double wallThickness, double girth = 0.0, double filletRadius = 0.0);
+
     public:
         //! @beginGroup
         double flangeWidth = 0.0; //!< Extent of the flange. @details Defined parallel to the x axis of the position coordinate system.
@@ -54,12 +56,12 @@ public:
         //! @endGroup
         };
 
-protected:
-    explicit CenterLineCShapeProfile (CreateParams const& params); //!< @private
+private:
+    explicit CenterLineCShapeProfile (CreateParams const& params);
 
-    virtual bool _Validate() const override; //!< @private
-    virtual bool _CreateGeometry() override;  //!< @private
-    IGeometryPtr _CreateShapeGeometry() const;  //!< @private
+    virtual bool _Validate() const override;
+    virtual bool _CreateGeometry() override;
+    virtual IGeometryPtr _CreateShapeGeometry() const override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineCShapeProfile)
@@ -70,7 +72,7 @@ public:
     //! @return Instance of CenterLineCShapeProfile.
     //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static CenterLineCShapeProfilePtr Create (CreateParams const& params) { return new CenterLineCShapeProfile (params); }
-public:
+
     //! @beginGroup
     PROFILES_EXPORT double GetFlangeWidth() const; //!< Get the value of @ref CreateParams.flangeWidth "FlangeWidth"
     PROFILES_EXPORT void SetFlangeWidth (double value); //!< Set the value for @ref CreateParams.flangeWidth "FlangeWidth"
