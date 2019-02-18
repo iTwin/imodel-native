@@ -127,10 +127,11 @@ bool SchifflerizedLShapeProfile::ValidateEdgeRadius() const
     if (ProfilesProperty::IsEqualToZero (edgeRadius))
         return true;
 
-    double const bentLegLength = GetLegLength() - GetThickness() - GetLegBendOffset();
+    double const innerEdgeOffset = GetThickness() / Angle::FromDegrees (15.0).Cos() * Angle::FromDegrees (15.0).Sin();
+    double const innerBentLegLength = GetLegLength() - GetThickness() - GetLegBendOffset() - innerEdgeOffset;
 
     bool const isPossitive = ProfilesProperty::IsGreaterOrEqualToZero (edgeRadius);
-    bool const fitsInLegLength = ProfilesProperty::IsLessOrEqual (edgeRadius, bentLegLength);
+    bool const fitsInLegLength = ProfilesProperty::IsLessOrEqual (edgeRadius, innerBentLegLength);
     bool const fitsInThickness = ProfilesProperty::IsLessOrEqual (edgeRadius, GetThickness());
 
     return isPossitive && fitsInLegLength && fitsInThickness;
