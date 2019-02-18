@@ -6,11 +6,124 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesPch.h"
+#include <ProfilesInternal\ProfilesProperty.h>
+#include <ProfilesInternal\ProfilesGeometry.h>
 #include <Profiles\CenterLineZShapeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (CenterLineZShapeProfileHandler)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CenterLineZShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CenterLineZShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth,
+                                                     double wallThickness, double filletRadius, double girth)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+      , flangeWidth (flangeWidth)
+      , depth (depth)
+      , wallThickness (wallThickness)
+      , filletRadius (filletRadius)
+      , girth (girth)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CenterLineZShapeProfile::CenterLineZShapeProfile (CreateParams const& params)
+     : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetFlangeWidth (params.flangeWidth);
+    SetDepth (params.depth);
+    SetWallThickness (params.wallThickness);
+    SetFilletRadius (params.filletRadius);
+    SetGirth (params.girth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CenterLineZShapeProfile::_Validate() const
+    {
+    if (!T_Super::_Validate())
+        return false;
+
+    bool const isFlangeWidthValid = ProfilesProperty::IsGreaterThanZero (GetFlangeWidth());
+    bool const isDepthValid = ProfilesProperty::IsGreaterThanZero (GetDepth());
+    bool const isWallThicknessValid = ValidateWallThickness();
+    bool const isFilletRadiusValid = ValidateFilletRadius();
+    bool const isGirthValid = ProfilesProperty::IsGreaterOrEqualToZero (GetGirth());
+
+    return isFlangeWidthValid && isDepthValid && isWallThicknessValid && isFilletRadiusValid && isGirthValid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CenterLineZShapeProfile::ValidateWallThickness() const
+    {
+    double const wallThickness = GetWallThickness();
+    double const availableFlangeWidth = ProfilesProperty::IsGreaterThanZero (GetGirth()) ? GetFlangeWidth() / 2.0 : GetFlangeWidth();
+
+    bool const isPositive = ProfilesProperty::IsGreaterThanZero (wallThickness);
+    bool const isLessThanHalfDepth = ProfilesProperty::IsLess (wallThickness, GetDepth() / 2.0);
+    bool const fitsInFlange = ProfilesProperty::IsLess (wallThickness, availableFlangeWidth);
+
+    return isPositive && isLessThanHalfDepth && fitsInFlange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CenterLineZShapeProfile::ValidateFilletRadius() const
+    {
+    double const filletRadius = GetFilletRadius();
+    if (ProfilesProperty::IsEqualToZero (filletRadius))
+        return true;
+
+    bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
+    bool const isLessThanHalfWidth = ProfilesProperty::IsLessOrEqual (filletRadius, GetFlangeWidth() / 2.0);
+    bool const isLessThanWebFaceLength = ProfilesProperty::IsLessOrEqual (filletRadius, GetDepth() - GetWallThickness());
+
+    bool isLessThanInnerGirthLength = true;
+    if (ProfilesProperty::IsGreaterThanZero (GetGirth()))
+        isLessThanInnerGirthLength = ProfilesProperty::IsLessOrEqual (filletRadius, GetGirth() - GetWallThickness());
+
+    return isPositive && isLessThanHalfWidth  && isLessThanWebFaceLength && isLessThanInnerGirthLength  ;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CenterLineZShapeProfile::_CreateGeometry()
+    {
+    IGeometryPtr centerLineGeometryPtr = ProfilesGeometry::CreateCenterLineForZShape (*this);
+    if (centerLineGeometryPtr.IsNull())
+        return false;
+    SetCenterLine (*centerLineGeometryPtr);
+
+    return T_Super::_CreateGeometry();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CenterLineZShapeProfile::_CreateShapeGeometry() const
+    {
+    return ProfilesGeometry::CreateCenterLineZShape (*this);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018

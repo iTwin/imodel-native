@@ -30,8 +30,10 @@ public:
     static IGeometryPtr CreateZShape (ZShapeProfile const& profile);
     static IGeometryPtr CreateCenterLineCShape (CenterLineCShapeProfile const& profile);
     static IGeometryPtr CreateCenterLineForCShape (CenterLineCShapeProfile const& profile);
-    static IGeometryPtr CreateCenterLineForLShape (CenterLineLShapeProfile const& profile);
     static IGeometryPtr CreateCenterLineLShape (CenterLineLShapeProfile const& profile);
+    static IGeometryPtr CreateCenterLineForLShape (CenterLineLShapeProfile const& profile);
+    static IGeometryPtr CreateCenterLineZShape (CenterLineZShapeProfile const& profile);
+    static IGeometryPtr CreateCenterLineForZShape (CenterLineZShapeProfile const& profile);
     static IGeometryPtr CreateArbitraryCenterLineShape (IGeometry const& centerLine, double wallThickness);
     static IGeometryPtr CreateCircle (CircleProfile const& profile);
     static IGeometryPtr CreateHollowCircle (HollowCircleProfile const& profile);
