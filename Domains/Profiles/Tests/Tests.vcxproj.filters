@@ -113,6 +113,9 @@
     <ClCompile Include="src\ArbitraryCenterLineProfileTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
+    <ClCompile Include="src\SchifflerizedLShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\TestHost.h">

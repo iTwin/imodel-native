@@ -79,6 +79,7 @@
     <ClCompile Include="src\RectangleProfileTests.cpp" />
     <ClCompile Include="src\RegularPolygonProfileTests.cpp" />
     <ClCompile Include="src\RoundedRectangleProfileTests.cpp" />
+    <ClCompile Include="src\SchifflerizedLShapeProfileTests.cpp" />
     <ClCompile Include="src\TestHost.cpp" />
     <ClCompile Include="src\TrapeziumProfileTests.cpp" />
     <ClCompile Include="src\TShapeProfileTests.cpp" />
