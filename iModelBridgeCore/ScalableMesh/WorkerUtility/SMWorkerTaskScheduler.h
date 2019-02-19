@@ -78,6 +78,10 @@ struct TaskScheduler
         void PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
 
         void PerformGenerateTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+
+        void PerformTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+
+        void PerformCreateTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
         
     
     public:

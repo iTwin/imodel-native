@@ -40,6 +40,11 @@ StatusInt IScalableMeshSourceCreatorWorker::CreateGenerationTasks(uint32_t maxGr
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateGenerationTasks(maxGroupSize, jobName, smFileName);
     }
 
+StatusInt IScalableMeshSourceCreatorWorker::CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName) const
+{
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateTextureTasks(maxGroupSize, jobName, smFileName);
+}
+
 StatusInt IScalableMeshSourceCreatorWorker::ExecuteNextTaskInTaskPlan() const
     {
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->ExecuteNextTaskInTaskPlan();
@@ -64,6 +69,11 @@ StatusInt IScalableMeshSourceCreatorWorker::ProcessGenerateTask(BeXmlNodeP pXmlT
     {   
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->ProcessGenerateTask(pXmlTaskNode);
     }
+
+StatusInt IScalableMeshSourceCreatorWorker::ProcessTextureTask(BeXmlNodeP pXmlTaskNode) const
+{
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->ProcessTextureTask(pXmlTaskNode);
+}
 
 
 IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(const WChar*  filePath,
@@ -271,30 +281,84 @@ uint64_t GetTotalCountWithSubResolutions(const HFCPtr<SMPointIndexNode<DPoint3d,
     return totalCount;         
     }
 
+struct NodeTask;
+
+typedef RefCountedPtr<NodeTask> NodeTaskPtr;
+
+struct NodeTask : public RefCountedBase
+{
+    NodeTask(bvector<NodeTaskPtr>& currentTasks, int nbResolutions, IScalableMeshNodePtr& rootNode)
+    {
+        m_orderId = 0;
+        m_totalNbPoints = 0;
+        m_groupRootNode = rootNode;
+        m_resolutionToGenerate.resize(nbResolutions);
+
+    }
+
+    void AccumulateNodes(bvector<IScalableMeshNodePtr>& groupNodes, bvector<NodeTaskPtr>& currentTasks, IScalableMeshNodePtr& currentNode)
+    {
+        for (auto& task : currentTasks)
+        {
+            if (task->m_groupRootNode->GetNodeId() == currentNode->GetNodeId())
+            {
+                m_orderId = max(m_orderId, task->m_orderId + 1);
+                return;
+            }
+        }
+
+
+        ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
+
+        if (smNode->GetNodePtr()->GetCount() == 0)
+            return;
+
+        groupNodes.push_back(currentNode);
+
+        bvector<IScalableMeshNodePtr> childrenNodes(currentNode->GetChildrenNodes());
+
+        for (auto& childNode : childrenNodes)
+        {
+            AccumulateNodes(groupNodes, currentTasks, childNode);
+        }
+    }
+
+
+
+    void AddNode(IScalableMeshNodePtr& currentNode)
+    {
+        ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
+
+        m_resolutionToGenerate[currentNode->GetLevel()].m_nodeIds.push_back(currentNode->GetNodeId());
+        m_totalNbPoints += GetTotalCountWithSubResolutions(smNode->GetNodePtr(), m_resolutionToGenerate.size(), currentNode->GetLevel());
+    }
+
+    IScalableMeshNodePtr     m_groupRootNode;
+    bvector<NodesToGenerate> m_resolutionToGenerate;
+    uint32_t                 m_orderId;
+    uint64_t                 m_totalNbPoints;
+};
+
 
 struct GenerationTask;
 
 typedef RefCountedPtr<GenerationTask> GenerationTaskPtr;
 
-struct GenerationTask : public RefCountedBase
+struct GenerationTask : public NodeTask
     {
-    GenerationTask(bvector<GenerationTaskPtr>& currentTasks, int nbResolutions, IScalableMeshNodePtr& rootNode)
-        {             
-        m_orderId = 0;
-        m_totalNbPoints = 0;
-        m_groupRootNode = rootNode;
-        m_resolutionToGenerate.resize(nbResolutions);
+    GenerationTask(bvector<NodeTaskPtr>& currentTasks, int nbResolutions, IScalableMeshNodePtr& rootNode)
+        : NodeTask(currentTasks, nbResolutions, rootNode)
+        { 
 
         bvector<IScalableMeshNodePtr> groupNodes;
 
         AccumulateNodes(groupNodes, currentTasks, m_groupRootNode);
 
         for (auto& node : groupNodes)
-            {
+        {
             AddNode(node);
             //m_resolutionToGenerate[node->GetLevel()].m_nodeIds.push_back(node->GetNodeId());
-            }
-
+        }
         for (auto& node : groupNodes)
             {
             bool isNeighborFound = true; 
@@ -315,75 +379,48 @@ struct GenerationTask : public RefCountedBase
                 m_resolutionToGenerate[node->GetLevel()].m_nodeStitchIds.push_back(node->GetNodeId());
             }
         }
-
-    void AccumulateNodes(bvector<IScalableMeshNodePtr>& groupNodes, bvector<GenerationTaskPtr>& currentTasks, IScalableMeshNodePtr& currentNode)
-        {        
-        for (auto& task : currentTasks)
-            {
-            if (task->m_groupRootNode->GetNodeId() == currentNode->GetNodeId())
-                {                
-                m_orderId = max(m_orderId, task->m_orderId + 1);
-                return;
-                }
-            }
-
-
-        ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
-
-        if (smNode->GetNodePtr()->GetCount() == 0)
-            return;
-
-        groupNodes.push_back(currentNode);
-        
-        bvector<IScalableMeshNodePtr> childrenNodes(currentNode->GetChildrenNodes());
-
-        for (auto& childNode : childrenNodes)
-            {            
-            AccumulateNodes(groupNodes, currentTasks, childNode);
-            }
-        }
-
-    /*
-    void SetGroupRootNode(int nbResolutions, bvector<IScalableMeshNodePtr>& groupRootNode)
-        {
-        m_groupRootNode = groupRootNode;
-        m_resolutionToGenerate.resize(nbResolutions);
-        AccumulateNodes(m_groupRootNode);            
-        }
-        */
-    
-    void AddNode(IScalableMeshNodePtr& currentNode)
-        {                
-        ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
-
-        m_resolutionToGenerate[currentNode->GetLevel()].m_nodeIds.push_back(currentNode->GetNodeId());
-        //m_totalNbPoints += currentNode->GetPointCount();
-        m_totalNbPoints += GetTotalCountWithSubResolutions(smNode->GetNodePtr(), m_resolutionToGenerate.size(), currentNode->GetLevel());
-        }    
-
-    /*
-    void MergeGenerationTask(GenerationTask& generationTask)
-        {
-        assert(generationTask.m_resolutionToGenerate.size() == m_resolutionToGenerate.size());
-
-        for (uint32_t levelInd = 0; levelInd < m_resolutionToGenerate.size(); levelInd++)
-            {
-            m_resolutionToGenerate[levelInd].Merge(generationTask.m_resolutionToGenerate[levelInd]);
-            }          
-
-        m_totalNbPoints += generationTask.m_totalNbPoints;
-        }
-        */
-    
-    IScalableMeshNodePtr     m_groupRootNode;
-    bvector<NodesToGenerate> m_resolutionToGenerate;
-    uint32_t                 m_orderId;
-    uint64_t                 m_totalNbPoints;
     };
 
-void CreateGenerationTask(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& groupRootNode, int nbResolutions)
+enum NodeTaskType
+{
+    GENERATION = 0,
+    TEXTURE,
+    QTY
+};
+
+struct TextureTask;
+
+typedef RefCountedPtr<TextureTask> TextureTaskPtr;
+
+struct TextureTask : public NodeTask
+{
+    TextureTask(bvector<NodeTaskPtr>& currentTasks, int nbResolutions, IScalableMeshNodePtr& rootNode)
+        : NodeTask(currentTasks, nbResolutions, rootNode)
+    {
+        bvector<IScalableMeshNodePtr> groupNodes;
+
+        AccumulateNodes(groupNodes, currentTasks, m_groupRootNode);
+
+        for (auto& node : groupNodes)
+        {
+            AddNode(node);
+        }
+    }
+};
+
+void CreateNodeTask(bvector<NodeTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& groupRootNode, int nbResolutions, NodeTaskType t)
     {           
-    GenerationTaskPtr newGenerationTask = new GenerationTask(toExecuteTasks, nbResolutions, groupRootNode);    
+    NodeTaskPtr newGenerationTask;
+    
+    if(NodeTaskType::GENERATION == t)
+        newGenerationTask = new GenerationTask(toExecuteTasks, nbResolutions, groupRootNode);
+    else if (NodeTaskType::TEXTURE == t)
+        newGenerationTask = new TextureTask(toExecuteTasks, nbResolutions, groupRootNode);
+    else
+    {
+        assert(false);
+        return;
+    }
     
     if (newGenerationTask->m_totalNbPoints > 0)    
         toExecuteTasks.push_back(newGenerationTask);
@@ -398,7 +435,7 @@ void CreateGenerationTask(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableM
 #endif
     }
 
-void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& currentNode, uint64_t pointThreshold, int& childrenGroupingSize, int nbResolutions)
+void GroupNodes(bvector<NodeTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& currentNode, uint64_t pointThreshold, int& childrenGroupingSize, int nbResolutions, NodeTaskType t)
     {    
     ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
     assert(smNode != nullptr);
@@ -408,7 +445,7 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
     //if (smNode->GetNodePtr()->GetCount() < pointThreshold)
     if (GetTotalCountWithSubResolutions(smNode->GetNodePtr(), nbResolutions, nbResolutions - 1) < pointThreshold)
         {        
-        CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions);
+        CreateNodeTask(toExecuteTasks, currentNode, nbResolutions, t);
 
         childrenGroupingSize = smNode->GetNodePtr()->GetCount();
         return;
@@ -421,7 +458,7 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
         for (auto& node : childrenNodes)
             {
             int childGroupingSize = 0;
-            GroupNodes(toExecuteTasks, node, pointThreshold, childGroupingSize, nbResolutions);
+            GroupNodes(toExecuteTasks, node, pointThreshold, childGroupingSize, nbResolutions, t);
             childrenGroupingSize += childGroupingSize;            
             }        
         }
@@ -431,7 +468,7 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
     if (parentNode == nullptr)
         {
         //Create final group
-        CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions);
+        CreateNodeTask(toExecuteTasks, currentNode, nbResolutions, t);
         //childrenGroupingSize = smNode->GetNodePtr()->GetCount();
         childrenGroupingSize = GetTotalCountWithSubResolutions(smNode->GetNodePtr(), nbResolutions, nbResolutions - 1);
         return;
@@ -444,7 +481,7 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
         //Will lead to group bigger than threshold but preferable than creating a group for each children, which can results in smaller group.
         assert(totalCountCurrentNode - childrenGroupingSize <= pointThreshold * 4);
 
-        CreateGenerationTask(toExecuteTasks, currentNode, nbResolutions);        
+        CreateNodeTask(toExecuteTasks, currentNode, nbResolutions, t);        
         childrenGroupingSize = totalCountCurrentNode;
         return;
         }
@@ -472,8 +509,22 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
     return;
     }
 
+void IScalableMeshSourceCreatorWorker::Impl::GetTextureTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t maxGroupSize)
+{
+    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
-void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks, uint32_t maxGroupSize)
+    HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> rootNode(pDataIndex->GetRootNode());
+
+    IScalableMeshNodePtr meshRootNode(new ScalableMeshNode<DPoint3d>(rootNode));
+
+    int childrenGroupingSize = 0;
+    int nbResolutions = (int)(pDataIndex->GetDepth() + 1);
+
+    GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions, NodeTaskType::TEXTURE);
+}
+
+
+void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t maxGroupSize)
     {   
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
@@ -484,7 +535,7 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<Generati
     int childrenGroupingSize = 0;     
     int nbResolutions = (int)(pDataIndex->GetDepth() + 1);
 
-    GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions);
+    GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions, NodeTaskType::GENERATION);
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
@@ -497,7 +548,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
 
     bvector<uint64_t> nodesToMesh;
     
-    bvector<GenerationTaskPtr> generationTasks;
+    bvector<NodeTaskPtr> generationTasks;
 
     //Explicitly open the sql file to improve speed when 3SM is located on network drive
     StatusInt status = OpenSqlFiles(true, false);
@@ -650,6 +701,71 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
     return SUCCESS;
     }
 
+StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
+    {
+    BeFileName taskDirectory(m_scmFileName);
+
+    taskDirectory = taskDirectory.GetDirectoryName();
+
+    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+
+    bvector<uint64_t> initialTextureNodes;
+
+    bvector<NodeTaskPtr> textureTasks;
+
+    //Explicitly open the sql file to improve speed when 3SM is located on network drive
+    StatusInt status = OpenSqlFiles(true, false);
+    assert(status == SUCCESS);
+
+    GetTextureTasks(textureTasks, maxGroupSize);
+
+    CloseSqlFiles();
+
+
+    wchar_t stringBuffer[100000];
+
+    for (size_t ind = 0; ind < textureTasks.size(); ind++)
+    {
+        if (textureTasks[ind]->m_orderId > 0)
+            continue;
+
+        BeFileName meshTaskFile(taskDirectory);
+
+        swprintf(stringBuffer, L"Texture%zi.xml", ind);
+        meshTaskFile.AppendString(stringBuffer);
+        BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
+
+        BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
+        workerNode->AddAttributeStringValue("type", "texture");
+        workerNode->AddAttributeStringValue("jobName", jobName.c_str());
+        workerNode->AddAttributeStringValue("smName", smFileName.c_str());
+
+        for (int resInd = (int)textureTasks[ind]->m_resolutionToGenerate.size() - 1; resInd >= 0; resInd--)
+        {
+            if (textureTasks[ind]->m_resolutionToGenerate[resInd].m_nodeIds.size() > 0)
+            {
+                BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("TextureTiles", nullptr, workerNode));
+                WString tileList;
+
+                for (auto& nodeId : textureTasks[ind]->m_resolutionToGenerate[resInd].m_nodeIds)
+                {
+                    WPrintfString tileId(L"%u,", nodeId);
+                    tileList.append(tileId);
+                }
+
+                tileNode->AddAttributeStringValue("ids", tileList.c_str());             
+            }
+
+        }
+
+        BeXmlDom::ToStringOption toStrOption = (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent);
+
+        BeXmlStatus status = xmlDomPtr->ToFile(meshTaskFile, toStrOption, BeXmlDom::FILE_ENCODING_Utf8);
+        assert(status == BEXML_Success);
+    }
+
+        return SUCCESS;
+    }
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateMeshTasks()
     {
@@ -1039,6 +1155,114 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     assert(SMMemoryPool::GetInstance()->GetCurrentlyUsed() == 0);
         
+    return SUCCESS;
+    }
+
+
+StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP pXmlTaskNode)
+    {
+    BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
+
+    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+
+    bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>> nodesToMesh;
+    bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>>     generatedNodes;
+
+    SMMeshDataToLoad meshDataToLoad;
+
+    meshDataToLoad.m_features = false;
+    meshDataToLoad.m_graph = false;
+
+   /* ITextureProviderPtr textureStreamProviderPtr;
+    WString url(L"http://www.bing.com/maps/Aerial");
+    IScalableMeshPtr nullSmPtr;
+    GetStreamedTextureProvider(textureStreamProviderPtr, nullSmPtr, pDataIndex, url);*/
+
+    ITextureProviderPtr textureProviderPtr;
+    IScalableMeshPtr nullSmPtr;
+    GetTextureProvider(textureProviderPtr, nullSmPtr, pDataIndex);
+    do
+        {
+        assert(pChildNode != nullptr);
+        assert(Utf8String(pChildNode->GetName()).CompareTo("TextureTiles") == 0);
+
+        bvector<uint64_t> tileIds;
+        WString           attrStr;
+
+        BeXmlStatus xmlStatus = pChildNode->GetAttributeStringValue(attrStr, "ids");
+        assert(xmlStatus == BEXML_Success);
+
+        bvector<WString> idAttrs;
+        BeStringUtilities::ParseArguments(idAttrs, attrStr.c_str(), L",");
+
+        for (auto& idStr : idAttrs)
+        {
+            tileIds.push_back(BeStringUtilities::ParseUInt64(Utf8String(idStr).c_str()));
+        }
+
+
+        assert(tileIds.size() > 0);
+
+        StatusInt status = OpenSqlFiles(true, true);
+        assert(status == SUCCESS);
+
+        bool dbOpResult = m_smDb->StartTransaction();
+        assert(dbOpResult == true);
+
+        dbOpResult = m_smSisterDb->StartTransaction();
+        assert(dbOpResult == true);
+
+        for (auto& tileId : tileIds)
+            {
+            HPMBlockID blockID(tileId);
+
+            HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
+
+            meshNode->NeedToLoadNeighbors(false);
+
+            meshNode->Load();
+            meshNode->LoadData(&meshDataToLoad);
+
+            nodesToMesh.push_back(meshNode);
+            }
+
+        dbOpResult = m_smDb->CommitTransaction();
+        assert(dbOpResult == true);
+
+        dbOpResult = m_smSisterDb->CommitTransaction();
+        assert(dbOpResult == true);
+
+        CloseSqlFiles();
+
+        for (auto& node : nodesToMesh)
+        {
+            //node->TextureFromRaster(textureStreamProviderPtr);
+            node->TextureFromRaster(textureProviderPtr);
+        }
+
+        generatedNodes.insert(generatedNodes.end(), nodesToMesh.begin(), nodesToMesh.end());
+
+        nodesToMesh.clear();
+        pChildNode = pChildNode->GetNextSibling();
+    } while (pChildNode != nullptr);
+
+    //Flush all the data on disk    
+    OpenSqlFiles(false, true);
+
+    for (auto& node : generatedNodes)
+    {
+        node->Discard();
+        // pDataIndex->ClearNodeMap();
+
+        node->Unload();
+    }
+
+    generatedNodes.clear();
+
+    pDataIndex->Store();
+
+    CloseSqlFiles();
+
     return SUCCESS;
     }
 

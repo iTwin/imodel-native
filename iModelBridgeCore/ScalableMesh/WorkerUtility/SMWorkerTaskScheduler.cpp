@@ -614,6 +614,12 @@ void TaskScheduler::OutputJobStat()
                     case WorkerTaskType::GENERATE:
                         taskTypeStr.AssignOrClear(L"GENERATE");
                         break;
+                    case WorkerTaskType::TEXTURE:
+                        taskTypeStr.AssignOrClear(L"TEXTURE");
+                        break;
+                    case WorkerTaskType::CREATETEXTURE:
+                        taskTypeStr.AssignOrClear(L"CREATETEXTURE");
+                        break;
                     default : 
                         assert(!"Unknown task type");
                         break;
@@ -679,7 +685,11 @@ bool TaskScheduler::ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType&
             else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"stitch"))
                 t = WorkerTaskType::STITCH;            
             else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"generate"))
-                t = WorkerTaskType::GENERATE;                        
+                t = WorkerTaskType::GENERATE;                   
+            else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"texture"))
+                t = WorkerTaskType::TEXTURE;
+            else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"createTexture"))
+                t = WorkerTaskType::CREATETEXTURE;
             else return false;
         }
         else return false;
@@ -784,6 +794,12 @@ bool TaskScheduler::ProcessTask(FILE* file)
             case WorkerTaskType::GENERATE:
                 PerformGenerateTask(pXmlTaskNode/*, pResultFile*/);
                 break;                
+            case WorkerTaskType::TEXTURE:
+                PerformTextureTask(pXmlTaskNode/*, pResultFile*/);
+                break;
+            case WorkerTaskType::CREATETEXTURE:
+                PerformCreateTextureTask(pXmlTaskNode/*, pResultFile*/);
+                break;
 
             default: break;
             }
@@ -1028,6 +1044,40 @@ void TaskScheduler::PerformGenerateTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/
 
     assert(status == SUCCESS);
     }
+
+void TaskScheduler::PerformTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+    {
+    WString    jobName;
+    BeFileName smFileName;
+
+    ParseJobInfo(jobName, smFileName, pXmlTaskNode);
+
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));
+    StatusInt status = SUCCESS;
+    if (ParseSourceSubNodes(creatorWorkerPtr->EditSources(), pXmlTaskNode) == true)
+    {
+        status = creatorWorkerPtr->ProcessTextureTask(pXmlTaskNode);
+    }
+
+    assert(status == SUCCESS);
+    }
+
+void TaskScheduler::PerformCreateTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+{
+    WString    jobName;
+    BeFileName smFileName;
+
+    ParseJobInfo(jobName, smFileName, pXmlTaskNode);
+
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));
+    StatusInt status = SUCCESS;
+    if (ParseSourceSubNodes(creatorWorkerPtr->EditSources(), pXmlTaskNode) == true)
+    {
+        status = creatorWorkerPtr->CreateTextureTasks(m_groupingSize, jobName, smFileName);
+    }
+
+    assert(status == SUCCESS);
+}
 
 
 END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
