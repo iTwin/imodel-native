@@ -29,6 +29,8 @@
 #include "../InternalUtilityFunctions.h"
 
 
+#define SMSTREAMINGSTORELOGNAME L"ScalableMesh::SMStreamingStore"
+#define SMSTREAMINGSTORE_LOG (*NativeLogging::LoggingManager::GetLogger(SMSTREAMINGSTORELOGNAME))
 
 
 USING_NAMESPACE_IMAGEPP
@@ -2326,7 +2328,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
             file.Write(nullptr, dataToWrite, sizeToWrite);
         else
             {
-            LOG.errorv("Failed to open or create b3dm file [BeFileStatus(%d)] : %ls", (uint32_t)status, url.c_str());
+            SMSTREAMINGSTORE_LOG.errorv("Failed to open or create b3dm file [BeFileStatus(%d)] : %ls", (uint32_t)status, url.c_str());
             }
 
         if (mustCleanup)

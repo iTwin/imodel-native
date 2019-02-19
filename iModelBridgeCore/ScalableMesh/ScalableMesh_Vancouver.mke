@@ -586,3 +586,8 @@ $(o)ScalableMeshCacert.pem: $(baseDir)ScalableMeshCacert.pem
 $(ContextDeliveryDir)ScalableMeshCacert.pem : $(o)ScalableMeshCacert.pem
         $(LinkFirstDepToFirstTarget)
 
+#----------------------------------------------------------------------------------------
+# Symlink the loggging configuration file to enable ScalableMesh logging
+#----------------------------------------------------------------------------------------
+$(ContextDeliveryDir)ScalableMeshLogging.config.xml : $(baseDir)Logging/ScalableMeshLogging.config.xml
+        $(LinkFirstDepToFirstTarget)

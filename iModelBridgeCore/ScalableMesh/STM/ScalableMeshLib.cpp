@@ -43,6 +43,8 @@ USING_NAMESPACE_IMAGEPP
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+static wchar_t const* s_configFileName = L"ScalableMeshLogging.config.xml";
+
 #define BING_AUTHENTICATION_KEY "AnLjDxNA_guaYuWWJifrpWnqvlxWPl8lLHzT1ixQH3vXLwb3CTEolWX34nbn4HfS"
 
 struct SMImagePPHost : public ImageppLib::Host
@@ -75,9 +77,41 @@ STMAdmin& ScalableMeshLib::Host::_SupplySTMAdmin()
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mathieu.St-Pierre  05/2015
+* @bsimethod                                                    Richard.Bois  02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+void InitializeScalableMeshLogging()
+    {
+    // Priority: 1- App  2- Env. Variable  3- default SM logging config file  4- Console
+    if(NativeLogging::LoggingConfig::IsProviderActive())
+        return; // Provider already setup by app
+
+    // Setup logging system
+    BeFileName appDir;
+    WChar smDllFile[MAX_PATH];
+    ::GetModuleFileNameW(NULL, smDllFile, _countof(smDllFile));
+    BeFileName dllDir(BeFileName::DevAndDir, smDllFile);
+    appDir.AssignOrClear(dllDir);
+    BeFileName loggingConfigFile(_wgetenv(L"SCALABLEMESH_LOGGING_CONFIG_FILE"));
+    if(!BeFileName::DoesPathExist(loggingConfigFile))
+        {
+        loggingConfigFile.AssignOrClear(appDir);
+        loggingConfigFile.AppendToPath(s_configFileName);
+        }
+
+    if(BeFileName::DoesPathExist(loggingConfigFile))
+        {
+        NativeLogging::LoggingConfig::SetMaxMessageSize(10000);
+        NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, loggingConfigFile.c_str());
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+        }
+    else
+        {
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+        }
+    }
+
 #ifndef LINUX_SCALABLEMESH_BUILD
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -628,6 +662,8 @@ void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     {
+    InitializeScalableMeshLogging();
+
     if (!ImageppLib::IsInitialized())
         {
         t_ippLibHost = new SMImagePPHost();

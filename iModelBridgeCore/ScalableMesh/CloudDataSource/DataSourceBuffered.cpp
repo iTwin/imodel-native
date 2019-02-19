@@ -131,7 +131,7 @@ DataSourceStatus DataSourceBuffered::read(std::vector<Buffer>& dest)
         return status;
 
     status = account->download(*this, dest);
-    assert(!dest.empty()); // Nothing was downloaded to the buffer!
+    BeAssert(!dest.empty()); // Nothing was downloaded to the buffer!
 
     return status;
     }

@@ -236,9 +236,6 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
         progress->Progress() = 0.0f;
         }
 
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity(L"SMPublisher", NativeLogging::LOG_TRACE);
-
     m_publishThreadPool = GetPublishThreadPool();
 
     // Create null promise for the root node and add it to the processing queue to kick-start the process
