@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/V8FileEditor.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,6 +44,7 @@ struct V8FileEditor
 
     // Geometry
     void AddLine(DgnV8Api::ElementId* eid = nullptr, DgnV8ModelP v8model = nullptr, DPoint3d offset = DPoint3d::FromZero());
+    void AddCellWithTwoArcs(DgnV8Api::ElementId* cellId, WCharCP cellName, DgnV8ModelP v8model = nullptr);
     void CreateCell(EditElementHandleR eeh, WCharCP cellName, bool addToModel = true, DgnV8ModelP v8model = nullptr);
     void CreateArc(EditElementHandleR eeh, bool addToModel=true, DgnV8ModelP v8model = nullptr);
     void CreateBSplineCurve(EditElementHandleR eeh, bool addToModel=true, DgnV8ModelP v8model = nullptr);
