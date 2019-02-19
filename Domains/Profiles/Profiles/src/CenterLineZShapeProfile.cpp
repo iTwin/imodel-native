@@ -93,15 +93,23 @@ bool CenterLineZShapeProfile::ValidateFilletRadius() const
     if (ProfilesProperty::IsEqualToZero (filletRadius))
         return true;
 
+    double availableFlangeLength = 0.0;
+    if (ProfilesProperty::IsGreaterThanZero (GetGirth()))
+        availableFlangeLength = (GetFlangeWidth() - GetWallThickness() * 2.0) / 2.0;
+    else
+        availableFlangeLength = GetFlangeWidth() - GetWallThickness();
+
+    double const availableWebLength = (GetDepth() - GetWallThickness() * 2.0) / 2.0;
+
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (filletRadius);
-    bool const isLessThanHalfWidth = ProfilesProperty::IsLessOrEqual (filletRadius, GetFlangeWidth() / 2.0);
-    bool const isLessThanWebFaceLength = ProfilesProperty::IsLessOrEqual (filletRadius, GetDepth() - GetWallThickness());
+    bool const isLessThanAvailableFlangeLength = ProfilesProperty::IsLessOrEqual (filletRadius, availableFlangeLength);
+    bool const isLessThanAvailableWebLength = ProfilesProperty::IsLessOrEqual (filletRadius, availableWebLength);
 
     bool isLessThanInnerGirthLength = true;
     if (ProfilesProperty::IsGreaterThanZero (GetGirth()))
         isLessThanInnerGirthLength = ProfilesProperty::IsLessOrEqual (filletRadius, GetGirth() - GetWallThickness());
 
-    return isPositive && isLessThanHalfWidth  && isLessThanWebFaceLength && isLessThanInnerGirthLength  ;
+    return isPositive && isLessThanAvailableFlangeLength && isLessThanAvailableWebLength && isLessThanInnerGirthLength;
     }
 
 /*---------------------------------------------------------------------------------**//**
