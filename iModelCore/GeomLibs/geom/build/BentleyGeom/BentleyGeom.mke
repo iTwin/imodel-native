@@ -83,21 +83,16 @@ rightsNeutralFile           = $(_MakeFilePath)rightsNeutralLibraries.txt
 #-----------------------------------------------------------------------
 # link
 #-----------------------------------------------------------------------
-DLM_NAME            = BentleyGeom$(libSuffix)
-DLM_LIBDEF_SRC      = $(_MakeFilePath)
-DLM_OBJECT_DEST     = $(o)
-DLM_DEST            = $(baseGeom_bin)
-DLM_EXPORT_DEST     = $(baseGeom_lib)
+DLM_NAME            = $(appName)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList)
-DLM_OBJECT_PCH      = $(o)bsibasegeompch.obj
-
 DLM_EXPORT_OBJS     = $(DLM_OBJECT_FILES)
+DLM_OBJECT_DEST     = $(o)
+DLM_DEST            = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_PCH      = $(o)bsibasegeompch.obj
 
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 DLM_NOENTRY         = 1
-
-# Temporary while working on static; it probably shouldn't be needed.
-LIB_PDB_SOURCE_DIR = $(DLM_OBJECT_DEST)
 
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(stlibprefix)BeJsonCpp$(stlibext)
 
@@ -114,6 +109,3 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(stlibprefix)BeJsonC
         <
 
 %endif
-
-
-
