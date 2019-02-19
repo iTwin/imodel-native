@@ -756,9 +756,17 @@ void CreateGroupStitchingTasks(bvector<GenerationTaskPtr>& toExecuteTasks, uint3
                 }
 
             currentTask->m_resolutionToGenerate[resInd].m_requireMeshingFiltering = false;            
-            currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.end(), toStitchNodeIds.begin(), toStitchNodeIds.end());
-            currentTask->m_resolutionToGenerate[resInd].m_nodeIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeIds.end(), toStitchNodeIds.begin(), toStitchNodeIds.end());                        
-            currentTask->m_resolutionToGenerate[resInd].m_nodeIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeIds.end(), notFoundNodeIds.begin(), notFoundNodeIds.end());                        
+            currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.end(), toStitchNodeIds.begin(), toStitchNodeIds.end());            
+            currentTask->m_resolutionToGenerate[resInd].m_nodeIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeIds.end(), notFoundNodeIds.begin(), notFoundNodeIds.end());
+
+            std::sort(notFoundNodeIds.begin(), notFoundNodeIds.end());
+
+            for (auto& stitchId : toStitchNodeIds)
+                {
+                if (!std::binary_search(notFoundNodeIds.begin(), notFoundNodeIds.end(), stitchId))
+                    currentTask->m_resolutionToGenerate[resInd].m_nodeIds.push_back(stitchId);
+                }
+                                            
             currentTask->m_totalNbPoints += totalPointsCount;
             currentTask->m_orderId = maxOrderId;
             }    
@@ -1245,7 +1253,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     SMMeshDataToLoad meshDataToFiltering;
     meshDataToFiltering.m_ptIndices = false;
-                    
+                        
     do
         {
         assert(pChildNode != nullptr);
@@ -1315,13 +1323,15 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
             HPMBlockID blockID(tileId);
 
             HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
-
+            
             if (std::find(stitchTileIds.begin(), stitchTileIds.end(), tileId) != stitchTileIds.end())    
                 meshNode->NeedToLoadNeighbors(true);
             else
                 meshNode->NeedToLoadNeighbors(false);
         
-            meshNode->Load();
+            //assert(!meshNode->IsLoaded());
+            //meshNode->Unload();
+            meshNode->Load();            
             meshNode->LoadData(&meshDataToLoad);
 
             //
@@ -1331,22 +1341,48 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
                 if (childNode != nullptr)
                     {
-                    childNode->NeedToLoadNeighbors(false);
-                    childNode->Load();
-                    childrenNodesForFiltering.push_back(childNode);
-                    //childNode->LoadData(&meshDataToFiltering);
-                    }
-                else
-                    {
-                    vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(meshNode->GetSubNodes());
-                    for (auto& childNode : childrenNodes)
+                    bool found = false;
+                    for (auto& node : generatedNodes)
+                        {       
+                        if (childNode->GetBlockID().m_integerID == node->GetBlockID().m_integerID)
+                            {
+                            found = true;
+                            break;
+                            }
+                        }
+
+                    if (!found)
                         {
                         childNode->NeedToLoadNeighbors(false);
                         childNode->Load();
                         childNode->LoadData(&meshDataToFiltering);
                         childrenNodesForFiltering.push_back(childNode);
                         }
-                    }                
+                    }
+                else
+                    {
+                    vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(meshNode->GetSubNodes());
+                    for (auto& childNode : childrenNodes)
+                        {             
+                        bool found = false;
+                        for (auto& node : generatedNodes)
+                            {            
+                            if (childNode->GetBlockID().m_integerID == node->GetBlockID().m_integerID)
+                                {
+                                found = true;
+                                break;
+                                }
+                            }
+
+                        if (!found)
+                            {
+                            childNode->NeedToLoadNeighbors(false);
+                            childNode->Load();
+                            childNode->LoadData(&meshDataToFiltering);
+                            childrenNodesForFiltering.push_back(childNode);
+                            }
+                        }
+                    }
                 }
 
             ptsNeighbors.push_back(meshNode->GetPointsPtr());
@@ -1427,7 +1463,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 if (node->GetBlockID().m_integerID == tileId)
                     {        
                     bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
-                
+                    assert(isStitched == true);
+                    
                     if (isStitched)
                         {
                         node->SetDirty(true);
@@ -1437,6 +1474,32 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                     }
                 }
             }
+
+#ifndef NDEBUG
+        if (!needFiltering && !needMeshing)
+            {
+            bool found = false;
+
+            for (auto& node : nodesToMesh)
+                {
+                for (auto& tileId : stitchTileIds)
+                    {                    
+                    if (node->GetBlockID().m_integerID == tileId)
+                        {
+                        found = true;                    
+                        break;
+                        }
+                    }
+
+                if (!found)
+                    assert(node->IsDirty() == false);
+                /*
+                else
+                    assert(node->IsDirty() == true);
+                    */
+                }            
+            }
+#endif
 
         generatedNodes.insert(generatedNodes.end(), nodesToMesh.begin(), nodesToMesh.end());
         generatedPtsNeighbors.insert(generatedPtsNeighbors.end(), ptsNeighbors.begin(), ptsNeighbors.end());
@@ -1462,21 +1525,18 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     childrenNodesForFiltering.clear();
 
     for (auto& node : generatedNodes)
-        {
+        {          
         node->Discard();
-        // pDataIndex->ClearNodeMap();
-
         node->Unload();
         }
 
     generatedNodes.clear();
-
-
     
-
-    pDataIndex->Store();            
+    pDataIndex->Store();    
 
     CloseSqlFiles();
+
+   // m_pDataIndex = nullptr;
 
 #if 0 
     //The save and save sister files are closing the db, which can create deadlock. Add sisterMain lock to prevent this for happening.
