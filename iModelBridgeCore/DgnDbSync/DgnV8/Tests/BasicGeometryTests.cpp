@@ -230,15 +230,23 @@ TEST_F(BasicGeometryTests, NestedCell)
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
     // Verify
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+        }
 
     // Make a change in the same model, but don't touch the cell. Verify that the cell and its children are intact
     v8editor.AddLine();
     v8editor.Save();
 
     DoUpdate(m_dgnDbFileName, m_v8FileName);
-    VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
