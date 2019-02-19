@@ -459,21 +459,21 @@ void TaskScheduler::Start()
         
             if (!isThereTaskAvailable)
                 {
-                BeFileName testPlanFile(m_taskFolderName);
+                BeFileName taskPlanFileName(m_taskFolderName);
 
-                testPlanFile.AppendString(L"\\Tasks.xml.Plan");
+                taskPlanFileName.AppendString(L"\\Tasks.xml.Plan");
 
                 struct _stat64i32 buffer;
 
                 //No task plan, no more task to execute
-                if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) 
+                if (_wstat(taskPlanFileName.c_str(), &buffer) != 0 || buffer.st_size == 0) 
                     continue;
 
-                BeFileName testPlanLockFile(m_taskFolderName);
+                BeFileName taskPlanLockFile(m_taskFolderName);
 
-                testPlanLockFile.AppendString(L"\\Tasks.xml.Plan.lock");
+                taskPlanLockFile.AppendString(L"\\Tasks.xml.Plan.lock");
 
-                FILE* lockFile = _wfsopen(testPlanLockFile.c_str(), L"ab+", _SH_DENYRW);
+                FILE* lockFile = _wfsopen(taskPlanLockFile.c_str(), L"ab+", _SH_DENYRW);
 
                 if (lockFile == nullptr)
                     {
@@ -500,11 +500,10 @@ void TaskScheduler::Start()
                 StatusInt status = SUCCESS;
             
                 if (needExecuteTaskPlan)
-                    {
-                    assert(!"Need to extract job info");
-                    //status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
+                    {        
+                    status = ExecuteTaskPlanNextTask(taskPlanFileName);
                     }
-
+                   
                 fclose(lockFile);
             
                 if (status == SUCCESS_TASK_PLAN_COMPLETE)
@@ -714,6 +713,7 @@ JobProcessingStat& TaskScheduler::GetJobStat(const WString& jobName)
     }
 
 
+
 bool TaskScheduler::ProcessTask(FILE* file)
     {
     assert(file != nullptr);
@@ -734,7 +734,7 @@ bool TaskScheduler::ProcessTask(FILE* file)
 
     if (pXmlDom == 0)
         {
-        assert(false && "Invalid test plan filename");
+        assert(false && "Invalid task filename");
         return false;
         }
 
@@ -827,7 +827,62 @@ bool TaskScheduler::ProcessTask(FILE* file)
     fflush(file);
 
     return true;
+    }
+        
 
+StatusInt TaskScheduler::ExecuteTaskPlanNextTask(const BeFileName& taskPlanFileName)
+    {
+    struct _stat64i32 buffer;
+
+    //If task plan doesn't exist. 
+    if (_wstat(taskPlanFileName.c_str(), &buffer) != 0)
+        return SUCCESS_TASK_PLAN_COMPLETE;    
+
+    FILE* file = nullptr;
+
+    errno_t err = 0;
+    file = _wfsopen(taskPlanFileName.c_str(), L"ab+", _SH_DENYRW);
+                    
+    assert(file != nullptr);
+
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    BeXmlStatus xmlStatus;
+    WString     errorMsg;
+
+    bvector<char> xmlFileContent(size);
+    size_t readSize = fread(&xmlFileContent[0], 1, size, file);
+    assert(readSize == size);
+    
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, &xmlFileContent[0], xmlFileContent.size(), &errorMsg);
+
+    if (pXmlDom == 0)
+        {
+        assert(!"Invalid task plan filename");
+        return SUCCESS_TASK_PLAN_COMPLETE;
+        }
+
+    BeXmlNodeP pXmlTaskNode(pXmlDom->GetRootElement());
+    if (0 != BeStringUtilities::Stricmp(pXmlTaskNode->GetName(), "taskPlan"))
+        {
+        assert("Invalid task plan format");
+        return SUCCESS_TASK_PLAN_COMPLETE;    
+        }
+
+    WString jobName;
+    BeFileName smFileName;
+
+    ParseJobInfo(jobName, smFileName, pXmlTaskNode);
+
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));               
+
+    fclose(file);
+
+    StatusInt status = creatorWorkerPtr->ExecuteNextTaskInTaskPlan(); 
+    
+    return status;
     }
 
 

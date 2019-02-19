@@ -61,11 +61,15 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         
         void GetTaskPlanFileName(BeFileName& taskPlanFileName) const;
 
+        void CreateTaskPlanForTaskGrouping(uint32_t maxPriority, const WString& jobName, const BeFileName& smFileName);
+
         void GetSisterMainLockFileName(BeFileName& lockFileName) const;
 
         StatusInt CreateFilterTasks(uint32_t resolutionInd);
 
         StatusInt CreateStitchTasks(uint32_t resolutionInd);
+
+        StatusInt CopyNextPriorityTasks(uint32_t priority);
 
         uint32_t GetNbNodesPerTask(size_t nbNodes) const;
 
@@ -94,7 +98,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         StatusInt                    CreateMeshTasks();        
 
         StatusInt                    CreateTaskPlan();
-
+        
         StatusInt                    ExecuteNextTaskInTaskPlan();
 
         StatusInt                    ProcessMeshTask(BeXmlNodeP pXmlTaskNode);         

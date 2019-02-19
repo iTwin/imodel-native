@@ -65,6 +65,8 @@ struct TaskScheduler
 
         bool ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t);
 
+        StatusInt ExecuteTaskPlanNextTask(const BeFileName& taskPlanFileName);
+                
         bool ProcessTask(FILE* file);
 
         void PerformCutTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
