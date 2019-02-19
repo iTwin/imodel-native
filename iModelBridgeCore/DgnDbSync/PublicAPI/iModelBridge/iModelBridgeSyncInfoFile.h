@@ -386,6 +386,22 @@ struct iModelExternalSourceAspect
     //! Look up all aspects on the specified element by Kind
     IMODEL_BRIDGE_EXPORT static bvector<iModelExternalSourceAspect> GetAllByKind(DgnElementCR, Utf8CP kind, ECN::ECClassCP aspectClass = nullptr);
 
+    //! Return a statement that finds all aspects with the specified scope, identifier, and kind and returns the Element.Id and ECInstanceId of each
+    static BeSQLite::EC::CachedECSqlStatementPtr GetSelect(DgnDbR db, Utf8StringCR kind, DgnElementId scope, Utf8StringCR identifier, BeSQLite::EC::IECSqlBinder::MakeCopy cc)
+        {
+        auto allFromSameSource = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE " XTRN_SRC_ASPCT_Identifier "=? AND " XTRN_SRC_ASPCT_Scope ".Id=? AND " XTRN_SRC_ASPCT_Kind "=?");
+        auto rc = allFromSameSource->BindText(1, identifier.c_str(), cc); BeAssert(rc.IsSuccess());
+        rc = allFromSameSource->BindId(2, scope); BeAssert(rc.IsSuccess());
+        rc = allFromSameSource->BindText(3, kind.c_str(), cc); BeAssert(rc.IsSuccess());
+        return allFromSameSource;
+        }
+
+    //! Return a statement that finds all aspects from the same source as the specified aspect and returns the Element.Id and ECInstanceId of each
+    static BeSQLite::EC::CachedECSqlStatementPtr GetSelectFromSameSource(DgnDbR db, iModelExternalSourceAspect const& aspect, BeSQLite::EC::IECSqlBinder::MakeCopy cc = BeSQLite::EC::IECSqlBinder::MakeCopy::Yes)
+        {
+        return GetSelect(db, aspect.GetKind(), aspect.GetScope(), aspect.GetIdentifier(), cc);
+        }
+
     IMODEL_BRIDGE_EXPORT Utf8String FormatForDump(DgnDbR, bool includeProperties, bool includeSourceState) const;
     IMODEL_BRIDGE_EXPORT static Utf8String GetDumpHeaders(bool includeProperties, bool includeSourceState);
     IMODEL_BRIDGE_EXPORT static void Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY, bool includeProperties = true, bool includeSourceState = false);
