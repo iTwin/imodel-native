@@ -45,6 +45,10 @@
         <ProductDirectory Name="Assets" RelativeTo="Root" Path="assets"/>
         <ProductDirectory Name="Libs" LibType="Static" RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="Libs" RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="PublicApi" LibType="Static" RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="PublicApi" RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi" LibType="Static" RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi" RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="VendorNotices" LibType="Static" RelativeTo="Root" Path="notices"/>
         <ProductDirectory Name="VendorNotices" RelativeTo="Root" Path="notices"/>
     </ProductDirectoryList>
