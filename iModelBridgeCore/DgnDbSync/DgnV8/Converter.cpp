@@ -2557,6 +2557,8 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results, SyncInfo
     if (result.IsValid() && LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
         LOG.tracev("Insert %s into %s", IssueReporter::FmtElement(*result).c_str(), IssueReporter::FmtModel(*results.m_element->GetModel()).c_str());
 
+    _GetChangeDetector().OnElementSeen(*this, results.m_element.get());
+
     for (ElementConversionResults& child : results.m_childElements)
         {
         if (!child.m_element.IsValid())
@@ -2630,6 +2632,9 @@ DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conv
     conversionResults.m_element = result->CopyForEdit();// Note that we don't plan to modify the result after this. We just
                                                         // want the output to reflect the outcome. Since, we have a non-const
                                                         // pointer, we have to make a copy.
+    
+    _GetChangeDetector().OnElementSeen(*this, conversionResults.m_element.get());
+    
     return DgnDbStatus::Success;
     }
 
@@ -2742,13 +2747,16 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
 
     if (IChangeDetector::ChangeType::Update == csearch.m_changeType)
         {
-        _GetChangeDetector()._OnElementSeen(*this, csearch.GetExistingElementId());
         conversionResults.m_mapping = csearch.m_v8ElementAspect;
         if (v8eh.GetElementType() != DgnV8Api::RASTER_FRAME_ELM &&
             !(v8eh.GetElementType() == DgnV8Api::EXTENDED_ELM &&  // Quickly reject non-106
              DgnV8Api::ElementHandlerManager::GetHandlerId(v8eh) == DgnV8Api::PointCloudHandler::GetElemHandlerId()))
             {
             UpdateResults(conversionResults, csearch.GetExistingElementId(), elprov);
+            }
+        else
+            {
+            _GetChangeDetector()._OnElementSeen(*this, csearch.GetExistingElementId());      // NEEDS WORK: Do I really need to presere this for the special case of raster elements?
             }
         }
     else
@@ -2757,8 +2765,6 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         InsertResults(conversionResults, elprov);
         if (!conversionResults.m_element.IsValid())
             return;
-
-        _GetChangeDetector().OnElementSeen(*this, conversionResults.m_element.get());
         }
 
     AnnounceConversionResults(conversionResults, v8eh, v8mm, csearch);
