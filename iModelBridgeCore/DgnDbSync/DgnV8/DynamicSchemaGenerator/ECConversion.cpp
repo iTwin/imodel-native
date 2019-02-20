@@ -1448,16 +1448,9 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
                  LOG.warning("Error adding a reference to the core custom attributes schema.");
              else
                 {
-                 ECN::ECClassCP dynamicSchemaClass = coreSchema->GetClassCP("DynamicSchema");
-                 ECN::StandaloneECEnablerPtr enabler;
-                 if (nullptr != dynamicSchemaClass)
-                     enabler = dynamicSchemaClass->GetDefaultStandaloneEnabler();
-                 if (enabler.IsValid())
-                    {
-                     ECN::IECInstancePtr dynamicSchemaAttribute = enabler->CreateInstance();
-                     if (dynamicSchemaAttribute.IsValid())
-                         schema->SetCustomAttribute(*dynamicSchemaAttribute);
-                    }
+                ECN::IECInstancePtr dynamicInstance = ECN::CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+                if (dynamicInstance.IsValid())
+                    schema->SetCustomAttribute(*dynamicInstance);
                 }
             }
          }
