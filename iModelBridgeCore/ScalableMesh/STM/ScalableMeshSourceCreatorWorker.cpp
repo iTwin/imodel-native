@@ -803,8 +803,13 @@ void CreateGroupStitchingTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t ma
             
             if (currentTask->m_totalNbPoints + totalPointsCount > maxGroupSize)
                 {
-                toExecuteTasks.push_back(currentTask);
-                currentTask = new GenerationTask((uint32_t)toExecuteTasks[0]->m_resolutionToGenerate.size());                
+                //MST - Edge case, when the ratio split threshold/group size is big handling the stiching of one group can required more points 
+                //than the generation group itself.
+                if (currentTask->m_totalNbPoints > 0)
+                    {
+                    toExecuteTasks.push_back(currentTask);
+                    currentTask = new GenerationTask((uint32_t)toExecuteTasks[0]->m_resolutionToGenerate.size());
+                    }
 
                 for (auto& foundNodeId : foundNodeIds)
                     {
@@ -833,9 +838,9 @@ void CreateGroupStitchingTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t ma
 
         remainingTaskIter++;
         }
-
-    assert(currentTask->m_totalNbPoints > 0);
-    toExecuteTasks.push_back(currentTask);
+    
+    if (currentTask->m_totalNbPoints > 0)
+        toExecuteTasks.push_back(currentTask);
     
     /*
 
@@ -1675,7 +1680,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     CloseSqlFiles();
 
-   // m_pDataIndex = nullptr;
+    //m_pDataIndex->UnloadAllNodes();
+
+    //m_pDataIndex = nullptr;
 
 #if 0 
     //The save and save sister files are closing the db, which can create deadlock. Add sisterMain lock to prevent this for happening.
@@ -1905,7 +1912,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
 
     m_smSQLitePtr->Save();
 
-    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
     assert(pSqliteStore != nullptr);
     pSqliteStore->SaveSisterFiles();
 
@@ -1968,7 +1975,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
     pDataIndex->Store();
     m_smSQLitePtr->Save();
 
-    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
     assert(pSqliteStore != nullptr);
     pSqliteStore->SaveSisterFiles();
 
@@ -1981,7 +1988,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
     {            
     if (m_smDb == nullptr || m_smSisterDb == nullptr)
         {
-        SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+        SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
         assert(pSqliteStore != nullptr);
         
         m_mainFilePtr = GetFile(true);
