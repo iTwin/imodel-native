@@ -98,6 +98,9 @@
     <ClInclude Include="Published\Mocks\BuddiProviderMock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Published\Mocks\PolicyProviderMock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

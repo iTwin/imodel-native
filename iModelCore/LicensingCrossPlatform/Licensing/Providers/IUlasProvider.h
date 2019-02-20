@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/Providers/IPolicyProvider.h $
+|     $Source: Licensing/Providers/IUlasProvider.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,19 +10,21 @@
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
 
-//#include <WebServices/Configuration/UrlProvider.h>
-
+#include "../UsageDb.h"
 #include "../Policy.h"
+
+#include <memory>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
-typedef std::shared_ptr<struct IPolicyProvider> IPolicyProviderPtr;
+typedef std::shared_ptr<struct IUlasProvider> IUlasProviderPtr;
 
-struct IPolicyProvider
-{
+struct IUlasProvider
+    {
 public:
-    virtual folly::Future<std::shared_ptr<Policy>> GetPolicy() = 0;
-    virtual ~IPolicyProvider() {};
-};
+    virtual BentleyStatus PostUsageLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy) = 0;
+    virtual BentleyStatus PostFeatureLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy) = 0;
+    virtual ~IUlasProvider() {};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

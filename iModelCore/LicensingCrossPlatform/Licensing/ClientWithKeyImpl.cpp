@@ -27,6 +27,7 @@ ClientWithKeyImpl::ClientWithKeyImpl(
 	BeFileNameCR db_path,
 	bool offlineMode,
     IBuddiProviderPtr buddiProvider,
+    IUlasProviderPtr ulasProvider,
 	Utf8StringCR projectId,
 	Utf8StringCR featureString,
 	IHttpHandlerPtr httpHandler
@@ -39,6 +40,7 @@ ClientWithKeyImpl::ClientWithKeyImpl(
 	m_dbPath = db_path;
 	m_offlineMode = offlineMode;
     m_buddiProvider = buddiProvider;
+    m_ulasProvider = ulasProvider;
 	m_projectId = projectId;
 	m_featureString = featureString;
 	m_httpHandler = httpHandler;
@@ -89,11 +91,11 @@ BentleyStatus ClientWithKeyImpl::StopApplication()
 	m_lastRunningUsageheartbeatStartTime = 0;       // This will stop Usage heartbeat
 	m_lastRunningLogPostingheartbeatStartTime = 0;  // This will stop log posting heartbeat
 
-	if (m_usageDb->GetUsageRecordCount() > 0)
-		PostUsageLogs();
+    if (m_usageDb->GetUsageRecordCount() > 0)
+        m_ulasProvider->PostFeatureLogs(*m_usageDb, m_policy);
 
-	if (m_usageDb->GetFeatureRecordCount() > 0)
-		PostFeatureLogs();
+    if (m_usageDb->GetFeatureRecordCount() > 0)
+        m_ulasProvider->PostFeatureLogs(*m_usageDb, m_policy);
 
 	m_usageDb->Close();
 

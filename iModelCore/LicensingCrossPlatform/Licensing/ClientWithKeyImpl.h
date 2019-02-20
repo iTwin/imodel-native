@@ -29,6 +29,7 @@ public:
 		BeFileNameCR db_path,
 		bool offlineMode,
         IBuddiProviderPtr buddiProvider,
+        IUlasProviderPtr ulasProvider,
 		Utf8StringCR projectId,
 		Utf8StringCR featureString,
 		IHttpHandlerPtr httpHandler

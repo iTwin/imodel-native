@@ -33,6 +33,7 @@ BeFileNameCR dbPath,
 bool offlineMode,
 IBuddiProviderPtr buddiProvider,
 IPolicyProviderPtr policyProvider,
+IUlasProviderPtr ulasProvider,
 Utf8StringCR projectId,
 Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler
@@ -44,6 +45,7 @@ m_dbPath(dbPath),
 m_featureString(featureString),
 m_buddiProvider(buddiProvider),
 m_policyProvider(policyProvider),
+m_ulasProvider(ulasProvider),
 m_httpHandler(httpHandler)
     {
     m_usageDb = std::make_unique<UsageDb>();
@@ -321,8 +323,8 @@ void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
 
         if (time_elapsed >= logsPostingInterval)
             {
-            PostUsageLogs();
-            PostFeatureLogs();
+            m_ulasProvider->PostUsageLogs(*m_usageDb, m_policy);
+            m_ulasProvider->PostFeatureLogs(*m_usageDb, m_policy);
             m_lastRunningLogPostingheartbeatStartTime = currentTime;
             }
 
@@ -334,10 +336,10 @@ void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
         else
             {
             if (m_usageDb->GetUsageRecordCount() > 0)
-                PostUsageLogs();
+                m_ulasProvider->PostUsageLogs(*m_usageDb, m_policy);
 
             if (m_usageDb->GetFeatureRecordCount() > 0)
-                PostFeatureLogs();
+                m_ulasProvider->PostFeatureLogs(*m_usageDb, m_policy);
 
             m_logPostingHeartbeatStopped = true;
             }
@@ -580,176 +582,6 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
         }
     
     return policy;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClientImpl::PostUsageLogs()
-    {    
-    LOG.debug("ClientImpl::PostUsageLogs");
-
-    Utf8String fileName;
-    bvector<WString> logFiles;
-    BeFileName logPath(m_dbPath.GetDirectoryName());
-
-    fileName.Sprintf("LicUsageLog.%s.csv", BeGuid(true).ToString().c_str());
-    
-    logPath.AppendToPath(BeFileName(fileName));
-
-    if (SUCCESS != m_usageDb->WriteUsageToCSVFile(logPath))
-        {
-        LOG.error("ClientImpl::PostLogs - ERROR: Unable to write usage records to usage log.");
-        return ERROR;
-        }
-
-    m_usageDb->CleanUpUsages();
-
-    Utf8String ultimateId;
-    ultimateId.Sprintf("%ld", m_policy->GetUltimateSAPId());  
-
-    LogFileHelper lfh;
-    logFiles = lfh.GetLogFiles(Utf8String(logPath.GetDirectoryName()));
-
-    if (!logFiles.empty())
-        {
-        for (auto const& logFile : logFiles)
-            {
-            SendUsageLogs(BeFileName(logFile), ultimateId).wait();
-            }
-        }
-    
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClientImpl::PostFeatureLogs()
-    {
-    LOG.debug("ClientImpl::PostFeatureLogs");
-
-    Utf8String fileName;
-    bvector<WString> logFiles;
-    BeFileName featureLogPath(m_dbPath.GetDirectoryName());
-
-    fileName.Sprintf("LicFeatureLog.%s.csv", BeGuid(true).ToString().c_str());
-
-    featureLogPath.AppendToPath(BeFileName(fileName));
-
-    if (SUCCESS != m_usageDb->WriteFeatureToCSVFile(featureLogPath))
-        {
-        LOG.error("ClientImpl::PostFeatureLogs ERROR: Unable to write feature usage records to features log.");
-        return ERROR;
-        }
-
-    m_usageDb->CleanUpFeatures();
-
-    Utf8String ultimateId;
-    ultimateId.Sprintf("%ld", m_policy->GetUltimateSAPId());
-
-    LogFileHelper lfh;
-    logFiles = lfh.GetLogFiles(Utf8String(featureLogPath.GetDirectoryName()));
-
-    if (!logFiles.empty())
-        {
-        for (auto const& logFile : logFiles)
-            {
-            SendFeatureLogs(BeFileName(logFile), ultimateId).wait();
-            }
-        }
-
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> ClientImpl::SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId)
-    {
-    LOG.debug("ClientImpl::SendUsageLogs");
-
-    auto url = m_buddiProvider->UlasLocationBaseUrl();
-    url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(),
-                            m_clientInfo->GetLanguage().c_str());
-
-    LOG.debugv("ClientImpl::SendUsageLogs - UsageLoggingServiceLocation: %s", url.c_str());
-
-    HttpClient client(nullptr, m_httpHandler);
-
-    return client.CreateGetRequest(url).Perform().then(
-        [=](Response response)
-        {
-        if (!response.IsSuccess())
-            throw HttpError(response);
-
-        Json::Value jsonBody = Json::Value::From(response.GetBody().AsString());
-        auto status = jsonBody["status"].asString();
-        auto epUri = jsonBody["epUri"].asString();
-        auto sharedAccessSignature = jsonBody["epInfo"]["SharedAccessSignature"].asString();
- 
-        HttpClient client(nullptr, m_httpHandler);
-        auto uploadRequest = client.CreateRequest(epUri + sharedAccessSignature, "PUT");
-        uploadRequest.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
-        uploadRequest.SetRequestBody(HttpFileBody::Create(usageCSV));
-        return uploadRequest.Perform().then([=](Response response)
-            {
-            if (!response.IsSuccess())
-                {
-                LOG.errorv("ClientImpl::SendUsageLogs ERROR: Unable to post %s - %s", usageCSV.c_str(), HttpError(response).GetMessage().c_str());
-                throw HttpError(response);
-                }
-
-            BeFileName(usageCSV).BeDeleteFile();
-
-            return folly::makeFuture();
-            });
-        });
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> ClientImpl::SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId)
-    {
-    LOG.debug("ClientImpl::SendFeatureLogs");
-
-    auto url = m_buddiProvider->UlasLocationBaseUrl();
-    url += Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(),
-                            m_clientInfo->GetLanguage().c_str());
-
-    LOG.debugv("ClientImpl::SendFeatureLogs - UsageLoggingServiceLocation: %s", url.c_str());
-
-    HttpClient client(nullptr, m_httpHandler);
-
-    return client.CreateGetRequest(url).Perform().then(
-        [=] (Response response)
-        {
-        if (!response.IsSuccess())
-            throw HttpError(response);
-
-        Json::Value jsonBody = Json::Value::From(response.GetBody().AsString());
-        auto status = jsonBody["status"].asString();
-        auto epUri = jsonBody["epUri"].asString();
-        auto sharedAccessSignature = jsonBody["epInfo"]["SharedAccessSignature"].asString();
-
-        HttpClient client(nullptr, m_httpHandler);
-        auto uploadRequest = client.CreateRequest(epUri + sharedAccessSignature, "PUT");
-        uploadRequest.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
-        uploadRequest.SetRequestBody(HttpFileBody::Create(featureCSV));
-        return uploadRequest.Perform().then([=] (Response response)
-            {
-            if (!response.IsSuccess())
-                {
-                LOG.errorv("ClientImpl::SendFeatureLogs ERROR: Unable to post %s - %s", featureCSV.c_str(), HttpError(response).GetMessage().c_str());
-                throw HttpError(response);
-                }
-
-            BeFileName(featureCSV).BeDeleteFile();
-
-            return folly::makeFuture();
-            });
-        });
     }
 
 /*--------------------------------------------------------------------------------------+

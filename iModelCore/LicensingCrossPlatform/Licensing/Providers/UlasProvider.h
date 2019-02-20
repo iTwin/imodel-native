@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/Providers/PolicyProvider.h $
+|     $Source: Licensing/Providers/UlasProvider.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,35 +11,34 @@
 #include <Licensing/LicenseStatus.h>
 
 #include "IBuddiProvider.h"
-#include "IPolicyProvider.h"
-//#include "../Policy.h"
+#include "IUlasProvider.h"
 
 #include <WebServices/Client/ClientInfo.h>
-#include <WebServices/Connect/IConnectAuthenticationProvider.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-struct PolicyProvider : IPolicyProvider
+struct UlasProvider : IUlasProvider
     {
 protected:
-    ClientInfoPtr m_clientInfo;
     IBuddiProviderPtr m_buddiProvider;
-    std::shared_ptr<IConnectAuthenticationProvider> m_authProvider;
+    ClientInfoPtr m_clientInfo;
+    BeFileName m_dbPath;
     IHttpHandlerPtr m_httpHandler;
 
-    folly::Future<Utf8String> GetCertificate();
-    folly::Future<Utf8String> PerformGetPolicyRequest();
-
 public:
-    PolicyProvider
+    UlasProvider
         (
         IBuddiProviderPtr buddiProvider,
         ClientInfoPtr clientInfo,
-        std::shared_ptr<IConnectAuthenticationProvider> authProvider,
+        BeFileNameCR dbPath,
         IHttpHandlerPtr httpHandler
         );
-    folly::Future<std::shared_ptr<Policy>> GetPolicy();
+
+    BentleyStatus PostUsageLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy);
+    folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
+    BentleyStatus PostFeatureLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy);
+    folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

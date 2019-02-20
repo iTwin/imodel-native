@@ -14,14 +14,16 @@
     <ClCompile Include="Licensing\ClientWithKeyImpl.cpp" />
     <ClCompile Include="Licensing\Policy.cpp" />
     <ClCompile Include="Licensing\PolicyToken.cpp" />
+    <ClCompile Include="Licensing\Providers\UlasProvider.cpp" />
     <ClCompile Include="Licensing\UsageDb.cpp" />
-    <ClCompile Include="Licensing\Utils\BuddiProvider.cpp" />
+    <ClCompile Include="Licensing\Providers\BuddiProvider.cpp" />
     <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
     <ClCompile Include="Licensing\GenerateSID.cpp" />
     <ClCompile Include="Licensing\Utils\FeatureUserDataMap.cpp" />
     <ClCompile Include="Licensing\Utils\InMemoryJsonLocalState.cpp" />
     <ClCompile Include="Licensing\Utils\JWToken.cpp" />
     <ClCompile Include="Licensing\Utils\LogFileHelper.cpp" />
+    <ClCompile Include="Licensing\Providers\PolicyProvider.cpp" />
     <ClCompile Include="Licensing\Utils\SCVWritter.cpp" />
     <ClCompile Include="Licensing\Utils\UrlSafeBase64Utilities.cpp" />
   </ItemGroup>
@@ -31,8 +33,10 @@
     <ClInclude Include="Licensing\IClient.h" />
     <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
     <ClInclude Include="Licensing\IFreeClient.h" />
-    <ClInclude Include="PublicAPI\Licensing\Utils\BuddiProvider.h" />
-    <ClInclude Include="PublicAPI\Licensing\Utils\IBuddiProvider.h" />
+    <ClInclude Include="Licensing\Providers\BuddiProvider.h" />
+    <ClInclude Include="Licensing\Providers\IBuddiProvider.h" />
+    <ClInclude Include="Licensing\Providers\IUlasProvider.h" />
+    <ClInclude Include="Licensing\Providers\UlasProvider.h" />
     <ClInclude Include="PublicAPI\Licensing\FreeClient.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\DateHelper.h" />
     <ClInclude Include="Licensing\FreeApplicationPolicyHelper.h" />
@@ -41,6 +45,8 @@
     <ClInclude Include="Licensing\PolicyHelper.h" />
     <ClInclude Include="Licensing\PolicyToken.h" />
     <ClInclude Include="Licensing\UsageDb.h" />
+    <ClInclude Include="Licensing\Providers\IPolicyProvider.h" />
+    <ClInclude Include="Licensing\Providers\PolicyProvider.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\UsageJsonHelper.h" />
     <ClInclude Include="PublicAPI\Licensing\Client.h" />
     <ClInclude Include="PublicAPI\Licensing\LicenseStatus.h" />

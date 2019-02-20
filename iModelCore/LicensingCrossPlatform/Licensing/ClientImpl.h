@@ -28,6 +28,7 @@
 
 #include "Providers/IBuddiProvider.h"
 #include "Providers/IPolicyProvider.h"
+#include "Providers/IUlasProvider.h"
 
 // Log Posting Sources
 #define LOGPOSTINGSOURCE_REALTIME           "RealTime"
@@ -70,6 +71,7 @@ protected:
     bool m_stopApplicationCalled;
     IBuddiProviderPtr m_buddiProvider;
     IPolicyProviderPtr m_policyProvider;
+    IUlasProviderPtr m_ulasProvider;
 
     // Policy
 	std::shared_ptr<Policy> m_policy;
@@ -79,7 +81,6 @@ protected:
     std::list<std::shared_ptr<Policy>> GetPolicies();
     std::list<std::shared_ptr<Policy>> GetUserPolicies();
     std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId="");
-    folly::Future<Utf8String> PerformGetPolicyRequest();
     bool HasOfflineGracePeriodStarted();
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
 
@@ -101,8 +102,8 @@ protected:
 
     void LogPostingHeartbeat(int64_t currentTime);
     void StopLogPostingHeartbeat();
-    BentleyStatus PostUsageLogs();
-    BentleyStatus PostFeatureLogs();
+    //BentleyStatus PostUsageLogs();
+    //BentleyStatus PostFeatureLogs();
 
     // Policy heartbeat
     int64_t m_lastRunningPolicyheartbeatStartTime = 0;
@@ -128,6 +129,7 @@ public:
         bool offlineMode,
         IBuddiProviderPtr buddiProvider,
         IPolicyProviderPtr policyProvider,
+        IUlasProviderPtr ulasProvider,
         Utf8StringCR projectId,
         Utf8StringCR featureString,
         IHttpHandlerPtr httpHandler
@@ -136,14 +138,13 @@ public:
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
-    LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
+    //LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
     //Features
     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
-    LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
+    //LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
 
-    // Policy -> moved to Provider
-    //LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
+    // Policy
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
     
     // Product status

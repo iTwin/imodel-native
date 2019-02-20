@@ -35,6 +35,8 @@ Headers + $(SourceDir)Providers/IPolicyProvider.h
 Headers + $(SourceDir)Providers/PolicyProvider.h
 Headers + $(SourceDir)Providers/IBuddiProvider.h
 Headers + $(SourceDir)Providers/BuddiProvider.h
+Headers + $(SourceDir)Providers/IUlasProvider.h
+Headers + $(SourceDir)Providers/UlasProvider.h
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
@@ -72,5 +74,7 @@ $(o)FeatureUserDataMap$(oext)        : $(SourceDir)Utils/FeatureUserDataMap.cpp 
 $(o)BuddiProvider$(oext)             : $(SourceDir)Providers/BuddiProvider.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)PolicyProvider$(oext)            : $(SourceDir)Providers/PolicyProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)UlasProvider$(oext)              : $(SourceDir)Providers/UlasProvider.cpp $(Headers) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
