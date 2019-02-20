@@ -498,7 +498,7 @@ TEST_F(ConverterTests, NoGCSNoChange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-// Importing DGN file that does not have a GCS. In that case, specify –inputgcs=lat,lng,angle in order to position the input DGN data in the BIM.
+// Importing DGN file that does not have a GCS. In that case, specify ï¿½inputgcs=lat,lng,angle in order to position the input DGN data in the BIM.
 TEST_F(ConverterTests, InputGCS)
     {
     LineUpFiles(L"inputGCS.bim", L"Test3d.dgn", false);
@@ -531,7 +531,7 @@ TEST_F(ConverterTests, InputGCS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-// input DGN File that does have a GCS, but it’s not the one we want for the BIM. In that case, specify --outputgcs=csname, and the converter will 
+// input DGN File that does have a GCS, but itï¿½s not the one we want for the BIM. In that case, specify --outputgcs=csname, and the converter will 
 // a) create the BIM with the specified GCS.
 // b) reproject the input DGN into it.
 TEST_F(ConverterTests, OutputGCS)
@@ -712,7 +712,7 @@ TEST_F(ConverterTests, GCSMultiFilesReprojectImport)
     ASSERT_TRUE (db->IsDbOpen());
 
     ValidateModelRange (*db.get(), "2D Site Data", 775473.879, 82772.289, -0.0005, 776530.835, 83720.500, 0.0005);
-    ValidateModelRange(*db.get(), "Building 1", 775954.601, 83335.970, -0.0005, 776087.898, 83454.089, 0.0005);
+    ValidateModelRange(*db.get(), "Building 1", 775953.178, 83335.970, -0.0005, 776088.567, 83467.103, 0.0005);
     ValidateModelRange (*db.get(), "TPB Building", 775885.795, 83307.686, -0.0005, 775960.121, 83398.667, 0.0005);
     }
 
