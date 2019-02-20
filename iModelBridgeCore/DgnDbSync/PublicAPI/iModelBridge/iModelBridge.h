@@ -10,6 +10,7 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/SHA1.h>
+#include <BeHttp/HttpClient.h>
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>

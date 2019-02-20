@@ -303,7 +303,7 @@ void ChangeDetector::_DetectDeletedElementsInFile(Converter& converter, DgnV8Fil
         auto model = converter.GetDgnDb().Models().GetModel(modelInFile->GetModelId());
         if (!model.IsValid())
             continue; // could happen if modeled element still exists but submodel itself does not.
-        elementsInModel.GetStatement()->BindInt(1, modelInFile.GetV8ModelSyncInfoId().GetValue());
+        SyncInfo::V8ElementExternalSourceAspectIterator elementsInModel(*model);
         _DetectDeletedElements(converter, elementsInModel);
         }
     }
