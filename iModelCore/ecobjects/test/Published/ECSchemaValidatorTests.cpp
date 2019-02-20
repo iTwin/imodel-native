@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECSchemaValidatorTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -36,7 +36,7 @@ static Utf8CP bisSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 </ECCustomAttributes>
             </ECNavigationProperty>
         </ECEntityClass>
-    
+
         <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
             <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
                 <Class class="Element"/>
@@ -45,24 +45,24 @@ static Utf8CP bisSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 <Class class="ElementUniqueAspect"/>
             </Target>
         </ECRelationshipClass>
-    
+
         <ECEntityClass typeName="Model" modifier="Abstract" description="A Model is a container for persisting a collection of related elements.">
-        <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
-            <ECCustomAttributes>
-                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="IsTemplate" typeName="boolean" displayLabel="Is Template" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
-            <ECCustomAttributes>
-                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
-            <ECCustomAttributes>
-                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECEntityClass>
+            <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
+                <ECCustomAttributes>
+                    <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+                </ECCustomAttributes>
+            </ECProperty>
+            <ECProperty propertyName="IsTemplate" typeName="boolean" displayLabel="Is Template" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
+                <ECCustomAttributes>
+                    <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+                </ECCustomAttributes>
+            </ECProperty>
+            <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
+                <ECCustomAttributes>
+                    <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECEntityClass>
     </ECSchema>)xml";
 
 struct SchemaValidatorTests : ECTestFixture
@@ -146,17 +146,6 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
             <ECClass typeName="TestClass" isDomainClass="true">
                 <BaseClass>bis:Element</BaseClass>
             </ECClass>
-            <ECClass typeName="A" isDomainClass="true">
-                <BaseClass>bis:Element</BaseClass>
-            </ECClass>
-            <ECRelationshipClass typeName="ARelB">
-                <Source cardinality="(1,1)" polymorphic="true">
-                    <Class class="TestClass"/>
-                </Source>
-                <Target cardinality="(1,1)" polymorphic="true">
-                    <Class class="A"/>
-                </Target>
-            </ECRelationshipClass>
         </ECSchema>)xml";
     InitBisContextWithSchemaXml(schemaXml);
     ASSERT_TRUE(schema.IsValid());
@@ -169,36 +158,14 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
-        "       <BaseClass>bis:Element</BaseClass>"
+        "        <BaseClass>bis:Element</BaseClass>"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='A'>"
-        "       <BaseClass>bis:Element</BaseClass>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='ARelB' modifier='None'>"
-        "        <Source multiplicity='(1..1)' polymorphic='true' roleLabel='source'>"
-        "            <Class class='TestClass'/>"
-        "        </Source>"
-        "        <Target multiplicity='(1..1)' polymorphic='true' roleLabel='Target'>"
-        "            <Class class='A'/>"
-        "        </Target>"
-        "    </ECRelationshipClass>"
         "</ECSchema>";
 
     InitBisContextWithSchemaXml(schemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
     EXPECT_TRUE(validator.Validate(*schema)) << "TestSchema validates successfully as it is a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema";
-    }
-
-    // Test uncessful validation of previous version schema
-    {
-    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-        </ECSchema>)xml";
-    InitBisContextWithSchemaXml(badSchemaXml);
-    ASSERT_TRUE(schema.IsValid());
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(validator.Validate(*schema)) << "Should fail validation as the schema is not latest version";
     }
     }
 
@@ -2431,31 +2398,6 @@ TEST_F(SchemaValidatorTests, NoClassShouldSubclassSpatialLocationModel)
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisSpatialLocationModel));
     ASSERT_FALSE(validator.Validate(*schema)) << "Entity class subclasses bis:SpatialLocationModel, so validation should fail";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Joseph.Urbano                        08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaValidatorTests, NoClassShouldSubclassGroupInformationModel)
-    {
-    // Test that an entity class may not subclass bis:GroupInformationModel
-    ECSchemaPtr bisSchema;
-    ECEntityClassP bisEntity, bisGroupInformationModel;
-    ECSchemaPtr schema;
-    ECEntityClassP entity0, entity1;
-
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisGroupInformationModel, "GroupInformationModel"));
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "GoodEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
-
-    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class does not subclass bis:GroupInformationModel, so validation should succeed";
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisGroupInformationModel));
-    ASSERT_FALSE(validator.Validate(*schema)) << "Entity class subclasses bis:GroupInformationModel, so validation should fail";
     }
 
 /*---------------------------------------------------------------------------------**//**

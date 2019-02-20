@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchemaValidator.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,9 +45,9 @@ public:
     //! Run the provided schema against all added validators.
     ECOBJECTS_EXPORT bool Validate(ECSchemaCR schema);
 
-    ECOBJECTS_EXPORT void AddSchemaValidator(Validator<ECSchemaCR> validator);
-    ECOBJECTS_EXPORT void AddClassValidator(Validator<ECClassCR> validator);
-    ECOBJECTS_EXPORT void AddKindOfQuantityValidator(Validator<KindOfQuantityCR> validator);
+    void AddSchemaValidator(Validator<ECSchemaCR> validator) {m_schemaValidators.push_back(validator);}
+    void AddClassValidator(Validator<ECClassCR> validator) {m_classValidators.push_back(validator);}
+    void AddKindOfQuantityValidator(Validator<KindOfQuantityCR> validator) {m_koqValidators.push_back(validator);}
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
