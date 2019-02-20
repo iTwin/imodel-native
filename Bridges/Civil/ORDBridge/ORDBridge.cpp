@@ -206,13 +206,13 @@ SubjectCPtr ORDBridge::_InitializeJob()
             physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
         m_converter->SetPhysicalNetworkModel(*physicalNetworkModelPtr);
 
-        InsertElementHasLinksRelationship(GetDgnDbR(), physicalPartitionCPtr->GetElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
+        InsertElementHasLinksRelationship(GetDgnDbR(), physicalPartitionCPtr->GetElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
         auto designAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(subjectCR, AlignmentBim::RoadRailAlignmentDomain::GetDesignPartitionName());
-        InsertElementHasLinksRelationship(GetDgnDbR(), designAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
+        InsertElementHasLinksRelationship(GetDgnDbR(), designAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
         auto linearsAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(subjectCR, AlignmentBim::RoadRailAlignmentDomain::Get3DLinearsPartitionName());
-        InsertElementHasLinksRelationship(GetDgnDbR(), linearsAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
+        InsertElementHasLinksRelationship(GetDgnDbR(), linearsAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
         m_converter->SetUpModelFormatters(subjectCR);
 
@@ -248,7 +248,7 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     auto fileScopeId = docLink.m_syncInfoRecord.GetROWID();
 
     // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
-    ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId, m_converter->GetRootModelUnitSystem());
+    ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId, m_converter->GetRootModelUnitSystem(), GetSyncInfo());
     Transform _old, _new;
     params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
     params.isCreatingNewDgnDb = IsCreatingNewDgnDb();

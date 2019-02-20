@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ORDBridgeInternal.h>
@@ -701,7 +701,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         {
         ORDAlignmentsConverter::CifAlignmentSourceItem alignmentItem(*cifAlignmentPtr);
         iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(params.fileScopeId, alignmentItem.Kind(), alignmentItem._GetId());
-        auto iterator = params.changeDetectorP->GetSyncInfo().MakeIteratorBySourceId(sourceIdentity);
+        auto iterator = params.syncInfo.MakeIteratorBySourceId(sourceIdentity);
         auto iterEntry = iterator.begin();
         if (iterEntry != iterator.end())
             {
@@ -1285,7 +1285,7 @@ void ORDConverter::AssociateGeneratedAlignments()
 
         ORDAlignmentsConverter::CifAlignmentSourceItem alignmentItem(*cifAlignmentPtr);
         iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(m_ordParams->fileScopeId, alignmentItem.Kind(), alignmentItem._GetId());
-        auto algIterator = m_ordParams->changeDetectorP->GetSyncInfo().MakeIteratorBySourceId(sourceIdentity);
+        auto algIterator = m_ordParams->syncInfo.MakeIteratorBySourceId(sourceIdentity);
         auto iterEntry = algIterator.begin();
         if (iterEntry != algIterator.end())
             {
@@ -1299,7 +1299,7 @@ void ORDConverter::AssociateGeneratedAlignments()
 
         ORDCorridorsConverter::CifCorridorSourceItem corridorItem(*cifCorridorPtr);
         sourceIdentity = iModelBridgeSyncInfoFile::SourceIdentity(m_ordParams->fileScopeId, corridorItem.Kind(), corridorItem._GetId());
-        auto corrIterator = m_ordParams->changeDetectorP->GetSyncInfo().MakeIteratorBySourceId(sourceIdentity);
+        auto corrIterator = m_ordParams->syncInfo.MakeIteratorBySourceId(sourceIdentity);
         iterEntry = corrIterator.begin();
         if (iterEntry != corrIterator.end())
             {
@@ -1467,7 +1467,7 @@ void ORDConverter::_OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::Resolve
             if (SUCCESS == namedViewPtr->GetClipElement(clipEeh))
                 {
                 DgnElementId bimClipElmId;
-                if (GetSyncInfo().TryFindElement(bimClipElmId, clipEeh))
+                if (TryFindElement(bimClipElmId, clipEeh))
                     {
                     auto bimClipElmCPtr = v8SheetModelMapping.GetDgnModel().GetDgnDb().Elements().GetElement(bimClipElmId);
                     if (bimClipElmCPtr->IsGeometricElement())

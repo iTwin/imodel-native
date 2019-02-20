@@ -28,9 +28,9 @@ public:
     struct Params
         {
         Params(Dgn::iModelBridge::Params const& iModelBridgeParams, Dgn::SubjectCR subject, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
-            Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId, Dgn::UnitSystem rootModelUnitSystem) :
+            Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId, Dgn::UnitSystem rootModelUnitSystem, Dgn::iModelBridgeSyncInfoFile& syncInfo) :
             iModelBridgeParamsCP(&iModelBridgeParams), subjectCPtr(&subject), changeDetectorP(&changeDetector), fileScopeId(fileScopeId), 
-            spatialDataTransformHasChanged(false), rootModelUnitSystem(rootModelUnitSystem)
+            spatialDataTransformHasChanged(false), rootModelUnitSystem(rootModelUnitSystem), syncInfo(syncInfo)
             {}
 
         Dgn::iModelBridge::Params const* iModelBridgeParamsCP;
@@ -41,6 +41,7 @@ public:
         bool isCreatingNewDgnDb;
         bool isUpdating;
         Dgn::UnitSystem rootModelUnitSystem;
+        Dgn::iModelBridgeSyncInfoFile& syncInfo;
         };
 
 private:

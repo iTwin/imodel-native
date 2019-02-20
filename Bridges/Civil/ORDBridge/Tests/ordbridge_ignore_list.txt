@@ -2,6 +2,6 @@
 
 #CiviliModelBridgesORDBridgeTests.ORDHelloWorldGeometryConversionTest
 #CiviliModelBridgesORDBridgeTests.ORDHelloWorldCorridorConversionTest
-#CiviliModelBridgesORDBridgeTests.ORDIntersectionWithEditsTest
+CiviliModelBridgesORDBridgeTests.ORDIntersectionWithEditsTest
 #ORDFullyFederatedConversionTest
 #ORDIHLConversionTest
