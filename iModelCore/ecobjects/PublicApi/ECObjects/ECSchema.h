@@ -1728,6 +1728,7 @@ private:
     ECObjectsStatus FixArrayPropertyOverrides();
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty, Utf8StringR errMsg) const;
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyReferences = false);
 
     void            OnBaseClassPropertyRemoved(ECPropertyCR baseProperty);
     void            OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP newBaseProperty);
@@ -1988,16 +1989,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, Utf8CP destPropertyName, ECPropertyCP sourceProperty, bool copyCustomAttributes);
 
     //! Returns true if this class derives from the input baseClass once and only once.  Returns false if this class does not derive from the input base class or if it is found more than once when traversing base classes
-
-    //! Copies the sourceProperty, adds it to the current class and outputs the copied property if the copy was successful
-    //! @param[out]  destProperty           Outputs the copied property.  Only valid if the method returns ::Success
-    //! @param[in]   sourceProperty         The property to copy into this class.  If nullptr, ::NullPointerValue returned.
-    //! @param[in]   destPropertyName       The name for the destProperty property
-    //! @param[in]   copyCustomAttributes   If true the primary custom attributes are copied to the destProperty.
-    //! @param[in]   andAddProperty         Whether to add the property to this.
-    //! @param[in]   copyReferences         Whether to copy references (like enums)
-    ECOBJECTS_EXPORT ECObjectsStatus CopyProperty (ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyReferences = false);
-
     ECOBJECTS_EXPORT bool IsSingularlyDerivedFrom(ECClassCR baseClass) const;
 
     ECOBJECTS_EXPORT bool Validate() const;
