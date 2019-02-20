@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/FakeRegistry.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/FakeRegistry.h>
@@ -48,12 +48,13 @@ FakeRegistry::FakeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            FakeRegistry::WriteAssignments()
+BentleyStatus            FakeRegistry::WriteAssignments()
     {
-    OpenOrCreateStateDb();
+    if (BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK != OpenOrCreateStateDb())
+        return ERROR;
     _DiscoverInstalledBridges();
     SearchForBridgesToAssignToDocuments();
-    m_stateDb.SaveChanges();
+    return (BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK == m_stateDb.SaveChanges() ? SUCCESS : ERROR);
     //m_stateDb.CloseDb();
     }
 

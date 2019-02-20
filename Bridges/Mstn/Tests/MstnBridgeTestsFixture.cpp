@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/MstnBridgeTestsFixture.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -27,8 +27,8 @@ BentleyApi::BeFileName MstnBridgeTestsFixture::GetOutputDir()
     {
     BentleyApi::BeFileName testDir;
     BentleyApi::BeTest::GetHost().GetOutputRoot(testDir);
-    testDir.AppendToPath(L"iModelBridgeTests");
-    testDir.AppendToPath(L"Dgnv8Bridge");
+    //testDir.AppendToPath(L"iModelBridgeTests");
+    //testDir.AppendToPath(L"Dgnv8Bridge");
     return testDir;
     }
 
@@ -149,16 +149,19 @@ void MstnBridgeTestsFixture::MakeCopyOfFile(BentleyApi::BeFileNameR outFile, Ben
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir, WCharCP bridgeRegSubkey, bool setCredentials)
+void MstnBridgeTestsFixture::SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir, WCharCP bridgeRegSubkey, bool setCredentials, WCharCP iModelName)
     {
     args.push_back(L"iModelBridgeTests.ConvertLinesUsingBridgeFwk");                                                 // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-environment=Qa");
-    args.push_back(L"--server-repository=iModelBridgeTests_Test1");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    if (NULL == iModelName)
+        args.push_back(L"--server-repository=iModelBridgeTests_Test1");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    else
+        args.push_back(BentleyApi::WPrintfString(L"--server-repository=%s", iModelName).c_str());
     args.push_back(L"--server-project-guid=iModelBridgeTests_Project");                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
     if (setCredentials)
         {
-        args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+        args.push_back(L"--server-user=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
         args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
         }
     args.push_back(BentleyApi::WPrintfString(L"--fwk-bridge-library=\"%s\"", GetDgnv8BridgeDllName().c_str()));     // must refer to a path that exists! 
@@ -194,7 +197,7 @@ void MstnBridgeTestsFixture::AddAttachment(BentleyApi::BeFileName& inputFile, Be
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile)
+int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile, int num)
     {
     int64_t elementId = 0;
     ScopedDgnv8Host testHost;
@@ -204,13 +207,19 @@ int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile)
     {
     V8FileEditor v8editor;
     v8editor.Open(inputFile);
-    DgnV8Api::ElementId eid1;
-    v8editor.AddLine(&eid1);
-    elementId = eid1;
+    for (int index = 0; index < num; ++index)
+        {
+        DgnV8Api::ElementId eid1;
+        v8editor.AddLine(&eid1,nullptr, Bentley::DPoint3d::FromXYZ((double) index * 1000, (double) index * 1000, 0));
+        if (index == 0)
+            elementId = eid1;
+        }
     v8editor.Save();
     }
     return elementId;
     }
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
@@ -268,11 +277,30 @@ int32_t MstnBridgeTestsFixture::DbFileInfo::GetBISClassCount(CharCP className)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int32_t MstnBridgeTestsFixture::DbFileInfo::GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid)
     {
-    CachedStatementPtr stmt = m_db->Elements().GetStatement("SELECT count(*) FROM " DGN_TABLE_ProvenanceModel " WHERE  V8FileId = ?");
+    Utf8String ecsql("SELECT Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind ='DocumentWithBeGuid') AND (Identifier= ?))");
+    
+    auto stmt = m_db->GetPreparedECSqlStatement(ecsql.c_str());
+
+    if (!stmt.IsValid())
+        return 0;
+
+    stmt->BindId(1, m_db->Elements().GetRootSubjectId());
     BentleyApi::Utf8String guidString = fileGuid.ToString();
-    stmt->BindText(1, guidString.c_str(), Statement::MakeCopy::No);
-    stmt->Step();
-    return  stmt->GetValueInt(0);
+    stmt->BindText(2, guidString.c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    
+    if (BE_SQLITE_ROW != stmt->Step())
+        return 0;
+    
+    DgnElementId repoLink = stmt->GetValueId<DgnElementId>(0);
+
+    Utf8String modelSQL("SELECT count(*) FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind = 'Model') )");
+
+    auto modelStmt = m_db->GetPreparedECSqlStatement(modelSQL.c_str());
+    modelStmt->BindId(1, repoLink);
+    if (BE_SQLITE_ROW != modelStmt->Step())
+        return 0;
+    
+    return  modelStmt->GetValueInt(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -304,7 +332,7 @@ void MstnBridgeTestsFixture::RunTheBridge(BentleyApi::bvector<BentleyApi::WStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,  BentleyApi::WCharCP dirName,
+void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir, BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
                                                 BentleyApi::BeFileNameCR inputFile, BentleyApi::BeSQLite::BeGuidCR inputGuid,
                                                 BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid)
     {
@@ -313,7 +341,8 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
     BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(L"iModelBridgeTests_Test1.fwk-registry.db");
+    assignDbName.AppendToPath(iModelName);
+    assignDbName.AppendExtension(L"fwk-registry.db");
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
 
@@ -359,11 +388,198 @@ BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementBy
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(*m_db, "SELECT sourceInfo.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
-                  SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS sourceInfo"
-                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.SourceId = ?)");
-    estmt.BindInt64(1, srcElementId);
+                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.Identifier = ?)");
+    estmt.BindText(1, Utf8PrintfString("%lld", srcElementId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     if (BE_SQLITE_ROW != estmt.Step())
         return BentleyApi::BentleyStatus::BSIERROR;
     elementId = estmt.GetValueId<DgnElementId>(0);
     return BentleyApi::BentleyStatus::BSISUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t SynchInfoTests::AddModel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR modelName)
+{
+    Bentley::WString wModelName (modelName.c_str ());
+    int64_t modelId = 0;
+    DgnV8Api::ModelId modelid;
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost ();
+    if (adoptHost)
+        testHost.Init ();
+    {
+        V8FileEditor v8editor;
+        v8editor.Open (inputFile);
+        v8editor.AddModel (modelid, wModelName.c_str ());
+    }
+    modelId = modelid;
+    return modelId;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t SynchInfoTests::AddNamedView (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR viewName)
+{
+    Bentley::WString wViewName (viewName.c_str ());
+    int64_t viewElementId = 0;
+    DgnV8Api::ElementId elementId;
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost ();
+    if (adoptHost)
+        testHost.Init ();
+    {
+        V8FileEditor v8editor;
+        v8editor.Open (inputFile);
+        v8editor.AddView (elementId, wViewName.c_str ());
+    }
+    viewElementId = elementId;
+    return viewElementId;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t SynchInfoTests::AddLevel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR levelName)
+{
+    Bentley::WString wLavelName (levelName.c_str ());
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost ();
+    int64_t levelid;
+    if (adoptHost)
+        testHost.Init ();
+    {
+        DgnV8Api::LevelId id;
+        V8FileEditor v8editor;
+        v8editor.Open (inputFile);
+        v8editor.AddLevel (id, wLavelName);
+        levelid = id;
+    }
+    return levelid;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SynchInfoTests::ValidateNamedViewSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId)
+{
+    DbFileInfo info (dbFile);
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare(*info.m_db, "SELECT kind, Identifier, sourceInfo.JsonProperties FROM "
+                  BIS_SCHEMA (BIS_CLASS_ViewDefinition) " AS v,"
+        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+        " WHERE (sourceInfo.Element.Id=v.ECInstanceId) AND (sourceInfo.Identifier = ?)");
+    estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
+    BentleyApi::Utf8String kind, properties, viewName;
+    int64_t id;
+    rapidjson::Document json;
+
+    kind = estmt.GetValueText (0);
+    ASSERT_TRUE (kind.Equals ("ViewDefinition"));
+
+    id = estmt.GetValueId<int64_t> (1);
+    ASSERT_TRUE (id == srcId);
+
+    properties = estmt.GetValueText (2);
+    json.Parse (properties.c_str ());
+    viewName = json["v8ViewName"].GetString ();
+    ASSERT_TRUE (viewName.Equals ("TestView"));
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SynchInfoTests::ValidateLevelSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId)
+{
+    DbFileInfo info (dbFile);
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare(*info.m_db, "SELECT kind, Identifier, JsonProperties FROM "
+                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo WHERE (sourceInfo.Identifier = ?)");
+    estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
+    BentleyApi::Utf8String kind, properties, levelName;
+    int64_t id;
+    rapidjson::Document json;
+
+    kind = estmt.GetValueText (0);
+    ASSERT_TRUE (kind.Equals ("Level"));
+
+    id = estmt.GetValueId<int64_t> (1);
+    ASSERT_TRUE (id == srcId);
+
+    properties = estmt.GetValueText (2);
+    json.Parse (properties.c_str ());
+    levelName = json["v8LevelName"].GetString ();
+    ASSERT_TRUE (levelName.Equals ("TestLevel"));
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt1;
+    estmt1.Prepare (*info.m_db, "SELECT * FROM "
+        BIS_SCHEMA (BIS_CLASS_Category) " AS c WHERE (c.CodeValue = ?)");
+
+    estmt1.BindText (1, levelName.c_str (), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt1.Step ());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SynchInfoTests::ValidateModelSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId)
+{
+    DbFileInfo info (dbFile);
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare (*info.m_db, "SELECT kind, sourceInfo.Identifier, sourceInfo.JsonProperties FROM "
+        BIS_SCHEMA (BIS_CLASS_Model) " AS m,"
+        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+        " WHERE (sourceInfo.Element.Id=m.ModeledElement.Id) AND (sourceInfo.Identifier = ?)");
+    estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
+    BentleyApi::Utf8String kind, properties, modelName;
+    int64_t id;
+    rapidjson::Document json;
+
+    kind = estmt.GetValueText (0);
+    ASSERT_TRUE (kind.Equals ("Model"));
+
+    id = estmt.GetValueId<int64_t> (1);
+    ASSERT_TRUE (id == srcId);
+
+    properties = estmt.GetValueText (2);
+    json.Parse (properties.c_str ());
+    modelName = json["v8ModelName"].GetString ();
+    ASSERT_TRUE (modelName.Equals ("TestModel"));
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SynchInfoTests::ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId)
+{
+    DbFileInfo info (dbFile);
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare (*info.m_db, "SELECT kind,Identifier FROM "
+        BIS_SCHEMA (BIS_CLASS_GeometricElement3d) " AS g,"
+        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+        " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.Identifier = ?)");
+    estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+
+    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
+    BentleyApi::Utf8String kind, properties, modelName;
+    int64_t id;
+
+    kind = estmt.GetValueText (0);
+    ASSERT_TRUE (kind.Equals ("Element"));
+
+    id = estmt.GetValueId<int64_t> (1);
+    ASSERT_TRUE (id == srcId);
+}
+
