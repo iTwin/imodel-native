@@ -837,29 +837,6 @@ static DgnCategoryCPtr insertSpatialCategory(DgnDbR db, Utf8CP categoryName, Dgn
     return category.Insert(appearance);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Sam.Wilson             02/17
-//---------------------------------------------------------------------------------------
-static void addCell(V8FileEditor& v8editor, DgnV8ModelR v8model)
-    {
-    BentleyStatus status = ERROR;
-    DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
-    v8editor.CreateArc(arcEEH1, false, &v8model);
-    v8editor.CreateArc(arcEEH2, false, &v8model);
-
-    DgnV8Api::EditElementHandle cellEEH;
-    v8editor.CreateCell(cellEEH, L"UserCell",false,&v8model);
-
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH1);
-    EXPECT_TRUE(SUCCESS == status);
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH2);
-    EXPECT_TRUE(SUCCESS == status);
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildComplete(cellEEH);
-    EXPECT_TRUE(SUCCESS == status);
-
-    EXPECT_TRUE( SUCCESS == cellEEH.AddToModel());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -989,7 +966,7 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     v8editor.AddLine(nullptr, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
-    addCell(v8editor, *v8editor.m_defaultModel);
+    v8editor.AddCellWithTwoArcs(nullptr, L"UserCell");
     auto threeDModel = v8editor.m_defaultModel;
 
     if (true)

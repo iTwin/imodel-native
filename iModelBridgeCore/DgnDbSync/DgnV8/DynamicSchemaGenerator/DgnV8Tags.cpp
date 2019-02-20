@@ -415,7 +415,7 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<Dg
         " FROM " TEMP_TAG_MAP_TABLE
         );
 
-    bset<uint32_t> v8FilesWithImportedTagSetDefSchema;
+    bset<uint64_t> v8FilesWithImportedTagSetDefSchema;
     
     // Iterate over each target element that has tags associated with it.
     while (DbResult::BE_SQLITE_ROW == selectTargets->Step())

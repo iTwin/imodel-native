@@ -135,8 +135,9 @@ $(o)Test2dImporter.obj  : $(baseDir)Test2dImporter.cpp $(DwgPublicAPI)DwgImporte
 LINKER_LIBRARIES    = $(DwgImporterLib)
 LINKER_LIBRARIES    + $(DwgBridgeLib)
 
-LINKER_LIBRARIES_DELAYLOADED = $(BuildContext)SubParts/Libs/Bentley.lib
-LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED = $(BuildContext)SubParts/Libs/Bentley$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/BeSQLiteEC$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/DgnPlatform$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/iModelBridge$(libext)
 
 #----------------------------------------------------------------------

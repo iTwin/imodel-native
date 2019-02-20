@@ -127,27 +127,56 @@ TEST_F(BasicGeometryTests, Cell)
     V8FileEditor v8editor;
     BentleyStatus status = ERROR;
     v8editor.Open(m_v8FileName);
-    DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
-    v8editor.CreateArc(arcEEH1, false);
-    v8editor.CreateArc(arcEEH2, false);
 
-    DgnV8Api::EditElementHandle cellEEH;
-    v8editor.CreateCell(cellEEH, L"UserCell",false);
-
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH1);
-    EXPECT_TRUE(SUCCESS == status);
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH2);
-    EXPECT_TRUE(SUCCESS == status);
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildComplete(cellEEH);
-    EXPECT_TRUE(SUCCESS == status);
-
-    EXPECT_TRUE( SUCCESS == cellEEH.AddToModel());
-    v8editor.Save();
+    DgnV8Api::ElementId cellHeaderElementId;
+    if (true)
+        {
+        v8editor.AddLine(nullptr, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
+        v8editor.AddCellWithTwoArcs(&cellHeaderElementId, L"UserCell1");
+        v8editor.Save();
+        }
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
-    // Verify
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+    
+    // Verify we have a corresponding BIS element with 2 child elements
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellHeaderElementId, 2);
+        }
+
+    // Make a change in the same model, but don't touch the cell. Verify that the cell and its children are intact (Bug#80864)
+    if (true)
+        {
+        v8editor.AddLine();
+        v8editor.Save();
+        }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellHeaderElementId, 2);
+        }
+
+    // Now insert another cell in the same model. Verify that the whole new cell came in. (Bug#81254)
+    DgnV8Api::ElementId cellHeaderElementId2;
+    if (true)
+        {
+        v8editor.AddCellWithTwoArcs(&cellHeaderElementId2, L"UserCell2");
+        v8editor.Save();
+        }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellHeaderElementId, 2);
+        VerifyCellElement(*db, cellHeaderElementId2, 2);
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -201,8 +230,23 @@ TEST_F(BasicGeometryTests, NestedCell)
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
     // Verify
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+        }
+
+    // Make a change in the same model, but don't touch the cell. Verify that the cell and its children are intact
+    v8editor.AddLine();
+    v8editor.Save();
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
