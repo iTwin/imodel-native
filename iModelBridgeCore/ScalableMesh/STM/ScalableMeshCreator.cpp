@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -461,19 +461,19 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(MOSAIC_TYPE* mosaicP)
 	GetProgress()->UpdateListeners();
     return SUCCESS;
     }
-   
 
-StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url)
+
+StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, IScalableMeshPtr& smPtr, HFCPtr<MeshIndexType>& dataIndexPtr, const WString& url)
     {
     DRange3d range;
 
-    if (m_scmPtr.IsValid())
-        m_scmPtr->GetRange(range);
+    if (smPtr.IsValid())
+        smPtr->GetRange(range);
     else
-        {
-        assert(m_dataIndex != nullptr);
-        range = ScalableMesh<DPoint3d>::ComputeTotalExtentFor(m_dataIndex.GetPtr());
-        }
+    {
+        assert(dataIndexPtr != nullptr);
+        range = ScalableMesh<DPoint3d>::ComputeTotalExtentFor(dataIndexPtr.GetPtr());
+    }
 
     //TFS# 761652 - Avoid reprojection at this stage so that the minimum pixel resolution is consistent whatever the reprojection is.
     BaseGCSCPtr cs; //(GetGCS().GetGeoRef().GetBasePtr();)
@@ -481,9 +481,9 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
     HFCPtr<HRARASTER> streamingRaster(RasterUtilities::LoadRaster(url, cs, extent2d));
 
     if (streamingRaster == nullptr)
-        {
+    {
         return ERROR;
-        }
+    }
     double ratioToMeterH = GetGCS().GetHorizontalUnit().GetRatioToBase();
     double ratioToMeterV = GetGCS().GetVerticalUnit().GetRatioToBase();
 
@@ -497,23 +497,28 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
 #else  
     unitTransform.InitFromScaleFactors(ratioToMeterH, ratioToMeterH, ratioToMeterV);
 #endif
-   
-    unitTransform.Multiply(range.low, range.low);
-    unitTransform.Multiply(range.high, range.high);    
 
-    if (m_scmPtr.IsValid())
-        { 
-        ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Streaming);
-        }
+    unitTransform.Multiply(range.low, range.low);
+    unitTransform.Multiply(range.high, range.high);
+
+    if (smPtr.IsValid())
+    {
+        ((ScalableMesh<DPoint3d>*)smPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Streaming);
+    }
     else
-        {
-        assert(m_dataIndex != nullptr);
-        m_dataIndex->SetTextured(SMTextureType::Streaming);
-        }
-        
+    {
+        assert(dataIndexPtr != nullptr);
+        dataIndexPtr->SetTextured(SMTextureType::Streaming);
+    }
+
     textureStreamProviderPtr = new StreamTextureProvider(streamingRaster, range);
 
     return SUCCESS;
+    }
+
+StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url)
+    {
+    return GetStreamedTextureProvider(textureStreamProviderPtr, m_scmPtr, m_dataIndex, url);
     }
 
 StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
