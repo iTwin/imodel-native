@@ -1980,6 +1980,14 @@ public:
     //! @param[in]   sourceProperty         The property to copy into this class.  If nullptr, ::NullPointerValue returned.
     //! @param[in]   copyCustomAttributes   If true the primary custom attributes are copied to the destProperty, supplemental custom attributes are not copied.  A schema references will be added as needed.
     ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
+
+    //! Copies the sourceProperty, adds it to the current class and outputs the copied property if the copy was successful
+    //! @param[out]  destProperty           Outputs the copied property.  Only valid if the method returns ::Success
+    //! @param[in]   sourceProperty         The property to copy into this class.  If nullptr, ::NullPointerValue returned.
+    //! @param[in]   destPropertyName       Rename the copied property to the given name
+    //! @param[in]   copyCustomAttributes   If true the primary custom attributes are copied to the destProperty, supplemental custom attributes are not copied.  A schema references will be added as needed.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, Utf8CP destPropertyName, ECPropertyCP sourceProperty, bool copyCustomAttributes);
+
     //! Returns true if this class derives from the input baseClass once and only once.  Returns false if this class does not derive from the input base class or if it is found more than once when traversing base classes
     ECOBJECTS_EXPORT bool IsSingularlyDerivedFrom(ECClassCR baseClass) const;
 
