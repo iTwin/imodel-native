@@ -11,14 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BimUpgraderTestFixture.cpp" />
+    <ClCompile Include="UpgraderTests.cpp" />
     <ClCompile Include="DgnDbCreator.cpp" />
     <ClCompile Include="DgnDbCreatorImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DgnDbCreator.h" />
     <ClInclude Include="DgnDbCreatorImpl.h" />
+    <ClInclude Include="BimUpgraderTestFixture.h" />
+    <ClInclude Include="Tests.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DgnDbCreator.mke" />
     <None Include="Tests.mke" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

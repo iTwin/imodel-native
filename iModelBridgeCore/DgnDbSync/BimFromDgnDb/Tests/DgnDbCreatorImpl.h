@@ -11,21 +11,20 @@
 #include <DgnDb06Api/DgnPlatform/DgnPlatformApi.h>
 #include <DgnDb06Api/DgnPlatform/DgnPlatformLib.h>
 
-#define DGNDB0601_TO_JSON_NAMESPACE_NAME BimFromDgnDbTest
-#define BEGIN_DGNDB0601_TO_JSON_NAMESPACE namespace BentleyG0601 { namespace Dgn { namespace DGNDB0601_TO_JSON_NAMESPACE_NAME {
-#define END_DGNDB0601_TO_JSON_NAMESPACE   } } }
-
+#include "Tests.h"
 BEGIN_DGNDB0601_TO_JSON_NAMESPACE
 
 struct DgnDbCreatorImpl
     {
     private:
-        const char* m_dgndbFilename;
+        BeFileName m_dgndbFilename;
+        DgnDbPtr            m_dgndb;
 
     public:
         DgnDbCreatorImpl(const char* fileName);
-
-        void ImportSchema(const char* schemaXml);
+        bool CreateDgnDb();
+        bool AddElement(const char* schemaName, const char* instanceXml);
+        bool ImportSchema(const char* schemaXml);
     };
 
 END_DGNDB0601_TO_JSON_NAMESPACE
