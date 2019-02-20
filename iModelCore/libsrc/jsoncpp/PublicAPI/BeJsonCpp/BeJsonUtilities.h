@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeJsonCpp/BeJsonUtilities.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,14 +22,17 @@ typedef Json::Value const& JsonValueCR;
 typedef Json::Value const* JsonValueCP;
 
 //=======================================================================================
-//! DEPRECATED! Use JsonLocalState instead.
+//! DO NOT USE DIRECTLY! Use JsonLocalState instead.
 //! ILocalState wrapper that handles JSON - string conversion.
 //  @bsiclass                                           Grigas.Petraitis        12/14
 //=======================================================================================
 struct IJsonLocalState : ILocalState
     {
 public:
-     //! Saves the supplied JSON value as string in the local state. Set null to delete.
+    //! Saves the supplied JSON value as string in the local state.
+    //! @param nameSpace Namespace usually identifies code responsible for maintaing value.
+    //! @param nameSpace Key identifying value in context of namespace.
+    //! @param value JSON value to save. Passing null will delete record.
     virtual void SaveJsonValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) 
         {
         Utf8String valueStr;
@@ -38,7 +41,10 @@ public:
         SaveValue(nameSpace, key, valueStr);
         }
 
-    //! Parses the stored serialized JSON value and returns it as JSON. Returns null if not existing.
+    //! Parses the stored serialized JSON value and returns it as JSON.
+    //! @param nameSpace Namespace usually identifies code responsible for maintaing value.
+    //! @param nameSpace Key identifying value in context of namespace.
+    //! @return JSON value for given namespace and key. Returns null value if record does not exist or failed to parse.
     virtual Json::Value GetJsonValue(Utf8CP nameSpace, Utf8CP key) const 
         {
         Json::Value value;
@@ -49,7 +55,7 @@ public:
     };
 
 //=======================================================================================
-//! Concrete JsonLocalState implementation. Pass local state to use specific storage.
+//! Concrete JsonLocalState implementation without storage. Pass local state to use specific storage.
 //  @bsiclass                                           Vincas.Razma            09/18
 //=======================================================================================
 struct JsonLocalState : IJsonLocalState
