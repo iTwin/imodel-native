@@ -19,8 +19,14 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+struct NodeTask;
+typedef RefCountedPtr<NodeTask> NodeTaskPtr;
+
 struct GenerationTask;
 typedef RefCountedPtr<GenerationTask> GenerationTaskPtr;
+
+struct TextureTask;
+typedef RefCountedPtr<TextureTask> TextureTaskPtr;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -49,7 +55,9 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         HFCPtr<MeshIndexType> GetDataIndex();
 
         
-        void GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);
+        void GetGenerationTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);
+
+        void GetTextureTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);
         
         void GetTaskPlanFileName(BeFileName& taskPlanFileName) const;
 
@@ -84,6 +92,8 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         
         StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName);
+
+        StatusInt                    CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName);
         
         StatusInt                    CreateMeshTasks();        
 
@@ -97,7 +107,9 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode);       
 
-        StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode);         
+        StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode);  
+
+        StatusInt                    ProcessTextureTask(BeXmlNodeP pXmlTaskNode);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

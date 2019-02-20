@@ -31,6 +31,8 @@ enum class WorkerTaskType
     MESH,
     STITCH,
     GENERATE,
+    TEXTURE,
+    CREATETEXTURE,
     TASK_TYPE_QTY,
     };
 
