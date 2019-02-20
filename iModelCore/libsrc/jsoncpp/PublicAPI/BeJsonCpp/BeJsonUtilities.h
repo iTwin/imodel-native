@@ -31,7 +31,7 @@ struct IJsonLocalState : ILocalState
 public:
     //! Saves the supplied JSON value as string in the local state.
     //! @param nameSpace Namespace usually identifies code responsible for maintaing value.
-    //! @param nameSpace Key identifying value in context of namespace.
+    //! @param key Key identifying value in context of namespace.
     //! @param value JSON value to save. Passing null will delete record.
     virtual void SaveJsonValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) 
         {
@@ -43,7 +43,7 @@ public:
 
     //! Parses the stored serialized JSON value and returns it as JSON.
     //! @param nameSpace Namespace usually identifies code responsible for maintaing value.
-    //! @param nameSpace Key identifying value in context of namespace.
+    //! @param key Key identifying value in context of namespace.
     //! @return JSON value for given namespace and key. Returns null value if record does not exist or failed to parse.
     virtual Json::Value GetJsonValue(Utf8CP nameSpace, Utf8CP key) const 
         {
