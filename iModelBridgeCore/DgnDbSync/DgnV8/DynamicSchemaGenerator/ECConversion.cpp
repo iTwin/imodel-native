@@ -1421,7 +1421,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
      ECN::IECCustomAttributeConverterPtr extendType = new ExtendTypeConverter(standard, angle);
      ECN::ECSchemaConverter::AddConverter("EditorCustomAttributes", EXTEND_TYPE, extendType);
-
+     ECN::ECSchemaPtr coreSchema = ECN::CoreCustomAttributeHelper::GetSchema();
      for (BECN::ECSchemaP schema : schemas)
          {
          if (schema->IsSupplementalSchema())
@@ -1441,6 +1441,25 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              for (ECN::ECPropertyP ecProp : ecClass->GetProperties())
                  RemoveDgnV8CustomAttributes(*ecProp);
              }
+         
+         if (coreSchema.IsValid())
+            {
+             if (ECN::ECObjectsStatus::Success != schema->AddReferencedSchema(*coreSchema))
+                 LOG.warning("Error adding a reference to the core custom attributes schema.");
+             else
+                {
+                 ECN::ECClassCP dynamicSchemaClass = coreSchema->GetClassCP("DynamicSchema");
+                 ECN::StandaloneECEnablerPtr enabler;
+                 if (nullptr != dynamicSchemaClass)
+                     enabler = dynamicSchemaClass->GetDefaultStandaloneEnabler();
+                 if (enabler.IsValid())
+                    {
+                     ECN::IECInstancePtr dynamicSchemaAttribute = enabler->CreateInstance();
+                     if (dynamicSchemaAttribute.IsValid())
+                         schema->SetCustomAttribute(*dynamicSchemaAttribute);
+                    }
+                }
+            }
          }
      ECN::ECSchemaConverter::RemoveConverter(ECN::ECSchemaConverter::GetQualifiedClassName("EditorCustomAttributes", EXTEND_TYPE));
 
