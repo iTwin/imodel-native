@@ -2,7 +2,7 @@
 #
 #     $Source: BaseGeoCoord/GeoCoordPrewire.mke $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 appName         = basegeocoord
@@ -17,5 +17,5 @@ PolicyFile = $(SrcRoot)GeoCoord/mki/GeoCoordPolicy.mki
 # is available to other builds.
 #----------------------------------------------------------------------
 always:
-    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/GeoCoord=$(baseDir)PublicAPI"
+    ~linkdir "$(BuildContext)PublicAPI/GeoCoord=$(baseDir)PublicAPI"
 

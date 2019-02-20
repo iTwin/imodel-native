@@ -2,7 +2,7 @@
 #
 #     $Source: BaseGeoCoord/BaseManagedGeoCoord.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 appName         = baseManaged
@@ -151,5 +151,5 @@ ASSEMBLY_TESTKEYFILE    =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
 # Expose our transkit directory for the transkit to see
 #----------------------------------------------------------------------
 always:
-    @CreateSymLinks.py  -d"$(ContextDeliveryDir)GeoCoordManaged\Transkit=$(baseDir)transkitManaged"
+    ~linkdir "$(ContextDeliveryDir)GeoCoordManaged\Transkit=$(baseDir)transkitManaged"
 
