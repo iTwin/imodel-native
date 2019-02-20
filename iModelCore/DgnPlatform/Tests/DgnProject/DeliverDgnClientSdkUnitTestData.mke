@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/DgnProject/DeliverDgnClientSdkUnitTestData.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -11,4 +11,4 @@ ProductRoot = $(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/
 
 always:
     ~mkdir $(BuildContext)Delivery/UnitTests/Documents
-    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py ${UNIT_TESTS_DOCUMENTS_DIR} $(BuildContext)Delivery/UnitTests/Documents --excludePattern=.hg
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py ${UNIT_TESTS_DOCUMENTS_DIR} $(BuildContext)Delivery/UnitTests/Documents --excludePattern=[\\\/].hg
