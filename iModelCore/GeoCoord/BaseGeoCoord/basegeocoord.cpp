@@ -1165,6 +1165,9 @@ int     FindDatumIndex (WCharCP datumName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FindDatumFromTransformationParams(WString& paramDatumName, const WString& ellipsoidName, double deltaX, double deltaY, double deltaZ, double rotX, double rotY, double rotZ, double scalePPM) const
     {
+
+    WString deprecated = L"LEGACY";
+
     if (distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
         doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ,0.0) && doubleSame(scalePPM, 0.0))
         {
@@ -1201,7 +1204,8 @@ bool FindDatumFromTransformationParams(WString& paramDatumName, const WString& e
         {
         DatumCP indexDatum = Datum::CreateDatum(WString(dtKeyName, false).c_str());
 
-        if (indexDatum->IsValid() && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
+        // If the datum is not deprecated, valid and equivalent then we have a match.
+        if (indexDatum->IsValid() && (0 != deprecated.CompareTo(GetDatumGroupName(*indexDatum))) && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
             {
             paramDatumName = WString(dtKeyName, false);
             paramDatum->Destroy();
@@ -1234,7 +1238,7 @@ bool FindDatumFromTransformationParams(WString& paramDatumName, const WString& e
         {
         DatumCP indexDatum = Datum::CreateDatum(WString(dtKeyName, false).c_str());
 
-        if (indexDatum->IsValid() && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
+        if (indexDatum->IsValid() && (0 != deprecated.CompareTo(GetDatumGroupName(*indexDatum))) && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
             {
             paramDatumName = WString(dtKeyName, false);
             paramDatum->Destroy();
@@ -1484,9 +1488,15 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
 
                     if (!DatumEquivalent(*(namedDatum1->GetCSDatum()), *(namedDatum2->GetCSDatum()), false, true))
                         {
-                        namedDatum1->Destroy();
-                        namedDatum2->Destroy();
-                        return ERROR;
+                        // This case can occur when a datum has a null transformation to WGS84 but has not the same shape for the ellipsoid (example: SphereWGS84)
+                        // In this case we simply check and go on
+                        if (!(distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
+                            doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ, 0.0) && doubleSame(scalePPM, 0.0)))
+                            {
+                            namedDatum1->Destroy();
+                            namedDatum2->Destroy();
+                            return ERROR;
+                            }
                         }
 
                     namedDatum1->Destroy();
