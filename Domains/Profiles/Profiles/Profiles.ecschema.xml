@@ -217,16 +217,16 @@
         <ECProperty propertyName="Girth" typeName="double" description="Length of lips. 0 if profile doesn't have lips, default 0 if not specified." />
     </ECEntityClass>
 
-    <ECEntityClass typeName="BentPlateProfile" modifier="Sealed" description="">
+    <ECEntityClass typeName="BentPlateProfile" modifier="Sealed" description="Profile of a plate that has been bent at a given point with a given angle.">
         <BaseClass>ParametricProfile</BaseClass>
         <BaseClass>ICenterLineProfile</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
         <ECProperty propertyName="Width" typeName="double" description="Extent of the plate length, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="BendAngle" typeName="double" description="Plate bend angle." />
-        <ECProperty propertyName="BendRadius" typeName="double" description="Plate bend radius." />
-        <ECProperty propertyName="BendOffset" typeName="double" description="" />
+        <ECProperty propertyName="BendAngle" typeName="double" description="Inner angle of the bend point. Value is valid in range (0..180) degrees. Values near 180 degrees meaning an almost unbent plate and values near 0 are almost fully bent in half plate." />
+        <ECProperty propertyName="BendOffset" typeName="double" description="Offset from the left edge of the plate defining at what point the plate is bent." />
+        <ECProperty propertyName="FilletRadius" typeName="double" description="Inner fillet radius of the bend point." />
     </ECEntityClass>
 
     <!-- Geometric shapes -->
