@@ -79,6 +79,7 @@
     <ClCompile Include="NamedGroupTests.cpp" />
     <ClCompile Include="ProgressMeterTests.cpp" />
     <ClCompile Include="RasterTests.cpp" />
+    <ClCompile Include="RulesetEmbedderTests.cpp" />
     <ClCompile Include="SyncInfoReader.cpp" />
     <ClCompile Include="TagTests.cpp" />
     <ClCompile Include="TextBlockTests.cpp" />

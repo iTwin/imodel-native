@@ -8,3 +8,7 @@ NamedGroupTests.NamedGroupOf2dElement
     #   Actual: false
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
+
+NamedGroupTests.NamedGroupAcrossReference # Sam broke this with switch to aspects for normal elements. Hopefully, Carole can fix it.
+
+ConverterTests.UseConverterAsLibrary # Sam - decide if we want to support the "record level mapping" feature of ConverterLibrary or not

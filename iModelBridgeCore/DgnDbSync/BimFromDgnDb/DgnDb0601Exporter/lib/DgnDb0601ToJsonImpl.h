@@ -85,6 +85,7 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         ECN::ECClassCP      m_pointCloudModelClass;
         ECN::ECClassCP      m_threeMxModelClass;
         ECN::ECClassCP      m_rasterFileModelClass;
+        ECN::ECClassCP      m_geometricQuantities;
 
         Dgn::DgnElementId        m_jobSubjectId;
         Dgn::DgnElementId        m_documentListModelId;
@@ -131,7 +132,6 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         BentleyStatus ExportElements(DgnModelId parentModel);
         BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true, bool allowDuplicates = false);
         BentleyStatus ExportElementAspects();
-        BentleyStatus ExportElementAspects(ECN::ECClassId classId);
         BentleyStatus ExportElementAspects(ECN::ECClassId classId, BentleyApi::BeSQLite::EC::ECInstanceId aspectId);
         BentleyStatus ExportTextAnnotationData();
         BentleyStatus ExportNamedGroups();

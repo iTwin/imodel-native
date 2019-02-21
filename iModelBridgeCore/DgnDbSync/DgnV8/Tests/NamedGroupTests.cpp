@@ -24,11 +24,11 @@ private:
     DgnElementIdSet GetMembers(DgnElementCR group, bool groupOwnsMembers);
 
 protected:
-    void RemoveMember(bool groupOwnsMembers, bool dropTable);
-    void DeleteMember(bool groupOwnsMembers, bool dropTable);
-    void DeleteGroup(bool groupOwnsMembers, bool dropTable);
+    void RemoveMember(bool groupOwnsMembers);
+    void DeleteMember(bool groupOwnsMembers);
+    void DeleteGroup(bool groupOwnsMembers);
     void CreateGroupInDictionary(bool groupOwnsMembers);
-    void Update(bool groupOwnsMembers, bool dropTable);
+    void Update(bool groupOwnsMembers);
 
     };
 
@@ -104,7 +104,7 @@ DgnElementIdSet NamedGroupTests::GetMembers(DgnElementCR group, bool groupOwnsMe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-void NamedGroupTests::RemoveMember(bool groupOwnsMembers, bool dropTable)
+void NamedGroupTests::RemoveMember(bool groupOwnsMembers)
     {
     LineUpFiles(L"Update.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     V8FileEditor v8editor;
@@ -154,15 +154,6 @@ void NamedGroupTests::RemoveMember(bool groupOwnsMembers, bool dropTable)
     EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->WriteToFile(true));
     v8editor.Save();
 
-    // This will simulate updating an older syncinfo db that doesn't have the NamedGroups table
-    if (dropTable)
-        {
-        BentleyApi::BeSQLite::Db db;
-        auto sfilename = SyncInfo::GetDbFileName(m_dgnDbFileName);
-        BentleyApi::BeSQLite::DbResult status = db.OpenBeSQLiteDb(sfilename, BentleyApi::BeSQLite::Db::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::ReadWrite));
-        db.ExecuteSql("DROP TABLE v8sync_NamedGroups");
-        }
-
     DoUpdate(m_dgnDbFileName, m_v8FileName);
     // Verify Updated
     if (true)
@@ -178,7 +169,7 @@ void NamedGroupTests::RemoveMember(bool groupOwnsMembers, bool dropTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-void NamedGroupTests::DeleteMember(bool groupOwnsMembers, bool dropTable)
+void NamedGroupTests::DeleteMember(bool groupOwnsMembers)
     {
     LineUpFiles(L"Update.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     V8FileEditor v8editor;
@@ -228,13 +219,6 @@ void NamedGroupTests::DeleteMember(bool groupOwnsMembers, bool dropTable)
     ASSERT_EQ(BentleyApi::SUCCESS, v8Eh.DeleteFromModel());
     v8editor.Save();
 
-    if (dropTable)
-        {
-        BentleyApi::BeSQLite::Db db;
-        auto sfilename = SyncInfo::GetDbFileName(m_dgnDbFileName);
-        BentleyApi::BeSQLite::DbResult status = db.OpenBeSQLiteDb(sfilename, BentleyApi::BeSQLite::Db::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::ReadWrite));
-        db.ExecuteSql("DROP TABLE v8sync_NamedGroups");
-        }
     DoUpdate(m_dgnDbFileName, m_v8FileName);
     // Verify Updated
     if (true)
@@ -250,7 +234,7 @@ void NamedGroupTests::DeleteMember(bool groupOwnsMembers, bool dropTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-void NamedGroupTests::DeleteGroup(bool groupOwnsMembers, bool dropTable)
+void NamedGroupTests::DeleteGroup(bool groupOwnsMembers)
     {
     LineUpFiles(L"Update.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     V8FileEditor v8editor;
@@ -299,13 +283,6 @@ void NamedGroupTests::DeleteGroup(bool groupOwnsMembers, bool dropTable)
     EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->DeleteFromFile());
     v8editor.Save();
 
-    if (dropTable)
-        {
-        BentleyApi::BeSQLite::Db db;
-        auto sfilename = SyncInfo::GetDbFileName(m_dgnDbFileName);
-        BentleyApi::BeSQLite::DbResult status = db.OpenBeSQLiteDb(sfilename, BentleyApi::BeSQLite::Db::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::ReadWrite));
-        db.ExecuteSql("DROP TABLE v8sync_NamedGroups");
-        }
     DoUpdate(m_dgnDbFileName, m_v8FileName);
     // Verify Updated
     if (true)
@@ -331,7 +308,7 @@ void NamedGroupTests::DeleteGroup(bool groupOwnsMembers, bool dropTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-void NamedGroupTests::Update(bool groupOwnsMembers, bool dropTable)
+void NamedGroupTests::Update(bool groupOwnsMembers)
     {
     LineUpFiles(L"Update.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     V8FileEditor v8editor;
@@ -397,13 +374,6 @@ void NamedGroupTests::Update(bool groupOwnsMembers, bool dropTable)
         AddInstance(v8editor, schema, eh);
         }
     v8editor.Save();
-    if (dropTable)
-        {
-        BentleyApi::BeSQLite::Db db;
-        auto sfilename = SyncInfo::GetDbFileName(m_dgnDbFileName);
-        BentleyApi::BeSQLite::DbResult status = db.OpenBeSQLiteDb(sfilename, BentleyApi::BeSQLite::Db::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::ReadWrite));
-        db.ExecuteSql("DROP TABLE v8sync_NamedGroups");
-        }
 
     DoUpdate(m_dgnDbFileName, m_v8FileName);
     if (true)
@@ -638,6 +608,8 @@ TEST_F(NamedGroupTests, NamedGroupInReferenceModel)
     {
     LineUpFiles(L"NamedGroupInReferenceModel.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
+    RepositoryLinkId repo2; // TODO look up RepositoryLink for second file
+
     DgnV8Api::ElementId ng1id=0, ng2id=0;
         {
         //--------------------------------------------------------------------------------------------------------
@@ -693,7 +665,7 @@ TEST_F(NamedGroupTests, NamedGroupInReferenceModel)
         ASSERT_TRUE(groupElem1.IsValid());
         ASSERT_EQ(2, ElementGroupsMembers::QueryMembers(*groupElem1).size()) << "There should be 2 member in NamedGroup";
         // Named Group from referenced Model
-        DgnElementCPtr groupElem2 = FindV8ElementInDgnDb(*db, ng2id, 2);
+        DgnElementCPtr groupElem2 = FindV8ElementInDgnDb(*db, ng2id, repo2);
         ASSERT_TRUE(groupElem2.IsValid());
         ASSERT_EQ(2, ElementGroupsMembers::QueryMembers(*groupElem2).size()) << "There should be 2 member in NamedGroup";
         }
@@ -758,15 +730,7 @@ TEST_F(NamedGroupTests, NamedGroupAcrossReference)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NamedGroupTests, UpdateWithRemovedMember)
     {
-    RemoveMember(false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            05/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(NamedGroupTests, UpdateWithRemovedMemberWithOldSyncInfo)
-    {
-    RemoveMember(false, true);
+    RemoveMember(false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -774,7 +738,7 @@ TEST_F(NamedGroupTests, UpdateWithRemovedMemberWithOldSyncInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NamedGroupTests, UpdateWithRemovedMemberInOwnedGroup)
     {
-    RemoveMember(true, false);
+    RemoveMember(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -782,15 +746,7 @@ TEST_F(NamedGroupTests, UpdateWithRemovedMemberInOwnedGroup)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(NamedGroupTests, UpdateWithDeletedMember)
     {
-    DeleteMember(false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            05/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(NamedGroupTests, UpdateWithDeletedMemberOldSyncInfo)
-    {
-    DeleteMember(false, true);
+    DeleteMember(false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -798,7 +754,7 @@ TEST_F(NamedGroupTests, UpdateWithDeletedMemberOldSyncInfo)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(NamedGroupTests, UpdateWithDeletedMemberInOwnedGroup)
     {
-    DeleteMember(true, false);
+    DeleteMember(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -806,15 +762,7 @@ TEST_F(NamedGroupTests, UpdateWithDeletedMemberInOwnedGroup)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(NamedGroupTests, UpdateWithDeletedGroup)
     {
-    DeleteGroup(false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            05/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(NamedGroupTests, UpdateWithDeletedGroupOldSyncInfo)
-    {
-    DeleteGroup(false, true);
+    DeleteGroup(false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -822,7 +770,7 @@ TEST_F(NamedGroupTests, UpdateWithDeletedGroupOldSyncInfo)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(NamedGroupTests, UpdateWithDeletedOwnedGroup)
     {
-    DeleteGroup(true, false);
+    DeleteGroup(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -846,15 +794,7 @@ TEST_F(NamedGroupTests, ConvertNamedGroupFromDictionaryWithOwnership)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(NamedGroupTests, UpdateWithAddedMember)
     {
-    Update(false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            05/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(NamedGroupTests, UpdateWithAddedMemberOldSyncInfo)
-    {
-    Update(false, true);
+    Update(false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -862,5 +802,5 @@ TEST_F(NamedGroupTests, UpdateWithAddedMemberOldSyncInfo)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(NamedGroupTests, UpdateWithAddedMemberWithOwnership)
     {
-    Update(true, false);
+    Update(true);
     }

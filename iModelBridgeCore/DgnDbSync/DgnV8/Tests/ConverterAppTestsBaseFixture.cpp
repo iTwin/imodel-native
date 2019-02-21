@@ -55,7 +55,7 @@ BentleyApi::WString ConverterAppTestsBaseFixture::GetOutRoot()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyApi::BeFileName ConverterAppTestsBaseFixture::GetBimFileName(BentleyApi::BeFileName& inFile)
     {
-    BentleyApi::BeFileName bimFile(inFile.GetDirectoryName(inFile.c_str()));
+    BentleyApi::BeFileName bimFile(GetOutRoot());
     bimFile.AppendToPath(inFile.GetFileNameWithoutExtension().c_str());
     bimFile.AppendExtension(L"bim");
     return bimFile;

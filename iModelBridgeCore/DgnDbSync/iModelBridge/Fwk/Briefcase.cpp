@@ -31,6 +31,8 @@ static BentleyStatus getEnvironmentFromString(UrlProvider::Environment& environm
         environment = WebServices::UrlProvider::Environment::Qa;
     else if (str.EqualsI("release"))
         environment = WebServices::UrlProvider::Environment::Release;
+    else if (str.EqualsI("Perf"))
+        environment = WebServices::UrlProvider::Environment::Perf;
     else
         return BSIERROR;
     return BSISUCCESS;

@@ -380,15 +380,17 @@ DgnCode ElementReader::CreateCodeFromJson(Json::Value& element)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ElementAspectReader::_Read(Json::Value& aspect)
     {
+    // Do not error out entire upgrade if we fail to create an aspect
     DgnElementId instanceId = ECJsonUtilities::JsonToId<DgnElementId>(aspect[ECJsonSystemNames::Id()]);
     if (!instanceId.IsValid())
-        return ERROR;
+        return SUCCESS;
 
     DgnElementId elementId = GetMappedElementId(aspect, "Element");
     if (!elementId.IsValid())
-        return ERROR;
+        return SUCCESS;
 
-    aspect.removeMember("Element");
+    ECJsonUtilities::IdToJson(aspect["Element"][ECJsonUtilities::json_navId()], elementId);
+    //aspect.removeMember("Element");
 
     DgnDbStatus stat = DgnDbStatus::Success;
     DgnElementPtr element = GetDgnDb()->Elements().GetForEdit<DgnElement>(elementId);
@@ -396,33 +398,50 @@ BentleyStatus ElementAspectReader::_Read(Json::Value& aspect)
     if (!element.IsValid())
         {
         GetLogger().errorv("Unable to get associated Element for ElementAspect.");
-        return ERROR;
+        return SUCCESS;
         }
     IECInstancePtr ecInstance = _CreateInstance(aspect);
     if (!ecInstance.IsValid())
         {
         GetLogger().errorv("Failed to create IECInstance for elementaspect\n");
-        return ERROR;
+        return SUCCESS;
         }
 
+    ECInstanceId newId;
     if (m_isUnique)
+        {
         stat = DgnElement::GenericUniqueAspect::SetAspect(*element, *ecInstance);
+        if (DgnDbStatus::Success == stat)
+            {
+            newId = DgnElement::UniqueAspect::GetAspect(*element, ecInstance->GetClass())->GetAspectInstanceId();
+            }
+        }
     else
+        {
         stat = DgnElement::GenericMultiAspect::AddAspect(*element, *ecInstance);
+        if (DgnDbStatus::Success == stat)
+            {
+            uint64_t id;
+            if (SUCCESS == BeStringUtilities::ParseUInt64(id, ecInstance->GetInstanceId().c_str()))
+                newId = ECInstanceId(id);
+            }
+        }
 
     if (DgnDbStatus::Success != stat)
         {
         GetLogger().errorv("Failed to add ElementAspect to Element.\n%s", aspect.toStyledString().c_str());
-        return ERROR;
+        return SUCCESS;
         }
 
     element->Update(&stat);
     if (DgnDbStatus::Success != stat)
         {
         GetLogger().errorv("Failed to update Element when adding ElementAspect");
-        return ERROR;
+        return SUCCESS;
         }
 
+    if (newId.IsValid())
+        GetSyncInfo()->InsertAspect(ECInstanceId(elementId.GetValueUnchecked()), newId);
     return SUCCESS;
     }
 
@@ -2618,59 +2637,49 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& groups)
+BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& group)
     {
-    if (!groups.isArray())
+    DgnElementId groupId = ECJsonUtilities::JsonToId<DgnElementId>(group["GroupId"]);
+    DgnElementId mappedGroup = GetSyncInfo()->LookupElement(groupId);
+    if (!mappedGroup.IsValid())
         {
-        GetLogger().error("ElementGroupsMembers value should be an array");
-        return ERROR;
+        Utf8PrintfString error("Failed to map GroupId element id %s.", groupId.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return SUCCESS;
         }
 
-    for (Json::Value::iterator iter = groups.begin(); iter != groups.end(); iter++)
+    DgnElementPtr groupElement = GetDgnDb()->Elements().GetForEdit<DgnElement>(mappedGroup);
+    if (!groupElement.IsValid())
         {
-        Json::Value& group = *iter;
-        DgnElementId groupId = ECJsonUtilities::JsonToId<DgnElementId>(group["GroupId"]);
-        DgnElementId mappedGroup = GetSyncInfo()->LookupElement(groupId);
-        if (!mappedGroup.IsValid())
-            {
-            Utf8PrintfString error("Failed to map GroupId element id %s.", groupId.ToString().c_str());
-            GetLogger().warning(error.c_str());
-            continue;
-            }
-
-        DgnElementPtr groupElement = GetDgnDb()->Elements().GetForEdit<DgnElement>(mappedGroup);
-        if (!groupElement.IsValid())
-            {
-            Utf8PrintfString error("Unable to get Group DgnElement(%s).", mappedGroup.ToString().c_str());
-            GetLogger().warning(error.c_str());
-            continue;
-            }
-        DgnElementId memberId = ECJsonUtilities::JsonToId<DgnElementId>(group["MemberId"]);
-        DgnElementId mappedMember = GetSyncInfo()->LookupElement(memberId);
-        if (!mappedMember.IsValid())
-            {
-            Utf8PrintfString error("Failed to map MemberId element id %s.", memberId.ToString().c_str());
-            GetLogger().warning(error.c_str());
-            continue;
-            }
-        DgnElementPtr member = GetDgnDb()->Elements().GetForEdit<DgnElement>(mappedMember);
-        if (!member.IsValid())
-            {
-            Utf8PrintfString error("Unable to get member DgnElement(%s).", mappedMember.ToString().c_str());
-            GetLogger().warning(error.c_str());
-            continue;
-            }
-        int priority = 0;
-        if (group.isMember("MemberPriority"))
-            priority = group["MemberPriority"].asInt();
-        DgnDbStatus status;
-        if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*groupElement, *member, priority)))
-            {
-
-            }
-        m_importer->SetTaskName(BimFromDgnDb::TASK_ELEMENT_GROUPS_MEMBERS());
-        m_importer->ShowProgress();
+        Utf8PrintfString error("Unable to get Group DgnElement(%s).", mappedGroup.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return SUCCESS;
         }
+    DgnElementId memberId = ECJsonUtilities::JsonToId<DgnElementId>(group["MemberId"]);
+    DgnElementId mappedMember = GetSyncInfo()->LookupElement(memberId);
+    if (!mappedMember.IsValid())
+        {
+        Utf8PrintfString error("Failed to map MemberId element id %s.", memberId.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return SUCCESS;
+        }
+    DgnElementPtr member = GetDgnDb()->Elements().GetForEdit<DgnElement>(mappedMember);
+    if (!member.IsValid())
+        {
+        Utf8PrintfString error("Unable to get member DgnElement(%s).", mappedMember.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return SUCCESS;
+        }
+    int priority = 0;
+    if (group.isMember("MemberPriority"))
+        priority = group["MemberPriority"].asInt();
+    DgnDbStatus status;
+    if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*groupElement, *member, priority)))
+        {
+
+        }
+    m_importer->SetTaskName(BimFromDgnDb::TASK_ELEMENT_GROUPS_MEMBERS());
+    m_importer->ShowProgress();
 
     return SUCCESS;
     }
@@ -2834,52 +2843,59 @@ void LinkTableReader::SetNavigationProperty(DgnElementId sourceId, DgnElementId 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus LinkTableReader::_Read(Json::Value& relationships)
+BentleyStatus LinkTableReader::_Read(Json::Value& link)
     {
-    if (!relationships.isArray())
+    Utf8PrintfString relName("%s.%s", link["Schema"].asString().c_str(), link["Class"].asString().c_str());
+
+    DgnElementId sourceId = ECJsonUtilities::JsonToId<DgnElementId>(link["SourceId"]);
+    DgnElementId mappedSource = GetSyncInfo()->LookupElement(sourceId);
+    if (!mappedSource.IsValid())
         {
-        GetLogger().error("ElementRefersToElement value should be an array.\n");
-        return ERROR;
+        Utf8PrintfString error("Failed to map source instance id %s for ECRelationship '%s'.", sourceId.ToString().c_str(), relName.c_str());
+        GetLogger().warning(error.c_str());
+        return SUCCESS;
         }
 
-    for (Json::Value::iterator iter = relationships.begin(); iter != relationships.end(); iter++)
+    // Not all relationships that were previously a link table relationship are now still link tables.  Some use nav properties instead.
+    ECN::ECRelationshipClassCP relClass = GetDgnDb()->Schemas().GetClass(link["Schema"].asString(), link["Class"].asString())->GetRelationshipClassCP();
+    ECInstanceKey relKey;
+    DgnElementId targetId = ECJsonUtilities::JsonToId<DgnElementId>(link["TargetId"]);
+    if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))
         {
-        Json::Value& member = *iter;
-        Utf8PrintfString relName("%s.%s", member["Schema"].asString().c_str(), member["Class"].asString().c_str());
-
-        DgnElementId sourceId = ECJsonUtilities::JsonToId<DgnElementId>(member["SourceId"]);
-        DgnElementId mappedSource = GetSyncInfo()->LookupElement(sourceId);
-        if (!mappedSource.IsValid())
-            {
-            Utf8PrintfString error("Failed to map source instance id %s for ECRelationship '%s'.", sourceId.ToString().c_str(), relName.c_str());
-            GetLogger().warning(error.c_str());
-            continue;
-            }
-
-        DgnElementId targetId = ECJsonUtilities::JsonToId<DgnElementId>(member["TargetId"]);
         DgnElementId mappedTarget = GetSyncInfo()->LookupElement(targetId);
         if (!mappedTarget.IsValid())
             {
             Utf8PrintfString error("Failed to map target instance id %s for ECRelationship %s.\n", targetId.ToString().c_str(), relName.c_str());
             GetLogger().warning(error.c_str());
-            continue;
+            return SUCCESS;
             }
-
-        // Not all relationships that were previously a link table relationship are now still link tables.  Some use nav properties instead.
-        ECN::ECRelationshipClassCP relClass = GetDgnDb()->Schemas().GetClass(member["Schema"].asString(), member["Class"].asString())->GetRelationshipClassCP();
-        ECInstanceKey relKey;
-        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))
-            {
-            GetDgnDb()->InsertLinkTableRelationship(relKey, *relClass, mappedSource, mappedTarget);
-            }
-        else
-            {
-            SetNavigationProperty(mappedSource, mappedTarget, relClass);
-            }
-        m_importer->SetTaskName(BimFromDgnDb::TASK_IMPORTING_RELATIONSHIP(), relName.c_str());
-        m_importer->ShowProgress();
-
+        GetDgnDb()->InsertLinkTableRelationship(relKey, *relClass, mappedSource, mappedTarget);
         }
+    else if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects) || relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect))
+        {
+        ECInstanceId aspectId = GetSyncInfo()->LookupAspect(ECInstanceId(targetId.GetValueUnchecked()));
+        if (!aspectId.IsValid())
+            {
+            Utf8PrintfString error("Failed to map target instance id %s for ECRelationship %s.\n", targetId.ToString().c_str(), relName.c_str());
+            GetLogger().warning(error.c_str());
+            return SUCCESS;
+            }
+        GetDgnDb()->InsertLinkTableRelationship(relKey, *relClass, ECInstanceId(mappedSource.GetValueUnchecked()), aspectId);
+        }
+    else
+        {
+        DgnElementId mappedTarget = GetSyncInfo()->LookupElement(targetId);
+        if (!mappedTarget.IsValid())
+            {
+            Utf8PrintfString error("Failed to map target instance id %s for ECRelationship %s.\n", targetId.ToString().c_str(), relName.c_str());
+            GetLogger().warning(error.c_str());
+            return SUCCESS;
+            }
+        SetNavigationProperty(mappedSource, mappedTarget, relClass);
+        }
+    //m_importer->SetTaskName(BimFromDgnDb::TASK_IMPORTING_RELATIONSHIP(), relName.c_str());
+    m_importer->ShowProgress();
+
 
     return SUCCESS;
     }
@@ -2887,44 +2903,34 @@ BentleyStatus LinkTableReader::_Read(Json::Value& relationships)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ElementHasLinksReader::_Read(Json::Value& hasLinks)
+BentleyStatus ElementHasLinksReader::_Read(Json::Value& link)
     {
-    if (!hasLinks.isArray())
+    DgnElementId elementId = ECJsonUtilities::JsonToId<DgnElementId>(link["ElementId"]);
+    DgnElementId mappedSource = GetSyncInfo()->LookupElement(elementId);
+    if (!mappedSource.IsValid())
         {
-        GetLogger().error("ElementHasLinks value should be an array.\n");
-        return ERROR;
+        Utf8PrintfString error("Failed to map ElementId for ElementHasLinks relationship %s.", elementId.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return SUCCESS;
         }
 
-    for (Json::Value::iterator iter = hasLinks.begin(); iter != hasLinks.end(); iter++)
+    DgnElementId linkId = ECJsonUtilities::JsonToId<DgnElementId>(link["LinkId"]);
+    DgnElementId mappedLink = GetSyncInfo()->LookupElement(linkId);
+    if (!mappedLink.IsValid())
         {
-        Json::Value& link = *iter;
-        DgnElementId elementId = ECJsonUtilities::JsonToId<DgnElementId>(link["ElementId"]);
-        DgnElementId mappedSource = GetSyncInfo()->LookupElement(elementId);
-        if (!mappedSource.IsValid())
-            {
-            Utf8PrintfString error("Failed to map ElementId for ElementHasLinks relationship %s.", elementId.ToString().c_str());
-            GetLogger().warning(error.c_str());
-            continue;
-            }
-
-        DgnElementId linkId = ECJsonUtilities::JsonToId<DgnElementId>(link["LinkId"]);
-        DgnElementId mappedLink = GetSyncInfo()->LookupElement(linkId);
-        if (!mappedLink.IsValid())
-            {
-            Utf8PrintfString error("Failed to map LinkId for ElementHasLinks relationship%s.", linkId.ToString().c_str());
-            GetLogger().warning(error.c_str());
-            continue;
-            }
-        LinkElementPtr linkElement = GetDgnDb()->Elements().GetForEdit<LinkElement>(mappedLink);
-        if (!linkElement.IsValid())
-            {
-            Utf8PrintfString error("Unable to get LinkElement DgnElement(%s).\n", linkElement->GetElementId().ToString().c_str());
-            GetLogger().warning(error.c_str());
-            continue;
-            }
-        linkElement->AddToSource(mappedSource);
-        m_importer->ShowProgress();
+        Utf8PrintfString error("Failed to map LinkId for ElementHasLinks relationship%s.", linkId.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return SUCCESS;
         }
+    LinkElementPtr linkElement = GetDgnDb()->Elements().GetForEdit<LinkElement>(mappedLink);
+    if (!linkElement.IsValid())
+        {
+        Utf8PrintfString error("Unable to get LinkElement DgnElement(%s).\n", linkElement->GetElementId().ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return SUCCESS;
+        }
+    linkElement->AddToSource(mappedSource);
+    m_importer->ShowProgress();
     return SUCCESS;
     }
 
@@ -2957,6 +2963,157 @@ BentleyStatus BaselineReader::_Read(Json::Value& baseline)
         }
     plan->Update();
     GetDgnDb()->SaveChanges();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus TimeSpanReader::_Read(Json::Value& entry)
+    {
+    BeSQLite::EC::ECInstanceId oldId = ECJsonUtilities::JsonToId<BeSQLite::EC::ECInstanceId>(entry[ECJsonSystemNames::Id()]);
+
+    Planning::BaselineId id = ECJsonUtilities::JsonToId<Planning::BaselineId>(entry["Baseline"]["id"]);
+    Planning::BaselineId mappedBaseline = Planning::BaselineId(GetSyncInfo()->LookupElement(DgnElementId(id.GetValue())).GetValue());
+    if (!mappedBaseline.IsValid())
+        {
+        Utf8PrintfString error("Failed to map BaselineId for TimeSpan aspect %s.", id.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+
+    DgnElementId planElementId = ECJsonUtilities::JsonToId<DgnElementId>(entry["Element"]["id"]);
+    DgnElementId mappedElementId = GetSyncInfo()->LookupElement(planElementId);
+
+    if (!mappedElementId.IsValid())
+        {
+        Utf8PrintfString error("Failed to map ParentId for TimeSpan aspect %s.", id.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+
+    Planning::PlanningElementPtr planningElement = GetDgnDb()->Elements().GetForEdit<Planning::PlanningElement>(mappedElementId);
+    if (!planningElement.IsValid())
+        {
+        Utf8PrintfString error("Failed to get Plan for mapped id %s.", mappedElementId.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+
+    Planning::TimeSpanP timeSpan = planningElement->GetTimeSpanP(mappedBaseline);
+    if (nullptr == timeSpan)
+        {
+        Utf8PrintfString error("Failed to create TimeSpan\n");
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+
+    if (entry.isMember("PlannedStart") && !entry["PlannedStart"].isNull())
+        {
+        DateTime dateTime;
+        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["PlannedStart"]))
+            timeSpan->SetPlannedStart(dateTime);
+        }
+
+    if (entry.isMember("PlannedFinish") && !entry["PlannedFinish"].isNull())
+        {
+        DateTime dateTime;
+        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["PlannedFinish"]))
+            timeSpan->SetPlannedFinish(dateTime);
+        }
+
+    if (entry.isMember("PlannedDuration") && !entry["PlannedDuration"].isNull())
+        {
+        Json::Value plannedDuration = entry["PlannedDuration"];
+        if (plannedDuration.isMember("Format") && !plannedDuration["Format"].isNull() &&
+            plannedDuration.isMember("Value") && !plannedDuration["Value"].isNull())
+            {
+            Planning::Duration duration(plannedDuration["Value"].asDouble(), (Planning::Duration::Format) plannedDuration["Format"].asInt());
+            timeSpan->SetPlannedDuration(duration);
+            }
+        }
+
+    if (entry.isMember("ActualStart") && !entry["ActualStart"].isNull())
+        {
+        DateTime dateTime;
+        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["ActualStart"]))
+            timeSpan->SetActualStart(dateTime);
+        }
+
+    if (entry.isMember("ActualFinish") && !entry["ActualFinish"].isNull())
+        {
+        DateTime dateTime;
+        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["ActualFinish"]))
+            timeSpan->SetActualFinish(dateTime);
+        }
+
+    if (entry.isMember("RemainingDuration") && !entry["RemainingDuration"].isNull())
+        {
+        Json::Value remainingDuration = entry["RemainingDuration"];
+        if (remainingDuration.isMember("Format") && !remainingDuration["Format"].isNull() &&
+            remainingDuration.isMember("Value") && !remainingDuration["Value"].isNull())
+            {
+            Planning::Duration duration(remainingDuration["Value"].asDouble(), (Planning::Duration::Format) remainingDuration["Format"].asInt());
+            timeSpan->SetRemainingDuration(duration);
+            }
+        }
+
+    if (entry.isMember("EarlyStart") && !entry["EarlyStart"].isNull())
+        {
+        DateTime dateTime;
+        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["EarlyStart"]))
+            timeSpan->SetEarlyStart(dateTime);
+        }
+
+    if (entry.isMember("EarlyFinish") && !entry["EarlyFinish"].isNull())
+        {
+        DateTime dateTime;
+        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["EarlyFinish"]))
+            timeSpan->SetEarlyFinish(dateTime);
+        }
+
+    if (entry.isMember("LateStart") && !entry["LateStart"].isNull())
+        {
+        DateTime dateTime;
+        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["LateStart"]))
+            timeSpan->SetLateStart(dateTime);
+        }
+
+    if (entry.isMember("LateFinish") && !entry["LateFinish"].isNull())
+        {
+        DateTime dateTime;
+        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["LateFinish"]))
+            timeSpan->SetLateFinish(dateTime);
+        }
+
+    if (entry.isMember("TotalFloat") && !entry["TotalFloat"].isNull())
+        {
+        Json::Value totalFloat = entry["TotalFloat"];
+        if (totalFloat.isMember("Format") && !totalFloat["Format"].isNull() &&
+            totalFloat.isMember("Value") && !totalFloat["Value"].isNull())
+            {
+            Planning::Duration duration(totalFloat["Value"].asDouble(), (Planning::Duration::Format) totalFloat["Format"].asInt());
+            timeSpan->SetTotalFloat(duration);
+            }
+        }
+
+    if (entry.isMember("FreeFloat") && !entry["FreeFloat"].isNull())
+        {
+        Json::Value freeFloat = entry["FreeFloat"];
+        if (freeFloat.isMember("Format") && !freeFloat["Format"].isNull() &&
+            freeFloat.isMember("Value") && !freeFloat["Value"].isNull())
+            {
+            Planning::Duration duration(freeFloat["Value"].asDouble(), (Planning::Duration::Format) freeFloat["Format"].asInt());
+            timeSpan->SetFreeFloat(duration);
+            }
+        }
+
+    DgnDbStatus stat;
+    planningElement->Update(&stat);
+    if (DgnDbStatus::Success == stat)
+        GetSyncInfo()->InsertAspect(oldId, timeSpan->GetAspectInstanceId());
+
+    m_importer->ShowProgress();
     return SUCCESS;
     }
 

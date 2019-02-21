@@ -71,13 +71,13 @@ void DeleteEntity (DwgDbHandleCR entityHandle, uint64_t& modelspaceId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t  CountImportedElements () const
+size_t  CountImportedElements (Utf8CP elemClass=BIS_SCHEMA(BIS_CLASS_SpatialElement)) const
     {
     auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
     EXPECT_TRUE (db.IsValid());
     EXPECT_TRUE (db->IsDbOpen());
 
-    size_t numElements = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialElement)).BuildIdList<DgnElementId>().size ();
+    size_t numElements = db->Elements().MakeIterator(elemClass).BuildIdList<DgnElementId>().size ();
     EXPECT_EQ (numElements, GetCount());
     return  numElements;
     }
@@ -520,3 +520,36 @@ TEST_F (BasicTests, AddAndUpdateGroup)
     CheckGenericGroup ("TestGroup", members, modelspaceId);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BasicTests, ImportModelspaceAs2dModel)
+    {
+    LineUpFiles(L"output2d.bim", L"basictype.dwg", false); 
+    InitializeImporterOptions (m_dwgFileName, false);
+
+    struct Importer2d : public DwgImporter
+        {
+        DEFINE_T_SUPER (DwgImporter)
+        Importer2d (DwgImporter::Options& options) : T_Super(options) { }
+        DgnClassId _GetElementType (DwgDbBlockTableRecordCR block) override
+            {
+            if (block.IsModelspace())
+                return GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
+            else
+                return T_Super::_GetElementType(block);;
+            }
+        DgnClassId _GetModelType (DwgDbBlockTableRecordCR block) override
+            {
+            if (block.IsModelspace())
+                return GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel);
+            else
+                return T_Super::_GetModelType(block);;
+            }
+        };  // Importer2d
+
+    Importer2d* importer = new Importer2d(m_options);
+    DoConvert (importer, m_dgnDbFileName, m_dwgFileName);
+    delete importer;
+    CountImportedElements (BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
+    }

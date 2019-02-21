@@ -711,8 +711,8 @@ BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, 
         {
         Utf8String docId = it.GetSourceIdentity().GetId();
 
-        if (IsDocumentAssignedToJob(docId))   // This is how to check if the document still exists.
-            continue;                         //  If it does, do nothing.
+        if (IsDocumentInRegistry(docId)) // If the document is in the document registry at all, that means that a) the document exists, and b) the job scheduler assigned the document to this bridge.
+            continue;                    // So, if the doc exists and is still assigned to me, then don't delete it.
 
         auto docrid = m_syncInfo.FindRowidBySourceId(iModelBridgeSyncInfoFile::SourceIdentity(srid, kind, docId.c_str()));
 
@@ -792,7 +792,7 @@ ECN::IECInstancePtr iModelExternalSourceAspect::CreateInstance(DgnElementId scop
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::ECClassCP iModelExternalSourceAspect::GetAspectClass(DgnDbR db)
     {
-    return db.Schemas().GetClass(XTRN_SRC_ASPCT_ECSCHEMA_NAME, XTRN_SRC_ASPCT_CLASS);
+    return db.Schemas().GetClass(BIS_ECSCHEMA_NAME, XTRN_SRC_ASPCT_CLASS);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -817,7 +817,7 @@ iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementByHash(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR hash)
     {
-    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Hash=?)");
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Checksum=?)");
     sel->BindId(1, scopeId);
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, hash.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -877,7 +877,7 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String iModelExternalSourceAspect::GetDumpHeaders(bool includeProperties, bool includeSourceState)
     {
-    Utf8PrintfString str("%-16.16s %8.8s %-32.32s %-32.32s", "Kind", "Scope", "Scope Element Class", "Identifier");
+    Utf8PrintfString str("%-20.20s %8.8s %-32.32s %-32.32s", "Kind", "Scope", " ", "Identifier");
     if (includeSourceState)
         {
         // TBD
@@ -896,7 +896,7 @@ Utf8String iModelExternalSourceAspect::FormatForDump(DgnDbR db, bool includeProp
     {
     auto scopeEl = db.Elements().GetElement(GetScope());
     auto scopeClass = scopeEl.IsValid()? scopeEl->GetElementClass()->GetFullName(): "?";
-    Utf8PrintfString str("%-16.16s %8.0llx %-32.32s %-32.32s", GetKind().c_str(), GetScope().GetValueUnchecked(), scopeClass, GetIdentifier().c_str());
+    Utf8PrintfString str("%-20s %8.0llx %-32s %-32s", GetKind().c_str(), GetScope().GetValueUnchecked(), scopeClass, GetIdentifier().c_str());
     if (includeSourceState)
         {
         // TBD
@@ -929,15 +929,24 @@ static void outDump(ILogger* logger, NativeLogging::SEVERITY sev, Utf8StringCR m
 void iModelExternalSourceAspect::Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY sev, bool includeProperties, bool includeSourceState)
     {
     auto aspects = GetAll(el, nullptr);
-    if (aspects.empty())
-        return;
+//    if (aspects.empty())
+//        return;
 
     ILogger* logger = loggingCategory? LoggingManager::GetLogger(loggingCategory): nullptr;
 
     GeometrySource const* geom = el.ToGeometrySource();
-    Utf8String catid = geom? Utf8PrintfString("Category: %llu", geom->GetCategoryId().GetValue()): Utf8String();
+    Utf8String catid;
+    if (nullptr != geom)
+        catid.Sprintf("Category: 0x%llx", geom->GetCategoryId().GetValue());
 
-    outDump(logger, sev, Utf8PrintfString("Element ID: 0x%llx Class: %s Code: %s %s", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName(), el.GetCode().GetValueUtf8CP(), catid.c_str()));
+    Utf8String parent;
+    if (el.GetParentId().IsValid())
+        parent.Sprintf("Parent: 0x%llx", el.GetDgnDb().Elements().GetElement(el.GetParentId())->GetElementId().GetValue());
+
+    outDump(logger, sev, Utf8PrintfString("Element ID: 0x%llx Class: %s Code: %s %s %s", el.GetElementId().GetValue(), el.GetElementClass()->GetFullName(), el.GetCode().GetValueUtf8CP(), catid.c_str(), parent.c_str()));
+
+    if (aspects.empty())
+        return;
 
     outDump(logger, sev, GetDumpHeaders(includeProperties, includeSourceState));
     for (auto const& aspect : aspects)
@@ -966,7 +975,7 @@ iModelExternalSourceAspect iModelExternalSourceAspect::GetAspect(DgnElementCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelExternalSourceAspect iModelExternalSourceAspect::GetAspect(DgnElementR el, BeSQLite::EC::ECInstanceId aspectid, ECN::ECClassCP aspectClass)
+iModelExternalSourceAspect iModelExternalSourceAspect::GetAspectForEdit(DgnElementR el, BeSQLite::EC::ECInstanceId aspectid, ECN::ECClassCP aspectClass)
     {
     if (!aspectClass)
         aspectClass = GetAspectClass(el.GetDgnDb());
@@ -1003,6 +1012,16 @@ DgnElementId iModelExternalSourceAspect::GetScope() const
     {
     ECN::ECValue v;
     m_instance->GetValue(v, XTRN_SRC_ASPCT_Scope);
+    return v.GetNavigationInfo().GetId<DgnElementId>();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId iModelExternalSourceAspect::GetElementId() const
+    {
+    ECN::ECValue v;
+    m_instance->GetValue(v, "Element");
     return v.GetNavigationInfo().GetId<DgnElementId>();
     }
 
@@ -1101,3 +1120,65 @@ iModelBridgeSyncInfoFile::SourceState::SourceState(iModelExternalSourceAspect::S
     m_hash = aspectState.m_checksum;
     m_lmt = iModelExternalSourceAspect::DoubleFromString(aspectState.m_version.c_str());
     }
+
+#ifdef COMMENT_OUT
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename XSAT>
+ExternalSourceAspectIterator::ExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP kind, Utf8StringCR wh) : m_db(db))
+    {
+    Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind=?)");
+    if (!wh.empty())
+        ecsql.append(" AND (").append(wh).append(" )");
+    ecsql.append(" )");
+
+    m_stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+
+    if (!m_stmt.IsValid())
+        return;
+
+    m_stmt->BindId(1, scope);
+    m_stmt->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename XSAT>
+BeSQLite::DbResult ExternalSourceAspectIterator::Step() const
+    {
+    if (!m_stmt.IsValid())
+        return BE_SQLITE_DONE;
+
+    auto rc = m_stmt->Step();
+    if (BE_SQLITE_ROW !=  rc)
+        {
+        m_aspect.Invalidate();
+        return rc;
+        }
+
+    auto el = m_db.Elements().GetElement(m_stmt->GetValueId<DgnElementId>(1));
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        m_aspect.Invalidate();
+        return BE_SQLITE_ERROR;
+        }
+    m_aspect = iModelExternalSourceAspect::GetAspect(*el, m_stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0));
+    return BE_SQLITE_ROW;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename XSAT>
+void ExternalSourceAspectIterator::Entry::Step()
+    {
+    if (m_it) 
+        {
+        if (BeSQLite::BE_SQLITE_ROW != m_it->Step()) 
+            m_it = nullptr;
+        }
+    }
+#endif

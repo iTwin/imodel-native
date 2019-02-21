@@ -1029,7 +1029,11 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
         return modelMap;
         }
 
+    // add a model map entry to syncInfo:
     modelMap = this->CreateAndInsertModelMap (model, dwgBlock, trans, xrefInsert, xrefDwg);
+
+    // add an ElementHasLinks relationship for the model & its RepositoryLink:
+    this->InsertElementHasLinks (*model, nullptr == xrefDwg ? *m_dwgdb : *xrefDwg);
 
     return  modelMap;
     }
@@ -1134,6 +1138,9 @@ ResolvedModelMapping    DwgImporter::_GetOrCreateRootModel (bool updating)
     rootModelMap = this->GetRootModel ();
     if (rootModelMap.IsValid())
         return  rootModelMap;
+
+    // creat or update doc codes for the root file
+    this->UpdateRepositoryLink ();
 
     if (m_modelspaceId.IsNull())
         m_modelspaceId = m_dwgdb->GetModelspaceId ();
@@ -1928,6 +1935,11 @@ void            DwgImporter::_BeginImport ()
     {
     this->_GetChangeDetector()._Prepare (*this);
     m_dgndb->AddIssueListener (m_issueReporter.GetECDbIssueListener());
+
+    // get imported DWG schemas
+    auto schemaName = DwgHelper::GetAttrdefECSchemaName (m_dwgdb.get());
+    m_attributeDefinitionSchema = m_dgndb->Schemas().GetSchema (schemaName.c_str(), true);
+
     m_hasBegunProcessing = true;
     }
 
@@ -1973,7 +1985,6 @@ void            DwgImporter::_FinishImport ()
                 if (nullptr != (dwg = xref.GetDatabaseP()))
                     {
                     changeDetector._DetectDeletedElementsInFile (*this, *dwg);
-                    changeDetector._DetectDeletedModelsInFile (*this, *dwg);
                     }
                 }
             // done per file deletion
@@ -1982,6 +1993,7 @@ void            DwgImporter::_FinishImport ()
             changeDetector._DetectDeletedMaterials (*this);
             changeDetector._DetectDeletedViews (*this);
             changeDetector._DetectDeletedGroups (*this);
+            changeDetector._DetectDetachedXrefs (*this);
             }
 
         // update syncinfo for master DWG file

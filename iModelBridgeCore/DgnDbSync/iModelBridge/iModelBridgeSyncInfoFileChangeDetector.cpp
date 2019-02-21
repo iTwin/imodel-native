@@ -292,7 +292,7 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
 
             if (nullptr != aspectClass)
                 {
-                iModelExternalSourceAspect aspect = iModelExternalSourceAspect::GetAspect(*conversionResults.m_element, BeSQLite::EC::ECInstanceId(), aspectClass); // NEEDS WORK: This valid only if you know that element will have just one aspect
+                iModelExternalSourceAspect aspect = iModelExternalSourceAspect::GetAspectForEdit(*conversionResults.m_element, BeSQLite::EC::ECInstanceId(), aspectClass); // NEEDS WORK: This valid only if you know that element will have just one aspect
                 if (aspect.IsValid())
                     aspect.SetSourceState(changeDetectorResults.GetCurrentState().GetAspectState());
                 else
@@ -509,7 +509,7 @@ BentleyStatus iModelBridgeSyncInfoFile::iModelBasedChangeDetector::_UpdateBimAnd
                 {
                 auto idVals = iModelExternalSourceAspect::FindElementBySourceId(GetDgnDb(), DgnElementId(changeDetectorResults.GetSourceIdentity().GetScopeROWID()),
                     changeDetectorResults.GetSourceIdentity().GetKind().c_str(), changeDetectorResults.GetSourceIdentity().GetId());
-                iModelExternalSourceAspect aspect = iModelExternalSourceAspect::GetAspect(*conversionResults.m_element, BeSQLite::EC::ECInstanceId(idVals.aspectId), aspectClass);
+                iModelExternalSourceAspect aspect = iModelExternalSourceAspect::GetAspectForEdit(*conversionResults.m_element, BeSQLite::EC::ECInstanceId(idVals.aspectId), aspectClass);
                 //iModelExternalSourceAspect aspect = iModelExternalSourceAspect::GetAspect(*conversionResults.m_element, changeDetectorResults.GetSourceIdentity().GetKind().c_str(), changeDetectorResults.GetSourceIdentity().GetId(), aspectClass); 
                 if (aspect.IsValid())
                     {

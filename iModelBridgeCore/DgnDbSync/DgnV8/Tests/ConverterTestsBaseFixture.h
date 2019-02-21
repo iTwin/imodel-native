@@ -15,7 +15,7 @@
 struct ConverterTestBaseFixture : public testing::Test
     {
     protected:
-        DgnElementCPtr FindV8ElementInDgnDb(DgnDbR db, DgnV8Api::ElementId eV8Id, uint8_t dgnIndex = 1);
+        DgnElementCPtr FindV8ElementInDgnDb(DgnDbR db, DgnV8Api::ElementId eV8Id, RepositoryLinkId rlinkId = RepositoryLinkId());
 
         void InitializeTheConverter();
 
@@ -50,7 +50,11 @@ struct ConverterTestBaseFixture : public testing::Test
 
     void SetGcsDef();
 
+    RepositoryLinkId FindRepositoryLinkIdByFilename(DgnDbR db, BentleyApi::BeFileNameCR filename);
+    RepositoryLinkCPtr FindRepositoryLinkByFilename(DgnDbR db, BentleyApi::BeFileNameCR filename) {auto id = FindRepositoryLinkIdByFilename(db, filename); return db.Elements().Get<RepositoryLink>(id);} 
+
     static BentleyApi::BeFileName GetOutputDir();
+    static BentleyApi::BeFileName GetTempDir();
     BentleyApi::BeFileName GetInputFileName(BentleyApi::WCharCP filename);
     BentleyApi::BeFileName GetOutputFileName(BentleyApi::WCharCP filename);
     void MakeWritableCopyOf(BentleyApi::BeFileName& fnoutFile, BentleyApi::WCharCP filename);

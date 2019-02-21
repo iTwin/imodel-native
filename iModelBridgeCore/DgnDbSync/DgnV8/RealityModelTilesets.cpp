@@ -231,9 +231,9 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     for (auto const& curr : m_modelsRequiringRealityTiles)
         {
         auto model = m_dgndb->Models().GetModel(curr.first);
-        bpair<Utf8String, SyncInfo::V8FileSyncInfoId> tpair = curr.second;
+        bpair<Utf8String, RepositoryLinkId> tpair = curr.second;
         Utf8String fileName = tpair.first;
-        SyncInfo::V8FileSyncInfoId fileId = tpair.second;
+        RepositoryLinkId fileId = tpair.second;
         auto geometricModel = model->ToGeometricModel();
 
         if (nullptr == geometricModel)
@@ -242,27 +242,20 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             return ERROR;
             }
 
-        BeFileName file(fileName.c_str());
-        uint64_t currentLastModifiedTime;
-        uint64_t currentFileSize;
-        Utf8String currentEtag;
-        GetSyncInfo().GetCurrentImageryInfo(fileName, currentLastModifiedTime, currentFileSize, currentEtag);
+        SyncInfo::UriContentInfo currentInfo;
+        currentInfo.GetInfo(fileName);
 
-        uint64_t existingLastModifiedTime;
-        uint64_t existingFileSize;
-        Utf8String existingEtag;
+        auto imageryXsa = SyncInfo::UriExternalSourceAspect::GetAspect(*GetDgnDb().Elements().GetElement(model->GetModeledElementId()));
         Utf8String rdsId;
         bool isUpdate = false;
-        if (GetSyncInfo().TryFindImageryFile(model->GetModeledElementId(), fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
+        if (imageryXsa.IsValid())
             {
-            if (!existingEtag.empty())
-                {
-                if (existingEtag.Equals(currentEtag))
-                    continue;
-                }
-            else if (currentLastModifiedTime == existingLastModifiedTime && currentFileSize == existingFileSize)
+            SyncInfo::UriContentInfo storedInfo;
+            imageryXsa.GetInfo(storedInfo);
+            rdsId = imageryXsa.GetSourceGuid();
+            if (storedInfo.IsEqual(currentInfo) && !rdsId.empty())
                 continue;
-            isUpdate = true;
+            isUpdate = !rdsId.empty();
             }
 
         // Only get to this point if it is a new image or if it is an existing image that has been modified
@@ -297,9 +290,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         auto smModel = dynamic_cast<ScalableMeshModelCP>(geometricModel);
         if (smModel != nullptr)
             {
-            DPoint3d initialCenter = m_dgndb->GeoLocation().GetInitialProjectCenter();
-            dbToEcefTransform = Transform::FromProduct(dbToEcefTransform, Transform::From(initialCenter.x, initialCenter.y, initialCenter.z));
-            smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform, Transform::From(-initialCenter.x, -initialCenter.y, -initialCenter.z));
+            smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform);
             }
         else
             {
@@ -383,8 +374,12 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             }
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
-        m_syncInfo.UpdateImageryFile(model->GetModeledElementId(), currentLastModifiedTime, currentFileSize, currentEtag.c_str(), identifier.c_str());
 
+        auto modeledElement = GetDgnDb().Elements().GetForEdit<DgnElement>(model->GetModeledElementId());
+        imageryXsa = SyncInfo::UriExternalSourceAspect::GetAspectForEdit(*modeledElement);
+        imageryXsa.SetInfo(currentInfo);
+        imageryXsa.SetSourceGuid(identifier);
+        modeledElement->Update();
         }
 
     return BSISUCCESS;

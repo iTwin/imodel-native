@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -877,8 +877,7 @@ BeSQLite::DbResult V8ECSchemaXmlInfo::CreateTable(DgnDbR db)
 V8ECSchemaXmlInfo::Iterable::const_iterator V8ECSchemaXmlInfo::Iterable::begin() const
     {
     if (m_stmt == nullptr)
-        m_db->GetCachedStatement(m_stmt, "SELECT s.V8Name,s.V8VersionMajor,s.V8VersionMinor,s.MappingType,x.Xml FROM " TEMPTABLE_ATTACH(V8ECSCHEMAXML_TABLE) " x, "
-                                 SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) " s WHERE x.Id = s.rowid");
+        m_db->GetCachedStatement(m_stmt, "SELECT x.Id ,x.Xml FROM " TEMPTABLE_ATTACH(V8ECSCHEMAXML_TABLE) " x");
     else
         m_stmt->Reset();
 
@@ -888,12 +887,33 @@ V8ECSchemaXmlInfo::Iterable::const_iterator V8ECSchemaXmlInfo::Iterable::begin()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
-BECN::SchemaKey V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaKey() const
+void V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaInfo(BECN::SchemaKey& key, SyncInfo::SchemaExternalSourceAspect::Type& type, DgnDbR db)
     {
-    BECN::SchemaKey key(m_sql->GetValueText(0), (uint32_t) m_sql->GetValueInt(1), (uint32_t) m_sql->GetValueInt(2));
+    auto id = m_sql->GetValueId<DgnElementId>(0);
+    Utf8String ecsql = "SELECT Identifier, Version, JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ECInstanceId=? and Kind='Schema'";
+
+    auto stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+    stmt->BindId(1, id);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return;
+
+    Utf8String version = stmt->GetValueText(1);
+    Utf8String checksum = stmt->GetValueText(2);
+
+    key.m_schemaName = stmt->GetValueText(0);
+
+    uint32_t versionWrite;
+    ECN::SchemaKey::ParseVersionString(key.m_versionRead, versionWrite, key.m_versionMinor, version.c_str());
+
     Utf8String xml(GetSchemaXml());
     key.m_checksum = ECN::ECSchema::ComputeSchemaXmlStringCheckSum(xml.c_str(), xml.length());
-    return key;
+
+    Utf8String jsonProp = stmt->GetValueText(2);
+    rapidjson::Document doc;
+    doc.Parse(jsonProp.c_str());
+    type = doc["isDynamic"].IsTrue() ? SyncInfo::SchemaExternalSourceAspect::Type::Dynamic : SyncInfo::SchemaExternalSourceAspect::Type::Identity;
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -901,17 +921,8 @@ BECN::SchemaKey V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaKey() const
 //---------------------------------------------------------------------------------------
 Utf8CP V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaXml() const
     {
-    return m_sql->GetValueText(4);
+    return m_sql->GetValueText(1);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-SyncInfo::ECSchemaMappingType V8ECSchemaXmlInfo::Iterable::Entry::GetMappingType() const
-    {
-    return (SyncInfo::ECSchemaMappingType) m_sql->GetValueInt(3);
-    }
-
 
 //****************************************************************************************
 // ECSchemaXmlDeserializer
@@ -1283,9 +1294,11 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
 #endif
 
-    for (auto const& entry : V8ECSchemaXmlInfo::Iterable(GetDgnDb()))
+    for (auto entry : V8ECSchemaXmlInfo::Iterable(GetDgnDb()))
         {
-        BECN::SchemaKey key = entry.GetSchemaKey();
+        BECN::SchemaKey key;
+        SyncInfo::SchemaExternalSourceAspect::Type type;
+        entry.GetSchemaInfo(key, type, GetDgnDb());
         Utf8String schemaName(key.GetName().c_str());
         if (0 == BeStringUtilities::Strnicmp("EWR", schemaName.c_str(), 3))
             {
@@ -1295,7 +1308,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
         targetSchemaNames.insert(schemaName);
         Utf8CP schemaXml = entry.GetSchemaXml();
-        if (entry.GetMappingType() == SyncInfo::ECSchemaMappingType::Dynamic)
+        if (type == SyncInfo::SchemaExternalSourceAspect::Type::Dynamic)
             schemaXmlDeserializer.AddSchemaXml(schemaName.c_str(), key, schemaXml);
         else
             schemaXmlDeserializer.AddSchemaXml(key.GetFullSchemaName().c_str(), key, schemaXml);
@@ -1408,7 +1421,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
      ECN::IECCustomAttributeConverterPtr extendType = new ExtendTypeConverter(standard, angle);
      ECN::ECSchemaConverter::AddConverter("EditorCustomAttributes", EXTEND_TYPE, extendType);
-
+     ECN::ECSchemaPtr coreSchema = ECN::CoreCustomAttributeHelper::GetSchema();
      for (BECN::ECSchemaP schema : schemas)
          {
          if (schema->IsSupplementalSchema())
@@ -1428,6 +1441,18 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              for (ECN::ECPropertyP ecProp : ecClass->GetProperties())
                  RemoveDgnV8CustomAttributes(*ecProp);
              }
+         
+         if (coreSchema.IsValid())
+            {
+             if (ECN::ECObjectsStatus::Success != schema->AddReferencedSchema(*coreSchema))
+                 LOG.warning("Error adding a reference to the core custom attributes schema.");
+             else
+                {
+                ECN::IECInstancePtr dynamicInstance = ECN::CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+                if (dynamicInstance.IsValid())
+                    schema->SetCustomAttribute(*dynamicInstance);
+                }
+            }
          }
      ECN::ECSchemaConverter::RemoveConverter(ECN::ECSchemaConverter::GetQualifiedClassName("EditorCustomAttributes", EXTEND_TYPE));
 
@@ -2877,14 +2902,14 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
     Utf8String schemaName(schemaKey.GetName().c_str());
 
     ECObjectsV8::SchemaKey existingSchemaKey;
-    SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
+    SyncInfo::SchemaExternalSourceAspect::Type existingMappingType = SyncInfo::SchemaExternalSourceAspect::Type::Identity;
     
-    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), SyncInfo::V8FileSyncInfoId()))
+    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), RepositoryLinkId()))
         {
         //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
         //and also check whether the existing one and the new one are compatible.
 
-        if (existingMappingType == SyncInfo::ECSchemaMappingType::Dynamic)
+        if (existingMappingType == SyncInfo::SchemaExternalSourceAspect::Type::Dynamic)
             {
             if (!isDynamicSchema)
                 {
@@ -2927,29 +2952,55 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                         {
                         if (GetDgnDb().Schemas().GetSchema(schemaName, false) != nullptr)
                             {
+                            DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
+                            SyncInfo::SchemaExternalSourceAspect aspect = SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(*repositoryLink, schemaName);
+                            if (!aspect.IsValid())
+                                return BSIERROR;
+                            iModelExternalSourceAspect::SourceState state;
+                            state.m_version = ECN::SchemaKey::FormatLegacySchemaVersion(schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor());
+                            state.m_checksum.Sprintf("%02" PRIu32, schemaKey.m_checkSum);
+                            aspect.SetSourceState(state);
+                            repositoryLink->Update();
                             return BSISUCCESS;
                             }
                         }
-                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), Converter::GetV8FileSyncInfoIdFromAppData(*v8Model.GetDgnFileP())))
+                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP())))
                         return BSISUCCESS;
                     }
                 }
             }
         }
 
+    DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
+    SyncInfo::SchemaExternalSourceAspect xsa = SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(*repositoryLink, schemaName);
     ECN::ECSchemaId schemaId;
-    if (BE_SQLITE_OK != GetSyncInfo().InsertECSchema(schemaId, *v8Model.GetDgnFileP(),
-                                                     schemaName.c_str(),
-                                                     schemaKey.GetVersionMajor(),
-                                                     schemaKey.GetVersionMinor(),
-                                                     isDynamicSchema,
-                                                     schemaKey.m_checkSum))
+    if (!xsa.IsValid())
         {
-        BeAssert(false && "Failed to insert ECSchema sync info");
-        return BSIERROR;
-        }
+        RepositoryLinkId scopeId = m_converter.GetRepositoryLinkId(*v8Model.GetDgnFileP());
+        if (!scopeId.IsValid() || Utf8String::IsNullOrEmpty(schemaName.c_str()))
+            {
+            BeAssert(false && "Failed to insert ECSchema sync info");
+            return BSIERROR;
+            }
 
+        auto aspect = SyncInfo::SchemaExternalSourceAspect::CreateAspect(scopeId, schemaName.c_str(), schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor(), isDynamicSchema, schemaKey.m_checkSum, GetDgnDb());
+        auto repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(scopeId);
+        aspect.AddAspect(*repositoryLink);
+        repositoryLink->Update();
+        schemaId = ECN::ECSchemaId(aspect.GetECInstanceId().GetValueUnchecked());
+        }
+    else
+        {
+        iModelExternalSourceAspect::SourceState state;
+        state.m_version = ECN::SchemaKey::FormatLegacySchemaVersion(schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor());
+        state.m_checksum.Sprintf("%02" PRIu32, schemaKey.m_checkSum);
+        xsa.SetSourceState(state);
+        repositoryLink->Update();
+        schemaId = ECN::ECSchemaId(xsa.GetECInstanceId().GetValueUnchecked());
+        }
     BeAssert(schemaId.IsValid());
+    if (!schemaId.IsValid())
+        return BSIERROR;
 
     if (BE_SQLITE_OK != V8ECSchemaXmlInfo::Insert(GetDgnDb(), schemaId, schemaXml))
         {
@@ -3112,7 +3163,7 @@ void DynamicSchemaGenerator::CheckNoECSchemaChanges(bvector<DgnV8ModelP> const& 
     for (auto& v8Model : uniqueModels)
         {
         bmap<Utf8String, uint32_t> syncInfoChecksums;
-        SyncInfo::V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*v8Model->GetDgnFileP());
+        RepositoryLinkId v8FileId = Converter::GetRepositoryLinkIdFromAppData(*v8Model->GetDgnFileP());
         GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums, v8FileId);
         CheckECSchemasForModel(*v8Model, syncInfoChecksums);
         }
@@ -3358,13 +3409,12 @@ void DynamicSchemaGenerator::GenerateSchemas(bvector<DgnV8FileP> const& files, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::CreateProvenanceTables()
     {
+    // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
+
     if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceFile) && _WantModelProvenanceInBim())
         DgnV8FileProvenance::CreateTable(*m_dgndb);
     if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceModel) && _WantModelProvenanceInBim())
         DgnV8ModelProvenance::CreateTable(*m_dgndb);
-    // if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceElement))
-    //     DgnV8ElementProvenance::CreateTable(*m_dgndb);
-    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3377,7 +3427,13 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
 
     // *** TRICKY: We need to know if this is an update or not. The framework has not yet set the 'is-updating' flag.
     //              So, we must figure out if this is an update or not right here and now by checking to see if the job subject already exists.
-    _GetParamsR().SetIsUpdating(FindImportJobForModel(*GetRootModelP()).IsValid());
+    auto mmsubj = FindSourceMasterModelSubject(*GetRootModelP());
+    if (mmsubj.IsValid())
+        {
+        auto jobsubj = FindSoleJobSubjectForSourceMasterModel(*mmsubj);
+        if (jobsubj.IsValid())
+            _GetParamsR().SetIsUpdating(true);
+        }
 
 #ifndef NDEBUG
     if (_WantModelProvenanceInBim())
@@ -3512,7 +3568,7 @@ BentleyStatus TiledFileConverter::MakeSchemaChanges()
     bvector<DgnV8FileP> filesInOrder;
     filesInOrder.push_back(GetRootModelP()->GetDgnFileP());
 
-    GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
+    GetRepositoryLinkId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
     auto status = T_Super::MakeSchemaChanges(filesInOrder, modelsInOrder);
 
@@ -3601,7 +3657,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
     v8ECManager.FindRelationshipEntriesOnElement(v8Element.GetElementRef(), relationships);
 
     DgnDbR dgndb = GetDgnDb();
-    SyncInfo::V8FileSyncInfoId fileId = GetV8FileSyncInfoIdFromAppData(*v8Element.GetDgnFileP());
+    RepositoryLinkId fileId = GetRepositoryLinkId(*v8Element.GetDgnFileP());
 
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {
@@ -3769,44 +3825,44 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
 
         if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && !navPropOnSource)
             {
-            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(sourceInstanceKey.GetInstanceId().GetValue()));
-            if (!element.IsValid())
-                continue;
-            DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *targetClass, targetInstanceKey.GetInstanceId());
-            if (nullptr == aspect)
-                {
-                Utf8String errorMsg;
-                errorMsg.Sprintf("Unable to get ElementAspect from Element."
-                                 "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
-                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
-                                 "Insertion into target BIM file failed.",
-                                 v8RelFullClassName.c_str(),
-                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
-                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
-                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
-                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
-                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
-                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
-                            errorMsg.c_str());
-                continue;
-                }
-            if (DgnDbStatus::Success != aspect->SetPropertyValue(navProp->GetName().c_str(), val))
-                {
-                Utf8String errorMsg;
-                errorMsg.Sprintf("Failed to set NavigationECProperty on Target ElementAspect ECInstance for ECRelationship '%s' from element %" PRIu64 " in file '%s' "
-                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). ",
-                                 v8RelFullClassName.c_str(),
-                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
-                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
-                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
-                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
-                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+            //DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(sourceInstanceKey.GetInstanceId().GetValue()));
+            //if (!element.IsValid())
+            //    continue;
+            //DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *targetClass, targetInstanceKey.GetInstanceId());
+            //if (nullptr == aspect)
+            //    {
+            //    Utf8String errorMsg;
+            //    errorMsg.Sprintf("Unable to get ElementAspect from Element."
+            //                     "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+            //                     "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+            //                     "Insertion into target BIM file failed.",
+            //                     v8RelFullClassName.c_str(),
+            //                     v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+            //                     v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+            //                     sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+            //                     v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+            //                     targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+            //    ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+            //                errorMsg.c_str());
+            //    continue;
+            //    }
+            //if (DgnDbStatus::Success != aspect->SetPropertyValue(navProp->GetName().c_str(), val))
+            //    {
+            //    Utf8String errorMsg;
+            //    errorMsg.Sprintf("Failed to set NavigationECProperty on Target ElementAspect ECInstance for ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+            //                     "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). ",
+            //                     v8RelFullClassName.c_str(),
+            //                     v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+            //                     v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+            //                     sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+            //                     v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+            //                     targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
 
-                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
-                            errorMsg.c_str());
-                continue;
-                }
-            element->Update();
+            //    ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+            //                errorMsg.c_str());
+            //    continue;
+            //    }
+            //element->Update();
             }
         else if (sourceClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && navPropOnSource)
             {

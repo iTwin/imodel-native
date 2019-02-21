@@ -1041,6 +1041,23 @@ void            DwgHelper::SetGradientFrom (DwgGiGradientFillR gradientOut, DwgD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      DwgHelper::GetAttrdefECSchemaName (DwgDbDatabaseCP dwg)
+    {
+    // build a per-file attrdef schema name
+    Utf8String  schemaName = SCHEMAName_AttributeDefinitions;
+    if (dwg != nullptr)
+        {
+        Utf8String  filename(BeFileName::GetFileNameWithoutExtension(dwg->GetFileName().c_str()).c_str());
+        schemaName += "_" + filename;
+        if (!ECNameValidation::IsValidName(schemaName.c_str()))
+            ECNameValidation::EncodeToValidName (schemaName, schemaName.c_str());
+        }
+    return  schemaName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String      DwgHelper::GetAttrdefECClassNameFromBlockName (WCharCP blockName)
     {
     // build an ECClassName representing a collection of attribute definitions in a block:

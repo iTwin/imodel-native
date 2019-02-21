@@ -111,10 +111,11 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     if (WasAborted())
         return DgnV8Api::DGNFILE_STATUS_UnknownError;
     
+    CreateProvenanceTables(); // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
+
     // Detect all V8 models. This process also classifies 2d design models and loads and fills drawings and sheets.
     // The of models that we find will be fed into the ECSchema conversion logic. These functions will ALSO enroll the v8files that they find in syncinfo.
-    CreateProvenanceTables(); // TRICKY: Call this before anyone calls _GetV8FileIntoSyncInfo
-    _GetV8FileIntoSyncInfo(*m_rootFile, _GetIdPolicy(*m_rootFile)); // TRICKY: Before looking for models, register the root file in syncinfo. This starts the process of populating m_v8files. Do NOT CALL GetV8FileSyncInfoId as that will fail to populate m_v8Files in some cases.
+    GetRepositoryLinkId(*m_rootFile);
     
     for (auto xdomain : XDomainRegistry::s_xdomains)
         xdomain->_OnBeginConversion(*this, *m_rootModelRef->GetDgnModelP());
@@ -126,12 +127,11 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     BeAssert((m_v8Files.size() >= 1) && "FindSpatialV8Models should have populated m_v8Files");
     for (auto f : m_v8Files)
         {
-        auto cachedSfid = GetV8FileSyncInfoIdFromAppData(*f);
-        BeAssert(cachedSfid.IsValid() && "We should have cached the V8FileSyncInfoId for each V8 file that we found");
+        auto rlink = GetRepositoryLinkElement(*f);
+        BeAssert(rlink.IsValid() && "We should have cached the RepositoryLinkId for each V8 file that we found");
 
-        SyncInfo::FileById syncInfoFiles(GetDgnDb(), cachedSfid);
-        SyncInfo::FileIterator::Entry syncInfoFile = syncInfoFiles.begin();
-        BeAssert((syncInfoFile != syncInfoFiles.end()) && "We should be able to look up V8 files in syncinfo by their V8FileSyncInfoId's");
+        auto aspect = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*rlink);
+        BeAssert(aspect.IsValid() && "We should be able to look up V8 files in syncinfo by their RepositoryLinkId's");
         }
 #endif
 
@@ -151,11 +151,19 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
 
-    BeAssert(!GetRepositoryLinkFromAppData(*GetRootV8File()).IsValid());
-    WriteRepositoryLink(*GetRootV8File());  // Find the RepositoryLink element for the root file now. This is the order in which the older converter did it.
+    GetRepositoryLinkId(*GetRootV8File());  // Make sure the RepositoryLink element for the root file exists and its ID is cached in appdata.
 
-    m_importJob = FindImportJobForModel(*GetRootModelP());
+    auto sourceMasterModelSubject = FindSourceMasterModelSubject(*GetRootModelP());
+    if (!sourceMasterModelSubject.IsValid())
+        {
+        return ImportJobLoadStatus::FailedNotFound;
+        }
+    auto rootModelAspect = GetRootModelAspectFromSourceMasterModelSubject(*sourceMasterModelSubject);
+    BeAssert(rootModelAspect.GetV8ModelId() == GetRootModelP()->GetModelId());
 
+    // Look for a Job Subject for this bridge under this SourceMasterModel Subject.
+    // If we don't find one, that means that this bridge has never been run against this source master file.
+    m_importJob = FindSoleJobSubjectForSourceMasterModel(*sourceMasterModelSubject);
     if (!m_importJob.IsValid())
         return ImportJobLoadStatus::FailedNotFound;
 
@@ -163,12 +171,10 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     if (!_HaveChangeDetector() || IsUpdating())
         _SetChangeDetector(true);
 
-    _GetV8FileIntoSyncInfo(*m_rootFile, _GetIdPolicy(*m_rootFile)); // (on update, this just looks up the existing mapping and caches it in memory)
-
-    if (BSISUCCESS != FindRootModelFromImportJob())
-        return ImportJobLoadStatus::FailedNotFound;
-
-    ApplyJobTransformToRootTrans();
+    auto rootBimModel = GetDgnDb().Models().GetModel(rootModelAspect.GetModelId());
+    m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), rootModelAspect, nullptr);
+    _AddResolvedModelMapping(m_rootModelMapping);
+    _GetChangeDetector()._OnModelSeen(*this, m_rootModelMapping);
 
     DetectRootTransformChange();
 
@@ -188,58 +194,28 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
-    {
-    // Look up the root model in syncinfo, using the ID saved in the ImportJob record. We can't use GetModelForDgnV8Model, because m_rootTrans might have changed.
-    SyncInfo::V8ModelMapping syncInfoModelMapping;
-    auto status = GetSyncInfo().GetModelBySyncInfoId(syncInfoModelMapping, m_importJob.GetV8ModelSyncInfoId());
-    if (BSISUCCESS != status)
-        {
-        BeAssert(false);
-        ReportError(IssueCategory::CorruptData(), Issue::Error(), "ImportJob has bad V8ModelSyncInfoId");
-        return BSIERROR;
-        }
-    auto rootBimModel = GetDgnDb().Models().GetModel(syncInfoModelMapping.GetModelId());
-    if (!rootBimModel.IsValid())
-        {
-        BeAssert(false);
-        ReportError(IssueCategory::CorruptData(), Issue::Error(), "V8ModelMapping has bad DgnModelId");
-        return BSIERROR;
-        }
-    m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping, nullptr);
-    _AddResolvedModelMapping(m_rootModelMapping);
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::ApplyJobTransformToRootTrans()
-    {
-    Transform jobTrans = iModelBridge::GetSpatialDataTransform(_GetParams(), m_importJob.GetSubject());
-    if (jobTrans.IsIdentity())
-        return;
-
-    // Incorporate the job transform into the root transform. The job transform is just one more ingredient in computing the root transform.
-
-    m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
-
-    if (!Converter::IsTransformEqualWithTolerance(jobTrans,m_importJob.GetImportJob().GetTransform()))
-        {
-        m_importJob.GetImportJob().SetTransform(jobTrans);
-        GetSyncInfo().UpdateImportJob(m_importJob.GetImportJob()); // update syncinfo to record the new baseline
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::DetectRootTransformChange()
     {
-    
-    //  Detect if anything about the root GCS/units transform has changed (including the computed root trans and the job trans).
-    m_rootTransHasChanged = !Converter::IsTransformEqualWithTolerance(m_rootModelMapping.GetTransform(),m_rootTrans);
+    // Detect two possible sources of change to the root transform:
+    // 1. The caller has specified a new and different "job transform" to be pre-multiplied into the usual units/gcs transform
+    // 2. The units/gcs transform has changed in the source file.
+    // If either (or both) changed, then we must set m_rootTransHasChanged=true and m_rootTransChange to a corrective transform that
+    // must be applied to all spatial models.
 
+    // Note that m_rootTrans was set by _ComputeCoordinateSystemTransform prior to this function being called. So, if the source
+    // units or GCS changed, then the effects will be reflected in m_rootTrans.
+
+    // Also note that m_rootModelMapping.GetTransform() tells us what the root transform was the last time we converted this root.
+    // Therefore, m_rootModelMapping.GetTransform() is the basis for comparison, when we try to find out if the all-in root transform
+    // has changed or not.
+
+    // Compute the root transform that the caller would like me to apply to all elements
+    Transform jobTrans = iModelBridge::GetSpatialDataTransform(_GetParams(), m_importJob.GetSubject()); // TRICKY! GetSpatialDataTransform reads the GetSpatialDataTransform property of the params and *updates* the Editable Transform property of the JobSubject if they differ!
+    if (!jobTrans.IsIdentity())
+        m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // Standing orders
+
+    // Is this different from what I applied last time I converted?
+    m_rootTransHasChanged = !Converter::IsTransformEqualWithTolerance(m_rootModelMapping.GetTransform(), m_rootTrans);
     if (!m_rootTransHasChanged)
         return;
 
@@ -248,7 +224,7 @@ void SpatialConverterBase::DetectRootTransformChange()
     // We will have to correct all model transforms (later on in the conversion).
     // So, we want the factor, rtc, such that: 
     //  r1 = rtc * r0    
-    // Where "r1" is the new root trans, and "r0" is the old root trans. Therefore, 
+    // Where "r1" is the new root trans, and "r0" is the old root trans . Therefore, 
     //  rtc = r1 * inverse(r0)
     // We can then pre-multiply *all* spatial model transforms by rtc, in order to base them on the new root transform.
     // For example, suppose the transform for a given attachment was 
@@ -258,6 +234,7 @@ void SpatialConverterBase::DetectRootTransformChange()
     // =   (r1*inverse(r0))*r0*a1*...*an
     // =                    r1*a1*...*an
     // See CorrectSpatialTransform for where we do this.
+    
     auto r0inv = m_rootModelMapping.GetTransform().ValidatedInverse();  // The inverse of the old root trans, aka r0
     if (!r0inv.IsValid())
         {
@@ -281,8 +258,17 @@ void SpatialConverterBase::CorrectSpatialTransform(ResolvedModelMapping& rmm)
     if (!m_rootTransHasChanged || !rmm.GetDgnModel().IsSpatialModel())
         return;
 
+    // Set the corrected transform in the copy of the aspect that we have cached in memory
     rmm.SetTransform(Transform::FromProduct(m_rootTransChange, rmm.GetTransform())); // See DetectRootTransformChange for how m_rootTransChange was computed
-    rmm.GetV8ModelMapping().Update(GetDgnDb()); // (we can now look up the model mapping in syncinfo using the new transform)
+    
+    // Also, write the corrected transform to the persistent aspect in the BIM
+    DgnElementPtr drawingEl;
+    SyncInfo::V8ModelExternalSourceAspect aspect;
+    std::tie(drawingEl, aspect) = SyncInfo::V8ModelExternalSourceAspect::GetAspectForEdit(rmm.GetDgnModel());
+    aspect.SetTransform(rmm.GetTransform());
+    drawingEl->Update();
+
+    // we can now look up the model mapping in the iModel using the new transform
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -290,12 +276,17 @@ void SpatialConverterBase::CorrectSpatialTransform(ResolvedModelMapping& rmm)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::CorrectSpatialTransforms()
     {
+    if (!m_rootTransHasChanged)
+        return;
+
     CorrectSpatialTransform(m_rootModelMapping);
 
     m_rootTrans = m_rootModelMapping.GetTransform();
 
     for (auto& rmm : m_v8ModelMappings)
         {
+        if (rmm.GetDgnModel().GetModelId() == m_rootModelMapping.GetDgnModel().GetModelId())
+            continue;
         if (!IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP()))
             continue;
         CorrectSpatialTransform(rmm);
@@ -346,8 +337,15 @@ static DgnCode createUniqueSubjectCode(SubjectCR parent, Utf8CP baseName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectCPtr SpatialConverterBase::GetSourceMasterModelSubject(DgnV8ModelR v8RootModel)
+SubjectCPtr SpatialConverterBase::CreateAndInsertSourceMasterModelSubject(DgnV8ModelR v8RootModel)
     {
+    auto existing = FindSourceMasterModelSubject(v8RootModel);
+    if (existing.IsValid())
+        {
+        BeAssert(false && "Caller should have checked for existing SourceMasterModel Subject");
+        return existing;
+        }
+
     // Make sure the code is unique among Subjects that are children of the root subject.
     // Make sure the code is *the same* for all bridges based on the V8 converter. For example, IModelBridgeForMstn and ABD bridge must use the same code,
     // as their bridge job subjects must be children of the same master model subject.
@@ -360,7 +358,10 @@ SubjectCPtr SpatialConverterBase::GetSourceMasterModelSubject(DgnV8ModelR v8Root
     auto code = createUniqueSubjectCode(*GetDgnDb().Elements().GetRootSubject(), sourceMasterModelName.c_str());
     auto sourceMasterModelId = GetDgnDb().Elements().QueryElementIdByCode(code);
     if (sourceMasterModelId.IsValid())
-        return GetDgnDb().Elements().Get<Subject>(sourceMasterModelId);
+        {
+        BeAssert(false && "how could I find an existing SourceMasterModel Subject element if I constructed a unique code?");
+        return GetDgnDb().Elements().Get<Subject>(sourceMasterModelId); //??
+        }
 
     auto ed = Subject::Create(*GetDgnDb().Elements().GetRootSubject(), code.GetValueUtf8());
 
@@ -368,13 +369,38 @@ SubjectCPtr SpatialConverterBase::GetSourceMasterModelSubject(DgnV8ModelR v8Root
     
     Json::Value modelProps(Json::nullValue);
     modelProps["Type"] = "SourceMasterModel";
+    modelProps["rootModelExternalAspectInstanceId"] = "<tbd>";      // to be filled in by InitializeJob
     ed->SetSubjectJsonProperties(Subject::json_Model(), modelProps);
 
     auto sourceMasterModelSubject = dynamic_cast<Subject const*>(ed->Insert().get());
 
-    iModelBridge::InsertElementHasLinksRelationship(GetDgnDb(), sourceMasterModelSubject->GetElementId(), GetRepositoryLinkFromAppData(*v8RootModel.GetDgnFileP()));
+    iModelBridge::InsertElementHasLinksRelationship(GetDgnDb(), sourceMasterModelSubject->GetElementId(), GetRepositoryLinkId(*v8RootModel.GetDgnFileP()));
 
     return sourceMasterModelSubject;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::SetRootModelAspectIdInSourceMasterModelSubject(SubjectCR sourceMasterModelSubject)
+    {
+    auto sourceMasterModelSubjectEd = sourceMasterModelSubject.MakeCopy<Subject>();
+    auto sourceMasterModelSubjectProps = sourceMasterModelSubjectEd->GetSubjectJsonProperties(Subject::json_Model());
+    sourceMasterModelSubjectProps["rootModelExternalAspectInstanceId"] = iModelExternalSourceAspect::UInt64ToString(m_rootModelMapping.GetAspect().GetECInstanceId().GetValue());
+    sourceMasterModelSubjectEd->SetSubjectJsonProperties(Subject::json_Model(), sourceMasterModelSubjectProps);
+    sourceMasterModelSubjectEd->Update();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      1/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::ECInstanceId SpatialConverterBase::GetRootModelAspectIdFromSourceMasterModelSubject(SubjectCR sourceMasterModelSubject) const
+    {
+    auto sourceMasterModelSubjectProps = sourceMasterModelSubject.GetSubjectJsonProperties(Subject::json_Model());
+    auto idvalue = iModelExternalSourceAspect::UInt64FromString(sourceMasterModelSubjectProps["rootModelExternalAspectInstanceId"].asCString());
+    auto id = BeSQLite::EC::ECInstanceId(idvalue);
+    BeAssert(id.IsValid() && "We have a sourceMasterModelSubject, but it has an invalid rootModelExternalAspectInstanceId JSON property value");
+    return id;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -521,8 +547,11 @@ void Converter::ComputeXSAInfo(Utf8StringR idPath, Utf8StringR v8AttachmentJson,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type jtype)
+SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(Utf8CP comments, ResolvedImportJob::ConverterType jtype)
     {
+    BeAssert(m_rootFile.IsValid() && "Must define root file before creating the job");
+    BeAssert((nullptr != m_rootModelRef) && "Must define root model before creating the job");
+
     if (_GetParams().GetBridgeRegSubKey().empty())
         {
         BeAssert(false && "Job registry subkey is a required property of iModelBridge::Params");
@@ -535,10 +564,19 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
         return ImportJobCreateStatus::FailedExistingRoot;
         }
 
-    WriteRepositoryLink(*GetRootV8File());  // Write the RepositoryLink element for the root file now. This is the order in which the older converter did it.
+    GetRepositoryLinkId(*GetRootV8File());
 
-    auto sourceMasterModelSubject = GetSourceMasterModelSubject(*GetRootModelP());
+    // ***
+    // ***  See Job Subject XSA.jpg for a diagram of how the MasterModel, BridgeJob, Hierarchy Subject hierarchy works,
+    // ***  how PhysicalPartitions are plugged in, and how ExternalSourceAspects (aka XSAs) create new relationships.
+    // ***
 
+    // Bootstrap the source master model subject element. (Note: another bridge might have created it already.)
+    auto sourceMasterModelSubject = FindSourceMasterModelSubject(*GetRootModelP());
+    if (!sourceMasterModelSubject.IsValid())
+        sourceMasterModelSubject = CreateAndInsertSourceMasterModelSubject(*GetRootModelP());
+
+    // Create a BridgeJob Subject as a child of the sourceMasterModel Subject
     Utf8String jobName = _GetParams().GetBridgeJobName();
     if (jobName.empty())
         {
@@ -555,83 +593,142 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
             }
         }
 
-    BeAssert(m_rootFile.IsValid() && "Must define root file before creating the job");
-    BeAssert((nullptr != m_rootModelRef) && "Must define root model before creating the job");
     BeAssert(!jobName.empty());
 
-    // Make sure that we don't already have a job for this root ...
-    if (FindImportJobForModel(*GetRootModelP()).IsValid())
+    // Check that it's OK to initialize this as a new bridge joblet.
+    if (FindSoleJobSubjectForSourceMasterModel(*sourceMasterModelSubject).IsValid())
         return ImportJobCreateStatus::FailedExistingRoot;
 
-    // ... and that we don't already have this V8 model mapped in as a reference to some other root.
-    SyncInfo::V8ModelMapping mapping;
-    if (BSISUCCESS == GetSyncInfo().FindModel(&mapping, *GetRootModelP(), &m_rootTrans, GetCurrentIdPolicy()))
-        return ImportJobCreateStatus::FailedExistingNonRootModel;
-
-    // 1. Look up the root file's syncinfoid. (_InitRootModel has already mapped in the root file.)
-    auto fileId = GetV8FileSyncInfoId(*m_rootFile);
-#ifndef NDEBUG
-    SyncInfo::FileById syncInfoFiles(GetDgnDb(), fileId);
-    BeAssert(syncInfoFiles.begin() != syncInfoFiles.end());
-#endif
-
-    _SetChangeDetector(false);
-
-    // 2. Create a subject, as a child of the rootsubject
-    SubjectPtr ed = Subject::Create(*sourceMasterModelSubject, jobName);
-
-    Json::Value v8JobProps(Json::objectValue);      // V8Bridge-specific job properties - information that is not recorded anywhere else.
-    v8JobProps["RootModel"] = Utf8String(m_rootModelRef->GetDgnModelP()->GetModelName());
-    v8JobProps["BridgeVersion"] = 1;//TODO: Move it to #define
-    v8JobProps["BridgeType"] = "IModelBridgeForMstn";
-    JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
-    JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());
-
-    if (_WantProvenanceInBim())
-        {
-        auto aspect = SyncInfo::BridgeJobletExternalSourceAspect::CreateAspect(*GetRootModelP(), (SyncInfo::BridgeJobletExternalSourceAspect::ConverterType)jtype, *this);
-        aspect.AddAspect(*ed);
+    if (IsFileAssignedToBridge(*GetRootV8File()))   // If this joblet is supposed to convert this master model, then we must assert that it wasn't already converted by some other joblet
+        {                                           // (On the other hand, this joblet may only be traversing through this master model in order to find some reference file to convert.)
+        SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id modelIt(*GetRepositoryLinkElement(*GetRootV8File()), *GetRootModelP());
+        if (modelIt.begin() != modelIt.end())
+            return ImportJobCreateStatus::FailedExistingNonRootModel;
         }
 
-    SubjectCPtr jobSubject = ed->InsertT<Subject>();
+    // If we are creating a JobSubject, then we know that we are not updating the results of a previous run of this joblet
+    _SetChangeDetector(false);
+
+    // Create the "job" subject, as a child of the source master model subject
+    SubjectCPtr jobSubject;
+    if (true)
+        {
+        SubjectPtr ed = Subject::Create(*sourceMasterModelSubject, jobName);
+
+        Json::Value v8JobProps(Json::objectValue);      // V8Bridge-specific job properties - information that is not recorded anywhere else.
+        v8JobProps["BridgeType"] = "IModelBridgeForMstn";
+        v8JobProps["BridgeVersion"] = 1;//TODO: Move it to #define
+        v8JobProps["ConverterType"] = (int)jtype;
+        JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
+        JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());
+        
+        jobSubject = ed->InsertT<Subject>();
+        }
     if (!jobSubject.IsValid())
         return ImportJobCreateStatus::FailedInsertFailure;
 
-    // 3. Set up m_importJob with the subject. That leaves out the syncinfo part, but we don't need that yet. 
-    //      We do need m_importJob to be defined and it must have its subject at this point, as GetOrCreateJobPartitions 
-    //      and GetModelForDgnV8Model refer to the subject in it.
+    // Set up m_importJob with the subject. Do this before calling GetOrCreateJobPartitions.
+    m_importJob = ResolvedImportJob(*jobSubject, jtype);
 
-    m_importJob = ResolvedImportJob(*jobSubject);
-
-    // 4. Create the job-specific stuff in the DgnDb (relative to the job subject).
+    // Create DocumentPartitions, GroupInformationPartition, and other organizer partitions, all as children of the jobSubject that we just created.
+    // Write some default Categories and CodeSpecs into the models under these partitions.
     GetOrCreateJobPartitions();
 
-    //  ... and create and push the root model's "hierarchy" subject. The root model's physical partition will be a child of that.
+    // Create the root model's "hierarchy" subject as a child of the jobSubject.
     SubjectCPtr hsubj = GetOrCreateModelSubject(GetJobSubject(), SubjectPhysicalBreakdownStructureCode, ModelSubjectType::Hierarchy);
     if (!hsubj.IsValid())
         {
         BeAssert(false);
         return ImportJobCreateStatus::FailedInsertFailure;
         }
+
+    // Create a model into the DgnDb to represent the source master/root model.
+    // Note that this will generally create a PhysicalPartition. 
+    // We call SetSpatialParentSubject first, passing it the hierarchy subject that we just created, so that the the PhysicalPartition will be a child of the hierarchy subject.
     SetSpatialParentSubject(*hsubj);
+    m_rootModelMapping = GetResolvedModelMapping(*m_rootModelRef->GetDgnModelP(), m_rootTrans);
 
-    // 5. Map the root model into the DgnDb. Note that this will generally create a partition, which is relative to the job subject,
-    //    So, the job subject and its framework must be created first.
-    m_rootModelMapping = GetModelForDgnV8Model(*m_rootModelRef->GetDgnModelP(), m_rootTrans);
+    // Finally, go back and fix up the reference from the SourceMasterModel Subject to the root model's V8ModelExternalSourceAspect.
+    // This is what will allow _GetRootModelId and FindJob to find the source master model (aka "root model").
+    // We use an XSA ECInstanceId in order to identify the BIM root model unambiguously. 
+    // This will work even if multiple source models are mapped into the iModel model that (also) represents the source master model (as TileFileConverter does).
+    // That is because this V8ModelExternalSourceAspect is specific to one source model (and one specific transform of it).
+    SetRootModelAspectIdInSourceMasterModelSubject(*sourceMasterModelSubject);
 
-    // 6. Now that we have the root model's syncinfo id, we can define the syncinfo part of the importjob.
-    SyncInfo::ImportJob importJob;
-    importJob.SetV8ModelSyncInfoId(m_rootModelMapping.GetV8ModelSyncInfoId());
-    importJob.SetPrefix(_GetNamePrefix());
-    importJob.SetType(jtype);
-    importJob.SetSubjectId(jobSubject->GetElementId());
-    importJob.SetTransform(BentleyApi::Transform::FromIdentity());
-    if (BSISUCCESS != GetSyncInfo().InsertImportJob(importJob))
-        return ImportJobCreateStatus::FailedExistingRoot;
+    BeAssert(FindSourceMasterModelSubject(*GetRootModelP()).IsValid()); // had to wait until RootModelAspectId was filled in to do this check
 
-    m_importJob.GetImportJob() = importJob;     // Update the syncinfo part of the import job
+    /*
+    iModelExternalSourceAspect::Dump(*GetRepositoryLinkElement(*m_rootFile), nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
+    iModelExternalSourceAspect::Dump(*sourceMasterModelSubject, nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
+    iModelExternalSourceAspect::Dump(m_importJob.GetSubject(), nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
+    iModelExternalSourceAspect::Dump(*hsubj, nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
+    iModelExternalSourceAspect::Dump(*m_rootModelMapping.GetDgnModel().GetModeledElement(), nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
+	*/
 
     return ImportJobCreateStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectCPtr SpatialConverterBase::FindSourceMasterModelSubject(DgnV8ModelCR v8Model)
+    {
+    // *** See Job Subject XSA.jpg
+
+    auto repositoryLinkId = GetRepositoryLinkId(*v8Model.GetDgnFileP());
+        
+    // Look up the SourceMasterModel Subject
+    // Note: we only support a single master *model* per master *file*.
+    // So, there will be one and only one master model subject for this file.
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT subject.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " subject "
+        " JOIN " BIS_SCHEMA(BIS_CLASS_RepositoryLink) " rlink USING " BIS_SCHEMA(BIS_REL_ElementHasLinks) 
+        " WHERE (rlink.ECInstanceId=? AND subject.Parent.Id=? AND json_extract(subject.JsonProperties, '$.Subject.Model.Type') = 'SourceMasterModel')");
+    stmt->BindId(1, repositoryLinkId);
+    stmt->BindId(2, GetDgnDb().Elements().GetRootSubjectId());
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto masterModelSubjectId = stmt->GetValueId<DgnElementId>(0);
+        auto sourceMasterModelSubject = GetDgnDb().Elements().Get<Subject>(masterModelSubjectId);
+
+        if (!v8Model.IsDictionaryModel())
+            {
+            // Check that this subject points at the specified v8 model NEEDS WORK: Can probably add a json_extract to the WHERE clause to do this...
+            auto rootModelAspect = GetRootModelAspectFromSourceMasterModelSubject(*sourceMasterModelSubject);
+            if (!rootModelAspect.IsValid() || (rootModelAspect.GetV8ModelId() != v8Model.GetModelId()))
+                {
+                continue;
+                }
+            }
+        return sourceMasterModelSubject;
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedImportJob SpatialConverterBase::FindSoleJobSubjectForSourceMasterModel(SubjectCR masterModelSubject)
+    {
+    // *** See Job Subject XSA.jpg
+
+    // Each V8-based bridge is a child of the masterModelSubject. Find the one with the correct name. There will only be one.
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE (Parent.Id=? AND json_extract(JsonProperties, '$.Subject.Job.Bridge') = ?)");
+    stmt->BindId(1, masterModelSubject.GetElementId());
+    stmt->BindText(2, _GetParams().GetBridgeRegSubKeyUtf8().c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes); // e.g., "iModelBridgeForMstn" or "ABDBridge", etc.
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ResolvedImportJob();
+    auto jobSubjectId = stmt->GetValueId<DgnElementId>(0);
+    auto jobSubject = GetDgnDb().Elements().Get<Subject>(jobSubjectId);
+    if (!jobSubject.IsValid())
+        {
+        BeAssert(false);
+        return ResolvedImportJob();
+        }
+    
+    auto jtype = (ResolvedImportJob::ConverterType)(JobSubjectUtils::GetProperty(*jobSubject, "Properties")["ConverterType"].asInt());
+
+    return ResolvedImportJob(*jobSubject, jtype);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -687,10 +784,10 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     {
     BeFileName fn(v8File.GetFileName().c_str());
     bool isMyFile = _GetParams().IsFileAssignedToBridge(fn);
-    if (!isMyFile)
+    if (!isMyFile && !v8File.IsIModel())
         {
-        // Always own a .i.dgn file and all its embedded references:
-        if (v8File.IsIModel() || v8File.IsEmbeddedFile())
+        // Always own embedded references:
+        if (v8File.IsEmbeddedFile())
             return  true;
 
         // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
@@ -731,7 +828,7 @@ void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef)
 
     DgnV8FileR thisV8File = *thisV8Model.GetDgnFileP();
 
-    GetV8FileSyncInfoId(thisV8File); // Register this FILE in syncinfo. Also populates m_v8files
+    GetRepositoryLinkId(thisV8File); // Register this FILE in syncinfo. Also populates m_v8files
 
     m_spatialModelsSeen.insert(&thisV8Model);   // Note that we may very well encounter the same model via more than one attachment path. Each path may have a different setting for nesting depth, so keep going.
 
@@ -779,14 +876,13 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
     // FindSpatialV8Models has already called ClassifyNormal2dModels (thisV8File);
 
-    SyncInfo::V8FileSyncInfoId v8FileId = GetV8FileSyncInfoId(thisV8File);
-    WriteRepositoryLink(thisV8File);    // write the RepositoryLink element for this v8 file now. This the order in which the older converter did it.
+    RepositoryLinkId v8FileId = GetRepositoryLinkId(thisV8File);
 
     // NB: We must not try to skip entire files if we need to follow reference attachments. Instead, we can skip 
     //      the elements in a model if the model (i.e., the file) is unchanged.
 
     // Map this v8 model into the project
-    ResolvedModelMapping v8mm = GetModelForDgnV8Model(thisModelRef, trans);
+    ResolvedModelMapping v8mm = GetResolvedModelMapping(thisModelRef, trans);
 
     if (nullptr == thisModelRef.GetDgnAttachmentsP())
         return;
@@ -820,6 +916,8 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
                                                                                         IssueReporter::FmtAttachment(*attachment).c_str()).c_str());
             continue;
             }
+        // iModelExternalSourceAspect::Dump(*myRefsSubject, nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
+
         SetSpatialParentSubject(*myRefsSubject); // >>>>>>>>>> Push spatial parent subject
 
         Transform refTrans = ComputeAttachmentTransform(trans, *attachment);
@@ -891,11 +989,14 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelIdFromViewGroup()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
     {
-    if (IsUpdating() && !m_params.GetRootModelChoice().IsSet())
+    if (IsUpdating() && !m_params.GetRootModelChoice().IsSet()) // (Note: Some of our unit tests converter various models from the same file.)
         {
-        auto importJob = FindSoleImportJobForFile(*m_rootFile);
-        if (importJob.IsValid())
-            return GetSyncInfo().GetV8ModelIdFromV8ModelSyncInfoId(importJob.GetV8ModelSyncInfoId());
+        auto sourceMasterModelSubject = FindSourceMasterModelSubject(m_rootFile->GetDictionaryModel()); // we must assume that there is only one SourceMasterModel Subject for this file.
+        if (sourceMasterModelSubject.IsValid())
+            {
+            auto aspect = GetRootModelAspectFromSourceMasterModelSubject(*sourceMasterModelSubject);
+            return aspect.GetV8ModelId();
+            }
         }
 
     if (!IsV8Format(*m_rootFile))
@@ -1251,9 +1352,6 @@ void RootModelConverter::CreatePresentationRules()
 //---------------------------------------------------------------------------------------
 BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationships()
     {
-    if (BentleyApi::SUCCESS != m_syncInfo.CheckNamedGroupTable())
-        return BSIERROR;
-
     for (auto const& modelMapping : m_v8ModelMappings)
         {
         if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
@@ -1263,7 +1361,7 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationships()
             return BSIERROR;
         }
 
-    return m_syncInfo.FinalizeNamedGroups();
+    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1282,8 +1380,9 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
             virtual DgnV8Api::MemberTraverseStatus VisitMember(DgnV8Api::NamedGroupMember const* member, DgnV8Api::NamedGroup const* ng, UInt32 index) override
                 {
                 DgnV8Api::ElementHandle memberEh(member->GetElementRef());
+
                 DgnElementId childElementId;
-                if (!m_converter.GetSyncInfo().TryFindElement(childElementId, memberEh))
+                if (!m_converter.TryFindElement(childElementId, memberEh))
                     {
                     Utf8String error;
                     error.Sprintf("No BIS grouping relationship created for v8 NamedGroup Member element (%s) because the member element was not converted.",
@@ -1321,7 +1420,6 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                         error.Sprintf("Failed to add child element %s to group %" PRIu64 "", Converter::IssueReporter::FmtElement(memberEh).c_str(), m_parentId.GetValue());
                         m_converter.ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                         }
-                    m_converter.GetSyncInfo().AddNamedGroupEntry(m_parentId, childElementId);
                     }
 
                 return DgnV8Api::MemberTraverseStatus::Continue;
@@ -1343,7 +1441,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
 
     //TODO: do we need to load the model and its attachments or can we consider them loaded already?
 
-    SyncInfo::V8FileSyncInfoId v8FileId = GetV8FileSyncInfoIdFromAppData(*v8Model.GetDgnFileP());
+    RepositoryLinkId v8FileId = GetRepositoryLinkId(*v8Model.GetDgnFileP());
     bset<DgnV8Api::ElementId> const* namedGroupsWithOwnershipHintPerFile = nullptr;
     V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(namedGroupsWithOwnershipHintPerFile, v8FileId);
 
@@ -1370,7 +1468,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
             }
 
         DgnElementId ngElementId;
-        if (!GetSyncInfo().TryFindElement(ngElementId, v8eh))
+        if (!TryFindElement(ngElementId, v8eh))
             {
             Utf8String error;
             error.Sprintf("No BIS grouping created for v8 NamedGroup element (%s) because the NamedGroup was not converted.",
@@ -1594,7 +1692,7 @@ void RootModelConverter::_BeginConversion()
         }
     m_beginConversionCalled = true;
 
-    if (!GetImportJob().IsValid() || (GetImportJob().GetConverterType() != SyncInfo::ImportJob::Type::RootModels))
+    if (!GetImportJob().IsValid() || (GetImportJob().GetConverterType() != ResolvedImportJob::ConverterType::RootModel))
         {
         OnFatalError();
         return;
@@ -1631,9 +1729,10 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
             {
             DgnModelId modelId = mref->GetModelId();
             mref->Delete();
+#ifdef WIP_OLD_MODEL_PROVENANCE
             if (_WantModelProvenanceInBim())
                 DgnV8ModelProvenance::Delete(modelId, GetDgnDb());
-            GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
+#endif
             if (element.IsValid())
                 element->Delete();
             }
@@ -1716,7 +1815,10 @@ void RootModelConverter::_FinishConversion()
             {
             if (!IsFileAssignedToBridge(*v8File))
                 continue;
-            GetSyncInfo().UpdateFile(nullptr, *v8File);
+            auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
+            auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
+            rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
+            rlinkEd->Update();
             }
         }
 
@@ -1997,11 +2099,11 @@ void RootModelConverter::RootModelSpatialParams::Legacy_Converter_Init(BeFileNam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping RootModelConverter::_FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid)
+ResolvedModelMapping RootModelConverter::_FindResolvedModelMappingByModelId(DgnModelId mid)
     {
     for (auto& rmm : m_v8ModelMappings)
         {
-        if (rmm.GetV8ModelSyncInfoId() == sid)
+        if (rmm.GetDgnModel().GetModelId() == mid)
             return rmm;
         }
     return ResolvedModelMapping();

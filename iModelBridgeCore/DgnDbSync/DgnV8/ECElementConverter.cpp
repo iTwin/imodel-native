@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ECElementConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -295,7 +295,7 @@ BentleyStatus ElementAspectConverter::ConvertToAspect(ElementConversionResults& 
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-bmap<SyncInfo::V8FileSyncInfoId, bset<DgnV8Api::ElementId>> V8NamedGroupInfo::s_namedGroupsWithOwnershipHint;
+bmap<RepositoryLinkId, bset<DgnV8Api::ElementId>> V8NamedGroupInfo::s_namedGroupsWithOwnershipHint;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
@@ -303,7 +303,7 @@ bmap<SyncInfo::V8FileSyncInfoId, bset<DgnV8Api::ElementId>> V8NamedGroupInfo::s_
 //static
 void V8NamedGroupInfo::AddNamedGroupWithOwnershipHint(DgnV8EhCR v8eh)
     {
-    s_namedGroupsWithOwnershipHint[Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP())].insert(v8eh.GetElementId());
+    s_namedGroupsWithOwnershipHint[Converter::GetRepositoryLinkIdFromAppData(*v8eh.GetDgnFileP())].insert(v8eh.GetElementId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -319,7 +319,7 @@ void V8NamedGroupInfo::Reset()
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-bool V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*& namedGroupsWithOwnershipHintPerFile, SyncInfo::V8FileSyncInfoId v8FileId)
+bool V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*& namedGroupsWithOwnershipHintPerFile, RepositoryLinkId v8FileId)
     {
     auto it = s_namedGroupsWithOwnershipHint.find(v8FileId);
     const bool found = it != s_namedGroupsWithOwnershipHint.end();
@@ -341,7 +341,7 @@ bool V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::Element
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-ECInstanceKey ECInstanceInfo::Find(bool& isElement, DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key)
+ECInstanceKey ECInstanceInfo::Find(bool& isElement, DgnDbR db, RepositoryLinkId fileId, V8ECInstanceKey const& v8Key)
     {
     isElement = false;
 
@@ -377,7 +377,7 @@ ECInstanceKey ECInstanceInfo::Find(bool& isElement, DgnDbR db, SyncInfo::V8FileS
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECInstanceInfo::Insert(DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key, BeSQLite::EC::ECInstanceKey const& key, bool isElement)
+BentleyStatus ECInstanceInfo::Insert(DgnDbR db, RepositoryLinkId fileId, V8ECInstanceKey const& v8Key, BeSQLite::EC::ECInstanceKey const& key, bool isElement)
     {
     if (!v8Key.IsValid() || !key.IsValid())
         {

@@ -50,6 +50,7 @@ static Utf8CP const JSON_TYPE_Plan = "Plan";
 static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
+static Utf8CP const JSON_TYPE_TimeSpan = "TimeSpan";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
 static Utf8CP const JSON_TYPE_ElementMultiAspect = "ElementMultiAspect";
 static Utf8CP const JSON_TYPE_ElementUniqueAspect = "ElementUniqueAspect";
@@ -523,6 +524,17 @@ struct BaselineReader : Reader
     {
     protected:
         BentleyStatus _Read(Json::Value& baseline) override;
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+struct TimeSpanReader : Reader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& timeSpan) override;
     public:
         using Reader::Reader;
     };
