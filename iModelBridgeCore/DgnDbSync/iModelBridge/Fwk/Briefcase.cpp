@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/Briefcase.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeFwk.h>
@@ -60,6 +60,8 @@ iModelHub:\n\
     --server-password=      (required)  The password for the project.\n\
     --server-retries=       (optional)  The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
     --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted.\n\
+    --server-oidcCallBackUrl= (optional) The OIDC callback url to receive access token instead of credentials. \n\
+    --server-briefcaseId= (optional) The briefcase Id incase we do not have the original BIM file\n\
     \n");
     }
 
@@ -160,7 +162,11 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>&
             m_callBackurl = getArgValue(argv[iArg]);
             continue;
             }
-
+        if (argv[iArg] == wcsstr(argv[iArg], L"--server-briefcaseId="))
+            {
+            m_briefcaseId = BeSQLite::BeBriefcaseId(atoi(getArgValue(argv[iArg]).c_str()));
+            continue;
+            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized server argument\n", argv[iArg]);
         return BSIERROR;
@@ -342,8 +348,13 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
         BeAssert(false);
         return BSIERROR;
         }
-
-    if (BSISUCCESS != m_client->AcquireBriefcase(m_briefcaseName, m_briefcaseBasename.c_str()))
+    BeSQLite::BeBriefcaseId briefcaseId = GetBriefcaseId();
+    if (GetBriefcaseId().IsValid())
+        {
+        if (BSISUCCESS != m_client->RestoreBriefcase(m_briefcaseName, m_briefcaseBasename.c_str(), briefcaseId))
+            return BSIERROR;
+        }
+    else if (BSISUCCESS != m_client->AcquireBriefcase(m_briefcaseName, m_briefcaseBasename.c_str()))
         {
         if (Error::Id::iModelDoesNotExist == m_client->GetLastError().GetId())
             {
@@ -384,7 +395,7 @@ bool iModelBridgeFwk::Briefcase_IsBriefcase()
     BeAssert(!m_briefcaseName.empty());
     DbResult fileStatus;
 
-    DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
+    DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
     DgnDbPtr dgndb = DgnDb::OpenDgnDb(&fileStatus, m_briefcaseName, openParams);
 
     if (!dgndb.IsValid())
