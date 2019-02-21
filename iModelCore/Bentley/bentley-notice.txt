@@ -1,0 +1,35 @@
+/*--------------------------------------------------------------------------------------+
+
+TRADEMARK NOTICE
+Bentley and the "B" Bentley logo are registered or non-registered trademarks of Bentley 
+Systems, Incorporated. All other marks are the property of their respective owners.
+
+COPYRIGHT NOTICE
+$Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+Including software, file formats, and audiovisual displays; may only be used pursuant to 
+applicable software license agreement; contains confidential and proprietary information 
+of Bentley Systems, Incorporated and/or third parties which is protected by copyright and 
+trade secret law and may not be provided or otherwise made available without proper 
+authorization.
+
+RESTRICTED RIGHTS LEGENDS
+If this software is acquired for or on behalf of the United States of America, its 
+agencies and/or instrumentalities ("U.S. Government"), it is provided with restricted 
+rights. This software and accompanying documentation are "commercial computer software" 
+and "commercial computer software documentation," respectively, pursuant to 48 C.F.R. 
+12.212 and 227.7202, and "restricted computer software" pursuant to 48 C.F.R. 
+52.227-19(a), as applicable. Use, modification, reproduction, release, performance, 
+display or disclosure of this software and accompanying documentation by the U.S. 
+Government are subject to restrictions as set forth in this Agreement and pursuant to 
+48 C.F.R. 12.212, 52.227-19, 227.7202, and 1852.227-86, as applicable. 
+Contractor/Manufacturer is Bentley Systems, Incorporated, 685 Stockton Drive, 
+Exton, PA 19341-0678.
+Unpublished - rights reserved under the Copyright Laws of the United States and 
+International treaties.
+
+PRIVACY POLICY
+Bentley respects your privacy.  For details please see our privacy policy located at 
+http://www.bentley.com/en-US/Corporate/Privacy+Policy.htm and specific privacy and data 
+collection notices in Bentley applications.
+
++--------------------------------------------------------------------------------------*/
