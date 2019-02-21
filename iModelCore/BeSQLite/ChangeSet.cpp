@@ -479,15 +479,6 @@ Utf8String Changes::Change::FormatChange(Db const& db, Utf8CP tableName, DbOpcod
     Byte* pcols = nullptr;
     int npcols = 0;
     GetPrimaryKeyColumns(&pcols, &npcols);
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-        {
-        if (npcols != (int)columnNames.size())
-            {
-            Utf8PrintfString msg("Db has %d columns, but change set has %d columns. Cannot dump - it's likely a required schema change has not happened yet", (int) columnNames.size(), npcols);
-            LOG.info(msg.c_str());
-            return msg;
-            }
-        }
 
     Utf8PrintfString line("key=%s", FormatPrimarykeyColumns((DbOpcode::Insert == opcode), detailLevel).c_str());
 
@@ -510,8 +501,14 @@ Utf8String Changes::Change::FormatChange(Db const& db, Utf8CP tableName, DbOpcod
 
     line.append(Utf8PrintfString("(%s)", indirect ? "indirect" : "direct"));
 
-    for (int i = 0; i <= npcols; ++i)
+    for (int i = 0; i < npcols; ++i)
         {
+        if (i >= columnNames.size())
+            {
+            line.append(Utf8PrintfString(" *** INVALID CHANGESET! MISSING SCHEMA CHANGESET! Table has only %d columns, but changeset thinks it has %d columns.", (int) columnNames.size(), npcols));
+            break;
+            }
+
         if (pcols[i] > 0)
             continue;
 
@@ -540,6 +537,11 @@ Utf8String Changes::Change::FormatChange(Db const& db, Utf8CP tableName, DbOpcod
             }
 
         line.append(Utf8PrintfString(",%s=%s", columnNames[i].c_str(), valStr.c_str()));
+        }
+
+    if (npcols < columnNames.size())
+        {
+        line.append(Utf8PrintfString(" *** INVALID CHANGESET! MISSING SCHEMA CHANGESET! Table has %d columns, but changeset thinks it has only %d columns.", (int) columnNames.size(), npcols));
         }
 
     return line;
