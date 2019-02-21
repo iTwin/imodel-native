@@ -286,19 +286,20 @@ void ECSchemaTests::VerifySyncInfo(DgnDbR db, DgnV8ModelP model, Utf8CP schemaNa
     RepositoryLinkId scope = FindRepositoryLinkIdByFilename(db, fileName);
     ASSERT_TRUE(scope.IsValid());
 
-    auto stmt = db.GetPreparedECSqlStatement("SELECT Version, Checksum FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Identifier = ? and Kind = 'Schema' AND Scope.Id=? ");
-    stmt->BindText(1, schemaName, BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->BindId(2, scope);
+    CachedStatementPtr stmt = nullptr;
+    auto stat = db.GetCachedStatement(stmt, "SELECT StrData FROM " BEDB_TABLE_Property " WHERE Id = ? and Name = ? AND NameSpace = 'dgn_V8Schema' ");
+    stmt->BindId(1, scope);
+    stmt->BindText(2, schemaName, BentleyApi::BeSQLite::Statement::MakeCopy::No);
 
     ASSERT_TRUE(BE_SQLITE_ROW == stmt->Step());
 
-    Utf8String version = stmt->GetValueText(0);
-    uint32_t storedVersionRead, versionWrite, storedVersionMinor;
-    BentleyApi::ECN::SchemaKey::ParseVersionString(storedVersionRead, versionWrite, storedVersionMinor, version.c_str());
+    uint32_t storedVersionRead, storedVersionMinor, storedChecksum;
+    BentleyApi::Json::Value  jsonObj;
+    ASSERT_TRUE(BentleyApi::Json::Reader::Parse(stmt->GetValueText(0), jsonObj));
 
-    Utf8String checksumStr = stmt->GetValueText(1);
-    uint32_t storedChecksum;
-    BE_STRING_UTILITIES_UTF8_SSCANF(checksumStr.c_str(), "%" PRIu32, &storedChecksum);
+    storedVersionRead = jsonObj["versionMajor"].asUInt();
+    storedVersionMinor = jsonObj["versionMinor"].asUInt();
+    storedChecksum = jsonObj["checksum"].asUInt();
 
     WString schemaXmlW;
     ECObjectsV8::SchemaKey key(WString(schemaName, true).c_str(), versionMajor, versionMinor);

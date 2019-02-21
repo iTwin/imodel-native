@@ -67,7 +67,6 @@ struct SyncInfo
             static constexpr Utf8CP GeomPart = "GeomPart";
             static constexpr Utf8CP ViewDefinition = "ViewDefinition";
             static constexpr Utf8CP URI = "URI";
-            static constexpr Utf8CP Schema = "Schema";
             };
         };
 
@@ -371,34 +370,6 @@ struct SyncInfo
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect GetAspect(DgnGeometryPartCR el);
         };
 
-    //! Multiple versions of a schema can exist within a dgn.  This stores the source of each version.  The versions are merged together and that single merged schema is then imported.
-    //! As there is no Schema element, we attach the schema source info to each Repository it came from.  On subsequent upgrades, if either an existing version was modified or a new version
-    //! is discovered, the schemas a re-merged and re-imported.
-    struct SchemaExternalSourceAspect : ExternalSourceAspect
-        {
-        private:
-            SchemaExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
-        public:
-            enum class Type { Identity, Dynamic}; // WARNING: Persistent values - do not change
-
-            //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file.
-            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect CreateAspect(DgnElementId repositoryId, Utf8StringCR schemaName, uint32_t v8ProfileVersionMajor, uint32_t v8ProfileVersionMinor,
-                                                                            bool isDynamic, uint32_t checksum, DgnDbR db);
-            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspect(DgnDbR db, Utf8StringCR schemaName);
-            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspect(DgnDbR db, RepositoryLinkId scopeId, Utf8StringCR schemaName);
-            DGNDBSYNC_EXPORT static SchemaExternalSourceAspect GetAspectForEdit(DgnElementR repositoryLink, Utf8StringCR schemaName);
-
-            Type GetType();
-            uint32_t GetChecksum();
-            uint32_t GetVersionMajor();
-            uint32_t GetVersionMinor();
-        };
-
-    struct SchemaExternalSourceAspectIterator : ExternalSourceAspectIterator<SchemaExternalSourceAspect>
-        {
-        SchemaExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP wh = "") : ExternalSourceAspectIterator(db, scope, ExternalSourceAspect::Kind::Schema, wh) {}
-        };
-
     //! An Id that is per-file
     template<typename IDTYPE> struct FileBasedId
         {
@@ -445,9 +416,6 @@ public:
 
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertFont (DgnFontId newId, V8FontId oldId);
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertLineStyle (DgnStyleId, double unitsScale, V8StyleId oldId);
-
-    DGNDBSYNC_EXPORT BeSQLite::DbResult SavePropertyString (BeSQLite::PropertySpec const& spec, Utf8CP stringData, uint64_t majorId=0, uint64_t subId=0);
-    DGNDBSYNC_EXPORT BeSQLite::DbResult QueryProperty (Utf8StringR str, BeSQLite::PropertySpec const& spec, uint64_t id=0, uint64_t subId=0) const;
 
     //! Construct a SyncInfo object to use for the specified project.
     SyncInfo(Converter&);
@@ -526,6 +494,38 @@ public:
 
     //! @name ECSchemas
     //! @{
+
+    enum class ECSchemaMappingType
+        {
+        Identity = 1, //!< Mapped as is
+        Dynamic = 2 //!< if multiple dynamic schemas exist, they will be merged during conversion
+        };
+
+    //! Adds an entry for this schema
+    //! @param[in] repositoryId - ElementId of the repository (DgnV8 file) that this schema was found in
+    //! @param[in] schemaName - Name of the schema
+    //! @param[in] v8SchemaVersionMajor - major version of the schema
+    //! @param[in] v8SchemaVersionMinor - minor version of the schema
+    //! @param[in] isDynamic - Whether this is a dynamic schema or not
+    //! @param[in] checksum - (V8) calculated checksum
+    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId, DgnElementId repositoryId, Utf8StringCR schemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor,
+                                                     bool isDynamic, uint32_t checksum);
+
+    //! Returns information about the given schema.  If a scope (repositoryId representing the V8 file) is given, will only look in that repository.  Otherwise, will just check to see if 
+    //! that schema has been synced and return information about the first found
+    //! @param[out] versionMajor - major schema version of the found schema
+    //! @param[out] versionMinor - minor schema version of the found schema
+    //! @param[out] isDynamic - whether the found schema is dynamic or not
+    //! @param[out] checksum - (V8) calculated checksum of the found schema
+    //! @param[in] schemaName - Schema to look for
+    //! @param[in] scope - limit query to only this scope (optional)
+    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8StringCR schemaName, DgnElementId scope = DgnElementId());
+
+    DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName) const;
+
+    //! For a give file, will return all of the schema names and checksums in that file
+    //! @param[out] syncInfoChecksums - map of schemaname:checksum pairs
+    //! @param[in]  fileId - The file to query
     DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId);
     //! @}
 

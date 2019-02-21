@@ -590,7 +590,7 @@ bool V8ECClassInfo::TryFind(BisConversionRule& rule, bool& hasSecondary, DgnDbR 
     {
     CachedStatementPtr stmt = nullptr;
 
-    auto stat = db.GetCachedStatement(stmt, "SELECT StrData FROM " BEDB_TABLE_Property " WHERE Name=? AND NameSpace='dgn_V8'");
+    auto stat = db.GetCachedStatement(stmt, "SELECT StrData FROM " BEDB_TABLE_Property " WHERE Name=? AND NameSpace='dgn_V8Class'");
     if (stat != BE_SQLITE_OK)
     {
     BeAssert(false && "Could not retrieve cached statement.");
@@ -688,7 +688,7 @@ BentleyStatus V8ECClassInfo::Save(DgnDbR db, ECClassName const& v8ClassName, Bis
     Json::Value jsonObj;
     jsonObj["Rule"] = (int) rule;
     jsonObj["HasSecondary"] = hasSecondary;
-    return BeSQLite::DbResult::BE_SQLITE_OK == db.SavePropertyString(DgnV8Property::V8ECClass(v8ClassName.GetClassFullName().c_str()), jsonObj.ToString()) ? BSISUCCESS : BSIERROR;
+    return BeSQLite::DbResult::BE_SQLITE_OK == db.SavePropertyString(DgnV8Class::V8Info(v8ClassName.GetClassFullName().c_str()), jsonObj.ToString()) ? BSISUCCESS : BSIERROR;
 
     //CachedStatementPtr stmt = nullptr;
     //auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " (V8SchemaName,V8ClassName,BisConversionRule) VALUES (?,?,?)");
@@ -770,7 +770,7 @@ bool V8ElementSecondaryECClassInfo::TryFind(DgnDbR db, DgnV8EhCR el, ECClassName
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BeSQLite::DbResult V8ECSchemaXmlInfo::Insert(DgnDbR db, BECN::ECSchemaId schemaId, Utf8CP schemaXml)
+BeSQLite::DbResult V8ECSchemaXmlInfo::Insert(DgnDbR db, ECN::ECSchemaId schemaId, Utf8CP schemaXml)
     {
     if (!schemaId.IsValid() || Utf8String::IsNullOrEmpty(schemaXml))
         {
@@ -807,12 +807,13 @@ BeSQLite::DbResult V8ECSchemaXmlInfo::CreateTable(DgnDbR db)
 //****************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
 V8ECSchemaXmlInfo::Iterable::const_iterator V8ECSchemaXmlInfo::Iterable::begin() const
     {
     if (m_stmt == nullptr)
-        m_db->GetCachedStatement(m_stmt, "SELECT x.Id ,x.Xml FROM " TEMPTABLE_ATTACH(V8ECSCHEMAXML_TABLE) " x");
+        m_db->GetCachedStatement(m_stmt, "SELECT be.Name, be.StrData, x.Xml FROM " TEMPTABLE_ATTACH(V8ECSCHEMAXML_TABLE) " x, "
+                                 BEDB_TABLE_Property " be WHERE x.Id = be.rowid");
     else
         m_stmt->Reset();
 
@@ -820,35 +821,19 @@ V8ECSchemaXmlInfo::Iterable::const_iterator V8ECSchemaXmlInfo::Iterable::begin()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-void V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaInfo(BECN::SchemaKey& key, SyncInfo::SchemaExternalSourceAspect::Type& type, DgnDbR db)
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::SchemaKey V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaKey() const
     {
-    auto id = m_sql->GetValueId<DgnElementId>(0);
-    Utf8String ecsql = "SELECT Identifier, Version, JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ECInstanceId=? and Kind='Schema'";
 
-    auto stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
-    stmt->BindId(1, id);
+    Json::Value  jsonObj;
+    if (!Json::Reader::Parse(m_sql->GetValueText(1), jsonObj))
+        return ECN::SchemaKey();
 
-    if (BE_SQLITE_ROW != stmt->Step())
-        return;
-
-    Utf8String version = stmt->GetValueText(1);
-    Utf8String checksum = stmt->GetValueText(2);
-
-    key.m_schemaName = stmt->GetValueText(0);
-
-    uint32_t versionWrite;
-    ECN::SchemaKey::ParseVersionString(key.m_versionRead, versionWrite, key.m_versionMinor, version.c_str());
-
+    ECN::SchemaKey schemaKey(m_sql->GetValueText(0), jsonObj["versionMajor"].asUInt(), jsonObj["versionMinor"].asUInt());
     Utf8String xml(GetSchemaXml());
-    key.m_checksum = ECN::ECSchema::ComputeSchemaXmlStringCheckSum(xml.c_str(), xml.length());
-
-    Utf8String jsonProp = stmt->GetValueText(2);
-    rapidjson::Document doc;
-    doc.Parse(jsonProp.c_str());
-    type = doc["isDynamic"].IsTrue() ? SyncInfo::SchemaExternalSourceAspect::Type::Dynamic : SyncInfo::SchemaExternalSourceAspect::Type::Identity;
-
+    schemaKey.m_checksum = ECN::ECSchema::ComputeSchemaXmlStringCheckSum(xml.c_str(), xml.length());
+    return schemaKey;
     }
 
 //---------------------------------------------------------------------------------------
@@ -856,7 +841,17 @@ void V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaInfo(BECN::SchemaKey& key, Syn
 //---------------------------------------------------------------------------------------
 Utf8CP V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaXml() const
     {
-    return m_sql->GetValueText(1);
+    return m_sql->GetValueText(2);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+SyncInfo::ECSchemaMappingType V8ECSchemaXmlInfo::Iterable::Entry::GetMappingType() const
+    {
+    rapidjson::Document doc;
+    doc.Parse(m_sql->GetValueText(1));
+    return doc["isDynamic"].IsTrue() ? SyncInfo::ECSchemaMappingType::Dynamic : SyncInfo::ECSchemaMappingType::Identity;
     }
 
 //****************************************************************************************
@@ -1231,9 +1226,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
     for (auto entry : V8ECSchemaXmlInfo::Iterable(GetDgnDb()))
         {
-        BECN::SchemaKey key;
-        SyncInfo::SchemaExternalSourceAspect::Type type;
-        entry.GetSchemaInfo(key, type, GetDgnDb());
+        BECN::SchemaKey key = entry.GetSchemaKey();
+        bool isDynamic = entry.GetMappingType() == SyncInfo::ECSchemaMappingType::Dynamic;
         Utf8String schemaName(key.GetName().c_str());
         if (0 == BeStringUtilities::Strnicmp("EWR", schemaName.c_str(), 3))
             {
@@ -1243,7 +1237,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
         targetSchemaNames.insert(schemaName);
         Utf8CP schemaXml = entry.GetSchemaXml();
-        if (type == SyncInfo::SchemaExternalSourceAspect::Type::Dynamic)
+        if (isDynamic)
             schemaXmlDeserializer.AddSchemaXml(schemaName.c_str(), key, schemaXml);
         else
             schemaXmlDeserializer.AddSchemaXml(key.GetFullSchemaName().c_str(), key, schemaXml);
@@ -2825,15 +2819,14 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
     Utf8String schemaName(schemaKey.GetName().c_str());
 
     ECObjectsV8::SchemaKey existingSchemaKey;
-    SyncInfo::SchemaExternalSourceAspect::Type existingMappingType = SyncInfo::SchemaExternalSourceAspect::Type::Identity;
-    
-    SyncInfo::SchemaExternalSourceAspect existing = SyncInfo::SchemaExternalSourceAspect::GetAspect(GetDgnDb(), schemaName);
-    if (existing.IsValid())
+    SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
+
+    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName, RepositoryLinkId()))
         {
         //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
         //and also check whether the existing one and the new one are compatible.
 
-        if (existing.GetType() == SyncInfo::SchemaExternalSourceAspect::Type::Dynamic)
+        if (existingMappingType == SyncInfo::ECSchemaMappingType::Dynamic)
             {
             if (!isDynamicSchema)
                 {
@@ -2855,17 +2848,17 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                 return BSISUCCESS;
                 }
 
-            const int majorDiff = existing.GetVersionMajor() - schemaKey.GetVersionMajor();
-            const int minorDiff = existing.GetVersionMinor() - schemaKey.GetVersionMinor();
+            const int majorDiff = existingSchemaKey.GetVersionMajor() - schemaKey.GetVersionMajor();
+            const int minorDiff = existingSchemaKey.GetVersionMinor() - schemaKey.GetVersionMinor();
             const int existingToNewVersionDiff = majorDiff != 0 ? majorDiff : minorDiff;
 
             if (existingToNewVersionDiff >= 0)
                 {
-                if (existingToNewVersionDiff == 0 && existing.GetChecksum() != schemaKey.m_checkSum)
+                if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
                     {
                     Utf8String error;
                     error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
-                                  Utf8String(schemaKey.GetFullSchemaName().c_str()).c_str(), existing.GetChecksum(),
+                                  Utf8String(schemaKey.GetFullSchemaName().c_str()).c_str(), existingSchemaKey.m_checkSum,
                                   Converter::IssueReporter::FmtModel(v8Model).c_str(), schemaKey.m_checkSum);
                     ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                     }
@@ -2874,57 +2867,31 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                     // If on a previous conversion we found the schema but it wasn't used, it will have an entry in the SyncInfo table but won't actually exist in the dgndb.  We still need to import it
                     if (m_converter.IsUpdating())
                         {
+                        // Already exists and imported
                         if (GetDgnDb().Schemas().GetSchema(schemaName, false) != nullptr)
-                            {
-                            DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
-                            SyncInfo::SchemaExternalSourceAspect aspect = SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(*repositoryLink, schemaName);
-                            if (!aspect.IsValid())
-                                return BSIERROR;
-                            iModelExternalSourceAspect::SourceState state;
-                            state.m_version = ECN::SchemaKey::FormatLegacySchemaVersion(schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor());
-                            state.m_checksum.Sprintf("%02" PRIu32, schemaKey.m_checkSum);
-                            aspect.SetSourceState(state);
-                            repositoryLink->Update();
                             return BSISUCCESS;
-                            }
                         }
-                    else if (SyncInfo::SchemaExternalSourceAspect::GetAspect(GetDgnDb(), Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()), schemaName).IsValid())
+                    // If the existing entry we found was actually for this file, then do nothing.
+                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName, Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP())))
                         return BSISUCCESS;
                     }
                 }
             }
         }
 
-    DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
-    SyncInfo::SchemaExternalSourceAspect xsa = SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(*repositoryLink, schemaName);
     ECN::ECSchemaId schemaId;
-    if (!xsa.IsValid())
-        {
-        RepositoryLinkId scopeId = m_converter.GetRepositoryLinkId(*v8Model.GetDgnFileP());
-        if (!scopeId.IsValid() || Utf8String::IsNullOrEmpty(schemaName.c_str()))
-            {
-            BeAssert(false && "Failed to insert ECSchema sync info");
-            return BSIERROR;
-            }
 
-        auto aspect = SyncInfo::SchemaExternalSourceAspect::CreateAspect(scopeId, schemaName.c_str(), schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor(), isDynamicSchema, schemaKey.m_checkSum, GetDgnDb());
-        auto repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(scopeId);
-        aspect.AddAspect(*repositoryLink);
-        repositoryLink->Update();
-        schemaId = ECN::ECSchemaId(aspect.GetECInstanceId().GetValueUnchecked());
-        }
-    else
+    DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
+    if (BeSQLite::DbResult::BE_SQLITE_OK != GetSyncInfo().InsertSchema(schemaId, repositoryLink->GetElementId(),
+                                                     schemaName.c_str(),
+                                                     schemaKey.GetVersionMajor(),
+                                                     schemaKey.GetVersionMinor(),
+                                                     isDynamicSchema,
+                                                     schemaKey.m_checkSum))
         {
-        iModelExternalSourceAspect::SourceState state;
-        state.m_version = ECN::SchemaKey::FormatLegacySchemaVersion(schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor());
-        state.m_checksum.Sprintf("%02" PRIu32, schemaKey.m_checkSum);
-        xsa.SetSourceState(state);
-        repositoryLink->Update();
-        schemaId = ECN::ECSchemaId(xsa.GetECInstanceId().GetValueUnchecked());
-        }
-    BeAssert(schemaId.IsValid());
-    if (!schemaId.IsValid())
+        BeAssert(false && "Failed to insert ECSchema sync info");
         return BSIERROR;
+        }
 
     if (BE_SQLITE_OK != V8ECSchemaXmlInfo::Insert(GetDgnDb(), schemaId, schemaXml))
         {

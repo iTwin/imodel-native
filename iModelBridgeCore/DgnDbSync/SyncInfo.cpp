@@ -1004,120 +1004,72 @@ BeSQLite::EC::CachedECSqlStatementPtr SyncInfo::ViewDefinitionExternalSourceAspe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::CreateAspect(DgnElementId scopeId, Utf8StringCR schemaName, uint32_t v8ProfileVersionMajor, uint32_t v8ProfileVersionMinor,
-                                                                                        bool isDynamic, uint32_t checksum, DgnDbR db)
+BeSQLite::DbResult SyncInfo::InsertSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId, DgnElementId repositoryId, Utf8StringCR schemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic,
+                                uint32_t checksum)
     {
-    BeAssert(scopeId.IsValid());
+    BeAssert(0 != checksum);
 
-    auto aspectClass = GetAspectClass(db);
-    if (nullptr == aspectClass)
-        return SchemaExternalSourceAspect(nullptr);
-
-    SourceState state;
-    state.m_version = ECN::SchemaKey::FormatLegacySchemaVersion(v8ProfileVersionMajor, v8ProfileVersionMinor);
-    state.m_checksum.Sprintf("%02" PRIu32, checksum);
-
-    auto instance = CreateInstance(scopeId, Kind::Schema, schemaName, &state, *aspectClass);
-    SchemaExternalSourceAspect aspect(instance.get());
-
-    rapidjson::Document json(rapidjson::kObjectType);
-    auto& allocator = json.GetAllocator();
-
-    json.AddMember("isDynamic", rapidjson::Value(isDynamic), allocator);
-    aspect.SetProperties(json);
-
-    return aspect;
+    Json::Value jsonObj;
+    jsonObj["versionMajor"] = v8SchemaVersionMajor;
+    jsonObj["versionMinor"] = v8SchemaVersionMinor;
+    jsonObj["checksum"] = checksum;
+    jsonObj["isDynamic"] = isDynamic;
+    BeSQLite::DbResult result;
+    if (BeSQLite::DbResult::BE_SQLITE_OK != (result = m_dgndb->SavePropertyString(DgnV8Schema::V8Info(schemaName.c_str()), jsonObj.ToString(), repositoryId.GetValue())))
+        return result;
+    insertedSchemaId = BECN::ECSchemaId((uint64_t) m_dgndb->GetLastInsertRowId());
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(DgnElementR repositoryLink, Utf8StringCR schemaName)
+bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& type, Utf8StringCR v8SchemaName, DgnElementId scope)
     {
-    auto stmt = repositoryLink.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind='Schema' AND Identifier=?)");
-    stmt->BindId(1, repositoryLink.GetElementId());
-    stmt->BindText(2, schemaName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    CachedStatementPtr stmt = nullptr;
+    Utf8String sql("SELECT StrData FROM " BEDB_TABLE_Property " WHERE Name=? AND NameSpace='dgn_V8Schema'");
+    if (scope.IsValid())
+        sql.append(" AND Id=?");
+
+    auto stat = m_dgndb->GetCachedStatement(stmt, sql.c_str());
+    if (stat != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Could not retrieve cached statement.");
+        return false;
+        }
+
+    stmt->BindText(1, v8SchemaName, BeSQLite::Statement::MakeCopy::No);
+    if (scope.IsValid())
+        stmt->BindId(2, scope);
     if (BE_SQLITE_ROW != stmt->Step())
-        return nullptr;
+        return false;
 
-    auto id = stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0);
-
-    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(repositoryLink, id).m_instance.get());
+    Json::Value  jsonObj;
+    if (!Json::Reader::Parse(stmt->GetValueText(0), jsonObj))
+        return false;
+    schemaKey.m_schemaName = WString(v8SchemaName.c_str()).c_str();
+    schemaKey.m_versionMajor = jsonObj["versionMajor"].asUInt();
+    schemaKey.m_versionMinor = jsonObj["versionMinor"].asUInt();
+    schemaKey.m_checkSum = jsonObj["checksum"].asUInt();
+    type = jsonObj["isDynamic"].asBool() ? ECSchemaMappingType::Dynamic : ECSchemaMappingType::Identity;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspect(DgnDbR db, Utf8StringCR schemaName)
+bool SyncInfo::ContainsECSchema(Utf8CP v8SchemaName) const
     {
-    auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind='Schema' AND Identifier=?)");
-    stmt->BindText(1, schemaName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return nullptr;
+    CachedStatementPtr stmt = nullptr;
+    auto stat = m_dgndb->GetCachedStatement(stmt, "SELECT NULL FROM " BEDB_TABLE_Property " WHERE Name=? and NameSpace='dgn_V8Schema'");
+    if (BE_SQLITE_OK != stat)
+        {
+        BeAssert(false && "Could not retrieve cached SyncInfo statement.");
+        return BE_SQLITE_ERROR;
+        }
 
-    auto scopeId = stmt->GetValueId<RepositoryLinkId>(0);
-    auto id = stmt->GetValueId<BeSQLite::EC::ECInstanceId>(1);
-    DgnElementPtr repositoryLink = db.Elements().GetForEdit<RepositoryLink>(scopeId);
-
-    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspect(*repositoryLink, id).m_instance.get());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2019
-//---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspect(DgnDbR db, RepositoryLinkId scopeId, Utf8StringCR schemaName)
-    {
-    auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind='Schema' AND Identifier=?)");
-    stmt->BindId(1, scopeId);
-    stmt->BindText(2, schemaName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return nullptr;
-
-    auto id = stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0);
-    DgnElementPtr repositoryLink = db.Elements().GetForEdit<RepositoryLink>(scopeId);
-    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspect(*repositoryLink, id).m_instance.get());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2019
-//---------------+---------------+---------------+---------------+---------------+-------
-uint32_t SyncInfo::SchemaExternalSourceAspect::GetChecksum()
-    {
-    auto state = GetSourceState();
-    uint32_t checksum;
-    BE_STRING_UTILITIES_UTF8_SSCANF(state.m_checksum.c_str(), "%" PRIu32, &checksum);
-    return checksum;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2019
-//---------------+---------------+---------------+---------------+---------------+-------
-uint32_t SyncInfo::SchemaExternalSourceAspect::GetVersionMajor()
-    {
-    auto state = GetSourceState();
-    uint32_t versionMajor, versionWrite, versionMinor;
-    ECN::SchemaKey::ParseVersionString(versionMajor, versionWrite, versionMinor, state.m_version.c_str());
-    return versionMajor;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2019
-//---------------+---------------+---------------+---------------+---------------+-------
-uint32_t SyncInfo::SchemaExternalSourceAspect::GetVersionMinor()
-    {
-    auto state = GetSourceState();
-    uint32_t versionMajor, versionWrite, versionMinor;
-    ECN::SchemaKey::ParseVersionString(versionMajor, versionWrite, versionMinor, state.m_version.c_str());
-    return versionMinor;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2019
-//---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::SchemaExternalSourceAspect::Type SyncInfo::SchemaExternalSourceAspect::GetType()
-    {
-    auto prop = GetProperties();
-    return prop["isDynamic"].IsTrue() ? SchemaExternalSourceAspect::Type::Dynamic : SchemaExternalSourceAspect::Type::Identity;
+    stmt->BindText(1, v8SchemaName, Statement::MakeCopy::No);
+    return stmt->Step() == BE_SQLITE_ROW;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1125,11 +1077,21 @@ SyncInfo::SchemaExternalSourceAspect::Type SyncInfo::SchemaExternalSourceAspect:
 //---------------+---------------+---------------+---------------+---------------+-------
 DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId)
     {
-    auto stmt = GetDgnDb()->GetPreparedECSqlStatement("SELECT Identifier, Checksum FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Scope.Id=? AND Kind='Schema'");
+    CachedStatementPtr stmt = nullptr;
+    auto stat = m_dgndb->GetCachedStatement(stmt, "SELECT Name, StrData FROM " BEDB_TABLE_Property " WHERE NameSpace='dgn_V8Schema' AND Id=?");
+    if (BE_SQLITE_OK != stat)
+        {
+        BeAssert(false && "Could not retrieve cached SyncInfo statement.");
+        return BE_SQLITE_ERROR;
+        }
+
     stmt->BindId(1, fileId);
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        syncInfoChecksums[stmt->GetValueText(0)] = (uint32_t) stmt->GetValueInt(1);
+        Json::Value  jsonObj;
+        if (!Json::Reader::Parse(stmt->GetValueText(1), jsonObj))
+            continue;
+        syncInfoChecksums[stmt->GetValueText(0)] = jsonObj["checksum"].asUInt();
         }
 
     return BE_SQLITE_OK;

@@ -71,14 +71,24 @@ public:
     static Utf8CP ToString(V8ElementType);
     };
 
-struct DgnV8Property
+struct DgnV8Class
     {
     struct Spec : BeSQLite::PropertySpec
         {
-        Spec(BentleyApi::Utf8CP name) : BeSQLite::PropertySpec(name, "dgn_V8", Mode::Normal, Compress::No) {}
+        Spec(BentleyApi::Utf8CP name) : BeSQLite::PropertySpec(name, "dgn_V8Class", Mode::Normal, Compress::No) {}
         };
 
-    static Spec V8ECClass(BentleyApi::Utf8CP ecClass) { return Spec(ecClass); }
+    static Spec V8Info(BentleyApi::Utf8CP ecClass) { return Spec(ecClass); }
+    };
+
+struct DgnV8Schema
+    {
+    struct Spec : BeSQLite::PropertySpec
+        {
+        Spec(BentleyApi::Utf8CP name) : BeSQLite::PropertySpec(name, "dgn_V8Schema", Mode::Normal, Compress::No) {}
+        };
+
+    static Spec V8Info(BentleyApi::Utf8CP ecSchema) { return Spec(ecSchema); }
     };
 
 //=======================================================================================
