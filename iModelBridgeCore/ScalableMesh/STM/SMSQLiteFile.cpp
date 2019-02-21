@@ -614,9 +614,9 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
 
     if (newNodeHeader.m_nodeCount == 0)
         {
-        int i = 0;
-        i = i;        
-        }
+        int j = 0;
+        j = j;        
+        }   
 
     stmt->BindInt(16, (int)newNodeHeader.m_nodeCount);
     stmt->BindDouble(17, (double)newNodeHeader.m_geometricResolution);
