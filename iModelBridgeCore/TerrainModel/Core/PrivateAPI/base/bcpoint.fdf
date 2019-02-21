@@ -1,0 +1,21 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Core/PrivateAPI/base/bcpoint.fdf $
+|
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+#include "bcutil.h"
+static inline double bcPoint_distance2d
+(
+    const DPoint3d    *thisP,
+    const DPoint3d    *pointP
+)
+{
+    if (thisP == NULL || pointP == NULL) 
+        return dc_zero;
+    else
+        return bcMath_distance2d (thisP->x, thisP->y, pointP->x, pointP->y);    
+}
