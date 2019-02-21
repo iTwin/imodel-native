@@ -144,6 +144,11 @@ bool ECSchemaValidator::Validate(ECSchemaCR schema)
     return m_validated;
     }
 
+bool isADesignSpeedClass(ECClassCP ecClass)
+    {
+    return 0 == strcmp(ecClass->GetFullName(), "RoadRailPhysical:DesignSpeed") || 0 == strcmp(ecClass->GetFullName(), "RoadRailPhysical:DesignSpeedElement");
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                  02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -227,6 +232,7 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
         }
 
     // RULE: Entity classes within the same schema should not have the same display label
+    //      Except: RoadRailPhysical:DesignSpeed and RoadRailPhysical:DesignSpeedElement
     // skip this rule for dynamic schemas; show it only as a warning
     bool isDynamicSchema = schema.IsDynamicSchema();
 
@@ -245,7 +251,7 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
                     schema.GetFullSchemaName().c_str(), prevClass->GetFullName(), ecClass->GetFullName(), ecClass->GetDisplayLabel().c_str());
 
                 // make this a warning for dynamic schemas
-                if (isDynamicSchema)
+                if (isDynamicSchema || (isADesignSpeedClass(ecClass) && isADesignSpeedClass(prevClass)))
                     {
                     LOG.warning(errMsg.c_str());
                     continue;
@@ -280,6 +286,7 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     // RULE: Properties should not be of type long.
     // RULE: All extended types of properties should be on the valid list
     // RULE: All Model subclasses outside of BisCore should not add properties
+    //      Except: Raster:RasterModel.Clip, ScalableMesh:ScalableMeshModel.SmModelClips, ScalableMesh:ScalableMeshModel.SmGroundCoverages, ScalableMesh:ScalableMeshModel.SmModelClipVectors
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
         if (prop->GetInvariantDescription().empty())
@@ -294,9 +301,20 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
 
         if (isModel && nullptr == prop->GetBaseProperty())
             {
-            status = ECObjectsStatus::Error;
-            LOG.errorv("Class '%s' adds property '%s.%s' despite being a subclass of 'BisCore:Model' defined outside 'BisCore'. Model subclasses should not add new properties.",
-                       ecClass.GetFullName(), ecClass.GetFullName(), prop->GetName().c_str());
+            static bmap<Utf8String, bvector<Utf8String>> exceptions;
+            exceptions["Raster:RasterModel"] = { "Clip" };
+            exceptions["ScalableMesh:ScalableMeshModel"] = { "SmModelClips", "SmGroundCoverages", "SmModelClipVectors" };
+
+            auto modelException = exceptions.find(ecClass.GetFullName());
+            if (modelException != exceptions.end() && std::any_of(modelException->second.begin(), modelException->second.end(), [prop](Utf8StringCR propName) { return propName.Equals(prop->GetName()); }))
+                LOG.warningv("Class '%s' adds property '%s.%s' dispite being a subclass of 'bis:Model' and is defined outside of BisCore.  Model subclasses should not add new properties, but this property was released before this rule was written",
+                             ecClass.GetFullName(), ecClass.GetFullName(), prop->GetName().c_str());
+            else
+                {
+                status = ECObjectsStatus::Error;
+                LOG.errorv("Class '%s' adds property '%s.%s' despite being a subclass of 'BisCore:Model' defined outside 'BisCore'. Model subclasses should not add new properties.",
+                           ecClass.GetFullName(), ecClass.GetFullName(), prop->GetName().c_str());
+                }
             }
 
         if (prop->HasExtendedType())
@@ -393,40 +411,41 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
 
 // Rule: Class may not subclass the following Model types:
 //  - bis:SpatialLocationModel
+//      - Except: RoadRailAlignment:AlignmentModel, RoadRailAlignment:AlignmentModel, RoadRailAlignment:HorizontalAlignmentModel
 //  - bis:PhysicalModel
+//      - Except: BuildingPhysical:BuildingPhysicalModel, StructuralPhysical:StructuralPhysicalModel
 //  - bis:InformationRecordModel
 //  - bis:DocumentListModel
 //  - bis:LinkModel
 //  - bis:DefinitionModel
-//      - Except for DictionaryModel and RepositoryModel
+//      - Except:   BisCore:DictionaryModel, BisCore:RepositoryModel,
+//                  BuildingPhysical:BuildingTypeDefinitionModel,
+//                  RoadRailAlignment:ConfigurationModel, RoadRailAlignment:RoadRailCategoryModel,
+//                  RoadRailPhysical:RailwayStandardsModel
 
 ECObjectsStatus CheckForModelBaseClasses(ECClassCR baseClass, ECClassCR entity)
     {
-    static bvector<Utf8String> notSubClassable = {
-        "SpatialLocationModel",
-        "PhysicalModel",
-        "InformationRecordModel",
-        "DocumentListModel",
-        "LinkModel",
-    };
+    static bmap<Utf8String, bvector<Utf8String>> notSubClassable;
+    notSubClassable["SpatialLocationModel"] = { "RoadRailAlignment:AlignmentModel", "RoadRailAlignment:AlignmentModel", "RoadRailAlignment:HorizontalAlignmentModel" };
+    notSubClassable["PhysicalModel"] = { "BuildingPhysical:BuildingPhysicalModel", "StructuralPhysical:StructuralPhysicalModel" };
+    notSubClassable["DefinitionModel"] = { "BisCore:DictionaryModel", "BisCore:RepositoryModel",
+        "BuildingPhysical:BuildingTypeDefinitionModel", 
+        "RoadRailAlignment:ConfigurationModel", "RoadRailAlignment:RoadRailCategoryModel",
+        "RoadRailPhysical:RailwayStandardsModel" };
+    notSubClassable["InformationRecordModel"] = {};
+    notSubClassable["DocumentListModel"] = {};
+    notSubClassable["LinkModel"] = {};
 
-    if (0 == baseClass.GetSchema().GetName().CompareTo(BISCORE_SCHEMA_NAME))
+    if (baseClass.GetSchema().GetName().Equals(BISCORE_SCHEMA_NAME))
         {
-        for (Utf8String& modelName : notSubClassable)
+        auto bfound = notSubClassable.find(baseClass.GetName().c_str());
+        if (bfound != notSubClassable.end())
             {
-            if (0 != baseClass.GetName().CompareTo(modelName.c_str()))
-                continue;
-
-            LOG.errorv("Entity class '%s' may not subclass bis:%s.", entity.GetFullName(), modelName.c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        // Class may not subclass bis:DefinitionModel except for bis:Dictionary or bis:RepositoryModel.
-        if (0 == baseClass.GetName().CompareTo("DefinitionModel"))
-            {
-            if (0 != strcmp(entity.GetFullName(), "BisCore:DictionaryModel") && 0 != strcmp(entity.GetFullName(), "BisCore:RepositoryModel"))
+            if (std::any_of(bfound->second.begin(), bfound->second.end(), [&entity](Utf8StringCR exception) { return exception.Equals(entity.GetFullName()); }))
+                LOG.warningv("Entity class '%s' should not subclass 'bis:%s' but was released before the error was caught.", entity.GetFullName(), bfound->first.c_str());
+            else
                 {
-                LOG.errorv("Entity class '%s' may not subclass bis:DefinitionModel.", entity.GetFullName());
+                LOG.errorv("Entity class '%s' may not subclass bis:%s.", entity.GetFullName(), bfound->first.c_str());
                 return ECObjectsStatus::Error;
                 }
             }
