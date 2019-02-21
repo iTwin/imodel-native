@@ -61,6 +61,8 @@ $(o)CenterLineLShapeProfileTests.obj    : $(BEGTEST_INPUT)CenterLineLShapeProfil
 
 $(o)CenterLineZShapeProfileTests.obj    : $(BEGTEST_INPUT)CenterLineZShapeProfileTests.cpp ${MultiCompileDepends}
 
+$(o)BentPlateProfileTests.obj           : $(BEGTEST_INPUT)BentPlateProfileTests.cpp ${MultiCompileDepends}
+
 $(o)LShapeProfileTests.obj              : $(BEGTEST_INPUT)LShapeProfileTests.cpp ${MultiCompileDepends}
 
 $(o)SchifflerizedLShapeProfileTests.obj : $(BEGTEST_INPUT)SchifflerizedLShapeProfileTests.cpp ${MultiCompileDepends}
