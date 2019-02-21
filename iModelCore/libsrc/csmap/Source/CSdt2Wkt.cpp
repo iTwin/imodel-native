@@ -373,9 +373,19 @@ int EXP_LVL3 CSdt2WktEx (char *datum,size_t datumSize,char *geoTran,size_t geoTr
 	   paremeters. */
 	if (parmCount == 3 || parmCount == 7)
 	{
+#ifdef GEOCOORD_ENHANCEMENT
+/* Changed to EPSG:9606 rotation sign convention as it is the convention used by GeoTIFF, Apache, PROJ4, OGC though the specs are completely
+   silent concerning the sign convention. Some have abandoned support of the TOWGS clause because of this. 
+   ESRI does not use TOWGS84 except with 3 params transforms probably for this reason. I 
+   would recommend not adding this clause but if present it should be EPSG:9606 convention */
+		sprintf (dtWkt,"DATUM[\"%s\",%s,TOWGS84[%.4f,%.4f,%.4f,%.6f,%.6f,%.6f,%.8f]]",wktDatumName,elWkt,
+												dt_def->delta_X,dt_def->delta_Y,dt_def->delta_Z,
+												-dt_def->rot_X,-dt_def->rot_Y,-dt_def->rot_Z,dt_def->bwscale);
+#else
 		sprintf (dtWkt,"DATUM[\"%s\",%s,TOWGS84[%.4f,%.4f,%.4f,%.6f,%.6f,%.6f,%.8f]]",wktDatumName,elWkt,
 												dt_def->delta_X,dt_def->delta_Y,dt_def->delta_Z,
 												dt_def->rot_X,dt_def->rot_Y,dt_def->rot_Z,dt_def->bwscale);
+#endif
 	}
 /******************************************************************************
 	Clients have indicated that this feature is rather undesireable; so we
