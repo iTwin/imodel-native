@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLiteProfileManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLiteProfileManager.h"
@@ -122,6 +122,8 @@ void BeSQLiteProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<BeS
     upgraders.clear();
     if (currentProfileVersion < ProfileVersion(3, 1, 0, 2))
         upgraders.push_back(std::unique_ptr<BeSQLiteProfileUpgrader>(new ProfileUpgrader_3102()));
+    if (currentProfileVersion < ProfileVersion(3, 1, 0, 3))
+        upgraders.push_back(std::unique_ptr<BeSQLiteProfileUpgrader>(new ProfileUpgrader_3103()));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -149,6 +151,24 @@ DbResult ProfileUpgrader_3102::_Upgrade(DbR db) const
         }
 
     LOG.debug("BeSqlite profile upgrade: Added sqlite_stat1 table using analyze command and truncated it so the table is empty.");
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+DbResult ProfileUpgrader_3103::_Upgrade(DbR db) const
+    {
+    // This should never happen, but better safe than sorry
+    Statement stmt;
+    stmt.Prepare(db, "SELECT 1 FROM sqlite_master where type='index' AND name='ix_" BEDB_TABLE_Property "_Property'");
+    if (BE_SQLITE_ROW == stmt.Step())
+        return BE_SQLITE_OK;
+
+    DbResult rc = db.CreateIndex("[ix_" BEDB_TABLE_Property "_Property]", BEDB_TABLE_Property, false, "[Namespace], [Name], [Id]");
+    if (BE_SQLITE_OK != rc)
+        return rc;
+
     return BE_SQLITE_OK;
     }
 END_BENTLEY_SQLITE_NAMESPACE

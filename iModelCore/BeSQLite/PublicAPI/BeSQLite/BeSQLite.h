@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/BeSQLite.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -349,7 +349,7 @@ enum DbProfileValues
     BEDB_CURRENT_VERSION_Major = 3,
     BEDB_CURRENT_VERSION_Minor = 1,
     BEDB_CURRENT_VERSION_Sub1  = 0,
-    BEDB_CURRENT_VERSION_Sub2  = 2,
+    BEDB_CURRENT_VERSION_Sub2  = 3,
 
     BEDB_SUPPORTED_VERSION_Major = BEDB_CURRENT_VERSION_Major,  // oldest version of the db schema supported by current api
     BEDB_SUPPORTED_VERSION_Minor = 1,

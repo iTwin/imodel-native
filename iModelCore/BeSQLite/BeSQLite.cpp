@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLite.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
@@ -1687,6 +1687,10 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
         rc = m_dbFile->CreatePropertyTable(BEDB_TABLE_Property, PROPERTY_TABLE_DDL);
         if (BE_SQLITE_OK != rc)
             return  rc;
+
+        rc = CreateIndex("[ix_" BEDB_TABLE_Property "_Property]", BEDB_TABLE_Property, false, "[Namespace], [Name], [Id]");
+        if (BE_SQLITE_OK != rc)
+            return rc;
 
         // this table purposely has no primary key so it won't be tracked / merged. It is meant to hold values that are
         // local to the briefcase and never in a changeset.
