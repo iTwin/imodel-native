@@ -17,13 +17,11 @@ PolicyProvider::PolicyProvider
     (
     IBuddiProviderPtr buddiProvider,
     WebServices::ClientInfoPtr clientInfo,
-    std::shared_ptr<IConnectAuthenticationProvider> authProvider,
-    IHttpHandlerPtr httpHandler
+    std::shared_ptr<IAuthHandlerProvider> authHandlerProvider
     ) :
     m_buddiProvider(buddiProvider),
     m_clientInfo(clientInfo),
-    m_authProvider(authProvider),
-    m_httpHandler(httpHandler)
+    m_authHandlerProvider(authHandlerProvider)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -57,7 +55,7 @@ folly::Future<Utf8String> PolicyProvider::GetCertificate()
 
     LOG.debugv("GetCertificate - EntitlementPolicyService: %s", url.c_str());
 
-    auto authHandler = m_authProvider->GetAuthenticationHandler(url, m_httpHandler, IConnectAuthenticationProvider::HeaderPrefix::Saml);
+    auto authHandler = m_authHandlerProvider->GetAuthHandler(url, IConnectAuthenticationProvider::HeaderPrefix::Saml);
 
     HttpClient client(nullptr, authHandler);
     return client.CreateGetRequest(url).Perform().then(
@@ -84,7 +82,7 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest()
 
     LOG.debugv("ClientImpl::PerformGetPolicyRequest - EntitlementPolicyService: %s", url.c_str());
 
-    auto authHandler = m_authProvider->GetAuthenticationHandler(url, m_httpHandler, IConnectAuthenticationProvider::HeaderPrefix::Saml);
+    auto authHandler = m_authHandlerProvider->GetAuthHandler(url, IConnectAuthenticationProvider::HeaderPrefix::Saml);
 
     HttpClient client(nullptr, authHandler);
 

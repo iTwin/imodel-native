@@ -211,3 +211,14 @@ MockHttpHandler& MockHttpHandler::ForAnyRequest(Http::ResponseCR response)
         return response;
         });
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Http::Response MockHttpHandler::StubHttpResponse()
+    {
+    HttpStatus httpStatus = HttpStatus::OK;
+    ConnectionStatus status = ConnectionStatus::OK;
+
+    return Response(HttpResponseContent::Create(HttpStringBody::Create()), "", status, httpStatus);
+    }

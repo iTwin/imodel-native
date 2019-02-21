@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Tests/UnitTests/Published/TestsHelper.h $
+|     $Source: Tests/UnitTests/Published/TestsHelper.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,7 @@
 
 #include <Bentley/BeTest.h>
 #include <Licensing/Licensing.h>
+#include <BeHttp/HttpClient.h>
 
 #define BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE BEGIN_BENTLEY_LICENSING_NAMESPACE namespace UnitTests {
 #define END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE   } END_BENTLEY_LICENSING_NAMESPACE
@@ -21,3 +22,5 @@
 BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 
 END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_HTTP

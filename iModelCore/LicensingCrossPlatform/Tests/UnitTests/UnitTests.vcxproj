@@ -14,6 +14,7 @@
     <ClCompile Include="Published\PolicyTokenTests.cpp" />
     <ClCompile Include="Published\TestsHelper.cpp" />
     <ClCompile Include="Published\UsageDbTests.cpp" />
+    <ClCompile Include="Published\PolicyProviderTests.cpp" />
     <ClCompile Include="Published\Utils\DelayedExecutorTests.cpp" />
     <ClCompile Include="Published\Utils\FeatureUserDataMapTests.cpp" />
     <ClCompile Include="Published\Utils\JWTokenTests.cpp" />
@@ -31,6 +32,7 @@
     <ClInclude Include="Published\PolicyTokenTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />
     <ClInclude Include="Published\UsageDbTests.h" />
+    <ClInclude Include="Published\PolicyProviderTests.h" />
     <ClInclude Include="Published\Utils\DelayedExecutorTests.h" />
     <ClInclude Include="Published\Utils\FeatureUserDataMapTests.h" />
     <ClInclude Include="Published\Utils\JWTokenTests.h" />

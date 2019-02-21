@@ -15,7 +15,7 @@
 //#include "../Policy.h"
 
 #include <WebServices/Client/ClientInfo.h>
-#include <WebServices/Connect/IConnectAuthenticationProvider.h>
+#include "IAuthHandlerProvider.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -25,21 +25,18 @@ struct PolicyProvider : IPolicyProvider
 protected:
     ClientInfoPtr m_clientInfo;
     IBuddiProviderPtr m_buddiProvider;
-    std::shared_ptr<IConnectAuthenticationProvider> m_authProvider;
-    IHttpHandlerPtr m_httpHandler;
-
-    folly::Future<Utf8String> GetCertificate();
-    folly::Future<Utf8String> PerformGetPolicyRequest();
+    std::shared_ptr<IAuthHandlerProvider> m_authHandlerProvider;
 
 public:
-    PolicyProvider
+    LICENSING_EXPORT PolicyProvider
         (
         IBuddiProviderPtr buddiProvider,
         ClientInfoPtr clientInfo,
-        std::shared_ptr<IConnectAuthenticationProvider> authProvider,
-        IHttpHandlerPtr httpHandler
+        std::shared_ptr<IAuthHandlerProvider> authHandlerProvider
         );
-    folly::Future<std::shared_ptr<Policy>> GetPolicy();
+    LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
+    LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
+    LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyRequest();
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

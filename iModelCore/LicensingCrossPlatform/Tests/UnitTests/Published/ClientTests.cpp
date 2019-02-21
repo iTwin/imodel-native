@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#include "TestsHelper.h"
 #include "ClientTests.h"
 #include "Utils/MockHttpHandler.h"
 #include "DummyPolicyHelper.h"
@@ -478,14 +479,6 @@ TEST_F(ClientTests, GetPolicy_Success)
     //EXPECT_NE(policyToken, nullptr); not testing the policy token here, just that GetPolicy is called
     }
 
-Response StubHttpResponse()
-    {
-    HttpStatus httpStatus = HttpStatus::OK;
-    ConnectionStatus status = ConnectionStatus::OK;
-
-    return Response(HttpResponseContent::Create(HttpStringBody::Create()), "", status, httpStatus);
-    }
-
 TEST_F(ClientTests, GetCertificate_Success_Mock)
     {
     auto url = "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api";
@@ -494,7 +487,7 @@ TEST_F(ClientTests, GetCertificate_Success_Mock)
     GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_EQ(url, request.GetUrl());
-        return StubHttpResponse();
+        return MockHttpHandler::StubHttpResponse();
         });
 
     HttpClient client(nullptr, GetHandlerPtr());

@@ -43,7 +43,7 @@ USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
-* @bsiclass                                                   
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct ClientImpl> ClientImplPtr;
 
@@ -146,7 +146,7 @@ public:
 
     // Policy
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
-    
+
     // Product status
     LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
 

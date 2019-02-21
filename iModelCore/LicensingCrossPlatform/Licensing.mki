@@ -35,8 +35,11 @@ Headers + $(SourceDir)Providers/IPolicyProvider.h
 Headers + $(SourceDir)Providers/PolicyProvider.h
 Headers + $(SourceDir)Providers/IBuddiProvider.h
 Headers + $(SourceDir)Providers/BuddiProvider.h
+Headers + $(SourceDir)Providers/IAuthHandlerProvider.h
+Headers + $(SourceDir)Providers/AuthHandlerProvider.h
 Headers + $(SourceDir)Providers/IUlasProvider.h
 Headers + $(SourceDir)Providers/UlasProvider.h
+
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
@@ -72,6 +75,8 @@ $(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Hea
 $(o)FeatureUserDataMap$(oext)        : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)BuddiProvider$(oext)             : $(SourceDir)Providers/BuddiProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)AuthHandlerProvider$(oext)       : $(SourceDir)Providers/AuthHandlerProvider.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)PolicyProvider$(oext)            : $(SourceDir)Providers/PolicyProvider.cpp $(Headers) ${MultiCompileDepends}
 

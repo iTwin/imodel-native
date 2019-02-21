@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Tests/UnitTests/Published/TestsHelper.cpp $
+|     $Source: Tests/UnitTests/Published/TestsHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,3 +10,6 @@
 
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 
+BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
+
+END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
