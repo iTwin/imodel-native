@@ -70,7 +70,7 @@ void Integrate (double startFraction, double endFraction, TransformCR frame, uin
         {
         frame.Multiply (xyz, m_uv[i].x, m_uv[i].y, 0);
         m_xyz.push_back (xyz);
-        m_localFraction.push_back (startFraction + (m_globalFraction[i] - startFraction) * intervalDivisor);
+        m_localFraction.push_back ((m_globalFraction[i] - startFraction) * intervalDivisor);
         }
     }
 };
@@ -134,7 +134,8 @@ void CreateCachedCurve() const
     m_cachedStrokeFraction = 1.0 / (double)iNumStroke;
     NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
     integrand.Integrate (m_placement.fractionA, m_placement.fractionB, m_placement.frame, iNumStroke);
-    m_trueDistance = integrand.m_summedDistance;
+    for (auto d : integrand.m_summedDistance)
+        m_trueDistance.push_back (fabs (d));
     m_strokes = integrand.m_xyz;
     m_localFraction = integrand.m_localFraction;
     m_curve = MSBsplineCurve::CreateFromInterpolationAtBasisFunctionPeaks (m_strokes, 4, 0);
@@ -209,6 +210,10 @@ bool _TransformInPlace (TransformCR transform) override
     }
 
 size_t _NumComponent() const override { return 1; }
+bool _IsExtensibleFractionSpace() const override {return true;}
+bool _IsMappableFractionSpace() const override {return true;}
+bool _IsFractionSpace() const override {return true;}
+bool _IsPeriodicFractionSpace(double &period) const override { return false;}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      12/2015
@@ -253,7 +258,7 @@ bool _PointAtSignedDistanceFromFraction (double localStartFraction, double signe
     double localDelta = signedDistance / m_trueDistance.back (); // first approximation !!!
     double localFractionDelta = m_placement.fractionB - m_placement.fractionA;
     static double s_relTol = 1.0e-10;
-    double distanceTolerance = m_trueDistance.back () * s_relTol;   // um.. maybe it should be the full length?
+    double distanceTolerance = fabs (m_trueDistance.back () * s_relTol);   // um.. maybe it should be the full length?
     NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
     DPoint2d uv;
     DVec2d d1uv;
@@ -262,6 +267,7 @@ bool _PointAtSignedDistanceFromFraction (double localStartFraction, double signe
     uint32_t numStroke;
     double actualDistance = 0.0;
     double approximateDelta = localDelta * localFractionDelta;
+    double globalSignFactor = localFractionDelta >= 0.0 ? 1.0 : -1.0;
     // dS / df for global fraction is nearly constant.   This should not happen many times . . .
     // TODO:  For internal points, use the cached fractions and distances to get within a single integration step
     for (uint32_t count = 0; count< s_maxIteration; count++)
@@ -273,7 +279,8 @@ bool _PointAtSignedDistanceFromFraction (double localStartFraction, double signe
             numStroke = StrokeCountBetweenLocalFractions (0, 0, 0, startFraction, endFraction);
 
         integrand.Integrate (startFraction, endFraction, m_placement.frame, numStroke);
-        actualDistance += integrand.LastDistance ();
+        double distanceStep = integrand.LastDistance ();
+        actualDistance += distanceStep * globalSignFactor;
         // Get the final velocity ...
         m_directSpiral->EvaluateAtFraction (endFraction, uv, &d1uv, nullptr, nullptr);
         double dSdGlobal = d1uv.Magnitude ();   // This is GLOBAL fraction velocity
@@ -295,7 +302,7 @@ bool _PointAtSignedDistanceFromFraction (double localStartFraction, double signe
             {
             convergedCount = 0;
             }
-        approximateDelta = -distanceError / dSdGlobal;
+        approximateDelta = - globalSignFactor * distanceError / dSdGlobal;
         startFraction = endFraction;
         }
     return false;
@@ -352,7 +359,7 @@ bool _FractionToPoint (double f, DPoint3dR point, DVec3dR tangent, DVec3dR deriv
 
     point = m_placement.frame * DPoint3d::From (xy);
     m_placement.frame.MultiplyMatrixOnly (tangent, d1xy.x, d1xy.y, 0.0);
-    m_placement.frame.MultiplyMatrixOnly (tangent, d2xy.x, d2xy.y, 0.0);
+    m_placement.frame.MultiplyMatrixOnly (derivative2, d2xy.x, d2xy.y, 0.0);
     return true;
     }
 
@@ -369,8 +376,8 @@ bool _FractionToPoint (double f, DPoint3dR point, DVec3dR tangent, DVec3dR deriv
     d3xy.Scale (intervalScale * intervalScale * intervalScale);
     point = m_placement.frame * DPoint3d::From (xy);
     m_placement.frame.MultiplyMatrixOnly (tangent, d1xy.x, d1xy.y, 0.0);
-    m_placement.frame.MultiplyMatrixOnly (tangent, d2xy.x, d2xy.y, 0.0);
-    m_placement.frame.MultiplyMatrixOnly (tangent, d3xy.x, d3xy.y, 0.0);
+    m_placement.frame.MultiplyMatrixOnly (derivative2, d2xy.x, d2xy.y, 0.0);
+    m_placement.frame.MultiplyMatrixOnly (derivative3, d3xy.x, d3xy.y, 0.0);
     return true;
     }
 
@@ -520,7 +527,7 @@ bool _AddStrokes (bvector <DPoint3d> &points, IFacetOptionsCR options,
     uint32_t numStrokes = NumStrokeBetweenActiveFractions (startFraction, endFraction, &options);
     double globalA = m_placement.ActiveFractionToGlobalFraction (startFraction);
     double globalB = m_placement.ActiveFractionToGlobalFraction (endFraction);
-    uint32_t i0 = includeStartPoint ? 1 : 0;
+    uint32_t i0 = includeStartPoint ? 0 : 1;
     DPoint2d uv;
     DPoint3d xyz;
     for (auto i = i0; i <= numStrokes; i++)

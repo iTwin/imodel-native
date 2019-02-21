@@ -8,20 +8,6 @@
 #pragma once
 
 
-/*
-#ifdef flexwiki
-:Title: struct Bentley::ICurvePrimitive and Bentley::ICurvePrimitivePtr
-
-Summary:  ICurvePrimitive is an abstract type implemented by multiple types of parametric curves.  (LineSegment, Arc, BsplineCurve, etc)
-
-An ICurvePrimitive is a refcounted structure.  At point of creation, an instance is addressed via a ICurvePrimitivePtr.   Inputs to methods can be passed as simple references and pointers.
-
-!!Fields
-
-All fields of ICurvePrimitive are private.
-
-#endif
-*/
 
 /*__PUBLISH_SECTION_START__*/
 #ifdef BENTLEY_WIN32
@@ -33,7 +19,82 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
 
-//! Base interface for variant curve types.
+/**
+An ICurvePrimitive is a refcounted structure.  At point of creation, an instance is addressed via a ICurvePrimitivePtr.   Inputs to methods can be passed as simple references and pointers.
+
+<h3> Primitive type and queries</h3>
+ 
+ Each curve vector is marked with an enumerated value indicating how its contents are to be interpretted.  The enumerated type can be accessed via cv.GetCurvePrimitiveType ().
+ 
+<TABLE BORDER="1">
+ <TR><TD>enum name                                 </TD> <TD> represents   </TD> <TD> Remarks </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_Invalid             </TD> <TD> error type.  Exists only at point of construction </TD> <TD> </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_Line                </TD> <TD> line segment    </TD> <TD> Detail data is DSegment3d</TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_LineString          </TD> <TD> polyline   </TD> <TD> Detail data is bvector<DPoint3d> </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_Arc                 </TD> <TD> elliptic arc   </TD> <TD> Detail data is a DEllipse3d </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_BsplineCurve        </TD> <TD> bspline curve  </TD> <TD> Detail data is MSBsplienCurve </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_InterpolationCurve  </TD> <TD> bspline curve with original interpolation points </TD> <TD> </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_AkimaCurve          </TD> <TD> C1 curve through points. </TD> <TD>  This is a 1970s curve type with very poor smoothness properties.   </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_PointString         </TD> <TD> unconnected points </TD> <TD>    </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_CurveVector         </TD> <TD> placeholder for CurveVector </TD> <TD>  </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_Spiral              </TD> <TD> Clothoid or other plane spiral section </TD> <TD>    </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_PartialCurve        </TD> <TD> fractional portion of another curve </TD> <TD>   </TD> </TR>
+ <TR><TD> CURVE_PRIMITIVE_TYPE_NotClassified       </TD> <TD>  </TD> <TD>  </TD> </TR>
+ </TABLE>
+ <h3> Fractional position along a primitive</h3>
+
+ Every primitive (except CURVE_PRIMITIVE_TYPE_CurveVector and CURVE_PRIMITIVE_TYPE_PointString) supports a "fractional" parametric form.
+ 
+ <ul>
+ <li>The fractional coordinate 0.0 is always the start point.
+ <li>The fractional coordinate 1.0 is always the end point.
+ <li>increasing fractions "from 0 towards 1" moves forward along the curve.
+ <li>methods    curve->FractionToPoint (fraction, xyz ...)   can be freely called for fractions between 0 and 1.
+ <li>fractions outside of 0 to 1 may be treated as errors if the equations for the primitive do not allow extended evaluation.
+ <li>the mapping from fraction to point is determined by the equations of the curve.
+     <ul>
+     <li>fraction changes are not required to be proportional to distance change.
+     <li>fractional changes ARE proportional to distance change for a limited subset of curve primtivies.  Specifically, these types are 
+         <ul>
+         <li>line segment
+         <li>circular arcs
+         <li>transition spirals
+         </ul>
+     <li>fractional changes are NOT typically proportional to distance change for other types:
+         <ul>
+         <li>LineString
+         <li>elliptic (non-circular)arcs
+         <li>bspline curve
+         <li>interpolation curves
+         <li>partial curves
+         </ul>
+     </ul>
+<li>A linestring with (N+1) points (i.e. N edges) has this parameterization
+    <ul>
+    <li>fraction 0 is the start point
+    <li>fraction (1/N), (2/N) through ((N-1)/N) are internal point
+    <li>fraction 1 is the final point.
+    <li> within each edge, there is a "componentFraction" that various from 0 to 1.
+    <li> within edge k (k ranging from 0 through N-1 inclusive) the global fraction for componentFration within the edge is (k + componentFraction)/N
+    <li> When a position "along a linestring" is captured in a CurveLocationDetail, the detail carries both
+        <ul>
+        <li>fraction = the global fraction
+        <li>(componentIndex, componentFraction) to identify the particular edge and fractional position along the edge
+        </ul>
+    </ul>
+ <li> To convert between fractional position and distance along, use these methods:
+    <ul>
+    <li>curvePrimitive.PointAtSignedDistanceFromFraction (startFraction, signedDistance, allowExtension, [out]curveLocationDetail) --- starts at startFraction and moves forward or backwards by given distance.
+    <li>curvePrimitive.SignedDistanceBetweenFractions (startFraction, endFraction, [out]distance) -- returns distance "along the curve" between two fractional positions.
+    </ul>
+ <li> To make queries based on "distance along" within a CurveVector with multiple primitives, bundle the CurveVector into a CurveVectorWithDistanceIndex.
+ <li> Question: Why aren't distances used everywhere?
+     <ul>
+     <li>Answer 1: For many types, computing with true distance along is <em>significantly</em> more expensive than computations involving the natural parameterization of the curve type.
+     <li>Answer 2: The "0 to 1" fraction convention gives absolute certainty of what to pass to ask for start and end, without needing to check the length of the instance.
+     </ul>
+ </ul>
+ */
 struct ICurvePrimitive :  public RefCountedBase
 {
 //__PUBLISH_SECTION_END__
@@ -44,25 +105,6 @@ private:
     mutable CurvePrimitiveIdPtr         m_id;
     int64_t                             m_tag;
     
-//flex!! Primitive type and queries
-//flex 
-//flex Each curve vector is marked with an enumerated value indicating how its contents are to be interpretted.  The enumerated type can be accessed via cv.GetCurvePrimitiveType ().
-//flex 
-//flex || enum name                                 | represents   || Remarks ||
-//flex || CURVE_PRIMITIVE_TYPE_Invalid             || error type.  Exists only at point of construction || ||
-//flex || CURVE_PRIMITIVE_TYPE_Line                || line segment    || start and end points ||
-//flex || CURVE_PRIMITIVE_TYPE_LineString          || polyline   || array of points ||
-//flex || CURVE_PRIMITIVE_TYPE_Arc                 || elliptic arc   || SEE(DEllipse3d) ||
-//flex || CURVE_PRIMITIVE_TYPE_BsplineCurve        || bspline curve  || SEE(MSBsplineCurve) ||
-//flex || CURVE_PRIMITIVE_TYPE_InterpolationCurve  || bspline curve with original interpolation points || ||
-//flex || CURVE_PRIMITIVE_TYPE_AkimaCurve          || C1 curve through points. ||  This is a 1970s curve type with very poor smoothness properties.   ||
-//flex || CURVE_PRIMITIVE_TYPE_PointString         || unconnected points ||    ||
-//flex || CURVE_PRIMITIVE_TYPE_CurveVector         || placeholder for SEE(CurveVector) ||  ||
-//flex || CURVE_PRIMITIVE_TYPE_Spiral              || Clothoid or other plane spiral section ||    ||
-//flex || CURVE_PRIMITIVE_TYPE_PartialCurve        || fractional portion of another curve ||   ||
-//flex || CURVE_PRIMITIVE_TYPE_Catenary            || Catenary curve. ||
-//flex || CURVE_PRIMITIVE_TYPE_TrackingCurve            || Parent curve shifted by linear transformation of the parent curve's derivative. ||
-//flex || CURVE_PRIMITIVE_TYPE_NotClassified       ||  ||  ||
 
 //__PUBLISH_SECTION_START__
 public:

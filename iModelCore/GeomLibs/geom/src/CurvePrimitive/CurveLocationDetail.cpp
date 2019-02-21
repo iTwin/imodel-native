@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurveLocationDetail.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -290,6 +290,49 @@ void CurveLocationDetail::SortByCurveAndFraction (bvector<CurveLocationDetail> &
     std::sort (detail.begin (), detail.end (), cb_lessThan_curveAndFraction);
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      12/2015
++--------------------------------------------------------------------------------------*/
+ValidatedCurveLocationDetail CurveLocationDetail::ClosestPoint (bvector<CurveLocationDetail> &data, DPoint3dCR xyz, double searchRadius)
+    {
+    double dMin = DBL_MAX;
+    ValidatedCurveLocationDetail closestDetail;
+    for (auto &detail : data)
+        {
+        double d = detail.point.Distance (xyz);
+        if (d < dMin)
+            {
+            closestDetail = ValidatedCurveLocationDetail (detail, true);
+            dMin = d;
+            }
+        }
+    return closestDetail;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      12/2015
++--------------------------------------------------------------------------------------*/
+ValidatedCurveLocationDetailPair CurveLocationDetail::ClosestPoint (bvector<CurveLocationDetailPair> &data, DPoint3dCR xyz, double searchRadius)
+    {
+    double dMin = DBL_MAX;
+    ValidatedCurveLocationDetailPair closestDetail;
+    for (auto &pair : data)
+        {
+        double d = pair.detailA.point.Distance (xyz);
+        if (d < dMin && d <= searchRadius)
+            {
+            closestDetail = ValidatedCurveLocationDetailPair (pair, true);
+            dMin = d;
+            }
+        d = pair.detailB.point.Distance (xyz);
+        if (d < dMin && d <= searchRadius)
+            {
+            closestDetail = ValidatedCurveLocationDetailPair (pair, true);
+            dMin = d;
+            }
+        }
+    return closestDetail;
+    }
 
 
 /*--------------------------------------------------------------------------------**//**
