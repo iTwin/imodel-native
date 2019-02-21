@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>ECObjects</id>
+        <version>$version$</version>
+        <title>Bentley ECObjects (native)</title>
+        <authors>Bentley Systems, Incorporated</authors>
+        <owners>Bentley Systems, Incorporated</owners>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Native ECObjects and its dependencies</description>
+        <copyright>(c) $CopyRightYear$ Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <language>en-US</language>
+    </metadata>
+    <files>
+        <file src="ECObjectsM02.dll"                            target="lib\native\ECObjectsM02.dll" />
+        <file src="libs\ECObjects.lib"                          target="lib\native\ECObjects.lib" />
+        <file src="BeIcu4cB02.dll"                              target="lib\native\BeIcu4cB02.dll" />
+        <file src="libs\BeIcu4c.lib"                            target="lib\native\BeIcu4c.lib" />
+        <file src="BeLibxml2B02.dll"                            target="lib\native\BeLibxml2B02.dll" />
+        <file src="libs\BeLibxml2.lib"                          target="lib\native\BeLibxml2.lib" />
+        <file src="BentleyM02.dll"                              target="lib\native\BentleyM02.dll" />
+        <file src="libs\Bentley.lib"                            target="lib\native\Bentley.lib" />
+        <file src="BentleyGeomM02.dll"                          target="lib\native\BentleyGeomM02.dll" />
+        <file src="libs\BentleyGeom.lib"                        target="lib\native\BentleyGeom.lib" />
+        <file src="BentleyGeomSerializationM02.dll"             target="lib\native\BentleyGeomSerializationM02.dll" />
+        <file src="libs\BentleyGeomSerialization.lib"           target="lib\native\BentleyGeomSerialization.lib" />
+        <file src="bentleylog4cxxM02.dll"                       target="lib\native\bentleylog4cxxM02.dll" />
+        <file src="libs\bentleylog4cxx.lib"                     target="lib\native\bentleylog4cxx.lib" />
+        <file src="BeXmlM02.dll"                                target="lib\native\BeXmlM02.dll" />
+        <file src="libs\BeXml.lib"                              target="lib\native\BeXml.lib" />
+        <file src="UnitsM02.dll"                                target="lib\native\UnitsM02.dll" />
+        <file src="libs\Units.lib"                              target="lib\native\Units.lib" />
+        <file src="libs\BeJsonCpp.lib"                          target="lib\native\BeJsonCpp.lib" />
+
+        <file src="Assets\ECSchemas\Standard\*"                 target="Assets\ECSchemas\Standard" />
+        <file src="Notices\*"                                   target="Notices" />
+        <file src="Assets\icudt63l.dat"                         target="Assets\icudt6l.dat" />
+        <file src="PublishedApi\**\*"                           target="include" />
+    </files>
+</package>
