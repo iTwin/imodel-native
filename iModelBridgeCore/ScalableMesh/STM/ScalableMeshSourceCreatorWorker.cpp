@@ -224,6 +224,14 @@ HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
     return m_pDataIndex;
     }
 
+void IScalableMeshSourceCreatorWorker::Impl::FreeDataIndex()
+    {
+    m_smDb = nullptr;
+    m_smSisterDb = nullptr;
+    m_mainFilePtr = nullptr;
+    m_sisterFilePtr = nullptr;
+    m_pDataIndex = nullptr;
+    }
 
 void IScalableMeshSourceCreatorWorker::Impl::GetSisterMainLockFileName(BeFileName& lockFileName) const
     {
@@ -937,6 +945,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         
     CloseSqlFiles();
 
+    FreeDataIndex();
+
     uint64_t totalNodes = 0;
     uint64_t totalStichableNodes = 0;
 
@@ -1376,6 +1386,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     {
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
 
+    assert(m_pDataIndex.GetPtr() == nullptr);
+
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
     ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>* filter = dynamic_cast<ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>*>(pDataIndex->GetFilter());
@@ -1450,8 +1462,22 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         xmlStatus = pChildNode->GetAttributeBooleanValue(needMeshing, "needMeshing");
         assert(xmlStatus == BEXML_Success);
 
-        //Load all the nodes created during the indexing step. 
         
+
+/*
+        BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+        BeFileName lockFileName(m_scmFileName);
+        lockFileName.AppendString(L".lock");
+
+        FILE* lockFile; 
+
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();            
+            }
+            */
+         
         //TBD_G : Need lock file?        
         StatusInt status = OpenSqlFiles(true, true);
         assert(status == SUCCESS);
@@ -1542,11 +1568,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
         CloseSqlFiles();
 
+        //fclose(lockFile);
+
         for (auto& node : nodesToMesh)
             {
             vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> subNodes(node->GetSubNodes());
-            
-
+                                    
             for (auto& subNode : subNodes)
                 {         
                 bool found = false;
@@ -1576,8 +1603,18 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
             {
             for (auto& node : nodesToMesh)
                 {                  
+#ifndef NDEBUG
+                uint32_t pointCount = node->GetNbObjects();
+#endif
                 node->Filter((int)node->GetLevel(), nullptr);                
                 node->SetDirty(true);
+
+#ifndef NDEBUG
+                uint32_t newPointCount = node->GetNbObjects();
+                assert(pointCount <= newPointCount);
+                assert(newPointCount > 0);
+                assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+#endif
                 }
             }
             
@@ -1606,6 +1643,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
                 if (node->GetBlockID().m_integerID == tileId)
                     {        
+#ifndef NDEBUG
+                    uint32_t pointCount = node->GetNbObjects();
+                    assert(node->m_nodeHeader.m_nodeCount == pointCount);
+#endif
+
                     bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
                     assert(isStitched == true);
                     
@@ -1613,6 +1655,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                         {
                         node->SetDirty(true);
                         }
+
+#ifndef NDEBUG
+                    uint32_t newPointCount = node->GetNbObjects();
+                    assert(pointCount <= newPointCount);
+                    assert(newPointCount > 0);
+                    assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+#endif
 
                     break;
                     }
@@ -1630,7 +1679,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                     {                    
                     if (node->GetBlockID().m_integerID == tileId)
                         {
-                        found = true;                    
+                        found = true;
                         break;
                         }
                     }
@@ -1655,6 +1704,21 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         pChildNode = pChildNode->GetNextSibling();
         } while (pChildNode != nullptr);
             
+
+/*
+    BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+    BeFileName lockFileName(m_scmFileName);
+    lockFileName.AppendString(L".lock");
+
+    FILE* lockFile; 
+
+    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+        {
+        sleeper.Sleep();
+        }
+*/
+
     //Flush all the data on disk    
     OpenSqlFiles(false, true);
 
@@ -1679,6 +1743,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     pDataIndex->Store();    
 
     CloseSqlFiles();
+
+    FreeDataIndex();
+
+   // fclose(lockFile);
+
+    
 
     //m_pDataIndex->UnloadAllNodes();
 

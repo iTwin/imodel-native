@@ -5599,7 +5599,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(ISM
     s_importedFeatures = 0;
     if (this->m_indexHeader.m_rootNodeBlockID.IsValid() && this->m_pRootNode == nullptr)
         {
-        this->m_pRootNode = CreateNewNode(this->m_indexHeader.m_rootNodeBlockID);
+        this->m_pRootNode = CreateNewNode(this->m_indexHeader.m_rootNodeBlockID, true, true);
         }    
     }
 
