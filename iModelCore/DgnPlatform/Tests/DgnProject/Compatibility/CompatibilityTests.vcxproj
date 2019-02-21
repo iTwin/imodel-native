@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BeDbCompatibilityTests.cpp" />
+    <ClCompile Include="CompatibilityTestFixture.cpp" />
+    <ClCompile Include="IModelCompatibilityTests.cpp" />
+    <ClCompile Include="iModelHubMock\iModelHubMock.cpp" />
+    <ClCompile Include="iModelHubMock\iModelHubMockTests.cpp" />
+    <ClCompile Include="Profiles.cpp" />
+    <ClCompile Include="TestDb.cpp" />
+    <ClCompile Include="TestDomain.cpp" />
+    <ClCompile Include="TestIModelCreators.cpp" />
+    <ClCompile Include="ECDbCompatibilityTests.cpp" />
+    <ClCompile Include="TestECDbCreators.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CompatibilityTestFixture.h" />
+    <ClInclude Include="CompatibilityTests.h" />
+    <ClInclude Include="iModelHubMock\iModelHubMock.h" />
+    <ClInclude Include="Profiles.h" />
+    <ClInclude Include="TestDb.h" />
+    <ClInclude Include="TestDomain.h" />
+    <ClInclude Include="TestIModelCreators.h" />
+    <ClInclude Include="TestECDbCreators.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\..\DgnPlatform.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.0.ecschema.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.1.ecschema.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.2.ecschema.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7782F16A-217A-417A-BF3B-B7B8A137BE16}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <OutDir>$(OutRoot)Winx64\Build\DgnCompatibility\</OutDir>
+    <IntDir>$(OutRoot)Winx64\Build\DgnCompatibility\</IntDir>
+    <IntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatformTest\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatformTest\</BaseIntermediateOutputPath>
+    <NMakeOutput>$(OutRoot)Winx64\Product\iModelEvolutionGTest\iModelEvolutionTests.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(SrcRoot)DgnPlatform\PublicAPI\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\DgnPlatform\Delivery\</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
