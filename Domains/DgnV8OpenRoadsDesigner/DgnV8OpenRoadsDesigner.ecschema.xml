@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="DgnV8OpenRoadsDesigner" alias="orddgn" version="01.00.00" description="Application schema for data specific to DgnV8 OpenRoads Designer." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="DgnV8OpenRoadsDesigner" alias="orddgn" version="01.00.01" description="Application schema for data specific to DgnV8 OpenRoads Designer." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="RoadRailAlignment" version="01.00.00" alias="rralign"/>
 
+    <KindOfQuantity typeName="VOLUME" displayLabel="Road &amp; Rail Volume" persistenceUnit="CUB.M(DefaultReal)" presentationUnits="CUB.M(real2u);CUB.FT(real2u)" relativeError="0.0001"/>
+    
     <ECEntityClass typeName="CorridorSurfaceAspect" modifier="Sealed" displayLabel="Component Layer" description="UniqueAspect to be applied to elements carrying CorridorSurface data from ORD.">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
@@ -18,6 +21,7 @@
                 <HiddenProperty xmlns="CoreCustomAttributes.01.00.00"/>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" />
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsCorridorSurfaceAspect" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
@@ -43,6 +47,123 @@
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
             <Class class="FeatureAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TemplateDropAspect" modifier="Sealed" displayLabel="Template Drop" description="UniqueAspect to be applied to elements carrying Template Drop data from ORD.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>        
+        <ECProperty propertyName="Interval" typeName="double" displayLabel="Interval" kindOfQuantity="rralign:LENGTH"/>
+        <ECProperty propertyName="TemplateName" typeName="string" displayLabel="Template Name" />
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsTemplateDropAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="TemplateDropAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="StationRangeAspect" modifier="Sealed" displayLabel="Station Range" description="UniqueAspect to be applied to elements carrying Station Range data from ORD.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="StartStation" typeName="double" displayLabel="Start Station" kindOfQuantity="rralign:STATION"/>
+        <ECProperty propertyName="EndStation" typeName="double" displayLabel="End Station" kindOfQuantity="rralign:STATION"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsStationRangeAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="StationRangeAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="SuperelevationAspect" modifier="Sealed" displayLabel="Superelevation" description="UniqueAspect to be applied to elements carrying Superelevation data from ORD.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
+        <ECProperty propertyName="NormalCrossSlope" typeName="double" displayLabel="Normal Cross Slope" kindOfQuantity="rralign:SLOPE"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsSuperelevationAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="SuperelevationAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="CorridorAspect" modifier="Sealed" displayLabel="Corridor" description="UniqueAspect to be applied to elements carrying Corridor data from ORD.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsCorridorAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="CorridorAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="VolumetricQuantityAspect" modifier="Sealed" displayLabel="Geometry" description="UniqueAspect to be applied to elements carrying Volumetric Quantity data from ORD.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Volume" typeName="double" displayLabel="Volume" kindOfQuantity="VOLUME"/>
+        <ECProperty propertyName="SurfaceArea" typeName="double" displayLabel="Surface Area" kindOfQuantity="rralign:AREA"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsVolumetricQuantityAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="VolumetricQuantityAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="LinearQuantityAspect" modifier="Sealed" displayLabel="Geometry" description="UniqueAspect to be applied to elements carrying Linear Quantity data from ORD.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Length" typeName="double" displayLabel="Length" kindOfQuantity="rralign:LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsLinearQuantityAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="LinearQuantityAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="DiscreteQuantityAspect" modifier="Sealed" displayLabel="Geometry" description="UniqueAspect to be applied to elements carrying Discrete Quantity data from ORD.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Count" typeName="int" displayLabel="Count"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsDiscreteQuantityAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="DiscreteQuantityAspect"/>
         </Target>
     </ECRelationshipClass>
 </ECSchema>

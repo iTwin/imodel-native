@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,18 +47,38 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 
 
 // Aspects
+#define V8ORD_CLASS_CorridorAspect                                   "CorridorAspect"
 #define V8ORD_CLASS_CorridorSurfaceAspect                            "CorridorSurfaceAspect"
+#define V8ORD_CLASS_DiscreteQuantityAspect                           "DiscreteQuantityAspect"
 #define V8ORD_CLASS_FeatureAspect                                    "FeatureAspect"
+#define V8ORD_CLASS_LinearQuantityAspect                             "LinearQuantityAspect"
+#define V8ORD_CLASS_StationRangeAspect                               "StationRangeAspect"
+#define V8ORD_CLASS_SuperelevationAspect                             "SuperelevationAspect"
+#define V8ORD_CLASS_TemplateDropAspect                               "TemplateDropAspect"
+#define V8ORD_CLASS_VolumetricQuantityAspect                         "VolumetricQuantityAspect"
 
 
 // Relationships
 
 
 // Properties
+#define V8ORD_PROP_CorridorAspect_Name                                           "Name"
+#define V8ORD_PROP_CorridorSurfaceAspect_Description                             "Description"
 #define V8ORD_PROP_CorridorSurfaceAspect_IsTopMesh                               "IsTopMesh"
 #define V8ORD_PROP_CorridorSurfaceAspect_IsBottomMesh                            "IsBottomMesh"
+#define V8ORD_PROP_DiscreteQuantityAspect_Count                                  "Count"
 #define V8ORD_PROP_FeatureAspect_Name                                            "Name"
 #define V8ORD_PROP_FeatureAspect_DefinitionName                                  "DefinitionName"
+#define V8ORD_PROP_LinearQuantityAspect_Length                                   "Length"
+#define V8ORD_PROP_StationRangeAspect_EndStation                                 "EndStation"
+#define V8ORD_PROP_StationRangeAspect_StartStation                               "StartStation"
+#define V8ORD_PROP_SuperelevationAspect_Name                                     "Name"
+#define V8ORD_PROP_SuperelevationAspect_NormalCrossSlope                         "NormalCrossSlope"
+#define V8ORD_PROP_TemplateDropAspect_Interval                                   "Interval"
+#define V8ORD_PROP_TemplateDropAspect_TemplateName                               "TemplateName"
+#define V8ORD_PROP_TemplateDropAspect_Description                                "Description"
+#define V8ORD_PROP_VolumetricQuantityAspect_SurfaceArea                          "SurfaceArea"
+#define V8ORD_PROP_VolumetricQuantityAspect_Volume                               "Volume"
 
 
 //-----------------------------------------------------------------------------------------
@@ -118,8 +138,15 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Define typedefs and Ptrs in the DgnV8OpenRoadsDesigner namespace
 //-----------------------------------------------------------------------------------------
+DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorAspect)
 DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorSurfaceAspect)
+DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(DiscreteQuantityAspect)
 DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(FeatureAspect)
+DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(LinearQuantityAspect)
+DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(StationRangeAspect)
+DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(SuperelevationAspect)
+DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(TemplateDropAspect)
+DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(VolumetricQuantityAspect)
 
 
 //-----------------------------------------------------------------------------------------
