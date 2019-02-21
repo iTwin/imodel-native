@@ -8,10 +8,13 @@
 import os
 import FindStream
 
-Components = {'Bentley':                {'dll': 'BentleyM02.dll', 'exe': 'BentleyTest',
+Components = {'BeHttp':                 {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpTest',
+                                         'ignore':['BeHttp','Tests','UnitTests'],
+                                         'owner': 'Vincas Razma'},
+              'Bentley':                {'dll': 'BentleyM02.dll', 'exe': 'BentleyTest',
                                          'ignore':['Bentley','Tests'],
                                          'pdb': ['Bentley', 'BentleyDll'],
-              'BeSecurity':             {'dll': 'BeSecurityB02.dll', 'exe': 'BeSecurityTest',
+              'BeSecurity':             {'dll': 'BeSecurityM02.dll', 'exe': 'BeSecurityTest',
                                          'ignore':['BeSecurity','Tests'],
                                          'pdb': ['BeSecurity', 'BeSecurityLibrary'],
                                          'owner': 'Vincas Razma'},
@@ -24,7 +27,7 @@ Components = {'Bentley':                {'dll': 'BentleyM02.dll', 'exe': 'Bentle
                                          'ignore':['DgnPlatform','Tests','DgnProject'],
                                          'pdb': ['DgnPlatform', 'DgnPlatformDll', 'DgnPlatform'],
                                          'owner': 'Ramanujam Raman'},
-              'ECDb':                   {'dll': 'BeSQLiteECB02.dll', 'exe': 'ECDbTest',
+              'ECDb':                   {'dll': 'BeSQLiteECM02.dll', 'exe': 'ECDbTest',
                                          'ignore':['ECDb','Tests'],
                                          'owner': 'Krischan Eberle'},
               'ECObjects':              {'dll': 'ECObjectsM02.dll', 'exe': 'ECObjectsTest',
@@ -42,12 +45,12 @@ Components = {'Bentley':                {'dll': 'BentleyM02.dll', 'exe': 'Bentle
               'Units':                  {'dll': 'UnitsM02.dll', 'exe': 'UnitsTest',
                                          'ignore':['Units','Tests'],
                                          'owner': 'Colin Kerr'},
-              'Licensing':               {'dll': 'Licensing.dll', 'exe': 'LicensingTest',
+              'Licensing':               {'dll': 'LicensingM02.dll', 'exe': 'LicensingTest',
                                          'ignore':['LicensingCrossPlatform','Tests','UnitTests'],
                                          'pdb': ['Licensing'],
                                          'owner': 'Jeff Marker',
                                           'repo': ['imodel02', 'imodelCore', 'LicensingCrossPlatform']},
-              'WSClient':               {'dll': 'WebServicesClientB02.dll', 'exe': 'WSClientTest',
+              'WSClient':               {'dll': 'WebServicesClientM02.dll', 'exe': 'WSClientTest',
                                          'ignore':['WSClient','Tests','UnitTests'],
                                          'pdb': ['WSClient', 'Client'],
                                          'owner': 'Vincas Razma'}
@@ -102,7 +105,7 @@ def RepoForComp(compToFind):
             if 'repo' in Components[comp].keys():
                 return Components[comp]['repo']
             else:
-                return None
+                return  os.path.join(os.getenv('SrcRoot'),'imodel02', 'iModelCore', compToFind)
     
 def LogPathForComp(compToFind):
     exeName = ExeForComp(compToFind)

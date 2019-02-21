@@ -92,7 +92,7 @@ def getTiaMapAll(covRoot, comp, dll=None):
             testNameP = fileName.split('.')
             testCase = testNameP[0]
             testName = testNameP[1]
-            print("\nProcessing file " + str(i) + " of " + str(totalFiles) + ". File Name: " + os.path.join(covPath, file))
+            print("Processing file " + str(i) + " of " + str(totalFiles) + ". File Name: " + os.path.join(covPath, file))
             i+=1
             tree = ET.parse(os.path.join(covPath, file))
             root = tree.getroot()
@@ -114,7 +114,8 @@ def getTiaMapAll(covRoot, comp, dll=None):
                     if packName.lower() in dllFilter and packName in tiaMap:
                         if cmp.CompForDll(packName).lower() in sfName.lower() and lineRate > 0.0:
                             sfPath =  os.path.join(drive, sfName)
-                            if srcRoot in sfPath: 
+                            if srcRoot.lower() in sfPath.lower():
+                                print 'yes 3'
                                 sfNtoAdd = sfPath[sfPath.find(srcRoot)+len(srcRoot):]
                                 if sfNtoAdd not in tiaMap:
                                     tiaMap[packName].setdefault(sfNtoAdd, {})
@@ -165,15 +166,59 @@ def writeMapToFile(fileName, tiaMap, comp):
                     mapFile.write(testCase + '.' + test + ':')
 
 #-------------------------------------------------------------------------------------------
-# bsimethod                                     Majd.Uddin    10/2017
+# bsimethod                                     Majd.Uddin    02/2019
 #-------------------------------------------------------------------------------------------
-def pushMapFiles(mapDir, comps):
+def adjustMapFiles(map_dir):
+    limit = 999
+    for f in os.listdir(map_dir):
+        full_path = os.path.join(map_dir, f)
+        statinfo = os.stat(full_path)
+        size_kb = int(statinfo.st_size/1024)
+        if size_kb > limit:
+            filename, file_extension = os.path.splitext(os.path.basename(full_path))
+            parts = int(size_kb / limit) + 1
+            f1 = open(full_path, 'r')
+            lines = f1.readlines()
+            entries = (len(lines) - 1) / 2
+            partlines = ((entries / parts) * 2) - 4
+            last = 0
+            for i in range(0, parts + 1):
+                if i == 0:
+                    start = i*partlines
+                else:
+                    start = i*partlines - 1
+                end = (i+1)*partlines - 1
+                last = end
+                f_name = os.path.join(map_dir, os.path.basename(filename) + '_' + str(i) + file_extension)
+                f2 = open(f_name, 'w')
+                print 'writing to file: ' + str(f_name)
+                for line in lines[start:end]:
+                    f2.write(line)
+            #if remaining entires
+            if last < len(lines):
+                f_name2 = os.path.join(map_dir, os.path.basename(filename) + '_' + str(i+1) + file_extension)
+                f3 = open(f_name2, 'w')
+                print 'writing to file: ' + str(f_name2)
+                for line in lines[last:]:
+                    f3.write(line)
+            f1.close()
+            os.remove(full_path)
+
+#-------------------------------------------------------------------------------------------
+# bsimethod                                     Majd.Uddin    02/2019
+#-------------------------------------------------------------------------------------------
+def copyMapFiles(mapDir, comps):
     srcDir = os.path.join(os.getenv('SrcRoot'), 'imodel02', 'TestingScripts', 'TestImpactAnalysis', 'TIAMaps')
     for comp in comps:
         compMapDir = os.path.join(mapDir, comp, 'TIAMaps')
         if os.path.exists(compMapDir):
             for file in os.listdir(compMapDir):
                 shutil.copy2(os.path.join(compMapDir, file), srcDir)
+
+#-------------------------------------------------------------------------------------------
+# bsimethod                                     Majd.Uddin    10/2017
+#-------------------------------------------------------------------------------------------
+def pushMapFiles(mapDir, comps):
     print 'Push disabled.'
 ##    #Determine which files to commit and push
 ##    filesToAdd = []
@@ -214,6 +259,7 @@ def main():
     parser.add_argument("--component", help = "The name of the component you want map for e.g. --component=ECDb. If none is given, it runs for all")
     parser.add_argument("--DLL", help = "The DLL name against which you want map for e.g. --DLL=BeSQLiteB02.dll")
     parser.add_argument("--pushChanges", help = "If specified, will also push Map files.", action='store_true')
+    parser.add_argument("--forceAll", help = "Pass this argument to force generate Coverage report for all tests. Otherwise, it will run for changed tests only.", action='store_true')
 
     args = parser.parse_args()
     covRoot = args.covReports
@@ -243,7 +289,7 @@ def main():
     for component in comps:
         print '***Generating TiaMaps for component: ' + component
         compDir = os.path.join(covRoot, component)
-        results = runCoverage(covRoot, component, False)
+        results = runCoverage(covRoot, component, args.forceAll)
         printResults(results, component) # for logging purpose
         
         if os.path.exists(compDir):
@@ -253,7 +299,8 @@ def main():
 
             tiaMap = getTiaMapAll(covRoot, component, dll)
             writeMapToFiles(mapDir, tiaMap, component)
-
+            adjustMapFiles(mapDir)
+    copyMapFiles(mapDir)
     if args.pushChanges:
     #Copy all Map files to source and push changes
         status = pushMapFiles(covRoot, comps)

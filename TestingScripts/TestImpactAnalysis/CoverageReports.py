@@ -17,6 +17,7 @@ from CodeCoverage import CodeCoverage
 import Components as cmp
 from printing import printColored
 from TestResults import TestResults
+from TestsFromCpp import TestCatalog, CPPTests
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Jeff.Marker
@@ -30,38 +31,23 @@ def fixPath(path):
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    11/2017
 #-------------------------------------------------------------------------------------------
-def getChangedTests(testList, comp):
-    NotNeeded = []
+def getChangedTests(comp):
+    testList = []
     mapFile = cmp.TiaMapPathForComp(comp)
     if not os.path.exists(mapFile):
-        return testList, NotNeeded
+        return testList
     timeToCompare = os.path.getmtime(mapFile)
-
-    testsDb = os.path.join(os.getenv('SrcRoot'), 'imodel02', 'TestingScripts', 'TestFlakiness', 'TestsCatalog.db')
-    conn = sqlite3.connect(testsDb)
-    c = conn.cursor()
-
-    for test in testList[:]:
-        testP = test.split('.')
-        buffer = 'SELECT File FROM Tests WHERE TestCase=\'' + testP[0] +'\' AND Test=\'' + testP[1] + '\''
-        try:
-            c.execute(buffer)
-            for row in c:
-                sfName = str(row[0])
-                if '%SrcRoot%' in sfName:
-                        sfName = sfName.replace('%SrcRoot%', fixPath(os.getenv('SrcRoot')))
-
-                if os.path.exists(sfName):
-                    fileTime = os.path.getmtime(sfName)
-                    if fileTime < timeToCompare:
-                        if test in testList:
-                            #print 'Removing test from code coverage. It has not changed: ' + test
-                            testList.remove(test)
-                            NotNeeded.append(test)
-        except sqlite3.Error as e:
-            print "An error occurred:", e.args[0]
-            print "The command was: ", buffer
-    return testList, NotNeeded
+    tcatalog = TestCatalog(cmp.RepoForComp(comp))
+    sf = tcatalog.get_files()
+    for sfn in sf:
+        fileTime = os.path.getmtime(sfn)
+        if fileTime > timeToCompare:
+            cpp = CPPTests(sfn)
+            tests = cpp.get_tests()
+            for test in tests:
+                if test not in testList:
+                    testList.append(test)
+    return testList
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    12/2017
@@ -70,26 +56,26 @@ def runCoverage(reportPath, comp, forceAll):
     print 'Running Coverage for comp: ' + comp
     results = {'NotNeeded': [], 'Passed': [], 'Failed': []}
     testExe = cmp.ExePathForComp(comp)
-    testLog = cmp.LogPathForComp(comp)
-    print testLog
-    if os.path.exists(testLog):
-        tr = TestResults(testLog)
-        testList = tr.getAllTests()
-    else:
-        print printColored('Test log not found. Running the tests first', 'cyan', True)
-        testLogNew = os.path.join(reportPath, comp+'_test.log')
-        cmdForTests = testExe + ' > ' + testLogNew
-        print cmdForTests
-        result = os.system(cmdForTests)
-        if result != 0 : # Test run failed
-            print printColored('Test execution failed for: ' + testExe, 'red', True)
-            exit(-1)
-        else:
-            tr = TestResults(testLogNew)
+    if forceAll:
+        testLog = cmp.LogPathForComp(comp)
+        print testLog
+        if os.path.exists(testLog):
+            tr = TestResults(testLog)
             testList = tr.getAllTests()
-    if not forceAll:
-        testList, NotNeeded = getChangedTests(testList, comp)
-        results['NotNeeded'] = NotNeeded
+        else:
+            print printColored('Test log not found. Running the tests first', 'cyan', True)
+            testLogNew = os.path.join(reportPath, comp+'_test.log')
+            cmdForTests = testExe + ' > ' + testLogNew
+            print cmdForTests
+            result = os.system(cmdForTests)
+            if result != 0 : # Test run failed
+                print printColored('Test execution failed for: ' + testExe, 'red', True)
+                exit(-1)
+            else:
+                tr = TestResults(testLogNew)
+                testList = tr.getAllTests()
+    else: # only run for changed files
+        testList = getChangedTests(comp)
     i = 0
     if len(testList) > 0: # we need to run coverage for some tests
         reportDir = os.path.join(reportPath, comp)

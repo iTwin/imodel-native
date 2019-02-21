@@ -7,7 +7,11 @@
 #--------------------------------------------------------------------------------------
 import os, sys, shutil
 import argparse
+import re
+import subprocess
+import sqlite3
 import time
+import psutil
 
 #Common Scripts to be used by any task
 scriptsDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -68,15 +72,18 @@ def getTests(sfName, dll):
         return tests
     else:
         print  "\nRun for component: " + dll + "\n"
-        fileName =  os.path.join(tiaMapDir, 'TIAMap_' + dll + '_' + comp + '.txt')
-        print "\n Map file: " + fileName + "\n"
-        if os.path.exists(fileName):
-            mapFile = open(fileName,'r')
-            lines = mapFile.readlines()
-            for i in range(0, len(lines)):
-                line = lines[i]
-                if sfPath.lower() in line.lower():
-                    tests.append(os.path.expandvars(lines[i+1]))
+        name_find = 'TIAMap_' + dll + '_' + comp
+        for f in os.listdir(tiaMapDir):
+            if f.startswith(name_find):
+                fileName =  os.path.join(tiaMapDir,  + f)
+                print "\n Map file: " + fileName + "\n"
+                if os.path.exists(fileName):
+                    mapFile = open(fileName,'r')
+                    lines = mapFile.readlines()
+                    for i in range(0, len(lines)):
+                        line = lines[i]
+                        if sfPath.lower() in line.lower():
+                            tests.append(os.path.expandvars(lines[i+1]))
         return tests
 
 #-------------------------------------------------------------------------------------------
@@ -158,25 +165,9 @@ def main():
     parser.add_argument("--gtestName", help = "Name of GTest Exe against which changes are required. Comes from Make file. e.g.: --gtestExe=UnitsTest", required=True)
 
     args = parser.parse_args()
-    logsDir = os.path.join(os.getenv('OutRoot'), 'winx64', 'LogFiles')
-    if not os.path.exists(logsDir):
-        os.mkdir(logsDir)
-    logsPath = os.path.join(logsDir, 'RunRequiredTests')
-    if not os.path.exists(logsPath):
-        os.mkdir(logsPath)
-
 
     comp = cmp.CompForExe(args.gtestName)
     if comp is None: # we don't have this component in our list
-        print 'Component for test exe: ' + args.gtestName + ' is out of scope. Skipping finding tests.'
-        os.environ["OUTSIDE_SCOPE"] = "1"
-        cmdFile = os.path.join(logsPath, args.gtestName + '_NotNeeded.txt')
-        if os.path.exists(cmdFile):
-            os.remove(cmdFile)
-        
-        with open(cmdFile, 'w') as f:
-            f.write("Component out of scope")
-
         exit()
     dll = comp
     repoPath = cmp.RepoPathForComp(comp)
@@ -184,12 +175,19 @@ def main():
     repos = []
     repos.append(repoPath)
 
+    logsDir = os.path.join(os.getenv('OutRoot'), 'winx64', 'LogFiles')
+    if not os.path.exists(logsDir):
+        os.mkdir(logsDir)
+    logsPath = os.path.join(logsDir, 'RunRequiredTests')
+    if not os.path.exists(logsPath):
+        os.mkdir(logsPath)
+
     print ("\n Getting source file list from git repository... \n")
     sfLog = os.path.join(logsPath, 'sfNames.txt')
     if os.path.exists(sfLog):
         os.remove(sfLog)
     src_branch = 'origin/' + os.path.basename(os.getenv('SourceBranch'))
-    tgt_branch = 'origin/' + os.path.basename(os.getenv('TargetBranch'))
+    tgt_branch = os.path.basename(os.getenv('TargetBranch'))
     for repo in repos:
         print 'Checking files at path: ' + repo
         os.chdir(cmp.RepoPathForComp(repo))

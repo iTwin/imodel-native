@@ -1,0 +1,3 @@
+
+[imodel02\imodelcore\besqlite\l10n.cpp]
+%OutRoot%Winx64\Product\Units-GTest\UnitsTest.exe --gtest_filter=LocaleTests.*:FormatParsingSetTest.*:FormatTest.*:UnitsPerformanceTests.*:UnitsTests.*:UnitNameMappingsTests.*:FormatJsonTest.*:FormattingTestFixture.*:CompositeValueSpecJsonTest.*:FormatDoubleTest.*:CompositeValueSpecTest.*:NumericFormatSpecTest.*:QuantityTestFixture.*:UnitConversionTests.*:FormatUtilsTest.*:FormatCompositeStringTest.*:MappingTest.*:FormatStringTest.*:UnitRegistryTests.*:FormatIntegerTest.*:NumericFormatSpecJsonTest.*:

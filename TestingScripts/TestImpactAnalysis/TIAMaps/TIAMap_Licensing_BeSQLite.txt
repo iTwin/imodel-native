@@ -1,0 +1,15 @@
+
+[imodel02\imodelcore\besqlite\sqlite\closure.c]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:UsageDbTests.*:
+[imodel02\imodelcore\besqlite\besqlite.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.GetACLsQualifierOverrideWithSecureDataQualifierOverride_TimeToKeepUnSentLogs_Success:PolicyTests.GetACLsQualifierOverride_HeartbeatInterval_Success:PolicyTests.GetSecureDataQualifierOverride_PolicyInterval_Success:PolicyTests.InvalidJson_Robustness:ClientTests.*:UsageDbTests.*:
+[imodel02\imodelcore\besqlite\sqlite\see-aes128-ofb.c]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:UsageDbTests.*:
+[imodel02\imodelcore\besqlite\sqlite\sqlite3.c]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.GetACLsQualifierOverrideWithSecureDataQualifierOverride_TimeToKeepUnSentLogs_Success:PolicyTests.GetACLsQualifierOverride_HeartbeatInterval_Success:PolicyTests.GetSecureDataQualifierOverride_PolicyInterval_Success:PolicyTests.InvalidJson_Robustness:ClientTests.*:UsageDbTests.*:
+[imodel02\imodelcore\besqlite\besqliteprofilemanager.h]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:UsageDbTests.*:
+[imodel02\imodelcore\besqlite\besqliteprofilemanager.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:UsageDbTests.*:
+[imodel02\imodelcore\besqlite\l10n.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:

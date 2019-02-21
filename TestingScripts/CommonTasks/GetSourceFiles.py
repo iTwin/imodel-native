@@ -32,6 +32,31 @@ def getFilesGit():
         if not os.path.exists(f):
             sFiles.remove(f)
     return sFiles
+#-------------------------------------------------------------------------------------------
+# bsimethod                                     Majd.Uddin    01/2019
+#-------------------------------------------------------------------------------------------
+def getFilesGitIncoming():
+    srcRoot = os.path.join(os.getenv('SrcRoot'), 'imodel02')
+
+    # Get file names in last commit
+    gitCmd = 'git fetch && git diff --name-only ..origin'
+    sFiles = []
+
+    try:
+        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
+    lines = result.split('\n')
+    for line in lines:
+        if len(line) > 1:
+            fullPath = os.path.join(srcRoot, line)
+            if fullPath not in sFiles:
+                sFiles.append(fullPath)
+    for f in sFiles:
+        if not os.path.exists(f):
+            sFiles.remove(f)
+    return sFiles
+
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    01/2019
