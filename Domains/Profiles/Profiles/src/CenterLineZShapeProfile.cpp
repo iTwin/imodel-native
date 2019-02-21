@@ -28,11 +28,11 @@ CenterLineZShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 CenterLineZShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth,
                                                      double wallThickness, double filletRadius, double girth)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
-      , flangeWidth (flangeWidth)
-      , depth (depth)
-      , wallThickness (wallThickness)
-      , filletRadius (filletRadius)
-      , girth (girth)
+    , flangeWidth (flangeWidth)
+    , depth (depth)
+    , wallThickness (wallThickness)
+    , filletRadius (filletRadius)
+    , girth (girth)
     {
     }
 

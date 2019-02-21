@@ -1010,6 +1010,118 @@ IGeometryPtr ProfilesGeometry::CreateCenterLineForZShape (CenterLineZShapeProfil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+static DPoint2d calculateBentPlateBoundingBox (BentPlateProfile const& profile)
+    {
+    double const bentWidth = profile.GetBendOffset();
+    double const unbentWidth = profile.GetWidth() - bentWidth;
+    Angle const bendAngle = profile.GetBendAngle();
+    DPoint2d const bentPartEnd = { bentWidth * bendAngle.Cos(), bentWidth * bendAngle.Sin() };
+
+    DPoint2d boundingBox = { 0.0 };
+    boundingBox.y = bentPartEnd.y;
+
+    if (bentPartEnd.x > unbentWidth)
+        boundingBox.x = bentPartEnd.x;
+    else if (bentPartEnd.x < 0.0)
+        boundingBox.x = unbentWidth - bentPartEnd.x;
+    else
+        boundingBox.x = unbentWidth;
+
+    return boundingBox;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateBentPlateShape (BentPlateProfile const& profile)
+    {
+    double const halfBoundingBoxWidth = calculateBentPlateBoundingBox (profile).x / 2.0;
+    double const halfBoundingBoxDepth = calculateBentPlateBoundingBox (profile).y / 2.0;
+    double const bendOffset = profile.GetBendOffset();
+    double const width = profile.GetWidth();
+    double const thickness = profile.GetWallThickness();
+    double const halfThickness = thickness / 2.0;
+    Angle const bendAngle = profile.GetBendAngle();
+    Angle const bendAngleMinus90Deg = bendAngle - Angle::FromDegrees (90.0);
+    Angle const bendAnglePlus90Deg = bendAngle + Angle::FromDegrees (90.0);
+    Angle const bendAngleMinus180Deg = bendAngle - Angle::FromDegrees (180.0);
+
+    DPoint3d const unbentLegInnerEdge = { halfBoundingBoxWidth, -halfBoundingBoxDepth + halfThickness };
+    DPoint3d const unbentLegOuterEdge = { halfBoundingBoxWidth, -halfBoundingBoxDepth - halfThickness };
+    DPoint3d const bentLegEnd = DPoint3d { bendOffset * bendAngle.Cos(), bendOffset * bendAngle.Sin() } -
+                                DPoint3d { width - bendOffset - halfBoundingBoxWidth, halfBoundingBoxDepth };
+    DPoint3d const bentLegInnerEdge = bentLegEnd - DPoint3d { -halfThickness * bendAngleMinus90Deg.Cos(), -halfThickness * bendAngleMinus90Deg.Sin() };
+    DPoint3d const bentLegOuterEdge = bentLegEnd - DPoint3d { -halfThickness * bendAnglePlus90Deg.Cos(), -halfThickness * bendAnglePlus90Deg.Sin() };
+
+    // Outer and inner bend points are calculated with the help of extended-line intersection points.
+    DPoint3d bentLegInnerExtensionPoint = bentLegInnerEdge - DPoint3d { -width * bendAngleMinus180Deg.Cos(), -width * bendAngleMinus180Deg.Sin() };
+    DPoint3d unbentLegInnerExtensionPoint = unbentLegInnerEdge - DPoint3d { width, 0.0 };
+
+    Angle const lineExtensionAngle = Angle::FromDegrees (180) - bendAngle;
+    if (BeNumerical::IsEqualToZero (lineExtensionAngle.Sin()))
+        {
+        BeAssert (false && "BendAngle should be less than 180 degrees and greater than 0 - sin of 0 shouldn't be possible here.");
+        return nullptr;
+        }
+    double const outerLineExtensionLength = (thickness / lineExtensionAngle.Sin()) * lineExtensionAngle.Cos() * 2.0; // Multiply by 2.0 just to make sure lines intersect
+    double const outerLineLength = outerLineExtensionLength + width;
+    DPoint3d bentLegOuterExtensionPoint = bentLegOuterEdge - DPoint3d { outerLineLength * bendAngleMinus180Deg.Cos(), outerLineLength * bendAngleMinus180Deg.Sin() };
+    DPoint3d unbentLegOuterExtensionPoint = unbentLegOuterEdge - DPoint3d { outerLineLength, 0.0 };
+
+    DPoint3d const innerBendPoint = getLineIntersectionPoint (DSegment3d::From (bentLegInnerEdge, bentLegInnerExtensionPoint),
+                                                        DSegment3d::From (unbentLegInnerEdge, unbentLegInnerExtensionPoint));
+    DPoint3d const outerBendPoint = getLineIntersectionPoint (DSegment3d::From (bentLegOuterEdge, bentLegOuterExtensionPoint),
+                                                        DSegment3d::From (unbentLegOuterEdge, unbentLegOuterExtensionPoint));
+
+    ICurvePrimitivePtr unbentLegInnerLine = ICurvePrimitive::CreateLine (innerBendPoint, unbentLegInnerEdge);
+    ICurvePrimitivePtr unbentLegEndLine = ICurvePrimitive::CreateLine (unbentLegInnerEdge, unbentLegOuterEdge);
+    ICurvePrimitivePtr unbentLegOuterLine = ICurvePrimitive::CreateLine (unbentLegOuterEdge, outerBendPoint);
+    ICurvePrimitivePtr outerBendPointArc = nullptr;
+    ICurvePrimitivePtr bentLegOuterLine = ICurvePrimitive::CreateLine (outerBendPoint, bentLegOuterEdge);
+    ICurvePrimitivePtr bentLegEndLine = ICurvePrimitive::CreateLine (bentLegOuterEdge, bentLegInnerEdge);
+    ICurvePrimitivePtr bentLegInnerLine = ICurvePrimitive::CreateLine (bentLegInnerEdge, innerBendPoint);
+    ICurvePrimitivePtr innerBendPointArc = nullptr;
+
+    outerBendPointArc = createArcBetweenLines (unbentLegOuterLine, bentLegOuterLine, profile.GetFilletRadius() + thickness);
+    innerBendPointArc = createArcBetweenLines (bentLegInnerLine, unbentLegInnerLine, profile.GetFilletRadius());
+
+    bvector<ICurvePrimitivePtr> orderedCurves =
+        {
+        unbentLegInnerLine, unbentLegEndLine, unbentLegOuterLine, outerBendPointArc,
+        bentLegOuterLine, bentLegEndLine, bentLegInnerLine, innerBendPointArc
+        };
+    return createGeometryFromPrimitiveArray (orderedCurves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr ProfilesGeometry::CreateBentPlateCenterLine (BentPlateProfile const& profile)
+    {
+    double const halfBoundingBoxWidth = calculateBentPlateBoundingBox (profile).x / 2.0;
+    double const halfBoundingBoxDepth = calculateBentPlateBoundingBox (profile).y / 2.0;
+    double const bendOffset = profile.GetBendOffset();
+    double const unbentWidth = profile.GetWidth() - bendOffset;
+    double const halfThickness = profile.GetWallThickness() / 2.0;
+    Angle const bendAngle = profile.GetBendAngle();
+
+    DPoint3d const unbentLegEnd = { halfBoundingBoxWidth, -halfBoundingBoxDepth };
+    DPoint3d const bendPoint = { halfBoundingBoxWidth - unbentWidth, -halfBoundingBoxDepth };
+    DPoint3d const bentLegEnd = bendPoint - DPoint3d { -bendOffset * bendAngle.Cos(), -bendOffset * bendAngle.Sin() };
+
+    ICurvePrimitivePtr unbentLegLine = ICurvePrimitive::CreateLine (unbentLegEnd, bendPoint);
+    ICurvePrimitivePtr bendPointArc = nullptr;
+    ICurvePrimitivePtr bentLegLine = ICurvePrimitive::CreateLine (bendPoint, bentLegEnd);
+
+    bendPointArc = createArcBetweenLines (unbentLegLine, bentLegLine, profile.GetFilletRadius() + halfThickness);
+
+    bvector<ICurvePrimitivePtr> curves = { unbentLegLine, bendPointArc, bentLegLine };
+    return createGeometryFromPrimitiveArray (curves, CurveVector::BOUNDARY_TYPE_Open);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 static IGeometryPtr createArbitraryCenterLineShape (CurveVectorPtr const& curvesPtr, double wallThickness)
     {
     if (curvesPtr.IsNull())

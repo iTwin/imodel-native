@@ -14,16 +14,59 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 //=======================================================================================
-//! 
-//! @ingroup GROUP_ParametricProfiles
+//! Profile of a plate that has been bent at a given point with a given angle.
+//! @ingroup GROUP_ParametricProfiles GROUP_CenterLineProfiles
 //=======================================================================================
 struct BentPlateProfile : ParametricProfile, ICenterLineProfile
     {
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_BentPlateProfile, ParametricProfile);
     friend struct BentPlateProfileHandler;
 
-protected:
-    explicit BentPlateProfile (CreateParams const& params) : T_Super (params) {}
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (BentPlateProfile)
+
+    public:
+        //! Minimal constructor that initializes all members to zero.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        //! Full constructor to initialize members.
+        //! @param[in] model DgnModel that the Profile will be associated to.
+        //! @param[in] pName Name of the Profile.
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double wallThickness, Angle const& angle,
+                                               double bendOffset, double filletRadius = 0.0);
+
+    public:
+        //! @beginGroup
+        //! Extent of the plate length, defined parallel to the x axis of the position coordinate system.
+        double width = 0.0;
+        //! Constant thickness of profile walls.
+        double wallThickness = 0.0;
+        //! Inner angle of the bend point. @details Value is valid in range (0..180) degrees.
+        //! Values near 180 degrees meaning an almost unbent plate and values near 0 are almost fully bent in half plate.
+        Angle bendAngle = Angle::FromRadians (0.0);
+        //! Offset from the left edge of the plate defining at what point the plate is bent.
+        double bendOffset = 0.0;
+        //! Inner fillet radius of the bend point.
+        double filletRadius = 0.0;
+        //! @endGroup
+        };
+
+private:
+    explicit BentPlateProfile (CreateParams const& params);
+
+    virtual bool _Validate() const override;
+    virtual bool _CreateGeometry() override;
+    virtual IGeometryPtr _CreateShapeGeometry() const override;
+
+    bool ValidateWallThickness() const;
+    bool ValidateBendAngle() const;
+    bool ValidateBendOffset() const;
+    bool ValidateFilletRadius() const;
+
+    double CalculateMaxWallThickness() const;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (BentPlateProfile)
@@ -35,15 +78,14 @@ public:
     //! Note that you must call instance.Insert() to persist it in the `DgnDb`
     PROFILES_EXPORT static BentPlateProfilePtr Create (CreateParams const& params) { return new BentPlateProfile (params); }
 
-public:
     PROFILES_EXPORT double GetWidth() const; //!< Get the value of @ref CreateParams.width "Width"
     PROFILES_EXPORT void SetWidth (double value); //!< Set the value for @ref CreateParams.width "Width"
 
-    PROFILES_EXPORT double GetBendAngle() const; //!< Get the value of @ref CreateParams.bendAngle "BendAngle"
-    PROFILES_EXPORT void SetBendAngle (double value); //!< Set the value for @ref CreateParams.bendAngle "BendAngle"
+    PROFILES_EXPORT Angle GetBendAngle() const; //!< Get the value of @ref CreateParams.bendAngle "BendAngle"
+    PROFILES_EXPORT void SetBendAngle (Angle const& value); //!< Set the value for @ref CreateParams.bendAngle "BendAngle"
 
-    PROFILES_EXPORT double GetBendRadius() const; //!< Get the value of @ref CreateParams.bendRadius "BendRadius"
-    PROFILES_EXPORT void SetBendRadius (double value); //!< Set the value for @ref CreateParams.bendRadius "BendRadius"
+    PROFILES_EXPORT double GetFilletRadius() const; //!< Get the value of @ref CreateParams.filletRadius "FilletRadius"
+    PROFILES_EXPORT void SetFilletRadius (double value); //!< Set the value for @ref CreateParams.filletRadius "FilletRadius"
 
     PROFILES_EXPORT double GetBendOffset() const; //!< Get the value of @ref CreateParams.bendOffset "BendOffset"
     PROFILES_EXPORT void SetBendOffset (double value); //!< Set the value for @ref CreateParams.bendOffset "BendOffset"

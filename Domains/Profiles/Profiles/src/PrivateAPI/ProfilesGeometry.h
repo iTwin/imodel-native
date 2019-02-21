@@ -34,6 +34,8 @@ public:
     static IGeometryPtr CreateCenterLineForLShape (CenterLineLShapeProfile const& profile);
     static IGeometryPtr CreateCenterLineZShape (CenterLineZShapeProfile const& profile);
     static IGeometryPtr CreateCenterLineForZShape (CenterLineZShapeProfile const& profile);
+    static IGeometryPtr CreateBentPlateShape (BentPlateProfile const& profile);
+    static IGeometryPtr CreateBentPlateCenterLine (BentPlateProfile const& profile);
     static IGeometryPtr CreateArbitraryCenterLineShape (IGeometry const& centerLine, double wallThickness);
     static IGeometryPtr CreateCircle (CircleProfile const& profile);
     static IGeometryPtr CreateHollowCircle (HollowCircleProfile const& profile);
