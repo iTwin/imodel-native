@@ -167,6 +167,13 @@ Napi::Function RequestTokenFunction()
     return method;
     }
 
+static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t line, BeAssertFunctions::AssertType atype)
+    {
+    WPrintfString str(L"BridgeAddon.cpp: ASSERT: (%ls) @ %ls:%u\n", message, file, line);
+    // NativeLogging::LoggingManager::GetLogger("BimTeleporter")->errorv(str.c_str());
+    ::OutputDebugStringW (str.c_str());
+    }    
+
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    John.Majerle                      10/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -176,6 +183,9 @@ int RunBridge(Env env, const char* jsonString)
 
     printf("BridgeAddon.cpp: RunBridge() jsonString = %s\n", jsonString);           // [NEEDSWORK] This line just for testing.  Remove later.
  
+    // Disable asserts since we may be running as a service (and perhaps on the cloud)
+    BeAssertFunctions::SetBeAssertHandler(justLogAssertionFailures);
+
     BridgeNative::logMessageToSEQ("INFO", "BridgeAddon.cpp: RunBridge() BEGIN");        
     BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() BEGIN");                 // [NEEDSWORK] This line just for testing.  Remove later.
     
