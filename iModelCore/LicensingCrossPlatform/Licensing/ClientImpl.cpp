@@ -200,7 +200,7 @@ void ClientImpl::UsageHeartbeat(int64_t currentTime)
             {
             m_usageHeartbeatStopped = true;
             }
-        }); 
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -308,7 +308,7 @@ void ClientImpl::StopPolicyHeartbeat()
 void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
     {
     LOG.debug("ClientImpl::LogPostingHeartbeat");
-    
+
     if (m_startLogPostingHeartbeat)
         {
         m_lastRunningLogPostingheartbeatStartTime = currentTime;
@@ -494,7 +494,7 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
 
     return SUCCESS;
     }
-    
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -538,7 +538,7 @@ BentleyStatus ClientImpl::RecordUsage()
                GetLoggingPostSource().c_str(),
                m_policy->GetCountry().c_str(),
                m_policy->GetUsageType().c_str());
-    
+
 
     if (SUCCESS != m_usageDb->RecordUsage(m_policy->GetUltimateSAPId(),
                                           m_policy->GetPrincipalId(),
@@ -563,7 +563,7 @@ BentleyStatus ClientImpl::RecordUsage()
         LOG.error("ClientImpl::RecordUsage - ERROR: Usage failed to be recorded.");
         return ERROR;
         }
-    
+
     return SUCCESS;
     }
 
@@ -580,7 +580,7 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
         StorePolicyInUsageDb(policy);
 		DeleteAllOtherUserPolicies(policy);
         }
-    
+
     return policy;
     }
 
@@ -655,7 +655,7 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyWithId(Utf8StringCR policyId)
 std::list<std::shared_ptr<Policy>> ClientImpl::GetPolicies()
 	{
     LOG.debug("ClientImpl::GetPolicies");
-    
+
     std::list<std::shared_ptr<Policy>> policyList;
 	auto jsonpolicies = m_usageDb->GetPolicyFiles();
 	for (auto json : jsonpolicies)
@@ -672,7 +672,7 @@ std::list<std::shared_ptr<Policy>> ClientImpl::GetPolicies()
 std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
 	{
     LOG.debug("ClientImpl::GetUserPolicies");
-    
+
     std::list<std::shared_ptr<Policy>> policyList;
 	auto jsonpolicies = m_usageDb->GetPolicyFiles(m_userInfo.userId);
 	for (auto json : jsonpolicies)
@@ -767,13 +767,13 @@ bool ClientImpl::HasOfflineGracePeriodStarted()
 int64_t ClientImpl::GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString)
 	{
     LOG.debug("ClientImpl::GetDaysLeftInOfflineGracePeriod");
-    
+
     Utf8String graceStartString = m_usageDb->GetOfflineGracePeriodStart();
 	if (graceStartString == "")
 	{
 		return 0;
 	}
-	// check if online usage is allowed; 
+	// check if online usage is allowed;
 	auto offlineDurationDays = policy->GetOfflineDuration(productId, featureString);
 	auto gracePeriodEndTime = DateHelper::AddDaysToTime(graceStartString, offlineDurationDays);
 	auto daysLeft = DateHelper::GetDaysLeftUntilTime(gracePeriodEndTime);

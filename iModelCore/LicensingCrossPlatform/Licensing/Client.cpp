@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Client.h>
+#include "Providers/AuthHandlerProvider.h"
 #include "Providers/BuddiProvider.h"
 #include "Providers/PolicyProvider.h"
 #include "Providers/UlasProvider.h"
@@ -41,7 +42,8 @@ IHttpHandlerPtr httpHandler
 )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, authenticationProvider, httpHandler);
+    IAuthHandlerProviderPtr authHandlerProvider = std::make_shared<AuthHandlerProvider>(authenticationProvider, httpHandler);
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, authHandlerProvider);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, clientInfo, dbPath, httpHandler);
     return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, buddiProvider, policyProvider, ulasProvider, projectId, featureString, httpHandler)));
     }

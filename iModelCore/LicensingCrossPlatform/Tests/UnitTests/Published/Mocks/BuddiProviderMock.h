@@ -12,7 +12,7 @@
 
 #include "../TestsHelper.h"
 
-BEGIN_BENTLEY_LICENSING_NAMESPACE
+BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 
 struct BuddiProviderMock : IBuddiProvider
 {
@@ -22,4 +22,4 @@ public:
     MOCK_METHOD0(UlasRealtimeLoggingBaseUrl, Utf8String());
 };
 
-END_BENTLEY_LICENSING_NAMESPACE
+END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE

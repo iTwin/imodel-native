@@ -65,6 +65,8 @@ struct MockHttpHandler : public IHttpHandler
 
         MockHttpHandler& ForAnyRequest(OnResponseCallback callback);
         MockHttpHandler& ForAnyRequest(Http::ResponseCR response);
+
+        static Http::Response StubHttpResponse();
     };
 
 END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
