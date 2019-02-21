@@ -987,6 +987,82 @@ void assignORDFeatureAspect(Dgn::DgnElementR element, Cif::FeaturizedConsensusIt
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignTemplateDropAspect(Dgn::DgnElementR element, Cif::TemplateDropCR templateDrop)
+    {
+    auto templatePtr = templateDrop.GetTemplate();
+    auto description = Utf8String(templateDrop.GetDescription().c_str());
+    Utf8String templateName;
+    if (templatePtr.IsValid())
+        templateName = Utf8String(templatePtr->GetName().c_str());
+
+    if (auto templateDropAspectP = DgnV8ORDBim::TemplateDropAspect::GetP(element))
+        {
+        templateDropAspectP->SetInterval(templateDrop.GetInterval());
+        templateDropAspectP->SetDescription(description.c_str());
+
+        if (templatePtr.IsValid())
+            templateDropAspectP->SetTemplateName(templateName.c_str());
+        }
+    else
+        {
+        auto templateDropAspectPtr = DgnV8ORDBim::TemplateDropAspect::Create(templateDrop.GetInterval(), templateName.c_str(), description.c_str());
+        DgnV8ORDBim::TemplateDropAspect::Set(element, *templateDropAspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignCorridorAspect(Dgn::DgnElementR element, CorridorCR corridor)
+    {
+    auto name = Utf8String(corridor.GetName().c_str());
+    if (auto corridorAspectP = DgnV8ORDBim::CorridorAspect::GetP(element))
+        corridorAspectP->SetName(name.c_str());
+    else
+        {
+        auto corridorAspectPtr = DgnV8ORDBim::CorridorAspect::Create(name.c_str());
+        DgnV8ORDBim::CorridorAspect::Set(element, *corridorAspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignStationRangeAspect(Dgn::DgnElementR element, double startStation, double endStation)
+    {
+    if (auto stationRangeAspectP = DgnV8ORDBim::StationRangeAspect::GetP(element))
+        {
+        stationRangeAspectP->SetStartStation(startStation);
+        stationRangeAspectP->SetEndStation(endStation);
+        }
+    else
+        {
+        auto stationRangeAspectPtr = DgnV8ORDBim::StationRangeAspect::Create(startStation, endStation);
+        DgnV8ORDBim::StationRangeAspect::Set(element, *stationRangeAspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignSuperelevationAspect(Dgn::DgnElementR element, Cif::SuperElevationCR cifSuperelevation)
+    {
+    auto name = Utf8String(cifSuperelevation.GetName().c_str());
+    if (auto superelevationAspectP = DgnV8ORDBim::SuperelevationAspect::GetP(element))
+        {
+        superelevationAspectP->SetName(name.c_str());
+        superelevationAspectP->SetNormalCrossSlope(cifSuperelevation.GetNormalCrossSlope());
+        }
+    else
+        {
+        auto superelevationAspectPtr = DgnV8ORDBim::SuperelevationAspect::Create(name.c_str(), cifSuperelevation.GetNormalCrossSlope());
+        DgnV8ORDBim::SuperelevationAspect::Set(element, *superelevationAspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCorridorSurface)
@@ -1001,7 +1077,7 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
         }
     else
         {
-        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh);
+        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, nullptr);
         DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
         }
     }
@@ -1014,17 +1090,43 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
     if (m_converter.m_v8ToBimElmMap.end() != m_converter.m_v8ToBimElmMap.find(v8el.GetElementRef()))
         return;
 
-    auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-    if (featurizedPtr.IsValid())
+    auto templateDropPtr = TemplateDrop::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+    if (templateDropPtr.IsValid())
         {
-        assignORDFeatureAspect(*elRes.m_element, *featurizedPtr);
-
-        if (v8mm.GetV8Model().Is3D())
+        assignORDFeatureAspect(*elRes.m_element, *templateDropPtr);
+        assignTemplateDropAspect(*elRes.m_element, *templateDropPtr);        
+        }
+    else
+        {
+        auto superElevationPtr = SuperElevation::CreateFromElementHandle(v8el);
+        if (superElevationPtr.IsValid())
             {
-            if (auto cifCorridorSurfaceCP = dynamic_cast<CorridorSurfaceCP>(featurizedPtr.get()))
+            assignStationRangeAspect(*elRes.m_element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
+            assignSuperelevationAspect(*elRes.m_element, *superElevationPtr);
+            }
+        else
+            {
+            auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
+            if (cifCorridorPtr.IsValid())
                 {
-                assignCorridorSurfaceAspect(*elRes.m_element, *cifCorridorSurfaceCP);
-                return;
+                assignCorridorAspect(*elRes.m_element, *cifCorridorPtr);
+                }
+            else
+                {
+                auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+                if (featurizedPtr.IsValid())
+                    {
+                    assignORDFeatureAspect(*elRes.m_element, *featurizedPtr);
+
+                    if (v8mm.GetV8Model().Is3D())
+                        {
+                        if (auto cifCorridorSurfaceCP = dynamic_cast<CorridorSurfaceCP>(featurizedPtr.get()))
+                            {
+                            assignCorridorSurfaceAspect(*elRes.m_element, *cifCorridorSurfaceCP);
+                            return;
+                            }
+                        }
+                    }
                 }
             }
         }
