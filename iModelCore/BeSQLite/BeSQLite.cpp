@@ -1688,10 +1688,6 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
         if (BE_SQLITE_OK != rc)
             return  rc;
 
-        rc = CreateIndex("[ix_" BEDB_TABLE_Property "_Property]", BEDB_TABLE_Property, false, "[Namespace], [Name], [Id]");
-        if (BE_SQLITE_OK != rc)
-            return rc;
-
         // this table purposely has no primary key so it won't be tracked / merged. It is meant to hold values that are
         // local to the briefcase and never in a changeset.
         rc = CreateTable(BEDB_TABLE_Local, "Name CHAR NOT NULL COLLATE NOCASE UNIQUE,Val BLOB");

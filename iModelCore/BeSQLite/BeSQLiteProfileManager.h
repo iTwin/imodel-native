@@ -75,14 +75,4 @@ struct ProfileUpgrader_3102 final : BeSQLiteProfileUpgrader
         DbResult _Upgrade(DbR db) const override;
     };
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2019
-//---------------+---------------+---------------+---------------+---------------+-------
-struct ProfileUpgrader_3103 final : BeSQLiteProfileUpgrader
-    {
-    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-    private:
-        DbResult _Upgrade(DbR db) const override;
-    };
-
 END_BENTLEY_SQLITE_NAMESPACE
