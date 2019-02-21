@@ -125,8 +125,8 @@ bool SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, BECN::EC
     {
     BisConversionRule conversionRule;
     bool hasSecondary;
-    if (!V8ECClassInfo::TryFind(conversionRule, m_converter.GetDgnDb(),
-                                ECClassName(ecSchema.GetName().c_str(), serializedClassName.c_str()), hasSecondary))
+    Utf8PrintfString name("%s.%s", ecSchema.GetName().c_str(), serializedClassName.c_str());
+    if (!V8ECClassInfo::TryFind(conversionRule, hasSecondary, m_converter.GetDgnDb(), name))
         {
         BeAssert(false);
         return false;
@@ -335,7 +335,8 @@ bool V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::Element
 //****************************************************************************************
 // ECInstanceInfo
 //****************************************************************************************
-#define ECINSTANCE_TABLE SYNCINFO_TABLE("ECInstance")
+#define ECINSTANCE_TABLE "ECInstance"
+#define TEMPTABLE_ATTACH(name) "temp." name
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2015
@@ -346,7 +347,7 @@ ECInstanceKey ECInstanceInfo::Find(bool& isElement, DgnDbR db, RepositoryLinkId 
     isElement = false;
 
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT ECClassId,ECInstanceId,IsElement FROM " SYNCINFO_ATTACH(ECINSTANCE_TABLE) " WHERE V8SchemaName = ? AND V8ClassName = ? AND V8InstanceId = ? AND V8FileSyncInfoId = ?");
+    auto stat = db.GetCachedStatement(stmt, "SELECT ECClassId,ECInstanceId,IsElement FROM " TEMPTABLE_ATTACH(ECINSTANCE_TABLE) " WHERE V8SchemaName = ? AND V8ClassName = ? AND V8InstanceId = ? AND V8FileSyncInfoId = ?");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert(false && "Could not retrieve cached statement.");
@@ -386,7 +387,7 @@ BentleyStatus ECInstanceInfo::Insert(DgnDbR db, RepositoryLinkId fileId, V8ECIns
         }
 
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName,V8ClassName,V8InstanceId, ECClassId,ECInstanceId,IsElement,V8FileSyncInfoId) VALUES (?,?,?,?,?,?,?)");
+    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " TEMPTABLE_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName,V8ClassName,V8InstanceId, ECClassId,ECInstanceId,IsElement,V8FileSyncInfoId) VALUES (?,?,?,?,?,?,?)");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert(false && "Could not retrieve cached statement for ECInstanceInfo::Insert.");
@@ -411,10 +412,7 @@ BentleyStatus ECInstanceInfo::Insert(DgnDbR db, RepositoryLinkId fileId, V8ECIns
 //static
 BentleyStatus ECInstanceInfo::CreateTable(DgnDbR db)
     {
-    if (db.TableExists(SYNCINFO_ATTACH(ECINSTANCE_TABLE)))
-        return BSISUCCESS;
-
-    return db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName TEXT NOT NULL, V8ClassName TEXT NOT NULL, V8InstanceId TEXT NOT NULL, ECClassId INTEGER NOT NULL, ECInstanceId INTEGER NOT NULL, IsElement BOOL NOT NULL, V8FileSyncInfoId INTEGER NOT NULL,"
+    return db.ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName TEXT NOT NULL, V8ClassName TEXT NOT NULL, V8InstanceId TEXT NOT NULL, ECClassId INTEGER NOT NULL, ECInstanceId INTEGER NOT NULL, IsElement BOOL NOT NULL, V8FileSyncInfoId INTEGER NOT NULL,"
                          "PRIMARY KEY (V8SchemaName, V8ClassName, V8InstanceId, V8FileSyncInfoId))") == BE_SQLITE_OK ? BSISUCCESS : BSIERROR;
     }
 END_DGNDBSYNC_DGNV8_NAMESPACE

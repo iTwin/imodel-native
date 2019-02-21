@@ -286,19 +286,20 @@ void ECSchemaTests::VerifySyncInfo(DgnDbR db, DgnV8ModelP model, Utf8CP schemaNa
     RepositoryLinkId scope = FindRepositoryLinkIdByFilename(db, fileName);
     ASSERT_TRUE(scope.IsValid());
 
-    auto stmt = db.GetPreparedECSqlStatement("SELECT Version, Checksum FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Identifier = ? and Kind = 'Schema' AND Scope.Id=? ");
-    stmt->BindText(1, schemaName, BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->BindId(2, scope);
+    CachedStatementPtr stmt = nullptr;
+    auto stat = db.GetCachedStatement(stmt, "SELECT StrData FROM " BEDB_TABLE_Property " WHERE Id = ? and Name = ? AND NameSpace = 'dgn_V8Schema' ");
+    stmt->BindId(1, scope);
+    stmt->BindText(2, schemaName, BentleyApi::BeSQLite::Statement::MakeCopy::No);
 
     ASSERT_TRUE(BE_SQLITE_ROW == stmt->Step());
 
-    Utf8String version = stmt->GetValueText(0);
-    uint32_t storedVersionRead, versionWrite, storedVersionMinor;
-    BentleyApi::ECN::SchemaKey::ParseVersionString(storedVersionRead, versionWrite, storedVersionMinor, version.c_str());
+    uint32_t storedVersionRead, storedVersionMinor, storedChecksum;
+    BentleyApi::Json::Value  jsonObj;
+    ASSERT_TRUE(BentleyApi::Json::Reader::Parse(stmt->GetValueText(0), jsonObj));
 
-    Utf8String checksumStr = stmt->GetValueText(1);
-    uint32_t storedChecksum;
-    BE_STRING_UTILITIES_UTF8_SSCANF(checksumStr.c_str(), "%" PRIu32, &storedChecksum);
+    storedVersionRead = jsonObj["versionMajor"].asUInt();
+    storedVersionMinor = jsonObj["versionMinor"].asUInt();
+    storedChecksum = jsonObj["checksum"].asUInt();
 
     WString schemaXmlW;
     ECObjectsV8::SchemaKey key(WString(schemaName, true).c_str(), versionMajor, versionMinor);
@@ -726,8 +727,8 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
         RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
         DgnModelId editModelId;
@@ -737,7 +738,6 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
         DgnElementId dgnDbElementId2;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementId2, editModelId, eid2);
 
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         //db->Schemas().CreateClassViewsInDb();
         //db->SaveChanges();
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
@@ -782,8 +782,8 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
     DoUpdate(m_dgnDbFileName, m_v8FileName, false);
     if (true)
         {
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
         RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
         DgnModelId editModelId;
@@ -791,7 +791,6 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
         DgnElementId dgnDbElementId3;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementId3, editModelId, eid3);
 
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         auto dgnDbElement3 = db->Elements().GetElement(dgnDbElementId3);
         ASSERT_TRUE(dgnDbElement3.IsValid());
 
@@ -1147,8 +1146,8 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
 
     if (true)
         {
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
         RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
         DgnModelId editModelId;
@@ -1156,7 +1155,6 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
         DgnElementId dgnDbElementId;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eid);
 
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         //db->Schemas().CreateClassViewsInDb();
         //db->SaveChanges();
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
@@ -1562,6 +1560,66 @@ TEST_F(ECSchemaTests, UpdateWithNewSchemaAndChangedOldSchemas)
     ASSERT_TRUE(nullptr != ecSchema);
     ASSERT_TRUE(nullptr != ecSchema->GetClassCP("Child"));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, SequentialProcessing)
+    {
+    // This test mimics multiple bridges being processed sequentially.  The first bridge will find TestSchema and an instance of TestInstance, thereby properly classifying
+    // 'ClassA'.  On a subsequent update (or second bridge), the same TestSchema is found (but in an unprocessed file) from which an instance of the unused 'SecondClass' is found.
+    // The schema should be re-analyzed an imported, thereby properly classifying 'SecondClass'
+
+    // Unfortunately, this doesn't work because the schemas are not updated in this workflow.  The logic does not look at the checksums of the schemas to see if they have changed, only the
+    // version numbers.
+    LineUpFiles(L"SequentialProcessing.bim", L"Test3d.dgn", false);
+    ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
+    ECObjectsV8::ECClassP ecClass;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == schema->CreateClass(ecClass, L"SecondClass"));
+    ECObjectsV8::PrimitiveECPropertyP ecProperty;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == ecClass->CreatePrimitiveProperty(ecProperty, L"IntProp", ECObjectsV8::PrimitiveType::PRIMITIVETYPE_Integer));
+
+    DgnV8Api::ElementId eid;
+    ImportSchemaAndAddInstance(m_v8FileName, eid, schema);
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    {
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+    VerifyElement(eid, "ClassA", true);
+    }
+
+    BentleyApi::BeFileName secondV8File = GetOutputFileName(L"SecondV8.dgn");
+    BentleyApi::BeFileName seedFile = GetInputFileName(L"Test3d.dgn");
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(seedFile, secondV8File)) << "Unable to copy file \nSource: [" << Utf8String(seedFile.c_str()).c_str() << "]\nDestination: [" << Utf8String(secondV8File
+                                                                                                                                                                                                                                   .c_str()).c_str() << "]";
+    V8FileEditor v8editor2;
+    v8editor2.Open(secondV8File);
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor2.m_file)));
+    v8editor2.Save();
+
+    DgnV8Api::ElementId eid2;
+    v8editor2.AddLine(&eid2);
+    DgnV8Api::ElementHandle eh(eid2, v8editor2.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"ClassB"));
+    //EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"SecondClass"));
+
+    DoConvert(m_dgnDbFileName, secondV8File);
+    {
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    VerifyElement(eid, "ClassA", true); // Verify first element is still there and properly classified
+
+    auto rlink2 = FindRepositoryLinkIdByFilename(*db, secondV8File);
+
+    VerifyElement(eid2, "ClassB", true, rlink2); 
+    //VerifyElement(eid2, "SecondClass", false);
+    }
+
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                    Carole.MacDonald            01/2018

@@ -20,7 +20,7 @@ BEGTEST_NAME=$(programName)
 BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
-TestsHeaders = $(baseDir)DgnDbCreator.h
+TestsHeaders = $(baseDir)DgnDbCreator.h $(baseDir)Tests.h $(baseDir)BimUpgraderTestFixture.h
 
 # Let all stand-alone tests share the same gtestmain and TestFixture objects.
 o = $(OutputRootDir)build/BimUpgrader/$(programName)/
@@ -33,6 +33,9 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)gtestmain.obj               : $(BEGTEST_INPUT)gtestmain.cpp                 $(TestsHeaders) ${MultiCompileDepends}
 
+$(o)BimUpgraderTestFixture.obj  : $(BEGTEST_INPUT)BimUpgraderTestFixture.cpp     $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)UpgraderTests.obj           : $(BEGTEST_INPUT)UpgraderTests.cpp             $(TestsHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

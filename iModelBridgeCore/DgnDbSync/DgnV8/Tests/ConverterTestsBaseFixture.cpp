@@ -49,13 +49,6 @@ void ConverterTestBaseFixture::SetUp_CreateNewDgnDb()
     DgnDbPtr dgndb = DgnDb::CreateDgnDb(nullptr, m_seedDgnDbFileName, createProjectParams);
     ASSERT_TRUE(dgndb.IsValid());
 
-    auto sfilename = SyncInfo::GetDbFileName(m_seedDgnDbFileName);
-    if (sfilename.DoesPathExist())
-        {
-        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, sfilename.BeDeleteFile());
-        }
-    ASSERT_EQ(BSISUCCESS, SyncInfo::CreateEmptyFile(sfilename));
-    ASSERT_TRUE(sfilename.DoesPathExist());
     FunctionalDomain::GetDomain().ImportSchema(*dgndb);
     BentleyApi::Raster::RasterDomain::GetDomain().ImportSchema(*dgndb);
     BentleyApi::PointCloud::PointCloudDomain::GetDomain().ImportSchema(*dgndb);
@@ -461,9 +454,6 @@ void ConverterTestBaseFixture::LineUpFiles(BentleyApi::WCharCP outputDgnDbFileNa
     m_dgnDbFileName = GetOutputFileName(outputDgnDbFileName);
     DeleteExistingDgnDb(m_dgnDbFileName);
     MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
-    auto syncFile(SyncInfo::GetDbFileName(m_seedDgnDbFileName));
-    BentleyApi::BeFileName outSyncFile;
-    MakeWritableCopyOf(outSyncFile, syncFile, SyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
     if (doConvert)
         DoConvert(m_dgnDbFileName, m_v8FileName);
     }
@@ -558,9 +548,8 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     //  Count *all* of the models, from both files
     if (true)
         {
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        auto stmt = syncInfo.m_dgndb->GetPreparedECSqlStatement("SELECT COUNT(*) FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind=?)");
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        auto stmt = db->GetPreparedECSqlStatement("SELECT COUNT(*) FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind=?)");
         stmt->BindText(1, SyncInfo::ExternalSourceAspect::Kind::Model, BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BentleyApi::BeSQLite::BE_SQLITE_ROW, stmt->Step());
         int count = stmt->GetValueInt(0);
@@ -573,17 +562,16 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     DgnModelId editModelId;
     if (true)
         {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         //  Verify that Updater found the new element
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
-
+        SyncInfoReader syncInfo(m_params, db);
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, editV8FileName);
 
         syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, editV8ModelId);
 
         syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, editV8ElementId);
 
-        DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
+        DgnElementCPtr dgnDbElement = db->Elements().GetElement(dgnDbElementId);
         ASSERT_TRUE(dgnDbElement.IsValid());
 
         GeometrySource3dCP geomElement = dgnDbElement->ToGeometrySource3d();
@@ -618,15 +606,15 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
 
     if (true)
         {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         //  Verify that the DgnDb element was updated as expected
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
 
         DgnElementId dgnDbElementAfter;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editModelId, editV8ElementId);
         ASSERT_EQ(dgnDbElementId, dgnDbElementAfter) << L"modified V8 element should still be mapped to the same DgnDb element";
 
-        DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
+        DgnElementCPtr dgnDbElement = db->Elements().GetElement(dgnDbElementId);
         GeometrySource3dCP geomElement = dgnDbElement->ToGeometrySource3d();
         ASSERT_NE(nullptr, geomElement);
         BentleyApi::Placement3d placementAfter = geomElement->GetPlacement();
@@ -655,15 +643,15 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
 
     if (true)
         {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         //  Verify that the DgnDb element was deleted from both the db and syncinfo
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
 
         DgnElementId dgnDbElementAfter;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementAfter, editModelId, editV8ElementId, /*>>*/0/*<<*/);
         ASSERT_TRUE(!dgnDbElementAfter.IsValid()) << L"V8 element was deleted => we should not find a mapping to a DgnDb element";
 
-        DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
+        DgnElementCPtr dgnDbElement = db->Elements().GetElement(dgnDbElementId);
         ASSERT_TRUE(!dgnDbElement.IsValid());
         }
     }

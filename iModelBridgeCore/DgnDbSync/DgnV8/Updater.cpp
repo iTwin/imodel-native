@@ -18,7 +18,6 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeDetector::_Prepare(Converter& c)
     {
-    BeAssert (c.GetSyncInfo().IsValid());
     BeAssert (!c.WasAborted());
 
     c.PopulateRangePartIdMap(); // Populate range to partId map for update...

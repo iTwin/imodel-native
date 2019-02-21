@@ -10,19 +10,8 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
 //---------------------------------------------------------------------------------------
-SyncInfoReader::SyncInfoReader(Converter::Params& p) : m_params(&p)
+SyncInfoReader::SyncInfoReader(Converter::Params& p, DgnDbPtr db) : m_params(&p), m_dgndb(db)
     {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Sam.Wilson                      07/14
-//---------------------------------------------------------------------------------------
-void SyncInfoReader::AttachToDgnDb(BentleyApi::BeFileNameCR dbName)
-    {
-    m_dgndb = DgnDb::OpenDgnDb(nullptr, dbName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
-    BentleyApi::BeFileName syncInfoFileName = m_dgndb->GetFileName();
-    syncInfoFileName.append(L".syncinfo");
-    ASSERT_EQ( BE_SQLITE_OK , m_dgndb->AttachDb(BentleyApi::Utf8String(syncInfoFileName).c_str(), SYNCINFO_ATTACH_ALIAS) );
     }
 
 //---------------------------------------------------------------------------------------

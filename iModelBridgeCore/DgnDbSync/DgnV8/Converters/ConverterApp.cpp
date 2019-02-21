@@ -460,31 +460,6 @@ WString ConverterApp::_SupplySqlangRelPath()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ConverterApp::CreateSyncInfoIfNecessary()
-    {
-    //  If I am creating a new local file or if I just acquired a briefcase for an existing repository, then I will have to bootstrap syncinfo.
-    if (!SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist())
-        {
-        if (BSISUCCESS != SyncInfo::CreateEmptyFile(SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()))) // Bootstrap the V8 converter by pairing an empty syncinfo file with the briefcase
-            return BSIERROR;
-        }
-
-    BeAssert(SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist());
-
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterApp::_DeleteSyncInfo()
-    {
-    SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).BeDeleteFile();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
     {
     auto status = m_converter->MakeSchemaChanges();
@@ -512,7 +487,6 @@ BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
     m_converter->SetSkipEContent(skipECData);
     m_converter->SetDgnDb(db);
     m_converter->SetWantDebugCodes(m_params.GetWantDebugCodes());
-    CreateSyncInfoIfNecessary();
     return m_converter->AttachSyncInfo();
     }
 

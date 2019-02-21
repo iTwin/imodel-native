@@ -47,13 +47,10 @@ protected:
     WString _SupplySqlangRelPath() override;
     CmdLineArgStatus _ParseCommandLineArg(int iarg, int argc, WCharCP argv[]) override;
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
-    void _DeleteSyncInfo() override;
 
     //  For subclasses to override:
     virtual Converter::Params& _GetConverterParams() = 0;
     virtual BeFileName _GetLoggingConfigurationFilename(WCharCP argv0);
-
-    BentleyStatus CreateSyncInfoIfNecessary();
 
     WString GetCommonCommandLineOptions();
 

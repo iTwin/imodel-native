@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converters/TiledConverterApp.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbSync/DgnV8/ConverterApp.h>
@@ -107,7 +107,6 @@ BentleyStatus TiledConverterApp::_OnOpenBim(DgnDbR db)
     {
     m_converter.reset(new TiledFileConverter(m_params));
     m_converter->SetDgnDb(db);
-    CreateSyncInfoIfNecessary();
     return m_converter->AttachSyncInfo();
     }
 

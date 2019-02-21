@@ -27,8 +27,9 @@ public:
             Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql, isValid) {}
 
         public:
-            void GetSchemaInfo(ECN::SchemaKey &key, SyncInfo::SchemaExternalSourceAspect::Type& type, DgnDbR db);
+            ECN::SchemaKey GetSchemaKey() const;
             Utf8CP GetSchemaXml () const;
+            SyncInfo::ECSchemaMappingType GetMappingType() const;
             Entry const& operator* () const {return *this;}
             };
 

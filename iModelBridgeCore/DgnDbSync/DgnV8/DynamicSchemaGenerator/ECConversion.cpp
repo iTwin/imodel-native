@@ -586,36 +586,27 @@ Utf8CP V8ElementTypeHelper::ToString(V8ElementType v8ElementType)
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-bool V8ECClassInfo::TryFind(BECN::ECClassId& v8ClassId, BisConversionRule& rule, DgnDbR db, ECClassName const& v8ClassName, bool& hasSecondary)
+bool V8ECClassInfo::TryFind(BisConversionRule& rule, bool& hasSecondary, DgnDbR db, Utf8StringCR v8ClassName)
     {
-    if (!v8ClassName.IsValid())
-        {
-        BeAssert(false);
-        return false;
-        }
-
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT V8ClassId, BisConversionRule, HasSecondary FROM " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " WHERE V8SchemaName=? AND V8ClassName=?");
+
+    auto stat = db.GetCachedStatement(stmt, "SELECT StrData FROM " BEDB_TABLE_Property " WHERE Name=? AND NameSpace='dgn_V8Class'");
     if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement.");
-        return false;
-        }
+    {
+    BeAssert(false && "Could not retrieve cached statement.");
+    return false;
+    }
 
-    stmt->BindText(1, v8ClassName.GetSchemaName(), Statement::MakeCopy::No);
-    stmt->BindText(2, v8ClassName.GetClassName(), Statement::MakeCopy::No);
-
+    stmt->BindText(1, v8ClassName, BeSQLite::Statement::MakeCopy::No);
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        BeAssert(!stmt->IsColumnNull(0) && !stmt->IsColumnNull(1));
-
-        v8ClassId = stmt->GetValueId<BECN::ECClassId>(0);
-        rule = (BisConversionRule) stmt->GetValueInt(1);
-        hasSecondary = stmt->GetValueBoolean(2);
-
+        Json::Value  jsonObj;
+        if (!Json::Reader::Parse(stmt->GetValueText(0), jsonObj))
+            return false;
+        rule = (BisConversionRule) jsonObj["Rule"].asInt();
+        hasSecondary = jsonObj["HasSecondary"].asBool();
         return true;
         }
-
     return false;
     }
 
@@ -623,14 +614,14 @@ bool V8ECClassInfo::TryFind(BECN::ECClassId& v8ClassId, BisConversionRule& rule,
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR v8Eh, ECClassName const& v8ClassName, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, BisConversionTargetModelInfoCR targetModelInfo)
+BentleyStatus V8ECClassInfo::InsertOrUpdate(DynamicSchemaGenerator& converter, DgnV8EhCR v8Eh, ECClassName const& v8ClassName, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, BisConversionTargetModelInfoCR targetModelInfo)
     {
     const V8ElementType v8ElementType = V8ElementTypeHelper::GetType(v8Eh);
 
     BisConversionRule existingRule;
     BECN::ECClassId existingClassId;
-    bool hasSecondary;
-    const bool classInfoFound = TryFind(existingClassId, existingRule, converter.GetDgnDb(), v8ClassName, hasSecondary);
+    bool hasSecondary = false;
+    const bool classInfoFound = TryFind(existingRule, hasSecondary, converter.GetDgnDb(), v8ClassName.GetClassFullName());
 
     BisConversionRule rule = BisConversionRule::ToDefaultBisBaseClass;
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8Eh.GetHandler());
@@ -652,54 +643,41 @@ BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR
             {
             Utf8PrintfString info("Multiple rules for ECClass '%s'. Using %s and creating a secondary Aspect class.", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(rule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
-            Update(converter, existingClassId, rule, true);
+            Save(converter.GetDgnDb(), v8ClassName, rule, true);
+            return BSISUCCESS;
             }
         else if (rule == BisConversionRule::ToAspectOnly)
             {
             Utf8PrintfString info("Multiple rules for ECClass '%s'. Using %s and creating a secondary Aspect class.", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(existingRule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
-            Update(converter, existingClassId, existingRule, true);
+            Save(converter.GetDgnDb(), v8ClassName, existingRule, true);
+            return BSISUCCESS;
             }
-        else
+        else if (existingRule != BisConversionRule::ToDefaultBisBaseClass)
             {
             Utf8PrintfString info("Ambiguous conversion rules found for ECClass '%s': %s versus %s. Keeping the previous one", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(existingRule), BisConversionRuleHelper::ToString(rule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
+            return BSISUCCESS;
             }
-        return BSISUCCESS;
+        return Save(converter.GetDgnDb(), v8ClassName, rule, hasSecondary);
         }
 
-    return DoInsert(converter.GetDgnDb(), v8ClassName, rule);
+    return Save(converter.GetDgnDb(), v8ClassName, rule, hasSecondary);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus V8ECClassInfo::InsertOrUpdate(DynamicSchemaGenerator& converter, ECClassName const& v8ClassName, BisConversionRule rule)
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus V8ECClassInfo::InsertOrUpdate(DynamicSchemaGenerator& gen, ECClassName const& className, BisConversionRule rule, bool hasSecondary)
     {
-    BisConversionRule existingRule;
-    BECN::ECClassId existingClassId;
-    bool hasSecondary;
-    if (TryFind(existingClassId, existingRule, converter.GetDgnDb(), v8ClassName, hasSecondary))
-        return Update(converter, existingClassId, rule, hasSecondary);
-
-    return Insert(converter, v8ClassName, rule);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     07/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, ECClassName const& v8ClassName, BisConversionRule rule)
-    {
-    return DoInsert(converter.GetDgnDb(), v8ClassName, rule);
+    return Save(gen.GetDgnDb(), className, rule, hasSecondary);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus V8ECClassInfo::DoInsert(DgnDbR db, ECClassName const& v8ClassName, BisConversionRule rule)
+BentleyStatus V8ECClassInfo::Save(DgnDbR db, ECClassName const& v8ClassName, BisConversionRule rule, bool hasSecondary)
     {
     if (!v8ClassName.IsValid())
         {
@@ -707,80 +685,37 @@ BentleyStatus V8ECClassInfo::DoInsert(DgnDbR db, ECClassName const& v8ClassName,
         return BSIERROR;
         }
 
-    CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " (V8SchemaName,V8ClassName,BisConversionRule) VALUES (?,?,?)");
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement.");
-        return BSIERROR;
-        }
+    Json::Value jsonObj;
+    jsonObj["Rule"] = (int) rule;
+    jsonObj["HasSecondary"] = hasSecondary;
+    return BeSQLite::DbResult::BE_SQLITE_OK == db.SavePropertyString(DgnV8Class::V8Info(v8ClassName.GetClassFullName().c_str()), jsonObj.ToString()) ? BSISUCCESS : BSIERROR;
 
-    stmt->BindText(1, v8ClassName.GetSchemaName(), Statement::MakeCopy::No);
-    stmt->BindText(2, v8ClassName.GetClassName(), Statement::MakeCopy::No);
-    stmt->BindInt(3, (int) rule);
+    //CachedStatementPtr stmt = nullptr;
+    //auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " (V8SchemaName,V8ClassName,BisConversionRule) VALUES (?,?,?)");
+    //if (stat != BE_SQLITE_OK)
+    //    {
+    //    BeAssert(false && "Could not retrieve cached statement.");
+    //    return BSIERROR;
+    //    }
 
-    return BE_SQLITE_DONE == stmt->Step() ? BSISUCCESS : BSIERROR;
-    }
+    //stmt->BindText(1, v8ClassName.GetSchemaName(), Statement::MakeCopy::No);
+    //stmt->BindText(2, v8ClassName.GetClassName(), Statement::MakeCopy::No);
+    //stmt->BindInt(3, (int) rule);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus V8ECClassInfo::Update(DynamicSchemaGenerator& converter, BECN::ECClassId v8ClassId, BisConversionRule rule, bool hasSecondary)
-    {
-    if (!v8ClassId.IsValid())
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-
-    CachedStatementPtr stmt = nullptr;
-    DbResult stat = converter.GetDgnDb().GetCachedStatement(stmt, "UPDATE " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " SET BisConversionRule=?, HasSecondary=? WHERE V8ClassId=?");
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement.");
-        return BSIERROR;
-        }
-
-    stmt->BindInt(1, (int) rule);
-    stmt->BindBoolean(2, hasSecondary);
-    stmt->BindId(3, v8ClassId);
-    return BE_SQLITE_DONE == stmt->Step() ? BSISUCCESS : BSIERROR;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus V8ECClassInfo::CreateTable(DgnDbR db)
-    {
-    if (db.TableExists(SYNCINFO_ATTACH(V8ECCLASS_TABLE)))
-        return BSISUCCESS;
-
-    if (BE_SQLITE_OK != db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " (V8ClassId INTEGER PRIMARY KEY, V8SchemaName TEXT NOT NULL, V8ClassName TEXT NOT NULL, BisConversionRule INTEGER NOT NULL, HasSecondary BOOL DEFAULT 0)"))
-        return BSIERROR;
-
-    if (BE_SQLITE_OK != db.ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(V8ECCLASS_TABLE) "_uix ON " V8ECCLASS_TABLE " (V8SchemaName, V8ClassName)"))
-        return BSIERROR;
-
-    return BSISUCCESS;
+    //return BE_SQLITE_DONE == stmt->Step() ? BSISUCCESS : BSIERROR;
     }
 
 //****************************************************************************************
 // V8ElementECClassInfo
 //****************************************************************************************
-#define V8ELEMENT_SECONDARYCLASSMAPPING_TABLE SYNCINFO_TABLE("V8ElementSecondaryECClass")
+#define V8ELEMENT_SECONDARYCLASSMAPPING_TABLE "V8ElementSecondaryECClass"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus V8ElementSecondaryECClassInfo::CreateTable(DgnDbR db)
     {
-    if (db.TableExists(SYNCINFO_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE)))
-        return BSISUCCESS;
-
-    return db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " (V8ElementId INTEGER NOT NULL, V8SchemaName, V8ClassName, "
+    return db.ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " (V8ElementId INTEGER NOT NULL, V8SchemaName, V8ClassName, "
                          " PRIMARY KEY (V8ElementId, V8SchemaName, V8ClassName))") == BE_SQLITE_OK ? BSISUCCESS : BSIERROR;
     }
 
@@ -790,7 +725,7 @@ BentleyStatus V8ElementSecondaryECClassInfo::CreateTable(DgnDbR db)
 BentleyStatus V8ElementSecondaryECClassInfo::Insert(DgnDbR db, DgnV8EhCR el, ECClassName const& v8Class)
     {
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " (V8ElementId, V8SchemaName, V8ClassName) VALUES (?, ?, ?)");
+    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " TEMPTABLE_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " (V8ElementId, V8SchemaName, V8ClassName) VALUES (?, ?, ?)");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert(false && "Could not retrieve cached statement for V8ElementECClassInfo::Insert");
@@ -811,7 +746,7 @@ BentleyStatus V8ElementSecondaryECClassInfo::Insert(DgnDbR db, DgnV8EhCR el, ECC
 bool V8ElementSecondaryECClassInfo::TryFind(DgnDbR db, DgnV8EhCR el, ECClassName const& ecClassName)
     {
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT V8SchemaName, V8ClassName FROM " SYNCINFO_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " WHERE V8ElementId = ? AND V8SchemaName=? AND V8ClassName=?");
+    auto stat = db.GetCachedStatement(stmt, "SELECT V8SchemaName, V8ClassName FROM " TEMPTABLE_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " WHERE V8ElementId = ? AND V8SchemaName=? AND V8ClassName=?");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert(false && "Could not retrieve cached statement for V8ElementECClassInfo::Find.");
@@ -835,7 +770,7 @@ bool V8ElementSecondaryECClassInfo::TryFind(DgnDbR db, DgnV8EhCR el, ECClassName
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BeSQLite::DbResult V8ECSchemaXmlInfo::Insert(DgnDbR db, BECN::ECSchemaId schemaId, Utf8CP schemaXml)
+BeSQLite::DbResult V8ECSchemaXmlInfo::Insert(DgnDbR db, ECN::ECSchemaId schemaId, Utf8CP schemaXml)
     {
     if (!schemaId.IsValid() || Utf8String::IsNullOrEmpty(schemaXml))
         {
@@ -872,12 +807,13 @@ BeSQLite::DbResult V8ECSchemaXmlInfo::CreateTable(DgnDbR db)
 //****************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
 V8ECSchemaXmlInfo::Iterable::const_iterator V8ECSchemaXmlInfo::Iterable::begin() const
     {
     if (m_stmt == nullptr)
-        m_db->GetCachedStatement(m_stmt, "SELECT x.Id ,x.Xml FROM " TEMPTABLE_ATTACH(V8ECSCHEMAXML_TABLE) " x");
+        m_db->GetCachedStatement(m_stmt, "SELECT be.Name, be.StrData, x.Xml FROM " TEMPTABLE_ATTACH(V8ECSCHEMAXML_TABLE) " x, "
+                                 BEDB_TABLE_Property " be WHERE x.Id = be.rowid");
     else
         m_stmt->Reset();
 
@@ -885,35 +821,19 @@ V8ECSchemaXmlInfo::Iterable::const_iterator V8ECSchemaXmlInfo::Iterable::begin()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-void V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaInfo(BECN::SchemaKey& key, SyncInfo::SchemaExternalSourceAspect::Type& type, DgnDbR db)
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::SchemaKey V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaKey() const
     {
-    auto id = m_sql->GetValueId<DgnElementId>(0);
-    Utf8String ecsql = "SELECT Identifier, Version, JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ECInstanceId=? and Kind='Schema'";
 
-    auto stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
-    stmt->BindId(1, id);
+    Json::Value  jsonObj;
+    if (!Json::Reader::Parse(m_sql->GetValueText(1), jsonObj))
+        return ECN::SchemaKey();
 
-    if (BE_SQLITE_ROW != stmt->Step())
-        return;
-
-    Utf8String version = stmt->GetValueText(1);
-    Utf8String checksum = stmt->GetValueText(2);
-
-    key.m_schemaName = stmt->GetValueText(0);
-
-    uint32_t versionWrite;
-    ECN::SchemaKey::ParseVersionString(key.m_versionRead, versionWrite, key.m_versionMinor, version.c_str());
-
+    ECN::SchemaKey schemaKey(m_sql->GetValueText(0), jsonObj["versionMajor"].asUInt(), jsonObj["versionMinor"].asUInt());
     Utf8String xml(GetSchemaXml());
-    key.m_checksum = ECN::ECSchema::ComputeSchemaXmlStringCheckSum(xml.c_str(), xml.length());
-
-    Utf8String jsonProp = stmt->GetValueText(2);
-    rapidjson::Document doc;
-    doc.Parse(jsonProp.c_str());
-    type = doc["isDynamic"].IsTrue() ? SyncInfo::SchemaExternalSourceAspect::Type::Dynamic : SyncInfo::SchemaExternalSourceAspect::Type::Identity;
-
+    schemaKey.m_checksum = ECN::ECSchema::ComputeSchemaXmlStringCheckSum(xml.c_str(), xml.length());
+    return schemaKey;
     }
 
 //---------------------------------------------------------------------------------------
@@ -921,7 +841,17 @@ void V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaInfo(BECN::SchemaKey& key, Syn
 //---------------------------------------------------------------------------------------
 Utf8CP V8ECSchemaXmlInfo::Iterable::Entry::GetSchemaXml() const
     {
-    return m_sql->GetValueText(1);
+    return m_sql->GetValueText(2);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+SyncInfo::ECSchemaMappingType V8ECSchemaXmlInfo::Iterable::Entry::GetMappingType() const
+    {
+    rapidjson::Document doc;
+    doc.Parse(m_sql->GetValueText(1));
+    return doc["isDynamic"].IsTrue() ? SyncInfo::ECSchemaMappingType::Dynamic : SyncInfo::ECSchemaMappingType::Identity;
     }
 
 //****************************************************************************************
@@ -1296,9 +1226,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
     for (auto entry : V8ECSchemaXmlInfo::Iterable(GetDgnDb()))
         {
-        BECN::SchemaKey key;
-        SyncInfo::SchemaExternalSourceAspect::Type type;
-        entry.GetSchemaInfo(key, type, GetDgnDb());
+        BECN::SchemaKey key = entry.GetSchemaKey();
+        bool isDynamic = entry.GetMappingType() == SyncInfo::ECSchemaMappingType::Dynamic;
         Utf8String schemaName(key.GetName().c_str());
         if (0 == BeStringUtilities::Strnicmp("EWR", schemaName.c_str(), 3))
             {
@@ -1308,7 +1237,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
         targetSchemaNames.insert(schemaName);
         Utf8CP schemaXml = entry.GetSchemaXml();
-        if (type == SyncInfo::SchemaExternalSourceAspect::Type::Dynamic)
+        if (isDynamic)
             schemaXmlDeserializer.AddSchemaXml(schemaName.c_str(), key, schemaXml);
         else
             schemaXmlDeserializer.AddSchemaXml(key.GetFullSchemaName().c_str(), key, schemaXml);
@@ -2377,7 +2306,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3))
             v8ClassName = ECClassName("EWR", v8ClassName.GetClassName());
 
-        if (BentleyApi::SUCCESS != V8ECClassInfo::Insert(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModelInfo))
+        if (BentleyApi::SUCCESS != V8ECClassInfo::InsertOrUpdate(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModelInfo))
             return BSIERROR;
         if (!isPrimary && (BentleyApi::SUCCESS != V8ElementSecondaryECClassInfo::Insert(GetDgnDb(), v8Element, v8ClassName)))
             return BSIERROR;
@@ -2902,14 +2831,14 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
     Utf8String schemaName(schemaKey.GetName().c_str());
 
     ECObjectsV8::SchemaKey existingSchemaKey;
-    SyncInfo::SchemaExternalSourceAspect::Type existingMappingType = SyncInfo::SchemaExternalSourceAspect::Type::Identity;
-    
-    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), RepositoryLinkId()))
+    SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
+
+    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName, RepositoryLinkId()))
         {
         //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
         //and also check whether the existing one and the new one are compatible.
 
-        if (existingMappingType == SyncInfo::SchemaExternalSourceAspect::Type::Dynamic)
+        if (existingMappingType == SyncInfo::ECSchemaMappingType::Dynamic)
             {
             if (!isDynamicSchema)
                 {
@@ -2941,7 +2870,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                     {
                     Utf8String error;
                     error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
-                                  Utf8String(existingSchemaKey.GetFullSchemaName().c_str()).c_str(), existingSchemaKey.m_checkSum,
+                                  Utf8String(schemaKey.GetFullSchemaName().c_str()).c_str(), existingSchemaKey.m_checkSum,
                                   Converter::IssueReporter::FmtModel(v8Model).c_str(), schemaKey.m_checkSum);
                     ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                     }
@@ -2950,57 +2879,31 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                     // If on a previous conversion we found the schema but it wasn't used, it will have an entry in the SyncInfo table but won't actually exist in the dgndb.  We still need to import it
                     if (m_converter.IsUpdating())
                         {
+                        // Already exists and imported
                         if (GetDgnDb().Schemas().GetSchema(schemaName, false) != nullptr)
-                            {
-                            DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
-                            SyncInfo::SchemaExternalSourceAspect aspect = SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(*repositoryLink, schemaName);
-                            if (!aspect.IsValid())
-                                return BSIERROR;
-                            iModelExternalSourceAspect::SourceState state;
-                            state.m_version = ECN::SchemaKey::FormatLegacySchemaVersion(schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor());
-                            state.m_checksum.Sprintf("%02" PRIu32, schemaKey.m_checkSum);
-                            aspect.SetSourceState(state);
-                            repositoryLink->Update();
                             return BSISUCCESS;
-                            }
                         }
-                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP())))
+                    // If the existing entry we found was actually for this file, then do nothing.
+                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName, Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP())))
                         return BSISUCCESS;
                     }
                 }
             }
         }
 
-    DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
-    SyncInfo::SchemaExternalSourceAspect xsa = SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(*repositoryLink, schemaName);
     ECN::ECSchemaId schemaId;
-    if (!xsa.IsValid())
-        {
-        RepositoryLinkId scopeId = m_converter.GetRepositoryLinkId(*v8Model.GetDgnFileP());
-        if (!scopeId.IsValid() || Utf8String::IsNullOrEmpty(schemaName.c_str()))
-            {
-            BeAssert(false && "Failed to insert ECSchema sync info");
-            return BSIERROR;
-            }
 
-        auto aspect = SyncInfo::SchemaExternalSourceAspect::CreateAspect(scopeId, schemaName.c_str(), schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor(), isDynamicSchema, schemaKey.m_checkSum, GetDgnDb());
-        auto repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(scopeId);
-        aspect.AddAspect(*repositoryLink);
-        repositoryLink->Update();
-        schemaId = ECN::ECSchemaId(aspect.GetECInstanceId().GetValueUnchecked());
-        }
-    else
+    DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
+    if (BeSQLite::DbResult::BE_SQLITE_OK != GetSyncInfo().InsertSchema(schemaId, repositoryLink->GetElementId(),
+                                                     schemaName.c_str(),
+                                                     schemaKey.GetVersionMajor(),
+                                                     schemaKey.GetVersionMinor(),
+                                                     isDynamicSchema,
+                                                     schemaKey.m_checkSum))
         {
-        iModelExternalSourceAspect::SourceState state;
-        state.m_version = ECN::SchemaKey::FormatLegacySchemaVersion(schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor());
-        state.m_checksum.Sprintf("%02" PRIu32, schemaKey.m_checkSum);
-        xsa.SetSourceState(state);
-        repositoryLink->Update();
-        schemaId = ECN::ECSchemaId(xsa.GetECInstanceId().GetValueUnchecked());
-        }
-    BeAssert(schemaId.IsValid());
-    if (!schemaId.IsValid())
+        BeAssert(false && "Failed to insert ECSchema sync info");
         return BSIERROR;
+        }
 
     if (BE_SQLITE_OK != V8ECSchemaXmlInfo::Insert(GetDgnDb(), schemaId, schemaXml))
         {
@@ -3219,7 +3122,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             if (stat != BentleyApi::SUCCESS)
                 {
                 Utf8PrintfString msg("Could not read v8 ECSchema XML for '%s'.", v8SchemaName.c_str());
-                ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
+                ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
                 OnFatalError(Converter::IssueCategory::MissingData());
                 return;
                 }
@@ -3238,14 +3141,14 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             if (externalSchema == nullptr)
                 {
                 Utf8PrintfString msg("Could not locate external v8 ECSchema '%s'", v8SchemaName.c_str());
-                ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
+                ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
                 OnFatalError(Converter::IssueCategory::MissingData());
                 return;
                 }
             if (ECObjectsV8::SCHEMA_WRITE_STATUS_Success != externalSchema->WriteToXmlString(schemaXml))
                 {
                 Utf8PrintfString msg("Could not serialize external v8 ECSchema '%s'", v8SchemaName.c_str());
-                ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::CorruptData(), Converter::Issue::Error(), "Could not serialize external v8 ECSchema.");
+                ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::CorruptData(), Converter::Issue::Error(), "Could not serialize external v8 ECSchema.");
                 OnFatalError(Converter::IssueCategory::CorruptData());
                 return;
                 }
@@ -3260,7 +3163,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
                 !IsDynamicSchema(v8SchemaName.c_str(), schemaXml))
                 {
                 Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema yet the version is the same as or lower than the version stored.  Minor version must be greater than stored version in order to update.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
-                ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
+                ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
                 OnFatalError(Converter::IssueCategory::InconsistentData());
                 return;
 
@@ -3662,7 +3565,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {
         //schemas not captured in sync info are system schemas which we don't consider during conversion
-        if (!GetSyncInfo().ContainsECSchema(Utf8String(entry.RelationshipSchemaName.c_str()).c_str()))
+        if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(Utf8String(entry.RelationshipSchemaName.c_str())))
             continue;
 
         V8ECInstanceKey v8SourceKey(ECClassName(Utf8String(entry.SourceSchemaName.c_str()).c_str(), Utf8String(entry.SourceClassName.c_str()).c_str()),
@@ -3674,8 +3577,11 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
 
         BisConversionRule rule;
         bool hasSecondary;
-        if (!V8ECClassInfo::TryFind(rule, dgndb, v8RelName, hasSecondary))
+        if (!V8ECClassInfo::TryFind(rule, hasSecondary, dgndb, v8RelName.GetClassFullName()))
             {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Failed to find rule for %s.", v8RelName.GetClassFullName().c_str());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             BeAssert(false && "V8ECClassInfo should exist for relationship classes.");
             continue;
             }

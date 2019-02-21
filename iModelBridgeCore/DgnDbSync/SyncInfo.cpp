@@ -12,12 +12,12 @@
 #undef LOG
 #define LOG (*LoggingManager::GetLogger(L"DgnV8Converter.SyncInfo"))
 
-#define MUSTBEDBRESULT(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {SetLastError(rc); return BSIERROR;}}
+#define MUSTBEDBRESULT(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {return BSIERROR;}}
 #define MUSTBEOK(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_OK)
 #define MUSTBEROW(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_ROW)
 #define MUSTBEDONE(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_DONE)
 
-#define MUSTBEDBRESULTRC(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {SetLastError(rc); return rc;}}
+#define MUSTBEDBRESULTRC(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {return rc;}}
 #define MUSTBEOKRC(stmt) MUSTBEDBRESULTRC(stmt,BE_SQLITE_OK)
 #define MUSTBEROWRC(stmt) MUSTBEDBRESULTRC(stmt,BE_SQLITE_ROW)
 #define MUSTBEDONERC(stmt) MUSTBEDBRESULTRC(stmt,BE_SQLITE_DONE)
@@ -46,121 +46,18 @@ static void fixedArrayFromJson(double* darray, size_t count, rapidjson::Value co
         darray[i] = jdbls[i].GetDouble();
         }
     }
-
-static ProfileVersion s_currentVersion(0, 1, 0, 0);
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SyncInfo::SavePropertyString(PropertySpecCR spec, Utf8CP stringData, uint64_t id, uint64_t subId)
-    {
-    Statement stmt;
-    auto rc = stmt.Prepare(*m_dgndb, "INSERT OR REPLACE INTO " SYNCINFO_ATTACH(BEDB_TABLE_Property) " (Namespace,Name,Id,SubId,TxnMode,StrData) VALUES(?,?,?,?,?,?)");
-    if (BE_SQLITE_OK != rc)
-        return  rc;
-
-    int col = 1;
-    stmt.BindText(col++, spec.GetNamespace(), Statement::MakeCopy::No);
-    stmt.BindText(col++, spec.GetName(), Statement::MakeCopy::No);
-    stmt.BindInt64(col++, id);
-    stmt.BindInt64(col++, subId);
-    stmt.BindInt(col++, 0);
-    stmt.BindText(col++, stringData, Statement::MakeCopy::No);
-    rc = stmt.Step();
-    return (BE_SQLITE_DONE == rc) ? BE_SQLITE_OK : rc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SyncInfo::QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t id, uint64_t subId) const
-    {
-    Statement stmt;
-    DbResult rc = stmt.Prepare(*m_dgndb, "SELECT StrData FROM " SYNCINFO_ATTACH(BEDB_TABLE_Property) " WHERE Namespace=? AND Name=? AND Id=? AND SubId=?");
-    if (BE_SQLITE_OK != rc)
-        return rc;
-
-    int col = 1;
-    stmt.BindText(col++, spec.GetNamespace(), Statement::MakeCopy::No);
-    stmt.BindText(col++, spec.GetName(), Statement::MakeCopy::No);
-    stmt.BindInt64(col++, id);
-    stmt.BindInt64(col++, subId);
-    rc = stmt.Step();
-    if (BE_SQLITE_ROW != rc)
-        return rc;
-
-    value.AssignOrClear(stmt.GetValueText(0));
-    return  BE_SQLITE_ROW;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::CreateTables()
+BentleyStatus SyncInfo::Initialize(DgnDb& project)
     {
-    if (nullptr == m_dgndb)
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-
-
+    m_dgndb = &project;
+    // These are all just temporary tables. 
     CreateNamedGroupTable();
-    CreateECTables();
-
-    m_dgndb->SaveChanges();
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::CreateECTables()
-    {
-    V8ECClassInfo::CreateTable(*m_dgndb);
     ECInstanceInfo::CreateTable(*m_dgndb);
     V8ECSchemaXmlInfo::CreateTable(*m_dgndb);
     V8ElementSecondaryECClassInfo::CreateTable(*m_dgndb);
-    }
-
-// TOOD: Get rid of this
-struct SyncInfoProperty
-{
-    struct Spec : BeSQLite::PropertySpec
-        {
-        Spec(BentleyApi::Utf8CP name) : PropertySpec(name, "SyncInfo", PropertySpec::Mode::Normal, PropertySpec::Compress::No) {}
-        };
-
-    static Spec ProfileVersion()       {return Spec("SchemaVersion");}
-    static Spec DgnDbGuid()            {return Spec("DgnDbGuid");}
-    static Spec DbProfileVersion()     {return Spec("DbSchemaVersion");}
-    static Spec DgnDbProfileVersion()  {return Spec("DgnDbSchemaVersion");}
-};
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Sam.Wilson                      07/14
-//---------------------------------------------------------------------------------------
-BentleyStatus SyncInfo::PerformVersionChecks()
-    {
-    //  Look at the stored version and see if we have to upgrade
-    Utf8String versionString;
-    MUSTBEROW(QueryProperty(versionString, SyncInfoProperty::ProfileVersion()));
-
-    ProfileVersion storedVersion(0, 0, 0, 0);
-    storedVersion.FromJson(versionString.c_str());
-
-    if (storedVersion.CompareTo(s_currentVersion) == 0)
-        return BSISUCCESS;
-
-    if (storedVersion.CompareTo(s_currentVersion) > 0)
-        { // version is too new!
-        LOG.errorv("compatibility error - storedVersion=%s > currentVersion=%s", versionString.c_str(), s_currentVersion.ToJson().c_str());
-        return BSIERROR;
-        }
-
-    //  Upgrade - when we change the syncInfo schema, add upgrade steps here ...
-
-    //  Upgraded. Update the stored version.
-    MUSTBEOK(SavePropertyString(SyncInfoProperty::ProfileVersion(), s_currentVersion.ToJson().c_str()));
+    m_dgndb->SaveChanges();
     return BSISUCCESS;
     }
 
@@ -600,35 +497,6 @@ DgnCategoryId SyncInfo::GetCategory(DgnV8EhCR v8Eh, ResolvedModelMapping const& 
         categoryId = FindCategory(v8Level, *v8Eh.GetDgnModelP()->GetDgnFileP(), ltype);
 
     return (categoryId.IsValid() ? categoryId : GetConverter().GetUncategorizedCategory()); // return uncategorized if we didn't find a valid category...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName SyncInfo::GetDbFileName(BeFileNameCR dbname)
-    {
-    BeFileName name(dbname);
-    name.append(L".syncinfo");
-    return name;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName SyncInfo::GetDbFileName (DgnDb& db)
-    {
-    return GetDbFileName(BeFileName(db.GetDbFileName(), BentleyCharEncoding::Utf8));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::AttachToProject(DgnDb& targetProject, BeFileNameCR dbName)
-    {
-    DbResult rc = targetProject.AttachDb(Utf8String(dbName).c_str(), SYNCINFO_ATTACH_ALIAS);
-    if (BE_SQLITE_OK != rc)
-        return BSIERROR;
-    return OnAttach(targetProject);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1133,214 +1001,74 @@ BeSQLite::EC::CachedECSqlStatementPtr SyncInfo::ViewDefinitionExternalSourceAspe
     return stmt;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::OnAttach(DgnDb& project)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BeSQLite::DbResult SyncInfo::InsertSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId, DgnElementId repositoryId, Utf8StringCR schemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic,
+                                uint32_t checksum)
     {
-    m_dgndb = &project;
+    BeAssert(0 != checksum);
 
-    if (!m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)))
-        {
-        // We are creating a new syncinfo file
-        Utf8String currentDbProfileVersion;
-        m_dgndb->QueryProperty(currentDbProfileVersion, Properties::ProfileVersion());
-
-        MUSTBEOK(SavePropertyString(SyncInfoProperty::ProfileVersion(), s_currentVersion.ToJson().c_str()));
-        MUSTBEOK(SavePropertyString(Properties::CreationDate(), DateTime::GetCurrentTimeUtc().ToString().c_str()));
-        MUSTBEOK(SavePropertyString(SyncInfoProperty::DgnDbGuid(), m_dgndb->GetDbGuid().ToString().c_str()));
-        MUSTBEOK(SavePropertyString(SyncInfoProperty::DbProfileVersion(), currentDbProfileVersion.c_str()));
-        MUSTBEOK(SavePropertyString(SyncInfoProperty::DgnDbProfileVersion(), m_dgndb->GetProfileVersion().ToJson().c_str()));
-        // *** WIP_CONVERTER - I'd like to save project's last save time
-
-        CreateTables();
-        SetValid(true);
-        return BSISUCCESS;
-        }
-
-    //  We are opening an existing syncinfo file
-    if (PerformVersionChecks() != BSISUCCESS)
-        return BSIERROR;
-
-    //  Check that this syncinfo goes with this project
-    Utf8String projguidstr;
-    BeSQLite::BeGuid projguid;
-    if (QueryProperty(projguidstr, SyncInfoProperty::DgnDbGuid()) != BE_SQLITE_ROW
-        || projguid.FromString(projguidstr.c_str()) != BSISUCCESS
-        || m_dgndb->GetDbGuid() != projguid)
-        {
-        LOG.errorv("GUID mismatch. syncinfo=%s projectguid=%s does not match project guid=%s",
-                   m_dgndb->GetDbFileName(), projguidstr.c_str(), m_dgndb->GetDbGuid().ToString().c_str());
-        return BSIERROR;
-        }
-
-    Utf8String savedProjectDbProfileVersion, currentProjectDbProfileVersion;
-    if (QueryProperty(savedProjectDbProfileVersion, SyncInfoProperty::DbProfileVersion()) != BE_SQLITE_ROW
-        || m_dgndb->QueryProperty(currentProjectDbProfileVersion, Properties::ProfileVersion()) != BE_SQLITE_ROW
-        || !savedProjectDbProfileVersion.Equals(currentProjectDbProfileVersion))
-        {
-        LOG.warningv("DB schema version mismatch. syncinfo=%s ProjectDbProfileVersion=%s does not match project ProfileVersion=%s.",
-                     m_dgndb->GetDbFileName(), savedProjectDbProfileVersion.c_str(), currentProjectDbProfileVersion.c_str());
-        // *** WIP_CONVERTER - Do we really have to throw away project history whenever we make a trivial schema change?
-        return BSISUCCESS;//BSIERROR; *** WIP_CONVERTER - support schema evolution 
-        }
-
-    Utf8String currentProjectProfileVersion = m_dgndb->GetProfileVersion().ToJson();
-    Utf8String savedProjectProfileVersion;
-    if (QueryProperty(savedProjectProfileVersion, SyncInfoProperty::DgnDbProfileVersion()) != BE_SQLITE_ROW
-        || !savedProjectProfileVersion.Equals(currentProjectProfileVersion))
-        {
-        LOG.warningv("project schema version mismatch. syncinfo=%s ProjectProfileVersion=%s does not match project ProjectProfileVersion=%s.",
-                     m_dgndb->GetDbFileName(), savedProjectProfileVersion.c_str(), currentProjectProfileVersion.c_str());
-        // *** WIP_CONVERTER - Do we really have to throw away project history whenever we make a trivial schema change?
-        return BSISUCCESS;//BSIERROR; *** WIP_CONVERTER - support schema evolution 
-        }
-
-    CreateTables();  // We STILL call CreateTables. That gives EC a chance to create its TEMP tables.
-
-    SetValid(true);
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncInfo::CreateEmptyFile(BeFileNameCR fileName, bool deleteIfExists)
-    {
-    if (deleteIfExists)
-        fileName.BeDeleteFile();
-
-    Utf8String dbName(fileName);
-    Db bootStrapper;
-    auto rc = bootStrapper.CreateNewDb(dbName.c_str());
-    if (rc != BE_SQLITE_OK)
-        {
-        LOG.errorv("%s - cannot create. Error code=%s", dbName.c_str(), Db::InterpretDbResult(rc));
-        return BSIERROR;
-        }
-
-    bootStrapper.CloseDb();
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::SetLastError(BeSQLite::DbResult rc)
-    {
-    m_lastError = rc;
-    m_lastErrorDescription = m_dgndb->GetLastError();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::GetLastError(BeSQLite::DbResult& result, Utf8String& descr)
-    {
-    result = m_lastError;
-    descr = m_lastErrorDescription;
+    Json::Value jsonObj;
+    jsonObj["versionMajor"] = v8SchemaVersionMajor;
+    jsonObj["versionMinor"] = v8SchemaVersionMinor;
+    jsonObj["checksum"] = checksum;
+    jsonObj["isDynamic"] = isDynamic;
+    BeSQLite::DbResult result;
+    if (BeSQLite::DbResult::BE_SQLITE_OK != (result = m_dgndb->SavePropertyString(DgnV8Schema::V8Info(schemaName.c_str()), jsonObj.ToString(), repositoryId.GetValue())))
+        return result;
+    insertedSchemaId = BECN::ECSchemaId((uint64_t) m_dgndb->GetLastInsertRowId());
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::CreateAspect(DgnElementId scopeId, Utf8StringCR schemaName, uint32_t v8ProfileVersionMajor, uint32_t v8ProfileVersionMinor,
-                                                                                        bool isDynamic, uint32_t checksum, DgnDbR db)
+bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& type, Utf8StringCR v8SchemaName, DgnElementId scope)
     {
-    BeAssert(scopeId.IsValid());
+    CachedStatementPtr stmt = nullptr;
+    Utf8String sql("SELECT StrData FROM " BEDB_TABLE_Property " WHERE Name=? AND NameSpace='dgn_V8Schema'");
+    if (scope.IsValid())
+        sql.append(" AND Id=?");
 
-    auto aspectClass = GetAspectClass(db);
-    if (nullptr == aspectClass)
-        return SchemaExternalSourceAspect(nullptr);
+    auto stat = m_dgndb->GetCachedStatement(stmt, sql.c_str());
+    if (stat != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Could not retrieve cached statement.");
+        return false;
+        }
 
-    SourceState state;
-    state.m_version = ECN::SchemaKey::FormatLegacySchemaVersion(v8ProfileVersionMajor, v8ProfileVersionMinor);
-    state.m_checksum.Sprintf("%02" PRIu32, checksum);
-
-    auto instance = CreateInstance(scopeId, Kind::Schema, schemaName, &state, *aspectClass);
-    SchemaExternalSourceAspect aspect(instance.get());
-
-    rapidjson::Document json(rapidjson::kObjectType);
-    auto& allocator = json.GetAllocator();
-
-    json.AddMember("isDynamic", rapidjson::Value(isDynamic), allocator);
-    aspect.SetProperties(json);
-
-    return aspect;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspectForEdit(DgnElementR repositoryLink, Utf8StringCR schemaName)
-    {
-    auto stmt = repositoryLink.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind='Schema' AND Identifier=?)");
-    stmt->BindId(1, repositoryLink.GetElementId());
-    stmt->BindText(2, schemaName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return nullptr;
-
-    auto id = stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0);
-
-    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(repositoryLink, id).m_instance.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::SchemaExternalSourceAspect SyncInfo::SchemaExternalSourceAspect::GetAspect(DgnElementCR repositoryLink, Utf8StringCR schemaName)
-    {
-    auto stmt = repositoryLink.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind='Schema' AND Identifier=?)");
-    stmt->BindId(1, repositoryLink.GetElementId());
-    stmt->BindText(2, schemaName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return nullptr;
-
-    auto id = stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0);
-
-    return SchemaExternalSourceAspect(ExternalSourceAspect::GetAspect(repositoryLink, id).m_instance.get());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, SchemaExternalSourceAspect::Type& mappingType, Utf8CP v8SchemaName, RepositoryLinkId fileId)
-    {
-    Utf8String ecsql = "SELECT Version, Checksum, JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Identifier=? and Kind='Schema'";
-    if (fileId.IsValid())
-        ecsql.append(" AND Scope.Id=? ");
-
-    auto stmt = GetDgnDb()->GetPreparedECSqlStatement(ecsql.c_str());
-
-    stmt->BindText(1, v8SchemaName, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    if (fileId.IsValid())
-        stmt->BindId(2, fileId);
+    stmt->BindText(1, v8SchemaName, BeSQLite::Statement::MakeCopy::No);
+    if (scope.IsValid())
+        stmt->BindId(2, scope);
     if (BE_SQLITE_ROW != stmt->Step())
         return false;
 
-    schemaKey.m_schemaName = WString(v8SchemaName).c_str();
-    Utf8String version = stmt->GetValueText(0);
-    Utf8String checksum = stmt->GetValueText(1);
-    Utf8String jsonProp = stmt->GetValueText(2);
-    rapidjson::Document doc;
-    doc.Parse(jsonProp.c_str());
-    mappingType = doc["isDynamic"].IsTrue() ? SchemaExternalSourceAspect::Type::Dynamic : SchemaExternalSourceAspect::Type::Identity;
-
-    uint32_t versionWrite;
-    ECN::SchemaKey::ParseVersionString(schemaKey.m_versionMajor, versionWrite, schemaKey.m_versionMinor, version.c_str());
-
-    BE_STRING_UTILITIES_UTF8_SSCANF(checksum.c_str(), "%" PRIu32, &schemaKey.m_checkSum);
-
+    Json::Value  jsonObj;
+    if (!Json::Reader::Parse(stmt->GetValueText(0), jsonObj))
+        return false;
+    schemaKey.m_schemaName = WString(v8SchemaName.c_str()).c_str();
+    schemaKey.m_versionMajor = jsonObj["versionMajor"].asUInt();
+    schemaKey.m_versionMinor = jsonObj["versionMinor"].asUInt();
+    schemaKey.m_checkSum = jsonObj["checksum"].asUInt();
+    type = jsonObj["isDynamic"].asBool() ? ECSchemaMappingType::Dynamic : ECSchemaMappingType::Identity;
     return true;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   11/2014
-//---------------------------------------------------------------------------------------
-bool SyncInfo::ContainsECSchema(Utf8CP v8SchemaName)
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SyncInfo::ContainsECSchema(Utf8CP v8SchemaName) const
     {
-    auto stmt = GetDgnDb()->GetPreparedECSqlStatement("SELECT NULL FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Identifier=? AND Kind='Schema'");
-    stmt->BindText(1, v8SchemaName, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    CachedStatementPtr stmt = nullptr;
+    auto stat = m_dgndb->GetCachedStatement(stmt, "SELECT NULL FROM " BEDB_TABLE_Property " WHERE Name=? and NameSpace='dgn_V8Schema'");
+    if (BE_SQLITE_OK != stat)
+        {
+        BeAssert(false && "Could not retrieve cached SyncInfo statement.");
+        return BE_SQLITE_ERROR;
+        }
+
+    stmt->BindText(1, v8SchemaName, Statement::MakeCopy::No);
     return stmt->Step() == BE_SQLITE_ROW;
     }
 
@@ -1349,24 +1077,35 @@ bool SyncInfo::ContainsECSchema(Utf8CP v8SchemaName)
 //---------------+---------------+---------------+---------------+---------------+-------
 DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId)
     {
-    auto stmt = GetDgnDb()->GetPreparedECSqlStatement("SELECT Identifier, Checksum FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Scope.Id=? AND Kind='Schema'");
+    CachedStatementPtr stmt = nullptr;
+    auto stat = m_dgndb->GetCachedStatement(stmt, "SELECT Name, StrData FROM " BEDB_TABLE_Property " WHERE NameSpace='dgn_V8Schema' AND Id=?");
+    if (BE_SQLITE_OK != stat)
+        {
+        BeAssert(false && "Could not retrieve cached SyncInfo statement.");
+        return BE_SQLITE_ERROR;
+        }
+
     stmt->BindId(1, fileId);
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        syncInfoChecksums[stmt->GetValueText(0)] = (uint32_t) stmt->GetValueInt(1);
+        Json::Value  jsonObj;
+        if (!Json::Reader::Parse(stmt->GetValueText(1), jsonObj))
+            continue;
+        syncInfoChecksums[stmt->GetValueText(0)] = jsonObj["checksum"].asUInt();
         }
 
     return BE_SQLITE_OK;
     }
 
 #define TEMPTABLE_ATTACH(name) "temp." name
+#define TEMPTABLE_NamedGroups  "NamedGroups"
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SyncInfo::CreateNamedGroupTable()
     {
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL);"));
-    Utf8CP sql = "INSERT INTO " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) "(SourceId, TargetId) SELECT SourceId, TargetId from bis_ElementRefersToElements b, ec_Class e, ec_Schema s where b.ECClassId = e.Id and e.Name='ElementGroupsMembers' and e.SchemaId = s.Id and s.Name='BisCore'";
+    MUSTBEOK(m_dgndb->ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(TEMPTABLE_NamedGroups) " (SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL);"));
+    Utf8CP sql = "INSERT INTO " TEMPTABLE_ATTACH(TEMPTABLE_NamedGroups) "(SourceId, TargetId) SELECT SourceId, TargetId from bis_ElementRefersToElements b, ec_Class e, ec_Schema s where b.ECClassId = e.Id and e.Name='ElementGroupsMembers' and e.SchemaId = s.Id and s.Name='BisCore'";
     Statement groups;
     if (BE_SQLITE_OK != groups.Prepare(*m_dgndb, sql))
         return BentleyApi::ERROR;
@@ -1375,7 +1114,7 @@ BentleyStatus SyncInfo::CreateNamedGroupTable()
         {
         return ERROR;
         }
-    MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
+    MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " TEMPTABLE_ATTACH(TEMPTABLE_NamedGroups) "_ng_uix ON " TEMPTABLE_NamedGroups "(SourceId, TargetId);"));
 
     return SUCCESS;
     }
@@ -1386,7 +1125,7 @@ BentleyStatus SyncInfo::CreateNamedGroupTable()
 bool SyncInfo::IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetId)
     {
     CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " WHERE SourceId=? AND TargetId=?");
+    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " TEMPTABLE_ATTACH(TEMPTABLE_NamedGroups) " WHERE SourceId=? AND TargetId=?");
     if (!stmt.IsValid())
         return BentleyApi::ERROR;
 

@@ -773,8 +773,6 @@ void RootModelConverter::_ConvertModels()
         }
 
     _ImportDrawingAndSheetModels(m_rootModelMapping); // we also need to convert all drawing models now, so that we can analyze them for EC content.
-
-    m_syncInfo.SetValid(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

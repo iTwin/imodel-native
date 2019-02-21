@@ -264,8 +264,8 @@ TEST_F(LightTests, CreatePointLightWithECInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
         RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
         DgnModelId editModelId;
@@ -273,7 +273,6 @@ TEST_F(LightTests, CreatePointLightWithECInstance)
         DgnElementId dgnDbElementId;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eidWithInst);
 
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
         ASSERT_TRUE(dgnDbElement.IsValid());
 
@@ -1118,9 +1117,6 @@ TEST_F(ConverterTests, CommonReferences)
     m_dgnDbFileName = GetOutputFileName(L"CommonReferences.bim");
     DeleteExistingDgnDb(m_dgnDbFileName);
     MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
-    auto syncFile(SyncInfo::GetDbFileName(m_seedDgnDbFileName));
-    BentleyApi::BeFileName outSyncFile;
-    MakeWritableCopyOf(outSyncFile, syncFile, SyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
 
     m_v8FileName = masterPackageFile1;
     DoConvert(m_dgnDbFileName, m_v8FileName);
