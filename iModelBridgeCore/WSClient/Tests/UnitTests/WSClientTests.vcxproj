@@ -1,0 +1,438 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\BackDoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestApplication.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
+    <ClInclude Include="Published\Utils\StubLogger.h" />
+    <ClInclude Include="Published\WebServices\Azure\EventServiceClientTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\StubFileManager.h" />
+    <ClInclude Include="Published\WebServices\Client\ActivityIdGeneratorTests.h" />
+    <ClInclude Include="Published\WebServices\Client\ActivityLoggerTests.h" />
+    <ClInclude Include="Published\WebServices\Client\MockRepositoryInfoListener.h" />
+    <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
+    <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Published\Utils\MockTests.h" />
+    <ClInclude Include="Published\Utils\MockHttpHandler.h" />
+    <ClInclude Include="Published\Utils\StubInstances.h" />
+    <ClInclude Include="Published\Utils\ValuePrinter.h" />
+    <ClInclude Include="Published\Utils\WebServicesUnitTests.h" />
+    <ClInclude Include="Published\Utils\WSClientBaseTest.h" />
+    <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.cpp" />
+    <ClInclude Include="Published\WebServices\Cache\BaseCachingDataSourceTest.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceErrorTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceProgressTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingTestsHelper.h" />
+    <ClInclude Include="Published\WebServices\Cache\ChangeGraphTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\MockCachingDataSource.h" />
+    <ClInclude Include="Published\WebServices\Cache\MockQueryProvider.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\BaseCacheTest.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\SyncNotifierTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\MockChangeManager.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\MockDataSourceCache.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\MockRepositoryInfoStore.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\StubRepositoryInfoStore.h" />
+    <ClInclude Include="Published\WebServices\Cache\ServerQueryHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Transactions\MockTransactionHandler.h" />
+    <ClInclude Include="Published\WebServices\Cache\Transactions\StubCacheTransactionManager.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECDbAdapterTests.h" />
+    <ClInclude Include="Published\Utils\SeedFile.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECDbHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\FileUtilTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ISelectProviderTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\JsonDiffTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\JsonUtilTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapter.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapterDeleteListener.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockECDbSchemaChangeListener.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapter.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapterDelegate.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockSelectProvider.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ProgressFilterTests.h" />
+    <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
+    <ClInclude Include="Published\WebServices\Client\Response\WSUploadResponseTests.h" />
+    <ClInclude Include="Published\WebServices\Client\WSChangesetTests.h" />
+    <ClInclude Include="Published\WebServices\Client\WSJobTests.h" />
+    <ClInclude Include="Published\WebServices\Configuration\BuddiClientTests.h" />
+    <ClInclude Include="Published\WebServices\Configuration\MockBuddiClient.h" />
+    <ClInclude Include="Published\WebServices\Configuration\StubBuddiClient.h" />
+    <ClInclude Include="Published\WebServices\Configuration\UrlProviderTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\ConnectSignInManagerTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\ImsClientTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\ConnectTestsHelper.h" />
+    <ClInclude Include="Published\WebServices\Connect\ConnectTokenProviderTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationPersistence.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationProvider.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectionClientInterface.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectSignInManagerListener.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectTokenProvider.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockImsClient.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockLocalState.h" />
+    <ClInclude Include="Published\Connect\PasswordPersistenceTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockTokenStore.h" />
+    <ClInclude Include="Published\WebServices\Connect\SamlTokenTests.h" />
+    <ClInclude Include="Published\Connect\SecureStoreTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\SecurityTokenTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\SimpleConnectTokenProviderTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\StubImsClient.h" />
+    <ClInclude Include="Published\Utils\FSTest.h" />
+    <ClInclude Include="Published\Utils\Http\AuthenticationHandlerTests.h" />
+    <ClInclude Include="Published\Utils\Http\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Published\Utils\Http\HttpBody\HttpFileBodyTests.h" />
+    <ClInclude Include="Published\Utils\Http\HttpBody\HttpMultipartBodyTests.h" />
+    <ClInclude Include="Published\Utils\Http\HttpBody\HttpRangeBodyTests.h" />
+    <ClInclude Include="Published\Utils\Http\HttpBody\HttpStringBodyTests.h" />
+    <ClInclude Include="Published\Utils\Http\HttpHeadersTests.h" />
+    <ClInclude Include="Published\Utils\Http\MockAuthenticationHandler.h" />
+    <ClInclude Include="Published\Utils\Http\MockHttpHandler.h" />
+    <ClInclude Include="Published\Utils\Http\WebTestsHelper.h" />
+    <ClInclude Include="Published\Utils\MobileUtilsTestHost.h" />
+    <ClInclude Include="Published\Utils\TestAppPathProvider.h" />
+    <ClInclude Include="Published\Utils\TestsHelper.h" />
+    <ClInclude Include="Published\Utils\Threading\AsyncResultTests.h" />
+    <ClInclude Include="Published\Utils\Threading\AsyncTaskTests.h" />
+    <ClInclude Include="Published\Utils\Threading\UniqueTaskHolderTests.h" />
+    <ClInclude Include="Published\Utils\Threading\UniqueTasksHolderTests.h" />
+    <ClInclude Include="Published\Utils\Threading\WorkerThreadTests.h" />
+    <ClInclude Include="Published\Utils\Web\Http\AuthenticationHandlerTests.h" />
+    <ClInclude Include="Published\Utils\Web\Http\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Published\Utils\Web\Http\HttpBody\HttpFileBodyTests.h" />
+    <ClInclude Include="Published\Utils\Web\Http\HttpBody\HttpMultipartBodyTests.h" />
+    <ClInclude Include="Published\Utils\Web\Http\HttpBody\HttpRangeBodyTests.h" />
+    <ClInclude Include="Published\Utils\Web\Http\HttpBody\HttpStringBodyTests.h" />
+    <ClInclude Include="Published\Utils\Web\Http\HttpHeadersTests.h" />
+    <ClInclude Include="Published\Utils\Web\Http\MockAuthenticationHandler.h" />
+    <ClInclude Include="Published\Utils\Web\Http\MockHttpHandler.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\ChunkedUploadRequestTests.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\MockServerInfoListener.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\MockWSClient.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\MockWSRepositoryClient.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\ObjectIdTests.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\Response\WSObjectsReaderV1Tests.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\Response\WSObjectsReaderV2Tests.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\Response\WSObjectsResponseTests.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\WebServicesTestsHelper.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\WSClientTests.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\WSErrorTests.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\WSInfoTests.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\WSQueryTests.h" />
+    <ClInclude Include="Published\Utils\Web\WebServices\WSRepositoryClientTests.h" />
+    <ClInclude Include="Published\Utils\Web\WebTestsHelper.h" />
+    <ClInclude Include="Published\WebServices\Client\ChunkedUploadRequestTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
+    <ClInclude Include="Published\WebServices\Connect\StubTokenStore.h" />
+    <ClInclude Include="Published\WebServices\Licensing\UsageTrackingDataTests.h" />
+    <ClInclude Include="Published\WebServices\Client\MockServerInfoListener.h" />
+    <ClInclude Include="Published\WebServices\Client\MockWSClient.h" />
+    <ClInclude Include="Published\WebServices\Client\MockWSRepositoryClient.h" />
+    <ClInclude Include="Published\WebServices\Client\MockWSSchemaProvider.h" />
+    <ClInclude Include="Published\WebServices\Client\ObjectIdTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\PassportTests.h" />
+    <ClInclude Include="Published\WebServices\Client\Response\WSObjectsReaderV2Tests.h" />
+    <ClInclude Include="Published\WebServices\Client\Response\WSObjectsResponseTests.h" />
+    <ClInclude Include="Published\WebServices\Licensing\UsageTrackingTests.h" />
+    <ClInclude Include="Published\Utils\WebServicesTestsHelper.h" />
+    <ClInclude Include="Published\WebServices\Client\WSClientTests.h" />
+    <ClInclude Include="Published\WebServices\Client\WSErrorTests.h" />
+    <ClInclude Include="Published\WebServices\Client\WSInfoTests.h" />
+    <ClInclude Include="Published\WebServices\Client\WSQueryTests.h" />
+    <ClInclude Include="Published\WebServices\Client\WSRepositoryClientTests.h" />
+    <ClInclude Include="Published\WebServices\Ims\SolrQueryTests.h" />
+    <ClInclude Include="Published\WebServices\Ims\SolrClientTests.h" />
+    <ClInclude Include="Published\WSClientUnitTestsPch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BackDoor\BackDoor.cpp" />
+    <ClCompile Include="BackDoor\TestApplication.cpp" />
+    <ClCompile Include="BackDoor\TestEnvironment.cpp" />
+    <ClCompile Include="BackDoor\DgnClientFxViewportHelpers.cpp" />
+    <ClCompile Include="Published\Utils\StubLogger.cpp" />
+    <ClCompile Include="Published\WebServices\Azure\EventServiceClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ActivityIdGeneratorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ActivityLoggerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSRepositoryTests.cpp" />
+    <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />
+    <ClCompile Include="NonPublished\ConfigurableUiTests.cpp" />
+    <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
+    <ClCompile Include="NonPublished\NonPublishedBackstageTests.cpp" />
+    <ClCompile Include="NonPublished\NonPublishedTaskManagerTests.cpp" />
+    <ClCompile Include="NonPublished\PortableUiTests.cpp" />
+    <ClCompile Include="NonPublished\UiEventHandlerTests.cpp" />
+    <ClCompile Include="NonPublished\UiTests.cpp" />
+    <ClCompile Include="NonPublished\Win7WindowManagerTests.cpp" />
+    <ClCompile Include="Published\ApplicationTests.cpp" />
+    <ClCompile Include="Published\BackstageTests.cpp" />
+    <ClCompile Include="Published\Utils\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Published\Utils\MockTests.cpp" />
+    <ClCompile Include="Published\Utils\MockHttpHandler.cpp" />
+    <ClCompile Include="Published\Utils\SeedFile.cpp" />
+    <ClCompile Include="Published\Utils\StubInstances.cpp" />
+    <ClCompile Include="Published\Utils\ValuePrinter.cpp" />
+    <ClCompile Include="Published\Utils\WebServicesTestsHelper.cpp" />
+    <ClCompile Include="Published\Utils\WSClientBaseTest.cpp" />
+    <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\BaseCachingDataSourceTest.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceErrorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceProgressTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingTestsHelper.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\BaseCacheTest.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCachePerformanceTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\ServerQueryHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\SyncNotifierTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECDbAdapterTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECDbHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\FileUtilTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ISelectProviderTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\JsonDiffTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\JsonUtilTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ProgressFilterTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSChangesetTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSJobTests.cpp" />
+    <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\ConnectSignInManagerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\ImsClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\ConnectTestsHelper.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\ConnectTokenProviderTests.cpp" />
+    <ClCompile Include="Published\Connect\PasswordPersistenceTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\SamlTokenTests.cpp" />
+    <ClCompile Include="Published\Connect\SecureStoreTests.cpp" />
+    <ClCompile Include="Published\DgnProjectInfoExportServiceTests.cpp" />
+    <ClCompile Include="Published\DgnXfTests.cpp" />
+    <ClCompile Include="Published\MarkupTests.cpp" />
+    <ClCompile Include="Published\TaskManagerTests.cpp" />
+    <ClCompile Include="Published\ThreadControllerTests.cpp" />
+    <ClCompile Include="Published\UiTests.cpp" />
+    <ClCompile Include="Published\Utils\FSTest.cpp" />
+    <ClCompile Include="Published\Utils\Http\AuthenticationHandlerTests.cpp" />
+    <ClCompile Include="Published\Utils\Http\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Published\Utils\Http\HttpBody\HttpFileBodyTests.cpp" />
+    <ClCompile Include="Published\Utils\Http\HttpBody\HttpMultipartBodyTests.cpp" />
+    <ClCompile Include="Published\Utils\Http\HttpBody\HttpRangeBodyTests.cpp" />
+    <ClCompile Include="Published\Utils\Http\HttpBody\HttpStringBodyTests.cpp" />
+    <ClCompile Include="Published\Utils\Http\HttpHeadersTests.cpp" />
+    <ClCompile Include="Published\Utils\Http\MockHttpHandler.cpp" />
+    <ClCompile Include="Published\Utils\Http\WebTestsHelper.cpp" />
+    <ClCompile Include="Published\Utils\MobileUtilsTestHost.cpp" />
+    <ClCompile Include="Published\Utils\TestMain.cpp" />
+    <ClCompile Include="Published\Utils\TestsHelper.cpp" />
+    <ClCompile Include="Published\Utils\Threading\AsyncResultTests.cpp" />
+    <ClCompile Include="Published\Utils\Threading\AsyncTaskTests.cpp" />
+    <ClCompile Include="Published\Utils\Threading\UniqueTaskHolderTests.cpp" />
+    <ClCompile Include="Published\Utils\Threading\UniqueTasksHolderTests.cpp" />
+    <ClCompile Include="Published\Utils\Threading\WorkerThreadTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\Http\AuthenticationHandlerTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\Http\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Published\Utils\Web\Http\HttpBody\HttpFileBodyTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\Http\HttpBody\HttpMultipartBodyTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\Http\HttpBody\HttpRangeBodyTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\Http\HttpBody\HttpStringBodyTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\Http\HttpHeadersTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\Http\MockHttpHandler.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\ChunkedUploadRequestTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\ObjectIdTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\Response\WSObjectsReaderV1Tests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\Response\WSObjectsReaderV2Tests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\Response\WSObjectsResponseTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\WebServicesTestsHelper.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\WSClientTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\WSErrorTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\WSInfoTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\WSQueryTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebServices\WSRepositoryClientTests.cpp" />
+    <ClCompile Include="Published\Utils\Web\WebTestsHelper.cpp" />
+    <ClCompile Include="Published\ViewportTests.cpp" />
+    <ClCompile Include="Published\UnitTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ChunkedUploadRequestTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\SecurityTokenTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\SimpleConnectTokenProviderTests.cpp" />
+    <ClCompile Include="Published\WebServices\Licensing\UsageTrackingDataTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ObjectIdTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\PassportTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\Response\WSObjectsReaderV2Tests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\Response\WSObjectsResponseTests.cpp" />
+    <ClCompile Include="Published\WebServices\Licensing\UsageTrackingTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSErrorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSInfoTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSQueryTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSRepositoryClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Ims\SolrQueryTests.cpp" />
+    <ClCompile Include="Published\WebServices\Ims\SolrClientTests.cpp" />
+    <ClCompile Include="Published\WSClientUnitTestsPch.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests.mke" />
+    <None Include="CompileOptions.mki" />
+    <None Include="Prewire.mke" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\12.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\20.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\5.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\9.zip" />
+    <None Include="AssetsDelivery.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{962EAE8A-23AA-4992-B5BA-ABB8E8536306}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <IntDir>$(OutDir)</IntDir>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <IntDir>$(OutDir)</IntDir>
+    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-Gtest b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);WSCLIENT_ENABLE_DUPLICATING_SYMBOLS</NMakePreprocessorDefinitions>
+    <NMakeOutput>$(OutRoot)Winx64\Product\WSClient-Gtest\WSClientTest.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeBuildCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WSClient-Gtest -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);USE_GTEST</NMakePreprocessorDefinitions>
+    <NMakeOutput>$(OutRoot)Winx86\build\BeGTest\bin\begtest.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath);$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\</NMakeIncludeSearchPath>
+    <IncludePath>$(OutRoot)Winx86\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx86\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\Product\BeGTest\bin\begtest.exe</NMakeOutput>
+    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p  WSClientUnitTests b</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <OutDir>$(TEMP)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(TEMP)</IntDir>
+    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>bb  reb wsclientunittests begtestexe -x86 -s</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeReBuildCommandLine>bb  reb wsclientunittests begtestexe -x86</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>x86;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx86\BuildContexts\DgnClientFx\PublicAPI\;$(OutRoot)Winx86\BuildContexts\DgnClientFx\VendorAPI\;$(OutRoot)Winx86\build\UnitTests\DgnClientFx\BackDoorUnitTests\PublicAPI\;$(SrcRoot)DgnClientFx\PublicAPI\</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <BuildLog>
+      <Path>$(TEMP)\$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
