@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: prewirenapi.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+$(BuildContext)PublicAPI/node-addon-api : $(baseDir)PublicAPI/node-addon-api
+    $(LinkFirstDepToFirstTargetAsDirectory)
