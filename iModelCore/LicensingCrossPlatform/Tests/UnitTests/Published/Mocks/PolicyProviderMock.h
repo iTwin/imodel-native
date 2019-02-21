@@ -12,7 +12,7 @@
 
 #include "../TestsHelper.h"
 
-BEGIN_BENTLEY_LICENSING_NAMESPACE
+BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 
 struct PolicyProviderMock : IPolicyProvider
 {
@@ -20,4 +20,4 @@ public:
     MOCK_METHOD0(GetPolicy, folly::Future<std::shared_ptr<Policy>>());
 };
 
-END_BENTLEY_LICENSING_NAMESPACE
+END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE

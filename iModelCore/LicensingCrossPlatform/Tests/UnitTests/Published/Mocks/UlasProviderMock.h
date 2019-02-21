@@ -12,7 +12,7 @@
 
 #include "../TestsHelper.h"
 
-BEGIN_BENTLEY_LICENSING_NAMESPACE
+BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 
 struct UlasProviderMock : IUlasProvider
     {
@@ -23,4 +23,4 @@ public:
     MOCK_METHOD2(SendFeatureLogs, BentleyStatus(BeFileNameCR featureCSV, Utf8StringCR ultId));
     };
 
-END_BENTLEY_LICENSING_NAMESPACE
+END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
