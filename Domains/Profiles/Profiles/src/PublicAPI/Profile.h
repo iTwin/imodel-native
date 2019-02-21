@@ -193,6 +193,19 @@ public:
 
     //! Get the IGeometry defining the shape of this Profile.
     //! @details Geometry is created during a db Insert or Update operation.
+    //! @attention A copy of IGeometry is returned with no external references to it meaning that the user must keep
+    //! the reference count alive in order to use it.
+    //! @code{.cpp}
+    //! CurveVectorPtr curvesPtr = profile.GetShape()->GetAsCurveVector();
+    //! foo (curvesPtr); // BAD: curvesPtr might be invalid at this point!
+    //! bar (*profile.GetShape()); // BAD: reference will be invalid as the newly returned IGeometryPtr goes out of scope instantly!
+    //! @endcode
+    //! Valid use:
+    //! @code{.cpp}
+    //! IGeometryPtr shapePtr = profile.GetShape(); // Will be valid until shapePtr goes out of scope (unless referenced again)
+    //! foo (shapePtr->GetAsCurveVector()); // OK
+    //! bar (*shapePtr); // OK
+    //! @endcode
     PROFILES_EXPORT IGeometryPtr GetShape() const;
 
 private:
