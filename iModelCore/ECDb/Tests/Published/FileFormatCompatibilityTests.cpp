@@ -1588,7 +1588,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     actualDdlStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT count(*) FROM sqlite_master"));
     ASSERT_EQ(BE_SQLITE_ROW, actualDdlStmt.Step());
-    ASSERT_EQ(benchmarkMasterTableRowCount + 19, actualDdlStmt.GetValueInt(0)) << " 19 sqlite_master entries are added in the upgrade " << benchmarkFilePath.GetNameUtf8();
+    ASSERT_EQ(benchmarkMasterTableRowCount + 18, actualDdlStmt.GetValueInt(0)) << " 18 sqlite_master entries are added in the upgrade " << benchmarkFilePath.GetNameUtf8();
     }
 
 //---------------------------------------------------------------------------------------

@@ -432,7 +432,7 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
     {
     auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
     ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
-    ASSERT_EQ(49, stmt->GetValueInt(0));
+    ASSERT_EQ(48, stmt->GetValueInt(0));
     }
 
     //printf("%s", changeset1.ToJson(m_ecdb).ToString().c_str());
