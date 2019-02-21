@@ -1,0 +1,259 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="OpenPlant_3D_V3Conversion" nameSpacePrefix="op3dv3" version="1.2" displayLabel="OpenPlant3D.01.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECRelationshipClass typeName="Document_Is_Related_To_Object" displayLabel="Document Is Related To Object" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:OTHER_RELATIONSHIP</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="AREA_HAS_NAMED_ITEM" displayLabel="Area Has Named Item" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:CONTAINMENT_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ARRANGEMENT_OF_INDIVIDUAL" description="An &lt;arrangement_of_individual&gt; is a &lt;composition_of_individual&gt; that indicates that the part is a part of an &lt;arranged_individual&gt;. The temporal extent of the part is that of the whole." displayLabel="Arrangement Of Individual" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:COMPOSITION_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ASSEMBLY_OF_INDIVIDUAL" description="An &lt;assembly_of_individual&gt; is an &lt;arrangement_of_individual&gt; that indicates that the part is connected directly or indirectly to other parts of the whole. The parts and wholes are super-molecular objects." displayLabel="Assembly of Individual" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:COMPOSITION_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DEVICE_HAS_PORT" displayLabel="Device Has Port" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:FEATURE_WHOLE_PART</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DEVICE_HAS_SUPPORT" displayLabel="Device Has Support" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:DIRECT_CONNECTION_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DIRECT_CONNECTION_OF_INDIVIDUAL" description="A &lt;direct_connection&gt; is a &lt;connection_of_individual&gt; that indicates that the side_1 and side_2 are directly connected via a common spatial boundary." displayLabel="Direct Connection Of Individual" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:CONNECTION_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DOCUMENT_HAS_DEVICE" displayLabel="Document Has Device" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:Document_Is_Related_To_Object</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DOCUMENT_HAS_HVAC_NETWORK_SYSTEM" displayLabel="Document Has HvacSystem" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:Document_Is_Related_To_Object</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DOCUMENT_HAS_PIPING_NETWORK_SYSTEM" displayLabel="Document Has Pipeline" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:Document_Is_Related_To_Object</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DOCUMENT_HAS_TRAY_NETWORK_SYSTEM" displayLabel="Document Has Trayline" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:Document_Is_Related_To_Object</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="EQUIPMENT_HAS_DATUM" displayLabel="Equipment Has Datum" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="EQUIPMENT_HAS_NOZZLE" displayLabel="Equipment Has Nozzle" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FEATURE_WHOLE_PART" description="A &lt;feature_whole_part&gt; is an &lt;arrangement_of_individual&gt; that indicates that the part is a non-separable, contiguous part of the whole." displayLabel="Feature Whole Part" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:COMPOSITION_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="HVAC_COMPONENT_HAS_PORT" displayLabel="Hvac Component Has Port" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:DEVICE_HAS_PORT</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="HVACSYSTEM_HAS_SEGMENT" description="HvacSystem Has Segment" displayLabel="HvacSystem Has Segment" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="INDIRECT_CONNECTION_OF_INDIVIDUAL" description="An &lt;indirect_connection&gt; is a &lt;connection_of_individual&gt; that indicates that side_1 and side_2 are connected via other individuals" displayLabel="Indirect Connection Of Individual" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:CONNECTION_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="INSTRUMENT_HAS_PORT" displayLabel="Instrument Has Port" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:DEVICE_HAS_PORT</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="JOINT_HAS_FASTENER" displayLabel="Joint Has Fastener" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="JOINT_HAS_SEAL" displayLabel="Joint Has Seal" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="Locational_Object_Has_Object" displayLabel="Location Object Has Named Item" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:CONTAINMENT_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="NOZZLE_HAS_PORT" displayLabel="Nozzle Has Port" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:DEVICE_HAS_PORT</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PIPELINE_HAS_SEGMENT" displayLabel="Pipeline Has Segment" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PIPING_COMPONENT_HAS_PORT" displayLabel="Piping Component Has Port" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:DEVICE_HAS_PORT</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PLANT_AREA_HAS_NAMED_ITEM" displayLabel="Plant Area Has Named Item" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:Locational_Object_Has_Object</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PORT_HAS_JOINT" displayLabel="Port Has Joint" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:OTHER_RELATIONSHIP</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SEGMENT_HAS_HVAC_COMPONENT" description="Segment Has Hvac Component" displayLabel="Segment Has Hvac Component" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SEGMENT_HAS_INSTRUMENT" displayLabel="Segment Has Instrument" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:INDIRECT_CONNECTION_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SEGMENT_HAS_PIPING_COMPONENT" displayLabel="Segment Has Piping Component" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SEGMENT_HAS_TRAY_COMPONENT" displayLabel="Segment Has Tray" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SERVICE_IS_RELATED_TO_NAMED_ITEM" displayLabel="Service Is Related To Named Item" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:OTHER_RELATIONSHIP</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SYSTEM_HAS_NAMED_ITEM" description="Abstract Relationship" displayLabel="System has Named Item" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:CONTAINMENT_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TRAY_COMPONENT_HAS_PORT" displayLabel="Tray Component Has Port" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:DEVICE_HAS_PORT</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TRAYLINE_HAS_SEGMENT" displayLabel="Trayline Has Segment" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="UNIT_HAS_NAMED_ITEM" displayLabel="Unit Has Named Item" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ARRANGEMENT_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="VALVE_HAS_VALVE_OPERATING_DEVICE" displayLabel="Valve Has Valve Operating Device" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>OpenPlant_3D:ASSEMBLY_OF_INDIVIDUAL</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+</ECSchema>

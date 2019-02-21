@@ -1,0 +1,80 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Dwg/Samples/ListProp/ListProperty.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName             = ListProperty
+baseDir             = $(_MakeFilePath)
+DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
+DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
+DwgPublicAPI        = $(DgnDbSyncRootDir)PublicAPI/Dwg/
+DwgVendorAPI        = $(BuildContext)VendorAPI/$(DWGTOOLKIT)$(VendorVersion)/
+DwgImporterDir      = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/
+
+o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)$(appName)/
+always:
+    ~mkdir $(o)
+
+ListPropertyDepends = $(baseDir)ListProperty.h              \
+                      $(DwgPublicAPI)DwgImporter.h          \
+                      $(DwgPublicAPI)DwgBridge.h
+
+### Pass $(DWGTOOLKIT) to compiler
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
+
+%if $(DWGTOOLKIT) == "OpenDwg"
+    DwgDbLibName    = OpenDwgDbExchange$(libext)
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+    DwgDbLibName    = RealDwg$(VendorVersion)/RealDwgDbExchange$(libext)
+
+    ### Need to bypass the line #pragma comment(lib, "acpal.lib") in PAL\api\def.h; else we have to link with acpal.lib!!??
+    %if $(VendorVersion) <= 2018
+        CCompOpts + -D_ADESK_STATIC_LINKING_
+    %else
+        CCompOpts + -DACFABRIC_WINRT
+    %endif
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)ListProperty.obj    : $(baseDir)ListProperty.cpp $(ListPropertyDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST            = $(o)
+EXE_NAME            = $(appname)
+EXE_OBJS            = $(MultiCompileObjectList)
+EXE_LOPT1           = -entry:wmainCRTStartup
+EXE_TMP_DIR         = $(o)
+EXE_NO_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES    = $(DwgImporterDir)DwgImporter$(libext)
+LINKER_LIBRARIES    + $(DwgImporterDir)DwgBridge$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(DwgDbLibName)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)Bentley$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)DgnPlatform$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeJsonCpp$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)ECObjects$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge$(libext)
+
+%include $(sharedMki)linktool.mki
+
+# Symlink source to Delivery
+always:
+    ~linkdir "$(BuildContext)Delivery/Samples/ListProp=$(baseDir)"
+
+%if !defined(NDEBUG)
+# Symlink the exe to RealDwgImporter for debugging purpose
+always:
+    ~linkfile "$(OutputRootDir)Product/RealDwgImporter/$(EXE_NAME)$(exeext)=$(EXE_DEST)$(EXE_NAME)$(exeext)"
+%endif

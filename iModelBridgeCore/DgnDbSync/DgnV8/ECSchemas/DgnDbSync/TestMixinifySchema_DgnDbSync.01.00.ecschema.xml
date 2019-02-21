@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SP3DBR_B_MAA_20161116_DgnDbSync" nameSpacePrefix="sp3dv3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="DgnDbSyncV8" version="01.00" prefix="syncv8"/>
+    <ECCustomAttributes>
+        <MixinConversionContext xmlns="DgnDbSyncV8.01.00">
+            <BaseInterfaceClassName>BaseInterface</BaseInterfaceClassName>
+            <BaseObjectClassName>BaseObject</BaseObjectClassName>
+        </MixinConversionContext>
+    </ECCustomAttributes>
+</ECSchema>

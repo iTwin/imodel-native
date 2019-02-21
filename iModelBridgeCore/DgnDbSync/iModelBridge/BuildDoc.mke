@@ -1,0 +1,107 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: iModelBridge/BuildDoc.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+
+DocOverviewDir = $(baseDir)docs
+
+#----------------------------------------------------------------------------------------
+#   Configuration files for Doxygen
+#----------------------------------------------------------------------------------------
+BENTLEY_DOXYGEN_CONFIG      = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.cfg
+BENTLEY_DOXYGEN_ALIASES     = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen-html-aliases.cfg
+
+DOXYGEN_CONFIG_FILES        = $(BENTLEY_DOXYGEN_CONFIG)
+DOXYGEN_CONFIG_FILES        + $(BENTLEY_DOXYGEN_ALIASES)
+DOXYGEN_CONFIG_FILES        + $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.css
+
+#----------------------------------------------------------------------------------------
+#   Configure verbose setting for Doxygen
+#----------------------------------------------------------------------------------------
+%if defined (VERBOSE)
+    DOXYGEN_QUIET = NO
+%else
+    DOXYGEN_QUIET = YES
+%endif
+
+OutBuildDocs = $(OutputRootDir)build/iModelBridge/dox
+
+DOXYGEN_ARTIFACTS       = $(OutputRootDir)build/iModelBridge/dox-temp/
+DOXYGEN_INPUT           = $(DOXYGEN_ARTIFACTS)input/
+DOXYGEN_OUTPUT          = $(OutBuildDocs)
+DOXYGEN_WARN_LOGFILE    = $(DOXYGEN_ARTIFACTS)doxygen-warnings.txt
+
+#----------------------------------------------------------------------------------------
+#   Handle "clean" of all output files
+#----------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) ${DOXYGEN_ARTIFACTS}
+        -$(rmdirRecursiveCmd) ${OutBuildDocs}
+
+    %return
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Gather Doxygen inputs
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------
+#   Gather overviews and APIS to document  ==> $(DOXYGEN_INPUT)
+#       Note that we don't document most vendor apis. Json is the exception.
+APIS_NOT_DOCUMENTED = icu4c,libxml,openssl,csmap,curl,rapidjson,folly
+
+always:
+    !~@mkdir ${OutputRootDir}
+    !~@mkdir ${DOXYGEN_INPUT}
+    ~linkdir "$(DOXYGEN_INPUT)overview = ${DocOverviewDir}"
+    ~linkdir "$(DOXYGEN_INPUT)api = ${iModelBridgeAPISrc}"
+    !~@mkdir ${DOXYGEN_OUTPUT}
+
+#----------------------------------------------------------------------------------------
+#   Run Doxygen
+#----------------------------------------------------------------------------------------
+$(DOXYGEN_ARTIFACTS)doxygen.cfg : $(DOXYGEN_CONFIG_FILES) $[@wildcard $(DocOverviewDir)*] $[@wildcard $(iModelBridgeAPISrc)*.h] $(_MakeFileSpec)
+    $(msg)
+    > $(DOXYGEN_ARTIFACTS)doxygen.cfg
+    @INCLUDE = $(BENTLEY_DOXYGEN_CONFIG)
+    @INCLUDE = $(BENTLEY_DOXYGEN_ALIASES)
+    PROJECT_NAME        = "iModelBridge API Documentation"
+    WARN_LOGFILE        = $(DOXYGEN_WARN_LOGFILE)
+    QUIET               = $(DOXYGEN_QUIET)
+    INPUT               = $(DOXYGEN_INPUT)
+    OUTPUT_DIRECTORY    = $(DOXYGEN_OUTPUT)
+    INCLUDE_PATH        = $(BuildContext)PublicAPI
+    IMAGE_PATH          = $(DOXYGEN_INPUT)overview/
+    DOT_PATH            = $(DOXYGEN_DOT_PATH)
+    GENERATE_HTML       = YES
+    GENERATE_XML        = NO
+    GENERATE_HTMLHELP   = NO
+    HHC_LOCATION        =
+    FILE_PATTERNS       = *.doxpage *.h *.r.h
+    <
+%if defined (__apple)
+    ~@putenv GVBINDIR=${DOXYGEN_DOT_PATH}
+%endif
+    !$(doxygenCmd) $(DOXYGEN_ARTIFACTS)doxygen.cfg
+    ~time
+
+%if $[@readfile $(DOXYGEN_WARN_LOGFILE)] != " "
+    %warn ********************
+    %warn * DOXYGEN Warnings *
+    %warn ********************
+    %warn $[@readfile $(DOXYGEN_WARN_LOGFILE)]
+
+    %warn ********************
+    %error DOXYGEN warnings treated as build error
+%endif
+
+$(BuildContext)Delivery/docs : ${DOXYGEN_OUTPUT}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
