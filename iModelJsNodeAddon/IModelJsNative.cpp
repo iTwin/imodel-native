@@ -2,7 +2,7 @@
 |
 |     $Source: IModelJsNative.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <functional>
@@ -3955,7 +3955,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     Napi::Value SetupLocaleDirectories(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, localeDirectories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "localeDirectories")));
-        ECPresentationResult result = ECPresentationUtils::SetupLocaleDirectories(localeDirectories);
+        ECPresentationResult result = ECPresentationUtils::SetupLocaleDirectories(*m_presentationManager, localeDirectories);
         return CreateReturnValue(result);
         }
     
