@@ -25,6 +25,9 @@ static Utf8CP bisSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         </ECEntityClass>
 
         <ECEntityClass typeName="Element" modifier="Abstract" description="Element description"/>
+        <ECEntityClass typeName="PhysicalElement" modifier="Abstract" description="Element description">
+            <BaseClass>Element</BaseClass>
+        </ECEntityClass>
 
         <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="An Element Aspect is a class that defines a set of properties that are related to (and owned by) a single element. Semantically, an Element Aspect can be considered part of the Element. Thus, an Element Aspect is deleted if its owning Element is deleted."/>
 
@@ -62,6 +65,18 @@ static Utf8CP bisSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
                     <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 </ECCustomAttributes>
             </ECProperty>
+        </ECEntityClass>
+        <ECEntityClass typeName="PhysicalModel" modifier="Abstract">
+            <BaseClass>Model</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="DefinitionModel" modifier="Abstract">
+            <BaseClass>Model</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="SpatialLocationModel" modifier="Abstract">
+            <BaseClass>Model</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="SpatialModel" modifier="Abstract">
+            <BaseClass>Model</BaseClass>
         </ECEntityClass>
     </ECSchema>)xml";
 
@@ -2567,6 +2582,113 @@ TEST_F(SchemaValidatorTests, NoModelSubclassMayHaveProperties)
             ASSERT_TRUE(schema.IsValid());
             ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses with override properties are valid";
             }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                         02/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, ErrorsForAlreadyReleasedSchemasAreSuppressed)
+    {
+        {
+        // BuildingPhysical
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='BuildingPhysical' alias='bp' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+            "    <ECEntityClass typeName='BuildingPhysicalModel'>"
+            "        <BaseClass>bis:PhysicalModel</BaseClass>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='BuildingTypeDefinitionModel'>"
+            "        <BaseClass>bis:DefinitionModel</BaseClass>"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "BuildingPhysical may violate the model subclassing rule with BuildingPhyscialModel and BuildingTypeDefinitionModel";
+        }
+        {
+        // Raster
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='Raster' alias='raster' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+            "    <ECEntityClass typeName='RasterModel'>"
+            "        <BaseClass>bis:Model</BaseClass>"
+            "        <ECProperty propertyName='Clip' typeName='boolean'/>"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "Raster may violate the model subclass adds property rule with RasterModel property Clip";
+        }
+        {
+        // RoadRailAlignment
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='RoadRailAlignment' alias='rra' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+            "    <ECEntityClass typeName='AlignmentModel'>"
+            "        <BaseClass>bis:SpatialLocationModel</BaseClass>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='ConfigurationModel'>"
+            "        <BaseClass>bis:DefinitionModel</BaseClass>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='HorizontalAlignmentModel'>"
+            "        <BaseClass>bis:SpatialLocationModel</BaseClass>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='RoadRailCategoryModel'>"
+            "        <BaseClass>bis:DefinitionModel</BaseClass>"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "RoadRailAlignment may violate the model subclass rule with AlignmentModel, ConfigurationModel, HorizontalAlignmentModel, and RoadRailCategoryModel";
+        }
+        {
+        // RoadRailPhyscial
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='RoadRailPhysical' alias='rrp' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+            "    <ECEntityClass typeName='DesignSpeed' displayLabel='Design Speed'>"
+            "        <BaseClass>bis:PhysicalElement</BaseClass>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='DesignSpeedElement' displayLabel='Design Speed'>"
+            "        <BaseClass>bis:PhysicalElement</BaseClass>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='RailwayStandardsModel'>"
+            "        <BaseClass>bis:DefinitionModel</BaseClass>"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "RoadRailPhyscial may violate the model subclass rule with RailwayStandardsModel and the same display label rule with DesignSpeed and DesignSpeedElement";
+        }
+        {
+        // ScalableMesh
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='ScalableMesh' alias='sm' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+            "    <ECEntityClass typeName='ScalableMeshModel'>"
+            "        <BaseClass>bis:SpatialModel</BaseClass>"
+            "        <ECProperty propertyName='SmModelClips' typeName='boolean'/>"
+            "        <ECProperty propertyName='SmGroundCoverages' typeName='boolean'/>"
+            "        <ECProperty propertyName='SmModelClipVectors' typeName='boolean'/>"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "ScalableMesh may violate the model subclass adds property rule with ScalableMeshModel properties SmModelClips, SmGroundCoverages and SmModelClipVectors";
+        }
+        {
+        // BuildingPhysical
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='StructuralPhysical' alias='sp' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+            "    <ECEntityClass typeName='StructuralPhysicalModel'>"
+            "        <BaseClass>bis:PhysicalModel</BaseClass>"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "StructuralPhysical may violate the model subclassing rule with StructuralPhysicalModel";
+        }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
