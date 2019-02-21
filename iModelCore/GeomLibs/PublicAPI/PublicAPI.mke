@@ -1,0 +1,20 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: PublicAPI/PublicAPI.mke $
+#       $Date: 2008/10/21 15:09:31 $
+#     $Author: Keith.Bentley $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include  mdl.mki
+
+GeomPublicAPISrc        = $(SrcGeomLibs)PublicAPI/
+repoName = geomlibs
+repoRootDir = $(SrcGeomLibs)
+
+OtherFiles=$(GeomPublicAPISrc)/**/*.fdf
+
+FileMatcher=$(GeomPublicAPISrc)/**/*.h;$(GeomPublicAPISrc)/**/*.hpp;$(OtherFiles)
+%include BuildPublishApi.mki
+

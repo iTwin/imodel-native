@@ -1,0 +1,116 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: common/inc/geomlibsoutdirs.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+GEOMLIBS_OUT        = $(OutGeomLibs)
+BENTLEY_OUT         = $(OutGeomLibs)../Bentley/
+BEXML_OUT           = $(OutGeomLibs)../BeXml/
+BEXML2_OUT          = $(OutGeomLibs)../BeLibXml2/
+ECOBJECTS_OUT       = $(OutGeomLibs)../ECObjects/
+BEICU4C_OUT         = $(OutGeomLibs)../BeIcu4c/
+LOGGING_OUT         = $(OutGeomLibs)../
+
+geomlibs_build      = $(GEOMLIBS_OUT)build/
+geomlibs_delivery   = $(GEOMLIBS_OUT)delivery/
+
+bentley_delivery    = $(BENTLEY_OUT)bentley_dll/
+bexml_delivery      = $(BEXML_OUT)bexml_dll/
+belibxml2_delivery  = $(BEXML2_OUT)
+beicu4c_delivery    = $(BEICU4C_OUT)
+logging_delivery    = e:\topaz\out\Winx64\BuildContexts\bsibin\LoggingOut\bin\
+
+
+#----------------------------------------------------------------------
+#       Base Geom Output directories
+#----------------------------------------------------------------------
+baseGeom_build                      = $(geomlibs_build)basegeom/
+    baseGeom_buildGensrc            = $(baseGeom_build)gensrc/
+    baseGeom_buildDoc               = $(baseGeom_build)doc/
+    geomObj                         = $(baseGeom_build)obj/
+    geomTestOut                     = $(baseGeom_build)test/
+    
+baseGeom_delivery                   = $(geomlibs_delivery)basegeom/
+    baseGeom_symbols                = $(baseGeom_delivery)symbols/
+    baseGeom_doc                    = $(baseGeom_delivery)doc/
+    baseGeom_lib                    = $(baseGeom_delivery)library/
+    baseGeom_bin                    = $(baseGeom_delivery)bin/
+
+baseGeomStatic_delivery             = $(geomlibs_delivery)basegeom_static/
+    baseGeomStatic_include          = $(baseGeomStatic_delivery)include/
+    baseGeomStatic_symbols          = $(baseGeomStatic_delivery)symbols/
+    baseGeomStatic_lib              = $(baseGeomStatic_delivery)library/
+
+baseGeomStatic_delivery             = $(geomlibs_delivery)basegeom_static/
+    baseGeomStatic_include          = $(baseGeomStatic_delivery)include/
+    baseGeomStatic_symbols          = $(baseGeomStatic_delivery)symbols/
+    baseGeomStatic_lib              = $(baseGeomStatic_delivery)library/
+
+BentleyGeomSmall_build              = $(geomlibs_build)BentleyGeomSmall/
+    BentleyGeomSmall_buildGensrc    = $(BentleyGeomSmall_build)gensrc/
+    BentleyGeomSmall_buildDoc       = $(BentleyGeomSmall_build)doc/
+    BentleyGeomSmall_obj            = $(BentleyGeomSmall_build)obj/
+
+BentleyGeomSmall_delivery           = $(geomlibs_delivery)basegeom/
+    BentleyGeomSmall_symbols        = $(BentleyGeomSmall_delivery)symbols/
+    BentleyGeomSmall_doc            = $(BentleyGeomSmall_delivery)doc/
+    BentleyGeomSmall_lib            = $(BentleyGeomSmall_delivery)library/
+    BentleyGeomSmall_bin            = $(BentleyGeomSmall_delivery)bin/
+
+#----------------------------------------------------------------------
+#       VU Output directories
+#----------------------------------------------------------------------
+vu_build                            = $(geomlibs_build)vu/
+    vu_buildGensrc                  = $(vu_build)gensrc/
+    vu_buildDoc                     = $(vu_build)doc/
+    vuObj                           = $(vu_build)obj/
+    vuStaticObj                     = $(vu_build)staticObj/
+
+vu_delivery                         = $(geomlibs_delivery)vu/
+    vu_include                      = $(vu_delivery)include/
+    vu_symbols                      = $(vu_delivery)symbols/
+    vu_doc                          = $(vu_delivery)doc/
+    vu_lib                          = $(vu_delivery)library/
+    vu_bin                          = $(vu_delivery)bin/
+    vu_examples                     = $(vu_delivery)doc/examples/
+
+vuStatic_delivery                   = $(geomlibs_delivery)vu_static/
+    vuStatic_include                = $(vuStatic_delivery)include/
+    vuStatic_symbols                = $(vuStatic_delivery)symbols/
+    vuStatic_lib        = $(vuStatic_delivery)library/
+
+#----------------------------------------------------------------------
+#       Create directories
+#----------------------------------------------------------------------
+always:
+    ~@mkdir  $(baseGeom_include)
+    ~@mkdir  $(baseGeom_buildGensrc)
+    ~@mkdir  $(baseGeom_buildDoc)
+    ~@mkdir  $(baseGeom_symbols)
+    ~@mkdir  $(baseGeom_doc)
+    ~@mkdir  $(baseGeom_lib)
+    ~@mkdir  $(baseGeom_bin)
+    ~@mkdir  $(baseGeomStatic_include)
+    ~@mkdir  $(baseGeomStatic_symbols)
+    ~@mkdir  $(baseGeomStatic_lib)
+
+always:
+    ~@mkdir  $(vu_include)
+    ~@mkdir  $(vu_buildGensrc)
+    ~@mkdir  $(vu_buildDoc)
+    ~@mkdir  $(vu_symbols)
+    ~@mkdir  $(vu_doc)
+    ~@mkdir  $(vu_lib)
+    ~@mkdir  $(vu_bin)
+    ~@mkdir  $(vuStatic_include)
+    ~@mkdir  $(vuStatic_symbols)
+    ~@mkdir  $(vuStatic_lib)
+
+#-----------------------------------------------------------------------
+# Configure Google Test macros
+#-----------------------------------------------------------------------
+#The gtest mk* files (which we harvest as a subpart for our gtest builds) rely on this macro being defined
+GUnitTestDir                = $(BuildContext)SubParts/google_gtest/
+
