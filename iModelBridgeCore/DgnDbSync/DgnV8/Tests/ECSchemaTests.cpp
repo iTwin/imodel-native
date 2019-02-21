@@ -726,8 +726,8 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
         RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
         DgnModelId editModelId;
@@ -737,7 +737,6 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
         DgnElementId dgnDbElementId2;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementId2, editModelId, eid2);
 
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         //db->Schemas().CreateClassViewsInDb();
         //db->SaveChanges();
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
@@ -782,8 +781,8 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
     DoUpdate(m_dgnDbFileName, m_v8FileName, false);
     if (true)
         {
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
         RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
         DgnModelId editModelId;
@@ -791,7 +790,6 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
         DgnElementId dgnDbElementId3;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementId3, editModelId, eid3);
 
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         auto dgnDbElement3 = db->Elements().GetElement(dgnDbElementId3);
         ASSERT_TRUE(dgnDbElement3.IsValid());
 
@@ -1147,8 +1145,8 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
 
     if (true)
         {
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
         RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
         DgnModelId editModelId;
@@ -1156,7 +1154,6 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
         DgnElementId dgnDbElementId;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eid);
 
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         //db->Schemas().CreateClassViewsInDb();
         //db->SaveChanges();
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);

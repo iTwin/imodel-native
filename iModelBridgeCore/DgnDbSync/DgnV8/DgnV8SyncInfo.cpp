@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DgnV8SyncInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -558,15 +558,3 @@ SyncInfo::SyncInfo(Converter& converter) : m_converter(converter), m_dgndb(nullp
     {
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::~SyncInfo()
-    {
-    if (m_dgndb != nullptr)
-        m_dgndb->DetachDb(SYNCINFO_ATTACH_ALIAS);
-
-#if defined (DUMP_HASHES)
-    SetDumpHash(false);
-#endif
-    }

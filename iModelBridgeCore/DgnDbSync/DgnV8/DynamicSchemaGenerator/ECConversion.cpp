@@ -708,17 +708,14 @@ BentleyStatus V8ECClassInfo::Save(DgnDbR db, ECClassName const& v8ClassName, Bis
 //****************************************************************************************
 // V8ElementECClassInfo
 //****************************************************************************************
-#define V8ELEMENT_SECONDARYCLASSMAPPING_TABLE SYNCINFO_TABLE("V8ElementSecondaryECClass")
+#define V8ELEMENT_SECONDARYCLASSMAPPING_TABLE "V8ElementSecondaryECClass"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus V8ElementSecondaryECClassInfo::CreateTable(DgnDbR db)
     {
-    if (db.TableExists(SYNCINFO_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE)))
-        return BSISUCCESS;
-
-    return db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " (V8ElementId INTEGER NOT NULL, V8SchemaName, V8ClassName, "
+    return db.ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " (V8ElementId INTEGER NOT NULL, V8SchemaName, V8ClassName, "
                          " PRIMARY KEY (V8ElementId, V8SchemaName, V8ClassName))") == BE_SQLITE_OK ? BSISUCCESS : BSIERROR;
     }
 
@@ -728,7 +725,7 @@ BentleyStatus V8ElementSecondaryECClassInfo::CreateTable(DgnDbR db)
 BentleyStatus V8ElementSecondaryECClassInfo::Insert(DgnDbR db, DgnV8EhCR el, ECClassName const& v8Class)
     {
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " (V8ElementId, V8SchemaName, V8ClassName) VALUES (?, ?, ?)");
+    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " TEMPTABLE_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " (V8ElementId, V8SchemaName, V8ClassName) VALUES (?, ?, ?)");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert(false && "Could not retrieve cached statement for V8ElementECClassInfo::Insert");
@@ -749,7 +746,7 @@ BentleyStatus V8ElementSecondaryECClassInfo::Insert(DgnDbR db, DgnV8EhCR el, ECC
 bool V8ElementSecondaryECClassInfo::TryFind(DgnDbR db, DgnV8EhCR el, ECClassName const& ecClassName)
     {
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT V8SchemaName, V8ClassName FROM " SYNCINFO_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " WHERE V8ElementId = ? AND V8SchemaName=? AND V8ClassName=?");
+    auto stat = db.GetCachedStatement(stmt, "SELECT V8SchemaName, V8ClassName FROM " TEMPTABLE_ATTACH(V8ELEMENT_SECONDARYCLASSMAPPING_TABLE) " WHERE V8ElementId = ? AND V8SchemaName=? AND V8ClassName=?");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert(false && "Could not retrieve cached statement for V8ElementECClassInfo::Find.");
@@ -3146,7 +3143,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             if (stat != BentleyApi::SUCCESS)
                 {
                 Utf8PrintfString msg("Could not read v8 ECSchema XML for '%s'.", v8SchemaName.c_str());
-                ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
+                ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
                 OnFatalError(Converter::IssueCategory::MissingData());
                 return;
                 }
@@ -3165,14 +3162,14 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             if (externalSchema == nullptr)
                 {
                 Utf8PrintfString msg("Could not locate external v8 ECSchema '%s'", v8SchemaName.c_str());
-                ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
+                ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
                 OnFatalError(Converter::IssueCategory::MissingData());
                 return;
                 }
             if (ECObjectsV8::SCHEMA_WRITE_STATUS_Success != externalSchema->WriteToXmlString(schemaXml))
                 {
                 Utf8PrintfString msg("Could not serialize external v8 ECSchema '%s'", v8SchemaName.c_str());
-                ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::CorruptData(), Converter::Issue::Error(), "Could not serialize external v8 ECSchema.");
+                ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::CorruptData(), Converter::Issue::Error(), "Could not serialize external v8 ECSchema.");
                 OnFatalError(Converter::IssueCategory::CorruptData());
                 return;
                 }
@@ -3187,7 +3184,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
                 !IsDynamicSchema(v8SchemaName.c_str(), schemaXml))
                 {
                 Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema yet the version is the same as or lower than the version stored.  Minor version must be greater than stored version in order to update.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
-                ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
+                ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
                 OnFatalError(Converter::IssueCategory::InconsistentData());
                 return;
 

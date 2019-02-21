@@ -823,8 +823,8 @@ TEST_F(ECConversionTests, UpdatePropertyValueOnExistingInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo(m_params);
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
         RepositoryLinkId editV8FileSyncInfoId;
         syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
         DgnModelId editModelId;
@@ -832,7 +832,6 @@ TEST_F(ECConversionTests, UpdatePropertyValueOnExistingInstance)
         DgnElementId dgnDbElementId;
         syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eidWithInst);
 
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
         ASSERT_TRUE(dgnDbElement.IsValid());
 

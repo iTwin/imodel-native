@@ -896,7 +896,6 @@ BentleyStatus iModelBridgeFwk::DoInitial()
         m_briefcaseDgnDb->AbandonChanges();
         m_briefcaseDgnDb = nullptr;
         m_briefcaseName.BeDeleteFile();
-        m_bridge->_DeleteSyncInfo();
         return BentleyStatus::ERROR;
         }
 

@@ -1746,19 +1746,14 @@ void Converter::ReportDgnFileStatus(DbResult fileStatus, BeFileNameCR projectFil
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::AttachSyncInfo()
     {
-    // Create and then attach the .syncInfo file to the project
-    BeFileName syncInfoFileName = SyncInfo::GetDbFileName(*m_dgndb);
 
-    if (BentleyApi::SUCCESS != m_syncInfo.AttachToProject(GetDgnDb(), syncInfoFileName))
+    if (BentleyApi::SUCCESS != m_syncInfo.Initialize(GetDgnDb()))
         {
-        ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Sync(), Converter::Issue::CantOpenSyncInfo(), "");
-        BeFileName::BeDeleteFile(syncInfoFileName.c_str());
+        ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Sync(), Converter::Issue::CantOpenSyncInfo(), "");
         return OnFatalError();
         }
 
     m_dgndb->SaveChanges();
-
-    BeAssert(m_syncInfo.IsValid());
     BeAssert(!WasAborted());
 
     return SUCCESS;
@@ -1796,7 +1791,6 @@ void Converter::_OnConversionStart()
 
     ParseLevelConfigAndUpdateParams(m_config);
 
-    BeAssert(GetSyncInfo().IsValid());
     GetChangeDetector()._Prepare(*this);
 
     InitLinkConverter();
@@ -3606,9 +3600,6 @@ ConverterLibrary::ConverterLibrary(DgnDbR bim, RootModelSpatialParams& params) :
 
     m_changeDetector.reset(new CreatorChangeDetector); // *** NEEDS WORK: we must use a real change detector in case we are updating, if only to detect changes to drawings and sheets.
     
-    if (SUCCESS != m_syncInfo.CreateEmptyFile(SyncInfo::GetDbFileName(*m_dgndb)))
-        ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Sync(), Converter::Issue::CantCreateSyncInfo(), "");
-
     AttachSyncInfo();
 
     m_dgndb->AddIssueListener(m_issueReporter.GetECDbIssueListener());

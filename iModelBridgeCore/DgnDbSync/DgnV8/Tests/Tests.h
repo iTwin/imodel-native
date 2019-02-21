@@ -38,8 +38,7 @@ struct SyncInfoReader
     BentleyApi::BeSQLite::Db m_syncInfo;
     Converter::Params* m_params;
 
-    SyncInfoReader(Converter::Params&);
-    void AttachToDgnDb(BentleyApi::BeFileNameCR);
+    SyncInfoReader(Converter::Params&, DgnDbPtr db);
     void MustFindFileByName(RepositoryLinkId&, BentleyApi::BeFileNameCR v8FileName, int expectedCount=1);
     void MustFindModelByV8ModelId(DgnModelId&, RepositoryLinkId, DgnV8Api::ModelId, int expectedCount=1);
     void MustFindElementByV8ElementId(DgnElementId&, DgnModelId, DgnV8Api::ElementId, int expectedCount=1);
