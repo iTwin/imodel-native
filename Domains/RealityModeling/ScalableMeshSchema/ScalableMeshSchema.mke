@@ -1,0 +1,105 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ScalableMeshSchema/ScalableMeshSchema.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+#-----------------------------------------------------------
+# Root directory
+#-----------------------------------------------------------
+SrcScMeshSchema                 = $(_MakeFilePath)
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+ScMeshSchemaPublicApiSrc        = $(SrcScMeshSchema)../PublicAPI/ScalableMeshSchema/
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcScMeshSchema)ScalableMeshSchema.mki
+%include $(CompileOptionsMki)
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+meshmodelDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
+                                  $(BuildContext)PublicAPI/DgnPlatform/DgnPlatform.h \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaCommon.h           \
+                                  $(ScMeshSchemaPublicApiSrc)IMeshSpatialModel.h  \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshHandler.h \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshDomain.h \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaApi.h
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Make sure that RasterSchemaInternal.pch is up-to-date.
+#----------------------------------------------------------------------
+PchCompiland        = $(SrcScMeshSchema)ScalableMeshSchemaPCH.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(meshmodelDepends)
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+#--------------------------------------------------------------------------------------
+#   Compile portable source
+#--------------------------------------------------------------------------------------
+$(o)IMeshSpatialModel$(oext)        : $(SrcScMeshSchema)IMeshSpatialModel.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshHandler$(oext)        : $(SrcScMeshSchema)ScalableMeshHandler.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshDomain$(oext)        : $(SrcScMeshSchema)ScalableMeshDomain.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+CCPchOpts =
+CPchOpts =
+
+#--------------------------------------------------------------------------------------
+#   Build the library
+#--------------------------------------------------------------------------------------
+DLM_OBJECT_FILES            = $(objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)ScalableMeshSchemaPCH$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+
+LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
+                                $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ScalableMesh$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+
+
+#$(SYSTEM_LIBRARIES)
+
+
+%include $(sharedMki)LinkLibrary.mki
+
