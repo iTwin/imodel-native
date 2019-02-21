@@ -61,12 +61,12 @@ bool BentPlateProfile::_Validate() const
         return false;
 
     bool const isWidthValid = ProfilesProperty::IsGreaterThanZero (GetWidth());
-    bool const isWallThicknessValid = ValidateWallThickness();
     bool const isBendAngleValid = ValidateBendAngle();
     bool const isBendOffsetValid = ValidateBendOffset();
+    bool const isWallThicknessValid = ValidateWallThickness();
     bool const isFilletRadiusValid = ValidateFilletRadius();
 
-    return isWidthValid && isWallThicknessValid && isBendAngleValid && isBendOffsetValid && isFilletRadiusValid;
+    return isWidthValid && isBendAngleValid && isBendOffsetValid && isWallThicknessValid && isFilletRadiusValid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,10 +132,7 @@ double BentPlateProfile::CalculateMaxWallThickness() const
     Angle const halfAngle = GetBendAngle() * 0.5;
 
     if (BeNumerical::IsLessOrEqualToZero (halfAngle.Cos()))
-        {
-        BeAssert (false && "BendAngle should be less than 180 degrees, so half angle is less than 90 degrees - cos can't be less or equal to 0");
         return 0.0;
-        }
 
     // Calculated wallThickness is maximum for the inner side of the bent plate.
     // Multiply result by 2.0 because the wall thickness is aplied in both ways from the CenterLine
