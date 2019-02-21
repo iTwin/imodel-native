@@ -227,7 +227,7 @@ void GeometryTestCase::InsertPhysicalElementForCenterLineProfile (ProfilePtr pro
 
     if (centerLineGeom.IsValid())
         {
-        Transform translation = Transform::From (DPoint3d::From (range.low.x * -1.0, range.low.y * -1.0, 0.1));
+        Transform translation = Transform::From (DPoint3d::From (range.low.x * -1.0, range.low.y * -1.0, 0.01));
         BeAssert (centerLineGeom->TryTransformInPlace (translation));
 
         builder->Append (GetGeometryParamsForCenterLine());
@@ -333,6 +333,11 @@ TEST_F(GeometryTestCase, ProfilesGeometry)
                                                               3.5, 10.0, 1.0, 0.0, 2.0));
     InsertCenterlineProfileGeometry<CenterLineZShapeProfile> (CenterLineZShapeProfile::CreateParams (GetModel(), "CenterLineZShape",
                                                               3.5, 10.0, 1.0, 0.25, 2.0));
+
+    InsertCenterlineProfileGeometry<BentPlateProfile> (BentPlateProfile::CreateParams (GetModel(), "BentPlate", 6.0, 0.5, Angle::FromDegrees (135), 2.0, 0.5), true);
+    InsertCenterlineProfileGeometry<BentPlateProfile> (BentPlateProfile::CreateParams (GetModel(), "BentPlate", 6.0, 0.5, Angle::FromDegrees (60), 3.0, 0.1));
+    InsertCenterlineProfileGeometry<BentPlateProfile> (BentPlateProfile::CreateParams (GetModel(), "BentPlate", 6.0, 0.5, Angle::FromDegrees (45), 2.0, 0.5));
+    InsertCenterlineProfileGeometry<BentPlateProfile> (BentPlateProfile::CreateParams (GetModel(), "BentPlate", 4.0, 0.5, Angle::FromDegrees (90), 1.0, 0.05));
 
     InsertProfileGeometry<CircleProfile> (CircleProfile::CreateParams (GetModel(), "Circle", 3.0), true);
     InsertProfileGeometry<HollowCircleProfile> (HollowCircleProfile::CreateParams (GetModel(), "HollowCircle", 3.0, 0.5));
