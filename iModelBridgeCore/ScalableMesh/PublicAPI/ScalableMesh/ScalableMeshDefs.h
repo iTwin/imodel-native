@@ -25,47 +25,57 @@
 #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Import;
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
-#if _WIN32
-#ifdef __BENTLEYSTM_BUILD__ 
-    #define BENTLEY_SM_EXPORT __declspec(dllexport)
-#else
-    #define BENTLEY_SM_EXPORT __declspec(dllimport)
-#endif
-#else
-    #define BENTLEY_SM_EXPORT
-#endif
-    
 
-#if _WIN32
-#ifdef __BENTLEYSTMIMPORT_BUILD__ 
-#define BENTLEY_SM_IMPORT_EXPORT __declspec(dllexport)
-#else
-#define BENTLEY_SM_IMPORT_EXPORT __declspec(dllimport)
-#endif
-#else
-    #define BENTLEY_SM_IMPORT_EXPORT
-#endif
+#ifndef BENTLEY_SM_EXPORT
+    #if _WIN32
+    #ifdef __BENTLEYSTM_BUILD__ 
+        #define BENTLEY_SM_EXPORT __declspec(dllexport)
+    #else
+        #define BENTLEY_SM_EXPORT __declspec(dllimport)
+    #endif
+    #else
+        #define BENTLEY_SM_EXPORT
+    #endif
+#endif //BENTLEY_SM_EXPORT
+
+    
+#ifndef BENTLEY_SM_IMPORT_EXPORT
+    #if _WIN32
+    #ifdef __BENTLEYSTMIMPORT_BUILD__ 
+        #define BENTLEY_SM_IMPORT_EXPORT __declspec(dllexport)
+    #else
+        #define BENTLEY_SM_IMPORT_EXPORT __declspec(dllimport)
+    #endif
+    #else
+        #define BENTLEY_SM_IMPORT_EXPORT
+    #endif
+#endif //BENTLEY_SM_IMPORT_EXPORT
+
 
 #if !defined(_WIN32)
 typedef uint8_t byte;
 #endif
 
-#ifdef VANCOUVER_API
-#define IMAGEPP_NAMESPACE_NAME
-#else
-#define IMAGEPP_NAMESPACE_NAME ImagePP
-#endif
-
-
-#ifdef VANCOUVER_API
-    #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
-#else
-    #ifdef DGNDB06_API
-        #define CLIP_VECTOR_NAMESPACE 
+#ifndef IMAGEPP_NAMESPACE_NAME
+    #ifdef VANCOUVER_API
+        #define IMAGEPP_NAMESPACE_NAME
     #else
-        #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
+        #define IMAGEPP_NAMESPACE_NAME ImagePP
     #endif
-#endif
+#endif //IMAGEPP_NAMESPACE_NAME
+
+
+#ifndef CLIP_VECTOR_NAMESPACE
+    #ifdef VANCOUVER_API
+        #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
+    #else
+        #ifdef DGNDB06_API
+            #define CLIP_VECTOR_NAMESPACE 
+        #else
+            #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
+        #endif
+    #endif
+#endif //CLIP_VECTOR_NAMESPACE
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
