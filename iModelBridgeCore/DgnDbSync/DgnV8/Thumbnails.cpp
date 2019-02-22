@@ -183,7 +183,6 @@ BentleyStatus Converter::GenerateThumbnail(ViewDefinition const& view)
     if (IsUpdating() && !ThumbnailUpdateRequired (view))
         return BSISUCCESS;
 
-#if defined(TODO_IMODEL02_THUMBNAILS)
     // VSTS#54728 - Converter hangs on Windows 7 machines due to a bug in folly, which is used during tile generation.
     // Rather than spend time trying to workaround that, we're just turning off thumbnail generation for Windows 7 and earlier.
 #if defined(BENTLEY_WIN32)
