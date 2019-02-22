@@ -648,6 +648,8 @@ void CreateNodeTask(bvector<NodeTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& 
             toExecuteTasks.push_back(newGenerationTask);
             }
 		}
+        else
+            toExecuteTasks.push_back(newGenerationTask);
 
 #ifndef NDEBUG
     else
@@ -1112,8 +1114,6 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t ma
 
     for (size_t ind = 0; ind < textureTasks.size(); ind++)
     {
-        if (textureTasks[ind]->m_orderId > 0)
-            continue;
 
         BeFileName meshTaskFile(taskDirectory);
 
@@ -1362,6 +1362,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateFilterTasks(uint32_t res
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP pXmlTaskNode)
     {
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
+
+    if (pChildNode == nullptr)
+        return SUCCESS;
 
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
@@ -1664,7 +1667,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
     ITextureProviderPtr textureProviderPtr;
     IScalableMeshPtr nullSmPtr;
-    GetTextureProvider(textureProviderPtr, nullSmPtr, pDataIndex);
+    GetTextureProvider(textureProviderPtr, nullSmPtr, pDataIndex);   
+
+    bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>> nodesCreated;
     do
         {
         assert(pChildNode != nullptr);
@@ -1720,8 +1725,30 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
         for (auto& node : nodesToMesh)
         {
+            bool hasNoChildren = false;
+            node->DisableMultiThreadTexturingCutting();
             //node->TextureFromRaster(textureStreamProviderPtr);
+            if (node->IsLeaf())
+                hasNoChildren = true;
             node->TextureFromRaster(textureProviderPtr);
+            if (hasNoChildren && !node->IsLeaf()) 
+            {
+                //add newly created nodes
+                HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> subNodeNoSplit(node->GetSubNodeNoSplit());
+
+                if (subNodeNoSplit != nullptr)
+                {
+                    nodesCreated.push_back((SMMeshIndexNode<DPoint3d, DRange3d>*)(&*subNodeNoSplit));
+                }
+                else
+                {
+                    vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(node->GetSubNodes());
+
+                    for (auto& childNode : childrenNodes)
+                        nodesCreated.push_back((SMMeshIndexNode<DPoint3d, DRange3d>*)(&*childNode));
+                }
+
+            }
         }
 
         generatedNodes.insert(generatedNodes.end(), nodesToMesh.begin(), nodesToMesh.end());
@@ -1730,22 +1757,69 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
         pChildNode = pChildNode->GetNextSibling();
     } while (pChildNode != nullptr);
 
-    //Flush all the data on disk    
-    OpenSqlFiles(false, true);
 
-    for (auto& node : generatedNodes)
-    {
-        node->Discard();
-        // pDataIndex->ClearNodeMap();
+    do
+    { 
+        //at the moment just process newly created nodes in the same task
+        for (auto& node : nodesToMesh)
+        {
+            bool hasNoChildren = false;
+            node->DisableMultiThreadTexturingCutting();
+            //node->TextureFromRaster(textureStreamProviderPtr);
+            if (node->IsLeaf())
+                hasNoChildren = true;
+            node->TextureFromRaster(textureProviderPtr);
+            if (hasNoChildren && !node->IsLeaf())
+            {
+                //add newly created nodes
+                HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> subNodeNoSplit(node->GetSubNodeNoSplit());
 
-        node->Unload();
-    }
+                if (subNodeNoSplit != nullptr)
+                {
+                    nodesCreated.push_back((SMMeshIndexNode<DPoint3d, DRange3d>*)(&*subNodeNoSplit));
+                }
+                else
+                {
+                    vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(node->GetSubNodes());
 
-    generatedNodes.clear();
+                    for (auto& childNode : childrenNodes)
+                        nodesCreated.push_back((SMMeshIndexNode<DPoint3d, DRange3d>*)(&*childNode));
+                }
 
-    pDataIndex->Store();
+            }
+        }
 
-    CloseSqlFiles();
+        generatedNodes.insert(generatedNodes.end(), nodesToMesh.begin(), nodesToMesh.end());
+
+        nodesToMesh.clear();
+
+        //Flush all the data on disk    
+        OpenSqlFiles(false, true);
+
+        for (auto& node : generatedNodes)
+        {
+            node->Discard();
+            // pDataIndex->ClearNodeMap();
+
+            node->Unload();
+        }
+
+        generatedNodes.clear();
+
+        for (auto& node : nodesCreated)
+        {
+            node->NeedToLoadNeighbors(false);
+
+            node->Load();
+            node->LoadData(&meshDataToLoad);
+            nodesToMesh.push_back(node);
+        }
+        nodesCreated.clear();
+
+        pDataIndex->Store();
+
+        CloseSqlFiles();
+    } while (!nodesToMesh.empty());
 
     return SUCCESS;
     }

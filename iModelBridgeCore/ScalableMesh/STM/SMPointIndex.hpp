@@ -9117,6 +9117,7 @@ template<class POINT, class EXTENT>
 void SMPointIndex<POINT, EXTENT>::SetTextured(SMTextureType textureState)
     {
     m_indexHeader.m_textured = textureState;
+    m_indexHeaderDirty = true;
     }
 
 template<class POINT, class EXTENT>
