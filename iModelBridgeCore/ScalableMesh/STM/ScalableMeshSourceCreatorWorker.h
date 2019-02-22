@@ -54,7 +54,8 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         HFCPtr<MeshIndexType> GetDataIndex();
 
-        
+        void FreeDataIndex();        
+                
         void GetGenerationTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);
 
         void GetTextureTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);

@@ -224,6 +224,14 @@ HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
     return m_pDataIndex;
     }
 
+void IScalableMeshSourceCreatorWorker::Impl::FreeDataIndex()
+    {
+    m_smDb = nullptr;
+    m_smSisterDb = nullptr;
+    m_mainFilePtr = nullptr;
+    m_sisterFilePtr = nullptr;
+    m_pDataIndex = nullptr;
+    }
 
 void IScalableMeshSourceCreatorWorker::Impl::GetSisterMainLockFileName(BeFileName& lockFileName) const
     {
@@ -805,8 +813,13 @@ void CreateGroupStitchingTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t ma
             
             if (currentTask->m_totalNbPoints + totalPointsCount > maxGroupSize)
                 {
-                toExecuteTasks.push_back(currentTask);
-                currentTask = new GenerationTask((uint32_t)toExecuteTasks[0]->m_resolutionToGenerate.size());                
+                //MST - Edge case, when the ratio split threshold/group size is big handling the stiching of one group can required more points 
+                //than the generation group itself.
+                if (currentTask->m_totalNbPoints > 0)
+                    {
+                    toExecuteTasks.push_back(currentTask);
+                    currentTask = new GenerationTask((uint32_t)toExecuteTasks[0]->m_resolutionToGenerate.size());
+                    }
 
                 for (auto& foundNodeId : foundNodeIds)
                     {
@@ -818,18 +831,26 @@ void CreateGroupStitchingTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t ma
                 }
 
             currentTask->m_resolutionToGenerate[resInd].m_requireMeshingFiltering = false;            
-            currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.end(), toStitchNodeIds.begin(), toStitchNodeIds.end());
-            currentTask->m_resolutionToGenerate[resInd].m_nodeIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeIds.end(), toStitchNodeIds.begin(), toStitchNodeIds.end());                        
-            currentTask->m_resolutionToGenerate[resInd].m_nodeIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeIds.end(), notFoundNodeIds.begin(), notFoundNodeIds.end());                        
+            currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeStitchIds.end(), toStitchNodeIds.begin(), toStitchNodeIds.end());            
+            currentTask->m_resolutionToGenerate[resInd].m_nodeIds.insert(currentTask->m_resolutionToGenerate[resInd].m_nodeIds.end(), notFoundNodeIds.begin(), notFoundNodeIds.end());
+
+            std::sort(notFoundNodeIds.begin(), notFoundNodeIds.end());
+
+            for (auto& stitchId : toStitchNodeIds)
+                {
+                if (!std::binary_search(notFoundNodeIds.begin(), notFoundNodeIds.end(), stitchId))
+                    currentTask->m_resolutionToGenerate[resInd].m_nodeIds.push_back(stitchId);
+                }
+                                            
             currentTask->m_totalNbPoints += totalPointsCount;
             currentTask->m_orderId = maxOrderId;
             }    
 
         remainingTaskIter++;
         }
-
-    assert(currentTask->m_totalNbPoints > 0);
-    toExecuteTasks.push_back(currentTask);
+    
+    if (currentTask->m_totalNbPoints > 0)
+        toExecuteTasks.push_back(currentTask);
     
     /*
 
@@ -925,6 +946,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
     GetGenerationTasks(generationTasks, maxGroupSize);
         
     CloseSqlFiles();
+
+    FreeDataIndex();
 
     uint64_t totalNodes = 0;
     uint64_t totalStichableNodes = 0;
@@ -1365,6 +1388,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     if (pChildNode == nullptr)
         return SUCCESS;
+    assert(m_pDataIndex.GetPtr() == nullptr);
 
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
@@ -1387,7 +1411,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     SMMeshDataToLoad meshDataToFiltering;
     meshDataToFiltering.m_ptIndices = false;
-                    
+                        
     do
         {
         assert(pChildNode != nullptr);
@@ -1440,8 +1464,22 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         xmlStatus = pChildNode->GetAttributeBooleanValue(needMeshing, "needMeshing");
         assert(xmlStatus == BEXML_Success);
 
-        //Load all the nodes created during the indexing step. 
         
+
+/*
+        BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+        BeFileName lockFileName(m_scmFileName);
+        lockFileName.AppendString(L".lock");
+
+        FILE* lockFile; 
+
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();            
+            }
+            */
+         
         //TBD_G : Need lock file?        
         StatusInt status = OpenSqlFiles(true, true);
         assert(status == SUCCESS);
@@ -1457,13 +1495,15 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
             HPMBlockID blockID(tileId);
 
             HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
-
+            
             if (std::find(stitchTileIds.begin(), stitchTileIds.end(), tileId) != stitchTileIds.end())    
                 meshNode->NeedToLoadNeighbors(true);
             else
                 meshNode->NeedToLoadNeighbors(false);
         
-            meshNode->Load();
+            //assert(!meshNode->IsLoaded());
+            //meshNode->Unload();
+            meshNode->Load();            
             meshNode->LoadData(&meshDataToLoad);
 
             //
@@ -1473,22 +1513,48 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
                 if (childNode != nullptr)
                     {
-                    childNode->NeedToLoadNeighbors(false);
-                    childNode->Load();
-                    childrenNodesForFiltering.push_back(childNode);
-                    //childNode->LoadData(&meshDataToFiltering);
-                    }
-                else
-                    {
-                    vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(meshNode->GetSubNodes());
-                    for (auto& childNode : childrenNodes)
+                    bool found = false;
+                    for (auto& node : generatedNodes)
+                        {       
+                        if (childNode->GetBlockID().m_integerID == node->GetBlockID().m_integerID)
+                            {
+                            found = true;
+                            break;
+                            }
+                        }
+
+                    if (!found)
                         {
                         childNode->NeedToLoadNeighbors(false);
                         childNode->Load();
                         childNode->LoadData(&meshDataToFiltering);
                         childrenNodesForFiltering.push_back(childNode);
                         }
-                    }                
+                    }
+                else
+                    {
+                    vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(meshNode->GetSubNodes());
+                    for (auto& childNode : childrenNodes)
+                        {             
+                        bool found = false;
+                        for (auto& node : generatedNodes)
+                            {            
+                            if (childNode->GetBlockID().m_integerID == node->GetBlockID().m_integerID)
+                                {
+                                found = true;
+                                break;
+                                }
+                            }
+
+                        if (!found)
+                            {
+                            childNode->NeedToLoadNeighbors(false);
+                            childNode->Load();
+                            childNode->LoadData(&meshDataToFiltering);
+                            childrenNodesForFiltering.push_back(childNode);
+                            }
+                        }
+                    }
                 }
 
             ptsNeighbors.push_back(meshNode->GetPointsPtr());
@@ -1504,11 +1570,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
         CloseSqlFiles();
 
+        //fclose(lockFile);
+
         for (auto& node : nodesToMesh)
             {
             vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> subNodes(node->GetSubNodes());
-            
-
+                                    
             for (auto& subNode : subNodes)
                 {         
                 bool found = false;
@@ -1538,8 +1605,18 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
             {
             for (auto& node : nodesToMesh)
                 {                  
+#ifndef NDEBUG
+                uint32_t pointCount = node->GetNbObjects();
+#endif
                 node->Filter((int)node->GetLevel(), nullptr);                
                 node->SetDirty(true);
+
+#ifndef NDEBUG
+                uint32_t newPointCount = node->GetNbObjects();
+                assert(pointCount <= newPointCount);
+                assert(newPointCount > 0);
+                assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+#endif
                 }
             }
             
@@ -1568,17 +1645,56 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
                 if (node->GetBlockID().m_integerID == tileId)
                     {        
+#ifndef NDEBUG
+                    uint32_t pointCount = node->GetNbObjects();
+                    assert(node->m_nodeHeader.m_nodeCount == pointCount);
+#endif
+
                     bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
-                
+                    assert(isStitched == true);
+                    
                     if (isStitched)
                         {
                         node->SetDirty(true);
                         }
 
+#ifndef NDEBUG
+                    uint32_t newPointCount = node->GetNbObjects();
+                    assert(pointCount <= newPointCount);
+                    assert(newPointCount > 0);
+                    assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+#endif
+
                     break;
                     }
                 }
             }
+
+#ifndef NDEBUG
+        if (!needFiltering && !needMeshing)
+            {
+            bool found = false;
+
+            for (auto& node : nodesToMesh)
+                {
+                for (auto& tileId : stitchTileIds)
+                    {                    
+                    if (node->GetBlockID().m_integerID == tileId)
+                        {
+                        found = true;
+                        break;
+                        }
+                    }
+
+                if (!found)
+                    assert(node->IsDirty() == false);
+                /*
+                else
+                    assert(node->IsDirty() == true);
+                    */
+                }            
+            }
+#endif
 
         generatedNodes.insert(generatedNodes.end(), nodesToMesh.begin(), nodesToMesh.end());
         generatedPtsNeighbors.insert(generatedPtsNeighbors.end(), ptsNeighbors.begin(), ptsNeighbors.end());
@@ -1590,6 +1706,21 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         pChildNode = pChildNode->GetNextSibling();
         } while (pChildNode != nullptr);
             
+
+/*
+    BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+    BeFileName lockFileName(m_scmFileName);
+    lockFileName.AppendString(L".lock");
+
+    FILE* lockFile; 
+
+    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+        {
+        sleeper.Sleep();
+        }
+*/
+
     //Flush all the data on disk    
     OpenSqlFiles(false, true);
 
@@ -1604,21 +1735,26 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     childrenNodesForFiltering.clear();
 
     for (auto& node : generatedNodes)
-        {
+        {          
         node->Discard();
-        // pDataIndex->ClearNodeMap();
-
         node->Unload();
         }
 
     generatedNodes.clear();
+    
+    pDataIndex->Store();    
 
+    CloseSqlFiles();
+
+    FreeDataIndex();
+
+   // fclose(lockFile);
 
     
 
-    pDataIndex->Store();            
+    //m_pDataIndex->UnloadAllNodes();
 
-    CloseSqlFiles();
+    //m_pDataIndex = nullptr;
 
 #if 0 
     //The save and save sister files are closing the db, which can create deadlock. Add sisterMain lock to prevent this for happening.
@@ -1919,7 +2055,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
 
     m_smSQLitePtr->Save();
 
-    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
     assert(pSqliteStore != nullptr);
     pSqliteStore->SaveSisterFiles();
 
@@ -1982,7 +2118,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
     pDataIndex->Store();
     m_smSQLitePtr->Save();
 
-    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
     assert(pSqliteStore != nullptr);
     pSqliteStore->SaveSisterFiles();
 
@@ -1995,7 +2131,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
     {            
     if (m_smDb == nullptr || m_smSisterDb == nullptr)
         {
-        SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+        SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
         assert(pSqliteStore != nullptr);
         
         m_mainFilePtr = GetFile(true);
