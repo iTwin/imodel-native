@@ -193,9 +193,9 @@ void VersionCompareTestFixture::SetUp()
     m_conMgr = new ConnectionManager();
     RulesDrivenECPresentationManager::Paths paths (rulesetsDir, tempDir);
     IECPresentationManager::SetSerializer(new ECPresentation::DefaultECPresentationSerializer());
-    IECPresentationManager::SetLocalizationProvider(new ECPresentation::SQLangLocalizationProvider());
 
     m_manager = new RulesDrivenECPresentationManager(*m_conMgr, paths);
+    m_manager->SetLocalizationProvider(new ECPresentation::SQLangLocalizationProvider());
 
     // Add presentation rules
     rulesetsDir.AppendToPath(L"PresentationRules");
