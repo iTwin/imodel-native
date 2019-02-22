@@ -516,8 +516,9 @@ Render::FillDisplay GetFillDisplay () const
     Get fill display from m_fillType, which may be set by an object enabler.
     A LWPolyline is never filled, but its OE may call _SetFill (unexpected though)!
     -----------------------------------------------------------------------------------*/
+    double width = 0.0;
     auto lwpline = DwgDbPolyline::Cast (this->GetSourceEntity());
-    if (nullptr != lwpline)
+    if (nullptr != lwpline && (!lwpline->GetConstantWidth(width) || width < 1.0e-5))
         return  Render::FillDisplay::Never;
 
     return DwgGiFillType::Always == m_filltype ? Render::FillDisplay::Always : Render::FillDisplay::Never;
@@ -1200,6 +1201,13 @@ virtual void    _Pline (DwgDbPolylineCR pline, size_t fromIndex = 0, size_t numS
     CurveVectorPtr  curveVector = plineFactory.CreateCurveVector (false);
     if (curveVector.IsValid())
         {
+        auto shape = plineFactory.ApplyConstantWidthTo (curveVector);
+        if (shape.IsValid())
+            {
+            curveVector = shape;
+            m_drawParams._SetFillType (DwgGiFillType::Always);
+            }
+
         if (m_isTargetModel2d)
             {
             this->AppendGeometry (*curveVector.get());
@@ -2253,7 +2261,8 @@ void    ElementFactory::SetBaseTransform (TransformCR blockTrans)
     if (!DwgHelper::GetTransformForSharedParts(&m_baseTransform, &m_basePartScale, blockToModel))
         m_canCreateSharedParts = false;
 
-    this->Validate2dTransform (m_baseTransform);
+    if (this->Validate2dTransform(m_baseTransform) && m_canCreateSharedParts && m_basePartScale != 0.0)
+        DwgHelper::NegateScaleForSharedParts (m_basePartScale, blockTrans);
 
     m_invBaseTransform.InverseOf (m_baseTransform);
 
@@ -2344,7 +2353,7 @@ void    ElementFactory::ApplyPartScale (TransformR transform, double scale, bool
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ElementFactory::Validate2dTransform (TransformR transform) const
+bool    ElementFactory::Validate2dTransform (TransformR transform) const
     {
     DPoint3d    placementPoint;
     transform.GetTranslation (placementPoint);
@@ -2354,6 +2363,8 @@ void    ElementFactory::Validate2dTransform (TransformR transform) const
 
     YawPitchRollAngles  angles;
     YawPitchRollAngles::TryFromRotMatrix (angles, matrix);
+
+    bool changed = false;
 
     // validate Placement2d
     if (!m_is3d)
@@ -2372,11 +2383,13 @@ void    ElementFactory::Validate2dTransform (TransformR transform) const
                         transform.form3d[i][j] = 0.0;
                     }
                 }
+            changed = true;
             }
         // and has no z-translation:
         placementPoint.z = 0.0;
         transform.SetTranslation (placementPoint);
         }
+    return  changed;
     }
 
 /*---------------------------------------------------------------------------------**//**
