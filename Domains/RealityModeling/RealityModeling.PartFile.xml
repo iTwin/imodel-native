@@ -14,11 +14,11 @@
 
     <Part Name="ScalableMeshSchemaMobile" OnlyPlatforms="iOSARM64,AndroidArm64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchemaIos.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
         <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
-        <SubPart PartName="ScalableMeshCoreStaticLinux" PartFile="ScalableMesh" Repository="ScalableMesh" LibType="Static"/>
-        <SubPart PartName="ImagePP"         PartFile="ImagePP"                  Repository="ImagePP" LibType="Static"/>
-        <SubPart PartName="Core"            PartFile="TerrainModelDgnDb"        Repository="TerrainModel" LibType="Static"/>
-        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"              Repository="DgnPlatform" LibType="Static"/>
-        <SubPart PartName="DgnView"         PartFile="DgnDisplay"               Repository="DgnDisplay" LibType="Static"/>
+        <SubPart PartName="ScalableMeshCoreStaticLinux" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" LibType="Static"/>
+        <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                       LibType="Static"/>
+        <SubPart PartName="Core"            PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"        LibType="Static"/>
+        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                     LibType="Static"/>
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"               Repository="DgnDisplay"       LibType="Static"/>
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(ApiNumber)$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>

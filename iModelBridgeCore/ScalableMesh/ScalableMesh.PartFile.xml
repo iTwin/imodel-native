@@ -24,7 +24,7 @@
 
 
     <Part Name="ScalableMeshRDSDependencies_DgnDb06" >
-        <SubPart PartName="RealityPlatform"            PartFile="RealityModFramework"       Repository="RealityModFramework"/>
+        <SubPart PartName="RealityPlatform"            PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework"/>
         <SubPart PartName="CCApi"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient"/>
         <SubPart PartName="BeXmlDll"                   PartFile="BeLibxml2"                 Repository="libsrc-libxml2" />    
     </Part>
@@ -71,29 +71,29 @@
 
     <!--<Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="G" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1">-->
     <Part Name="ScalableMesh_DgnDb06" BMakeFile="ScalableMesh_DgnDb06.mke" ApiNumber="G">
-        <SubPart PartName="DgnPlatformDll"   PartFile="DgnPlatform"                          Repository="DgnPlatform" />
-        <!--<SubPart PartName="TilePublisherLib" PartFile="DgnPlatform"                          Repository="DgnPlatform"/>-->
+        <SubPart PartName="DgnPlatformDll"   PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <!--<SubPart PartName="TilePublisherLib" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>-->
         <!--<SubPart PartName="PCLWrapper" />
         <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>   -->
-        <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>
-        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
-        <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
-        <SubPart PartName="Core_DgnDb06"    PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
-        <SubPart PartName="Formats_DgnDb06" PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
-        <SubPart PartName="AutomaticGroundDetection_DgnDb06" PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
+        <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"/>
+        <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"/>
+        <!--<SubPart PartName="GdalLib"         PartFile="iModelBridgeCore/Imagepp/ImagePP"/>-->
+        <SubPart PartName="Core_DgnDb06"    PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"/>
+        <SubPart PartName="Formats_DgnDb06" PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"/>
+        <SubPart PartName="AutomaticGroundDetection_DgnDb06" PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"/>
         <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
-        <SubPart PartName="CloudDataSource_DgnDb06" PartFile="CloudDataSource" Repository="ScalableMesh" />
+        <SubPart PartName="CloudDataSource_DgnDb06" PartFile="iModelBridgeCore/ScalableMesh/CloudDataSource"/>
         <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
-        <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
-        <SubPart PartName="ThreeMxReader" PartFile="RealityModeling" Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite"/>
+        <SubPart PartName="BePointCloud" PartFile="iModelBridgeCore/Pointools/BePointCloud/BePointCloud" />
+        <SubPart PartName="ThreeMxReader" PartFile="Domains/RealityModeling/RealityModeling" />
         <SubPart PartName="ScalableMeshRDSDependencies_DgnDb06"/>
 
         <!-- For Importer-->
         <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
-        <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
+        <SubPart PartName="DgnGeoCoord"     PartFile="iModelCore/GeoCoord/GeoCoord"/>
         <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  -->
-        <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>    -->
+        <!--<SubPart PartName="ElementHandler"         PartFile="iModelBridgeCore/TerrainModel/TerrainModelElement"/>    -->
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>
             <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies>
@@ -162,7 +162,7 @@
         <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02" LibType="Static" />
         <SubPart PartName="CloudDataSource"  PartFile="iModelBridgeCore/ScalableMesh/CloudDataSource"                      Repository="imodel02" LibType="Static" />
         <SubPart PartName="Cgal"             PartFile="Libsrc-Nugets"                        Repository="bsicommon" LibType="Static"/>
-        <SubPart PartName="RealityPlatformToolsNoCC"    PartFile="RealityModFramework"  Repository="RealityModFramework" LibType="Static"/>
+        <SubPart PartName="RealityPlatformToolsNoCC"    PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework"  Repository="imodel02" LibType="Static"/>
         
     
         <Bindings>
@@ -204,8 +204,8 @@
     </Part>
 
     <Part Name="ScalableMeshATPexe_DgnDb06" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
-        <SubPart PartName="ScalableMesh_DgnDb06"  PartFile="ScalableMesh" Repository="ScalableMesh" />
-        <SubPart PartName="RasterSchema"            PartFile="RealityModeling"          Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ScalableMesh_DgnDb06"  PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" />
+        <SubPart PartName="RasterSchema"            PartFile="Domains/RealityModeling/RealityModeling" />
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
@@ -612,8 +612,8 @@
 
     <Product Name="ScalableMeshATP_DgnDb06" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe_DgnDb06" />
-        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <Directories DirectoryListName="DgnPlatformDirList" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <Directories DirectoryListName="DgnPlatformDirList" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <Directories DirectoryListName="ScalableMeshATP_DgnDb06" />
     </Product>
 
@@ -635,11 +635,11 @@
 
 
     <Product Name="ScalableMeshLumenSdk_DgnDb06" SaveProduct="true" >
-        <SubPart PartName="ScalableMesh_DgnDb06"  PartFile="ScalableMesh" Repository="ScalableMesh" />
-        <SubPart PartName="RasterSchema"            PartFile="RealityModeling"          Repository="DgnDomains-RealityModeling" />
-        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="ScalableMesh_DgnDb06"  PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh"/>
+        <SubPart PartName="RasterSchema"            PartFile="Domains/RealityModeling/RealityModeling"/>
+        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
-        <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Directories DirectoryListName="DgnPlatform" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <Directories DirectoryListName="ScalableMeshLumenSdk_DgnDb06" />
     </Product>
 

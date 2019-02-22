@@ -6,7 +6,7 @@
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
+PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/AssertScalableMeshPolicy.mki
 
 VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
@@ -21,7 +21,7 @@ CCompOpts + $(VendorApiIncludes)
 
 #consoleAppUnicode = 1
 
-includeDir=$(SrcRoot)ScalableMesh/CloudDataSource/include/
+includeDir=$(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/CloudDataSource/include/
 dirToSearch=$(includeDir)
 %include cincapnd.mki
 
@@ -39,7 +39,7 @@ o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
 always:
     ~mkdir $(o)
 
-SrcDir=$(SrcRoot)ScalableMesh/CloudDataSource/
+SrcDir=$(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/CloudDataSource/
 
 always:
     @CreateSymLinks.py -d"$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"

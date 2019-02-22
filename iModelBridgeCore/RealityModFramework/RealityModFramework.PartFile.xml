@@ -41,7 +41,7 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/>
-        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
+        <SubPart PartName="ImagePPDll"                 PartFile="iModelBridgeCore/Imagepp/ImagePP"                   Repository="imodel02" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformToolsLight$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatformToolsLight$(ApiNumber)$(shlibext)</Assemblies>
@@ -165,7 +165,7 @@
     <Part Name="RealityServicesNet" BMakeFile="RealityServicesNet\RealityServicesNet.mke">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>         
+        <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/>         
         <Bindings>
             <Assemblies>Delivery/RealityServicesNet$(shlibext)</Assemblies>
         </Bindings>

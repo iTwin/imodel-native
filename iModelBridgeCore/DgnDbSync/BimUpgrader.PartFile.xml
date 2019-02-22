@@ -45,8 +45,8 @@
 
     <Product Name="DgnDb0601Exporter">
         <SubPart PartName="DgnDb0601ExporterExe"/>
-        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="DgnDbSync" Repository="DgnDbSync"/>
-        <Directories DirectoryListName="BimUpgraderDirList"  PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+        <Directories DirectoryListName="BimUpgraderDirList"  PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
     </Product>
 
     <Part Name="DgnDbCreator" BentleyBuildMakeFile="BimFromDgnDb/Tests/DgnDbCreator.mke" OnlyPlatforms="x64" ExcludeLibType="Static">

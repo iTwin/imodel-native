@@ -8,7 +8,7 @@
 CCompOpts + -wd4456 -wd4458 -wd4838 -wd4459
 
 %include  mdl.mki
-%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/TerrainModelCommon.mki
 
 formatsDir              = $(_MakeFilePath)
 terrainModelFormatsObj  = $(terrainModelBuildDir_)TerrainModelFormats/

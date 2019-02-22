@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------------------------
 programName = DwgImporterTests
 baseDir =   $(_MakeFilePath)
-DwgPublicAPI = $(SrcRoot)DgnDbSync/PublicAPI/Dwg/
+DwgPublicAPI = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/Dwg/
 
 BEGTEST_INPUT=$(baseDir)
 
