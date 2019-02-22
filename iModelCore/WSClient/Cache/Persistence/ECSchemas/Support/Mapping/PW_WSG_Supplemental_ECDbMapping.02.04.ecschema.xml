@@ -40,4 +40,21 @@
         </ECCustomAttributes>
     </ECClass>
 
+    <ECClass typeName="Interface">
+        <ECCustomAttributes>
+            <!-- BIM02 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="AttributeDefinition">
+        <ECCustomAttributes>
+            <!-- BIM02 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
 </ECSchema>

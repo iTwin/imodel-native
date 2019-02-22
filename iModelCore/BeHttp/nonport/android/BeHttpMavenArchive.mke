@@ -2,7 +2,7 @@
 #
 #     $Source: nonport/android/BeHttpMavenArchive.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -25,8 +25,14 @@
 #--------------------------------------------------------------------------------------
 #   Set variables to match default Gradle project structure
 #--------------------------------------------------------------------------------------
-buildOut    = $(OutputRootDir)build/$(_MakeFileName)/
+buildOut    = $(PartBuildDir)
 projectDir  = $(_MakeFilePath)BeHttp/
+
+%if defined(BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(buildOut)
+    %return
+%endif
 
 always:
     !~@mkdir $(buildOut)

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/V8FileEditor.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "V8FileEditor.h"
@@ -88,4 +88,44 @@ void V8FileEditor::AddAttachment(BentleyApi::BeFileNameCR attachmentFileName, Dg
     ASSERT_TRUE(nullptr != attachment);
     attachment->SetRefOrigin(origin);
     ASSERT_EQ( BentleyApi::SUCCESS, attachment->WriteToModel() );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void V8FileEditor::AddModel (DgnV8Api::ModelId& modelid, Bentley::WStringCR modelName)
+    {
+    Bentley::WString wModelName (modelName.c_str ());
+    DgnV8Api::DgnModelStatus modelStatus;
+    DgnV8Api::DgnModel* model = m_file->CreateNewModel (&modelStatus, modelName.c_str (), DgnV8Api::DgnModelType::Sheet, true);
+    ASSERT_TRUE (nullptr != model);
+    ASSERT_TRUE (DgnV8Api::DgnModelStatus::DGNMODEL_STATUS_Success == modelStatus);
+    modelid = model->GetModelId ();
+    DgnV8Api::ElementId eid;
+    AddLine (&eid, model, Bentley::DPoint3d::From (1000, 1000, 0));
+    Save ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void V8FileEditor::AddView (DgnV8Api::ElementId& elementId, Bentley::WStringCR viewName)
+    {
+    DgnV8Api::NamedViewPtr namedViewPtr;
+    DgnV8Api::NamedView::Create (namedViewPtr, *m_file, viewName.c_str ());
+    ASSERT_EQ (DgnV8Api::NamedViewStatus::Success, namedViewPtr->WriteToFile ());
+    Save ();
+    elementId = namedViewPtr->GetElementId ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void V8FileEditor::AddLevel (DgnV8Api::LevelId& levelid, Bentley::WStringCR levelName)
+    {
+    DgnV8Api::FileLevelCache& lt = m_file->GetLevelCacheR ();
+    DgnV8Api::EditLevelHandle level = lt.CreateLevel (levelName.c_str (), 0xffffffff, -1);
+    ASSERT_TRUE (level.IsValid ());
+    ASSERT_EQ (Bentley::DgnPlatform::LevelCacheErrorCode::None, lt.Write ());
+    levelid = level.GetLevelId ();
     }

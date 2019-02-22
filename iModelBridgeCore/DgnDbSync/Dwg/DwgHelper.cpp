@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgHelper.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -1041,6 +1041,23 @@ void            DwgHelper::SetGradientFrom (DwgGiGradientFillR gradientOut, DwgD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      DwgHelper::GetAttrdefECSchemaName (DwgDbDatabaseCP dwg)
+    {
+    // build a per-file attrdef schema name
+    Utf8String  schemaName = SCHEMAName_AttributeDefinitions;
+    if (dwg != nullptr)
+        {
+        Utf8String  filename(BeFileName::GetFileNameWithoutExtension(dwg->GetFileName().c_str()).c_str());
+        schemaName += "_" + filename;
+        if (!ECNameValidation::IsValidName(schemaName.c_str()))
+            ECNameValidation::EncodeToValidName (schemaName, schemaName.c_str());
+        }
+    return  schemaName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String      DwgHelper::GetAttrdefECClassNameFromBlockName (WCharCP blockName)
     {
     // build an ECClassName representing a collection of attribute definitions in a block:
@@ -1346,6 +1363,19 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbRegionCR region, CurveVec
         auto entity = DwgDbEntity::Cast (entities[i]);
         if (nullptr != entity && shape.IsValid())
             {
+            // if it's a region, recursively drop it:
+            auto nestedRegion = DwgDbRegion::Cast (entity);
+            if (nullptr != nestedRegion)
+                {
+                auto nestedShape = DwgHelper::CreateCurveVectorFrom (*nestedRegion, type, transform);
+                if (nestedShape.IsValid())
+                    shape->Add (nestedShape);
+                else
+                    BeAssert (false && "Nested region failed!");
+                ::free (entities[i]);
+                continue;
+                }
+
             // expect primitive geometries only
             auto curve = DwgHelper::CreateCurvePrimitive (*entity, transform);
             if (curve.IsValid())
@@ -1761,7 +1791,7 @@ uint32_t    DwgHelper::GetDwgImporterVersion ()
     uint32_t    toolkitVersion = 0, importerVersion = 0;
 #ifdef DLM_API_NUMBER
     // parse the DLL suffix "####b#"
-    BeAssert (::sscanf(DLM_API_NUMBER, "%db%d", &toolkitVersion, &importerVersion) == 2);
+    BeAssert (::sscanf(DLM_API_NUMBER, "%ub%u", &toolkitVersion, &importerVersion) == 2);
 #else
     BeAssert (false && "DLM_API_NUMBER should be passed through the makefile!");
 #endif

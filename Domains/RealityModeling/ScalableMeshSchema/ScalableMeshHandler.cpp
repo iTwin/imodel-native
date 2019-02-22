@@ -2,7 +2,7 @@
 |
 |     $Source: ScalableMeshSchema/ScalableMeshHandler.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,6 +17,12 @@
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/IScalableMeshSaveAs.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
+
+#if defined(_WIN32) && !defined(NDEBUG)
+    #define _X86_
+    #include <debugapi.h>
+    #undef min
+#endif
 
 #define SCALABLEMESH_MODEL_PROP_Clips           "SmModelClips"
 #define SCALABLEMESH_MODEL_PROP_GroundCoverages "SmGroundCoverages"
@@ -43,6 +49,12 @@ USING_NAMESPACE_BENTLEY_RENDER
 #define PRINT_MSG(...)
 #endif
 
+#ifndef NDEBUG
+    static int s_activeNodeCounter = 0;
+    static int s_activeLoadedNodeCounter = 0;
+#endif
+
+
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre     3/2017
@@ -57,7 +69,7 @@ BentleyStatus IScalableMeshLocationProvider::GetExtraFileDirectory(BeFileNameR e
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  12/2017
 //----------------------------------------------------------------------------------------
-bool IsUrl(WCharCP filename)
+bool IsSMNameUrl(WCharCP filename)
     {
     return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
     }
@@ -70,7 +82,7 @@ BentleyStatus ResolveFileName(BeFileNameR fileName, Utf8StringCR fileId, DgnDbCR
     WString fileNameW(fileId.c_str(), true);
     BeFileName fileIdWStr(fileNameW);
 
-    if (BeFileName::DoesPathExist(fileIdWStr.c_str()) || IsUrl(fileIdWStr.c_str()))
+    if (BeFileName::DoesPathExist(fileIdWStr.c_str()) || IsSMNameUrl(fileIdWStr.c_str()))
         {               
         fileName = fileIdWStr;
         return SUCCESS;        
@@ -96,10 +108,10 @@ BentleyStatus ResolveFileName(BeFileNameR fileName, Utf8StringCR fileId, DgnDbCR
 AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     {
     if (m_smPtr.IsValid())
-		{
+        {
         m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
-		m_smPtr->GetReprojectionTransform().Multiply(m_range, m_range);
-		}
+        m_smPtr->GetReprojectionTransform().Multiply(m_range, m_range);
+        }
 
     return m_range;
     }
@@ -232,11 +244,14 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
     {
     return false;
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                 Elenie.Godzaridis     2/2016
-//----------------------------------------------------------------------------------------
-#define QUERY_ID 0
+ 
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
+    static double s_maxPixelError = 10;
+    static double s_maxPixelErrorStreamingTexture = 10;
+#else
+    static double s_maxPixelError = 3;
+    static double s_maxPixelErrorStreamingTexture = 3;
+#endif
 
 void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
     {
@@ -254,10 +269,81 @@ void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
         {
         correctedViewToView.InitFrom(nonPrintableMargin.x, nonPrintableMargin.y, 0);
         }
-
-#ifdef _WIN32    
-#endif
     }
+
+#if defined(ANDROID) || defined(__APPLE__) || defined(ACTIVATE_MOBILE_CODE_ON_DESKTOP)
+void SMNode::CleanupUnusedChildren(bvector<Dgn::TileTree::TileCPtr>& selected) const
+    {
+    if (s_unloadChildren)
+        {
+        if (m_canUnloadChildren)
+            {
+            if (true /*IsReady() || IsNotLoaded()*/)
+                {
+                  //static BeTimePoint Now() {return std::chrono::steady_clock::now();}
+                //TileTree::Tile::_UnloadChildren(olderThan);
+                /*
+                for (auto const& child : m_children)
+                    {
+                    int refCount = child->GetRefCount();
+                    assert(refCount == 1);
+                    refCount = refCount;
+                    }
+                    */
+                for (auto const& child : m_children)
+                    {
+                    SMNode* node = static_cast<SMNode*>(child.get());
+                    
+                    if ((node->m_meshes.begin() != node->m_meshes.end()))
+                        {                        
+                        bool found = false;
+
+                        for (auto const& selectChild : selected)
+                            {
+                            const SMNode* selectNode = static_cast<const SMNode*>(selectChild.get());
+
+                            if (node->m_scalableMeshNodePtr->GetNodeId() == selectNode->m_scalableMeshNodePtr->GetNodeId())
+                                {
+                                found = true;
+                                break;
+                                }                                                
+                            }
+
+                        if (!found)
+                            {
+                            node->ClearGeometry();   
+                            node->SetNotLoaded();            
+#ifndef NDEBUG
+                            s_activeLoadedNodeCounter--;
+#if defined(_WIN32)                            
+                            if (selected.size() == 0)
+                                {
+                                wchar_t text_buffer[1000] = { 0 }; //temporary buffer        
+                                swprintf(text_buffer, _countof(text_buffer), L"CLEANUP NODE : %I64d \r\n", node->m_scalableMeshNodePtr->GetNodeId()); // convert
+                                OutputDebugStringW(text_buffer); // print
+                                }
+#endif
+#endif
+                            }
+                        }
+
+                    node->CleanupUnusedChildren(selected);
+                    }                    
+                }      
+
+            return;
+            }
+        else
+            {
+            for (auto const& child : m_children)
+                {
+                SMNode* node = static_cast<SMNode*>(child.get());
+                node->CleanupUnusedChildren(selected);
+                }
+            }
+        }
+    }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -646,13 +732,13 @@ bool ScalableMeshModel::AllowPublishing() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Richard.Bois     08/2018
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& tileToECEF, const Transform& dbToTile) const
+void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& dbToECEF) const
     {
     if (!AllowPublishing())
         return;
 
 #ifdef _WIN32
-        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, tileToECEF, dbToTile))
+        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, dbToECEF))
         {
         BeFileName oldRootFile = outputDir;
         oldRootFile.AppendToPath(L"n_0.json");
@@ -685,7 +771,7 @@ void ScalableMeshModel::CloseFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     {    
-    if (!BeFileName::DoesPathExist(newFilename) && !IsUrl(newFilename.c_str()))
+    if (!BeFileName::DoesPathExist(newFilename) && !IsSMNameUrl(newFilename.c_str()))
         return ERROR;
             
     m_properties.m_fileId = Utf8String(newFilename);
@@ -1512,7 +1598,8 @@ void ScalableMeshModel::_OnSaveJsonProperties()
         Json::Value tilesetVal = m_properties.m_fileId.c_str();
         SetJsonProperties(json_tilesetUrl(), tilesetVal);
         }
-    #if !defined(ANDROID)
+
+#if !defined(ANDROID)
     if (m_clip.IsValid())
         val[json_clip()] = m_clip->ToJson();
 

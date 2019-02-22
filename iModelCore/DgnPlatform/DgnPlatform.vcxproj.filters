@@ -1193,5 +1193,8 @@
     <ClCompile Include="DgnCore\ElementTileTree.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
+    <ClCompile Include="DgnCore\IModelTileWriter.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

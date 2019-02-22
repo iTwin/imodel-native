@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/GeoCoordinationService.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -389,8 +389,10 @@ void DownloadReportUploadRequest::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 Utf8String GeoCoordinationService::s_geoCoordinationServer = "";
 Utf8String GeoCoordinationService::s_geoCoordinationWSGProtocol = "2.4";
-Utf8String GeoCoordinationService::s_geoCoordinationRepoName = "IndexECPlugin-Server";
+Utf8String GeoCoordinationService::s_geoCoordinationRepoName = "IndexECPlugin--Server";
+Utf8String GeoCoordinationService::s_geoCoordinationRepoNameWProjectId = "";
 Utf8String GeoCoordinationService::s_geoCoordinationSchemaName = "RealityModeling";
+Utf8String GeoCoordinationService::s_geoCoordinationProjectId = "";
 
 bool GeoCoordinationService::s_verifyPeer = false;
 Utf8String GeoCoordinationService::s_certificatePath = "";
@@ -408,10 +410,23 @@ GeoCoordinationService_RequestCallback GeoCoordinationService::s_requestCallback
 
 Utf8StringCR GeoCoordinationService::GetServerName() { return s_geoCoordinationServer; }
 Utf8StringCR GeoCoordinationService::GetWSGProtocol() { return s_geoCoordinationWSGProtocol; }
-Utf8StringCR GeoCoordinationService::GetRepoName() { return s_geoCoordinationRepoName; }
+Utf8StringCR GeoCoordinationService::GetRepoName() 
+    { 
+    //if (s_geoCoordinationProjectId.empty())
+        return s_geoCoordinationRepoName;
+    /*else if (!RealityPlatformTopazUtilities::ContainsI(s_geoCoordinationRepoNameWProjectId, s_geoCoordinationProjectId.c_str()))
+        {
+        s_geoCoordinationRepoNameWProjectId = s_geoCoordinationRepoName;
+        s_geoCoordinationRepoNameWProjectId.ReplaceAll("Server", s_geoCoordinationProjectId.c_str());
+        }
+
+    return s_geoCoordinationRepoNameWProjectId;*/
+    }
 Utf8StringCR GeoCoordinationService::GetSchemaName() { return s_geoCoordinationSchemaName; }
 const bool GeoCoordinationService::GetVerifyPeer() { return s_verifyPeer; } //TODO: verify when possible...
 Utf8StringCR GeoCoordinationService::GetCertificatePath() { return s_certificatePath; }
+Utf8StringCR GeoCoordinationService::GetProjectId() { return s_geoCoordinationProjectId; }
+void GeoCoordinationService::SetProjectId(Utf8StringCR projectId) { s_geoCoordinationProjectId = projectId; }
 
 static void defaultErrorCallback(Utf8String basicMessage, const RawServerResponse& rawResponse)
     {
@@ -604,27 +619,25 @@ Utf8String GeoCoordinationService::Request(const LastPackageRequest& request, Ra
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-bvector<Utf8String> GeoCoordinationService::Request(const PreparedPackagesRequest& request, RawServerResponse& rawResponse)
+void GeoCoordinationService::Request(const PreparedPackagesRequest& request, RawServerResponse& rawResponse, bvector<Utf8String>& packageIds)
     {
-    /*WSGRequest::GetInstance().SetCertificatePath(GeoCoordinationService::GetCertificatePath());
-    BeFile file;
-    if (file.Create(filename.GetNameUtf8().c_str(), true) != BeFileStatus::Success)
-        {
-        s_errorCallback("PreparedPackageRequest failed to create file at provided location", rawResponse);
-        return;
-        }
+    rawResponse = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request));
+    
+    Utf8String lastName = "";
+    Json::Value instances(Json::objectValue);
+    Json::Reader::Parse(rawResponse.body, instances);
 
-    WSGRequest::GetInstance().PerformRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), &file);
-
-    rawResponse.status = RequestStatus::OK;
-    if (rawResponse.toolCode != 0)
-        {
+    if (rawResponse.status == RequestStatus::BADREQ || !instances["instances"][0].isMember("properties") || !instances["instances"][0]["properties"].isMember("Name") || !instances["instances"][0]["properties"].isMember("CreationTime"))
         rawResponse.status = RequestStatus::BADREQ;
-        s_errorCallback("Package download failed with response", rawResponse);
-        }
     else
-        rawResponse.status = RequestStatus::OK;*/
-    return bvector<Utf8String>();
+        {
+        rawResponse.status = RequestStatus::OK;
+        unsigned int size = instances["instances"].size();
+        for(unsigned int count = 0; count < size; count++)
+            {
+            packageIds.push_back(instances["instances"]["properties"]["Name"].asCString());
+            }
+        }
     }
 
 //=====================================================================================

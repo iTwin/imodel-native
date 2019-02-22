@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,9 +27,9 @@ public:
             Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql, isValid) {}
 
         public:
-            ECN::SchemaKey GetSchemaKey () const;
+            ECN::SchemaKey GetSchemaKey() const;
             Utf8CP GetSchemaXml () const;
-            SyncInfo::ECSchemaMappingType GetMappingType () const;
+            SyncInfo::ECSchemaMappingType GetMappingType() const;
             Entry const& operator* () const {return *this;}
             };
 

@@ -217,9 +217,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\CloudDataSource.mke" />
+    <Xml Include="..\CloudDataSource.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\CloudDataSource.PartFile.xml" />
+    <None Include="..\CloudDataSource_DgbDb06.mke" />
   </ItemGroup>
 </Project>

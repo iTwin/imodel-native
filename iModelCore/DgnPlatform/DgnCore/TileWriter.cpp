@@ -33,7 +33,7 @@ BentleyStatus Writer::WriteGltf()
 
     long    startPosition =  m_buffer.GetSize();
     m_buffer.Append(Format::Gltf);
-    m_buffer.Append(Gltf::Version2);
+    m_buffer.Append(Gltf::Version1);
     long    lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);
     m_buffer.Append((const uint8_t*) &sceneStrLength, sizeof(sceneStrLength));

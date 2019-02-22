@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/PresentationManager.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -245,6 +245,8 @@ protected:
 
     // IECPresentationManager: Updating
     ECPRESENTATION_EXPORT virtual folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR) override;
+    
+    ECPRESENTATION_EXPORT virtual void _OnLocalizationProviderChanged() override;
 
 //__PUBLISH_SECTION_END__
 public:

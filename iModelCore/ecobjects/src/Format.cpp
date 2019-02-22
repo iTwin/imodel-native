@@ -2,7 +2,7 @@
 |
 |     $Source: src/Format.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -457,7 +457,13 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
         auto comp = GetCompositeSpec();
         xmlWriter.WriteElementStart(FORMAT_COMPOSITE_ELEMENT);
         if (comp->HasSpacer())
-            xmlWriter.WriteAttribute(COMPOSITE_SPACER_ATTRIBUTE, comp->GetSpacer().c_str());
+            {
+            Utf8String spacerString = comp->GetSpacer();
+            if (Utf8String::IsNullOrEmpty(spacerString.c_str()))
+                xmlWriter.WriteEmptyAttribute(COMPOSITE_SPACER_ATTRIBUTE);
+            else
+                xmlWriter.WriteAttribute(COMPOSITE_SPACER_ATTRIBUTE, spacerString.c_str());
+            }
         auto writeUnit = [&](Nullable<Utf8String> label, Units::UnitCP unit)
             {
             xmlWriter.WriteElementStart(FORMAT_COMPOSITE_UNIT_ELEMENT);

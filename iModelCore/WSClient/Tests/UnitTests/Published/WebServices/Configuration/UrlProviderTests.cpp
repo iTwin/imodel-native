@@ -2,13 +2,12 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/UrlProviderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UrlProviderTests.h"
 
 #include "../Connect/MockLocalState.h"
-#include "../Connect/StubLocalState.h"
 #include "MockBuddiClient.h"
 #include <WebServices/Configuration/UrlProvider.h>
 #include <Bentley/BeDebugLog.h>
@@ -40,7 +39,7 @@ void UrlProviderTests::TearDown()
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefaultUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
@@ -55,7 +54,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefault
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoConnectionError_ReturnsDefaultUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
@@ -70,7 +69,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoConnectionError_Returns
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeWhenUrlIsCached_GetsUrlFromLocalState)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
@@ -86,7 +85,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeWhenUrlIsCached_Gets
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_ReturnsCachedUrlButAlsoCallBuddiGet)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, 0, &localState, client, nullptr, s_thread);
 
@@ -109,7 +108,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_ReturnsCachedUrlBut
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeAfterTimeoutAndBuddiCannotConnect_ReturnsLastCachedUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, 0, &localState, client, nullptr, s_thread);
 
@@ -126,7 +125,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeAfterTimeoutAndBuddi
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, 5, &localState, client, nullptr, s_thread);
 
@@ -150,7 +149,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBu
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, 3600 * 1000, &localState, client, nullptr, s_thread);
 
@@ -193,7 +192,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     {
     auto client = std::make_shared<MockBuddiClient>();
     Utf8String url = "https://test/foo";
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     bset<Utf8String> urlNames;
     EXPECT_CALL(*client, GetUrl(_, _)).Times(URL_COUNT).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
@@ -251,7 +250,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     {
     auto client = std::make_shared<MockBuddiClient>();
     Utf8String url = "https://test/foo";
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     EXPECT_CALL(*client, GetUrl(_, _))
         .Times(URL_COUNT)
@@ -310,7 +309,7 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_Cle
     auto client = std::make_shared<MockBuddiClient>();
     Utf8String urlDev = "http://test/dev";
     Utf8String urlQa = "http://test/qa";
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     EXPECT_CALL(*client, GetUrl(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(urlDev))))
@@ -333,7 +332,7 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_Cle
 TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotCleanUpCache)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("https://test/foo"))));
 
@@ -349,7 +348,7 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetValidateCertificate)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
@@ -369,7 +368,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetVa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
@@ -389,7 +388,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetVal
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsValidateCertificate)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
 
     UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
@@ -409,7 +408,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsVali
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithReleaseAndSetToQa_DoesNotSetValidateCertificate)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
     UrlProvider::SetEnvironment(UrlProvider::Environment::Qa);
     ASSERT_EQ(UrlProvider::Environment::Qa, UrlProvider::GetEnvironment());
@@ -431,7 +430,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithReleaseAndSetToQ
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQaAndSetToRelease_SetsValidateCertificate)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
     UrlProvider::SetEnvironment(UrlProvider::Environment::Release);
     ASSERT_EQ(UrlProvider::Environment::Release, UrlProvider::GetEnvironment());
@@ -520,4 +519,30 @@ TEST_F(UrlDescriptorTests, GetBuddiUrl_UrlDescriptorWithEmptyName_EmptyString)
     UrlProvider::UrlDescriptor descriptor("", "", "", "", "", &registry);
     EXPECT_STREQ("", descriptor.GetBuddiUri().c_str());
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                      Vincas.Razma    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, GetStoredEnvironment_FreshLocalState_ReturnsFalse)
+    {
+    RuntimeJsonLocalState localState;
+    UrlProvider::Environment env = (UrlProvider::Environment)123;
+    EXPECT_FALSE(UrlProvider::GetStoredEnvironment(localState, env));
+    EXPECT_EQ(123, env);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                      Vincas.Razma    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, GetStoredEnvironment_InitializedLocalState_ReturnsTrueAndEnvironment)
+    {
+    RuntimeJsonLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
+    UrlProvider::Uninitialize();
+
+    UrlProvider::Environment env = (UrlProvider::Environment)123;
+    EXPECT_TRUE(UrlProvider::GetStoredEnvironment(localState, env));
+    EXPECT_EQ(UrlProvider::Environment::Qa, env);
+    }
+
 #endif

@@ -5,9 +5,9 @@
 #include "SMStoreUtils.h"
 #include "SMStoreUtils.hpp"
 
-#include <ImagePP\all\h\HCDCodecIJG.h>
-#include <ImagePP\all\h\HCDCodecZlib.h>
-#include <ImagePP\all\h\HFCAccessMode.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDCodecZlib.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
 
 
 

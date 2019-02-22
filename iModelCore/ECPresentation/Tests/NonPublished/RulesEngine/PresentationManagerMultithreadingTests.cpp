@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/PresentationManagerMultithreadingTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
@@ -78,7 +78,8 @@ void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerMultithreadingTestsBase::TearDown()
     {
-    DELETE_AND_CLEAR(m_manager);
+    if (nullptr != m_manager)
+        DELETE_AND_CLEAR(m_manager);
     DELETE_AND_CLEAR(m_connections);
     }
 
@@ -135,7 +136,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, RulesetLocaterCallsI
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, UserSettingsManagerCallsItsCallbacksOnECPresentationThread)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     m_manager->GetUserSettings().SetLocalState(&localState);
     TestUserSettingsChangeListener listener;
     m_manager->GetUserSettings().SetChangesListener(&listener);
@@ -220,6 +221,131 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     // verify we do get the result after the lock is released
     size_t countResult = count.get();
     EXPECT_NE(0, countResult);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, SetsUpCustomFunctionsInBothPrimaryAndProxyConnections)
+    {
+    // prepare the dataset
+    ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, 
+        Utf8PrintfString("this.IsOfClass(\"%s\", \"%s\")", ecClass->GetName().c_str(), ecClass->GetSchema().GetName().c_str()), 
+        ecClass->GetFullName(), true);
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*specification);
+    rules->AddPresentationRule(*rule);
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    locater->AddRuleSet(*rules);
+    m_manager->GetLocaters().RegisterLocater(*locater);
+
+    // get content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+
+    // assert
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    EXPECT_EQ(1, contentSet.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, UnregisterCustomFunctionsInBothPrimaryAndProxyConnections)
+    {
+    // prepare the dataset
+    ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1,
+        Utf8PrintfString("this.IsOfClass(\"%s\", \"%s\")", ecClass->GetName().c_str(), ecClass->GetSchema().GetName().c_str()),
+        ecClass->GetFullName(), true);
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*specification);
+    rules->AddPresentationRule(*rule);
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    locater->AddRuleSet(*rules);
+    m_manager->GetLocaters().RegisterLocater(*locater);
+
+    // get content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+
+    // Assert that custom functions are registered
+    ASSERT_TRUE(content.IsValid());
+    DbFunction* function = nullptr;
+    s_project->GetECDb().TryGetSqlFunction(function, FUNCTION_NAME_IsOfClass, 3);
+    ASSERT_NE(nullptr, function);
+    
+    // Remove presentation manager
+    DELETE_AND_CLEAR(m_manager);
+
+    // Assert that custom functions are unregistered
+    s_project->GetECDb().TryGetSqlFunction(function, FUNCTION_NAME_IsOfClass, 3);
+    ASSERT_EQ(nullptr, function);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#73761
+* @bsimethod                                    Haroldas.Vitunskas              02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, HandlesProjectReloadCorrectly)
+    {
+    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    "    <ECSchemaReference name =\"Bentley_Standard_CustomAttributes\" version =\"01.04\" prefix =\"bsca\" />"
+    "    <ECClass typeName=\"ClassA\" isDomainClass=\"True\">"
+    "        <ECProperty propertyName=\"n\" typeName=\"int\" />"
+    "    </ECClass>"
+    "    <ECClass typeName=\"ClassB\" >"
+    "        <ECProperty propertyName=\"p\" typeName=\"int\" />"
+    "    </ECClass>"
+    "</ECSchema>";
+    ECSchemaPtr schema = nullptr;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, schemaXML, *context);
+    
+    // prepare the dataset
+    ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1,
+        Utf8PrintfString("this.IsOfClass(\"%s\", \"%s\")", ecClass->GetName().c_str(), ecClass->GetSchema().GetName().c_str()),
+        ecClass->GetFullName(), true);
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*specification);
+    rules->AddPresentationRule(*rule);
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    locater->AddRuleSet(*rules);
+    m_manager->GetLocaters().RegisterLocater(*locater);
+
+    // get content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+
+    // Attempt to trigger a deadlock by importing a schema and ask for content again
+    bvector<ECSchemaCP> schemaList = bvector<ECSchemaCP>{ schema.get() };
+    s_project->GetECDb().Schemas().ImportSchemas(schemaList);
+
+    descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
     }
 
 /*=================================================================================**//**

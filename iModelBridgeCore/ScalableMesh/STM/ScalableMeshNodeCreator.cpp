@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 21:55:29 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -226,7 +226,7 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddChildNode(const ISca
     if (parentNode == 0)
         {
         StatusInt stat;
-        auto ret = AddNode(stat);
+        auto ret = AddNode(stat, computeNodeID, nodeId);
         status = stat == BSISUCCESS ? S_SUCCESS : S_ERROR;
         return ret;
         }

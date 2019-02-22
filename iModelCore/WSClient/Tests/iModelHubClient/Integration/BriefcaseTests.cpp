@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/BriefcaseTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -96,8 +96,7 @@ TEST_F(BriefcaseTests, SuccessfulAcquireBriefcase)
 TEST_F(BriefcaseTests, UnsuccessfulAcquireBriefcase)
     {
     //Attempt acquiring briefcase from a non-existing imodel
-    DgnDbPtr db = CreateTestDb(GetTestiModelName());
-    iModelResult imodelResult = iModelHubHelpers::CreateNewiModel(s_client, db, s_projectId, true);
+    iModelResult imodelResult = iModelHubHelpers::CreateEmptyiModel(*s_client, s_projectId, GetTestiModelName(), "", true);
     ASSERT_SUCCESS(imodelResult);
     iModelInfoPtr info = imodelResult.GetValue();
     auto deleteResult = s_client->DeleteiModel(s_projectId, *info)->GetResult();

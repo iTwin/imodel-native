@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/InroadsExporter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -23,10 +23,43 @@ BENTLEYDTMFORMATS_EXPORT InroadsExporterPtr InroadsExporter::Create()
     return new InroadsExporter();
     }
 
-StatusInt InroadsExporter::Export(WCharCP filename, NamedDTM const& dtm)
+StatusInt InroadsExporter::Export(WCharCP filename, NamedDTM const& namedDtm)
     {
-    dtm.GetBcDTMP()->SetMemoryAccess(DTMAccessMode::Temporary);
-    bcdtmFormatInroads_exportBclibDtmToInroadsDtmFile(dtm.GetBcDTMP()->GetTinHandle(), filename, dtm.GetName(), dtm.GetDescription());
+    BcDTMPtr transformedDTM;
+
+    Transform transform;
+    BcDTMP dtm = namedDtm.GetBcDTMP();
+
+    bool hasTransform = !dtm->GetTransformation(transform);
+    if (hasTransform)
+        {
+        DPoint3d fixedPoint;
+        double scale;
+        double aspectFix;
+        RotMatrix axes;
+
+        if (!transform.IsTranslateScaleRotateAroundZ(fixedPoint, axes, scale, aspectFix))
+            {
+            return ERROR;
+            }
+        else if (0 != aspectFix)
+            {
+            return ERROR;
+            }
+
+        BC_DTM_OBJ *dtmHandleP = nullptr;
+
+        bcdtmObject_cloneDtmObject(dtm->GetTinHandle(), (BC_DTM_OBJ **)&dtmHandleP);
+
+        // Create a new Digital TM instance
+        transformedDTM = BcDTM::CreateFromDtmHandle(*dtmHandleP);
+
+        transformedDTM->Transform(transform);
+        dtm = transformedDTM.get();
+        }
+    else
+        dtm->SetMemoryAccess(DTMAccessMode::Temporary);
+    bcdtmFormatInroads_exportBclibDtmToInroadsDtmFile(dtm->GetTinHandle(), filename, namedDtm.GetName(), namedDtm.GetDescription());
     return SUCCESS;
     }
 

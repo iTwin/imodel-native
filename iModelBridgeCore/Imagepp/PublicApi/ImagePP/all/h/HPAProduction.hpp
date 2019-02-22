@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAProduction.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ inline HPAProduction operator+(HPAGrammarObject& pi_rLeft,
 inline const HPAProduction& operator+(const HPAProduction& pi_rLeft,
                                       HPAGrammarObject& pi_rRight)
     {
-    ((HPAProduction&)pi_rLeft).AddGrammarObject(&pi_rRight);
+    (const_cast<HPAProduction&>(pi_rLeft)).AddGrammarObject(&pi_rRight);
     return pi_rLeft;
     }
 
@@ -103,7 +103,7 @@ inline HPAProductionList operator||(const HPAProduction& pi_rLeft,
 inline const HPAProductionList& operator||(const HPAProductionList& pi_rLeft,
                                            const HPAProduction& pi_rRight)
     {
-    ((HPAProductionList&)pi_rLeft).push_back(pi_rRight);
+    (const_cast<HPAProductionList&>(pi_rLeft)).push_back(pi_rRight);
     return pi_rLeft;
     }
 
@@ -112,7 +112,7 @@ inline const HPAProductionList& operator||(const HPAProductionList& pi_rLeft,
 inline const HPAProductionList& operator||(const HPAProductionList& pi_rLeft,
                                            HPAGrammarObject& pi_rRight)
     {
-    ((HPAProductionList&)pi_rLeft).push_back(HPAProduction(pi_rRight));
+    (const_cast<HPAProductionList&>(pi_rLeft)).push_back(HPAProduction(pi_rRight));
     return pi_rLeft;
     }
 END_IMAGEPP_NAMESPACE

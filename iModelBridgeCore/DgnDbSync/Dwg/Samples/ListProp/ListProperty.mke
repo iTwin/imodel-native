@@ -33,8 +33,11 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
     DwgDbLibName    = RealDwg$(VendorVersion)/RealDwgDbExchange$(libext)
 
     ### Need to bypass the line #pragma comment(lib, "acpal.lib") in PAL\api\def.h; else we have to link with acpal.lib!!??
-    ### Remove it when RealDWG2018 has it fixed (request has been sent to Adesk)!
-    CCompOpts + -D_ADESK_STATIC_LINKING_
+    %if $(VendorVersion) <= 2018
+        CCompOpts + -D_ADESK_STATIC_LINKING_
+    %else
+        CCompOpts + -DACFABRIC_WINRT
+    %endif
 %endif
 
 MultiCompileDepends = $(_MakeFileSpec)

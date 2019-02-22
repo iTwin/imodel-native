@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatformTools/RealityConversionTools.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,33 +68,33 @@ public:
 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToRealityDataExtended(Utf8CP data, bvector<RealityDataExtendedPtr>* outData);
 
-    //! To retreive EnterpriseStat from a JSON fragment 
+    //! To retrieve EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToDataLocation(Utf8CP data, RealityDataLocation& dataLocationObject);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToDataLocation(Json::Value properties, RealityDataLocation& datLocationObject);
 
-    //! To retreive many EnterpriseStat from a JSON fragment 
+    //! To retrieve many EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToDataLocations(Utf8CP data, bvector<RealityDataLocation>& dataLocationObjects);
 
 
-    //! To retreive EnterpriseStat from a JSON fragment 
+    //! To retrieve EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStat(Utf8CP data, RealityDataEnterpriseStat& statObject);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStat(Json::Value properties, RealityDataEnterpriseStat& statObject);
 
-    //! To retreive many EnterpriseStat from a JSON fragment 
+    //! To retrieve many EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStats(Utf8CP data, bvector<RealityDataEnterpriseStat>& statObjects);
 
-    //! To retreive ServiceStat from a JSON fragment 
+    //! To retrieve ServiceStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToServiceStat(Utf8CP data, RealityDataServiceStat& statObject);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToServiceStat(Json::Value properties, RealityDataServiceStat& statObject);
 
-    //! To retreive many EnterpriseStat from a JSON fragment 
+    //! To retrieve many EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToServiceStats(Utf8CP data, bvector<RealityDataServiceStat>& statObjects);
 
-    //! To retreive EnterpriseStat from a JSON fragment 
+    //! To retrieve EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToUserStat(Utf8CP data, RealityDataUserStat& statObject);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToUserStat(Json::Value properties, RealityDataUserStat& statObject);
 
-    //! To retreive many UserStat from a JSON fragment 
+    //! To retrieve many UserStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToUserStats(Utf8CP data, bvector<RealityDataUserStat>& statObjects);
 
     //! Utility function to extract a SpatialEntity from a SpatialEntityWithDetailsView JSON fragment.
@@ -109,13 +109,14 @@ public:
 
     //! Utility methods that convert a file containing a GeoCoordinationService package, the package itself or a string containing the package
     //! and produces a download list according tot he package content including alternate data sources as mirror sites and so on.
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageStringToDownloadOrder(Utf8CP source, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName());
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName());
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder = BeFileName());
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageStringToDownloadOrder(Utf8CP source, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true);
+
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::sisterFileVector SpatialEntityDataSourceToSisterVector(RealityPlatform::SpatialEntityDataSourceCR dataSource, BeFileNameCR destinationFolder);
 
 private:
-    static RealityDataDownload::sisterFileVector SpatialEntityDataSourceToSisterVector(RealityPlatform::SpatialEntityDataSourceCR dataSource, BeFileNameCR destinationFolder);
-    static RealityDataDownload::mirrorWSistersVector RealityDataToMirrorVector(const RealityPlatform::PackageRealityData& realityData, BeFileNameCR destinationFolder);
+    static RealityDataDownload::mirrorWSistersVector RealityDataToMirrorVector(const RealityPlatform::PackageRealityData& realityData, BeFileNameCR destinationFolder, bool skipStreams = true);
     static StatusInt JsonToObjectBase(Utf8CP data, Json::Value& json);
     };
 

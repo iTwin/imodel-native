@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Render.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -147,7 +147,7 @@ PolyfaceHeaderPtr TriMeshArgs::ToPolyface() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform Render::TextureMapping::Trans2x3::GetTransform() const
     {
-    Transform transform = Transform::FromIdentity();
+    auto transform = Transform::FromIdentity();
 
     for (size_t i=0; i<2; ++i)
         {
@@ -158,6 +158,59 @@ Transform Render::TextureMapping::Trans2x3::GetTransform() const
     transform.form3d[0][3] = m_val[0][2];
     transform.form3d[1][3] = m_val[1][2];
     return transform;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Render::TextureMapping::Trans2x3::AlmostEqual(Trans2x3 const& rhs) const
+    {
+    auto tol = DoubleOps::SmallCoordinateRelTol();
+    for (auto i = 0; i < 2; i++)
+        for (auto j = 0; j < 3; j++)
+            if (fabs(m_val[i][j] - rhs.m_val[i][j]) < tol)
+                return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::TextureMapping::Trans2x3::ToJson() const
+    {
+    Json::Value json;
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 3; j++)
+            json[i][j] = m_val[i][j];
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TextureMapping::Trans2x3 Render::TextureMapping::Trans2x3::FromJson(JsonValueCR json)
+    {
+    return Trans2x3(json[0][0].asDouble(), json[0][1].asDouble(), json[0][2].asDouble(),
+                    json[1][0].asDouble(), json[1][1].asDouble(), json[1][2].asDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Render::MaterialUVDetail::IsEquivalent(MaterialUVDetailCR rhs) const
+    {
+    if (m_type != rhs.m_type)
+        return false;
+
+    switch (m_type)
+        {
+        case Type::None: return true;
+        case Type::Projection: return true; // ###TODO...
+        case Type::Transform: return m_transform.AlmostEqual(rhs.m_transform);
+        default: BeAssert(false); return true;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

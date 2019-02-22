@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/SimpleGCSApiExample.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     WString exeDir = exePath;
     size_t pos = exeDir.find_last_of(L"/\\");
     exeDir = exeDir.substr(0, pos + 1);
-    BeFileName outDir = BeFileName(exeDir);
+    BeFileName outDir = BeFileName(exeDir.c_str());
     outDir.AppendToPath(L"SimpleGCSApiTestDirectory");
     WString directory(outDir);
     if (BeFileName::DoesPathExist(directory.c_str()))

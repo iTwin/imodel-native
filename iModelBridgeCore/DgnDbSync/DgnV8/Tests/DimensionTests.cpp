@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/DimensionTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -80,7 +80,7 @@ static void  dimHandlerTest_createLinearDimension(DgnV8Api::EditElementHandle  &
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DimensionTests, Dimension)
     {
-    LineUpFiles(L"Dimension.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Dimension.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     m_wantCleanUp = false;
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -165,7 +165,7 @@ static void verifyview(DgnDbPtr db,BentleyApi::RefCountedCPtr<Sheet::ViewAttachm
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DimensionTests, Note)
     {
-    LineUpFiles(L"Note.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Note.bim", L"Test3d.dgn", false);
     m_wantCleanUp = false;
 
     V8FileEditor v8editor;
@@ -194,7 +194,7 @@ TEST_F (DimensionTests, Note)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DimensionTests, NotetoSheet)
     {
-    LineUpFiles(L"AnnotationstoSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"AnnotationstoSheet.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
     DgnV8Api::EditElementHandle noteElem;
     DgnV8Api::EditElementHandle leader;

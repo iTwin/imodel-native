@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ConverterTestsBaseFixture.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,7 @@
 struct ConverterTestBaseFixture : public testing::Test
     {
     protected:
-        DgnElementCPtr FindV8ElementInDgnDb(DgnDbR db, DgnV8Api::ElementId eV8Id, uint8_t dgnIndex = 1);
+        DgnElementCPtr FindV8ElementInDgnDb(DgnDbR db, DgnV8Api::ElementId eV8Id, RepositoryLinkId rlinkId = RepositoryLinkId());
 
         void InitializeTheConverter();
 
@@ -50,7 +50,11 @@ struct ConverterTestBaseFixture : public testing::Test
 
     void SetGcsDef();
 
+    RepositoryLinkId FindRepositoryLinkIdByFilename(DgnDbR db, BentleyApi::BeFileNameCR filename);
+    RepositoryLinkCPtr FindRepositoryLinkByFilename(DgnDbR db, BentleyApi::BeFileNameCR filename) {auto id = FindRepositoryLinkIdByFilename(db, filename); return db.Elements().Get<RepositoryLink>(id);} 
+
     static BentleyApi::BeFileName GetOutputDir();
+    static BentleyApi::BeFileName GetTempDir();
     BentleyApi::BeFileName GetInputFileName(BentleyApi::WCharCP filename);
     BentleyApi::BeFileName GetOutputFileName(BentleyApi::WCharCP filename);
     void MakeWritableCopyOf(BentleyApi::BeFileName& fnoutFile, BentleyApi::WCharCP filename);
@@ -75,9 +79,13 @@ struct ConverterTestBaseFixture : public testing::Test
     void countElements(DgnModel& model, int expected);
     void countElementsInModelByClass(DgnModel& model, DgnClassId classId, int expected);
     void countModels(DgnDbR db, int ndrawings_expected, int nspatial_expected);
+    SubjectCPtr GetFirstJobSubjectUnderParent(SubjectCR);
     SubjectCPtr GetFirstJobSubject(DgnDbR db);
     SubjectCPtr GetJobHierarchySubject(DgnDbR db);
     SubjectCPtr GetReferencesChildSubjectOf(SubjectCR);
+    SubjectCPtr GetFirstSourceMasterModelSubject(DgnDbR);
+    size_t CountJobSubjects(DgnDbR);
+    size_t CountSourceMasterModelSubjects(DgnDbR);
 
     DefinitionModelPtr GetJobDefinitionModel(DgnDbR db);
     bool ShouldImportSchema(BentleyApi::Utf8StringCR fullSchemaName, DgnV8Api::DgnModel& v8Model) { return _ShouldImportSchema(fullSchemaName, v8Model); }

@@ -6,7 +6,7 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -79,8 +79,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <DgnPlatform\ScanCriteria.h>
 #endif
 
-#ifndef VANCOUVER_API
-//#include <DgnPlatform\ImageUtilities.h>
+#ifdef DGNDB06_API
+    #include <DgnPlatform\ImageUtilities.h>
 #endif
 
 
@@ -101,7 +101,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <DgnPlatform\TerrainModel\TMElementHandler.h>
 #endif
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #else
 USING_NAMESPACE_BENTLEY_DGN
@@ -122,6 +122,7 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 /*----------------------------------------------------------------------+
 | Include TerrainModel general header files                             |
 +----------------------------------------------------------------------*/
+	
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #include <ScalableMesh/GeoCoords/Definitions.h>

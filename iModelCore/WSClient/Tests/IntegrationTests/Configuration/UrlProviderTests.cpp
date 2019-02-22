@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Configuration/UrlProviderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UrlProviderTests.h"
@@ -43,7 +43,7 @@ TEST_F(UrlProviderTests, Get_WithCustomDefaultSheduler_DoesNotUseDefaultSheduler
 
     auto thread = WorkerThread::Create();
 
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, thread);
 
     EXPECT_NE("", UrlProvider::Urls::ConnectedContext.Get());
@@ -75,7 +75,7 @@ INSTANTIATE_TEST_CASE_P(,UrlProviderParamTests,
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(UrlProviderParamTests, VerifyClientConnection_Success)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Environment enviroment = ::testing::get<0>(GetParam());
     UrlProvider::Initialize(enviroment, UrlProvider::DefaultTimeout, &localState);
 

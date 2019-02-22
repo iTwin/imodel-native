@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.cpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -28,13 +28,12 @@ SMGroupingStrategy<DRange3d>* s_groupingStrategy = nullptr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifndef LINUX_SCALABLEMESH_BUILD
 bool ConvertToJsonFromBytes(Json::Value & outputJson, std::vector<DataSourceBuffer::BufferData>& dest)
     {
     char* jsonBlob = reinterpret_cast<char *>(dest.data());
     return Json::Reader().parse(jsonBlob, jsonBlob + dest.size(), outputJson);
     }
-#endif
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
@@ -286,9 +285,9 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
                 auto tilesetURL = BEFILENAME(GetFileNameAndExtension, contentURL);
                 SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, s_currentGroupID);
                 newGroup->SetLevel(tile["SMHeader"]["level"].asUInt());
-#ifndef LINUX_SCALABLEMESH_BUILD
+
                 newGroup->SetURL(DataSourceURL(tilesetURL.c_str()));
-#endif
+
                 newGroup->SetDataSourcePrefix(newPrefix);
                 //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
                 newGroup->m_tilesetRootNode = tile;
@@ -308,7 +307,7 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
         }
     return this->SaveNode(tileID, &tile);
     }
-#ifndef LINUX_SCALABLEMESH_BUILD
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -326,7 +325,7 @@ DataSource * SMNodeGroup::InitializeDataSource()
 
     return dataSource;
     }
-#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -340,7 +339,6 @@ StatusInt SMNodeGroup::Load()
     else
         {
         m_isLoading = true;
-#ifndef LINUX_SCALABLEMESH_BUILD
         if (m_parametersPtr->GetStrategyType() == SMGroupGlobalParameters::VIRTUAL)
             {
             this->LoadGroupParallel();
@@ -386,7 +384,6 @@ StatusInt SMNodeGroup::Load()
                 return ERROR;
                 }
             }
-#endif
 
         m_isLoading = false;
         m_groupCV.notify_all();
@@ -404,7 +401,6 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
     unique_lock<mutex> lk(m_groupMutex, std::defer_lock);
     //auto nodeHeader = this->GetNodeHeader(priorityNodeID);
     //assert(nodeHeader != nullptr);
-#ifndef LINUX_SCALABLEMESH_BUILD
     if (!lk.try_lock() || m_isLoading)
         {
         //// Someone else is loading the group
@@ -522,7 +518,6 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
         }
 
     // Loading completed successfully
-#endif
     m_isLoading = false;
     m_isLoaded = true;
     return SUCCESS;
@@ -571,7 +566,7 @@ void SMNodeGroup::LoadGroupParallel()
         });
     thread.detach();
     }
-#ifndef LINUX_SCALABLEMESH_BUILD
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -599,7 +594,7 @@ void SMNodeGroup::SetURL(DataSourceURL url)
     {
     m_url = url;
     }
-#endif
+
 
 Json::Value* SMNodeGroup::GetSMMasterHeaderInfo()
     {
@@ -652,7 +647,6 @@ void SMNodeGroup::SetHeaderDataAtCurrentPosition(const uint64_t& nodeID, const u
     m_currentPosition += nodeHeader->size;
     }
 
-#ifndef LINUX_SCALABLEMESH_BUILD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -765,10 +759,10 @@ bool SMNodeGroup::DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, 
                         {
                         // Construct path to tempory folder
                         BeFileName tempPath;
-#ifndef VANCOUVER_API
-						if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
+                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))                        
 #else
-                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+                        if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
 #endif
                             BeAssert(false); // Couldn't retrieve the temporary path
                         tempPath.AppendToPath(L"RealityDataCache");
@@ -804,14 +798,14 @@ bool SMNodeGroup::DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, 
 
     return true;
     }
-#endif
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t SMNodeGroup::GetSingleNodeFromStore(const uint64_t & pi_pNodeID, bvector<uint8_t>& pi_pData)
     {
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     std::vector<DataSourceBuffer::BufferData> dest;
 
     DataSourceURL dataSourceURL(m_dataSourcePrefix.c_str());
@@ -825,9 +819,7 @@ uint64_t SMNodeGroup::GetSingleNodeFromStore(const uint64_t & pi_pNodeID, bvecto
 
     assert(!pi_pData.empty()); // A problem occured while downloading a blob
     return pi_pData.size();
-#else
-    return 0;
-#endif
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1028,7 +1020,7 @@ Json::Value * SMGroupCache::GetNodeFromCache(const uint64_t & nodeId)
     }
 
 
-#ifndef VANCOUVER_API
+#if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre 08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1046,7 +1038,7 @@ SMGroupCache::Ptr SMGroupCache::Create(node_header_cache* nodeCache)
     {
     return new SMGroupCache(nodeCache);
     }
-#ifndef LINUX_SCALABLEMESH_BUILD
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1079,5 +1071,5 @@ SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strate
     {
     return new SMGroupGlobalParameters(strategy, account, session);
     }
-#endif
+
 

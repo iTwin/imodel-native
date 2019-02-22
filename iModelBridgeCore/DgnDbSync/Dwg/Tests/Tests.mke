@@ -2,11 +2,12 @@
 #
 #  $Source: Dwg/Tests/Tests.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 programName = DwgImporterTests
 baseDir =   $(_MakeFilePath)
+DwgPublicAPI = $(SrcRoot)DgnDbSync/PublicAPI/Dwg/
 
 BEGTEST_INPUT=$(baseDir)
 
@@ -19,6 +20,7 @@ BEGTEST_INPUT=$(baseDir)
 %endif
 
 DwgImporterLib  = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/DwgImporter.lib
+DwgBridgeLib    = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/DwgBridge.lib
 
 %include $(baseDir)../DwgCompileOptions.mki
 
@@ -91,7 +93,7 @@ LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Be*.lib]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Dgn*.lib]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/iModel*.lib]
 LOCAL_GUNITTEST_OBJS + $(BuildContext)SubParts/Libs/Raster.lib
-LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/RealDwg2018/*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/*.lib]
 
 
 LINKER_LIBRARIES    + $(DwgImporterLib)
@@ -118,3 +120,36 @@ SQLANG_OutputDb     = $(o)DwgImporterTests_en-US.sqlang.db3
 SQLANG_DeliveryDir  = $(BuildContext)Delivery/
 SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
 %include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke
+
+
+#----------------------------------------------------------------------
+#   Create a standalone EXE to test a 2D importer
+#----------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)Test2dImporter.obj  : $(baseDir)Test2dImporter.cpp $(DwgPublicAPI)DwgImporter.h $(DwgPublicAPI)DwgBridge.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+LINKER_LIBRARIES    = $(DwgImporterLib)
+LINKER_LIBRARIES    + $(DwgBridgeLib)
+
+LINKER_LIBRARIES_DELAYLOADED = $(BuildContext)SubParts/Libs/Bentley$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/BeSQLiteEC$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/DgnPlatform$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/iModelBridge$(libext)
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST        = $(o)
+EXE_NAME        = Test2dImporter
+EXE_OBJS        = $(MultiCompileObjectList)
+EXE_LOPT1       = -entry:wmainCRTStartup
+EXE_TMP_DIR     = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/Test2dImporter$(exeext)=$(o)Test2dImporter$(exeext)"

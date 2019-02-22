@@ -2,7 +2,7 @@
  |
  |     $Source: SecureStore.cpp $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <BeSecurity/SecureStore.h>
@@ -303,7 +303,7 @@ Utf8String SecureStore::Decrypt(Utf8CP encrypted)
     if (!CryptUnprotectData(&ciphertextBlob, NULL, NULL, NULL, NULL, 0, &plaintextBlob))
         {
         BeAssert(false && "decryption failed");
-        LOG.errorv("SecureStore: decryption failed (GLE=%d)", GetLastError());
+        LOG.errorv("SecureStore: decryption failed (GetLastError=%d)", GetLastError());
         return nullptr;
         }
 

@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/Dwg/ProtocalExtensions.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 #pragma once
 
 #include <Dwg/DwgDb/DwgRxObjects.h>
+#include <Raster/RasterApi.h>
 
 USING_NAMESPACE_DWGDB
 
@@ -16,22 +17,22 @@ BEGIN_DWG_NAMESPACE
 
 #ifdef DWGTOOLKIT_OpenDwg
 
-#define DWG_PROTOCALEXT_DECLARE_MEMBERS(_className_)                                    \
+#define DWG_PROTOCOLEXT_DECLARE_MEMBERS(_className_)                                    \
     DWG_EXPORT static void            RxInit ();                                        \
     DWG_EXPORT static OdRxObjectPtr   CreateObject();
 
-#define DWG_PROTOCALEXT_DEFINE_MEMBERS(_className_)                                     \
+#define DWG_PROTOCOLEXT_DEFINE_MEMBERS(_className_)                                     \
     void            _className_::RxInit () { _className_::rxInit(); }                   \
     OdRxObjectPtr   _className_::CreateObject() { return _className_::createObject(); } \
-    DWGRX_CONS_DEFINE_MEMBERS(##_className_##,DwgProtocalExtension)
+    DWGRX_CONS_DEFINE_MEMBERS(##_className_##,DwgProtocolExtension)
 
 #elif DWGTOOLKIT_RealDwg
 
-#define DWG_PROTOCALEXT_DECLARE_MEMBERS(_className_)                                    \
+#define DWG_PROTOCOLEXT_DECLARE_MEMBERS(_className_)                                    \
     DWG_EXPORT static void            RxInit () {;}                                     \
     DWG_EXPORT static DwgRxObjectP    CreateObject();
 
-#define DWG_PROTOCALEXT_DEFINE_MEMBERS(_className_)                                     \
+#define DWG_PROTOCOLEXT_DEFINE_MEMBERS(_className_)                                     \
     DwgRxObjectP        _className_::CreateObject() { return new _className_(); }       \
     DWG_TypeP(RxClass)  _className_::isA() const { return T_Super::isA(); }
 
@@ -48,10 +49,8 @@ typedef DwgImporter::ElementImportInputs&           ElementInputsR;
 //! @brief A data context passed in an object protocal extension that converts a DWG entity 
 //! in the modelspace or a paperspace to DgnDb.  It contains the input context for a DWG
 //! entity and the output context for DgnDb elements.
-*
-* @bsiclass                                                     Don.Fu          06/16
 +===============+===============+===============+===============+===============+======*/
-struct ProtocalExtensionContext
+struct ProtocolExtensionContext
     {
 private:
     ElementInputsR          m_elementInputs;
@@ -59,7 +58,7 @@ private:
     DgnModelP               m_resultantModel;
 
 public:
-    explicit ProtocalExtensionContext (ElementInputsR inputs, ElementResultsR results) :
+    explicit ProtocolExtensionContext (ElementInputsR inputs, ElementResultsR results) :
         m_elementInputs(inputs),
         m_elementResults(results)
         {
@@ -81,44 +80,44 @@ public:
     DWG_EXPORT ElementInputsR     GetElementInputsR () { return m_elementInputs; }
     DWG_EXPORT DgnModelP          GetResultantModel () const { return m_resultantModel; }
     DWG_EXPORT void               SetResultantModel (DgnModelP outModel) { m_resultantModel = outModel; }
-    };  // ProtocalExtensionContext
+    };  // ProtocolExtensionContext
 
 
 /*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          06/16
+//! An object protocol exntension to convert its data to BIM
 +===============+===============+===============+===============+===============+======*/
-class DwgProtocalExtension : public DwgRxObject
+class DwgProtocolExtension : public DwgRxObject
     {
 public:
     DEFINE_T_SUPER (DwgRxObject)
-    DWGRX_DECLARE_MEMBERS (DwgProtocalExtension)
+    DWGRX_DECLARE_MEMBERS (DwgProtocolExtension)
 
     DWG_EXPORT static DWG_TypeP(RxClass)      Desc ();
-    DWG_EXPORT static DwgProtocalExtension*   Cast (DWG_TypeCP(RxObject) obj);
+    DWG_EXPORT static DwgProtocolExtension*   Cast (DWG_TypeCP(RxObject) obj);
     DWG_EXPORT static void                    RxInit ();
 
     //! Must implement this method to either create a new or update an existing element from the input entity.
     //! This method is called only when an entity is in the modelspace or a paperspace.
-    DWG_EXPORT virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) = 0;
+    DWG_EXPORT virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) = 0;
     //! Optional method to create a geometry from an entity in a block.
     //! This method is called only when an entity is in a block definition.
     DWG_EXPORT virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, DwgImporter& importer) { return nullptr; }
-    };  // DwgProtocalExtension
+    };  // DwgProtocolExtension
 
 /*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          06/16
+//! Raster object protocol extension
 +===============+===============+===============+===============+===============+======*/
-class DwgRasterImageExt : public DwgProtocalExtension
+class DwgRasterImageExt : public DwgProtocolExtension
     {
 public:
-    DEFINE_T_SUPER (DwgProtocalExtension)
+    DEFINE_T_SUPER (DwgProtocolExtension)
     DWGRX_DECLARE_MEMBERS (DwgRasterImageExt)
-    DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgRasterImageExt)
+    DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgRasterImageExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
 
 private:
-    mutable ProtocalExtensionContext*   m_toBimContext;
+    mutable ProtocolExtensionContext*   m_toBimContext;
     mutable DwgImporter*                m_importer;
     mutable DwgDbRasterImageCP          m_dwgRaster;
 
@@ -135,51 +134,51 @@ private:
     };  // DwgRasterImageExt
 
 /*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          06/16
+//! Point cloud object protocol extension
 +===============+===============+===============+===============+===============+======*/
-class DwgPointCloudExExt : public DwgProtocalExtension
+class DwgPointCloudExExt : public DwgProtocolExtension
     {
 public:
-    DEFINE_T_SUPER (DwgProtocalExtension)
+    DEFINE_T_SUPER (DwgProtocolExtension)
     DWGRX_DECLARE_MEMBERS (DwgPointCloudExExt)
-    DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgPointCloudExExt)
+    DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgPointCloudExExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
 
 private:
     ColorDef    GetDgnColor (DwgDbEntityCR entity) const;
     };  // DwgPointCloudExExt
 
 /*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          12/16
+//! Paperspace viewport entity protocol extension
 +===============+===============+===============+===============+===============+======*/
-class DwgViewportExt : public DwgProtocalExtension
+class DwgViewportExt : public DwgProtocolExtension
     {
 public:
-    DEFINE_T_SUPER (DwgProtocalExtension)
+    DEFINE_T_SUPER (DwgProtocolExtension)
     DWGRX_DECLARE_MEMBERS (DwgViewportExt)
-    DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgViewportExt)
+    DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgViewportExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
 
 private:
-    BentleyStatus   UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName);
+    BentleyStatus   UpdateBim (ProtocolExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName);
     };  // DwgViewportExt
 
 /*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          11/17
+//! Light object protocol extension
 +===============+===============+===============+===============+===============+======*/
-class DwgLightExt : public DwgProtocalExtension
+class DwgLightExt : public DwgProtocolExtension
     {
 public:
-    DEFINE_T_SUPER (DwgProtocalExtension)
+    DEFINE_T_SUPER (DwgProtocolExtension)
     DWGRX_DECLARE_MEMBERS (DwgLightExt)
-    DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgLightExt)
+    DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgLightExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
 
 private:
-    mutable ProtocalExtensionContext*   m_toBimContext;
+    mutable ProtocolExtensionContext*   m_toBimContext;
     mutable DwgImporter*                m_importer;
     mutable DwgDbLightP                 m_dwgLight;
 
@@ -198,21 +197,20 @@ private:
     };  // DwgLightExt
 
 /*=================================================================================**//**
-* A shared protocal extension for solid3d, region, body and surface entities.
-* @bsiclass                                                     Don.Fu          07/18
+//! A shared protocal extension for solid3d, region, body and surface entities.
 +===============+===============+===============+===============+===============+======*/
-class DwgBrepExt : public DwgProtocalExtension
+class DwgBrepExt : public DwgProtocolExtension
     {
 public:
-    DEFINE_T_SUPER (DwgProtocalExtension)
+    DEFINE_T_SUPER (DwgProtocolExtension)
     DWGRX_DECLARE_MEMBERS (DwgBrepExt)
-    DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgBrepExt)
+    DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgBrepExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
     virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, DwgImporter& importer) override;
 
 private:
-    mutable ProtocalExtensionContext*   m_toBimContext;
+    mutable ProtocolExtensionContext*   m_toBimContext;
     mutable DwgImporter*                m_importer;
     mutable DwgDbEntityCP               m_entity;
     mutable DPoint3d                    m_placementPoint;
@@ -229,6 +227,19 @@ private:
     GeometricPrimitivePtr PlaceGeometry (CurveVectorPtr& shapes);
     BentleyStatus   SetPlacementPoint (TransformR transform) const;
     };  // DwgBrep
+
+/*=================================================================================**//**
+//! Block reference entity protocol extension
++===============+===============+===============+===============+===============+======*/
+class DwgBlockReferenceExt : public DwgProtocolExtension
+    {
+public:
+    DEFINE_T_SUPER (DwgProtocolExtension)
+    DWGRX_DECLARE_MEMBERS (DwgBlockReferenceExt)
+    DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgBlockReferenceExt)
+
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
+    };  // DwgBlockReferenceExt
 
 
 END_DWG_NAMESPACE

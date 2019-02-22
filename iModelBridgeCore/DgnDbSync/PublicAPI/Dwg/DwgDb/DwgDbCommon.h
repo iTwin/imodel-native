@@ -86,6 +86,7 @@
 #include    <RealDwg/Base/dbViewRepBlockReference.h>
 #include    <RealDwg/Base/AcDbLMgr.h>
 #include    <RealDwg/Base/AcString.h>
+#include    <RealDwg/Base/idver.h>
 
 #else
     #error  "Must define DWGTOOLKIT!!!"
@@ -163,6 +164,13 @@
 
     #define DWGDB_IsTrue(_boolValue_)       _boolValue_
 
+    // major release number, e.g. 3, 4, 19 etc
+    #define DWGDB_ToolkitMajorRelease       TD_MAJOR_VERSION
+    // manior release number, e.g. 3, 8, etc
+    #define DWGDB_ToolkitMinorRelease       TD_MINOR_VERSION
+    // ODA DLL version suffix, e.g. "4.3_1", "19.8_15", etc
+    #define DWGDB_ToolkitDllSuffix          TD_DLL_VERSION_SUFFIX_STR
+
 #elif DWGTOOLKIT_RealDwg
 
     #define DWGDB_SDKNAME(_opendwgName_,_realdwgName_)      _realdwgName_
@@ -226,6 +234,13 @@
     #define DWGRX_NO_CONS_DEFINE_MEMBERS(_class_,_parent_)  ACRX_NO_CONS_DEFINE_MEMBERS(##_class_##,##_parent_##);
 
     #define DWGDB_IsTrue(_boolValue_)       Adesk::kTrue == ##_boolValue_
+
+    // major release number, e.g. 22, 23, etc
+    #define DWGDB_ToolkitMajorRelease       ACADV_RELMAJOR
+    // manior release number, e.g. 0, 1, etc
+    #define DWGDB_ToolkitMinorRelease       ACADV_RELMINOR
+    // RealDWG core DLL version suffix, e.g. "22", "23", etc
+    #define DWGDB_ToolkitDllSuffix          ACRX_T(ID2STR(ACADV_RELMAJOR))
 
 #endif  // DWGTOOLKIT
 

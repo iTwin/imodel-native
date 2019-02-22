@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECClassTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1115,7 +1115,7 @@ TEST_F(ClassTest, SerializeClassWithProperties)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
-    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true));
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
 
     ECEntityClassP entityClass;
     schema->CreateEntityClass(entityClass, "ExampleEntityClass");

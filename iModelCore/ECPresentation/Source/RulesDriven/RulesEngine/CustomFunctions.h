@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/CustomFunctions.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -129,15 +129,16 @@ struct CustomFunctionsInjector : IConnectionsListener
 {
 private:
     IConnectionManagerCR m_connections;
-    bset<Utf8String> m_handledConnectionIds;
+    bset<IConnectionCP> m_handledConnections;
     bvector<ScalarFunction*> m_scalarFunctions;
     bvector<AggregateFunction*> m_aggregateFunctions;
 
 private:
     void CreateFunctions();
     void DestroyFunctions();
-    void Register(IConnectionCR);
-    void Unregister(IConnectionCR);
+    void Register(IConnectionCR, bool primary = false);
+    void Unregister(IConnectionCR, bool primary = false);
+    bool HandlesPrimaryConnection(Utf8StringCR connectionId) const;
 
 protected:
     void _OnConnectionEvent(ConnectionEvent const&) override;
@@ -147,7 +148,7 @@ public:
     ECPRESENTATION_EXPORT CustomFunctionsInjector(IConnectionManagerCR, IConnectionCR);
     ECPRESENTATION_EXPORT ~CustomFunctionsInjector();
     ECPRESENTATION_EXPORT void OnConnection(IConnectionCR);
-    bool Handles(IConnectionCR connection) const {return m_handledConnectionIds.end() != m_handledConnectionIds.find(connection.GetId());}
+    ECPRESENTATION_EXPORT bool Handles(IConnectionCR connection) const;
     };
 
 /*=================================================================================**//**

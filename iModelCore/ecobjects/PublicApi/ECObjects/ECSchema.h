@@ -1824,6 +1824,9 @@ public:
 
     ECClassType GetClassType() const {return _GetClassType();} //!< The type of derived ECClass this is
 
+    //! Is the class a Mixin.
+    //! Returns true if this class is an Entity class and has the CoreCustomAttributes:IsMixin custom attribute applied.
+    bool IsMixin() const {return IsEntityClass() && IsDefinedLocal("CoreCustomAttributes", "IsMixin");}
     bool IsEntityClass() const {return ECClassType::Entity == GetClassType();} //!< Is the class an entity class
     bool IsStructClass() const {return ECClassType::Struct == GetClassType();} //!< Is the class a struct class
     bool IsCustomAttributeClass() const {return ECClassType::CustomAttribute == GetClassType();} //!< Is the class a custom attribute class
@@ -1977,6 +1980,14 @@ public:
     //! @param[in]   sourceProperty         The property to copy into this class.  If nullptr, ::NullPointerValue returned.
     //! @param[in]   copyCustomAttributes   If true the primary custom attributes are copied to the destProperty, supplemental custom attributes are not copied.  A schema references will be added as needed.
     ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
+
+    //! Copies the sourceProperty, adds it to the current class and outputs the copied property if the copy was successful
+    //! @param[out]  destProperty           Outputs the copied property.  Only valid if the method returns ::Success
+    //! @param[in]   sourceProperty         The property to copy into this class.  If nullptr, ::NullPointerValue returned.
+    //! @param[in]   destPropertyName       Rename the copied property to the given name
+    //! @param[in]   copyCustomAttributes   If true the primary custom attributes are copied to the destProperty, supplemental custom attributes are not copied.  A schema references will be added as needed.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, Utf8CP destPropertyName, ECPropertyCP sourceProperty, bool copyCustomAttributes);
+
     //! Returns true if this class derives from the input baseClass once and only once.  Returns false if this class does not derive from the input base class or if it is found more than once when traversing base classes
     ECOBJECTS_EXPORT bool IsSingularlyDerivedFrom(ECClassCR baseClass) const;
 
@@ -2053,9 +2064,6 @@ public:
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
     ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
-    
-    //! Returns true if this class has the CoreCustomAttributes:IsMixin custom attribute applied.
-    bool IsMixin() const {return IsDefinedLocal("CoreCustomAttributes", "IsMixin");}
 
     //! Returns true if the provided mixin class can be applied to this class. 
     //! @remarks The mixin class can be applied to this class if this class is derived from the AppliesToEntityClass property defined in IsMixin custom attribute.

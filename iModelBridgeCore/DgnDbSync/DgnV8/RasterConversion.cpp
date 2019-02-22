@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/RasterConversion.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -1007,8 +1007,6 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         pModel = pFileModel.get();
         }
 
-    SyncInfo::ElementProvenance prov = SyncInfo::ElementProvenance(v8eh, GetSyncInfo(), GetCurrentIdPolicy());
-    SyncInfo::V8ElementMapping mapping = SyncInfo::V8ElementMapping(pModel->GetModeledElementId(), v8eh, v8mm.GetV8ModelSyncInfoId(), prov);
     if (!existingId.IsValid())
         {
         // -- Insert model
@@ -1019,7 +1017,7 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
             ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), v8LocalFilename.GetNameUtf8().c_str());
             return ERROR;
             }
-        m_syncInfo.InsertElement(mapping);
+
         _GetChangeDetector()._OnElementSeen(*this, pModel->GetModeledElementId());
         }
     else
@@ -1031,10 +1029,12 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
             ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), v8LocalFilename.GetNameUtf8().c_str());
             return ERROR;
             }
-        m_syncInfo.UpdateElement(mapping);
-        _OnElementConverted(mapping.GetElementId(), &v8eh, Converter::ChangeOperation::Update);
 
+        _OnElementConverted(pModel->GetModeledElementId(), &v8eh, Converter::ChangeOperation::Update);
         }
+
+    WriteV8ElementExternalSourceAspect(pModel->GetModeledElementId(), v8eh, v8mm.GetDgnModel().GetModelId()); // NB: last arg (scope) must be the same model as is passed in to _IsElementChanged
+
     // -- Enable display (or not) in views.    
     DgnCategoryId category = GetSyncInfo().GetCategory(v8eh, v8mm);
     for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb()))
@@ -1053,7 +1053,7 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         models.Update();
         }
     // Schedule reality model tileset creation.
-    AddModelRequiringRealityTiles(pModel->GetModelId(), v8LocalFilename.GetNameUtf8(), Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP()));
+    AddModelRequiringRealityTiles(pModel->GetModelId(), v8LocalFilename.GetNameUtf8(), GetRepositoryLinkId(*v8eh.GetDgnFileP()));
 
     return SUCCESS;
     }

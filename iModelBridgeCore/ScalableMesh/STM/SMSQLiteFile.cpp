@@ -507,6 +507,9 @@ DbResult SMSQLiteFile::CreateTables()
     DbResult result;
     result = m_database->CreateNewDb(filename);
 
+    if (result == BE_SQLITE_ERROR_FileExists)
+        return false;
+
     if (result == BE_SQLITE_ERROR_AlreadyOpen) 
         return true;
 
@@ -608,6 +611,13 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
 
 
     stmt->BindInt(15, newNodeHeader.m_isTextured ? 1 : 0); 
+
+    if (newNodeHeader.m_nodeCount == 0)
+        {
+        int j = 0;
+        j = j;        
+        }   
+
     stmt->BindInt(16, (int)newNodeHeader.m_nodeCount);
     stmt->BindDouble(17, (double)newNodeHeader.m_geometricResolution);
     stmt->BindDouble(18, (double)newNodeHeader.m_textureResolution);

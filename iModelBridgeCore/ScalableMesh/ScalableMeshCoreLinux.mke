@@ -487,7 +487,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
-	$(ContextSubpartsLibs)RealityPlatformTools.lib \
+    $(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
 
 #	    $(ContextSubpartsLibs)wastorage.lib \
@@ -500,9 +500,9 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)BeJpeg$(libext) \
     $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
     $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
-%if defined (MSVC_VERSION)
+    $(ContextSubpartsLibs)RealityPlatform.lib \
+    $(ContextSubpartsLibs)RealityPlatformToolsLight.lib \
     $(ContextSubpartsLibs)CloudDataSource.lib 
-%endif
 
 
 %if defined (MSVC_VERSION)

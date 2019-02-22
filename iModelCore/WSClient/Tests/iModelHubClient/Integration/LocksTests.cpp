@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/LocksTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -46,8 +46,7 @@ struct LocksTests : public iModelTestsBase, TestElementDrivesElementHandler::Cal
     +---------------+---------------+---------------+---------------+---------------+------*/
     void CreateTestiModel()
         {
-        DgnDbPtr db = CreateTestDb();
-        iModelResult result = IntegrationTestsBase::CreateiModel(db);
+        iModelResult result = IntegrationTestsBase::CreateEmptyiModel(GetTestiModelName());
         ASSERT_SUCCESS(result);
         m_info = result.GetValue();
         }

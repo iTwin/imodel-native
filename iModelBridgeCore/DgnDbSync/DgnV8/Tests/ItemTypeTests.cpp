@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ItemTypeTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -54,7 +54,7 @@ void ItemTypesTests::CreateItemTypes()
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ItemTypesTests, Create)
     {
-    LineUpFiles(L"ItemTypes.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ItemTypes.bim", L"Test3d.dgn", false);
     CreateItemTypes();
 
     DoConvert(m_dgnDbFileName, m_v8FileName);

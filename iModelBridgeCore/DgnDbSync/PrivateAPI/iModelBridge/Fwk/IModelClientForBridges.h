@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateAPI/iModelBridge/Fwk/IModelClientForBridges.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,6 +30,7 @@ struct IModelClientForBridges
     virtual ~IModelClientForBridges() {}
 
     virtual StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) = 0;
+    virtual StatusInt RestoreBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName, BeSQLite::BeBriefcaseId briefcaseId) = 0;
     virtual StatusInt OpenBriefcase(Dgn::DgnDbR db) = 0;
     virtual StatusInt Push(Utf8CP) = 0;
     virtual StatusInt PullMergeAndPush(Utf8CP) = 0;
@@ -77,6 +78,7 @@ public:
     StatusInt PullMergeAndPush(Utf8CP) override;
     StatusInt PullAndMerge() override;
     StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) override;
+    StatusInt RestoreBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName, BeSQLite::BeBriefcaseId briefcaseId) override;
     iModel::Hub::Error const& GetLastError() const override {return m_lastServerError;}
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) override;
     void CloseBriefcase() override {m_briefcase = nullptr;}

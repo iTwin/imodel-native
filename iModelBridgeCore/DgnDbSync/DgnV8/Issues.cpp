@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Issues.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -72,7 +72,14 @@ Utf8String Converter::IssueReporter::FmtTransform(Transform const& trans)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Converter::IssueReporter::FmtFileBaseName(DgnV8Api::DgnFile const& ff)
     {
-    Utf8String fn(BeFileName::GetFileNameWithoutExtension(ff.GetFileName().c_str()));
+    Bentley::WString basename;
+    if (BSISUCCESS != DgnV8Api::DgnFile::ParsePackagedName(nullptr, nullptr, &basename, ff.GetFileName().c_str()))
+        {
+        basename = ff.GetFileName();
+        }
+
+    Utf8String fn(BeFileName::GetFileNameWithoutExtension(basename.c_str()).c_str());
+
     size_t idot = fn.find(".");
     if (idot != Utf8String::npos)
         fn.erase(idot);
@@ -328,23 +335,6 @@ void Converter::ReportDgnV8FileOpenError(DgnV8Api::DgnFileStatus fstatus, WCharC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ReportSyncInfoIssue(IssueSeverity severity, IssueCategory::StringId category, Issue::StringId issue, Utf8CP details)
-    {
-    BeSQLite::DbResult lastError;
-    Utf8String lastErrorDesc;
-    GetSyncInfo().GetLastError(lastError, lastErrorDesc);
-    BeFileName syncInfoFileName = SyncInfo::GetDbFileName(GetDgnDb());
-    Utf8String desc;
-    if (!lastErrorDesc.empty() || 0 != *details)
-        desc.Sprintf("[%s] - %s - %s", Utf8String(syncInfoFileName).c_str(), lastErrorDesc.c_str(), details);
-    else
-        desc = Utf8String(syncInfoFileName);
-    ReportIssue(severity, category, issue, desc.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::AddSteps(int32_t n) const
     {
     GetProgressMeter().AddSteps(n);
@@ -589,4 +579,8 @@ void Converter::ReportFailedThumbnails()
     ReportIssue(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToConvertThumbnails(), nullptr);
     }
 
+void Converter::ReportFailedPresentationRules()
+    {
+    ReportIssue(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToCreatePresentationRules(), nullptr);
+    }
 END_DGNDBSYNC_DGNV8_NAMESPACE

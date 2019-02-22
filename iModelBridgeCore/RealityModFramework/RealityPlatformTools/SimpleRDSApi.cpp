@@ -1,3 +1,11 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: RealityPlatformTools/SimpleRDSApi.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
 #include <RealityPlatformTools/SimpleRDSApi.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -45,7 +53,7 @@ ConnectedResponse ConnectedNavNode::GetRootNodes(bvector<ConnectedNavNode>& node
     RawServerResponse rawResponse = RawServerResponse();
     bvector<NavNode> rootNodes = NodeNavigator::GetInstance().GetRootNodes(RealityDataService::GetServerName(), RealityDataService::GetRepoName(), rawResponse);
 
-    for (int i = 0; i < rootNodes.size(); i++)
+    for (size_t i = 0; i < rootNodes.size(); i++)
         nodes.push_back(ConnectedNavNode(rootNodes[i]));
 
     response.Clone(rawResponse);
@@ -60,7 +68,7 @@ ConnectedResponse ConnectedNavNode::GetChildNodes(bvector<ConnectedNavNode>& nod
     RawServerResponse rawResponse = RawServerResponse();
     bvector<NavNode> rootNodes = NodeNavigator::GetInstance().GetChildNodes(RealityDataService::GetServerName(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), GetNavString(), rawResponse);
 
-    for (int i = 0; i < rootNodes.size(); i++)
+    for (size_t i = 0; i < rootNodes.size(); i++)
         nodes.push_back(ConnectedNavNode(rootNodes[i]));
 
     response.Clone(rawResponse);
@@ -175,24 +183,6 @@ ConnectedRealityDataEnterpriseStat::ConnectedRealityDataEnterpriseStat(const Rea
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                04/2018
 //-------------------------------------------------------------------------------------
-// ConnectedResponse ConnectedRealityDataServiceStat::GetServiceStats()
-    // {
-    // ConnectedResponse response = ConnectedResponse();
-    // RealityDataServiceStatRequest ptt("");
-
-    // RawServerResponse rawResponse = RawServerResponse();
-    // RealityDataServiceStat stat;
-    // RealityDataService::Request(ptt, stat, rawResponse);
-    // Clone(stat);
-
-    // response.Clone(rawResponse);
-
-    // return response;
-    // }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Alain.Robert                04/2018
-//-------------------------------------------------------------------------------------
 ConnectedRealityDataServiceStat::ConnectedRealityDataServiceStat(const RealityDataServiceStat& stat)
     {
     Clone(stat);
@@ -201,47 +191,10 @@ ConnectedRealityDataServiceStat::ConnectedRealityDataServiceStat(const RealityDa
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                04/2018
 //-------------------------------------------------------------------------------------
-// ConnectedResponse ConnectedRealityDataUserStat::GetUserStats()
-    // {
-    // ConnectedResponse response = ConnectedResponse();
-    // RealityDataUserStatRequest ptt("");
-
-    // RawServerResponse rawResponse = RawServerResponse();
-    // bvector<RealityDataUserStat> stats;
-    // stats = RealityDataService::Request(ptt, rawResponse);
-    // Clone(stats);
-
-    // response.Clone(rawResponse);
-
-    // return response;
-    // }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Alain.Robert                04/2018
-//-------------------------------------------------------------------------------------
 ConnectedRealityDataUserStat::ConnectedRealityDataUserStat(const RealityDataUserStat& stat)
     {
     Clone(stat);
-    }	
-	
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                10/2017
-//-------------------------------------------------------------------------------------
-/*ConnectedResponse ConnectedRealityDataEnterpriseStat::GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec)
-    {
-    ConnectedResponse response = ConnectedResponse();
-    RawServerResponse rawResponse = RawServerResponse();
-    RealityDataAllEnterpriseStatsRequest* ptt = new RealityDataAllEnterpriseStatsRequest();
-    bvector<RealityDataEnterpriseStat> stats;
-    stats = RealityDataService::Request(*ptt, rawResponse);
-     
-    for (int i = 0; i < stats.size(); i++)
-        statVec.push_back(ConnectedRealityDataEnterpriseStat(stats[i]));
-
-    response.Clone(rawResponse);
-
-    return response;
-    }*/
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
@@ -334,7 +287,7 @@ ConnectedResponse ConnectedRealityDataRelationship::RetrieveAllForRDId(bvector<C
 
     bvector<RealityDataRelationshipPtr> tmpVector = RealityDataService::Request(idReq, rawResponse);
 
-    for (int i = 0; i < tmpVector.size(); i++)
+    for (size_t i = 0; i < tmpVector.size(); i++)
         relationshipVector.push_back(new ConnectedRealityDataRelationship(tmpVector[i]));
 
     response.Clone(rawResponse);
@@ -370,7 +323,7 @@ ConnectedResponse ConnectedRealityDataRelationship::RetrieveAllForProjectId(bvec
 
     bvector<RealityDataRelationshipPtr> tmpVector = RealityDataService::Request(idReq, rawResponse);
 
-    for (int i = 0; i < tmpVector.size(); i++)
+    for (size_t i = 0; i < tmpVector.size(); i++)
         relationshipVector.push_back(new ConnectedRealityDataRelationship(tmpVector[i]));
 
     response.Clone(rawResponse);
@@ -446,7 +399,7 @@ ConnectedResponse ConnectedRealityDataDocument::RetrieveAllForRealityData(bvecto
     RawServerResponse sasResponse = RawServerResponse();
     bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, sasResponse);
 
-    for(int i = 0; i < filesInRepo.size(); i++)
+    for(size_t i = 0; i < filesInRepo.size(); i++)
         {
         docVector.push_back(make_bpair(Utf8PrintfString("%s/%s", realityDataGUID.c_str(), Utf8String(filesInRepo[i].first.c_str()).c_str()), filesInRepo[i].second));
         }

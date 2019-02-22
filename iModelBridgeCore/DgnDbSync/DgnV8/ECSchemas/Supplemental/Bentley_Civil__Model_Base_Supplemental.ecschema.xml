@@ -43,9 +43,6 @@
                 <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
                     <Cardinality>(0,1)</Cardinality>
                 </OverwriteCardinality>
-                <DropConstraints xmlns="ECv3ConversionAttributes.01.00">
-                    <Drop>hebcmb:NamedEntityReferenced</Drop>
-                </DropConstraints>
             </ECCustomAttributes>
         </Target>
     </ECRelationshipClass>

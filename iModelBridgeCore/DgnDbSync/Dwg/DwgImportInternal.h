@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgImportInternal.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -434,6 +434,7 @@ private:
     bool                m_canCreateSharedParts;
     bool                m_hasBaseTransform;
     DwgDbObjectId       m_sourceBlockId;
+    DwgDbObjectId       m_sourceLayerId;
     DwgImporter&        m_importer;
 
     void            SetDefaultCreation ();
@@ -466,5 +467,23 @@ public:
     // Create db elements from a block-geometry map
     BentleyStatus   CreateElements (DwgImporter::T_BlockGeometryMap const* geometryMap);
     };  // ElementFactory
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          02/19
++===============+===============+===============+===============+===============+======*/
+struct RepositoryLinkFactory
+    {
+private:
+    DgnDbR      m_dgndb;
+    iModelBridge::Params const& m_bridgeparams;
+
+    Utf8String  ComputeURN (BeFileNameCR dwgFilename);
+
+public:
+    RepositoryLinkFactory (DgnDbR db, iModelBridge::Params const& bp) : m_dgndb(db), m_bridgeparams(bp) {}
+
+    DgnElementId    CreateOrUpdate (DwgDbDatabaseR dwg);
+    BentleyStatus   DeleteFromDb (BeFileNameCR dwgFileName);
+    };  // RepositoryFactory
 
 END_DWG_NAMESPACE

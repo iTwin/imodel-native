@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PresentationManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -875,6 +875,17 @@ folly::Future<bvector<ECInstanceChangeResult>> RulesDrivenECPresentationManager:
     // note: the connection should be changed only on the primary thread so we're not
     // switching to the executor thread here.
     return m_impl->SaveValueChange(primaryConnection, instances, propertyAccessor, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::_OnLocalizationProviderChanged()
+    {
+    IECPresentationManager::_OnLocalizationProviderChanged();
+
+    if (nullptr != m_impl)
+        m_impl->SetLocalizationProvider(GetLocalizationProvider());
     }
 
 /*---------------------------------------------------------------------------------**//**

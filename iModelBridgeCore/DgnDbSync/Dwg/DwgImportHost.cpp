@@ -85,7 +85,7 @@ void            DwgImportHost::_Alert (WCharCP message) const
     Utf8String  msg(message);
     // remove whilte spaces and linefeed etc from front & end of the string:
     msg.Trim ();
-    m_importer->ReportError (IssueCategory::ToolkitError(), Issue::Error(), msg.c_str());
+    m_importer->ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::ToolkitError(), Issue::Message(), msg.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -474,6 +474,15 @@ bool    DwgImporter::_GetRealDwgRootRegistry (WStringR rootKeyOut) const
                 if (nullptr != relativePath && 0 != relativePath[0] && nullptr != ++relativePath && 0 != relativePath[0])
                     {
                     rootKeyOut.assign (relativePath);
+
+                    // check the registry against currently running RealDWG release:
+                    WPrintfString curRelease(L"R%d.%d\\", DWGDB_ToolkitMajorRelease, DWGDB_ToolkitMinorRelease);
+                    if (!rootKeyOut.EndsWith(curRelease.c_str()))
+                        {
+                        LOG.warningv ("Installer registry %ls does not match RealDWG release, %ls!", relativePath, curRelease.c_str());
+                        rootKeyOut.clear ();
+                        return  false;
+                        }
 
                     if (LOG_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
                         LOG.tracev ("Found installer registry %ls", relativePath);

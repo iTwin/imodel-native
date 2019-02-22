@@ -49,7 +49,7 @@
 
     <Part Name="GdalData" BentleyBuildMakeFile="ext/gdal/GdalData.mke" OnlyPlatforms="x86,x64">
         <Bindings>
-            <Directory ProductDirectoryName="Assets" ProductSubDirectory="Gdal" SourceName="Delivery\GdalData" Feature="GdalData" FeatureDefault="No"/>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="Gdal_Data" SourceName="Delivery\GdalData" Feature="GdalData" FeatureDefault="Yes"/>
         </Bindings>
     </Part>
     <!-- Why so many jpeg libs?
@@ -270,7 +270,7 @@
     <!--                ********************** -->
     <!--                **** AndroidJUnit **** -->
     <!--                ********************** -->
-    <Part Name="AndroidJUnit-TestCollection" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit-TestCollection" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dTEST_SHORT_NAME=IppTst -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="ImagePP-TestCollection"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>

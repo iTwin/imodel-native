@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionNode.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -2061,12 +2061,12 @@ ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, Ex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ExpressionStatus ResolveMethod(MethodReferencePtr& methodReference, Utf8CP name, bool useOuter, bvector<ExpressionContextP> contexts)
+static ExpressionStatus ResolveMethod(MethodReferencePtr& methodReference, Utf8CP name, bool useOuter, bvector<ExpressionContextP> contexts, ExpressionMethodType methodType)
     {
     // note: start looking from the topmost context on the stack
     for (auto iter = contexts.rbegin(); iter != contexts.rend(); ++iter)
         {
-        if (ExpressionStatus::Success == (*iter)->ResolveMethod(methodReference, name, useOuter))
+        if (ExpressionStatus::Success == (*iter)->ResolveMethod(methodReference, name, useOuter, methodType))
             {
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ResolveMethod: %s", name).c_str());
             return ExpressionStatus::Success;
@@ -2082,7 +2082,7 @@ static ExpressionStatus ResolveMethod(MethodReferencePtr& methodReference, Utf8C
 ExpressionStatus CallNode::InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, bvector<ExpressionContextP> const& contextsStack)
     {
     MethodReferencePtr methodRef;
-    ExpressionStatus status = ResolveMethod(methodRef, GetMethodName(), true, contextsStack);
+    ExpressionStatus status = ResolveMethod(methodRef, GetMethodName(), true, contextsStack, ExpressionMethodType::ValueList);
     if (ExpressionStatus::Success == status)
         {
         EvaluationResultVector argsList;
@@ -2102,7 +2102,7 @@ ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, EC
     MethodReferencePtr  methodReference;
 
     //  The lookup should include the instance data since that would be the most logical place to find the method reference
-    ExpressionStatus    exprStatus = ResolveMethod(methodReference, GetMethodName(), true, contextsStack);
+    ExpressionStatus    exprStatus = ResolveMethod(methodReference, GetMethodName(), true, contextsStack, ExpressionMethodType::Instance);
     if (ExpressionStatus::Success != exprStatus)
         {
         evalResult = ECN::ECValue();
@@ -2140,7 +2140,7 @@ ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, bvec
     MethodReferencePtr  methodReference;
 
     //  The lookup should include the instance data since that would be the most logical place to find the method reference
-    ExpressionStatus    exprStatus = ResolveMethod(methodReference, GetMethodName(), true, contextsStack);
+    ExpressionStatus    exprStatus = ResolveMethod(methodReference, GetMethodName(), true, contextsStack, ExpressionMethodType::Static);
     if (ExpressionStatus::Success != exprStatus)
         {
         evalResult = ECN::ECValue();

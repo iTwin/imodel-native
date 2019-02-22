@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: nonport/android/BeSecurity/BeSecurityProject/src/main/java/com/bentley/android/security/BeSecurity.java $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 package com.bentley.android.security;
 
 import android.content.Context;

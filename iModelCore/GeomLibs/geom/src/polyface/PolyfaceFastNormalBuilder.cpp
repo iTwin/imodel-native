@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceFastNormalBuilder.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -80,7 +80,7 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
         {
         int32_t const pointIndex = abs(GetPointIndexCP()[i]);
 
-        if (0 == pointIndex)
+        if (0 == pointIndex && !facePoints.empty())
             {
             
             facet->Init(facePoints);

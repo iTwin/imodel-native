@@ -2,13 +2,15 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeSyncInfoFile.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 //__PUBLISH_SECTION_START__
 #include <iModelBridge/iModelBridge.h>
+#include <Bentley/md5.h>
+#include <BeRapidJson/BeRapidJson.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -242,6 +244,286 @@ method and not in its _ConvertToBim method.
 *  @ingroup GROUP_iModelBridgeSyncInfoFile
 * @bsiclass                                    BentleySystems 
 */
+
+//! iModelExternalSourceAspect holds information that identifies a piece of data in a source repository. It is part of a mapping of that data to an element in an iModel. It also
+//! contains enough information to enable a bridge to detect changes in the source data and to update the related element.
+//! The "kind" property is used by source-specific bridges to distinguish different kinds of data. The meaning of this property is known only to the bridge.
+//! The "sourceId" property is source-specific bridges to identify items uniquely in the source repository. The information required to form an identifier is bridge-specific.
+//! The "scope" property identifies the element in the iModel (not the source) that corresponds to the scope or container in the source that owns, contains, or qualifies the identity of the source item.
+//! Note that the scope property does not hold an identifier of any item in the source repository. Rather, it holds the ElementId of the element in the iModel that represents the source container.
+//!
+//! Optional properties:
+//!
+//! SourceState
+//! The "lastModHash" - Optional value that is a version number or last modified time -- something quick that will allow the synchronizer to detect that an item is unchanged and avoid computing 
+//! a cryptographic hash. If present, this value must be guaranteed to change when *any* of the source item's content changes. If LastModHash is non-empty and if the current value equals the stored 
+//! value, then a bridge will conclude that the item is unchanged. Otherwise, the bridge will ask for and use the cryptographic hash.
+//! The "hash" property must capture the state of the source item's content. Its value must be guaranteed to be unique to the content. A cryptographic hash or message digest is ideal for this purpose.
+//! For very small items, the item's state itself would also work.
+//!
+//!
+//! The "properties" property is for the private use of the bridge to store additional qualifying data on a mapping. This can be used, for example to capture a transform in the 
+//! case where a single item in the source is intstanced multiple times in the iModel, each instance being transformed in some way. It is recommended that the bridge store auxilliary properties
+//! in JSON format, but that is up to the bridge.
+struct iModelExternalSourceAspect
+    {
+    //! Utility function to convert a fixed-length byte array to its hex string representation. This is useful when 
+    //! converting an MD5 or SHA1 hash value to a string in order to store it. This is a common operation.
+    template<size_t BYTE_COUNT> static void HexStrFromBytes(Utf8StringR str, const Byte (&bytes)[BYTE_COUNT])
+        {
+        str.clear();
+        str.reserve(2 * BYTE_COUNT);
+        for (size_t i = 0; i < BYTE_COUNT; i++)
+            {
+            static constexpr char* dec2hex = "0123456789abcdef";
+            str += dec2hex[(bytes[i] >> 4) & 15];
+            str += dec2hex[ bytes[i]       & 15];
+            }
+        }
+
+    //! Utility function to convert a hex string representation of a byte array to a fixed-length byte array. This is useful when 
+    //! converting a stored hash value back to a MD5 or SHA1 binary hash value. This should be rarely needed, as hash values can
+    //! be compared for equality in their stringified form.
+    template<size_t BYTE_COUNT> static void HextStrToBytes(Byte (&bytes)[BYTE_COUNT], Utf8StringCR str)
+        {
+        if (str.size() != 2 * BYTE_COUNT)
+            {
+            BeAssert(false);
+            return;
+            }
+        std::transform(str.begin(), str.end(), bytes, [](Utf8Char ch) {return isdigit(ch) ? ch - '0' : static_cast <char> (tolower(ch)) - 'a' + 10;});
+        }
+
+    //! Generate a string representation of a double, without losing any precision
+    static void DoubleToString(Utf8StringR str, double v) {str.Sprintf("%.17g", v);}
+    //! Reconstruct a double by parsing a string representation
+    static double DoubleFromString(Utf8CP str) {return ::atof(str);}
+
+    //! Useful when writing uint64_t to JSON 
+    static void UInt64ToString(Utf8StringR str, uint64_t v)
+        {
+        str.Sprintf("%llu", v);
+        }
+    static Utf8String UInt64ToString(uint64_t v)
+        {
+        Utf8String s;
+        UInt64ToString(s, v);
+        return s;
+        }
+
+    //! Useful when deserializing uint64_t previously written as a string
+    static uint64_t UInt64FromString(Utf8CP str)
+        {
+        uint64_t v;
+        return (1 == sscanf(str, "%llu", &v))? v: 0;
+        }
+
+    struct SourceState
+        {
+        Utf8String m_checksum;
+        Utf8String m_version;
+        };
+
+    RefCountedPtr<ECN::IECInstance> m_instance;
+
+    public:
+
+    iModelExternalSourceAspect(ECN::IECInstance* i = nullptr) :m_instance(i) {}
+    iModelExternalSourceAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
+ 
+    bool IsValid() const {return m_instance.IsValid();}
+    void Invalidate() {m_instance = nullptr;}
+
+    bool operator!=(iModelExternalSourceAspect const& rhs) const {return m_instance == rhs.m_instance;}
+    bool operator==(iModelExternalSourceAspect const& rhs) const {return m_instance != rhs.m_instance;}
+
+    BeSQLite::EC::ECInstanceId GetECInstanceId() const { return BeSQLite::EC::ECInstanceId(BeSQLite::EC::ECInstanceId::FromString(m_instance->GetInstanceId().c_str()).GetValueUnchecked()); }
+    IMODEL_BRIDGE_EXPORT Utf8String GetKind() const;
+    IMODEL_BRIDGE_EXPORT DgnElementId GetElementId() const;
+    IMODEL_BRIDGE_EXPORT DgnElementId GetScope() const;
+    IMODEL_BRIDGE_EXPORT Utf8String GetIdentifier() const;
+    IMODEL_BRIDGE_EXPORT SourceState GetSourceState() const;
+    IMODEL_BRIDGE_EXPORT rapidjson::Document GetProperties() const;
+
+    IMODEL_BRIDGE_EXPORT void SetProperties(rapidjson::Document const&); //!< Update the custom properties
+    IMODEL_BRIDGE_EXPORT void SetSourceState(SourceState const& ss) {SetSourceState(*m_instance, ss);} //!< Update the state-tracking properties of the ECInstance
+    
+    //! Add this aspect to the specified element. (Caller must then call element's Insert or Update method.)
+    IMODEL_BRIDGE_EXPORT DgnDbStatus AddAspect(DgnElementR);
+
+    //! Get the ExternalSourceAspect ECClass
+    IMODEL_BRIDGE_EXPORT static ECN::ECClassCP GetAspectClass(DgnDbR);
+
+    //! Get an existing ExternalSourceAspect from the specified element in order to view the aspect
+    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspect(DgnElementCR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
+    //! Get an existing ExternalSourceAspect from the specified element in order to update the aspect (and then the element)
+    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspectForEdit(DgnElementR el, BeSQLite::EC::ECInstanceId id, ECN::ECClassCP aspectClass = nullptr);
+
+    //! Look up an aspect by Scope, Kind, and SourceId
+    IMODEL_BRIDGE_EXPORT static iModelExternalSourceAspect GetAspectBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
+
+    //! Create a new ECInstance of the specified provenance aspect class
+    //! Bridges will probably want factory methods with signatures that are customized to the bridge.
+    IMODEL_BRIDGE_EXPORT static ECN::IECInstancePtr CreateInstance(DgnElementId scope, Utf8CP kind, Utf8StringCR sourceId, SourceState const*, ECN::ECClassCR aspectClass);
+
+    //! Set the SourceState of this aspect in memory
+    IMODEL_BRIDGE_EXPORT static void SetSourceState(ECN::IECInstanceR, SourceState const&);
+
+    struct ElementAndAspectId
+        {
+        DgnElementId elementId;
+        BeSQLite::EC::ECInstanceId aspectId;
+        };
+
+    //! Look up the ElementId of the element that contains an aspect with the specified Scope, Kind, and Identifier. Also returns the aspect's instanceid.
+    IMODEL_BRIDGE_EXPORT static ElementAndAspectId FindElementBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
+
+    IMODEL_BRIDGE_EXPORT static ElementAndAspectId FindElementByHash(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId);
+
+    //! Look up all aspects on the specified element
+    IMODEL_BRIDGE_EXPORT static bvector<iModelExternalSourceAspect> GetAll(DgnElementCR, ECN::ECClassCP aspectClass = nullptr);
+
+    //! Look up all aspects on the specified element by Kind
+    IMODEL_BRIDGE_EXPORT static bvector<iModelExternalSourceAspect> GetAllByKind(DgnElementCR, Utf8CP kind, ECN::ECClassCP aspectClass = nullptr);
+
+    //! Return a statement that finds all aspects with the specified scope, identifier, and kind and returns the Element.Id and ECInstanceId of each
+    static BeSQLite::EC::CachedECSqlStatementPtr GetSelect(DgnDbR db, Utf8StringCR kind, DgnElementId scope, Utf8StringCR identifier, BeSQLite::EC::IECSqlBinder::MakeCopy cc)
+        {
+        auto allFromSameSource = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE " XTRN_SRC_ASPCT_Identifier "=? AND " XTRN_SRC_ASPCT_Scope ".Id=? AND " XTRN_SRC_ASPCT_Kind "=?");
+        auto rc = allFromSameSource->BindText(1, identifier.c_str(), cc); BeAssert(rc.IsSuccess());
+        rc = allFromSameSource->BindId(2, scope); BeAssert(rc.IsSuccess());
+        rc = allFromSameSource->BindText(3, kind.c_str(), cc); BeAssert(rc.IsSuccess());
+        return allFromSameSource;
+        }
+
+    //! Return a statement that finds all aspects from the same source as the specified aspect and returns the Element.Id and ECInstanceId of each
+    static BeSQLite::EC::CachedECSqlStatementPtr GetSelectFromSameSource(DgnDbR db, iModelExternalSourceAspect const& aspect, BeSQLite::EC::IECSqlBinder::MakeCopy cc = BeSQLite::EC::IECSqlBinder::MakeCopy::Yes)
+        {
+        return GetSelect(db, aspect.GetKind(), aspect.GetScope(), aspect.GetIdentifier(), cc);
+        }
+
+    IMODEL_BRIDGE_EXPORT Utf8String FormatForDump(DgnDbR, bool includeProperties, bool includeSourceState) const;
+    IMODEL_BRIDGE_EXPORT static Utf8String GetDumpHeaders(bool includeProperties, bool includeSourceState);
+    IMODEL_BRIDGE_EXPORT static void Dump(DgnElementCR el, Utf8CP loggingCategory, NativeLogging::SEVERITY, bool includeProperties = true, bool includeSourceState = false);
+    };
+
+//=======================================================================================
+// Identifies an iModelExternalSourceAspect on an element.
+// @bsiclass                                                    
+//=======================================================================================
+#ifdef COMMENT_OUT_NOT_USED
+struct iModelExternalSourceAspectID
+    {
+    DgnElementId m_elementId;
+    BeSQLite::EC::ECInstanceId m_aspectId;
+
+    iModelExternalSourceAspectID()  {}
+    iModelExternalSourceAspectID(DgnElementId eid, BeSQLite::EC::ECInstanceId aid) : m_elementId(eid), m_aspectId(aid) {BeAssert(m_elementId.IsValid()); BeAssert(m_aspectId.IsValid());}
+    iModelExternalSourceAspectID(iModelExternalSourceAspect const& aspect) : m_elementId(aspect.GetElementId()), m_aspectId(aspect.GetECInstanceId()) {BeAssert(m_elementId.IsValid()); BeAssert(m_aspectId.IsValid());}
+
+    bool IsValid() const {return m_elementId.IsValid();}
+
+    bool operator==(iModelExternalSourceAspectID const& rhs) const {return m_elementId == rhs.m_elementId && m_aspectId == rhs.m_aspectId;}
+    bool operator!=(iModelExternalSourceAspectID const& rhs) const {return !(*this == rhs);}
+    bool operator <(iModelExternalSourceAspectID const& rhs) const {if (m_elementId.GetValue() < rhs.m_elementId.GetValue()) return true; if (m_elementId.GetValue() > rhs.m_elementId.GetValue()) return false; return m_aspectId < rhs.m_aspectId;}
+    };
+#endif
+
+//=======================================================================================
+//! Helper class for stepping through all ExternalSourceAspects in a specified Scope
+//! with optional WHERE clause. 
+//! NB: It is generally unsafe to use positional parameter binding. Use named parameters
+//! and call GetParameterIndex instead.
+// @bsiclass                                                    
+//=======================================================================================
+template<typename T>
+struct ExternalSourceAspectIterator : NonCopyableClass
+{
+    struct Entry;
+    friend struct Entry;
+
+protected:
+    DgnDbR m_db;
+    BeSQLite::EC::CachedECSqlStatementPtr m_stmt;
+    mutable iModelExternalSourceAspect m_aspect;
+
+    BeSQLite::DbResult Step() const
+        {
+        if (!m_stmt.IsValid())
+            return BeSQLite::BE_SQLITE_DONE;
+
+        auto rc = m_stmt->Step();
+        if (BeSQLite::BE_SQLITE_ROW !=  rc)
+            {
+            m_aspect.Invalidate();
+            return rc;
+            }
+
+        auto el = m_db.Elements().GetElement(m_stmt->GetValueId<DgnElementId>(1));
+        if (!el.IsValid())
+            {
+            BeAssert(false);
+            m_aspect.Invalidate();
+            return BeSQLite::BE_SQLITE_ERROR;
+            }
+        m_aspect = iModelExternalSourceAspect::GetAspect(*el, m_stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0));
+        return BeSQLite::BE_SQLITE_ROW;
+        }
+
+public:
+    ExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP kind, Utf8StringCR wh) : m_db(db)
+        {
+        Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind=?)");
+        if (!wh.empty())
+            ecsql.append(" AND (").append(wh).append(" )");
+        ecsql.append(" )");
+
+        m_stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+
+        if (!m_stmt.IsValid())
+            return;
+
+        m_stmt->BindId(1, scope);
+        m_stmt->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        }
+
+    //! Move ctor. ExternalSourceAspectIterator are not copyable, but they are movable.
+    ExternalSourceAspectIterator(ExternalSourceAspectIterator&& rhs) : m_stmt(std::move(rhs.m_stmt)), m_aspect(rhs.m_aspect), m_db(rhs.m_db) {}
+
+    struct Entry : std::iterator<std::input_iterator_tag, T const>
+    {
+        friend struct ExternalSourceAspectIterator;
+    protected:
+        ExternalSourceAspectIterator const* m_it;
+        Entry(ExternalSourceAspectIterator const* it) : m_it(it) {Step();}
+        void Step()
+            {
+            if (m_it) 
+                {
+                if (BeSQLite::BE_SQLITE_ROW != m_it->Step()) 
+                    m_it = nullptr;
+                }
+            }
+    public:
+        Entry& operator++() {Step(); return *this;}
+        bool operator!=(Entry const& rhs) const {return !(*this == rhs);}
+        bool operator==(Entry const& rhs) const {return m_it == rhs.m_it;}
+        T const& operator*() const {return (T const&)(m_it->m_aspect);}
+        T const* operator->() const {return (T const*)(&m_it->m_aspect);}
+    };
+
+    typedef Entry const_iterator;
+    typedef const_iterator iterator;
+    const_iterator begin() const {return Entry(this);}
+    const_iterator end() const {return Entry(nullptr);}
+
+    //! Get the prepared statement for this iterator. This can be used to bind parameters before calling /c begin.
+    BeSQLite::EC::CachedECSqlStatement* GetStatement() {return m_stmt.get();}
+
+    //! Get the parameter index of the specified named parameter. Note: you should not include the parameter prefix character in the name of the parameter.
+    int GetParameterIndex(Utf8CP pname) {BeAssert((*pname != ':') && (*pname != '@') && (*pname != '$')); auto i = GetStatement()->GetParameterIndex(pname); BeAssert(i != -1); return i;}
+};
+
 struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 {
     typedef uint64_t ROWID;
@@ -256,7 +538,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     {
         struct Spec : BeSQLite::PropertySpec
             {
-            Spec(BentleyApi::Utf8CP name) : PropertySpec(name, "SyncInfo", PropertySpec::Mode::Normal, PropertySpec::Compress::No) {}
+            Spec(Utf8CP name) : PropertySpec(name, "SyncInfo", PropertySpec::Mode::Normal, PropertySpec::Compress::No) {}
             };
 
         static Spec ProfileVersion()       {return Spec("SchemaVersion");}
@@ -317,11 +599,15 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         SourceState() : m_lmt(0) {}
         SourceState(double d, Utf8StringCR h) 
             : m_lmt(d), m_hash(h) {}
+        
+        IMODEL_BRIDGE_EXPORT SourceState(iModelExternalSourceAspect::SourceState aspectState);
 
         //! The last "time" the source item was created or modified. The definition of this value is known only to source repository.
         double GetLastModifiedTime() const {return m_lmt;}
         //! The cryptographic hash of the contents of the source item. The definition and method of computing this value is known only to source repository.
         Utf8StringCR GetHash() const  {return m_hash;}
+
+        iModelExternalSourceAspect::SourceState GetAspectState() const;
         };
 
     //=======================================================================================
@@ -448,9 +734,11 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
             SourceState const& GetCurrentState() const {return m_currentState;}
             };
 
+      private:
+        iModelBridgeSyncInfoFile* m_si;
       protected:
         uint32_t            m_elementsConverted = 0;
-        iModelBridgeSyncInfoFile& m_si;
+        
         DgnElementIdSet     m_elementsSeen;
         bset<ROWID>         m_scopesSkipped;
 
@@ -463,17 +751,18 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! Invoked just before an an element is deleted
         IMODEL_BRIDGE_EXPORT virtual void _OnItemDelete(Record const&);
 
+        DgnDbStatus AddProvenanceAspect(SourceIdentity const& identity, SourceState const &state, DgnElementR element);
       public:
         //! @private
         //! Construct a change detector object. This will invoke the iModelBridgeSyncInfoFile::_OnNewUpdate method on @a si
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
         //! @note You should use the same change detector object for an entire update.
-        IMODEL_BRIDGE_EXPORT ChangeDetector(iModelBridgeSyncInfoFile& si);
+        IMODEL_BRIDGE_EXPORT ChangeDetector(iModelBridgeSyncInfoFile* si);
 
         //! Get a reference to the BIM
-        DgnDbR GetDgnDb() {return m_si.GetDgnDb();}
+        virtual DgnDbR GetDgnDb() {return m_si->GetDgnDb();}
 
-        iModelBridgeSyncInfoFile& GetSyncInfo() {return m_si;}
+        iModelBridgeSyncInfoFile& GetSyncInfo() {return *m_si;}
 
         //! Used to choose one of many existing entries in SyncInfo
         typedef std::function<bool(Record const&, iModelBridgeSyncInfoFile& bridge)> T_Filter;
@@ -531,9 +820,35 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
         //! Construct a change detector that can be used efficiently by a converter that is doing an initial conversion, such that all items are new to the BIM.
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
-        InitialConversionChangeDetector(iModelBridgeSyncInfoFile& si) : ChangeDetector(si) {}
+        InitialConversionChangeDetector(iModelBridgeSyncInfoFile* si) : ChangeDetector(si) {}
         };
 
+    struct iModelBasedChangeDetector : ChangeDetector
+        {
+        DgnDbR m_dgnDb;
+        virtual DgnDbR GetDgnDb() override { return m_dgnDb; }
+        iModelBasedChangeDetector(DgnDbR dgnDb) : ChangeDetector(NULL) , m_dgnDb(dgnDb){}
+        //! Detect if the item has changed or is new.
+        //! @param scope The scoping item
+        //! @param kind the kind of source item
+        //! @param item the source item
+        //! @param filter Optional. How to choose among many records for the same item
+        //! @param forceChange Optional. If the item exists in syncinfo, then always report it as changed.
+        //! return the results of looking in syncinfo and comparing the existing syncinfo record, if any, with the item's current state.
+        IMODEL_BRIDGE_EXPORT virtual Results _DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter = nullptr, bool forceChange = false);
+
+        //! Update the BIM and syncinfo with the results of converting an item to one or more DgnElements.
+        //! If changeDetectorResults indicates that the item is new or changed, the conversion writes are written to the BIM and syncinfo is updated.
+        //! If changeDetectorResults indicates that the item is known and unchanged, then the BIM is not updated.
+        //! In either case, this function will call _OnElementSeen on the DgnElementIds in conversionResults.m_element and its children.
+        //! @note If you decide not to call this function to process unchanged items, then you must call _OnElementSeen or _OnScopeSkipped directly.
+        IMODEL_BRIDGE_EXPORT virtual BentleyStatus _UpdateBimAndSyncInfo(ConversionResults& conversionResults, ChangeDetector::Results const& changeDetectorResults);
+
+        //! Delete all elements in the BIM that are recorded in syncinfo but are not in the set of elements seen and are not the targets of mappings
+        //! in scopes that were skipped as unchanged.
+        //! @param onlyInScopes The scopes to consider. Items in all other scopes are left intact.
+        IMODEL_BRIDGE_EXPORT virtual void _DeleteElementsNotSeenInScopes(bvector<ROWID> const& onlyInScopes);
+        };
     typedef RefCountedPtr<ChangeDetector> ChangeDetectorPtr;
 
   protected:
@@ -622,10 +937,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     IMODEL_BRIDGE_EXPORT BentleyStatus DeleteItem(ROWID itemrid);
 
     //! Return the ChangeDetector that this bridge should use.
-    ChangeDetectorPtr GetChangeDetectorFor(iModelBridge& bridge) 
-        {
-        return bridge._GetParams().IsUpdating()? new ChangeDetector(*this): new InitialConversionChangeDetector(*this);
-        }
+    IMODEL_BRIDGE_EXPORT ChangeDetectorPtr GetChangeDetectorFor(iModelBridge& bridge);
+        
 };
 
 //=======================================================================================

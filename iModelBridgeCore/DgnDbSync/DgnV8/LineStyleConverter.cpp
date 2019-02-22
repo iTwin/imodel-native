@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/LineStyleConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -352,7 +352,7 @@ LineStyleConverter::V8Location::V8Location(DgnV8Api::LsCacheComponent const& com
     //  we don't try to check location based on RscFileHandle.  We only do a file test
     //  if the component definition comes from an element.
     if (m_isElement)
-        m_v8fileId = Converter::GetV8FileSyncInfoIdFromAppData(*lsLoc->GetSourceFile());
+        m_v8fileId = converter.GetRepositoryLinkId(*lsLoc->GetSourceFile());
 
     m_v8componentType   = (uint32_t)lsLoc->GetElementType();
     }
@@ -703,7 +703,7 @@ DgnStyleId Converter::_RemapLineStyle(double&unitsScale, DgnV8Api::DgnFile&v8Fil
     //  It seems odd to have line codes, i.e., style numbers 1-7, use file scoping.  However, if
     //  we don't everything that calls FindLineStyle has to know to treat 1-7 differently.
     //
-    SyncInfo::V8FileSyncInfoId v8FileId = GetV8FileSyncInfoIdFromAppData(v8File);
+    RepositoryLinkId v8FileId = GetRepositoryLinkId(v8File);
     SyncInfo::V8StyleId  srcLineStyleId(v8FileId, srcLineStyleNum);
 
     bool  foundStyle = false;

@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgImporter.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include mdl.mki
@@ -86,7 +86,11 @@ $(o)ImportXrefs$(oext)      : $(baseDir)ImportXrefs.cpp $(DwgDepends) ${MultiCom
 
 $(o)ImportBreps$(oext)      : $(baseDir)ImportBreps.cpp $(DwgDepends) ${MultiCompileDepends}
 
+$(o)ImportBlocks$(oext)     : $(baseDir)ImportBlocks.cpp $(DwgDepends) ${MultiCompileDepends}
+
 $(o)ImportGroups$(oext)     : $(baseDir)ImportGroups.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)RepositoryLinks$(oext)  : $(baseDir)RepositoryLinks.cpp $(DwgDepends) ${MultiCompileDepends}
 
 $(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) ${MultiCompileDepends}
 
@@ -98,13 +102,6 @@ $(o)ProcessLogger$(oext)    : $(baseDir)ProcessLogger.cpp $(DwgDepends) ${MultiC
 
 %include MultiCppCompileGo.mki
 cppObjects =% $(MultiCompileObjectList)
-
-FileTypeControl     =
-CCPchOpts           =
-CPchOpts            =
-PchExtraOptions     =
-
-%include MultiCppCompileRule.mki
 
 #----------------------------------------------------------------------
 #   Link the executable
@@ -142,16 +139,13 @@ LINKER_LIBRARIES        + $(ToolkitLibs)TD_Root$(libext)
 LINKER_LIBRARIES        + $(ToolkitLibs)TD_Alloc$(libext)
 LINKER_LIBRARIES        + $(ToolkitLibs)TD_Db$(libext)
 
-%elif $(DWGTOOLKIT) == "RealDwg"
-    %if $(VendorVersion) == 2016
-        RealDwgSuffix = 20
-    %elif $(VendorVersion) == 2017
-        RealDwgSuffix = 21
-    %elif $(VendorVersion) == 2018
-        RealDwgSuffix = 22
-    %endif
+%if exists ($(ToolkitLibs)TD_DbCore$(libext))
+LINKER_LIBRARIES        + $(ToolkitLibs)TD_DbCore$(libext)
+%endif
 
-LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+%elif $(DWGTOOLKIT) == "RealDwg"
+
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(ToolkitLibSuffix)$(libext)
 %if $(VendorVersion) >= 2017
 LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acpal$(libext)
 %endif

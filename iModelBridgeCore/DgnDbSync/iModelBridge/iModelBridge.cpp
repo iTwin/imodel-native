@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridge.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridge.h>
@@ -12,6 +12,7 @@
 #include <GeomJsonWireFormat/JsonUtils.h>
 #include <Bentley/BeNumerical.h>
 #include "iModelBridgeHelpers.h"
+#include "iModelBridgeLdClient.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -87,7 +88,8 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     if (nullptr != rootSubjectDescription)
         createProjectParams.SetRootSubjectDescription(rootSubjectDescription);
 
-    createProjectParams.SetRootSubjectName(_GetParams().GetBridgeRegSubKeyUtf8().c_str());
+    Utf8String rootSubjName(_GetParams().GetBriefcaseName().GetBaseName());
+    createProjectParams.SetRootSubjectName(rootSubjName.c_str());
 
     // Create the DgnDb file. All currently registered domain schemas are imported.
     BeSQLite::DbResult createStatus;
@@ -119,7 +121,9 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 
     // Tell the bridge to generate schemas
     _MakeSchemaChanges();
-
+    //We will need import the provenance schema
+    bool madeChanges;
+    
     auto jobsubj = _InitializeJob();
     if (!jobsubj.IsValid())
         {
@@ -166,7 +170,7 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
     // (Note that OpenDgnDb will also merge in any pending schema changes that were recently pulled from iModelHub.)
 
     madeSchemaChanges = false;
-    auto db = DgnDb::OpenDgnDb(&dbres, dbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    auto db = DgnDb::OpenDgnDb(&dbres, dbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive));
     if (!db.IsValid())
         {
         if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
@@ -174,7 +178,7 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
 
         // We must do a schema upgrade.
         // Probably, the bridge registered some required domains, and they must be imported
-        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
+        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
         oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
         db = DgnDb::OpenDgnDb(&dbres, dbName, oparams);
         if (!db.IsValid())
@@ -644,7 +648,7 @@ bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson              08/17
 //---------------------------------------------------------------------------------------
-bool iModelBridge::Params::IsDocumentAssignedToJob(Utf8StringCR docId) const
+bool iModelBridge::Params::IsDocumentInRegistry(Utf8StringCR docId) const
     {
     if (nullptr == m_documentPropertiesAccessor) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
         {
@@ -839,6 +843,24 @@ DgnDbStatus iModelBridge::InsertLinkTableRelationship(DgnDbR db, Utf8CP relClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::AreTransformsEqual(Transform const& t1, Transform const& t2)
+    {
+    auto matrixTolerance = Angle::TinyAngle();
+
+    DPoint3d x1, x2;
+    t1.GetTranslation(x1);
+    t2.GetTranslation(x2);
+
+    double maxCoord = std::max<double>(x1.MaxAbs(), x2.MaxAbs());
+
+    auto xlatTolerance = std::max<double>(1.0e-15, BentleyApi::BeNumerical::NextafterDelta(maxCoord));
+
+    return t1.IsEqual(t2, matrixTolerance, xlatTolerance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR jobSubject)
     {
     Transform jobTrans = params.GetSpatialDataTransform();
@@ -848,9 +870,7 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
     // the property on the JobSubject, so that the user and apps can see what the
     // bridge configuration transform is.
     Transform jobSubjectTransform;
-    auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(jobTrans.ColumnXMagnitude());
-    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !jobSubjectTransform.IsEqual(jobTrans, matrixTolerance, pointTolerance))
+    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !AreTransformsEqual(jobSubjectTransform, jobTrans))
         {
         auto jobSubjectED = jobSubject.MakeCopy<Subject>();
         JobSubjectUtils::SetTransform(*jobSubjectED, jobTrans);
@@ -863,8 +883,10 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& params, Utf8StringCR bridgeSpecificSuffix)
+Utf8String      iModelBridge::ComputeJobSubjectName(SubjectCR parent, Params const& params, Utf8StringCR bridgeSpecificSuffix)
     {
+    auto& db = parent.GetDgnDb();
+
     // Use the document GUID, if available, to ensure a unique Job subject name.
     Utf8String docIdStr;
     auto docGuid = params.QueryDocumentGuid(params.GetInputFileName());
@@ -882,13 +904,13 @@ Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& pa
         jobName.append(bridgeSpecificSuffix);
         }
 
-    DgnCode code = Subject::CreateCode(*db.Elements().GetRootSubject(), jobName.c_str());
+    DgnCode code = Subject::CreateCode(parent, jobName.c_str());
     int i = 0;
     while (db.Elements().QueryElementIdByCode(code).IsValid())
         {
         Utf8String uniqueJobName(jobName);
         uniqueJobName.append(Utf8PrintfString("%d", ++i).c_str());
-        code = Subject::CreateCode(*db.Elements().GetRootSubject(), uniqueJobName.c_str());
+        code = Subject::CreateCode(parent, uniqueJobName.c_str());
         }
     jobName = code.GetValueUtf8();
     return jobName;
@@ -1066,4 +1088,14 @@ bool iModelBridge::HoldsSchemaLock(DgnDbR db)
     {
     LockableId schemasLock(db.Schemas());
     return db.BriefcaseManager().QueryLockLevel(schemasLock) == LockLevel::Exclusive;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::TestFeatureFlag(CharCP ff)
+    {
+    bool flagVal = false;
+    iModelBridgeLdClient::GetInstance((WebServices::UrlProvider::Environment)GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
+    return flagVal;
     }

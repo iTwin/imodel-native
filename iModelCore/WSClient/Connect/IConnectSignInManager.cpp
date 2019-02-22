@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/IConnectSignInManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -24,6 +24,9 @@
 #define USERINFO_Serialized_UserId          "userId"
 #define USERINFO_Serialized_OrganizationId  "organizationId"
 
+#define LOCALSTATE_Namespace                "Connect"
+#define LOCALSTATE_SignedInUser             "SignedInUser"
+
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -38,9 +41,9 @@ AsyncTaskPtr<void> IConnectSignInManager::CheckAndUpdateToken()
         {
         if (!result.IsSuccess())
             {
-            LOG.infov("Force update token failed");
-            return;
+            LOG.infov("Force UpdateteToken failed");
             }
+
         });
     }
 
@@ -91,7 +94,7 @@ IConnectSignInManager::UserInfo IConnectSignInManager::GetUserInfo() const
 Utf8String IConnectSignInManager::GetLastUsername() const
     {
     BeMutexHolder lock(m_mutex);
-    return _GetLastUsername();
+    return m_secureLocalState->GetValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -277,7 +280,7 @@ void IConnectSignInManager::CheckUserChange()
         return;
 
     OnUserChanged();
-    _StoreSignedInUser();
+    StoreSignedInUser();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -294,6 +297,17 @@ IConnectSignInManager::UserInfo::UserInfo(Utf8StringCR serialized)
     lastName = json[USERINFO_Serialized_LastName].asString().c_str();
     userId = json[USERINFO_Serialized_UserId].asString().c_str();
     organizationId = json[USERINFO_Serialized_OrganizationId].asString().c_str();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void IConnectSignInManager::StoreSignedInUser()
+    {
+    BeMutexHolder lock(m_mutex);
+    UserInfo info = _GetUserInfo();
+    BeAssert(!info.username.empty());
+    m_secureLocalState->SaveValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser, info.username.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

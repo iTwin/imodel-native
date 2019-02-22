@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/Client.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,7 +67,7 @@ private:
                                    ICancellationTokenPtr cancellationToken = nullptr) const;
 
     iModelTaskPtr CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
-                                       ICancellationTokenPtr cancellationToken) const;
+                                       Utf8StringCR imodelTemplate, ICancellationTokenPtr cancellationToken) const;
                                        
     iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const
         {
@@ -188,6 +188,15 @@ public:
     //! @note Returned iModel Id might be different from the user supplied iModel name.
     IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR projectId, DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, 
                                                          bool waitForInitialized = true, Http::Request::ProgressCallbackCR  callback = nullptr, 
+                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Create an new iModel on the server from empty template.
+    //! @param[in] projectId Project Id to connect to.
+    //! @param[in] iModelName Explicit iModel name.
+    //! @param[in] description Explicit description of the iModel.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has created iModel information as the result. See iModelInfo.
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateEmptyiModel(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Update exsiting iModel's name and/or description on the server

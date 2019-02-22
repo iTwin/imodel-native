@@ -61,6 +61,9 @@
     <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\LightWeightConverter.h">
       <Filter>PublicAPI\DgnV8</Filter>
     </ClInclude>
+    <ClInclude Include="DgnV8\RulesetEmbedder.h">
+      <Filter>DgnV8</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.h">
@@ -172,6 +175,9 @@
       <Filter>DgnV8</Filter>
     </ClCompile>
     <ClCompile Include="DgnV8\RealityModelTilesets.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\RulesetEmbedder.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
   </ItemGroup>

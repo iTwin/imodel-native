@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECExpressionContextsProvider.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -79,7 +79,7 @@ private:
         }
 
 protected:
-    ExpressionStatus _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) override {return m_internalContext->ResolveMethod(result, ident, useOuterIfNecessary);}
+    ExpressionStatus _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary, ExpressionMethodType methodType) override {return m_internalContext->ResolveMethod(result, ident, useOuterIfNecessary, methodType);}
     bool _IsNamespace() const override {return m_internalContext->IsNamespace();}
     ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contexts, ::uint32_t startIndex) override {return m_internalContext->GetValue(evalResult, primaryList, contexts, startIndex);}
     ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contexts, ::uint32_t startIndex) override {return m_internalContext->GetReference(evalResult, refResult, primaryList, contexts, startIndex);}
@@ -168,6 +168,7 @@ public:
         ECInstancesHelper::LoadInstance(instance, m_connection, key->GetInstanceKey());
         if (instance.IsValid())
             instanceContext->SetInstance(*instance);
+
         return instanceContext;
         }
 };
@@ -920,9 +921,11 @@ private:
     bvector<Utf8String> m_usedClasses;
     Utf8String m_ecsql;
     RefCountedPtr<CallNode const> m_currentValueListMethodNode;
-    bool m_inArguments;
-    bool m_ignoreArguments;
-    bool m_inStructProperty;
+    bool m_skipNextArgumentsOpeningBrace;
+    bool m_ignoreNextArguments;
+    int32_t m_inArguments;
+    int32_t m_ignoreArguments;
+    int32_t m_inStructProperty;
     ExpressionToken m_previousToken;
     bvector<Utf8String> m_nodesStack;
 
@@ -1048,9 +1051,10 @@ private:
     void HandleScopeEnd()
         {
         if (m_inStructProperty)
+            {
             Append("]");
-
-        m_inStructProperty = false;
+            m_inStructProperty--;
+            }
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -1099,6 +1103,7 @@ private:
             m_usedClasses.push_back(qualifiedClassName);
             }
 
+        m_skipNextArgumentsOpeningBrace = true;
         return true;
         }
 
@@ -1181,7 +1186,7 @@ private:
             info.RelatedClassNames.SchemaName.c_str(), info.RelatedClassNames.ClassName.c_str(),
             info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str());
         m_ecsql.append(ecsql);
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1222,7 +1227,7 @@ private:
             info.ThisColumn.ClassIdColumnName.c_str(), prefix.c_str(), info.ThisColumn.InstanceIdColumnName.c_str(), prefix.c_str(),
             info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str());
         m_ecsql.append(ecsql);
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1259,7 +1264,7 @@ private:
             info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str(),
             info.ThisColumn.ClassIdColumnName.c_str(), prefix.c_str(), info.ThisColumn.InstanceIdColumnName.c_str(), prefix.c_str());
         m_ecsql.append(ecsql);
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1269,7 +1274,7 @@ private:
     bool HandleValueListMethodSpecialCase(CallNodeCR node)
         {
         m_currentValueListMethodNode = &node;
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1290,7 +1295,7 @@ private:
         Append(FUNCTION_NAME_InVariableIntValues);
         StartArguments(*args);
         args->GetArgument(0)->Traverse(*this);
-        m_ignoreArguments = true;
+        m_ignoreNextArguments = true;
         return true;
         }
     
@@ -1315,11 +1320,11 @@ private:
         bool isGetUserSettingIntValuesSpecialCase = (0 == strcmp("GetVariableIntValues", m_currentValueListMethodNode->GetMethodName()));
         if (!isGetUserSettingIntValuesSpecialCase)
             {
-            m_ignoreArguments = true;
+            m_ignoreNextArguments = true;
             args->Traverse(*this);
             }
 
-        m_inArguments = true;
+        m_skipNextArgumentsOpeningBrace = true;
         return true;
         }
 
@@ -1365,7 +1370,6 @@ private:
             return;
 
         Append(nodeCopy->ToString());
-        m_inArguments = false;
         }
     
     /*-----------------------------------------------------------------------------**//**
@@ -1413,14 +1417,13 @@ private:
         else
             {
             Append("IN ");
-            m_inArguments = false;
-            StartArguments(*m_currentValueListMethodNode);
+            m_inArguments--;
             m_currentValueListMethodNode->GetArguments()->Traverse(*this);
             }
 
         m_currentValueListMethodNode = nullptr;
-        m_inArguments = true;
-        m_ignoreArguments = true;
+        m_inArguments++;
+        m_ignoreArguments++;
         }
     
     /*-----------------------------------------------------------------------------**//**
@@ -1476,20 +1479,39 @@ public:
     bool ProcessUnits(UnitSpecCR) override {BeAssert(false); return false;}
     bool StartArguments(NodeCR) override
         {
-        if (!m_inArguments && !m_ignoreArguments)
-            Append("(", false);
-        m_inArguments = true;
+        if (m_ignoreNextArguments)
+            {
+            m_ignoreArguments++;
+            m_ignoreNextArguments = false;
+            }
+        else if (m_ignoreArguments)
+            {
+            m_ignoreArguments++;
+            }
+        else
+            {
+            if (!m_skipNextArgumentsOpeningBrace)
+                Append("(", false);
+            else
+                m_skipNextArgumentsOpeningBrace = false;
+            }
+        m_inArguments++;
         return true;
         }
     bool EndArguments(NodeCR) override
         {
-        if (!m_ignoreArguments)
+        if (m_ignoreArguments)
+            {
+            m_ignoreArguments--;
+            }
+        else
             {
             HandleScopeEnd();
-            Append(")");
+            if (m_inArguments)
+                Append(")");
             }
-        m_ignoreArguments = false;
-        m_inArguments = false;
+        if (m_inArguments)
+            m_inArguments--;
 
         // create an aggregated arguments' string and append it to the 
         // call node so it represents the whole call node
@@ -1515,7 +1537,14 @@ public:
 
         return true;
         }
-    bool Comma() override {ARGUMENTS_PRECONDITION(); Append(","); return true;}
+    bool Comma() override
+        {
+        ARGUMENTS_PRECONDITION();
+        if (m_inArguments)
+            HandleScopeEnd();
+        Append(",");
+        return true;
+        }
     bool OpenParens() override {ARGUMENTS_PRECONDITION(); Append("("); return true;}
     bool CloseParens() override {ARGUMENTS_PRECONDITION(); Append(")"); return true;}
 
@@ -1528,9 +1557,9 @@ public:
 
         HandleScopeEnd();
 
-        m_inStructProperty = (TOKEN_Dot == node.GetOperation());
-        if (m_inStructProperty)
+        if ((TOKEN_Dot == node.GetOperation()))
             {
+            m_inStructProperty++;
             Append(".");
             Append("[");
             }
@@ -1622,7 +1651,8 @@ public:
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
     ECExpressionToECSqlConverter() 
-        : m_inArguments(false), m_inStructProperty(false), m_ignoreArguments(false), m_previousToken(TOKEN_Unrecognized)
+        : m_inArguments(0), m_inStructProperty(0), m_ignoreArguments(0), m_previousToken(TOKEN_Unrecognized), 
+        m_skipNextArgumentsOpeningBrace(false), m_ignoreNextArguments(false)
         {}
     
     /*-----------------------------------------------------------------------------**//**
@@ -1706,6 +1736,59 @@ bvector<Utf8String> const& ECExpressionsHelper::GetUsedClasses(Utf8StringCR expr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsNextNonWhiteSpaceAlphaNum(Utf8StringCR expression, size_t currentIndex)
+    {
+    for (size_t i = currentIndex + 1; i < expression.size(); ++i)
+        {
+        if (std::isspace(expression[i]))
+            continue;
+
+        return std::isalnum(expression[i]);
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void RemoveExpressionWhitespaces(Utf8StringR expression)
+    {
+    bool inQuatation = false; // To ignore whitespaces between quatation marks
+    bool lastAlphaNum = false;
+    bool nextAlphaNum = false;
+    bool lastWSpace = false;
+    size_t currentIndex = 0;
+    char* removedItems = std::remove_if
+    (
+        expression.begin(), 
+        expression.end(), 
+        [&inQuatation, &lastAlphaNum, &nextAlphaNum, &expression, &currentIndex, &lastWSpace](Utf8Char c)
+            {
+            if ('\"' == c)
+                inQuatation = !inQuatation;
+            
+            bool isWSpace = std::isspace(c);
+            bool isAlphaNum = std::isalnum(c);
+
+            if (isWSpace != lastWSpace) // Recheck next alpha num only if last one has changed for optimization
+                nextAlphaNum = IsNextNonWhiteSpaceAlphaNum(expression, currentIndex);
+            bool remove = isWSpace && !inQuatation && !(lastAlphaNum && nextAlphaNum); // Remove whitespaces that are not between alphanum symbols
+            
+            lastAlphaNum = isAlphaNum ? true : (isWSpace ? lastAlphaNum : false);
+            lastWSpace = isWSpace;
+
+            ++currentIndex;
+            return remove;
+            }
+    );
+
+    expression.erase(removedItems, expression.end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodePtr ECExpressionsHelper::GetNodeFromExpression(Utf8CP expr)
@@ -1715,6 +1798,9 @@ NodePtr ECExpressionsHelper::GetNodeFromExpression(Utf8CP expr)
         return node;
 
     Utf8String expression = expr;
+
+    // Remove excessive whitespaces for optimizations below to work
+    RemoveExpressionWhitespaces(expression);
 
     // check node's class instead of instance's class - this allows us to avoid retrieving the ECInstance
     // if we're only checking for class.

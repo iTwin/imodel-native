@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/BasicGeometryTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -23,7 +23,7 @@ struct BasicGeometryTests : public GeomTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, Line)
     {
-    LineUpFiles(L"Line.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Line.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -41,7 +41,7 @@ TEST_F(BasicGeometryTests, Line)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, LineUpdateWithoutAnyChange)
     {
-    LineUpFiles(L"LineUpdateWithoutAnyChange.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"LineUpdateWithoutAnyChange.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -66,7 +66,7 @@ TEST_F(BasicGeometryTests, LineUpdateWithoutAnyChange)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, EnlargeProjectExtents)
     {
-    LineUpFiles(L"LineUpdateWithoutAnyChange.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"LineUpdateWithoutAnyChange.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     //  Do the initial conversion on a file containing a single line that starts at 0,0,0 and extends 1 meter to the right.
     V8FileEditor v8editor;
@@ -116,7 +116,7 @@ TEST_F(BasicGeometryTests, EnlargeProjectExtents)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, Cell)
     {
-    LineUpFiles(L"Cell.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Cell.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     
     // -----------------------------------------------------------------------------------------------------------
     // Create Named Cell with following hirarchy
@@ -127,27 +127,56 @@ TEST_F(BasicGeometryTests, Cell)
     V8FileEditor v8editor;
     BentleyStatus status = ERROR;
     v8editor.Open(m_v8FileName);
-    DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
-    v8editor.CreateArc(arcEEH1, false);
-    v8editor.CreateArc(arcEEH2, false);
 
-    DgnV8Api::EditElementHandle cellEEH;
-    v8editor.CreateCell(cellEEH, L"UserCell",false);
-
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH1);
-    EXPECT_TRUE(SUCCESS == status);
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH2);
-    EXPECT_TRUE(SUCCESS == status);
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildComplete(cellEEH);
-    EXPECT_TRUE(SUCCESS == status);
-
-    EXPECT_TRUE( SUCCESS == cellEEH.AddToModel());
-    v8editor.Save();
+    DgnV8Api::ElementId cellHeaderElementId;
+    if (true)
+        {
+        v8editor.AddLine(nullptr, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
+        v8editor.AddCellWithTwoArcs(&cellHeaderElementId, L"UserCell1");
+        v8editor.Save();
+        }
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
-    // Verify
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+    
+    // Verify we have a corresponding BIS element with 2 child elements
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellHeaderElementId, 2);
+        }
+
+    // Make a change in the same model, but don't touch the cell. Verify that the cell and its children are intact (Bug#80864)
+    if (true)
+        {
+        v8editor.AddLine();
+        v8editor.Save();
+        }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellHeaderElementId, 2);
+        }
+
+    // Now insert another cell in the same model. Verify that the whole new cell came in. (Bug#81254)
+    DgnV8Api::ElementId cellHeaderElementId2;
+    if (true)
+        {
+        v8editor.AddCellWithTwoArcs(&cellHeaderElementId2, L"UserCell2");
+        v8editor.Save();
+        }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellHeaderElementId, 2);
+        VerifyCellElement(*db, cellHeaderElementId2, 2);
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -155,7 +184,7 @@ TEST_F(BasicGeometryTests, Cell)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, NestedCell)
     {
-    LineUpFiles(L"NestedCell.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"NestedCell.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     
     // -----------------------------------------------------------------------------------------------------------
     // Create Named Shared Cell with following hirarchy 
@@ -201,8 +230,23 @@ TEST_F(BasicGeometryTests, NestedCell)
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
     // Verify
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+        }
+
+    // Make a change in the same model, but don't touch the cell. Verify that the cell and its children are intact
+    v8editor.AddLine();
+    v8editor.Save();
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyCellElement(*db, cellEEH.GetElementId(), 2);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -210,7 +254,7 @@ TEST_F(BasicGeometryTests, NestedCell)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, NamedView)
     {
-    LineUpFiles(L"NamedView.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"NamedView.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -229,7 +273,7 @@ TEST_F(BasicGeometryTests, NamedView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, Elements)
     {
-    LineUpFiles(L"Elements.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"Elements.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -259,7 +303,7 @@ TEST_F(BasicGeometryTests, Elements)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, GroupHole)
     {
-    LineUpFiles(L"GroupHole.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"GroupHole.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -307,7 +351,7 @@ DgnV8Api::MultilineStylePtr BasicGeometryTests::CreateSimpleStyle(WCharCP styleN
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, MultiLine)
     {
-    LineUpFiles(L"MultiLine.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"MultiLine.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
 
     DgnV8Api::EditElementHandle eeh1;
@@ -369,7 +413,7 @@ static void SetUpGradient(DgnV8Api::GradientSymbPtr& gradient, DgnV8Api::Gradien
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, GradientFills)
     {
-    LineUpFiles(L"GradientFills.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"GradientFills.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -426,7 +470,7 @@ static void SetUpHatchLine(Bentley::DwgHatchDefLineR hatchline)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicGeometryTests, PatternFill)
     {
-    LineUpFiles(L"PatternFill.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"PatternFill.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);

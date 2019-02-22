@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ECSchemaMappings.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,6 +71,26 @@ public:
     static Utf8CP ToString(V8ElementType);
     };
 
+struct DgnV8Class
+    {
+    struct Spec : BeSQLite::PropertySpec
+        {
+        Spec(BentleyApi::Utf8CP name) : BeSQLite::PropertySpec(name, "dgn_V8Class", Mode::Normal, Compress::No) {}
+        };
+
+    static Spec V8Info(BentleyApi::Utf8CP ecClass) { return Spec(ecClass); }
+    };
+
+struct DgnV8Schema
+    {
+    struct Spec : BeSQLite::PropertySpec
+        {
+        Spec(BentleyApi::Utf8CP name) : BeSQLite::PropertySpec(name, "dgn_V8Schema", Mode::Normal, Compress::No) {}
+        };
+
+    static Spec V8Info(BentleyApi::Utf8CP ecSchema) { return Spec(ecSchema); }
+    };
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      02/2015
 //+===============+===============+===============+===============+===============+======
@@ -80,17 +100,13 @@ private:
     V8ECClassInfo ();
     ~V8ECClassInfo ();
 
-    static BentleyStatus DoInsert(DgnDbR, ECClassName const& v8ClassName, BisConversionRule);
+    static BentleyStatus Save(DgnDbR, ECClassName const& v8ClassName, BisConversionRule, bool hasSecondary = false);
 
 public:
-    static BentleyStatus Insert(DynamicSchemaGenerator&, DgnV8EhCR, ECClassName const&, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, BisConversionTargetModelInfoCR targetModelInfo);
+    static BentleyStatus InsertOrUpdate(DynamicSchemaGenerator&, DgnV8EhCR, ECClassName const&, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, BisConversionTargetModelInfoCR targetModelInfo);
+    static BentleyStatus InsertOrUpdate(DynamicSchemaGenerator&, ECClassName const& className, BisConversionRule rule, bool hasSecondary = false);
 
-    static BentleyStatus InsertOrUpdate(DynamicSchemaGenerator&, ECClassName const&, BisConversionRule);
-    static BentleyStatus Insert(DynamicSchemaGenerator&, ECClassName const&, BisConversionRule);
-    static BentleyStatus Update(DynamicSchemaGenerator&, ECN::ECClassId v8ClassId, BisConversionRule, bool hasSecondary = false);
-
-    static bool TryFind(ECN::ECClassId& v8classId, BisConversionRule&, DgnDbR, ECClassName const&, bool& hasSecondary);
-    static bool TryFind(BisConversionRule& rule, DgnDbR dgndb, ECClassName const& className, bool& hasSecondary) { ECN::ECClassId id; return TryFind(id, rule, dgndb, className, hasSecondary); }
+    static bool TryFind(BisConversionRule& rule, bool& hasSecondary, DgnDbR dgndb, Utf8StringCR className);
 
     static BentleyStatus CreateTable(DgnDbR db);
     };

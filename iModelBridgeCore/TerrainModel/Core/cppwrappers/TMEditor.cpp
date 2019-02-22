@@ -19,7 +19,7 @@ using namespace std;
 #if _WIN32
 #define ABSTRACT_KEYWORD abstract
 #else
-#define ABSTRACT_KEYWORD
+#define ABSTRACT_KEYWORD =0
 #endif
 
 /*-------------------------------------------------------------------+

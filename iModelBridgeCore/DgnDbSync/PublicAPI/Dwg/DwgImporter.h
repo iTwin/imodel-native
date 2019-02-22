@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Dwg/DwgImporter.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -251,6 +251,7 @@ struct IDwgChangeDetector
     virtual void _DetectDeletedMaterials (DwgImporter&) = 0;
     virtual void _DetectDeletedViews (DwgImporter&) = 0;
     virtual void _DetectDeletedGroups (DwgImporter&) = 0;
+    virtual void _DetectDetachedXrefs (DwgImporter&) = 0;
     //! @}
 };  // IDwgChangeDetector
 typedef std::unique_ptr <IDwgChangeDetector>    T_DwgChangeDetectorPtr;
@@ -273,12 +274,13 @@ struct DwgImporter
     friend struct LayoutXrefFactory;
     friend struct GroupFactory;
     friend struct ElementFactory;
-    friend class DwgProtocalExtension;
+    friend class DwgProtocolExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
     friend class DwgViewportExt;
     friend class DwgLightExt;
     friend class DwgBrepExt;
+    friend class DwgBlockReferenceExt;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -732,18 +734,25 @@ public:
         {
     private:
         DwgDbObjectId               m_blockId;
+        DwgDbObjectId               m_layerId;
         double                      m_basePartScale;
+        MD5::HashVal                m_keyValue;
     public:
-        SharedPartKey (DwgDbObjectIdCR id, double scale) : m_blockId(id), m_basePartScale(scale) {}
-        SharedPartKey () : m_basePartScale(0.0) { m_blockId.SetNull(); }
+        //! A unique key value consists of blockId, layerId and scale
+        DWG_EXPORT SharedPartKey (DwgDbObjectIdCR block, DwgDbObjectIdCR layer, double scale);
+        DWG_EXPORT SharedPartKey ();
 
+        MD5::HashVal const& GetKeyValue () const { return m_keyValue; }
         DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
         void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
+        DwgDbObjectIdCR GetLayerId () const { return m_layerId; }
+        void    SetLayerId (DwgDbObjectIdCR id) { m_layerId = id; }
         double  GetBasePartScale () const { return m_basePartScale; }
         void    SetBasePartScale (double scale) { m_basePartScale = scale; }
         bool    IsMirrored () const { return m_basePartScale < -1.0e-5; }
+        DWG_EXPORT bool IsValid () const;
         //! The left-hand operand of the key
-        bool operator < (SharedPartKey const& rho) const;
+        DWG_EXPORT bool operator < (SharedPartKey const& rho) const;
         };  // SharedPartKey
     typedef bpair<SharedPartKey, T_SharedPartList>      T_BlockPartsEntry;
     typedef bmap<SharedPartKey, T_SharedPartList>       T_BlockPartsMap;
@@ -934,6 +943,7 @@ protected:
     DwgDbObjectId               m_currentspaceId;
     T_DwgModelMapping           m_dwgModelMap;
     ResolvedModelMapping        m_rootDwgModelMap;
+    bool                        m_hasBegunProcessing;
     bool                        m_isProcessingDwgModelMap;
     StandardUnit                m_modelspaceUnits;
     bool                        m_wasAborted;
@@ -961,6 +971,7 @@ protected:
     DgnModelIdSet               m_modelspaceXrefs;
     T_DwgXRefsInPaperspaces     m_paperspaceXrefs;
     T_PaperspaceViewMap         m_paperspaceViews;
+    DwgDbObjectIdArray          m_paperspaceBlockIds;
     T_TextStyleIdMap            m_importedTextstyles;
     T_LineStyleIdMap            m_importedLinestyles;
     T_MaterialIdMap             m_importedMaterials;
@@ -998,7 +1009,7 @@ private:
     Utf8String              RemapNameString (Utf8String filename, Utf8StringCR name, Utf8StringCR suffix);
     void                    OpenAndImportEntity (ElementImportInputs& inputs);
     Utf8String              ComputeModelName (Utf8StringR proposedName, BeFileNameCR baseFileName, BeFileNameCR refPath, Utf8CP inSuffix, DgnClassId modelType);
-    BentleyStatus           ImportModelsFrom (DwgDbBlockTableRecordR block, SubjectCR parentSubject, bool& hasPushedReferencesSubject);
+    BentleyStatus           ImportXrefModelsFrom (DwgXRefHolder& xref, SubjectCR parentSubject, bool& hasPushedReferencesSubject);
     ECN::ECObjectsStatus    AddAttrdefECClassFromBlock (ECN::ECSchemaPtr& schema, DwgDbBlockTableRecordCR block);
     void                    ImportAttributeDefinitionSchema (ECN::ECSchemaR attrdefSchema);
     void                    ImportDomainSchema (WCharCP fileName, DgnDomain& domain);
@@ -1011,10 +1022,12 @@ private:
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
     bool                    UpdateModelspaceView (ViewControllerP view);
     bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
+    BentleyStatus           UpdateRepositoryLink (DwgDbDatabaseP dwg = nullptr);
+    BentleyStatus           InsertElementHasLinks (DgnModelR model, DwgDbDatabaseR dwg);
     DgnCategoryId           FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
     DgnSubCategoryId        FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
 
-    static void             RegisterProtocalExtensions ();
+    static void             RegisterProtocolExtensions ();
 
 //__PUBLISH_SECTION_START__
 protected:
@@ -1160,8 +1173,18 @@ protected:
     // DWG entity section is the ModelSpace block containing graphical entities
     DWG_EXPORT virtual BentleyStatus  _ImportEntitySection ();
     //! Import a database-resident entity
+    //! @note This is the default method that converts a modelspace or paperspace entity to BIM.
+    //! The import process first tries to convert an entity via an object protocol extension, DwgProtocolExtension.
+    //! If the entity does not have DwgProtocolExtension, it gets directly sent into this method for conversion.
+    //! If the entity has DwgProtocolExtension, it gets sent into_ImportEntityByProtocolExtension.  The entity extension
+    //! may convert the entity data completely on its own. It may also alternatively fallback to call this method 
+    //! as it sees appropriate.
+    //! @see _ImportEntityByProtocolExtension
     DWG_EXPORT virtual BentleyStatus  _ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
-    //! Import a block reference entity
+    //! Import a database-resident entity that is implemented by DwgProtocolExtension
+    //! @see _ImportEntity
+    DWG_EXPORT virtual BentleyStatus  _ImportEntityByProtocolExtension (ElementImportResults& results, ElementImportInputs& inputs, DwgProtocolExtension& ext);
+    //! Import an xReference entity
     DWG_EXPORT virtual BentleyStatus  _ImportXReference (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a normal block reference entity
     DWG_EXPORT virtual BentleyStatus  _ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs);
@@ -1306,8 +1329,14 @@ public:
     //! Get/create the DefinitionModel that stores all other job specific definitions, expcept for GeometryParts.
     DefinitionModelPtr          GetOrCreateJobDefinitionModel ();
 
-    //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
+    //! An iModelBridge must call this method from _MakeSchemaChanges, to change schemass.
+    //! The default implementation iterates DWG block table for multiple tasks:
+    //! 1) Create or update dynamic DwgAttributeDefinitions schema from ATTRDEF's
+    //! 2) Load xRef files and cache them in m_loadedXrefFiles
+    //! 3) Cache paperspace/layout block ID's in m_paperspaceBlockIds
     DWG_EXPORT BentleyStatus    MakeSchemaChanges ();
+    //! An iModelBridge must call this method from _MakeDefinitionChanges, to change dictionaries possibly shared with other bridges.
+    DWG_EXPORT BentleyStatus    MakeDefinitionChanges (SubjectCR jobSubject);
 
     //! Call this once before working with DwgImporter, after initializing DgnDb's DgnPlatformLib
     //! @param toolkitDir Installed RealDWG or OpenDWG folder; default to the same folder as the EXE.
@@ -1337,6 +1366,7 @@ public:
     DwgXRefHolder&              GetCurrentXRefHolder () { return m_currentXref; }
     DwgXRefHolder*              FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock, bool createIfNotFound = false);
     DwgDbDatabaseP              FindLoadedXRef (BeFileNameCR path);
+    T_LoadedXRefFiles&          GetLoadedXrefs () { return m_loadedXrefFiles; }
     //! Import a database-resident entity
     DWG_EXPORT BentleyStatus    ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a none database-resident entity in a desired block (must be a valid block)
@@ -1372,6 +1402,7 @@ public:
     void    _DetectDeletedMaterials (DwgImporter&) override {}
     void    _DetectDeletedViews (DwgImporter&) override {}
     void    _DetectDeletedGroups (DwgImporter&) override {}
+    void    _DetectDetachedXrefs (DwgImporter&) override {}
 
     //! always fills in element provenence and returns true
     DWG_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter*) override;
@@ -1428,6 +1459,7 @@ public:
     DWG_EXPORT void   _DetectDeletedMaterials (DwgImporter&) override;
     DWG_EXPORT void   _DetectDeletedViews (DwgImporter&) override;
     DWG_EXPORT void   _DetectDeletedGroups (DwgImporter&) override;
+    DWG_EXPORT void   _DetectDetachedXrefs (DwgImporter&) override;
     //! @}
 };  // UpdaterChangeDetector
 

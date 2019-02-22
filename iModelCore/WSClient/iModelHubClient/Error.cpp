@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/Error.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Common.h>
@@ -61,6 +61,7 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["iModelHub.FailedToGetProjectById"]                     = Id::FailedToGetProjectById;
         
         map["iModelHub.DatabaseOperationFailed"]                    = Id::DatabaseOperationFailed;
+        map["iModelHub.SQLiteOperationFailed"]                      = Id::SQLiteOperationFailed;
         }
 
     auto it = map.find(errorIdString);

@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClInclude Include="DgnV8\ConverterInternal.h" />
     <ClInclude Include="DgnV8\LinkConverter.h" />
+    <ClInclude Include="DgnV8\RulesetEmbedder.h" />
     <ClInclude Include="DgnV8\SheetAttachmentViewHelper.h" />
     <ClInclude Include="ImportConfig.h">
       <DependentUpon>DgnV8\ImportConfig\ImportConfig.xsd</DependentUpon>
@@ -59,6 +60,7 @@
     <ClCompile Include="DgnV8\RasterConversion.cpp" />
     <ClCompile Include="DgnV8\RealityModelTilesets.cpp" />
     <ClCompile Include="DgnV8\RootModelConverter.cpp" />
+    <ClCompile Include="DgnV8\RulesetEmbedder.cpp" />
     <ClCompile Include="DgnV8\ScalableMeshConversion.cpp" />
     <ClCompile Include="DgnV8\ScalableMeshV8Utilities.cpp" />
     <ClCompile Include="DgnV8\SheetAttachmentViewHelper.cpp" />
@@ -89,12 +91,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">

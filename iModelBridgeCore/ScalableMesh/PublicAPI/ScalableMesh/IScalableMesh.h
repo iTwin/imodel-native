@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -43,12 +43,6 @@ namespace BENTLEY_NAMESPACE_NAME
 #define DGN_NAMESPACE BENTLEY_NAMESPACE_NAME::DgnPlatform
 #else
 #define DGN_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
-#endif
-
-#ifdef VANCOUVER_API
-#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
-#else
-#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
 #endif
 
 //ADD_BENTLEY_TYPEDEFS (BENTLEY_NAMESPACE_NAME::ScalableMesh, IDTMVolume)
@@ -484,7 +478,7 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetInvertClip(bool invertClips);
 
-        void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
+        BENTLEY_SM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
 
         BENTLEY_SM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
 
@@ -505,9 +499,9 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT int                    SaveAs(const WString& destination, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr);
 
-                          void                   ImportTerrainSM(WString terrainPath);
+        BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
 
-                          IScalableMeshPtr       GetTerrainSM();
+        BENTLEY_SM_EXPORT IScalableMeshPtr       GetTerrainSM();
 
         BENTLEY_SM_EXPORT SMStatus          DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr destinationGcs = nullptr, bool limitResolutions = false);
 

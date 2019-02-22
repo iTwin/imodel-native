@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/DEMRasterImporter_dgndb.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -113,7 +113,11 @@ HUTDEMRasterXYZPointsExtractor*     CreateDEMExtractor                     (cons
 
     try
         {
+#ifdef DGNDB06_API
+        return new HUTDEMRasterXYZPointsExtractor(adaptedPath, GetPoolInstance(), false);
+#else
         return new HUTDEMRasterXYZPointsExtractor(Utf8String(adaptedPath), GetPoolInstance(), false);
+#endif
         }
     catch (...) // TDORAY: Catch only IPP exceptions
         {
@@ -242,8 +246,12 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
         {
         try
             {
+#ifdef DGNDB06_API
+            const HFCPtr<HFCURL> urlPtr = new HFCURLFile(WString(L"file://") + pi_rSourceRef.GetPathCStr());
+#else
             Utf8String url(WString(L"file://") + pi_rSourceRef.GetPathCStr());
             const HFCPtr<HFCURL> urlPtr = new HFCURLFile(url);
+#endif            
             const HRFRasterFileCreator* foundCreatorP = HRFRasterFileFactory::GetInstance()->FindCreator(urlPtr, HFC_READ_ONLY);
             assert(0 != foundCreatorP);
             return true;
@@ -657,7 +665,11 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
                                                                                     const ExtractionConfig&               config,
                                                                                     Log&                                  log) const override
         {
+#ifdef DGNDB06_API
+        WString DestCoordSysKeyName = L"";
+#else
         Utf8String DestCoordSysKeyName = "";
+#endif
                 
         double scaleFactor = 1;
         

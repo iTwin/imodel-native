@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converters/ConverterApp.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -312,6 +312,20 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
         ResourceUpdateCaller rCaller(*docAccessor);
         DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(rCaller);
         }
+    for (; argc > 0; argc--, argv++)
+        {
+        WCharCP  thisArg = *argv;
+        if ((*thisArg != '-') || (*(thisArg + 1) != '-'))
+            continue;
+        thisArg = thisArg + 2;
+
+        WString tmpString(thisArg);
+        tmpString.ToUpper();
+        if (0 == wcsncmp(tmpString.c_str(), L"SET-DEBUGCODES", 17))
+            {
+            _GetConverterParams().SetWantDebugCodes(true);
+            }
+        }
     return SUCCESS;
     }
 
@@ -415,6 +429,12 @@ iModelBridge::CmdLineArgStatus RootModelConverterApp::_ParseCommandLineArg(int i
         return CmdLineArgStatus::Success;
         }
 
+    if (0 == wcscmp(argv[iArg], L"--set-DebugCodes"))
+        {
+        m_params.SetWantDebugCodes(true);
+        return CmdLineArgStatus::Success;
+        }
+
     return T_Super::_ParseCommandLineArg(iArg, argc, argv);
     }
 
@@ -435,31 +455,6 @@ WString ConverterApp::_SupplySqlangRelPath()
     {
     // *** Keep this consistent with DgnV8Converter.mke
     return L"sqlang/DgnV8Converter_en-US.sqlang.db3";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ConverterApp::CreateSyncInfoIfNecessary()
-    {
-    //  If I am creating a new local file or if I just acquired a briefcase for an existing repository, then I will have to bootstrap syncinfo.
-    if (!SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist())
-        {
-        if (BSISUCCESS != SyncInfo::CreateEmptyFile(SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()))) // Bootstrap the V8 converter by pairing an empty syncinfo file with the briefcase
-            return BSIERROR;
-        }
-
-    BeAssert(SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist());
-
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterApp::_DeleteSyncInfo()
-    {
-    SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).BeDeleteFile();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -491,7 +486,7 @@ BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
     m_converter.reset(new RootModelConverter(m_params));
     m_converter->SetSkipEContent(skipECData);
     m_converter->SetDgnDb(db);
-    CreateSyncInfoIfNecessary();
+    m_converter->SetWantDebugCodes(m_params.GetWantDebugCodes());
     return m_converter->AttachSyncInfo();
     }
 
@@ -610,7 +605,7 @@ BentleyStatus ConverterApp::Run(int argc, WCharCP argv[])
     {
     iModelBridgeSacAdapter::InitCrt(false);
 
-    _GetConverterParams().SetWantProvenanceInBim(true); // this is set ONLY for stand-alone converters
+    _GetConverterParams().SetWantProvenanceInBim(true);
 
     iModelBridgeSacAdapter::Params saparams;
     if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*this, saparams, argc, argv))

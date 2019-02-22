@@ -83,7 +83,7 @@
             <!-- Not supported in DgnDb
             <Directory ProductDirectoryName="UnitTests-GeomLibs-Tests-ProductData" ProductSubDirectory="GeomLibs-Tests-ProductData" SourceName="Delivery/UnitTests/GeomLibs-Tests-ProductData"/>
             -->
-		    <Directory ProductDirectoryName="UnitTests-GeomLibsTestData" SourceName="Delivery/UnitTests/GeomLibsTestData"/>
+            <Directory ProductDirectoryName="UnitTests-GeomLibsTestData" SourceName="Delivery/UnitTests/GeomLibsTestData"/>
         </Bindings>
     </Part>
 
@@ -178,7 +178,7 @@
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
-	
+
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeomLibsTest -dTEST_COLLECTION_PRODUCT=GeomLibs-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="GeomLibs-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
@@ -187,38 +187,36 @@
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeomLibsTest/Assets" />
         </Bindings>
     </Part>
-	
-	
+
     <Product Name="GeomLibs-Gtest" >
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
-		
     </Product>
-	
+
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeomLibs-Gtest -dGTEST_NAME=GeomLibsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="GeomLibs-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GeomLibsTest.log</Files>
         </Bindings>
-		<SubPart PartName="comparedgnjs" />
+    <SubPart PartName="comparedgnjs" />
     </Part>
 
-	<!-- Memory leak testing of GeomLibs tests. Only called on demand -->
-<!-- 	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeomLibs-Gtest -dGTEST_NAME=GeomLibsTest" OnlyPlatforms="x64">
-		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
-		<SubProduct ProductName="GeomLibs-Gtest" />
+    <!-- Memory leak testing of GeomLibs tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeomLibs-Gtest -dGTEST_NAME=GeomLibsTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="GeomLibs-Gtest" />
     </Part>
- -->	
-	
-	<Part Name="comparedgnjs" BentleyBuildMakeFile="comparedgnjs/comparedgnjs.mke" OnlyPlatforms="x64">
-		<SubProduct ProductName="GeomLibs-Gtest" />
+
+
+    <Part Name="comparedgnjs" BentleyBuildMakeFile="comparedgnjs/comparedgnjs.mke" OnlyPlatforms="x64">
+        <SubProduct ProductName="GeomLibs-Gtest" />
     </Part>
-	
+
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=GeomLibs-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=GeomLibs-Tests -dTEST_SHORT_NAME=GeomTst -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="GeomLibs-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
@@ -331,6 +329,5 @@
         <ProductDirectory Name="BentleyDll"                         Path=""/>
         <ProductDirectory Name="PublishedApi_Doc"                   Path="doc" />
     </ProductDirectoryList>
-	
-	
+
 </BuildContext>

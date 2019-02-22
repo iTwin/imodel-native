@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportViewports.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgViewportExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgViewportExt)
 
 
 /*=================================================================================**//**
@@ -1197,7 +1197,7 @@ DgnViewId       ViewportFactory::CreateModelView (DgnModelCR targetModel, Utf8St
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
+BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer)
     {
     // this is a viewport entity that displays the modelspace, not an overall viewport for a paperspace!
     DwgDbEntityPtr&     entity = context.GetEntityPtrR ();
@@ -1252,7 +1252,7 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName)
+BentleyStatus   DwgViewportExt::UpdateBim (ProtocolExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName)
     {
     /*-----------------------------------------------------------------------------------
     The default implementation of importing an entity can only update a single output 
@@ -1289,9 +1289,9 @@ BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, Dw
         importer.GetDgnDb().Elements().Delete (modelViewId);
         importer.GetSyncInfo().DeleteView (modelViewId);
 
-        Utf8PrintfString    viewName ("%s Viewport-%llx", sheetModel.GetName().c_str(), viewport->GetObjectId().ToUInt64());
+        Utf8PrintfString name("%s Viewport-%llx", sheetModel.GetName().c_str(), viewport->GetObjectId().ToUInt64());
 
-        modelViewId = factory.CreateModelView (rootModel, viewName);
+        modelViewId = factory.CreateModelView (rootModel, name);
         if (modelViewId.IsValid())
             {
             BeAssert (false && "failed creating a spatial view for a viewport entity");

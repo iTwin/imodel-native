@@ -2,7 +2,7 @@
 |
 |     $Source: ECPresentationUtils.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationUtils.h"
@@ -1138,8 +1138,8 @@ protected:
         return true;
         }
 public:
+    IModelJsECPresentationLocalizationProvider(bvector<BeFileName> directories = bvector<BeFileName>()): m_localeDirectories(directories) {}
     ~IModelJsECPresentationLocalizationProvider() {ClearCache();}
-    void SetLocaleDirectories(bvector<BeFileName> directories) {m_localeDirectories = directories; ClearCache();}
 };
 
 /*=================================================================================**//**
@@ -1149,21 +1149,17 @@ struct IModelJsECPresentationStaticSetupHelper
 {
 private:
     IModelJsECPresentationSerializer* m_serializer;
-    IModelJsECPresentationLocalizationProvider* m_localizationProvider;
 public:
     IModelJsECPresentationStaticSetupHelper()
-        : m_serializer(new IModelJsECPresentationSerializer()), m_localizationProvider(new IModelJsECPresentationLocalizationProvider())
+        : m_serializer(new IModelJsECPresentationSerializer())
         {
         IECPresentationManager::SetSerializer(m_serializer);
-        IECPresentationManager::SetLocalizationProvider(m_localizationProvider);
         }
     ~IModelJsECPresentationStaticSetupHelper()
         {
         IECPresentationManager::SetSerializer(nullptr);
-        IECPresentationManager::SetLocalizationProvider(nullptr);
         }
     IModelJsECPresentationSerializer& GetSerializer() {return *m_serializer;}
-    IModelJsECPresentationLocalizationProvider& GetLocalizationProvider() {return *m_localizationProvider;}
     };
 static IModelJsECPresentationStaticSetupHelper s_staticSetup;
 
@@ -1181,6 +1177,7 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager::Params params(connections, paths);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(params);
+    manager->SetLocalizationProvider(new IModelJsECPresentationLocalizationProvider());
 
     BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
     manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
@@ -1201,12 +1198,12 @@ ECPresentationResult ECPresentationUtils::SetupRulesetDirectories(RulesDrivenECP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::SetupLocaleDirectories(bvector<Utf8String> const& directories)
+ECPresentationResult ECPresentationUtils::SetupLocaleDirectories(RulesDrivenECPresentationManager& manager, bvector<Utf8String> const& directories)
     {
     bvector<BeFileName> directoryPaths;
     for (Utf8StringCR dir : directories)
         directoryPaths.push_back(BeFileName(dir).AppendSeparator());
-    s_staticSetup.GetLocalizationProvider().SetLocaleDirectories(directoryPaths);
+    manager.SetLocalizationProvider(new IModelJsECPresentationLocalizationProvider(directoryPaths));
     return ECPresentationResult();
     }
 

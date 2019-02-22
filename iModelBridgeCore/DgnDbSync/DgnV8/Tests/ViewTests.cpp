@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ViewTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -60,7 +60,7 @@ int ViewTests::GetViewCount(DgnDbR db)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ViewTests, SavedViewsCRUD)
     {
-    LineUpFiles(L"CreateViews.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"CreateViews.bim", L"Test3d.dgn", false);
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
 

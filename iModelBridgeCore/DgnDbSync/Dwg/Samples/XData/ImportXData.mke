@@ -35,14 +35,17 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
     DwgDbLibName    = RealDwg$(VendorVersion)/RealDwgDbExchange$(libext)
     ToolkitLibs     = $(BuildContext)SubParts/Libs/$(DWGTOOLKIT)$(VendorVersion)/
 
+    ## RealDWG appends a version suffix to its core lib names:
     %if $(VendorVersion) == 2017
         RealDwgSuffix = 21
     %elif $(VendorVersion) == 2018
         RealDwgSuffix = 22
+    %elif $(VendorVersion) == 2019
+        RealDwgSuffix = 23
+    %else
+        %error RealDwgSuffix not defined (a newer release of RealDWG?)!!
     %endif
 
-    ### Suppress RealDWG import/export directives so we don't have to link with its libs.
-    CCompOpts + -D_ADESK_STATIC_LINKING_
 %endif
 
 #----------------------------------------------------------------------
@@ -65,6 +68,7 @@ LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
 %if $(DWGTOOLKIT) == "RealDwg"
 LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acpal$(libext)
 %endif
 
 DLM_NAME            = SampleAffinity
@@ -110,9 +114,9 @@ LINKER_LIBRARIES    + $(ContextSubpartsLibs)DgnPlatform$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeJsonCpp$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)ECObjects$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge$(libext)
-
 %if $(DWGTOOLKIT) == "RealDwg"
 LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acpal$(libext)
 %endif
 
 %include $(sharedMki)linktool.mki

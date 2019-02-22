@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/NavigationQueryBuilder.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -2621,7 +2621,7 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
     query->From(*selectInfo.GetSelectClass(), selectInfo.GetSelectPolymorphically(), "this");
     query->Join(selectInfo.GetRelatedClassPath(), false);
     query->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(parentInstanceKey.GetInstanceId())});
-    ApplyInstanceFilter(*query, selectInfo, params, instanceFilter, nullptr);
+    ApplyInstanceFilter(*query, selectInfo, params, instanceFilter, &parentInstanceNode);
 
     if (groupByContract)
         {
@@ -2716,7 +2716,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         Utf8String supportedSchemas = GetSupportedSchemas(specification);
         if (supportedSchemas.empty())
             {
-            LoggingHelper::LogMessage(Log::Navigation, "Neither rule set nor AllInstanceNodesSpecification specification have specified supported rule sets. "
+            LoggingHelper::LogMessage(Log::Navigation, "Neither rule set nor AllInstanceNodesSpecification specification have specified supported schemas. "
                 "Consider specifying a value for this property as it can affect performance significantly", NativeLogging::LOG_WARNING, true);
             }
         ECClassSet queryClasses = m_params.GetSchemaHelper().GetECClassesFromSchemaList(supportedSchemas);
@@ -2774,7 +2774,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     Utf8String supportedSchemas = GetSupportedSchemas(specification);
     if (supportedSchemas.empty())
         {
-        LoggingHelper::LogMessage(Log::Navigation, "Neither rule set nor RelatedInstanceNodesSpecification have specified supported rule sets. "
+        LoggingHelper::LogMessage(Log::Navigation, "Neither rule set nor RelatedInstanceNodesSpecification have specified supported schemas. "
             "Consider specifying a value for this property as it can affect performance significantly", NativeLogging::LOG_WARNING, true);
         }
 

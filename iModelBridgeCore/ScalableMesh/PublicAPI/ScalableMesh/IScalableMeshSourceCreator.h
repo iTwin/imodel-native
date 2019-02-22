@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:35:02 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -60,7 +60,7 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
         BENTLEY_SM_IMPORT_EXPORT bool                    HasDirtySources() const;
 
         BENTLEY_SM_IMPORT_EXPORT bool                    AreAllSourcesReachable() const;
-
+                                                    
         BENTLEY_SM_IMPORT_EXPORT StatusInt               UpdateLastModified();
 
         BENTLEY_SM_IMPORT_EXPORT void                    ResetLastModified();
@@ -72,6 +72,8 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
         BENTLEY_SM_IMPORT_EXPORT void                    SetCreationMethod(ScalableMeshCreationMethod creationMethod);
 
         BENTLEY_SM_IMPORT_EXPORT void                    SetCreationCompleteness(ScalableMeshCreationCompleteness creationCompleteness);
+
+        BENTLEY_SM_IMPORT_EXPORT void                    SetSplitThreshold(uint32_t splitThreshold);
 
         
 

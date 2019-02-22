@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMPool.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -28,7 +28,7 @@ inline size_t HPMPool::GetLimit() const
 -----------------------------------------------------------------------------*/
 inline size_t HPMPool::GetActualCount() const
     {
-    HFCMonitor Monitor((HPMPool*)this);
+    HFCMonitor Monitor(const_cast<HPMPool*>(this));
     size_t Result = m_SizeCount;
     return Result;
     }

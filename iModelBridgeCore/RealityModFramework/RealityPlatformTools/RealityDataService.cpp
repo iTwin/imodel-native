@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/RealityDataService.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2159,7 +2159,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     
     m_fullTransferSize = 0;
 
-    if ((folders.size() > 1) && !m_id.EndsWith("/")) //if path ends with "/" it is a folder; otherwise, it is a single document
+    if ((folders.size() > 1) && !root.EndsWith(L"/")) //if path ends with "/" it is a folder; otherwise, it is a single document
         {
         path = filesInRepo[0].first;
 

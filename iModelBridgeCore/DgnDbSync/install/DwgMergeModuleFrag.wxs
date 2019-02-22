@@ -65,7 +65,7 @@
                 <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
             </Merge>
             <!-- NO [ODBXHOSTAPPREGROOT]: AcModelDoc_loc.msm-->
-            <Merge Id="acmpolygonobj22.msm" SourceFile="AcMPolygonObj22.msm" Language="0" DiskId="1" >
+            <Merge Id="acmpolygonobj23.msm" SourceFile="AcMPolygonObj23.msm" Language="0" DiskId="1" >
                 <ConfigurationData Name="DIR_RETARGET_AutodeskShared" Value="AutodeskShared"/>
                 <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
             </Merge>
@@ -197,28 +197,28 @@
             <!-- NO [ODBXHOSTAPPREGROOT]: MDTSHX.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: MentorGridFiles64.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: mpolygoncom20enu.msm-->
-            <Merge Id="mpolygoncom22_glob.msm" SourceFile="mpolygoncom22_glob.msm" Language="0" DiskId="1" >
+            <Merge Id="mpolygoncom23_glob.msm" SourceFile="mpolygoncom23_glob.msm" Language="0" DiskId="1" >
                 <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
             </Merge>
             <!-- NO [ODBXHOSTAPPREGROOT]: MPolygonObj20enu.msm-->
             <Merge Id="objdbx.msm" SourceFile="Objdbx.msm" Language="0" DiskId="1" >
                 <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
             </Merge>
-            <Merge Id="odbx22extra.msm" SourceFile="Odbx22Extra.msm" Language="0" DiskId="1" >
+            <Merge Id="odbx23extra.msm" SourceFile="Odbx23Extra.msm" Language="0" DiskId="1" >
                 <ConfigurationData Name="DIR_RETARGET_AutodeskShared" Value="AutodeskShared"/>
                 <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
             </Merge>
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxAsm_full20glob.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxAsm_obj20glob.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: odbxauto20enu.msm-->
-            <Merge Id="odbxauto22glob.msm" SourceFile="odbxauto22glob.msm" Language="0" DiskId="1" >
+            <Merge Id="odbxauto23glob.msm" SourceFile="odbxauto23glob.msm" Language="0" DiskId="1" >
                 <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
             </Merge>
             <!-- NO [ODBXHOSTAPPREGROOT]: odbxbrep20.msm-->
-            <Merge Id="odbxcore22glob.msm" SourceFile="OdbxCore22glob.msm" Language="0" DiskId="1" >
+            <Merge Id="odbxcore23glob.msm" SourceFile="OdbxCore23glob.msm" Language="0" DiskId="1" >
                 <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
             </Merge>
-            <Merge Id="odbxcore22glob_ps.msm" SourceFile="OdbxCore22glob_PS.msm" Language="0" DiskId="1" >
+            <Merge Id="odbxcore23glob_ps.msm" SourceFile="OdbxCore23glob_PS.msm" Language="0" DiskId="1" >
                 <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
             </Merge>
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20loc.msm-->

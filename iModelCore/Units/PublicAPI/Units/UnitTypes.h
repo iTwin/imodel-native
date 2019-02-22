@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Units/UnitTypes.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -185,8 +185,9 @@ friend struct Expression;
 friend struct InverseUnit;
 friend struct Phenomenon;
 private:
-    // TODO: Should these be a reference because it must be set?
+    // EC layer leaves this null for constants, so it must be a pointer.
     UnitSystemCP    m_system = nullptr;
+    // TODO: Should this be a reference because it must be set?
     PhenomenonCP    m_phenomenon = nullptr;
     UnitCP          m_parent = nullptr; // for an inverted Unit only.
     bool            m_isConstant = false;
@@ -242,7 +243,7 @@ public:
     virtual Utf8StringCR GetDisplayLabel() const {return GetInvariantDisplayLabel();}
     UNITS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
     bool GetIsDisplayLabelDefined() const {return m_explicitlyDefinedDisplayLabel;}
-    bool IsSI() const {return 0 == strcmp(m_system->GetName().c_str(), "SI");} // TODO: Replace with something better ... SI is a known system
+    bool IsSI() const {return HasUnitSystem()? 0 == strcmp(m_system->GetName().c_str(), "SI") : false;} // TODO: Replace with something better ... SI is a known system
 
     bool IsInvertedUnit() const {return nullptr != m_parent;} //!< Indicates if this unit is an InverseUnit or not
     bool IsConstant() const {return m_isConstant;} //!< Indicates if this Unit is constant.

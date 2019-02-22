@@ -2,7 +2,7 @@
 |
 |     $Source: Source/PresentationManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -13,7 +13,6 @@
 
 IECPresentationManager* IECPresentationManager::s_instance = nullptr;
 IECPresentationSerializer const* IECPresentationManager::s_serializer = nullptr;
-ILocalizationProvider const* IECPresentationManager::s_localizationProvider = nullptr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -394,12 +393,12 @@ folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetNodesPath(EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbCR db, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR extendedOptions)
     {
-    return SaveValueChange(db, bvector<ChangedECInstanceInfo>{instanceInfo}, propertyAccessor, value, extendedOptions).then([](bvector<ECInstanceChangeResult> result) -> ECInstanceChangeResult
+    return SaveValueChange(db, bvector<ChangedECInstanceInfo>{instanceInfo}, propertyAccessor, value, extendedOptions).then([this](bvector<ECInstanceChangeResult> result) -> ECInstanceChangeResult
         {
         if (result.empty())
             {
             BeAssert(false);
-            return ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()}));
+            return ECInstanceChangeResult::Error(GetLocalizationProvider()->GetString("", bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()}));
             }
         return result[0];
         });
@@ -424,12 +423,12 @@ folly::Future<bvector<ECInstanceChangeResult>> IECPresentationManager::SaveValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbCR db, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions)
     {
-    return SaveValueChange(db, bvector<ChangedECInstanceInfo>{instanceInfo}, propertyAccessor, value, extendedOptions).then([](bvector<ECInstanceChangeResult> result) -> ECInstanceChangeResult
+    return SaveValueChange(db, bvector<ChangedECInstanceInfo>{instanceInfo}, propertyAccessor, value, extendedOptions).then([this](bvector<ECInstanceChangeResult> result) -> ECInstanceChangeResult
         {
         if (result.empty())
             {
             BeAssert(false);
-            return ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()}));
+            return ECInstanceChangeResult::Error(GetLocalizationProvider()->GetString("", bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()}));
             }
         return result[0];
         });
@@ -450,7 +449,7 @@ folly::Future<bvector<ECInstanceChangeResult>> IECPresentationManager::SaveValue
         {
         BeAssert(false && "Failed to determine the changed property or it's not primitive");
         return bvector<ECInstanceChangeResult>(instanceInfos.size(), 
-            ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown()})));
+            ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider()->GetString("", bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown()})));
         }
     ECValue ecValue = ValueHelpers::GetECValueFromJson(*prop, value);
     return SaveValueChange(db, instanceInfos, propertyAccessor, ecValue, extendedOptions);
@@ -607,19 +606,15 @@ IECPresentationSerializer const& IECPresentationManager::GetSerializer()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECPresentationManager::SetLocalizationProvider(ILocalizationProvider const* provider)
     {
-    DELETE_AND_CLEAR(s_localizationProvider);
-    s_localizationProvider = provider;
+    DELETE_AND_CLEAR(m_localizationProvider);
+    m_localizationProvider = provider;
+    _OnLocalizationProviderChanged();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocalizationProvider const& IECPresentationManager::GetLocalizationProvider()
+ILocalizationProvider const* IECPresentationManager::GetLocalizationProvider()
     {
-    if (nullptr == s_localizationProvider)
-        {
-        BeAssert(false);
-        SetLocalizationProvider(new SQLangLocalizationProvider());
-        }
-    return *s_localizationProvider;
+    return m_localizationProvider;
     }

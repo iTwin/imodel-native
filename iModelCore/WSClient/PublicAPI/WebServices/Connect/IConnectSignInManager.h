@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/IConnectSignInManager.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/WebServices.h>
+#include <BeSecurity/SecureLocalState.h>
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
 #include <WebServices/Connect/IConnectTokenProvider.h>
@@ -16,6 +17,9 @@
 #include <BeHttp/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_SECURITY
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -59,6 +63,7 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
 
     protected:
         mutable BeMutex m_mutex;
+        ILocalStatePtr m_secureLocalState;
 
         bset<IListener*> m_listeners;
         std::function<void()> m_tokenExpiredHandler;
@@ -68,6 +73,8 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
         std::function<void()> m_connectionClientSignInHandler;
 
     protected:
+        IConnectSignInManager(ILocalStatePtr localState) : m_secureLocalState(localState) {};
+
         WSCLIENT_EXPORT void OnUserTokenExpired() const;
         WSCLIENT_EXPORT void OnUserTokenRenew(bool success, int64_t expireTime) const;
         WSCLIENT_EXPORT void OnUserChanged() const;
@@ -76,7 +83,7 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
         WSCLIENT_EXPORT void OnUserSignedInViaConnectionClient() const;
 
         WSCLIENT_EXPORT void CheckUserChange();
-
+        WSCLIENT_EXPORT void StoreSignedInUser();
     protected:
         //! Will be called thread safe by CheckAndUpdateToken
         virtual AsyncTaskPtr<WSConnectVoidResult> _CheckAndUpdateToken() = 0;
@@ -86,8 +93,6 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
         virtual bool _IsSignedIn() const = 0;
         //! Will be called thread safe by GetUserInfo
         virtual UserInfo _GetUserInfo() const = 0;
-        //! Will be called thread safe by GetLastUsername
-        virtual Utf8String _GetLastUsername() const = 0;
         //! Will be called thread safe by GetTokenProvider
         virtual IConnectTokenProviderPtr _GetTokenProvider(Utf8StringCR rpUri) const = 0;
         //! Will be called thread safe by GetAuthenticationHandler
@@ -97,8 +102,6 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
             IHttpHandlerPtr httpHandler = nullptr,
             HeaderPrefix prefix = HeaderPrefix::Token
             ) const = 0;
-        //! Will be called by CheckUserChange
-        virtual void _StoreSignedInUser() = 0;
 
     public:
         virtual ~IConnectSignInManager() {}

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/TestHelpers.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,6 @@
 #include "../../../Source/RulesDriven/RulesEngine/QueryBuilder.h"
 #include "../../../Source/RulesDriven/RulesEngine/NavNodeProviders.h"
 #include "../../BackDoor/PublicAPI/BackDoor/ECPresentation/Localization.h"
-#include "../../BackDoor/PublicAPI/BackDoor/ECPresentation/StubLocalState.h"
 #include <UnitTests/BackDoor/ECPresentation/TestConnectionCache.h>
 #include <UnitTests/BackDoor/ECPresentation/TestUserSettings.h>
 #include "ECDbTestProject.h"
@@ -93,6 +92,7 @@ private:
     std::function<Json::Value(Utf8CP, Utf8CP)> m_getHandler;
 
 protected:
+    // TODO: this is bad implementation ("null" strings), refer to RuntimeJsonLocalState
     void _SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
         {
         Json::Value jsonValue;
@@ -100,6 +100,7 @@ protected:
         if (nullptr != m_saveHandler)
             m_saveHandler(nameSpace, key, jsonValue);
         }
+    // TODO: this is bad implementation ("null" strings), refer to RuntimeJsonLocalState
     Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
         {
         return nullptr != m_getHandler ? Json::FastWriter().write(m_getHandler(nameSpace, key)) : "null"; 
@@ -532,6 +533,14 @@ public:
     void SetUpdateNodeHandler(UpdateNodeHandler handler) {m_updateNodeHandler = handler;}
     void SetUpdateDataSourceHandler(UpdateDataSourceHandler handler) {m_updateDataSourceHandler = handler;}
     void SetLocateNodeHandler(LocateNodeHandler handler) {m_locateNodeHandler = handler;}
+    size_t GetCachedChildrenCount(uint64_t parentId) 
+        { 
+        return std::count_if(m_nodes.begin(), m_nodes.end(), 
+            [&](bpair<uint64_t, JsonNavNodePtr> nodePair) 
+            {
+            return parentId == nodePair.second->GetParentNodeId(); 
+            }); 
+        }
 };
 
 //=======================================================================================

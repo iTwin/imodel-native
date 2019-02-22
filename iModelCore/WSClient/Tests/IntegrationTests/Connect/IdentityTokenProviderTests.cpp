@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Connect/IdentityTokenProviderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,7 +23,7 @@ struct IdentityTokenProviderTests : public WSClientBaseTest {};
 TEST_F(IdentityTokenProviderTests, UpdateToken_ValidToken_UpdatesAndCachesNewTokenAndCallsRenewHandler)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);
@@ -67,7 +67,7 @@ TEST_F(IdentityTokenProviderTests, UpdateToken_ValidToken_UpdatesAndCachesNewTok
 TEST_F(IdentityTokenProviderTests, UpdateToken_ExpiredToken_CallsExpirationHandlerAndLeavesOldCachedToken)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);

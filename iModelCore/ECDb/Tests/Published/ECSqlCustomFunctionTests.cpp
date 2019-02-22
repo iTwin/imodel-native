@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlCustomFunctionTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -160,6 +160,50 @@ TEST_F(ECSqlCustomFunctionTestFixture, RegisterUnregisterCustomSqlFunction)
 
     ASSERT_EQ(0, m_ecdb.RemoveFunction(func));
     ASSERT_EQ(0, m_ecdb.RemoveFunction(func)) << "Removing an unregistered ECSQL function is expected to succeed";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                    01/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlCustomFunctionTestFixture, searchForAFunction)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("searchForAFunction.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
+
+    PowSqlFunction powSqlFunction;
+    ASSERT_EQ(0, m_ecdb.AddFunction(powSqlFunction));
+
+    IntegerToBlobSqlFunction integerToBlobSqlFunction;;
+    ASSERT_EQ(0, m_ecdb.AddFunction(integerToBlobSqlFunction));
+
+    ToBoolStrSqlFunction toBoolStrSqlFunction;
+    ASSERT_EQ(0, m_ecdb.AddFunction(toBoolStrSqlFunction));
+
+    SumOfSquares sumOfSquares;
+    ASSERT_EQ(0, m_ecdb.AddFunction(sumOfSquares));
+
+    DbFunction* tmp;
+    ASSERT_TRUE(m_ecdb.TryGetSqlFunction(tmp, powSqlFunction.GetName(), powSqlFunction.GetNumArgs()));
+    ASSERT_EQ(tmp, &powSqlFunction);
+
+    ASSERT_TRUE(m_ecdb.TryGetSqlFunction(tmp, integerToBlobSqlFunction.GetName(), integerToBlobSqlFunction.GetNumArgs()));
+    ASSERT_EQ(tmp, &integerToBlobSqlFunction);
+
+    ASSERT_TRUE(m_ecdb.TryGetSqlFunction(tmp, toBoolStrSqlFunction.GetName(), toBoolStrSqlFunction.GetNumArgs()));
+    ASSERT_EQ(tmp, &toBoolStrSqlFunction);
+
+    ASSERT_TRUE(m_ecdb.TryGetSqlFunction(tmp, sumOfSquares.GetName(), sumOfSquares.GetNumArgs()));
+    ASSERT_EQ(tmp, &sumOfSquares);
+
+    ASSERT_EQ(0, m_ecdb.RemoveFunction(powSqlFunction));
+    ASSERT_EQ(0, m_ecdb.RemoveFunction(integerToBlobSqlFunction));
+    ASSERT_EQ(0, m_ecdb.RemoveFunction(toBoolStrSqlFunction));
+    ASSERT_EQ(0, m_ecdb.RemoveFunction(sumOfSquares));
+
+    ASSERT_FALSE(m_ecdb.TryGetSqlFunction(tmp, powSqlFunction.GetName(), powSqlFunction.GetNumArgs()));
+    ASSERT_FALSE(m_ecdb.TryGetSqlFunction(tmp, integerToBlobSqlFunction.GetName(), integerToBlobSqlFunction.GetNumArgs()));
+    ASSERT_FALSE(m_ecdb.TryGetSqlFunction(tmp, toBoolStrSqlFunction.GetName(), toBoolStrSqlFunction.GetNumArgs()));
+    ASSERT_FALSE(m_ecdb.TryGetSqlFunction(tmp, sumOfSquares.GetName(), sumOfSquares.GetNumArgs()));
     }
 
 //---------------------------------------------------------------------------------------

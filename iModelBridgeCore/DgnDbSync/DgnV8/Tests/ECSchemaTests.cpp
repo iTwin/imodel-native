@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ECSchemaTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -20,8 +20,8 @@ struct ECSchemaTests : public ConverterTestBaseFixture
     void TearDown();
 
     protected:
-        void VerifyElement(DgnV8Api::ElementId&, Utf8CP className, bool isPrimaryInstance, uint8_t refIndex = 1);
-        void VerifyElement(DgnDbR db, DgnV8Api::ElementId&, Utf8CP className, bool isPrimaryInstance, uint8_t refIndex = 1);
+        void VerifyElement(DgnV8Api::ElementId&, Utf8CP className, bool isPrimaryInstance, RepositoryLinkId rlinkId = RepositoryLinkId());
+        void VerifyElement(DgnDbR db, DgnV8Api::ElementId&, Utf8CP className, bool isPrimaryInstance, RepositoryLinkId rlinkId = RepositoryLinkId());
         ECObjectsV8::ECSchemaPtr ImportSchemaAndAddInstance(BentleyApi::BeFileNameR fileName, DgnV8Api::ElementId&, Utf8CP schemaString);
         ECObjectsV8::ECSchemaPtr ReadSchema(Utf8CP schemaString);
         void ImportSchemaAndAddInstance(BentleyApi::BeFileNameR fileName, DgnV8Api::ElementId&, ECObjectsV8::ECSchemaPtr& schema, WCharCP className = L"ClassA");
@@ -29,7 +29,8 @@ struct ECSchemaTests : public ConverterTestBaseFixture
         void ImportSchema(BentleyApi::BeFileNameR fileName, ECObjectsV8::ECSchemaPtr& schema);
         void ImportSchema(V8FileEditor& v8editor, ECObjectsV8::ECSchemaPtr& schema);
         ECObjectsV8::ECSchemaPtr ImportSchema(BentleyApi::BeFileNameR fileName, Utf8CP schemaString);
-        void ECSchemaTests::WriteInstanceOfSimpleClass(V8FileEditor& v8editor, ECObjectsV8::ECSchemaPtr& schema);
+        void WriteInstanceOfSimpleClass(V8FileEditor& v8editor, ECObjectsV8::ECSchemaPtr& schema);
+        void VerifySyncInfo(DgnDbR db, DgnV8ModelP model, Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor);
 
         struct ScopedExternalSchemaLocator
             {
@@ -256,18 +257,18 @@ ECObjectsV8::ECSchemaPtr ECSchemaTests::ImportSchema(BentleyApi::BeFileNameR fil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                          12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaTests::VerifyElement(DgnV8Api::ElementId& eid, Utf8CP className, bool isPrimaryInstance, uint8_t refIndex)
+void ECSchemaTests::VerifyElement(DgnV8Api::ElementId& eid, Utf8CP className, bool isPrimaryInstance, RepositoryLinkId rlinkId)
     {
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    VerifyElement(*db, eid, className, isPrimaryInstance, refIndex);
+    VerifyElement(*db, eid, className, isPrimaryInstance, rlinkId);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                03/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-void ECSchemaTests::VerifyElement(DgnDbR db, DgnV8Api::ElementId& eid, Utf8CP className, bool isPrimaryInstance, uint8_t refIndex)
+void ECSchemaTests::VerifyElement(DgnDbR db, DgnV8Api::ElementId& eid, Utf8CP className, bool isPrimaryInstance, RepositoryLinkId rlinkId)
     {
-    DgnElementCPtr elem1 = FindV8ElementInDgnDb(db, eid, refIndex);
+    DgnElementCPtr elem1 = FindV8ElementInDgnDb(db, eid, rlinkId);
     ASSERT_TRUE(elem1.IsValid());
 
     if (isPrimaryInstance)
@@ -276,12 +277,51 @@ void ECSchemaTests::VerifyElement(DgnDbR db, DgnV8Api::ElementId& eid, Utf8CP cl
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECSchemaTests::VerifySyncInfo(DgnDbR db, DgnV8ModelP model, Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor)
+    {
+    BentleyApi::BeFileName fileName(model->GetDgnFileP()->GetFileName().c_str());
+    RepositoryLinkId scope = FindRepositoryLinkIdByFilename(db, fileName);
+    ASSERT_TRUE(scope.IsValid());
+
+    CachedStatementPtr stmt = nullptr;
+    auto stat = db.GetCachedStatement(stmt, "SELECT StrData FROM " BEDB_TABLE_Property " WHERE Id = ? and Name = ? AND NameSpace = 'dgn_V8Schema' ");
+    stmt->BindId(1, scope);
+    stmt->BindText(2, schemaName, BentleyApi::BeSQLite::Statement::MakeCopy::No);
+
+    ASSERT_TRUE(BE_SQLITE_ROW == stmt->Step());
+
+    uint32_t storedVersionRead, storedVersionMinor, storedChecksum;
+    BentleyApi::Json::Value  jsonObj;
+    ASSERT_TRUE(BentleyApi::Json::Reader::Parse(stmt->GetValueText(0), jsonObj));
+
+    storedVersionRead = jsonObj["versionMajor"].asUInt();
+    storedVersionMinor = jsonObj["versionMinor"].asUInt();
+    storedChecksum = jsonObj["checksum"].asUInt();
+
+    WString schemaXmlW;
+    ECObjectsV8::SchemaKey key(WString(schemaName, true).c_str(), versionMajor, versionMinor);
+    DgnV8Api::SchemaInfo info(key, *model->GetDgnFileP());
+    const DgnV8Api::ReferencedModelScopeOption modelScopeOption = DgnV8Api::REFERENCED_MODEL_SCOPE_None;
+
+    DgnV8Api::DgnECManager::GetManager().LocateSchemaXmlInModel(schemaXmlW, info, Bentley::ECN::SCHEMAMATCHTYPE_Exact, *model, modelScopeOption);
+    const size_t xmlByteSize = schemaXmlW.length() * sizeof(WChar);
+
+    uint32_t checksum = ECObjectsV8::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXmlW.c_str(), xmlByteSize);
+
+    ASSERT_EQ(storedVersionRead, versionMajor);
+    ASSERT_EQ(storedVersionMinor, versionMinor);
+    ASSERT_EQ(storedChecksum, checksum);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                          08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, Schema_UnUsed)
     {
-    LineUpFiles(L"Schema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Schema.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -298,6 +338,9 @@ TEST_F(ECSchemaTests, Schema_UnUsed)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(NULL == ecSchema);
+
+    // Even though it wasn't imported, it is still recorded in sync info
+    VerifySyncInfo(*db, v8editor.m_defaultModel, "TestSchema", 1, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -305,7 +348,7 @@ TEST_F(ECSchemaTests, Schema_UnUsed)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, Schema_Used)
     {
-    LineUpFiles(L"Schema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"Schema.bim", L"Test3d.dgn", false);
 
     DgnV8Api::ElementId eid;
     ImportSchemaAndAddInstance(m_v8FileName, eid, TestSchema);
@@ -321,24 +364,21 @@ TEST_F(ECSchemaTests, Schema_Used)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                          08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSchemaTests, SchemasWithDifferentVersion)
+TEST_F(ECSchemaTests, MultipleVersionsInReferences)
     {
-    LineUpFiles(L"SchemaVersionMismatch.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"MultipleVersionsInReferences.bim", L"Test3d.dgn", false);
     DgnV8Api::ElementId eid, eid2;
+    BentleyApi::BeFileName refV8File1, refV8File2;
     {
-    BentleyApi::BeFileName refV8File1;
     CreateAndAddV8Attachment(refV8File1, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
     ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
     EXPECT_TRUE(schema.IsValid());
     ImportSchemaAndAddInstance(refV8File1, eid, schema);
 
-    //schema->SetVersionMajor(2);
-    //schema->SetVersionMinor(2);
     ECObjectsV8::ECClassP ecClass;
     EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == schema->CreateClass(ecClass, L"NewClass"));
     ECObjectsV8::PrimitiveECPropertyP ecProperty;
     EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == ecClass->CreatePrimitiveProperty(ecProperty, L"NewIntProperty", ECObjectsV8::PrimitiveType::PRIMITIVETYPE_Integer));
-    BentleyApi::BeFileName refV8File2;
     CreateAndAddV8Attachment(refV8File2, 2);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
     ImportSchemaAndAddInstance(refV8File2, eid2, schema, L"NewClass");
     }
@@ -346,12 +386,13 @@ TEST_F(ECSchemaTests, SchemasWithDifferentVersion)
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    auto rlink2 = FindRepositoryLinkIdByFilename(*db, refV8File1);
+    auto rlink3 = FindRepositoryLinkIdByFilename(*db, refV8File2);
+
     BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(NULL != ecSchema);
-    /*EXPECT_EQ(2, ecSchema->GetVersionMajor());
-    EXPECT_EQ(2, ecSchema->GetVersionMinor());*/
-    VerifyElement(*db, eid, "ClassA", true, 2);
-    VerifyElement(*db, eid2, "NewClass", true, 3);
+    VerifyElement(*db, eid, "ClassA", true, rlink2);
+    VerifyElement(*db, eid2, "NewClass", true, rlink3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -359,10 +400,10 @@ TEST_F(ECSchemaTests, SchemasWithDifferentVersion)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, DuplicateSchemas_AddNewProperty)
     {
-    LineUpFiles(L"SchemaMismatch.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SchemaMismatch.bim", L"Test3d.dgn", false);
     DgnV8Api::ElementId eid, eid2;
+    BentleyApi::BeFileName refV8File1, refV8File2;
     {
-    BentleyApi::BeFileName refV8File1;
     CreateAndAddV8Attachment(refV8File1, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
     ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
     EXPECT_TRUE(schema.IsValid());
@@ -372,7 +413,6 @@ TEST_F(ECSchemaTests, DuplicateSchemas_AddNewProperty)
     ECObjectsV8::ECClassP testClass = schema->GetClassP(L"ClassA");
     ECObjectsV8::PrimitiveECPropertyP ecProperty;
     EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == testClass->CreatePrimitiveProperty(ecProperty, L"NewIntProperty", ECObjectsV8::PrimitiveType::PRIMITIVETYPE_Integer));
-    BentleyApi::BeFileName refV8File2;
     CreateAndAddV8Attachment(refV8File2, 2);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
     ImportSchemaAndAddInstance(refV8File2, eid2, schema);
     }
@@ -380,10 +420,13 @@ TEST_F(ECSchemaTests, DuplicateSchemas_AddNewProperty)
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    auto rlink2 = FindRepositoryLinkIdByFilename(*db, refV8File1);
+    auto rlink3 = FindRepositoryLinkIdByFilename(*db, refV8File2);
+
     BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(NULL != ecSchema);
-    VerifyElement(*db, eid, "ClassA", true, 2);
-    VerifyElement(*db, eid2, "ClassA", true, 3);
+    VerifyElement(*db, eid, "ClassA", true, rlink2);
+    VerifyElement(*db, eid2, "ClassA", true, rlink3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,10 +434,10 @@ TEST_F(ECSchemaTests, DuplicateSchemas_AddNewProperty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, DuplicateSchemas_AddNewClass)
     {
-    LineUpFiles(L"SchemaMismatch_AddNewClass.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SchemaMismatch_AddNewClass.bim", L"Test3d.dgn", false);
     DgnV8Api::ElementId eid, eid2;
+    BentleyApi::BeFileName refV8File1, refV8File2;
     {
-    BentleyApi::BeFileName refV8File1;
     CreateAndAddV8Attachment(refV8File1, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
     ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
     EXPECT_TRUE(schema.IsValid());
@@ -403,7 +446,6 @@ TEST_F(ECSchemaTests, DuplicateSchemas_AddNewClass)
 
     ECObjectsV8::ECClassP ecClass;
     EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == schema->CreateClass(ecClass, L"NewClass"));
-    BentleyApi::BeFileName refV8File2;
     CreateAndAddV8Attachment(refV8File2, 2);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
     ImportSchemaAndAddInstance(refV8File2, eid2, schema, L"NewClass");
     }
@@ -411,10 +453,13 @@ TEST_F(ECSchemaTests, DuplicateSchemas_AddNewClass)
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    auto rlink2 = FindRepositoryLinkIdByFilename(*db, refV8File1);
+    auto rlink3 = FindRepositoryLinkIdByFilename(*db, refV8File2);
+
     BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(NULL != ecSchema);
-    VerifyElement(*db, eid, "ClassA", true, 2);
-    VerifyElement(*db, eid2, "NewClass", true, 3);
+    VerifyElement(*db, eid, "ClassA", true, rlink2);
+    VerifyElement(*db, eid2, "NewClass", true, rlink3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -422,17 +467,16 @@ TEST_F(ECSchemaTests, DuplicateSchemas_AddNewClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, DuplicateSchemas_DeleteClass)
     {
-    LineUpFiles(L"SchemaMismatch_DeleteClass.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SchemaMismatch_DeleteClass.bim", L"Test3d.dgn", false);
     DgnV8Api::ElementId eid, eid2;
+    BentleyApi::BeFileName refV8File1, refV8File2;
     {
     ECObjectsV8::ECSchemaPtr schema;
-    BentleyApi::BeFileName refV8File1;
     CreateAndAddV8Attachment(refV8File1, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
     schema = ImportSchemaAndAddInstance(refV8File1, eid, TestSchema);
 
     ECObjectsV8::ECClassP testClass = schema->GetClassP(L"ClassB");
     EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == schema->DeleteClass(*testClass));
-    BentleyApi::BeFileName refV8File2;
     CreateAndAddV8Attachment(refV8File2, 2);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
     ImportSchemaAndAddInstance(refV8File2, eid2, schema);
     }
@@ -440,10 +484,13 @@ TEST_F(ECSchemaTests, DuplicateSchemas_DeleteClass)
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    auto rlink2 = FindRepositoryLinkIdByFilename(*db, refV8File1);
+    auto rlink3 = FindRepositoryLinkIdByFilename(*db, refV8File2);
+
     BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(NULL != ecSchema);
-    VerifyElement(*db, eid, "ClassA", true, 2);
-    VerifyElement(*db, eid2, "ClassA", true, 3);
+    VerifyElement(*db, eid, "ClassA", true, rlink2);
+    VerifyElement(*db, eid2, "ClassA", true, rlink3);
 
     BentleyApi::ECN::ECClassCP classB = ecSchema->GetClassCP("ClassB");
     ASSERT_TRUE(NULL != classB);
@@ -454,7 +501,7 @@ TEST_F(ECSchemaTests, DuplicateSchemas_DeleteClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, ReferenceSchema)
     {
-    LineUpFiles(L"SchemaMismatch.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SchemaMismatch.bim", L"Test3d.dgn", false);
 
     DgnV8Api::ElementId eid;
     {
@@ -499,7 +546,7 @@ ECObjectsV8::ECSchemaPtr RegisteExternalSchema(WString ecSchemaXmlFile, Bentley:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, ExternalSchema)
     {
-    LineUpFiles(L"ExternalSchema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ExternalSchema.bim", L"Test3d.dgn", false);
 
     ScopedExternalSchemaLocator locator(GetOutputDir().c_str());
     ASSERT_TRUE(SUCCESS == locator.Status());
@@ -577,7 +624,7 @@ TEST_F(ECSchemaTests, ConvertSchemaWithCaseSensitiveIssues)
         "    </ECClass>"
         "</ECSchema>";
 
-    LineUpFiles(L"schemawithcasesensitiveissues.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"schemawithcasesensitiveissues.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaPtr schema=ImportSchema(m_v8FileName, schemaXml);
         {
@@ -635,7 +682,7 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
         "    </ECClass>"
         "</ECSchema>";
 
-    LineUpFiles(L"RemapSerializedInstance.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"RemapSerializedInstance.bim", L"Test3d.dgn", false);
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
 
@@ -680,18 +727,17 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo;
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
-        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
-        DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, eid);
-        DgnElementId dgnDbElementId2;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId2, editV8ModelSyncInfoId, eid2);
-
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
+        RepositoryLinkId editV8FileSyncInfoId;
+        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
+        DgnModelId editModelId;
+        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        DgnElementId dgnDbElementId;
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eid);
+        DgnElementId dgnDbElementId2;
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId2, editModelId, eid2);
+
         //db->Schemas().CreateClassViewsInDb();
         //db->SaveChanges();
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
@@ -736,16 +782,15 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
     DoUpdate(m_dgnDbFileName, m_v8FileName, false);
     if (true)
         {
-        SyncInfoReader syncInfo;
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
-        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
-        DgnElementId dgnDbElementId3;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId3, editV8ModelSyncInfoId, eid3);
-
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
+        RepositoryLinkId editV8FileSyncInfoId;
+        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
+        DgnModelId editModelId;
+        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        DgnElementId dgnDbElementId3;
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId3, editModelId, eid3);
+
         auto dgnDbElement3 = db->Elements().GetElement(dgnDbElementId3);
         ASSERT_TRUE(dgnDbElement3.IsValid());
 
@@ -765,7 +810,7 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECSchemaTests, ExternalSchemaRemoved)
     {
-    LineUpFiles(L"ExternalSchemaMissing.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ExternalSchemaMissing.bim", L"Test3d.dgn", false);
 
     ScopedExternalSchemaLocator locator(GetOutputDir().c_str());
     ASSERT_TRUE(SUCCESS == locator.Status());
@@ -815,7 +860,7 @@ TEST_F(ECSchemaTests, IdSpecificationCASkipIndex)
         "    </ECClass>"
         "</ECSchema>";
 
-    LineUpFiles(L"unsupportedcaonproperty.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"unsupportedcaonproperty.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, SchemaXML);
         {
@@ -845,7 +890,7 @@ TEST_F(ECSchemaTests, IdSpecificationCASkipIndex)
 // Strength, StrengthDirection, SourceClassMultiplicity, TargetClassMultiplicity of the converted relationship must match the BIS base relationship.
 TEST_F(ECSchemaTests, DerivedRelationshipAttributes)
     {
-    LineUpFiles(L"unsupportedcaonproperty.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"unsupportedcaonproperty.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, SchemaVersionA);
         {
@@ -912,7 +957,7 @@ TEST_F(ECSchemaTests, RelsWithAnyClassConstraint)
         "   </ECRelationshipClass>"
         "</ECSchema>";
 
-    LineUpFiles(L"relswithanyclassasconstraint.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"relswithanyclassasconstraint.bim", L"Test3d.dgn", false);
     m_wantCleanUp = false;
 
     ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, xmlRelsWithAnyClass);
@@ -994,7 +1039,7 @@ TEST_F(ECSchemaTests, Mixinify)
 		"    </ECClass>"
 		"</ECSchema>";
 
-	LineUpFiles(L"mixinify.ibim", L"Test3d.dgn", false);
+	LineUpFiles(L"mixinify.bim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, schemaMixinTest);
         {
@@ -1052,7 +1097,7 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
             </ECClass>
         </ECSchema>)xml";
 
-    LineUpFiles(L"RemapReservedPropertyNames.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"RemapReservedPropertyNames.bim", L"Test3d.dgn", false);
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
 
@@ -1101,16 +1146,15 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
 
     if (true)
         {
-        SyncInfoReader syncInfo;
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
-        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
-        DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, eid);
-
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
+        RepositoryLinkId editV8FileSyncInfoId;
+        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
+        DgnModelId editModelId;
+        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        DgnElementId dgnDbElementId;
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eid);
+
         //db->Schemas().CreateClassViewsInDb();
         //db->SaveChanges();
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
@@ -1147,104 +1191,435 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
     }
 
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                   Carole.MacDonald            06/2018
-    //---------------+---------------+---------------+---------------+---------------+-------
-    TEST_F(ECSchemaTests, SchemaWithMultiInheritance)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, SchemaWithMultiInheritance)
+    {
+    LineUpFiles(L"SkipSchemaWithVerifier.bim", L"Test3d.dgn", false);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    // Schema names that start with "ECXA_" are automatically flattened
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="ECXA_Multi" nameSpacePrefix="testa" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECClass typeName="Ichi" isDomainClass="True">
+        <ECProperty propertyName="Alpha" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Ni" isDomainClass="True">
+        <ECProperty propertyName="Beta" typeName="string" />
+    </ECClass>
+    <ECClass typeName="San" isDomainClass="True">
+        <BaseClass>Ichi</BaseClass>
+        <BaseClass>Ni</BaseClass>
+        <ECProperty propertyName="Gamma" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Shi" isDomainClass="True">
+        <ECProperty propertyName="Delta" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Go" isDomainClass="True">
+        <BaseClass>Ichi</BaseClass>
+        <BaseClass>Shi</BaseClass>
+        <ECProperty propertyName="Epsilon" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Roku" isDomainClass="True">
+        <BaseClass>Shi</BaseClass>
+        <ECProperty propertyName="Zeta" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="IchiToShi" isDomainClass="True" strength="referencing" strengthDirection="forward">"
+        <Source cardinality="(0,1)" polymorphic="True">"
+            <Class class="Ichi" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Shi"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="NiToRoku" isDomainClass="True" strength="referencing" strengthDirection="forward">"
+        <Source cardinality="(0,1)" polymorphic="True">"
+            <Class class="Ni" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Roku"/>
+        </Target>
+    </ECRelationshipClass>
+
+</ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr schema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid);
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"ECXA_Multi", L"Ichi"));
+
+    v8editor.Save();
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+
+    BentleyApi::ECN::ECSchemaCP imported = db->Schemas().GetSchema("ECXA_Multi");
+    ASSERT_TRUE(nullptr != imported);
+
+    ASSERT_EQ(8, imported->GetClassCount());
+
+    for (BentleyApi::ECN::ECClassCP ecClass : imported->GetClasses())
         {
-        LineUpFiles(L"SkipSchemaWithVerifier.ibim", L"Test3d.dgn", false);
-        V8FileEditor v8editor;
-        v8editor.Open(m_v8FileName);
+        ASSERT_TRUE(ecClass->GetBaseClasses().size() < 2);
+        }
 
-        // Schema names that start with "ECXA_" are automatically flattened
-        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="ECXA_Multi" nameSpacePrefix="testa" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-        <ECClass typeName="Ichi" isDomainClass="True">
-            <ECProperty propertyName="Alpha" typeName="string" />
-        </ECClass>
-        <ECClass typeName="Ni" isDomainClass="True">
-            <ECProperty propertyName="Beta" typeName="string" />
-        </ECClass>
-        <ECClass typeName="San" isDomainClass="True">
-            <BaseClass>Ichi</BaseClass>
-            <BaseClass>Ni</BaseClass>
-            <ECProperty propertyName="Gamma" typeName="string" />
-        </ECClass>
-        <ECClass typeName="Shi" isDomainClass="True">
-            <ECProperty propertyName="Delta" typeName="string" />
-        </ECClass>
-        <ECClass typeName="Go" isDomainClass="True">
-            <BaseClass>Ichi</BaseClass>
-            <BaseClass>Shi</BaseClass>
-            <ECProperty propertyName="Epsilon" typeName="string" />
-        </ECClass>
-        <ECClass typeName="Roku" isDomainClass="True">
-            <BaseClass>Shi</BaseClass>
-            <ECProperty propertyName="Zeta" typeName="string" />
-        </ECClass>
-        <ECRelationshipClass typeName="IchiToShi" isDomainClass="True" strength="referencing" strengthDirection="forward">"
-           <Source cardinality="(0,1)" polymorphic="True">"
-               <Class class="Ichi" />
-           </Source>
-           <Target cardinality="(0,N)" polymorphic="True">
-               <Class class="Shi"/>
-           </Target>
-       </ECRelationshipClass>
+    BentleyApi::ECN::ECClassCP san = imported->GetClassCP("San");
+    BentleyApi::ECN::ECClassCP shi = imported->GetClassCP("Shi");
+    BentleyApi::ECN::ECClassCP go = imported->GetClassCP("Go");
+    BentleyApi::ECN::ECClassCP roku = imported->GetClassCP("Roku");
+    ASSERT_TRUE(nullptr != san);
+    ASSERT_TRUE(nullptr != san->GetPropertyP("Alpha", false));
+    ASSERT_TRUE(nullptr != san->GetPropertyP("Beta", false));
+    ASSERT_TRUE(nullptr != san->GetPropertyP("Gamma", false));
 
-        <ECRelationshipClass typeName="NiToRoku" isDomainClass="True" strength="referencing" strengthDirection="forward">"
-           <Source cardinality="(0,1)" polymorphic="True">"
-               <Class class="Ni" />
-           </Source>
-           <Target cardinality="(0,N)" polymorphic="True">
-               <Class class="Roku"/>
-           </Target>
-       </ECRelationshipClass>
+    BentleyApi::ECN::ECRelationshipClassCP ichiToShi = imported->GetClassCP("IchiToShi")->GetRelationshipClassCP();
+    ASSERT_TRUE(ichiToShi->GetTarget().SupportsClass(*roku));
+    ASSERT_TRUE(roku->Is(shi));
 
+    ASSERT_TRUE(ichiToShi->GetTarget().SupportsClass(*go));
+    ASSERT_FALSE(go->Is(shi));
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, UpdateWithChangedSchema_WrongVersion)
+    {
+    LineUpFiles(L"UpdateWithChangedSchema.bim", L"Test3d.dgn", false);
+
+    ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
+    EXPECT_TRUE(schema.IsValid());
+    DgnV8Api::ElementId eid;
+    ImportSchemaAndAddInstance(m_v8FileName, eid, schema);
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+        ASSERT_TRUE(nullptr != ecSchema);
+        VerifySyncInfo(*db, v8editor.m_defaultModel, "TestSchema", 1, 1);
+        }
+
+        {
+        ECObjectsV8::ECClassP newClass;
+        schema->CreateClass(newClass, L"NewClass");
+        EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*schema, *(v8editor.m_file)));
+        v8editor.Save();
+        }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, true, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Umar.Hayat            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, UpdateWithChangedSchema_VersionUpdate)
+    {
+    LineUpFiles(L"UpdateWithChangedSchema.bim", L"Test3d.dgn", false);
+
+    ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
+    EXPECT_TRUE(schema.IsValid());
+    DgnV8Api::ElementId eid;
+    ImportSchemaAndAddInstance(m_v8FileName, eid, schema);
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+        ASSERT_TRUE(nullptr != ecSchema);
+        VerifySyncInfo(*db, v8editor.m_defaultModel, "TestSchema", 1, 1);
+        }
+
+    {
+    schema->SetVersionMinor(3);
+    ECObjectsV8::ECClassP newClass;
+    schema->CreateClass(newClass, L"NewClass");
+    EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*schema, *(v8editor.m_file)));
+    v8editor.Save();
+    }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+    ASSERT_TRUE(nullptr != ecSchema->GetClassCP("NewClass"));
+    VerifySyncInfo(*db, v8editor.m_defaultModel, "TestSchema", 1, 3);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, UpdateWithNewSchema)
+    {
+    LineUpFiles(L"UpdateWithNewSchema.bim", L"Test3d.dgn", false);
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
+    EXPECT_TRUE(schema.IsValid());
+    DgnV8Api::ElementId eid;
+    ImportSchemaAndAddInstance(m_v8FileName, eid, schema);
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+    EXPECT_EQ(1, m_count);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    VerifySyncInfo(*db, v8editor.m_defaultModel, "TestSchema", 1, 1);
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, UpdateWithNewSchemaReferencingOldSchemas)
+    {
+    LineUpFiles(L"UpdateWithNewSchemaReferencingOldSchemas.bim", L"Test3d.dgn", false);
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECClass typeName="Foo" isDomainClass="True">
+            <ECProperty propertyName="Foo" typeName="string" />
+        </ECClass>
     </ECSchema>)xml";
 
-        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-        ECObjectsV8::ECSchemaPtr schema;
-        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
-        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr refSchema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
 
-        DgnV8Api::ElementId eid;
-        v8editor.AddLine(&eid);
-        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
-        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"ECXA_Multi", L"Ichi"));
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
 
-        v8editor.Save();
-        DoConvert(m_dgnDbFileName, m_v8FileName);
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, refSchema->GetName().c_str(), L"Foo");
+    v8editor.Save();
+    DoConvert(m_dgnDbFileName, m_v8FileName);
 
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    Utf8CP testSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="RefSchema" version="1.1" prefix="ts" />
+        <ECClass typeName="Child" isDomainClass="True">
+            <BaseClass>ts:Foo</BaseClass>
+            <ECProperty propertyName="Bar" typeName="string" />
+        </ECClass>
+    </ECSchema>)xml";
 
-        BentleyApi::ECN::ECSchemaCP imported = db->Schemas().GetSchema("ECXA_Multi");
-        ASSERT_TRUE(nullptr != imported);
+    ECObjectsV8::ECSchemaPtr schema2;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema2, testSchema, *schemaContext));
 
-        ASSERT_EQ(8, imported->GetClassCount());
+    v8editor.Open(m_v8FileName);
 
-        for (BentleyApi::ECN::ECClassCP ecClass : imported->GetClasses())
-            {
-            ASSERT_TRUE(ecClass->GetBaseClasses().size() < 2);
-            }
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
+    v8editor.Save();
 
-        BentleyApi::ECN::ECClassCP san = imported->GetClassCP("San");
-        BentleyApi::ECN::ECClassCP shi = imported->GetClassCP("Shi");
-        BentleyApi::ECN::ECClassCP go = imported->GetClassCP("Go");
-        BentleyApi::ECN::ECClassCP roku = imported->GetClassCP("Roku");
-        ASSERT_TRUE(nullptr != san);
-        ASSERT_TRUE(nullptr != san->GetPropertyP("Alpha", false));
-        ASSERT_TRUE(nullptr != san->GetPropertyP("Beta", false));
-        ASSERT_TRUE(nullptr != san->GetPropertyP("Gamma", false));
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+    }
 
-        BentleyApi::ECN::ECRelationshipClassCP ichiToShi = imported->GetClassCP("IchiToShi")->GetRelationshipClassCP();
-        ASSERT_TRUE(ichiToShi->GetTarget().SupportsClass(*roku));
-        ASSERT_TRUE(roku->Is(shi));
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, UpdateWithNewSchemaReferencingNewSchemas)
+    {
+    LineUpFiles(L"UpdateWithNewSchemaReferencingNewSchemas.bim", L"Test3d.dgn", false);
+    DoConvert(m_dgnDbFileName, m_v8FileName);
 
-        ASSERT_TRUE(ichiToShi->GetTarget().SupportsClass(*go));
-        ASSERT_FALSE(go->Is(shi));
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECClass typeName="Foo" isDomainClass="True">
+            <ECProperty propertyName="Foo" typeName="string" />
+        </ECClass>
+    </ECSchema>)xml";
 
-        }
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr refSchema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
+
+    Utf8CP testSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="RefSchema" version="1.1" prefix="ts" />
+        <ECClass typeName="Child" isDomainClass="True">
+            <BaseClass>ts:Foo</BaseClass>
+            <ECProperty propertyName="Bar" typeName="string" />
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaPtr schema2;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema2, testSchema, *schemaContext));
+
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
+
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema2->GetName().c_str(), L"Child");
+
+    v8editor.Save();
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, UpdateWithNewSchemaAndChangedOldSchemas)
+    {
+    LineUpFiles(L"UpdateWithNewSchemaAndChangedOldSchemas.bim", L"Test3d.dgn", false);
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECClass typeName="Foo" isDomainClass="True">
+            <ECProperty propertyName="Foo" typeName="string" />
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr refSchema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, refSchema->GetName().c_str(), L"Foo");
+    v8editor.Save();
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    Utf8CP testSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="RefSchema" version="1.1" prefix="ts" />
+        <ECClass typeName="Child" isDomainClass="True">
+            <BaseClass>ts:Foo</BaseClass>
+            <ECProperty propertyName="Bar" typeName="string" />
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaPtr schema2;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema2, testSchema, *schemaContext));
+
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid2;
+    v8editor.AddLine(&eid2, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh2(eid2, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance2, eh2, v8editor.m_defaultModel, schema2->GetName().c_str(), L"Child");
+
+    v8editor.Save();
+
+    {
+    ECObjectsV8::ECClassP newClass;
+    refSchema->CreateClass(newClass, L"NewClass");
+    refSchema->SetVersionMinor(refSchema->GetVersionMinor() + 1);
+    EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*refSchema, *(v8editor.m_file)));
+    v8editor.Save();
+    }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("RefSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+
+    ASSERT_TRUE(nullptr != ecSchema->GetClassCP("NewClass"));
+
+    ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+    ASSERT_TRUE(nullptr != ecSchema->GetClassCP("Child"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, SequentialProcessing)
+    {
+    // This test mimics multiple bridges being processed sequentially.  The first bridge will find TestSchema and an instance of TestInstance, thereby properly classifying
+    // 'ClassA'.  On a subsequent update (or second bridge), the same TestSchema is found (but in an unprocessed file) from which an instance of the unused 'SecondClass' is found.
+    // The schema should be re-analyzed an imported, thereby properly classifying 'SecondClass'
+
+    // Unfortunately, this doesn't work because the schemas are not updated in this workflow.  The logic does not look at the checksums of the schemas to see if they have changed, only the
+    // version numbers.
+    LineUpFiles(L"SequentialProcessing.bim", L"Test3d.dgn", false);
+    ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
+    ECObjectsV8::ECClassP ecClass;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == schema->CreateClass(ecClass, L"SecondClass"));
+    ECObjectsV8::PrimitiveECPropertyP ecProperty;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == ecClass->CreatePrimitiveProperty(ecProperty, L"IntProp", ECObjectsV8::PrimitiveType::PRIMITIVETYPE_Integer));
+
+    DgnV8Api::ElementId eid;
+    ImportSchemaAndAddInstance(m_v8FileName, eid, schema);
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    {
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+    VerifyElement(eid, "ClassA", true);
+    }
+
+    BentleyApi::BeFileName secondV8File = GetOutputFileName(L"SecondV8.dgn");
+    BentleyApi::BeFileName seedFile = GetInputFileName(L"Test3d.dgn");
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(seedFile, secondV8File)) << "Unable to copy file \nSource: [" << Utf8String(seedFile.c_str()).c_str() << "]\nDestination: [" << Utf8String(secondV8File
+                                                                                                                                                                                                                                   .c_str()).c_str() << "]";
+    V8FileEditor v8editor2;
+    v8editor2.Open(secondV8File);
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor2.m_file)));
+    v8editor2.Save();
+
+    DgnV8Api::ElementId eid2;
+    v8editor2.AddLine(&eid2);
+    DgnV8Api::ElementHandle eh(eid2, v8editor2.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"ClassB"));
+    //EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"SecondClass"));
+
+    DoConvert(m_dgnDbFileName, secondV8File);
+    {
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    VerifyElement(eid, "ClassA", true); // Verify first element is still there and properly classified
+
+    auto rlink2 = FindRepositoryLinkIdByFilename(*db, secondV8File);
+
+    VerifyElement(eid2, "ClassB", true, rlink2); 
+    //VerifyElement(eid2, "SecondClass", false);
+    }
+
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                    Carole.MacDonald            01/2018
@@ -1266,7 +1641,7 @@ struct SkipSchemaImportTests : public ConverterTestBaseFixture
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SkipSchemaImportTests, WithInstances)
     {
-    LineUpFiles(L"SkipSchema.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SkipSchema.bim", L"Test3d.dgn", false);
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
 
@@ -1333,7 +1708,7 @@ struct TestVerifier : ISChemaImportVerifier
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECSchemaTests, SkipSchemaUsingVerifier)
     {
-    LineUpFiles(L"SkipSchemaWithVerifier.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"SkipSchemaWithVerifier.bim", L"Test3d.dgn", false);
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
 

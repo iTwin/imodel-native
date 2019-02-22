@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMXReader.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
@@ -164,7 +164,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Cesium::OutputR 
         return ERROR;
         }
 
-    Utf8P infoStr = (Utf8P) in.GetCurrent();
+    Utf8CP infoStr = (Utf8CP) in.GetCurrent();
     Json::Value pt;
     Json::Reader reader;
     if (!reader.parse(infoStr, infoStr+infoSize, pt))

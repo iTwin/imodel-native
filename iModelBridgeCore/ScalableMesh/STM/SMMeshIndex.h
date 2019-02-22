@@ -107,6 +107,21 @@ inline bool IsClosedPolygon(const bvector<DPoint3d>& vec)
     return !vec.empty() && (vec.front() == vec.back());
     }
 
+
+
+struct SMMeshDataToLoad : public SMNodeDataToLoad
+    {
+    BENTLEY_SM_EXPORT SMMeshDataToLoad();        
+
+    BENTLEY_SM_EXPORT virtual ~SMMeshDataToLoad();
+
+    bool m_ptIndices;
+    bool m_features;
+    bool m_graph;
+    bool m_textureIndices;
+    bool m_texture;
+    };
+
 template<class POINT, class EXTENT> class SMMeshIndex;
 
 template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndexNode < POINT, EXTENT >
@@ -186,6 +201,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
     virtual void Load() const override;
+
+    virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr) override;
 
     virtual void Unload() override;
 
@@ -274,7 +291,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     //NEEDS_WORK_SM: refactor all meshIndex recursive calls into something more like a visitor pattern
     //NEEDS_WORK_SM: move clip and raster support to point index
 
-    void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+    BENTLEY_SM_EXPORT void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
     void                TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
     void                CutTile(uint32_t splitThreshold, Transform unitTransform = Transform::FromIdentity());
@@ -1010,7 +1027,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
         HFCPtr<ClipRegistry> m_clipRegistry;
 
-        size_t m_texId = 0;
+        std::atomic<size_t> m_texId = {0};
 
         SharedTextureManager m_texMgr;
                 
@@ -1063,7 +1080,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void Load() const override
             {};
-
+        
+        virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr) override
+            {};
 
         virtual bool Store() override
             {

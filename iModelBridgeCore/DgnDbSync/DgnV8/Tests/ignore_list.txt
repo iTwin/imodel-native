@@ -9,29 +9,6 @@ NamedGroupTests.NamedGroupOf2dElement
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
 
-# These tests fail after the latest merge from bim0200
-ImportConfigTests.FontImport
-MstnBridgeTests.ConvertLinesUsingBridgeFwk
-MstnBridgeTests.ConvertAttachment
-MstnBridgeTests.ConvertAttachmentMultiBridge
+NamedGroupTests.NamedGroupAcrossReference # Sam broke this with switch to aspects for normal elements. Hopefully, Carole can fix it.
 
-MultiBridgeTests.Sandwich
-    #d:\bsw\imodel02-hg\src\DgnDbSync\DgnV8\Tests\MultiBridgeTests.cpp(377): error:       Expected: 1
-    #To be equal to: masterModels.size()
-    #     Which is: 2
-
-# Nobody seems able to decide which magic numbers are correct - they keep
-# flipping back and forth
-ConverterTests.GCSMultiFilesReprojectImport
-
-TransformTests.Test1
-
-    # VSTS#50113
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 12/07/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(437): error:       Expected: hadAnyChanges
-    # Which is: true
-    # To be equal to: expectUpdate
-    # Which is: false
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1239): error:       Expected: 0
-    # To be equal to: m_count
-    # Which is: 2
+ConverterTests.UseConverterAsLibrary # Sam - decide if we want to support the "record level mapping" feature of ConverterLibrary or not

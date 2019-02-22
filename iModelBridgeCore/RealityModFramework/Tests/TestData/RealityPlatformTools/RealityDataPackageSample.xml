@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RealityDataPackage version="2.1" xmlns="http://www.bentley.com/RealityDataServer/v2">
+<RealityDataPackage version="2.2" xmlns="http://www.bentley.com/RealityDataServer/v2">
   <Origin>Origin1</Origin>
   <RequestingApplication>RequestingApplication1</RequestingApplication>
   <Name>Name1</Name>

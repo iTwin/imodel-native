@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMeshCore_Vancouver.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -462,6 +462,9 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)RealityPlatform.lib \
 	$(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
+    $(ContextSubpartsLibs)BeHttp.lib\
+    $(ContextSubpartsLibs)BeFolly.lib\
+    $(ContextSubpartsLibs)BeXml.lib
 
 #	    $(ContextSubpartsLibs)wastorage.lib \
 

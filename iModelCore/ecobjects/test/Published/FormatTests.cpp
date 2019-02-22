@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/FormatTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -45,6 +45,50 @@ TEST_F(FormatTest, BasicUnitFormatCreation)
     ASSERT_NE(nullptr, ufmt->GetNumericSpec());
     EXPECT_EQ(Formatting::FractionalPrecision::Over_128, ufmt->GetNumericSpec()->GetFractionalPrecision());
     EXPECT_EQ(Formatting::PresentationType::Fractional, ufmt->GetNumericSpec()->GetPresentationType());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatTest, EmptySpacerRoundTrips)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <Format typeName="MrNoSpacer" type="fractional" precision="4">
+                <Composite spacer="" inputUnit="u:M">
+                  <Unit label="mile(s)">u:MILE</Unit>
+                  <Unit label="yrd(s)">u:YRD</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml";
+    Utf8String serializedSchemaXml;
+
+    static auto const verify = [](ECSchemaPtr schema) -> void
+        {
+        ECFormatCP ufmt = schema->GetFormatCP("MrNoSpacer");
+        ASSERT_NE(nullptr, ufmt);
+        ASSERT_EQ(schema.get(), &ufmt->GetSchema());
+        ASSERT_STREQ("MrNoSpacer", ufmt->GetName().c_str());
+        ASSERT_EQ(Formatting::PresentationType::Fractional, ufmt->GetNumericSpec()->GetPresentationType());
+        ASSERT_STREQ("", ufmt->GetCompositeSpec()->GetSpacer().c_str());   
+        };
+
+    // Deserialize original XML and serialize it back out.
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    verify(schema);
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
+    }
+    // Deserialize roundtriped schema XML.
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *context));
+    verify(schema);
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -125,7 +169,7 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "es", 3, 2, 0);
-    schema->AddReferencedSchema(*GetUnitsSchema(true));
+    schema->AddReferencedSchema(*GetUnitsSchema());
 
     ECFormatP ufmt;
     EC_ASSERT_SUCCESS(schema->CreateFormat(ufmt, "AmerMYFI4", "myfi4", ""));
