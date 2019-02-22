@@ -244,7 +244,7 @@ public:
     void AlignWithRootZ();
     DGNVIEW_EXPORT bool RenderFrame(Render::Task::Priority priority, UpdatePlan const& plan, TileTree::TileRequestsR requests); // Generally, this should not be called directly
     DGNVIEW_EXPORT bool RenderThumbnail(Render::Task::Priority priority, UpdatePlan const& plan, TileTree::TileRequestsR requests);
-    DGNVIEW_EXPORT void RenderSynchronousFrame(bool wantDecorators);
+    DGNVIEW_EXPORT void RenderSynchronousFrame(bool wantDecorators, bool wantHilite=true);
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
