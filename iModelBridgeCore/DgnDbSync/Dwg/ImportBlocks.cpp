@@ -94,6 +94,10 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
         {
         auto blockToModel = Transform::FromProduct (inputs.GetTransform(), blockTrans);
         canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockToModel);
+
+        // in a 2D model, a mirrored block needs a separate code value, VSTS 84042.
+        if (canShareParts && inputs.GetTargetModel().Is2dModel())
+            DwgHelper::NegateScaleForSharedParts (partScale, blockTrans);
         }
 
     if (canShareParts)
