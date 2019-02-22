@@ -156,6 +156,7 @@ def main():
     argParser = argparse.ArgumentParser(description="Runs BB commands based on a JSON config file.")
     argParser.add_argument("action",                                    help='One of pull|build|bdf|checkunused|createnugets|createinstallers')
     argParser.add_argument("-c", "--config", default=defaultConfigFile, help='Path to configuration file')
+    argParser.add_argument("-s", "--strat",                             help='Overrides configuration to use a specific build strategy')
     argParser.add_argument("-a", "--arch",                              help='Limits actions to strategies enabled for given arch')
     argParser.add_argument("-b", "--bdfdir",                            help='(bdf) Directory to write BDF files to -or- (pull) Directory where BDF files are stored')
     argParser.add_argument("-v", "--verbosity", default='3')
@@ -165,6 +166,19 @@ def main():
 
     with open(args.config, 'r') as configFile:
         config = json.load(configFile)
+
+    if args.strat:
+        if not args.arch:
+            print('ERROR: You must provide an architecture if you provide a strategy override.')
+            return 1
+
+        config['strategies'] = [{
+            "name": args.strat,
+            "archs": args.arch,
+            "augments": "",
+            "version_env": "VER_INVALID",
+            "version_seed": "0.0.0"
+        }]
 
     totalTimeStart = time.time()
 

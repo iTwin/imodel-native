@@ -13,12 +13,17 @@ always:
 always:
     %if defined (COMP_NAME)
         start "CodeCoverage $(COMP_NAME)" \/WAIT python $(_MakeFilePath)CoverageOpenCPP.py --component=$(COMP_NAME) --localReport
+	    %if defined (Type)
+		    start "CodeCoverage $(COMP_NAME)" \/WAIT python $(_MakeFilePath)CoverageOpenCPP.py --component=$(COMP_NAME)
+	    %endif
     %else
         %if !defined (Win10SdkDir)
             %error Define Win10SdkDir in your shared shell. e.g. set Win10SdkDir=C:\Program Files (x86)\Windows Kits\10\.
         %endif
         python $(_MakeFilePath)CoverageOpenCPP.py --reportPath=$(LOG_DIR) --uploadResults --excelReport
     %endif
+
+
 
 %message ..
 %message The Coverage reports are at $(LOG_DIR)

@@ -13,9 +13,9 @@ import time
 import argparse
 
 #Common Scripts to be used by any task
-#scriptsDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-#commonScriptsDir = os.path.join(scriptsDir, 'Common')
-#sys.path.append(commonScriptsDir)
+scriptsDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+commonScriptsDir = os.path.join(scriptsDir, 'CommonTasks')
+sys.path.append(commonScriptsDir)
 
 from CodeCoverage import CodeCoverage
 import Components as cmp
