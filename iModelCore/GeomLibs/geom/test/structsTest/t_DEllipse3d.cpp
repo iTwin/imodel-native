@@ -3222,7 +3222,7 @@ TEST(DEllipse3d,FlattenZ)
                 Check::SaveTransformed (strokes);
         
                 Check::Shift (2 * xShift, 0, 0);
-                auto arcB = FlattenDEllipse3dZ (arc, strokes, false);
+                /* unused - auto arcB = */FlattenDEllipse3dZ (arc, strokes, false);
                 Check::SaveTransformed (DSegment3d::From (strokes.front (), strokes.front () - ticShift));
                 Check::SaveTransformed (DSegment3d::From (strokes.back (), strokes.back () + ticShift));
                 Check::SaveTransformed (strokes);

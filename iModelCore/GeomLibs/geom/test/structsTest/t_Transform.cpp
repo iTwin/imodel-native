@@ -2282,7 +2282,7 @@ TEST(View,MouseMove)
     +---------------+---------------+---------------+---------------+---------------+------*/
     TEST(Frustum, FractionalMove)
         {
-        auto frame0 = Transform::FromIdentity ();
+        // unused - auto frame0 = Transform::FromIdentity ();
         double c20 = cos (Angle::DegreesToRadians (20));
         double s20 = sin (Angle::DegreesToRadians (20));
         for (auto frame0 : {
