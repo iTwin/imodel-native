@@ -1,0 +1,48 @@
+@echo off
+setLocal EnableDelayedExpansion
+set /p version=<C:\bridge\Version.log
+
+set installation_directory=%1
+
+set Server_Projectnumber=Hkbridges125
+
+set staging_directory=C:\bridge\staging_qa
+
+set user_name=Glen.worrall@bentley.com 
+
+set user_password=4Kc3WBdAWGqX
+
+
+set LOGFILE="C:\bridge\log.txt"
+
+call :LOG>%LOGFILE%
+
+:LOG
+
+for /d %%a in (MS VM HYB IFC BB24 FNT PRN OFF 2D LVL SAV 3SM) do (  
+if "%%a" == "MS"  "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\MetroStation\DGN\3DModel\Master.dgn" --DGN_WorkSpace=Example --DGN_WorkSet=MetroStation --DGN_CFGFILE="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\MetroStation.cfg" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" == "VM" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\MetroStation\DGN\3DModel\Visualization_Master.dgn" --DGN_WorkSpace=Example --DGN_WorkSet=MetroStation --DGN_CFGFILE="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\MetroStation.cfg" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" == "HYB" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\Hybrid_ORG_Dataset\Main.dgn" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" == "IFC" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\BingMaps_IFC\D12_ifc.dgn" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" ==  "BB24" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\BB24\BB24_All_Haz.i.dgn" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+if "%%a" ==  "BB24" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\BB24\BB24_All_Viz.i.dgn" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" ==  "FNT" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\LineStyles\A0.dgn" --DGN_WorkSpace=Example --DGN_WorkSet=SmokeTestMSTN --DGN_CFGFILE="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN.cfg" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" ==  "PRN" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\PointCloud_Rasters\PointClouds_RastersNew.dgn" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" ==  "OFF" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\DGN Links\EQPM01_821.dgn" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" ==  "2D" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\Corridor_2Dto3D\NB_Corridor.dgn" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" ==  "LVL" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\Levels\EWR_OSGB_Master.dgn" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" ==  "SAV" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\dgn\View Groups\Master_ViewGroup.dgn"--fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+if "%%a" ==  "SAV" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input-sheet="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\SmokeTestMSTN\DGN\SavedViews\Master_SavedView.dgn" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+
+if "%%a" ==  "3SM" "%1Bentley\iModelBridgeMstn\iModelBridgeFwk.exe" --server-repository=%%a_%version% --server-project=%Server_Projectnumber% --fwk-input="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\Reality\DGN\Reality.dgn" --DGN_WorkSpace=Example --DGN_WorkSet=Reality --DGN_CFGFILE="C:\ProgramData\Bentley\MicroStation CONNECT Edition\Configuration\WorkSpaces\Example\WorkSets\Reality.cfg" --fwk-staging-dir=%staging_directory% --fwk-bridge-library="%1Bentley\iModelBridgeMstn\Dgnv8BridgeB02.dll" --fwk-create-repository-if-necessary --server-environment=QA --fwk-assetsDir=%1Bentley\iModelBridgeMstn\Assets --fwk-skip-assignment-check --server-user=%user_name% --server-password=%user_password%
+)
