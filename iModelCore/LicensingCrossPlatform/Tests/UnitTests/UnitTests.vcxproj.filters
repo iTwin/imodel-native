@@ -24,9 +24,6 @@
     <ClCompile Include="UsageDbTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PolicyTokenTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Utils\DelayedExecutorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -72,9 +69,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UsageDbTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PolicyTokenTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h">
