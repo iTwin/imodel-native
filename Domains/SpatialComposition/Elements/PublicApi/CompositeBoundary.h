@@ -1,7 +1,5 @@
 #pragma once
 
-#include "CompositeElement.h"
-
 BEGIN_SPATIALCOMPOSITION_NAMESPACE
 
 struct CompositeBoundary : CompositeElement

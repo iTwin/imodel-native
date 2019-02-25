@@ -1,4 +1,4 @@
-#include <SpatialComposition/Elements/CompositeElement.h>
+#include <SpatialComposition/Elements/SpatialCompositionElementsApi.h>
 
 BEGIN_SPATIALCOMPOSITION_NAMESPACE
 

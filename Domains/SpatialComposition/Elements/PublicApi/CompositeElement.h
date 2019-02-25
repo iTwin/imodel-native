@@ -1,8 +1,5 @@
 #pragma once
 
-#include <SpatialComposition/Domain/SpatialCompositionMacros.h>
-#include <DgnPlatform/DgnPlatformApi.h>
-
 BEGIN_SPATIALCOMPOSITION_NAMESPACE
 
 struct CompositeElement : Dgn::SpatialLocationElement
