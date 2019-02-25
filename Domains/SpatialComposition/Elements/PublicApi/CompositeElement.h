@@ -4,6 +4,7 @@ BEGIN_SPATIALCOMPOSITION_NAMESPACE
 
 struct CompositeElement : Dgn::SpatialLocationElement
     {
+    typedef Dgn::SpatialLocationElement T_Super;
     protected:
         explicit CompositeElement(CreateParams const& params) : Dgn::SpatialLocationElement(params) {}
         BE_PROP_NAME(ComposingElement);
@@ -11,6 +12,13 @@ struct CompositeElement : Dgn::SpatialLocationElement
         Dgn::DgnElementId m_composedElementId;  //cached value from relationship
 
         void SetFootprintArea(const double area) { dynamic_cast<Dgn::DgnElementP>(this)->SetPropertyValue(prop_FootprintArea(), area); }
+
+        virtual SPATIALCOMPOSITION_EXPORT void CalculateProperties () {};
+        virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _LoadFromDb ();
+        virtual SPATIALCOMPOSITION_EXPORT void _CopyFrom (Dgn::DgnElementCR source) override;
+        virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnInsert () override;
+        virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
+        virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnDelete() const override;
 
     public:
         //---------------------------------------------------------------------------------------
