@@ -27,7 +27,7 @@ protected:
     IHttpHandlerPtr m_httpHandler;
 
 public:
-    UlasProvider
+    LICENSING_EXPORT UlasProvider
         (
         IBuddiProviderPtr buddiProvider,
         ClientInfoPtr clientInfo,
@@ -35,10 +35,10 @@ public:
         IHttpHandlerPtr httpHandler
         );
 
-    BentleyStatus PostUsageLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy);
-    folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
-    BentleyStatus PostFeatureLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy);
-    folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
+    LICENSING_EXPORT BentleyStatus PostUsageLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy);
+    LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
+    LICENSING_EXPORT BentleyStatus PostFeatureLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy);
+    LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

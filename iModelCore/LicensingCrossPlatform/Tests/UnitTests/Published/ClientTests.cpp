@@ -369,7 +369,6 @@ TEST_F(ClientTests, StartApplication_StopApplication_Success)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
-    //auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyMissingFields());
     auto policy = Policy::Create(jsonPolicyValid);
 
     EXPECT_CALL(GetPolicyProviderMock(), GetPolicy())
@@ -448,7 +447,6 @@ TEST_F(ClientTests, StartWithKeyApplicationFromFactory_Success)
     client->StopApplication();
     }
 
-
 //TEST_F(ClientTests, GetCertificate_Success) // no longer exposed as a client method
 //    {
 //    Utf8String cert;
@@ -467,7 +465,9 @@ TEST_F(ClientTests, StartWithKeyApplicationFromFactory_Success)
 
 TEST_F(ClientTests, GetPolicy_Success)
     {
-    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyMissingFields());
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
+    auto policy = Policy::Create(jsonPolicyValid);
 
     EXPECT_CALL(GetPolicyProviderMock(), GetPolicy())
         .Times(1)
@@ -476,10 +476,10 @@ TEST_F(ClientTests, GetPolicy_Success)
     auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr());
 
     auto policyToken = client->GetPolicy().get();
-    //EXPECT_NE(policyToken, nullptr); not testing the policy token here, just that GetPolicy is called
+    EXPECT_NE(policyToken, nullptr); //not testing the policy token here, just that GetPolicy is called
     }
 
-TEST_F(ClientTests, GetCertificate_Success_Mock)
+TEST_F(ClientTests, GetCertificate_Success_HttpMock)
     {
     auto url = "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api";
 
@@ -494,7 +494,8 @@ TEST_F(ClientTests, GetCertificate_Success_Mock)
     auto cert = client.CreateGetRequest(url).Perform().get();
     }
 
-// Need to fix this to have mock return a valid policy (or reevaluate the logic here...)
+// TODO: Mock UsageDB and change this test
+// TODO: make these integration tests?
 TEST_F(ClientTests, GetProductStatus_Test)
     {
     auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyMissingFields());
@@ -562,6 +563,8 @@ TEST_F(ClientTests, GetProductStatus_Test)
     ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Expired); // Valid status should be Expired now, since offline grace period has expired
     }
 
+// TODO: Mock UsageDB and change this test
+// TODO: make these integration tests?
 TEST_F(ClientTests, CleanUpPolicies_Success)
     {
     auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyMissingFields());
@@ -608,7 +611,7 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
     ASSERT_NE(client->GetPolicyWithId(validPolicy3->GetPolicyId()), nullptr);
     }
 
-// TODO: Move to UlasProvider UnitTests
+// TODO: Make these integration tests?
 
 //TEST_F(ClientTests, SendUsageLogs_Success)
 //    {
@@ -653,7 +656,7 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
 //    }
 
 
-// TODO: Move to UlasProvider UnitTests
+// TODO: Make these integration tests?
 
 //TEST_F(ClientTests, SendFeatureLogs_Success)
 //    {

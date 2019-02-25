@@ -194,5 +194,5 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(BeFileNameCR featureCSV
 
             return folly::makeFuture();
             });
-    });
+        });
     }
