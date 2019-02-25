@@ -6,37 +6,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "TestsHelper.h"
 #include "UlasProviderTests.h"
-#include "Utils/MockHttpHandler.h"
-#include "DummyPolicyHelper.h"
-
-#include <Licensing/Client.h>
-#include <Licensing/FreeClient.h>
-#include <Licensing/Utils/DateHelper.h>
-
-#include "../../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/L10N.h>
-#include <fstream>
-#include <Licensing/Utils/InMemoryJsonLocalState.h>
-
-#include <WebServices/Configuration/UrlProvider.h>
-#include <WebServices/Connect/ConnectSignInManager.h>
-
-#include "Mocks/BuddiProviderMock.h"
-#include "Mocks/PolicyProviderMock.h"
-
-#include "../../../Licensing/Providers/UlasProvider.h"
 
 using ::testing::AtLeast;
 using ::testing::Return;
-using ::testing::ReturnRef;
-using ::testing::ByMove;
-using ::testing::_;
 
 #define TEST_PRODUCT_ID     "2545"
 
@@ -46,16 +24,11 @@ USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 
-// ClientImplPtr CreateTestClient(bool signIn)
-//     {
-//     return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, nullptr, nullptr);
-//     }
-
 UlasProviderTests::UlasProviderTests() :
     m_handlerMock(std::make_shared<MockHttpHandler>()),
     m_buddiMock(std::make_shared<BuddiProviderMock>())
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "2545");
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
     BeFileName dbPath("TestPath");
 
     m_ulasProvider = std::make_shared<UlasProvider>(m_buddiMock, clientInfo, dbPath, m_handlerMock);
@@ -123,7 +96,7 @@ Utf8String UlasProviderTests::MockUlasUrl()
 TEST_F(UlasProviderTests, SendUsageLogs_Success)
     {
     const auto mockUrl = MockUlasUrl();
-    Utf8String expectedUrl = mockUrl + Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", "1004175881", "2545", "en");
+    Utf8String expectedUrl = mockUrl + Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", "1004175881", TEST_PRODUCT_ID, "en");
 
     const auto epUri = "https://locationmockurl.bentley.com/";
     const auto sharedAccessSignature = "MockSharedAccessSignature";
@@ -153,7 +126,7 @@ TEST_F(UlasProviderTests, SendUsageLogs_Success)
 TEST_F(UlasProviderTests, SendFeatureLogs_Success)
     {
     const auto mockUrl = MockUlasUrl();
-    Utf8String expectedUrl = mockUrl + Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", "1004175881", "2545", "en");
+    Utf8String expectedUrl = mockUrl + Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", "1004175881", TEST_PRODUCT_ID, "en");
 
     const auto epUri = "https://locationmockurl.bentley.com/";
     const auto sharedAccessSignature = "MockSharedAccessSignature";
