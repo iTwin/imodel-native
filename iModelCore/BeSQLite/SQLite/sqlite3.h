@@ -123,9 +123,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.27.0"
-#define SQLITE_VERSION_NUMBER 3027000
-#define SQLITE_SOURCE_ID      "2019-01-29 11:42:43 7ee3cd5b2cdf8db35f70400b3df58f7c421c78ae77c50f22b0ee22d5a303alt1"
+#define SQLITE_VERSION        "3.28.0"
+#define SQLITE_VERSION_NUMBER 3028000
+#define SQLITE_SOURCE_ID      "2019-02-25 14:16:19 8474c1560e0c3a28c6a7ed360202a8e7caae3c8259f60bbfa6d2948ab787alt1"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -1982,6 +1982,17 @@ struct sqlite3_mem_methods {
 ** negative value for this option restores the default behaviour.
 ** This option is only available if SQLite is compiled with the
 ** [SQLITE_ENABLE_SORTER_REFERENCES] compile-time option.
+**
+** [[SQLITE_CONFIG_MEMDB_MAXSIZE]]
+** <dt>SQLITE_CONFIG_MEMDB_MAXSIZE
+** <dd>The SQLITE_CONFIG_MEMDB_MAXSIZE option accepts a single parameter
+** [sqlite3_int64] parameter which is the default maximum size for an in-memory
+** database created using [sqlite3_deserialize()].  This default maximum
+** size can be adjusted up or down for individual databases using the
+** [SQLITE_FCNTL_SIZE_LIMIT] [sqlite3_file_control|file-control].  If this
+** configuration setting is never used, then the default maximum is determined
+** by the [SQLITE_MEMDB_DEFAULT_MAXSIZE] compile-time option.  If that
+** compile-time option is not set, then the default maximum is 1073741824.
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
@@ -2012,6 +2023,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_STMTJRNL_SPILL      26  /* int nByte */
 #define SQLITE_CONFIG_SMALL_MALLOC        27  /* boolean */
 #define SQLITE_CONFIG_SORTERREF_SIZE      28  /* int nByte */
+#define SQLITE_CONFIG_MEMDB_MAXSIZE       29  /* sqlite3_int64 */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options
@@ -2357,7 +2369,7 @@ SQLITE_API int sqlite3_changes(sqlite3*);
 ** not. ^Changes to a view that are intercepted by INSTEAD OF triggers 
 ** are not counted.
 **
-** This the [sqlite3_total_changes(D)] interface only reports the number
+** The [sqlite3_total_changes(D)] interface only reports the number
 ** of rows that changed due to SQL statement run against database
 ** connection D.  Any changes by other database connections are ignored.
 ** To detect changes against a database file from other database
@@ -3417,6 +3429,8 @@ SQLITE_API int sqlite3_open_v2(
 ** is not a database file pathname pointer that SQLite passed into the xOpen
 ** VFS method, then the behavior of this routine is undefined and probably
 ** undesirable.
+**
+** See the [URI filename] documentation for additional information.
 */
 SQLITE_API const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam);
 SQLITE_API int sqlite3_uri_boolean(const char *zFile, const char *zParam, int bDefault);
@@ -11287,7 +11301,7 @@ struct Fts5PhraseIter {
 **   Save the pointer passed as the second argument as the extension functions 
 **   "auxiliary data". The pointer may then be retrieved by the current or any
 **   future invocation of the same fts5 extension function made as part of
-**   of the same MATCH query using the xGetAuxdata() API.
+**   the same MATCH query using the xGetAuxdata() API.
 **
 **   Each extension function is allocated a single auxiliary data slot for
 **   each FTS query (MATCH expression). If the extension function is invoked 
@@ -11302,7 +11316,7 @@ struct Fts5PhraseIter {
 **   The xDelete callback, if one is specified, is also invoked on the
 **   auxiliary data pointer after the FTS5 query has finished.
 **
-**   If an error (e.g. an OOM condition) occurs within this function, an
+**   If an error (e.g. an OOM condition) occurs within this function,
 **   the auxiliary data is set to NULL and an error code returned. If the
 **   xDelete parameter was not NULL, it is invoked on the auxiliary data
 **   pointer before returning.
