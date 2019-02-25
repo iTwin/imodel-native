@@ -2,10 +2,12 @@
 |
 |     $Source: Domain/PublicApi/SpatialCompositionMacros.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+#include <Bentley/Bentley.h>
 
 #define SPATIALCOMPOSITION_NAMESPACE_NAME  SpatialComposition
 #define BEGIN_SPATIALCOMPOSITION_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace SPATIALCOMPOSITION_NAMESPACE_NAME {
@@ -30,3 +32,12 @@
 
 #define SPATIALCOMPOSITION_CODESPEC_CODE(categoryName)          SPATIALCOMPOSITION_SCHEMA_NAME "::" categoryName
 #define SPATIALCOMPOSITION_AUTHORITY_CompositeVolume        SPATIALCOMPOSITION_CODESPEC_CODE(SPATIALCOMPOSITION_CLASS_CompositeVolume)
+
+//-----------------------------------------------------------------------------------------
+// Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
+//-----------------------------------------------------------------------------------------
+#define SPATIALCOMPOSITION_REFCOUNTED_PTR_AND_TYPEDEFS(_name_) \
+    BEGIN_SPATIALCOMPOSITION_NAMESPACE \
+        DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) \
+        DEFINE_REF_COUNTED_PTR(_name_) \
+    END_SPATIALCOMPOSITION_NAMESPACE
