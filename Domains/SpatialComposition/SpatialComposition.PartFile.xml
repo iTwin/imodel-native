@@ -10,6 +10,7 @@
     </Part>
 
     <Part Name="SpatialCompositionSchema" BentleyBuildMakeFile="SpatialCompositionSchema.prewire.mke">
+        <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/SpatialComposition*.xml</Files>
         </Bindings>
