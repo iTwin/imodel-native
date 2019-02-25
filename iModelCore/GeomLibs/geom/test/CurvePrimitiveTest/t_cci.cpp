@@ -602,11 +602,12 @@ public:
         ).Curve ();
         }
     };
+/*
 
 TEST (CurveOffset, RebarJson)
     {
     Saved (
-        FullOffset (
+        CurveVector::ThickenXYPathToArea(
             Saved (
                 FirstCurveInJson (
                     BeFileName (
@@ -614,21 +615,21 @@ TEST (CurveOffset, RebarJson)
                     )
                 )
             ),
-            80
+            80, 80
         )
     );
 
     Check::ClearGeometry ("Offset.RebarJson");
     }
-
+*/
 TEST (CurveOffset, IsFlat)
     {
-    CurveVectorPtr offset = FullOffset (
+    CurveVectorPtr offset = CurveVector::ThickenXYPathToArea (
         CurveVector::Create (
             ICurvePrimitive::CreateLine (DPoint3d::FromZero (), DPoint3d::From (100, 0, 0)),
             CurveVector::BOUNDARY_TYPE_Open
         ),
-        80
+        80, 80
     );
 
     for (ICurvePrimitivePtr& primitive : *offset)
@@ -637,26 +638,26 @@ TEST (CurveOffset, IsFlat)
 
 TEST (CurveOffset, IsNone)
     {
-    CurveVectorPtr offset = FullOffset (
+    CurveVectorPtr offset = CurveVector::ThickenXYPathToArea(
         CurveVector::Create (
             ICurvePrimitive::CreateLine (DPoint3d::FromZero (), DPoint3d::From (100, 0, 0)),
             CurveVector::BOUNDARY_TYPE_Open
         ),
-        80
+        80, 80
     );
 
-    Check::True (offset->GetBoundaryType () == CurveVector::BOUNDARY_TYPE_None);
+    Check::True (offset->GetBoundaryType () == CurveVector::BOUNDARY_TYPE_Outer);
     }
 
 TEST (CurveOffset, RebarSimple)
     {
     Saved (
-        FullOffset (
+        CurveVector::ThickenXYPathToArea(
             CurveVector::Create (
                 ICurvePrimitive::CreateLine (DPoint3d::FromZero (), DPoint3d::From (100, 0, 0)),
                 CurveVector::BOUNDARY_TYPE_Open
             ),
-            80
+            80, 80
         )
     );
 
@@ -666,9 +667,9 @@ TEST (CurveOffset, RebarSimple)
 TEST (CurveOffset, RebarHard)
     {
     Saved (
-        FullOffset (
+        CurveVector::ThickenXYPathToArea(
             RebarCurve (),
-            80
+            80, 80
         )
     );
 

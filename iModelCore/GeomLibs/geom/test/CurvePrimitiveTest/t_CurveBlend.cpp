@@ -3221,3 +3221,146 @@ TEST(Train,Envelope)
 
     Check::ClearGeometry ("Train.Envelope");
     }
+CurveVectorPtr  ThickenPathToRegion(CurveVectorPtr const& plineCurve, double halfWidth)
+    {
+
+    double  pointTolerance = 0.01 * halfWidth;
+
+    // move the curve towards left by half width
+    CurveOffsetOptions  offsetOptions(halfWidth);
+    offsetOptions.SetTolerance(pointTolerance);
+
+    auto left = plineCurve->CloneOffsetCurvesXY(offsetOptions);
+    if (!left.IsValid())
+        return  nullptr;
+
+    // move the curve towards right by half width
+    offsetOptions.SetOffsetDistance(-halfWidth);
+
+    auto right = plineCurve->CloneOffsetCurvesXY(offsetOptions);
+    if (!right.IsValid())
+        return  nullptr;
+    if (plineCurve->IsClosedPath())
+        {
+        auto parityRegion = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+        parityRegion->Add(right);
+        parityRegion->Add(left);
+        parityRegion->FixupXYOuterInner(false);
+        return parityRegion;
+        }
+    else
+        {
+        auto shape = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+
+        ICurvePrimitivePtr  top, bottom;
+        // get start and end points
+        DPoint3d    starts[2], ends[2];
+        if (!left->GetStartEnd(starts[0], ends[0]) || !right->GetStartEnd(starts[1], ends[1]))
+            return  nullptr;
+
+        // bottom cap to connect left->right
+        bottom = ICurvePrimitive::CreateLine(DSegment3d::From(ends[0], ends[1]));
+        if (!bottom.IsValid())
+            return  nullptr;
+
+        // top cap to connect right->left
+        top = ICurvePrimitive::CreateLine(DSegment3d::From(starts[1], starts[0]));
+        if (!top.IsValid())
+            return  nullptr;
+
+        // reverse the right curve
+        right->ReverseCurvesInPlace();
+
+        // add and orient them to complete a loop:
+        shape->AddPrimitives(*left);
+        shape->Add(bottom);
+        shape->AddPrimitives(*right);
+        shape->Add(top);
+        if (shape->IsClosedPath())
+            return  shape;
+
+        CurveGapOptions gapOptions(pointTolerance, 1.0e-4, 1.0e-4);
+        return shape->CloneWithGapsClosed(gapOptions);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ThickenPathToRegion, openPolylines)
+    {
+    bvector<bvector<DPoint3d>> paths{
+        {
+        DPoint3d::From(-10, 0, 0),
+        DPoint3d::From(0, 0, 0),
+        DPoint3d::From(4, -5, 0),
+        DPoint3d::From(-10,-5,0)
+        },
+        {
+        DPoint3d::From(-10, 0, 0),
+        DPoint3d::From(0, 0, 0),
+        DPoint3d::From(8, -5, 0),
+        DPoint3d::From(-10,-5,0),
+        DPoint3d::From(-10, 0, 0)
+        }
+
+        /* ,
+        {
+        DPoint3d::From (0, 0, 0),
+        DPoint3d::From (10, 0, 0),
+        DPoint3d::From (10, 5, 0)
+        },
+        {
+        DPoint3d::From (0, 0, 0),
+        DPoint3d::From (10, 0, 0),
+        DPoint3d::From (12, 5, 0)
+        },
+        {
+        DPoint3d::From (0, 0, 0),
+        DPoint3d::From (10, 0, 0),
+        DPoint3d::From (0, 5, 0),
+        DPoint3d::From (10,10,0),
+        DPoint3d::From ( 0,10,0),
+        DPoint3d::From (8,15,0)
+        } */
+        };
+    double verticalShift = 0.001;
+    for (DPoint2d offsets : {
+        DPoint2d::From (0.5, 0.5),
+        DPoint2d::From (0.0, 0.25),
+        DPoint2d::From (0.25, 0.0),
+            DPoint2d::From(-0.25, 0.5),
+        })
+        {
+        double leftOffset  = offsets.x;
+        double rightOffset = offsets.y;
+        double radius = 1.0;
+        for (auto & points : paths)
+            {
+            SaveAndRestoreCheckTransform shifter(30, 0, 0);
+            auto cv = CurveVector::CreateLinear(points, 
+                points.back ().AlmostEqual (points.front ()) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+            Check::SaveTransformed(*cv);
+            Check::Shift(0, 20, 0);
+
+            auto region = CurveVector::ThickenXYPathToArea(cv, leftOffset, rightOffset);
+
+            Check::Shift(0, 0, verticalShift);
+            Check::SaveTransformed(points);
+            Check::Shift(0, 0, -verticalShift);
+            if (region.IsValid())
+                Check::SaveTransformed(*region);
+
+            Check::Shift (0,20,0);
+
+            auto cvB = cv->CloneWithFillets (radius);
+            auto regionB = CurveVector::ThickenXYPathToArea(cvB, leftOffset, rightOffset);
+            Check::Shift(0, 0, verticalShift);
+            Check::SaveTransformed(points);
+            Check::Shift(0, 0, -verticalShift);
+            if (regionB.IsValid ()  )
+                Check::SaveTransformed (*regionB);
+            }
+        }
+    Check::ClearGeometry("ThickenPathToRegion.openPolylines");
+    }
