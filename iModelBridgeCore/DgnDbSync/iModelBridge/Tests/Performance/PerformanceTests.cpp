@@ -345,11 +345,7 @@ void iModelBridgeTests_PerfTest_Bridge::DoConvertToBim(SubjectCR jobSubject)
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetector, _GetParams().GetInputFileName(), nullptr,
         "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
 
-    bool useNewAspect = TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim);
-    if (!useNewAspect)
-        m_docScopeId = docLink.m_syncInfoRecord.GetROWID();
-    else
-        m_docScopeId = docLink.m_element->GetElementId().GetValue();
+    m_docScopeId = docLink.m_element->GetElementId().GetValue();
 
     Transform _newTrans, _oldTrans;
     m_jobTransChanged = DetectSpatialDataTransformChange(_newTrans, _oldTrans, *changeDetector, m_docScopeId, "JT", "JT");
