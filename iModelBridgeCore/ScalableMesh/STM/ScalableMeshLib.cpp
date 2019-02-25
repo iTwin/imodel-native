@@ -503,8 +503,13 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
     #else
         RegisterPODImportPluginFP ScalableMeshLib::s_PODImportRegisterFP = nullptr;        
     #endif
-
+#else
+    #ifdef DGNDB06_API
+        void RegisterPODImportPlugin();
+    #endif    
 #endif
+
+
 
 static BingAuthenticationCallbackPtr s_bingAuthCallback;
 #endif
@@ -534,8 +539,12 @@ void ScalableMeshLib::Host::Initialize()
 #endif
     
 #else
-    //NEEDS_WORK_SM_POD_B0200
-    //RegisterPODImportPlugin();
+    #ifdef DGNDB06_API
+        RegisterPODImportPlugin();
+    #else
+        //NEEDS_WORK_SM_POD_B0200
+        //RegisterPODImportPlugin();
+    #endif    
 #endif
     
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
