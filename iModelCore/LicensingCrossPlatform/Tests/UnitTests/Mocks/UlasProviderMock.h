@@ -8,7 +8,7 @@
 #pragma once
 
 #include <Licensing/Licensing.h>
-#include "../../../../Licensing/Providers/IUlasProvider.h"
+#include "../../../Licensing/Providers/IUlasProvider.h"
 
 #include "../TestsHelper.h"
 

@@ -14,11 +14,11 @@
 #include <Licensing/Client.h>
 #include <Licensing/FreeClient.h>
 #include <Licensing/Utils/DateHelper.h>
-#include "../../../Licensing/ClientImpl.h"
-#include "../../../Licensing/FreeClientImpl.h"
-#include "../../../Licensing/ClientWithKeyImpl.h"
-#include "../../../Licensing/UsageDb.h"
-#include "../../../PublicAPI/Licensing/Utils/SCVWritter.h"
+#include "../../Licensing/ClientImpl.h"
+#include "../../Licensing/FreeClientImpl.h"
+#include "../../Licensing/ClientWithKeyImpl.h"
+#include "../../Licensing/UsageDb.h"
+#include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>

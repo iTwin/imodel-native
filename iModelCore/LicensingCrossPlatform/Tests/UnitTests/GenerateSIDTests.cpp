@@ -8,7 +8,7 @@
 
 #include "GenerateSIDTests.h"
 
-#include "../../../Licensing/GenerateSID.h"
+#include "../../Licensing/GenerateSID.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 

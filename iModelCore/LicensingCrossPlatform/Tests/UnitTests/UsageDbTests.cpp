@@ -9,7 +9,7 @@
 
 #include "UsageDbTests.h"
 
-#include "../../../Licensing/UsageDb.h"
+#include "../../Licensing/UsageDb.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 

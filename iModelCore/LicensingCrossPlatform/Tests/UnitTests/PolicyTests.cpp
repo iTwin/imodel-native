@@ -10,7 +10,7 @@
 #include "DummyPolicyHelper.h"
 
 #include <Licensing/Utils/JWToken.h>
-#include "../../../Licensing/Policy.h"
+#include "../../Licensing/Policy.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 

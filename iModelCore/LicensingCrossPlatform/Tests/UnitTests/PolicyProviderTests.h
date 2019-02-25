@@ -11,7 +11,7 @@
 #include "Utils/MockHttpHandler.h"
 #include "Mocks/BuddiProviderMock.h"
 #include "Mocks/AuthHandlerProviderMock.h"
-#include "../../../Licensing/Providers/PolicyProvider.h"
+#include "../../Licensing/Providers/PolicyProvider.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS

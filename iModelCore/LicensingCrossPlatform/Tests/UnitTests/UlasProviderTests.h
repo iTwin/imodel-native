@@ -10,7 +10,7 @@
 #include "TestsHelper.h"
 #include "Utils/MockHttpHandler.h"
 #include "Mocks/BuddiProviderMock.h"
-#include "../../../Licensing/Providers/UlasProvider.h"
+#include "../../Licensing/Providers/UlasProvider.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
