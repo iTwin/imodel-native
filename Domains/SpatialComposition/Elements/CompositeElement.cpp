@@ -120,4 +120,82 @@ Dgn::DgnDbStatus CompositeElement::RemoveOverlapedElement (Dgn::DgnElementId ove
     return Dgn::DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mykolas.Simutis                 06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus AllocatedVolume::_LoadFromDb ()
+    {
+    T_Super::_LoadFromDb ();
+    m_composedElementId = GetPropertyValueId<DgnElementId> (prop_ComposingElement ());
+    return Dgn::DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mykolas.Simutis                  07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllocatedVolume::_CopyFrom(Dgn::DgnElementCR source)
+    {
+    T_Super::_CopyFrom(source);
+
+    if (auto spatialElement = dynamic_cast<AllocatedVolumeCP>(&source))
+        {
+        m_composedElementId = spatialElement->m_composedElementId;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus AllocatedVolume::_OnInsert
+(
+)
+    {
+    if (m_composedElementId.IsValid ())
+        SetComposedElementId (m_composedElementId);
+    CalculateProperties ();
+    return T_Super::_OnInsert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus AllocatedVolume::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    CalculateProperties ();
+
+    if (GetRelatedAllocationRequirement ().IsValid())
+        if (GetRelatedAllocationRequirement()->GetTypeCost() != -1)
+            {
+            SetCost(UnitConverter::ToSquareFeet(GetFootprintArea ()) * GetRelatedAllocationRequirement ()->GetTypeCost ());
+            }
+
+    return T_Super::_OnUpdate (original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Wouter.Rombouts                 10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus AllocatedVolume::_OnDelete() const
+    {
+    //Preserve referential integrity of decomposed Allocation Volumes.
+    ElementIterator itor = MakeIterator(SPATIALCOMPOSITION_SCHEMA_NAME ":CompositeVolume");
+    DgnDbR db = GetDgnDb();
+    Dgn::DgnElementId nullParentId;
+
+    for (DgnElementId id : itor.BuildIdList<DgnElementId>())
+        {
+        auto avPtr = db.Elements().GetForEdit<AllocatedVolume>(id);
+        if (avPtr.IsValid())
+            {
+            avPtr->SetComposedElementId (nullParentId);
+            db.Elements().Update (*avPtr);
+            }
+        }
+
+    return __super::_OnDelete();
+    }
+
 END_SPATIALCOMPOSITION_NAMESPACE
