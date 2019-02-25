@@ -43,10 +43,6 @@ typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
-#define XTRN_SRC_ASPCT_ECSCHEMA_NAME            "BisCore"
-#define XTRN_SRC_ASPCT_SCHEMA(name)             XTRN_SRC_ASPCT_ECSCHEMA_NAME "." name
-#define XTRN_SRC_ASPCT_CLASS                    "ExternalSourceAspect"
-#define XTRN_SRC_ASPCT_FULLCLASSNAME            XTRN_SRC_ASPCT_SCHEMA(XTRN_SRC_ASPCT_CLASS)
 #define XTRN_SRC_ASPCT_Scope                    "Scope"
 #define XTRN_SRC_ASPCT_Identifier               "Identifier"
 #define XTRN_SRC_ASPCT_Kind                     "Kind"
@@ -545,7 +541,6 @@ struct iModelBridge
         Utf8String                              m_iModelHubUserName;
         Utf8String                              m_projectGuid;
 
-        bool m_wantProvenanceInBim {};
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
@@ -649,9 +644,6 @@ struct iModelBridge
         void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
         void SetDmsSupportLibrary (IDmsSupport* dmsAccessor) { m_dmsSupport  = dmsAccessor;}
         IDmsSupport* GetDmsSupportLibrary() { return m_dmsSupport; }
-
-        void SetWantProvenanceInBim(bool v) { m_wantProvenanceInBim = v; }
-        bool GetWantProvenanceInBim() const { return m_wantProvenanceInBim; }
 
         Utf8String GetiModelName() const { return m_repositoryName; }
         void SetiModelName(Utf8StringCR repositoryName)  { m_repositoryName = repositoryName; }
@@ -1059,8 +1051,6 @@ public:
     //! @{
 
     IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
-
-    IMODEL_BRIDGE_EXPORT static bool WantModelProvenanceInBim(DgnDbR db);
     //! @}
     };
 

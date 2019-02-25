@@ -224,10 +224,6 @@ struct iModelBridgeTests_PerfTest_Bridge : iModelBridgeWithSyncInfoBase
         auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
         
-        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceFile))
-            DgnV8FileProvenance::CreateTable(GetDgnDbR());
-        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceModel))
-            DgnV8ModelProvenance::CreateTable(GetDgnDbR());
         SubjectCPtr subj =  subjectObj->InsertT<Subject>();
 
         // register the document. This then becomes the scope for all of my items.

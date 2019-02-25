@@ -1044,19 +1044,6 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db,
     db.SaveChanges(commitComment.c_str());
     return bcMgr->_Push(commitComment.c_str());
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool iModelBridge::WantModelProvenanceInBim(DgnDbR db)
-    {
-    if (!db.TableExists(DGN_TABLE_ProvenanceModel))
-        return true;
-
-    if (db.ColumnExists(DGN_TABLE_ProvenanceModel, "Transform"))
-        return true;
-
-    return false;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14

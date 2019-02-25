@@ -220,25 +220,6 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
 
     SetRepositoryLinkInAppData(file, RepositoryLinkId(rlinkPost->GetElementId().GetValue()));
 
-#ifdef WIP_OLD_MODEL_PROVENANCE
-    if (_WantModelProvenanceInBim())
-        {
-        BeSQLite::BeGuid guid = GetDocumentGUIDforFile(file);
-        if (guid.IsValid())
-            {
-            if (BSISUCCESS != DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
-                {
-                LOG.infov("DgnV8FileProvenance::Insert %s (%s)", Bentley::Utf8String(file.GetFileName()).c_str(), guid.ToString().c_str());
-                DgnV8FileProvenance::Insert(guid, xsa.GetFileName(), xsa.GetIdentifier(), GetDgnDb());
-                }
-            else
-                {
-                LOG.infov("DgnV8FileProvenance already has %s (%s)", Bentley::Utf8String(file.GetFileName()).c_str(), guid.ToString().c_str());
-                }
-            }
-        }
-#endif
-
 #ifndef NDEBUG
     {
     // iModelExternalSourceAspect::Dump(*rlinkPost, nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
@@ -3231,25 +3212,6 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
         return ResolvedModelMapping();
         }
 
-#ifdef WIP_OLD_MODEL_PROVENANCE
-    if (_WantModelProvenanceInBim())
-        {
-        DgnV8FileP file = v8Model.GetDgnFileP();
-        BeSQLite::BeGuid guid = GetDocumentGUIDforFile(*file);
-
-        if (guid.IsValid() && BSISUCCESS == DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
-            {
-            LOG.infov("DgnV8FileProvenance has %s (%s)", Bentley::Utf8String(file->GetFileName()).c_str(), guid.ToString().c_str());
-            DgnV8ModelProvenance::ModelProvenanceEntry entry;
-            entry.m_dgnv8ModelId = v8ModelRef->GetModelId();
-            entry.m_modelId = modelId;
-            entry.m_modelName = newModelName;
-            entry.m_trans = trans;
-            DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
-            }
-        }
-#endif
-
     DgnModelPtr model = m_dgndb->Models().GetModel(modelId);
     if (!model.IsValid())
         {
@@ -3622,7 +3584,6 @@ void ConverterLibrary::SetRootModelAndSubject(DgnV8ModelR rootV8Model, SubjectCR
     m_rootModelRef = &rootV8Model;
     m_rootFile = rootV8Model.GetDgnFileP();
 
-    CreateProvenanceTables(); // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
     GetRepositoryLinkId(*m_rootFile);
     FindSpatialV8Models(*GetRootModelP());
     FindV8DrawingsAndSheets();
@@ -3816,16 +3777,6 @@ void Converter::CheckForAndSaveChanges()
     iModelBridge::SaveChanges(*m_dgndb);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::_WantModelProvenanceInBim()
-    {
-    if (m_dgndb.IsNull())
-        return false;
-
-    return iModelBridge::WantModelProvenanceInBim(*m_dgndb);
-    }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

@@ -792,7 +792,7 @@ ECN::IECInstancePtr iModelExternalSourceAspect::CreateInstance(DgnElementId scop
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::ECClassCP iModelExternalSourceAspect::GetAspectClass(DgnDbR db)
     {
-    return db.Schemas().GetClass(BIS_ECSCHEMA_NAME, XTRN_SRC_ASPCT_CLASS);
+    return db.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ExternalSourceAspect);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -800,7 +800,7 @@ ECN::ECClassCP iModelExternalSourceAspect::GetAspectClass(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementBySourceId(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR sourceId)
     {
-    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Identifier=?)");
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Scope.Id=? AND Kind=? AND Identifier=?)");
     sel->BindId(1, scopeId);
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -817,7 +817,7 @@ iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelExternalSourceAspect::ElementAndAspectId iModelExternalSourceAspect::FindElementByHash(DgnDbR db, DgnElementId scopeId, Utf8CP kind, Utf8StringCR hash)
     {
-    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=? AND Checksum=?)");
+    auto sel = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Scope.Id=? AND Kind=? AND Checksum=?)");
     sel->BindId(1, scopeId);
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, hash.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -839,7 +839,7 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAll(DgnElemen
         aspectClass = GetAspectClass(el.GetDgnDb());
     if (nullptr == aspectClass)
         return aspects;
-    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=?)");
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Element.Id=?)");
     sel->BindId(1, el.GetElementId());
     while (BE_SQLITE_ROW == sel->Step())
         {
@@ -860,7 +860,7 @@ bvector<iModelExternalSourceAspect> iModelExternalSourceAspect::GetAllByKind(Dgn
         aspectClass = GetAspectClass(el.GetDgnDb());
     if (nullptr == aspectClass)
         return aspects;
-    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=?)");
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Element.Id=? AND Kind=?)");
     sel->BindId(1, el.GetElementId());
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     while (BE_SQLITE_ROW == sel->Step())
@@ -1128,7 +1128,7 @@ iModelBridgeSyncInfoFile::SourceState::SourceState(iModelExternalSourceAspect::S
 template<typename XSAT>
 ExternalSourceAspectIterator::ExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP kind, Utf8StringCR wh) : m_db(db))
     {
-    Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind=?)");
+    Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE ( (Scope.Id=?) AND (Kind=?)");
     if (!wh.empty())
         ecsql.append(" AND (").append(wh).append(" )");
     ecsql.append(" )");

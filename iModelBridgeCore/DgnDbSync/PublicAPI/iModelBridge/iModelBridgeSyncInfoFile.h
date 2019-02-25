@@ -389,7 +389,7 @@ struct iModelExternalSourceAspect
     //! Return a statement that finds all aspects with the specified scope, identifier, and kind and returns the Element.Id and ECInstanceId of each
     static BeSQLite::EC::CachedECSqlStatementPtr GetSelect(DgnDbR db, Utf8StringCR kind, DgnElementId scope, Utf8StringCR identifier, BeSQLite::EC::IECSqlBinder::MakeCopy cc)
         {
-        auto allFromSameSource = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE " XTRN_SRC_ASPCT_Identifier "=? AND " XTRN_SRC_ASPCT_Scope ".Id=? AND " XTRN_SRC_ASPCT_Kind "=?");
+        auto allFromSameSource = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE " XTRN_SRC_ASPCT_Identifier "=? AND " XTRN_SRC_ASPCT_Scope ".Id=? AND " XTRN_SRC_ASPCT_Kind "=?");
         auto rc = allFromSameSource->BindText(1, identifier.c_str(), cc); BeAssert(rc.IsSuccess());
         rc = allFromSameSource->BindId(2, scope); BeAssert(rc.IsSuccess());
         rc = allFromSameSource->BindText(3, kind.c_str(), cc); BeAssert(rc.IsSuccess());
@@ -473,7 +473,7 @@ protected:
 public:
     ExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP kind, Utf8StringCR wh) : m_db(db)
         {
-        Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind=?)");
+        Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE ( (Scope.Id=?) AND (Kind=?)");
         if (!wh.empty())
             ecsql.append(" AND (").append(wh).append(" )");
         ecsql.append(" )");
