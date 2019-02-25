@@ -656,11 +656,25 @@ IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker(const 
 
         GetScalableMeshFileName(smFileNameAbsolutePath, smFileName);
 
+        BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+        BeFileName lockFileName(smFileNameAbsolutePath);
+        lockFileName.AppendString(L".lock");
+
+        FILE* lockFile; 
+
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();            
+            }    
+
         StatusInt status;
         
         m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileNameAbsolutePath.c_str(), m_nbWorkers, status);        
 
-        assert(m_sourceCreatorWorkerPtr.IsValid());            
+        assert(m_sourceCreatorWorkerPtr.IsValid());         
+
+        fclose(lockFile);
         }
 
     return m_sourceCreatorWorkerPtr;

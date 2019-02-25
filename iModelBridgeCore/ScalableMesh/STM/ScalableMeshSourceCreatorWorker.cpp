@@ -1388,7 +1388,22 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     assert(m_pDataIndex.GetPtr() == nullptr);
 
+
+    BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+    BeFileName lockFileName(m_scmFileName);
+    lockFileName.AppendString(L".lock");
+
+    FILE* lockFile; 
+
+    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+        {
+        sleeper.Sleep();            
+        }        
+
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+
+    fclose(lockFile);
 
     ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>* filter = dynamic_cast<ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>*>(pDataIndex->GetFilter());
     if (filter != nullptr)
@@ -1463,20 +1478,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         assert(xmlStatus == BEXML_Success);
 
         
-
-/*
-        BeDuration sleeper(BeDuration::FromSeconds(0.5));
-
-        BeFileName lockFileName(m_scmFileName);
-        lockFileName.AppendString(L".lock");
-
-        FILE* lockFile; 
+        
 
         while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
             {
             sleeper.Sleep();            
-            }
-            */
+            }        
          
         //TBD_G : Need lock file?        
         StatusInt status = OpenSqlFiles(true, true);
@@ -1568,7 +1575,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
         CloseSqlFiles();
 
-        //fclose(lockFile);
+        fclose(lockFile);
 
         for (auto& node : nodesToMesh)
             {
@@ -1705,19 +1712,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         } while (pChildNode != nullptr);
             
 
-/*
-    BeDuration sleeper(BeDuration::FromSeconds(0.5));
-
-    BeFileName lockFileName(m_scmFileName);
-    lockFileName.AppendString(L".lock");
-
-    FILE* lockFile; 
-
     while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
         {
         sleeper.Sleep();
         }
-*/
+
 
     //Flush all the data on disk    
     OpenSqlFiles(false, true);
@@ -1746,7 +1745,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     FreeDataIndex();
 
-   // fclose(lockFile);
+    fclose(lockFile);
 
     
 
