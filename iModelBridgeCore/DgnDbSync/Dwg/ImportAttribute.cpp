@@ -362,6 +362,19 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
                 status = attrdefSchema->AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
             else
                 BeAssert (false && "Failed finding schema: Dgn!");
+
+            // Reference schema BisCore
+            if (nullptr != (refSchema = CoreCustomAttributeHelper::GetSchema().get()))
+                status = attrdefSchema->AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
+            else
+                BeAssert (false && "Failed finding schema: Dgn!");
+
+            // set dynamic schema
+            auto ecInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance ("DynamicSchema");
+            if (ecInstance != nullptr)
+                status = attrdefSchema->SetCustomAttribute (*ecInstance);
+            else
+                status = ECObjectsStatus::NullPointerValue;
             }
         }
     if (ECObjectsStatus::Success != status)

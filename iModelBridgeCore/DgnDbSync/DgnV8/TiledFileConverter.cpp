@@ -71,7 +71,6 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
 
     SetLineStyleConverterRootModel(m_rootModelRef->GetDgnModelP());
 
-    CreateProvenanceTables(); // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
     GetRepositoryLinkId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
@@ -104,23 +103,6 @@ ResolvedModelMapping TiledFileConverter::_GetResolvedModelMapping(DgnV8ModelRefC
         {
         return ResolvedModelMapping();
         }
-
-#ifdef WIP_OLD_MODEL_PROVENANCE
-    if (_WantModelProvenanceInBim())
-        {
-        DgnV8FileP file = v8Model.GetDgnFileP();
-        BeSQLite::BeGuid guid = GetDocumentGUIDforFile(*file);
-        if (SUCCESS == DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
-            {
-            DgnV8ModelProvenance::ModelProvenanceEntry entry;
-            entry.m_dgnv8ModelId = v8Model.GetModelId();
-            entry.m_modelId = modelId;
-            entry.m_modelName = Utf8String(v8Model.GetModelName());
-            entry.m_trans = m_rootTrans;
-            DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
-            }
-        }
-#endif
 
     DgnModelPtr model = m_dgndb->Models().GetModel(modelId);
     if (!model.IsValid())

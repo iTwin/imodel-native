@@ -416,9 +416,6 @@ void iModelBridgeSyncInfoFile::ChangeDetector::_DeleteElementsNotSeenInScopes(bv
         GetDgnDb().Elements().Delete(previousConversion.GetDgnElementId());
         m_si->DeleteAllItemsMappedToElement(previousConversion.GetDgnElementId());
 
-        //if (_WantProvenanceInBim())
-        //    DgnV8ElementProvenance::Delete(previouslyConvertedElementId, converter.GetDgnDb());
-
         _OnItemConverted(previousConversion, ChangeOperation::Delete);
         }
     }
@@ -537,10 +534,7 @@ iModelBridgeSyncInfoFile::ChangeDetectorPtr iModelBridgeSyncInfoFile::GetChangeD
     if (!bridge.GetParamsCR().IsUpdating())
         return new InitialConversionChangeDetector(this);
 
-    if (bridge.TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim))
-        return new iModelBasedChangeDetector(*m_bim);
-    
-    return  new ChangeDetector(this);
+    return new iModelBasedChangeDetector(*m_bim);
     }
 
 //---------------------------------------------------------------------------------------
@@ -629,7 +623,7 @@ void iModelBridgeSyncInfoFile::iModelBasedChangeDetector::_DeleteElementsNotSeen
     // *** NB: This alogorithm *infers* that an element was deleted in the source repository if we did not see it during the conversion.
     //          This inference is valid only if we know that we saw all items in the source and that they were all added to m_elementsSeen or m_scopesSkipped.
 
-    auto sel = GetDgnDb().GetPreparedECSqlStatement("SELECT Element.Id, Scope  from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE InVirtualSet(? , Scope.Id) AND NOT InVirtualSet(?, Element.Id)");
+    auto sel = GetDgnDb().GetPreparedECSqlStatement("SELECT Element.Id, Scope  from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE InVirtualSet(? , Scope.Id) AND NOT InVirtualSet(?, Element.Id)");
     IdSet<DgnElementId> idSet(m_elementsSeen);
     IdHashSet<ROWID> scopeSet(onlyInScopes);
     sel->BindVirtualSet(1, scopeSet);

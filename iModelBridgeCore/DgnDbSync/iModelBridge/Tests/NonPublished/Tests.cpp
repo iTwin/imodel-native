@@ -79,8 +79,6 @@ struct iModelBridgeTests : ::testing::Test
         DgnDbTestUtils::InsertPhysicalModel(*db, "PhysicalModel");
         DgnDbTestUtils::InsertSpatialCategory(*db, "SpatialCategory");
 
-        DgnV8FileProvenance::CreateTable(*db);
-        DgnV8ModelProvenance::CreateTable(*db);
         // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
         db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
         db->SaveChanges();
@@ -603,10 +601,6 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         m_testIModelHubClientForBridges.m_expect.push_back(true);
         m_expect.findJobSubject = true;
 
-        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceFile))
-            DgnV8FileProvenance::CreateTable(GetDgnDbR());
-        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceModel))
-            DgnV8ModelProvenance::CreateTable(GetDgnDbR());
         SubjectCPtr subj =  subjectObj->InsertT<Subject>();
 
         // register the document. This then becomes the scope for all of my items.
@@ -753,11 +747,7 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetector, _GetParams().GetInputFileName(), nullptr,
         "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
 
-    bool useNewAspect = TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim);
-    if (!useNewAspect)
-        m_docScopeId = docLink.m_syncInfoRecord.GetROWID();
-    else
-        m_docScopeId = docLink.m_element->GetElementId().GetValue();
+    m_docScopeId = docLink.m_element->GetElementId().GetValue();
 
     Transform _newTrans, _oldTrans;
     m_jobTransChanged = DetectSpatialDataTransformChange(_newTrans, _oldTrans, *changeDetector, m_docScopeId, "JT", "JT");
@@ -811,7 +801,6 @@ TEST_F(iModelBridgeTests, Test1)
     args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists! 
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());      // must be consistent with testRegistry.m_bridgeRegSubKey
-    args.push_back(L"--fwk-storeElementIdsInBIM");
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -932,7 +921,6 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
     args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
-    //args.push_back(L"--fwk-storeElementIdsInBIM");
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -1074,7 +1062,6 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
     args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
-    args.push_back(L"--fwk-storeElementIdsInBIM");
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.

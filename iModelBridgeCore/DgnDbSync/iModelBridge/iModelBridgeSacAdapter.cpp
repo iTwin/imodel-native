@@ -625,12 +625,6 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
-    if (argv[iArg] == wcsstr(argv[iArg], L"--xsa"))
-        {
-        bparams.SetWantProvenanceInBim(true);
-        return iModelBridge::CmdLineArgStatus::Success;
-        }
-
     return iModelBridge::CmdLineArgStatus::NotRecognized;
     }
 

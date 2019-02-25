@@ -208,7 +208,6 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-job-subject-name=     (optional)  The unique name of the Job Subject element that the bridge must use.\n"
         L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
         L"--fwk-jobrequest-guid=      (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
-        L"--fwk-storeElementIdsInBIM  (optional)  Request the bridge to store element ids of the source file in an element aspect inside the bim file."
         L"--fwk-no-mergeDefinitions   (optional)  Do NOT merge definitions such as levels/layers and materials by name from different root models and bridges into the public dictionary model. Instead, keep definitions separate by job subject. The default is false (that is, merge definition)."
         );
     }
@@ -432,11 +431,6 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-job-subject-name="))
             {
             m_jobSubjectName = getArgValue(argv[iArg]);
-            continue;
-            }
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-storeElementIdsInBIM"))
-            {
-            m_wantProvenanceInBim = true;
             continue;
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-mergeDefinitions"))
@@ -1108,8 +1102,6 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         params.SetUserName(m_iModelHubArgs->m_credentials.GetUsername());
         params.SetProjectGuid(m_iModelHubArgs->m_bcsProjectId);
         }
-    params.SetWantProvenanceInBim(m_jobEnvArgs.m_wantProvenanceInBim || m_bridge->TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim));
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1640,32 +1632,6 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::ImportDgnProvenance(bool& madeChanges)
-    {
-    bool needFileProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceFile) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
-    bool needModelProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceModel) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
-
-    if (needFileProvenance || needModelProvenance)
-        {
-        if (SUCCESS != GetSchemaLock())
-            {
-            GetLogger().fatal("GetSchemaLock failed after all the retries. Aborting.");
-            return BSIERROR;
-            }
-        if (needFileProvenance)
-            DgnV8FileProvenance::CreateTable(*m_briefcaseDgnDb);
-        if (needModelProvenance)
-            DgnV8ModelProvenance::CreateTable(*m_briefcaseDgnDb);
-        }
-
-    madeChanges = (needFileProvenance || needModelProvenance);
-    return BSISUCCESS;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::UpdateExistingBimWithExceptionHandling()
@@ -1875,8 +1841,6 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         //Get the schema lock if needed.
         bool hasChanges = false;
-        if (BSISUCCESS != ImportDgnProvenance(hasChanges))
-            return BentleyStatus::ERROR;
 
         if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
             return RETURN_STATUS_SERVER_ERROR;                                                   // === SCHEMA LOCK
@@ -2103,8 +2067,6 @@ void iModelBridgeFwk::ReportFeatureFlags()
     {
     if (m_bridge != nullptr)
         {
-        if (m_bridge->_GetParams().GetWantProvenanceInBim())
-            GetLogger().info("FeatureFlag.WantProvenanceInBim = 1");
         }
     }
 

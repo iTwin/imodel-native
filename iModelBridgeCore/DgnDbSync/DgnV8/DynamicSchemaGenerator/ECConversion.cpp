@@ -3310,19 +3310,6 @@ void DynamicSchemaGenerator::GenerateSchemas(bvector<DgnV8FileP> const& files, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::CreateProvenanceTables()
-    {
-    // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
-
-    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceFile) && _WantModelProvenanceInBim())
-        DgnV8FileProvenance::CreateTable(*m_dgndb);
-    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceModel) && _WantModelProvenanceInBim())
-        DgnV8ModelProvenance::CreateTable(*m_dgndb);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrder, bvector<DgnV8ModelP> const& modelsInOrder)
     {
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
@@ -3337,13 +3324,6 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
         if (jobsubj.IsValid())
             _GetParamsR().SetIsUpdating(true);
         }
-
-#ifndef NDEBUG
-    if (_WantModelProvenanceInBim())
-        {
-        BeAssert(m_dgndb->TableExists(DGN_TABLE_ProvenanceFile));
-        }
-#endif
 
     // Bis-ify the V8 schemas
     if (m_config.GetOptionValueBool("SkipECContent", false))

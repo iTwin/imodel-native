@@ -111,8 +111,6 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     if (WasAborted())
         return DgnV8Api::DGNFILE_STATUS_UnknownError;
     
-    CreateProvenanceTables(); // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
-
     // Detect all V8 models. This process also classifies 2d design models and loads and fills drawings and sheets.
     // The of models that we find will be fed into the ECSchema conversion logic. These functions will ALSO enroll the v8files that they find in syncinfo.
     GetRepositoryLinkId(*m_rootFile);
@@ -1727,10 +1725,6 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
             {
             DgnModelId modelId = mref->GetModelId();
             mref->Delete();
-#ifdef WIP_OLD_MODEL_PROVENANCE
-            if (_WantModelProvenanceInBim())
-                DgnV8ModelProvenance::Delete(modelId, GetDgnDb());
-#endif
             if (element.IsValid())
                 element->Delete();
             }
