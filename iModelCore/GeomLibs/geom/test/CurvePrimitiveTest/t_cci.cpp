@@ -602,26 +602,25 @@ public:
         ).Curve ();
         }
     };
-/*
 
-TEST (CurveOffset, RebarJson)
-    {
-    Saved (
-        CurveVector::ThickenXYPathToArea(
-            Saved (
-                FirstCurveInJson (
-                    BeFileName (
-                        L"D:\\tmp\\original.dgnjs"
-                    )
-                )
-            ),
-            80, 80
-        )
-    );
+// TEST (CurveOffset, RebarJson)
+//     {
+//     Saved (
+//         CurveVector::ThickenXYPathToArea(
+//             Saved (
+//                 FirstCurveInJson (
+//                     BeFileName (
+//                         L"D:\\tmp\\original.dgnjs"
+//                     )
+//                 )
+//             ),
+//             80, 80
+//         )
+//     );
 
-    Check::ClearGeometry ("Offset.RebarJson");
-    }
-*/
+//     Check::ClearGeometry ("Offset.RebarJson");
+//     }
+
 TEST (CurveOffset, IsFlat)
     {
     CurveVectorPtr offset = CurveVector::ThickenXYPathToArea (
