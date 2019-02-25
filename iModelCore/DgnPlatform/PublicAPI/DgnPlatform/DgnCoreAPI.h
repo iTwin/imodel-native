@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCoreAPI.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,6 @@
 #include "ViewDefinition.h"
 #include "ECSqlClassParams.h"
 #include "LinkElement.h"
-#include "DgnProvenance.h"
 #include "MeshTile.h"
 #include "SnapContext.h"
 #include "NullContext.h"

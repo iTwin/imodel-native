@@ -115,7 +115,6 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnProgressMeter.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnProjectUpdater.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnProperties.h" />
-    <ClInclude Include="PublicAPI\DgnPlatform\DgnProvenance.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnRangeTree.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnRscFontStructures.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnScript.h" />
@@ -312,7 +311,6 @@
     <ClCompile Include="DgnCore\DgnMaterial.cpp" />
     <ClCompile Include="DgnCore\DgnModel.cpp" />
     <ClCompile Include="DgnCore\DgnPropertyJson.cpp" />
-    <ClCompile Include="DgnCore\DgnProvenance.cpp" />
     <ClCompile Include="DgnCore\DgnRscFont.cpp" />
     <ClCompile Include="DgnCore\DgnRscFontData.cpp" />
     <ClCompile Include="DgnCore\DgnScan.cpp" />
