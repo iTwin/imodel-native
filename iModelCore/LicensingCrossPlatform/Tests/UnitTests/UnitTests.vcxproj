@@ -7,51 +7,44 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Published\ClientTests.cpp" />
-    <ClCompile Include="Published\DummyPolicyHelper.cpp" />
-    <ClCompile Include="Published\GenerateSIDTests.cpp" />
-    <ClCompile Include="Published\PolicyTests.cpp" />
-    <ClCompile Include="Published\PolicyTokenTests.cpp" />
-    <ClCompile Include="Published\TestsHelper.cpp" />
-    <ClCompile Include="Published\UlasProviderTests.cpp" />
-    <ClCompile Include="Published\UsageDbTests.cpp" />
-    <ClCompile Include="Published\PolicyProviderTests.cpp" />
-    <ClCompile Include="Published\Utils\DelayedExecutorTests.cpp" />
-    <ClCompile Include="Published\Utils\FeatureUserDataMapTests.cpp" />
-    <ClCompile Include="Published\Utils\JWTokenTests.cpp" />
-    <ClCompile Include="Published\Utils\LogFileHelperTests.cpp" />
-    <ClCompile Include="Published\Utils\MockHttpHandler.cpp" />
-    <ClCompile Include="Published\Utils\SCVWritterTests.cpp" />
-    <ClCompile Include="Published\Utils\UrlSafeBase64UtilitiesTests.cpp" />
+    <ClCompile Include="ClientTests.cpp" />
+    <ClCompile Include="DummyPolicyHelper.cpp" />
+    <ClCompile Include="GenerateSIDTests.cpp" />
+    <ClCompile Include="PolicyTests.cpp" />
+    <ClCompile Include="PolicyTokenTests.cpp" />
+    <ClCompile Include="TestsHelper.cpp" />
+    <ClCompile Include="UlasProviderTests.cpp" />
+    <ClCompile Include="UsageDbTests.cpp" />
+    <ClCompile Include="PolicyProviderTests.cpp" />
+    <ClCompile Include="Utils\DelayedExecutorTests.cpp" />
+    <ClCompile Include="Utils\FeatureUserDataMapTests.cpp" />
+    <ClCompile Include="Utils\JWTokenTests.cpp" />
+    <ClCompile Include="Utils\LogFileHelperTests.cpp" />
+    <ClCompile Include="Utils\MockHttpHandler.cpp" />
+    <ClCompile Include="Utils\SCVWritterTests.cpp" />
+    <ClCompile Include="Utils\UrlSafeBase64UtilitiesTests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Published\ClientTests.h" />
-    <ClInclude Include="Published\DummyPolicyHelper.h" />
-    <ClInclude Include="Published\GenerateSIDTests.h" />
-    <ClInclude Include="Published\Mocks\AuthHandlerProviderMock.h" />
-    <ClInclude Include="Published\Mocks\BuddiProviderMock.h" />
-    <ClInclude Include="Published\Mocks\PolicyProviderMock.h" />
-    <ClInclude Include="Published\Mocks\UlasProviderMock.h" />
-    <ClInclude Include="Published\PolicyTests.h" />
-    <ClInclude Include="Published\PolicyTokenTests.h" />
-    <ClInclude Include="Published\TestsHelper.h" />
-    <ClInclude Include="Published\UlasProviderTests.h" />
-    <ClInclude Include="Published\UsageDbTests.h" />
-    <ClInclude Include="Published\PolicyProviderTests.h" />
-    <ClInclude Include="Published\Utils\DelayedExecutorTests.h" />
-    <ClInclude Include="Published\Utils\FeatureUserDataMapTests.h" />
-    <ClInclude Include="Published\Utils\JWTokenTests.h" />
-    <ClInclude Include="Published\Utils\LogFileHelperTests.h" />
-    <ClInclude Include="Published\Utils\MockHttpHandler.h" />
-    <ClInclude Include="Published\Utils\SCVWritterTests.h" />
-    <ClInclude Include="Published\Utils\UrlSafeBase64UtilitiesTests.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="BuildTests.mke" />
-    <None Include="Prewire.mke" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ignore_list.txt" />
+    <ClInclude Include="ClientTests.h" />
+    <ClInclude Include="DummyPolicyHelper.h" />
+    <ClInclude Include="GenerateSIDTests.h" />
+    <ClInclude Include="Mocks\AuthHandlerProviderMock.h" />
+    <ClInclude Include="Mocks\BuddiProviderMock.h" />
+    <ClInclude Include="Mocks\PolicyProviderMock.h" />
+    <ClInclude Include="Mocks\UlasProviderMock.h" />
+    <ClInclude Include="PolicyTests.h" />
+    <ClInclude Include="PolicyTokenTests.h" />
+    <ClInclude Include="TestsHelper.h" />
+    <ClInclude Include="UlasProviderTests.h" />
+    <ClInclude Include="UsageDbTests.h" />
+    <ClInclude Include="PolicyProviderTests.h" />
+    <ClInclude Include="Utils\DelayedExecutorTests.h" />
+    <ClInclude Include="Utils\FeatureUserDataMapTests.h" />
+    <ClInclude Include="Utils\JWTokenTests.h" />
+    <ClInclude Include="Utils\LogFileHelperTests.h" />
+    <ClInclude Include="Utils\MockHttpHandler.h" />
+    <ClInclude Include="Utils\SCVWritterTests.h" />
+    <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h" />
   </ItemGroup>
   <PropertyGroup>
     <ShowAllFiles>true</ShowAllFiles>
@@ -84,7 +77,7 @@
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\Licensing-Gtest\LicensingTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensingcrossplatform\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);$(SrcRoot)LicensingCrossPlatform\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
+    <IncludePath>$(SrcRoot)licensingcrossplatform\Tests\UnitTests\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);$(SrcRoot)LicensingCrossPlatform\Tests\UnitTests\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <BuildLog>

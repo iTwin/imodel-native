@@ -15,122 +15,115 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Published\TestsHelper.cpp">
+    <ClCompile Include="TestsHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ClientTests.cpp">
+    <ClCompile Include="ClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\UsageDbTests.cpp">
+    <ClCompile Include="UsageDbTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\PolicyTokenTests.cpp">
+    <ClCompile Include="PolicyTokenTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Utils\DelayedExecutorTests.cpp">
+    <ClCompile Include="Utils\DelayedExecutorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Utils\JWTokenTests.cpp">
+    <ClCompile Include="Utils\JWTokenTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Utils\SCVWritterTests.cpp">
+    <ClCompile Include="Utils\SCVWritterTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Utils\UrlSafeBase64UtilitiesTests.cpp">
+    <ClCompile Include="Utils\UrlSafeBase64UtilitiesTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\GenerateSIDTests.cpp">
+    <ClCompile Include="GenerateSIDTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\PolicyTests.cpp">
+    <ClCompile Include="PolicyTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Utils\LogFileHelperTests.cpp">
+    <ClCompile Include="Utils\LogFileHelperTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\DummyPolicyHelper.cpp">
+    <ClCompile Include="DummyPolicyHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Utils\FeatureUserDataMapTests.cpp">
+    <ClCompile Include="Utils\FeatureUserDataMapTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\PolicyProviderTests.cpp">
+    <ClCompile Include="PolicyProviderTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\UlasProviderTests.cpp">
+    <ClCompile Include="UlasProviderTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Utils\MockHttpHandler.cpp">
+    <ClCompile Include="Utils\MockHttpHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Published\TestsHelper.h">
+    <ClInclude Include="TestsHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\ClientTests.h">
+    <ClInclude Include="ClientTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\UsageDbTests.h">
+    <ClInclude Include="UsageDbTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\PolicyTokenTests.h">
+    <ClInclude Include="PolicyTokenTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Utils\UrlSafeBase64UtilitiesTests.h">
+    <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Utils\DelayedExecutorTests.h">
+    <ClInclude Include="Utils\DelayedExecutorTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Utils\JWTokenTests.h">
+    <ClInclude Include="Utils\JWTokenTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Utils\SCVWritterTests.h">
+    <ClInclude Include="Utils\SCVWritterTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\GenerateSIDTests.h">
+    <ClInclude Include="GenerateSIDTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\PolicyTests.h">
+    <ClInclude Include="PolicyTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Utils\LogFileHelperTests.h">
+    <ClInclude Include="Utils\LogFileHelperTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\DummyPolicyHelper.h">
+    <ClInclude Include="DummyPolicyHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Utils\FeatureUserDataMapTests.h">
+    <ClInclude Include="Utils\FeatureUserDataMapTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Mocks\BuddiProviderMock.h">
+    <ClInclude Include="Mocks\BuddiProviderMock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Mocks\PolicyProviderMock.h">
+    <ClInclude Include="Mocks\PolicyProviderMock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\PolicyProviderTests.h">
+    <ClInclude Include="PolicyProviderTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Mocks\UlasProviderMock.h">
+    <ClInclude Include="Mocks\UlasProviderMock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Mocks\AuthHandlerProviderMock.h">
+    <ClInclude Include="Mocks\AuthHandlerProviderMock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\UlasProviderTests.h">
+    <ClInclude Include="UlasProviderTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Utils\MockHttpHandler.h">
+    <ClInclude Include="Utils\MockHttpHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="BuildTests.mke" />
-    <None Include="Prewire.mke" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ignore_list.txt" />
   </ItemGroup>
 </Project>
