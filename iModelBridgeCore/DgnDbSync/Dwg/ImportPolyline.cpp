@@ -217,72 +217,18 @@ GeometricPrimitivePtr   PolylineFactory::ApplyThicknessTo (CurveVectorPtr const&
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr  PolylineFactory::ApplyConstantWidthTo (CurveVectorPtr const& plineCurve)
     {
-    static bool s_codeIsReadyToUse = false;
-    if (!s_codeIsReadyToUse)
-        return  nullptr;
-
     if (m_constantWidth < 1.0e-5 || !m_hasConstantWidth || !m_ecs.IsIdentity())
         return  nullptr;
 
-    double  pointTolerance = 0.01 * m_constantWidth;
     double  halfWidth = 0.5 * m_constantWidth;
 
-    // move the curve towards left by half width
-    CurveOffsetOptions  offsetOptions (halfWidth);
-    offsetOptions.SetTolerance (pointTolerance);
-
-    auto left = plineCurve->CloneOffsetCurvesXY (offsetOptions);
-    if (!left.IsValid())
-        return  nullptr;
-
-    // move the curve towards right by half width
-    offsetOptions.SetOffsetDistance (-halfWidth);
-
-    auto right = plineCurve->CloneOffsetCurvesXY (offsetOptions);
-    if (!right.IsValid())
-        return  nullptr;
-    
-    ICurvePrimitivePtr  top, bottom;
-    if (!m_isClosed)
-        {
-        // get start and end points
-        DPoint3d    starts[2], ends[2];
-        if (!left->GetStartEnd(starts[0], ends[0]) || !right->GetStartEnd(starts[1], ends[1]))
-            return  nullptr;
-
-        // bottom cap to connect left->right
-        bottom = ICurvePrimitive::CreateLine (ends[0], ends[1]);
-        if (!bottom.IsValid())
-            return  nullptr;
-
-        // top cap to connect right->left
-        top = ICurvePrimitive::CreateLine (starts[1], starts[0]);
-        if (!top.IsValid())
-            return  nullptr;
-        }
-
-    auto shape = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    auto shape = plineCurve->ThickenXYPathToArea (plineCurve, halfWidth, halfWidth);
     if (!shape.IsValid())
         return  nullptr;
 
-    // reverse the right curve
-    right->ReverseCurvesInPlace ();
-
-    // add and orient them to complete a loop:
-    shape->AddPrimitives (*left);
-    if (!m_isClosed)
-        shape->Add (bottom);
-    shape->AddPrimitives (*right);
-    if (!m_isClosed)
-        shape->Add (top);
-
     m_isClosed = true;
 
-    if (shape->IsClosedPath())
-        return  shape;
-
-    CurveGapOptions gapOptions (pointTolerance, 1.0e-4, 1.0e-4);
-    return shape->CloneWithGapsClosed (gapOptions);
+    return  shape;
     }
 
 /*---------------------------------------------------------------------------------**//**
