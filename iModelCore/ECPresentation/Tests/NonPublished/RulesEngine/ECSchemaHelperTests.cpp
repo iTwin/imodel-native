@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECSchemaHelperTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSchemaHelperTests.h"
@@ -903,4 +903,30 @@ TEST_F(ECInstancesHelperTests, LoadInstance_LoadsInstanceAfterSchemaImport)
     result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
     EXPECT_EQ(BE_SQLITE_ROW, result);
     EXPECT_TRUE(instance.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Haroldas.Vitunskas              02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECInstancesHelperTests, CachesPreparedStatementsThatRequireLoadingECInstances)
+    {
+    ConnectionManager manager;
+    manager.NotifyConnectionOpened(m_project.GetECDb());
+
+    ECClassCP ecClass = m_project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(m_project.GetECDb(), *ecClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(12)); }, true);
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(m_project.GetECDb(), *ecClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(0)); }, true);
+
+    ECInstanceKey key1(m_project.GetECDb().Schemas().GetClassId("RulesEngineTest", "Widget"), ECInstanceId((uint64_t)1));
+    ECInstanceKey key2(m_project.GetECDb().Schemas().GetClassId("RulesEngineTest", "Widget"), ECInstanceId((uint64_t)2));
+
+    IECInstancePtr instance;
+    std::thread([&instance, &manager, &key1, &key2, this]()
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, ECInstancesHelper::LoadInstance(instance, *manager.GetConnection(m_project.GetECDb()), key1));
+        EXPECT_TRUE(instance.IsValid());
+
+        EXPECT_EQ(BE_SQLITE_ROW, ECInstancesHelper::LoadInstance(instance, *manager.GetConnection(m_project.GetECDb()), key2));
+        EXPECT_TRUE(instance.IsValid());
+        }).join();
     }
