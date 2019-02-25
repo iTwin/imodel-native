@@ -1423,7 +1423,6 @@ TEST_F(iModelBridgeTests, LaunchDarklyQa)
     args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists! 
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());      // must be consistent with testRegistry.m_bridgeRegSubKey
-    args.push_back(L"--fwk-storeElementIdsInBIM");
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
