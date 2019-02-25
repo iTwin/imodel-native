@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/CurveVector.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1139,7 +1139,17 @@ double primarySpiralLength, //!< [in] primary path spiral length
 double offsetDistance       //!< [in] offset distance.  Positive is to the left of the primary path
 );
 
-
+//! Offset the path to both sides, forming an area.
+//! <ul>
+//! <li> Mixing a positive and negative makes an area completely to one side of the center path
+//! <li> Either (but not both) of the offsets can be zero, preserving the center path as a boundary of the area.
+//! </ul>
+static GEOMDLLIMPEXP CurveVectorPtr  ThickenXYPathToArea
+(
+    CurveVectorPtr const& path,     //!< [in] original curves.   Expected to be an open, inner, or outer.
+    double leftWidth,               //!< [in] offset to left.  Positive is left.
+    double rightWidth               //!< [in] offset to right. Positive is right.
+);
 }; // CurveVector
 
 
@@ -1656,7 +1666,6 @@ DPoint3dCR pointA,
 DVec3dCR tangentA,
 ICurvePrimitiveCR curve
 );
-
 
 };
 
