@@ -44,24 +44,33 @@
         <SubPart PartName="LicensingNativeLib" LibType="Static" />
     </Part>
 
-	<Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/Prewire.mke">
+	<Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Licensing" SubPartDirectory="UnitTests/Licensing">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+    <Part Name="IntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=IntegrationTests">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="Licensing" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/IntegrationTests" SourceName="Delivery/UnitTests/Objects/IntegrationTests"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=UnitTests">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="Licensing" />
 
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/UnitTests" SourceName="Delivery/UnitTests/Objects/UnitTests"/>
         </Bindings>
     </Part>
 
 	<Product Name="Licensing-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="UnitTests"/>
+        <SubPart PartName="IntegrationTests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
