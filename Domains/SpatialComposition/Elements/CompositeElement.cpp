@@ -121,23 +121,23 @@ Dgn::DgnDbStatus CompositeElement::RemoveOverlapedElement (Dgn::DgnElementId ove
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mykolas.Simutis                 06/2016
+* @bsimethod                                    Joana.Smitaite                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus AllocatedVolume::_LoadFromDb ()
+Dgn::DgnDbStatus CompositeElement::_LoadFromDb ()
     {
     T_Super::_LoadFromDb ();
-    m_composedElementId = GetPropertyValueId<DgnElementId> (prop_ComposingElement ());
+    m_composedElementId = GetPropertyValueId<Dgn::DgnElementId> (prop_ComposingElement ());
     return Dgn::DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mykolas.Simutis                  07/2016
+* @bsimethod                                    Joana.Smitaite                   01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AllocatedVolume::_CopyFrom(Dgn::DgnElementCR source)
+void CompositeElement::_CopyFrom(Dgn::DgnElementCR source)
     {
     T_Super::_CopyFrom(source);
 
-    if (auto spatialElement = dynamic_cast<AllocatedVolumeCP>(&source))
+    if (auto spatialElement = dynamic_cast<CompositeElementCP>(&source))
         {
         m_composedElementId = spatialElement->m_composedElementId;
         }
@@ -146,7 +146,7 @@ void AllocatedVolume::_CopyFrom(Dgn::DgnElementCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus AllocatedVolume::_OnInsert
+Dgn::DgnDbStatus CompositeElement::_OnInsert
 (
 )
     {
@@ -157,37 +157,30 @@ Dgn::DgnDbStatus AllocatedVolume::_OnInsert
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  12/2016
+* @bsimethod                                    Joana.Smitaite                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus AllocatedVolume::_OnUpdate
+Dgn::DgnDbStatus CompositeElement::_OnUpdate
 (
 Dgn::DgnElementCR original
 )
     {
     CalculateProperties ();
-
-    if (GetRelatedAllocationRequirement ().IsValid())
-        if (GetRelatedAllocationRequirement()->GetTypeCost() != -1)
-            {
-            SetCost(UnitConverter::ToSquareFeet(GetFootprintArea ()) * GetRelatedAllocationRequirement ()->GetTypeCost ());
-            }
-
     return T_Super::_OnUpdate (original);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Wouter.Rombouts                 10/17
+* @bsimethod                                    Joana.Smitaite                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus AllocatedVolume::_OnDelete() const
+Dgn::DgnDbStatus CompositeElement::_OnDelete() const
     {
     //Preserve referential integrity of decomposed Allocation Volumes.
-    ElementIterator itor = MakeIterator(SPATIALCOMPOSITION_SCHEMA_NAME ":CompositeVolume");
-    DgnDbR db = GetDgnDb();
+    Dgn::ElementIterator itor = MakeIterator(SPATIALCOMPOSITION_SCHEMA_NAME ":CompositeElement");
+    Dgn::DgnDbR db = GetDgnDb();
     Dgn::DgnElementId nullParentId;
 
-    for (DgnElementId id : itor.BuildIdList<DgnElementId>())
+    for (Dgn::DgnElementId id : itor.BuildIdList<Dgn::DgnElementId>())
         {
-        auto avPtr = db.Elements().GetForEdit<AllocatedVolume>(id);
+        auto avPtr = db.Elements().GetForEdit<CompositeElement>(id);
         if (avPtr.IsValid())
             {
             avPtr->SetComposedElementId (nullParentId);
