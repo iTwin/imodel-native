@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cv_offset.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -256,7 +256,7 @@ static bool AppendSimpleJoint (CurveVectorR collector, OffsetItem &offsetA, Offs
     else if (chamferAngle > 0.0)
         {
         int numPart = 1;
-        if (fabs (signedTurnAngle) > chamferAngle)
+        if (signedTurnAngle > chamferAngle)     // negative turn always makes the intersection point -- line consolidation will eliminate it !!
             numPart = (int) ((fabs (signedTurnAngle) / chamferAngle) + 0.999999999);
         offsetA.DefineOutputArc (numPart, offsetB, offsetDistance);
         return AppendOuterArcStrokes (collector, offsetA, numPart);
@@ -876,263 +876,75 @@ CurveVectorPtr CurveVector::AreaOffset (CurveOffsetOptionsCR options) const
     }
 
 
-struct SeparationByConnectivity final : ICurvePrimitiveProcessor
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      12/2012
++--------------------------------------------------------------------------------------*/
+CurveVectorPtr  CurveVector::ThickenXYPathToArea(CurveVectorPtr const& centerPath, double leftOffset, double rightOffset)
     {
-private:
-    CurveVectorPtr& m_result;
-    ValidatedDPoint3d m_lastEndPt;
-    CurveVector::BoundaryType m_boundaryType;
-
-    bool IsContinuous (DPoint3dCR startPt)
-        {
-        if (!m_lastEndPt.IsValid())
-            return true;
-        return DPoint3dOps::AlmostEqual (m_lastEndPt.Value (), startPt);
-        }
-
-    CurveVectorPtr Parent ()
-        {
-        if (!m_result.IsValid ())
-            m_result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-        return m_result;
-        }
-
-    CurveVectorPtr NewChild ()
-        {
-        Parent ()->Add (ICurvePrimitive::CreateChildCurveVector (CurveVector::Create (m_boundaryType)));
-        return m_result->back ()->GetChildCurveVectorP ();
-        }
-
-    CurveVectorPtr BackChild ()
-        {
-        if (Parent ()->empty ())
-            return NewChild ();
-        return Parent ()->back ()->GetChildCurveVectorP ();
-        }
-
-    void _ProcessDefault (ICurvePrimitiveCR curve, DSegment1dCP interval) override
-        {
-        DPoint3d start, end;
-        curve.GetStartEnd (start, end);
-        if (IsContinuous (start))
-            BackChild ()->Add (curve.Clone ());
-        else
-            NewChild ()->Add (curve.Clone ());
-
-        m_lastEndPt.Value () = end;
-        m_lastEndPt.SetIsValid (true);
-        }
-
-public:
-    SeparationByConnectivity (CurveVectorPtr& result)
-        :m_result (result)
-        {}
-    void _ProcessCurveVector (CurveVector const &curveVector, DSegment1dCP interval) override
-        {
-        m_boundaryType = curveVector.GetBoundaryType ();
-        ICurvePrimitiveProcessor::_ProcessCurveVector (curveVector, interval);
-        }
-    };
-
-struct CurveVectorOnlyProcessing final : ICurvePrimitiveProcessor
-    {
-private:
-    ICurvePrimitiveProcessor& m_next;
-
-    void _ProcessDefault (ICurvePrimitiveCR, DSegment1dCP) override;
-    void _ProcessChildCurveVector (ICurvePrimitiveCR curve, CurveVectorCR child, DSegment1dCP interval) override;
-
-public:
-    CurveVectorOnlyProcessing (ICurvePrimitiveProcessor& next);
-    };
-
-void CurveVectorOnlyProcessing::_ProcessDefault (ICurvePrimitiveCR, DSegment1dCP)
-    {
-    BeAssert (false && L"Can only process a CurveVector containing other CurveVector");
-    }
-
-void CurveVectorOnlyProcessing::_ProcessChildCurveVector (ICurvePrimitiveCR curve, CurveVectorCR child, DSegment1dCP interval)
-    {
-    m_next._ProcessChildCurveVector (curve, child, interval);
-    }
-
-CurveVectorOnlyProcessing::CurveVectorOnlyProcessing (ICurvePrimitiveProcessor& next)
-    :m_next (next)
-    {}
-
-struct FullOffsetChildren final : ICurvePrimitiveProcessor
-    {
-private:
-    double const m_distanceOffset;
-    // DVec3d const m_eyeVec;
-    // DPlane3d const m_projPlane;
-
-    CurveVectorPtr& m_result;
-
-    WChar m_count = L'A';
-
-    CurveVectorPtr WrittenToFile (CurveVectorPtr origin, WStringCR nakedName) const
-        {
-        if (origin.IsValid ())
-            {
-            WString count { 1, m_count };
-            WString fullPath = L"D:\\tmp\\" + nakedName + count + L".dgnjs";
-            return origin;
-            //return Saved (origin);
-            }
-        return origin;
-        }
-
-    CurveVectorPtr Transformed (CurveVectorCR curve) const
-        {
-        //Transform
-        //ValidatedTransform transform = TransformFromSweepToPlane (m_eyeVec, m_projPlane);
-        //if (!transform.IsValid ())
-        //    return nullptr;
-
-        CurveVectorPtr projected = curve.Clone ();
-        //if (!projected.IsValid () || !projected->TransformInPlace (transform.Value ()))
-        //    return nullptr;
-
-        return projected;
-        }
-
-    bool LeftAndRightOffsets (CurveVectorPtr& left, CurveVectorPtr& right, CurveVectorPtr projected) const
-        {
-        if (!projected.IsValid ())
-            return false;
-
-        left = projected->CloneOffsetCurvesXY (CurveOffsetOptions (m_distanceOffset));
-        right = projected->CloneOffsetCurvesXY (CurveOffsetOptions (-m_distanceOffset));
-
-        if (!left.IsValid () || !right.IsValid ())
-            return false;
-
-        //Setting the correct BoundaryType will make sure the endpoints are correct
-        left->SetBoundaryType (CurveVector::BoundaryType::BOUNDARY_TYPE_Open);
-        right->SetBoundaryType (CurveVector::BoundaryType::BOUNDARY_TYPE_Open);
-
-        //reverse (which requires the correct boundary type)
-        right->ReverseCurvesInPlace ();
-
-        //WrittenToFile (left, L"left");
-        //WrittenToFile (right, L"right");
-        return true;
-        }
-
-    CurveVectorPtr Capped (CurveVectorPtr left, CurveVectorPtr right) const
-        {
-        //Add to result with caps
-        DPoint3d leftStart, leftEnd, rightStart, rightEnd;
-        if (!left->GetStartEnd (leftStart, leftEnd) || !right->GetStartEnd (rightStart, rightEnd))
-            return nullptr;
-
-        CurveVectorPtr offset = left->Clone ();
-        if (!offset.IsValid ())
-            return nullptr;
-
-        offset->Add (ICurvePrimitive::CreateLine (DSegment3d::From (leftEnd, rightStart)));
-        for (ICurvePrimitivePtr curve : *right)
-            {
-            offset->Add (curve);
-            }
-        offset->Add (ICurvePrimitive::CreateLine (DSegment3d::From (rightEnd, leftStart)));
-        return offset;
-        }
-
-    void AddToResult (CurveVectorPtr offset)
-        {
-        if (offset.IsValid ())
-            {
-            if (!m_result.IsValid ())
-                m_result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Inner);
-            m_result->Add (offset);
-            }
-        m_count++;
-        }
-
-    void _ProcessChildCurveVector (ICurvePrimitiveCR, CurveVectorCR child, DSegment1dCP) override
-        {
-        //Transformed
-        CurveVectorPtr projected =
-            //WrittenToFile (
-                Transformed (
-                    child
-                //),
-                //L"center"
-            );
-
-        //Offset left and right
-        CurveVectorPtr left = nullptr;
-        CurveVectorPtr right = nullptr;
-        if (!LeftAndRightOffsets (left, right, projected))
-            return;
-
-        //Add to result with caps
-        AddToResult (
-            WrittenToFile (
-                Capped  (
-                    left,
-                    right
-                ),
-                L"offset"
-            )
-        );
-        }
-
-public:
-    FullOffsetChildren (double const& distanceOffset, DVec3dCR eyeVec, DPlane3dCR projPlane, CurveVectorPtr& result)
-        :m_distanceOffset (distanceOffset), /* m_eyeVec (eyeVec), m_projPlane (projPlane), */ m_result (result)
-        {}
-    };
-
-struct Flattened final : ICurvePrimitiveProcessor
-    {
-private:
-    CurveVectorPtr& m_result;
-    CurveVector::BoundaryType m_type;
-
-    CurveVectorPtr Origin ()
-        {
-        if (!m_result.IsValid ())
-            m_result = CurveVector::Create (m_type);
-        return m_result;
-        }
-
-    void _ProcessDefault (ICurvePrimitiveCR curve, DSegment1dCP interval) override
-        {
-        if (curve.GetCurvePrimitiveType () != ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_CurveVector)
-            Origin ()->Add (curve.Clone ());
-        }
-
-public:
-    Flattened (CurveVectorPtr& result, CurveVector::BoundaryType curveType)
-        :m_result (result), m_type (curveType)
-        {}
-    };
-
-CurveVectorPtr FullOffset (CurveVectorPtr curve, double const& distanceOffset, DVec3dCR eyeVec, DPlane3dCR projPlane)
-    {
-    if (!curve.IsValid ())
+    if (centerPath.IsNull ())
         return nullptr;
 
-    CurveVectorPtr separated;
-    SeparationByConnectivity (separated)._ProcessCurveVector (*curve, nullptr);
+    double fastLength = centerPath->FastLength();
+    double  pointTolerance = 0.001 *  DoubleOps::MaxAbs (leftOffset, rightOffset, 0.01 * fastLength);
 
-    CurveVectorPtr offset = nullptr;
-    FullOffsetChildren offsetting (distanceOffset, eyeVec, projPlane, offset);
-    CurveVectorOnlyProcessing (offsetting)._ProcessCurveVector (*separated, nullptr);
+    // move the curve towards left by half width
+    CurveOffsetOptions  offsetOptions(leftOffset);
+    offsetOptions.SetTolerance(pointTolerance);
 
-    CurveVectorPtr result = nullptr;
-    Flattened (result, CurveVector::BOUNDARY_TYPE_None)._ProcessCurveVector (*offset, nullptr);
+    auto left = fabs (leftOffset) < pointTolerance ? centerPath->Clone () : centerPath->CloneOffsetCurvesXY(offsetOptions);
+    if (!left.IsValid())
+        return  nullptr;
 
-    return result;
+    // move the curve towards right by half width
+    offsetOptions.SetOffsetDistance(-rightOffset);
+
+    auto right = fabs(rightOffset) < pointTolerance ? centerPath->Clone() : centerPath->CloneOffsetCurvesXY(offsetOptions);
+    if (!right.IsValid())
+        return  nullptr;
+
+    if (centerPath->IsClosedPath())
+        {
+        auto parityRegion = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+        parityRegion->Add(right);
+        parityRegion->Add(left);
+        parityRegion->FixupXYOuterInner(false);
+        return parityRegion;
+        }
+    else
+        {
+        auto shape = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+
+        ICurvePrimitivePtr  top, bottom;
+        // get start and end points
+        DPoint3d    starts[2], ends[2];
+        if (!left->GetStartEnd(starts[0], ends[0]) || !right->GetStartEnd(starts[1], ends[1]))
+            return  nullptr;
+
+        // bottom cap to connect left->right
+        bottom = ICurvePrimitive::CreateLine(DSegment3d::From(ends[0], ends[1]));
+        if (!bottom.IsValid())
+            return  nullptr;
+
+        // top cap to connect right->left
+        top = ICurvePrimitive::CreateLine(DSegment3d::From(starts[1], starts[0]));
+        if (!top.IsValid())
+            return  nullptr;
+
+        // reverse the right curve
+        right->ReverseCurvesInPlace();
+
+        // add and orient them to complete a loop:
+        shape->AddPrimitives(*left);
+        shape->Add(bottom);
+        shape->AddPrimitives(*right);
+        shape->Add(top);
+        if (shape->IsClosedPath())
+            return  shape;
+
+        CurveGapOptions gapOptions(pointTolerance, 1.0e-4, 1.0e-4);
+        return shape->CloneWithGapsClosed(gapOptions);
+        }
     }
 
-CurveVectorPtr FullOffset (CurveVectorPtr curve, double const& distance)
-    {
-    DVec3d eyeVec = DVec3d::UnitZ ();
-    return FullOffset (curve, distance, eyeVec, DPlane3d::FromOriginAndNormal (DPoint3d::FromZero (), eyeVec));
-    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE
