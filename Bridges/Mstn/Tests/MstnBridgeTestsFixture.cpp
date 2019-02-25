@@ -27,8 +27,6 @@ BentleyApi::BeFileName MstnBridgeTestsFixture::GetOutputDir()
     {
     BentleyApi::BeFileName testDir;
     BentleyApi::BeTest::GetHost().GetOutputRoot(testDir);
-    //testDir.AppendToPath(L"iModelBridgeTests");
-    //testDir.AppendToPath(L"Dgnv8Bridge");
     return testDir;
     }
 
@@ -104,6 +102,7 @@ void MstnBridgeTestsFixture::SetUpTestCase()
     BentleyApi::BeFileName tmpDir;
     BentleyApi::BeTest::GetHost().GetTempDir(tmpDir);
     BentleyApi::BeFileName::CreateNewDirectory(tmpDir.c_str());
+    BentleyApi::BeFileName::CreateNewDirectory(GetOutputDir());
 
     Converter::InitializeDllPath(GetDgnv8BridgeDllName());
 
@@ -113,16 +112,6 @@ void MstnBridgeTestsFixture::SetUpTestCase()
     sqLangFile.AppendToPath(L"sqlang\\MstnBridgeTests_en-US.sqlang.db3");
     L10N::Initialize(BentleyApi::BeSQLite::L10N::SqlangFiles(sqLangFile));
     ScopedDgnHost host;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyApi::BeFileName MstnBridgeTestsFixture::getiModelBridgeTestsOutputDir(WCharCP subdir)
-    {
-    BentleyApi::BeFileName testDir = GetOutputDir();
-    testDir.AppendToPath(subdir);
-    return testDir;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -277,9 +266,9 @@ int32_t MstnBridgeTestsFixture::DbFileInfo::GetBISClassCount(CharCP className)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int32_t MstnBridgeTestsFixture::DbFileInfo::GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid)
     {
-    CachedStatementPtr stmt = m_db->Elements().GetStatement("SELECT count(*) FROM " DGN_TABLE_ProvenanceModel " WHERE  V8FileId = ?");
+    auto stmt = m_db->GetPreparedECSqlStatement("SELECT COUNT(*) FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Kind='Model' AND Scope.Id=?)");
     BentleyApi::Utf8String guidString = fileGuid.ToString();
-    stmt->BindText(1, guidString.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(1, guidString.c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->Step();
     return  stmt->GetValueInt(0);
     }
@@ -317,7 +306,7 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
                                                 BentleyApi::BeFileNameCR inputFile, BentleyApi::BeSQLite::BeGuidCR inputGuid,
                                                 BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid)
     {
-    testDir = getiModelBridgeTestsOutputDir(dirName);
+    testDir = GetOutputDir();
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
@@ -367,10 +356,10 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
 BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, int64_t srcElementId)
     {
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
-    estmt.Prepare(*m_db, "SELECT sourceInfo.Element.Id FROM "
+    estmt.Prepare(*m_db, "SELECT xsa.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
-                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-                  " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.Identifier = ?)");
+                  BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " AS xsa"
+                  " WHERE (xsa.Element.Id=g.ECInstanceId) AND (xsa.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcElementId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     if (BE_SQLITE_ROW != estmt.Step())
         return BentleyApi::BentleyStatus::BSIERROR;
@@ -449,10 +438,10 @@ void SynchInfoTests::ValidateNamedViewSynchInfo (BentleyApi::BeFileName& dbFile,
     DbFileInfo info (dbFile);
 
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
-    estmt.Prepare(*info.m_db, "SELECT kind, Identifier, sourceInfo.JsonProperties FROM "
+    estmt.Prepare(*info.m_db, "SELECT kind, Identifier, xsa.JsonProperties FROM "
                   BIS_SCHEMA (BIS_CLASS_ViewDefinition) " AS v,"
-        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-        " WHERE (sourceInfo.Element.Id=v.ECInstanceId) AND (sourceInfo.Identifier = ?)");
+                  BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " AS xsa"
+        " WHERE (xsa.Element.Id=v.ECInstanceId) AND (xsa.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
@@ -481,7 +470,7 @@ void SynchInfoTests::ValidateLevelSynchInfo (BentleyApi::BeFileName& dbFile, int
 
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(*info.m_db, "SELECT kind, Identifier, JsonProperties FROM "
-                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo WHERE (sourceInfo.Identifier = ?)");
+                  BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " AS xsa WHERE (xsa.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
@@ -516,10 +505,10 @@ void SynchInfoTests::ValidateModelSynchInfo (BentleyApi::BeFileName& dbFile, int
     DbFileInfo info (dbFile);
 
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
-    estmt.Prepare (*info.m_db, "SELECT kind, sourceInfo.Identifier, sourceInfo.JsonProperties FROM "
+    estmt.Prepare (*info.m_db, "SELECT kind, xsa.Identifier, xsa.JsonProperties FROM "
         BIS_SCHEMA (BIS_CLASS_Model) " AS m,"
-        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-        " WHERE (sourceInfo.Element.Id=m.ModeledElement.Id) AND (sourceInfo.Identifier = ?)");
+        BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " AS xsa"
+        " WHERE (xsa.Element.Id=m.ModeledElement.Id) AND (xsa.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
@@ -549,8 +538,8 @@ void SynchInfoTests::ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, i
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare (*info.m_db, "SELECT kind,Identifier FROM "
         BIS_SCHEMA (BIS_CLASS_GeometricElement3d) " AS g,"
-        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-        " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.Identifier = ?)");
+        BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " AS xsa"
+        " WHERE (xsa.Element.Id=g.ECInstanceId) AND (xsa.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());

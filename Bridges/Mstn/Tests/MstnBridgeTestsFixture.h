@@ -28,8 +28,6 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     static void SetUpTestCase();
 
-    static BentleyApi::BeFileName getiModelBridgeTestsOutputDir(WCharCP subdir);
-
     void MakeCopyOfFile(BentleyApi::BeFileNameR outFile, BentleyApi::WCharCP filename, BentleyApi::WCharCP suffix);
 
     void SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir = nullptr, WCharCP bridgeRegSubkey = nullptr, bool setCredentials = true, WCharCP iModelName = nullptr);
