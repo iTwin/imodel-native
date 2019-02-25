@@ -4478,9 +4478,14 @@ struct CreationProcessWorkItem : RefCounted<WorkItem>
             }
     };
 
-
-static bool s_multiThreadCutting = true;
 static bool s_multiThreadTexturing = true;
+static bool s_multiThreadCutting = true;
+
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::DisableMultiThreadTexturingCutting()
+{
+    s_multiThreadTexturing = false;
+    s_multiThreadCutting = false;
+}
 
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {

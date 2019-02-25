@@ -1140,8 +1140,59 @@ void TaskScheduler::PerformCreateTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultF
 
     IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));
     StatusInt status = SUCCESS;
+
+    WString gcsKeyName;
+
+    auto statusRead = pXmlTaskNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+
+    if (statusRead == BEXML_Success)
+    {
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+        status = creatorWorkerPtr->SetBaseGCS(baseGCSPtr);
+        assert(status == SUCCESS);
+    }
+
+    bool streamFromMapBox = false;
+    bool streamFromBingMap = false;
+
+    WString streamAttr;
+    statusRead = pXmlTaskNode->GetAttributeStringValue(streamAttr, "textureStreaming");
+
+    if (statusRead == BEXML_Success)
+    {
+        if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"mapbox"))
+        {
+            streamFromMapBox = true;
+        }
+        else
+            if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"bingmap"))
+            {
+                streamFromBingMap = true;
+            }
+            else
+            {
+                //assert(!"Unknown textureStreaming value");
+            }
+    }
+
     if (ParseSourceSubNodes(creatorWorkerPtr->EditSources(), pXmlTaskNode) == true)
     {
+        if (streamFromBingMap)
+        {
+            Utf8String streamingRasterUrl = "http://www.bing.com/maps/Aerial";
+            ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_IMAGE,
+                WString(streamingRasterUrl.c_str(), true).c_str());
+            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(L"EPSG:900913"));
+
+            GeoCoords::GCS gcs(GetGCSFactory().Create(baseGCSPtr));
+
+            SourceImportConfig& sourceImportConfig = sourceP->EditConfig();
+
+            sourceImportConfig.SetReplacementGCS(gcs);
+            creatorWorkerPtr->EditSources().Add(sourceP);
+
+        }
+        creatorWorkerPtr->SaveToFile();
         status = creatorWorkerPtr->CreateTextureTasks(m_groupingSize, jobName, smFileName);
     }
 
