@@ -277,7 +277,7 @@ int32_t MstnBridgeTestsFixture::DbFileInfo::GetBISClassCount(CharCP className)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int32_t MstnBridgeTestsFixture::DbFileInfo::GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid)
     {
-    Utf8String ecsql("SELECT Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind ='DocumentWithBeGuid') AND (Identifier= ?))");
+    Utf8String ecsql("SELECT Element.Id FROM " BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect)  " WHERE ( (Scope.Id=?) AND (Kind ='DocumentWithBeGuid') AND (Identifier= ?))");
     
     auto stmt = m_db->GetPreparedECSqlStatement(ecsql.c_str());
 
@@ -293,7 +293,7 @@ int32_t MstnBridgeTestsFixture::DbFileInfo::GetModelProvenanceCount(BentleyApi::
     
     DgnElementId repoLink = stmt->GetValueId<DgnElementId>(0);
 
-    Utf8String modelSQL("SELECT count(*) FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ( (Scope.Id=?) AND (Kind = 'Model') )");
+    Utf8String modelSQL("SELECT count(*) FROM " BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect)  " WHERE ( (Scope.Id=?) AND (Kind = 'Model') )");
 
     auto modelStmt = m_db->GetPreparedECSqlStatement(modelSQL.c_str());
     modelStmt->BindId(1, repoLink);
@@ -388,7 +388,7 @@ BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementBy
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(*m_db, "SELECT sourceInfo.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
-                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+                  BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect)  " AS sourceInfo"
                   " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcElementId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     if (BE_SQLITE_ROW != estmt.Step())
@@ -470,7 +470,7 @@ void SynchInfoTests::ValidateNamedViewSynchInfo (BentleyApi::BeFileName& dbFile,
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(*info.m_db, "SELECT kind, Identifier, sourceInfo.JsonProperties FROM "
                   BIS_SCHEMA (BIS_CLASS_ViewDefinition) " AS v,"
-        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+                  BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect)  " AS sourceInfo"
         " WHERE (sourceInfo.Element.Id=v.ECInstanceId) AND (sourceInfo.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
@@ -500,7 +500,7 @@ void SynchInfoTests::ValidateLevelSynchInfo (BentleyApi::BeFileName& dbFile, int
 
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(*info.m_db, "SELECT kind, Identifier, JsonProperties FROM "
-                  XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo WHERE (sourceInfo.Identifier = ?)");
+                 BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect)  " AS sourceInfo WHERE (sourceInfo.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
     ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
@@ -537,7 +537,7 @@ void SynchInfoTests::ValidateModelSynchInfo (BentleyApi::BeFileName& dbFile, int
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare (*info.m_db, "SELECT kind, sourceInfo.Identifier, sourceInfo.JsonProperties FROM "
         BIS_SCHEMA (BIS_CLASS_Model) " AS m,"
-        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+        BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect)  " AS sourceInfo"
         " WHERE (sourceInfo.Element.Id=m.ModeledElement.Id) AND (sourceInfo.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
@@ -568,7 +568,7 @@ void SynchInfoTests::ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, i
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare (*info.m_db, "SELECT kind,Identifier FROM "
         BIS_SCHEMA (BIS_CLASS_GeometricElement3d) " AS g,"
-        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
+        BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect)  " AS sourceInfo"
         " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (sourceInfo.Identifier = ?)");
     estmt.BindText(1, Utf8PrintfString("%lld", srcId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
 
