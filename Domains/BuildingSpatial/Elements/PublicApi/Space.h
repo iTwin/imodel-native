@@ -1,14 +1,22 @@
 #pragma once
 
 #include <BuildingSpatial/Domain/BuildingSpatialMacros.h>
-BEGIN_BUILDINGSPATIAL_NAMESPACE
-USING_NAMESPACE_SPATIALCOMPOSITION
+#include <SpatialComposition/Elements/SpatialCompositionElementsApi.h>
 
-struct Space : CompositeVolume
+BUILDINGSPATIAL_REFCOUNTED_PTR_AND_TYPEDEFS(Space)
+
+BEGIN_BUILDINGSPATIAL_NAMESPACE
+
+struct Space : SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume
     {
-    typedef CompositeVolume T_Super;
-    protected:
-        explicit Space(CreateParams const& params) : CompositeVolume(params) {}
+    DGNELEMENT_DECLARE_MEMBERS(BUILDINGSPATIAL_CLASS_Space, SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume);
+    typedef SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume T_Super;
+    public:
+        explicit Space(CreateParams const& params) : SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume(params) {}
+        
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db);
+        
+        BUILDINGSPATIAL_EXPORT static SpacePtr Create (Dgn::DgnModelCR model);
     };
 
 END_BUILDINGSPATIAL_NAMESPACE
