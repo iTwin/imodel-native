@@ -2,7 +2,7 @@
 |
 |     $Source: formats/ImagePP.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -12,9 +12,16 @@
 #include <TerrainModel/Formats/ImagePP.h>
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeFile.h>
-#ifdef BUILDTMFORDGNDB
+#if defined(BUILDTMFORDGNDB)
+
 #include <ImagePP/h/ImageppAPI.h>
-typedef Utf8String STRING;
+
+#if defined(DGNDB06_API)
+    typedef WString STRING;
+#else
+    typedef Utf8String STRING;
+#endif
+
 #else
 #include <ImagePP/h/hstdcpp.h>
 typedef WString STRING;

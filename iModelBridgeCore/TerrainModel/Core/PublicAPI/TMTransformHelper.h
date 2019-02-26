@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/TMTransformHelper.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -904,9 +904,14 @@ struct TMTransformHelper : RefCountedBase
             m_elevationOffset = m_transform.form3d[2][3];
 
             DPoint3d fixedPoint;
-            RotMatrix axes;
 
+#ifdef DGNDB06_API
+            DVec3d directionVector;
+            if(!transform.IsUniformScaleAndRotateAroundLine (fixedPoint, directionVector, m_aspectFix, m_scale))                
+#else
+            RotMatrix axes;
             if (!transform.IsTranslateScaleRotateAroundZ(fixedPoint, axes, m_scale, m_aspectFix))
+#endif
                 {
                 m_aspectFix = 0;
                 m_scale = 1;

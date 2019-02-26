@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: AutomaticGroundDetection/AutomaticGroundDetectionDgnDb.mke $
+#  $Source: AutomaticGroundDetection/AutomaticGroundDetectionDgnDb_DgnDb06.mke $
 #
 #  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -31,7 +31,7 @@ always:
    ~linkdir "$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)TerrainModel\AutomaticGroundDetection\PublicAPI"
   
 
-CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__ -Zc:twoPhase-
+CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__ -DDGNDB06_API
 
 #Uncomment this to allow generating design meshes
 #CCompOpts + -DWIP_MESH_IMPORT
@@ -46,6 +46,9 @@ always:
 #CCompOpts + $(PublicApiIncludes) 
 
 nameToDefine = BUILDTMFORDGNDB
+%include cdefapnd.mki
+
+nameToDefine = DGNDB06_API
 %include cdefapnd.mki
 
 #----------------------------------------------------------------------
@@ -109,7 +112,11 @@ DLM_SYMB_DEST               = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_OBJECT_DEST             = $(o)
 DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
+DLM_NO_IMPLIB               = 1
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
 DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/

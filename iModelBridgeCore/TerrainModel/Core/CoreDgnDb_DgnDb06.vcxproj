@@ -27,10 +27,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="core.mke" />
-    <None Include="core.mki" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\Drainage\bcdtmDrainage.cpp" />
     <ClCompile Include="..\Drainage\bcdtmDrainageCatchment.cpp" />
     <ClCompile Include="..\Drainage\bcdtmDrainageFeatures.cpp" />
@@ -156,10 +152,14 @@
     <ClInclude Include="PublicAPI\PartitionArray.h" />
     <ClInclude Include="PublicAPI\TMTransformHelper.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="coreDgnDb_DgnDb06.mke" />
+    <None Include="coredgnDb_DgnDb06.mki" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1D2F2287-897A-4C09-AAF7-62984BEF33A6}</ProjectGuid>
+    <ProjectGuid>{920422D6-5DA9-4B3F-A63F-13DCA3A1A970}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
-    <ProjectName>TerrainModelCore</ProjectName>
+    <ProjectName>TerrainModelCore_DgnDb06</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -229,16 +229,17 @@
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__;DEBUG;__BENTLEYTMDRAINAGE_BUILD__</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -p Core -f  TerrainModel -r  TerrainModel re  Core -x64   </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p Core_DgnDb06 -f  TerrainModelDgnDb -r  TerrainModel re  Core_DgnDb06 -x64 </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakeCleanCommandLine>bb -p Core -f  TerrainModel -r  TerrainModel re  Core -x64 -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>call bb -p Core -f  TerrainModel -r  TerrainModel re  Core -x64   -c
-call bb -p Core -f  TerrainModel -r  TerrainModel re  Core -x64 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p Core_DgnDb06 -f  TerrainModelDgnDb -r  TerrainModel re  Core_DgnDb06 -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>call bb -p Core_DgnDb06 -f  TerrainModelDgnDb -r  TerrainModel re  Core_DgnDb06 -x64 -c
+call bb -p Core_DgnDb06 -f  TerrainModelDgnDb -r  TerrainModel re  Core_DgnDb06 -x64 
+</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
@@ -284,14 +285,12 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI</NMakeIncludeSearchPath>
-    <NMakeBuildCommandLine>set DEBUG=
-set NDEBUG=1
-python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p Core_DgnDb06 -f  TerrainModelDgnDb -r  TerrainModel re  Core_DgnDb06 -x64 </NMakeBuildCommandLine>
     <NMakeOutput />
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 CoreDll</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p Core_DgnDb06 -f  TerrainModelDgnDb -r  TerrainModel re  Core_DgnDb06 -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>call bb -p Core_DgnDb06 -f  TerrainModelDgnDb -r  TerrainModel re  Core_DgnDb06 -x64 -c
+call bb -p Core_DgnDb06 -f  TerrainModelDgnDb -r  TerrainModel re  Core_DgnDb06 -x64 </NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <ItemDefinitionGroup>

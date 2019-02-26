@@ -237,8 +237,8 @@
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakeCleanCommandLine>bb -p Core -f  TerrainModelDgnDb -r  TerrainModel re  Core -x64    -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>bb -p Core -f  TerrainModelDgnDb -r  TerrainModel re  Core -x64 -c
-bb -p Core -f  TerrainModelDgnDb -r  TerrainModel re  Core -x64 
+    <NMakeReBuildCommandLine>call bb -p Core -f  TerrainModelDgnDb -r  TerrainModel re  Core -x64 -c
+call bb -p Core -f  TerrainModelDgnDb -r  TerrainModel re  Core -x64 
 </NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
   </PropertyGroup>

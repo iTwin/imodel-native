@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableTerrainModel/STM/STM.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
@@ -21,7 +21,7 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableTerrainModel=$(STMPublicAPISrc)/ScalableTerrainModel"
+   ~linkdir "$(BuildContext)PublicAPI/ScalableTerrainModel=$(STMPublicAPISrc)/ScalableTerrainModel"
 
 
 #----------------------------------------------------------------------
