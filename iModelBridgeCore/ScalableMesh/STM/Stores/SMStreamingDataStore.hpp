@@ -145,10 +145,13 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
             // NEEDS_WORK_SM_STREAMING : handle Azure token properly
             }
 #ifndef LINUX_SCALABLEMESH_BUILD
-        if (ScalableMeshRDSProvider::IsHostedByRDS(this->m_serverID, this->m_projectID, this->m_guid))
+        if (ScalableMeshRDSProvider::IsHostedByRDS("", this->m_projectID, this->m_guid))
             {
             // Forward to RDS to properly handle SAS tokens
             this->m_location = ServerLocation::RDS;
+            auto rdsServerUrl = ScalableMeshRDSProvider::GetBuddiUrl();
+            auto pos = rdsServerUrl.find(".");
+            this->m_serverID = Utf8String(rdsServerUrl.substr(8, pos - 8));
             }
         else
             {
