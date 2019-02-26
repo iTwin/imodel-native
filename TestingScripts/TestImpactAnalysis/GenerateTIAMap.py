@@ -274,14 +274,6 @@ def main():
         exit(-1)
     if comp == None:
         comps = cmp.AllComps()
-        comps.remove('wsclient') # tests failing at mock object not released
-        #following component tests are not in Catalog db yet
-        comps.remove('geocoord')
-        comps.remove('versioncompare')
-        comps.remove('imodelbridge')
-        comps.remove('componentmodeling')
-        comps.remove('tilepublisher')
-        comps.remove('besecurity')        
 
     else:
         comps.append(comp)

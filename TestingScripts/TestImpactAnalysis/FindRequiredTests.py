@@ -239,4 +239,5 @@ def main():
     print 'Logs are at: ' + logsPath
 
 
-main()
+if __name__ == '__main__':    
+    main()

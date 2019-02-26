@@ -18,6 +18,7 @@ import Components as cmp
 from printing import printColored
 from TestResults import TestResults
 from TestsFromCpp import TestCatalog, CPPTests
+from FindRequiredTests import getIgnoredTests
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Jeff.Marker
@@ -29,13 +30,13 @@ def fixPath(path):
     return os.path.normcase(os.path.realpath(path))
 
 #-------------------------------------------------------------------------------------------
-# bsimethod                                     Majd.Uddin    11/2017
+# bsimethod                                     Majd.Uddin    02/2019
 #-------------------------------------------------------------------------------------------
 def getChangedTests(comp):
-    testList = []
+    tl = []
     mapFile = cmp.TiaMapPathForComp(comp)
     if not os.path.exists(mapFile):
-        return testList
+        return tl
     timeToCompare = os.path.getmtime(mapFile)
     tcatalog = TestCatalog(cmp.RepoForComp(comp))
     sf = tcatalog.get_files()
@@ -45,8 +46,42 @@ def getChangedTests(comp):
             cpp = CPPTests(sfn)
             tests = cpp.get_tests()
             for test in tests:
-                if test not in testList:
-                    testList.append(test)
+                if test not in tl:
+                    tl.append(test)
+    # remove tests that are ignored
+    ignored = getIgnoredTests(comp)
+    for test in ignored:
+        if test in tl:
+            tl.remove(test)
+    # Since unwanted tests can get in. Work around is to run tests and get list
+    allTests = getTests(comp)
+    for test in list(tl):
+        if test not in allTests:
+            print 'removing: ' + test
+            tl.remove(test)
+    return tl
+#-------------------------------------------------------------------------------------------
+# bsimethod                                     Majd.Uddin    02/2019
+#-------------------------------------------------------------------------------------------
+def getTests(comp):
+    testList = []
+    testLog = cmp.LogPathForComp(comp)
+    print testLog
+    if os.path.exists(testLog):
+        tr = TestResults(testLog)
+        testList = tr.getAllTests()
+    else:
+        print printColored('Test log not found. Running the tests first', 'cyan', True)
+        testLogNew = os.path.join(reportPath, comp+'_test.log')
+        cmdForTests = testExe + ' > ' + testLogNew
+        print cmdForTests
+        result = os.system(cmdForTests)
+        if result != 0 : # Test run failed
+            print printColored('Test execution failed for: ' + testExe, 'red', True)
+            exit(-1)
+        else:
+            tr = TestResults(testLogNew)
+            testList = tr.getAllTests()
     return testList
 
 #-------------------------------------------------------------------------------------------
@@ -57,23 +92,7 @@ def runCoverage(reportPath, comp, forceAll):
     results = {'NotNeeded': [], 'Passed': [], 'Failed': []}
     testExe = cmp.ExePathForComp(comp)
     if forceAll:
-        testLog = cmp.LogPathForComp(comp)
-        print testLog
-        if os.path.exists(testLog):
-            tr = TestResults(testLog)
-            testList = tr.getAllTests()
-        else:
-            print printColored('Test log not found. Running the tests first', 'cyan', True)
-            testLogNew = os.path.join(reportPath, comp+'_test.log')
-            cmdForTests = testExe + ' > ' + testLogNew
-            print cmdForTests
-            result = os.system(cmdForTests)
-            if result != 0 : # Test run failed
-                print printColored('Test execution failed for: ' + testExe, 'red', True)
-                exit(-1)
-            else:
-                tr = TestResults(testLogNew)
-                testList = tr.getAllTests()
+        testList = getTests(comp)
     else: # only run for changed files
         testList = getChangedTests(comp)
     i = 0

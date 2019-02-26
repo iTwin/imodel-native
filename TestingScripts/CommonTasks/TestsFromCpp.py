@@ -272,7 +272,6 @@ class TestCatalog:
     # bsimethod                                     Majd.Udidn   02/2019
     #----------------------------------------------------------------------------------------       
     def get_files(self):
-        print 'in get files'
         self.fill_filles()
         return self.source_files
 
